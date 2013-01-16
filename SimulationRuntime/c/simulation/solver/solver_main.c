@@ -384,7 +384,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     /******** End event handling ********/
 
     /******** check state selection ********/
-    if (stateSelection(data))
+    if (stateSelection(data,1))
     {
       /* if new set is calculated reinit the solver */
       solverInfo.didEventStep = 1;

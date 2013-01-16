@@ -603,7 +603,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   }
 
   /******** check state selection ********/
-  if (stateSelection(comp->fmuData))
+  if (stateSelection(comp->fmuData,1))
   {
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiEventUpdate: Need to iterate state values changed!");

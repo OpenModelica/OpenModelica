@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -192,7 +192,7 @@ void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, model
       data->localData[0]->realVars[sid] = data->localData[0]->realVars[id];
       row++;
     }
-  } 
+  }
 }
 
 int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, VAR_INFO* A, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data)
@@ -239,7 +239,7 @@ int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelic
  *  \author Frenkel TUD
  *
  */
-int stateSelection(DATA *data)
+int stateSelection(DATA *data, char reportError)
 {
   long i=0;
   long j=0;
@@ -254,7 +254,7 @@ int stateSelection(DATA *data)
     getAnalyticalJacobianSet(data,i);
     /* call pivoting function to select the states */
     memcpy(oldColPivot,set->colPivot,set->nCandidates*sizeof(modelica_integer));
-    if (pivot(set->J,set->nDummyStates,set->nCandidates,set->rowPivot,set->colPivot) != 0)
+    if ((pivot(set->J,set->nDummyStates,set->nCandidates,set->rowPivot,set->colPivot) != 0) && reportError)
     {
       /* error, report the matrix and the time */
       for(i=0;  i < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows;i++)
@@ -269,7 +269,7 @@ int stateSelection(DATA *data)
       }
       THROW1("Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSSJAC to get the Jacobian\n",data->localData[0]->timeValue);
     }
-    /* if we have a new set throw event for reinitialization 
+    /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot,set->colPivot,set->nCandidates,set->nDummyStates,set->nStates,set->A,set->states,set->statescandidates,data);
     if (res)

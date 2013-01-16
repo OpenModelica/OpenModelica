@@ -656,8 +656,8 @@ static int symbolic_initialization(DATA *data)
   storePreValues(data);
   overwriteOldSimulationData(data);
 
-  /* do pivoting for dynamic state selection */ 
-  stateSelection(data);
+  /* do pivoting for dynamic state selection */
+  stateSelection(data,0);
   functionInitialEquations(data);
 
   updateDiscreteSystem(data);
@@ -669,15 +669,15 @@ static int symbolic_initialization(DATA *data)
   storeRelations(data);
   storePreValues(data);
 
-  /* do pivoting for dynamic state selection */ 
-  stateSelection(data);
+  /* do pivoting for dynamic state selection */
+  stateSelection(data,0);
   functionInitialEquations(data);
-  
-  /* do pivoting for dynamic state selection if selection changed try again an */ 
-  if(stateSelection(data) == 1)
+
+  /* do pivoting for dynamic state selection if selection changed try again an */
+  if(stateSelection(data,1) == 1)
   {
     functionInitialEquations(data);
-    if(stateSelection(data) == 1)
+    if(stateSelection(data,1) == 1)
     {
       /* report a warning about strange start values */
       THROW("Error, cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
@@ -966,7 +966,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = symbolic_initialization(data);
   else
     THROW("unsupported option -iim");
-    
+
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
   printAllVars(data, 0, LOG_SOTI);

@@ -44,7 +44,7 @@ void initializeStateSetPivoting(DATA *data);
 void freeStateSetData(DATA *data);
 
 /* update the state selection */
-int stateSelection(DATA *data);
+int stateSelection(DATA *data, char reportError);
 
 /* do pivoting */
 extern int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd );
