@@ -60,11 +60,24 @@ static void indent(FILE *fout, int n) {
 }
 
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
-  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw 1\n";
-  const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
+  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw 2\n";
+  const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 2\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
+  double ygraphmin = 1e-30, ygraphmax = 0.0;
   if(!plt) return;
+  if(i >= 0) {
+    /*
+     * Note: We set the yrange here because otherwise we get warnings if the
+     * number of calls are the same in every time step (i.e. autoscale thinks
+     * the range is [3:3])
+     */
+    nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
+    nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
+    ymin = nmin==0 ? -0.01 : nmin*0.95;
+    ymax = nmax==0 ?  0.01 : nmax*1.05;
+    ygraphmax = rt_max_accumulated(SIM_TIMER_FIRST_FUNCTION + i) * 1.01 + 1e-30;
+  }
   /* PNG */
   fputs("set terminal png size 32,32\n", plt);
   fprintf(plt, "set output \"%s_prof.%s%d.thumb.png\"\n", prefix, idPrefix, id);
@@ -72,23 +85,17 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set xlabel\n");
   fprintf(plt, "set ylabel\n");
   fprintf(plt, "set log y\n");
+  if (i>=0) {
+    fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
+  } else {
+    fprintf(plt, "set yrange [*:*]\n");
+  }
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
   if(i >= 0) {
-    nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
-    nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
-    ymin = nmin==0 ? -0.01 : nmin*0.99;
-    ymax = nmax==0 ?  0.01 : nmax*1.01;
-
-    /*
-     * Note: We set the yrange here because otherwise we get warnings if the
-     * number of calls are the same in every time step (i.e. autoscale thinks
-     * the range is [3:3])
-     */
-    fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
+    fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
     fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.png\"\n", prefix, idPrefix, id);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
-    fprintf(plt, "set yrange [*:*]\n");
   }
 
   /* SVG */
@@ -98,15 +105,19 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
   fprintf(plt, "set output \"%s_prof.%s%d.%s\"\n", prefix, idPrefix, id, plotFormat);
   fprintf(plt, "set log y\n");
+  if (i>=0) {
+    fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
+  } else {
+    fprintf(plt, "set yrange [*:*]\n");
+  }
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
   if(i >= 0) {
-    fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
+    fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
     fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
-    fprintf(plt, "set yrange [*:*]\n");
   }
 }
 
