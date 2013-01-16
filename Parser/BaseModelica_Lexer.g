@@ -221,7 +221,7 @@ MODEL : 'model';
 T_NOT : 'not';
 T_OUTER : 'outer';
 OPERATOR : 'operator'; 
-OVERLOAD : 'overload';
+OVERLOAD : '$overload'; // OpenModelica extension
 T_OR : 'or';
 T_OUTPUT : 'output';
 T_PACKAGE : 'package';

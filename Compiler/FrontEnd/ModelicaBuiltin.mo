@@ -313,43 +313,43 @@ algorithm
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
 end linspace;
 
-function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
+function div = $overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
   "Integer part of a division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'div()'\">div()</a>
 </html>"));
 
-function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod)
+function mod = $overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod)
   "Integer modulus of a division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'mod()'\">mod()</a>
 </html>"));
 
-function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem)
+function rem = $overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem)
   "Integer remainder of the division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'rem()'\">rem()</a>
 </html>"));
 
-function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs)
+function abs = $overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs)
   "Absolute value"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'abs()'\">abs()</a>
 </html>"));
 
-function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal)
+function outerProduct = $overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal)
   "Outer product of two vectors"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'outerProduct()'\">outerProduct()</a>
 </html>"));
 
-function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal)
+function cross = $overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal)
   "Cross product of two 3-vectors"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
 </html>"));
 
-function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal)
+function skew = $overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal)
   "The skew matrix associated with the vector"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>

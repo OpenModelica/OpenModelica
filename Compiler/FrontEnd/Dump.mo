@@ -347,7 +347,7 @@ algorithm
         s5 = stringDelimitList(List.map(paths,Absyn.pathString), ", ");
         s6 = unparseCommentOption(cmt);
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = overload(",s5,")", s6});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = $overload(",s5,")", s6});
       then
         str;
 
