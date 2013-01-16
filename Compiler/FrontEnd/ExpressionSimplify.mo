@@ -895,6 +895,7 @@ algorithm
       Boolean scalar,sc;
       list<Values.Value> valueLst;
       Integer i,i1,i2,dim;
+      Real r1;
       array<array<DAE.Exp>> marr;
     
     // min/max function on arrays of only 1 element
@@ -985,37 +986,34 @@ algorithm
        then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(0.25));
                
    // exp(-log(x)) = 1/x
-   case (
-     DAE.CALL(path=Absyn.IDENT("exp"),expLst={
-     DAE.UNARY(DAE.UMINUS(ty = _),
-     exp = DAE.CALL(
-     path=Absyn.IDENT("log"),expLst={e1})
-     )}))
-      then e1; 
-
+   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.UNARY(DAE.UMINUS(ty = _), exp = DAE.CALL(path=Absyn.IDENT("log"),expLst={e1}))}))
+      then Expression.makeDiv(DAE.RCONST(1.0), e1); 
+  
+   // exp(log(x)) = x
    case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.CALL(path=Absyn.IDENT("log"),expLst={e1})}))
       then e1;
+   
+   // exp(e*log(x)) = x^e
+   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)),DAE.CALL(path=Absyn.IDENT("log"),expLst={e2}))}))
+      then Expression.expPow(e1,e2);
+   
+   // exp(log(x)*e) = x^e
+   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.BINARY(DAE.CALL(path=Absyn.IDENT("log"),expLst={e1}),DAE.POW(ty = DAE.T_REAL(source = _)),e2)}))
+      then Expression.expPow(e1,e2);
     
    // exp(e)^r = exp(e*r)
    case (DAE.BINARY(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}),DAE.POW(ty = DAE.T_REAL(source = _)),e2))
      equation
       e = Expression.expMul(e,e2);
    then Expression.makeBuiltinCall("exp",{e},DAE.T_REAL_DEFAULT);
-     
-   // log(exp(x)) = x
-   case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1})}))
-      then e1;
-        
-   // exp(log(x)) = x
-   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.CALL(path=Absyn.IDENT("log"),expLst={e1})}))
-      then e1;
         
    // log(x^n) = n*log(x)
-   case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)),e2)}))
+   case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)), DAE.RCONST(r1))}))
      equation
+       true = realEq(realMod(r1,2.0),1.0);
        e1 = Expression.makeBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
-     then  Expression.expMul(e2,e1);
-
+     then  Expression.expMul(DAE.RCONST(r1), e1);
+       
    // delay of constant expression
    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
      equation
