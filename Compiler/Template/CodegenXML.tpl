@@ -575,7 +575,7 @@ match whenClauses
 case SIM_WHEN_CLAUSE(__) then
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
+  let helpIf = (conditions |> e =>
       let helpInit = daeExpXml(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")
@@ -837,7 +837,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExpXml(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
   //let &helpInits = buffer "" /*BUFD*/
-  //let helpIf = (conditions |> (e, hidx) =>
+  //let helpIf = (conditions |> e =>
      // let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       //let &helpInits += ' <%helpInit%>'
      // '';separator=" || ")C*/, &varDecls /*BUFD*/)
@@ -869,7 +869,7 @@ match eq
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
-    let helpIf = (conditions |> (e, hidx) =>
+    let helpIf = (conditions |> e =>
         let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let &helpInits += '<%helpInit%>'
         '';separator=" || ")
@@ -892,7 +892,7 @@ match eq
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
-    let helpIf = (conditions |> (e, hidx) =>
+    let helpIf = (conditions |> e =>
         let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let &helpInits += '<%helpInit%>'
         '';separator=" || ")
@@ -921,7 +921,7 @@ template equationElseWhenXml(SimEqSystem eq, Context context, Text &preExp /*BUF
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> (e, hidx) =>
+  let helpIf = (conditions |> e =>
       let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")
@@ -942,7 +942,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     </equ:ElseWhen>
     >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> (e, hidx) =>
+  let helpIf = (conditions |> e =>
       let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")

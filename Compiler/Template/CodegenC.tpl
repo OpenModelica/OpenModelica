@@ -1246,7 +1246,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
       if reinits then  
@@ -2471,7 +2471,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
   match eq
     case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       <<
       if(<%helpIf%>)
@@ -2484,7 +2484,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
       }
       >>
     case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
       <<
@@ -2505,7 +2505,7 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   else if(<%helpIf%>)
@@ -2514,7 +2514,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<

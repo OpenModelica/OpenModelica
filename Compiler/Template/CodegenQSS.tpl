@@ -384,11 +384,11 @@ else
   >>
 end generateWhen;
 
-template generateCond(list<tuple<DAE.Exp, Integer>> conds, list<DAE.ComponentRef> states, 
+template generateCond(list<DAE.Exp> conds, list<DAE.ComponentRef> states, 
                       list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
 ::=
   match conds
-  case ({(DAE.CALL(path=IDENT(name="sample"),expLst={_,start,interval,_}),_)}) then
+  case ({DAE.CALL(path=IDENT(name="sample"),expLst={_,start,interval,_})}) then
   let &extraCode += 
   << 
   d[<% intAdd(index,1) %>] := pre(d[<% intAdd(index,1) %>]) + <%ExpressionDump.printExpStr(BackendQSS.replaceVars(interval,states,disc,algs)) %>;
@@ -396,15 +396,15 @@ template generateCond(list<tuple<DAE.Exp, Integer>> conds, list<DAE.ComponentRef
   <<
   time > <% ExpressionDump.printExpStr(BackendQSS.replaceVars(start,states,disc,algs)) %> + d[<% intAdd(index,1) %>]
   >>
-  case ({(e as DAE.CREF(__),_)}) then
+  case ({e as DAE.CREF(__)}) then
   <<
   <% ExpressionDump.printExpStr(BackendQSS.replaceVars(e,states,disc,algs)) %> > 0.5
   >>
-  case ({(DAE.LUNARY(exp=e),_)}) then
+  case ({DAE.LUNARY(exp=e)}) then
   <<
   1 - <% ExpressionDump.printExpStr(BackendQSS.replaceVars(e,states,disc,algs)) %> > 0.5
   >>
-  case ({(e,_)}) then
+  case ({e}) then
   <<
   <% ExpressionDump.printExpStr(BackendQSS.replaceVars(e,states,disc,algs)) %>
   >>

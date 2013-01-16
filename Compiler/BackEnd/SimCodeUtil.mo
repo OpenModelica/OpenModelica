@@ -2324,7 +2324,6 @@ algorithm
       DAE.ComponentRef left, varOutput;
       DAE.Exp e1, e2, varexp, exp_, right, cond, prevarexp;
       DAE.Type ty;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       BackendDAE.WhenEquation whenEquation, elseWhen;
       String algStr, message, eqStr;
       DAE.ElementSource source;
@@ -2381,9 +2380,8 @@ algorithm
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
         conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        ({SimCode.SES_WHEN(iuniqueEqIndex, left, right, conditionsWithHindex, NONE(), source)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_WHEN(iuniqueEqIndex, left, right, conditions, NONE(), source)}, iuniqueEqIndex+1, itempvars);
         
     // when eq with else
     case (_, _, 
@@ -2394,9 +2392,8 @@ algorithm
         BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen, wcl, helpVarInfo, source);
         conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        ({SimCode.SES_WHEN(iuniqueEqIndex, left, right, conditionsWithHindex, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_WHEN(iuniqueEqIndex, left, right, conditions, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);
         
     // single equation
     case (_, _, 
@@ -2693,21 +2690,18 @@ algorithm
     local
       DAE.Exp cond;
       list<DAE.Exp> conditions;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.ComponentRef> conditionVars; 
       BackendDAE.WhenEquation we;
       
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()), _, _) equation
       conditions = getConditionList(cond);
-      conditionsWithHindex =  List.map2(conditions, addHelpForCondition, inHelpVarInfo, inHelpVarInfo);
       conditionVars = Expression.extractCrefsFromExp(cond);        
-    then SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditionsWithHindex)::inSimWhenClause;
+    then SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditions)::inSimWhenClause;
     
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)), _, _) equation
       conditions = getConditionList(cond);
-      conditionsWithHindex =  List.map2(conditions, addHelpForCondition, inHelpVarInfo, inHelpVarInfo);
       conditionVars = Expression.extractCrefsFromExp(cond);        
-    then findWhenEquation1(we, inHelpVarInfo, SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditionsWithHindex)::inSimWhenClause);        
+    then findWhenEquation1(we, inHelpVarInfo, SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditions)::inSimWhenClause);        
   end match;
 end findWhenEquation1; 
 
@@ -2721,15 +2715,13 @@ protected
   list<BackendDAE.WhenOperator> reinits;
   list<DAE.ComponentRef> conditionVars;
   list<DAE.Exp> conditions;
-  list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
 algorithm
   BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits) := whenClause;
 
   conditions := getConditionList(cond);
-  conditionsWithHindex := List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
   conditionVars := Expression.extractCrefsFromExp(cond);
 
-  osimWhenClauses := SimCode.SIM_WHEN_CLAUSE(conditionVars, reinits, NONE(), conditionsWithHindex)::isimWhenClauses;
+  osimWhenClauses := SimCode.SIM_WHEN_CLAUSE(conditionVars, reinits, NONE(), conditions)::isimWhenClauses;
 end whenClauseToSimWhenClause;
 
 // =============================================================================
@@ -2777,137 +2769,6 @@ algorithm
         (index,simeqns);
   end matchcontinue;
 end createSampleEquations;
-
-protected function addHindexForCondition
-  input DAE.Exp condition;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  output tuple<DAE.Exp, Integer> conditionAndHindex;
-algorithm
-  conditionAndHindex :=
-  matchcontinue (condition, helpVarInfo)
-    local
-      Integer hindex;
-      DAE.Exp e;
-      list<SimCode.HelpVarInfo> restHelpVarInfo;
-    case (condition, (hindex, e, _) :: restHelpVarInfo)
-      equation
-        true = Expression.expEqual(condition, e);
-      then ((condition, hindex));
-    case (condition, (hindex, e, _) :: restHelpVarInfo)
-      equation
-        false = Expression.expEqual(condition, e);
-        conditionAndHindex = addHindexForCondition(condition, restHelpVarInfo);
-      then conditionAndHindex;
-  end matchcontinue;
-end addHindexForCondition;
-
-protected function addHelpForCondition
-  input DAE.Exp icondition;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  input list<SimCode.HelpVarInfo> helpVarInfo1;
-  output tuple<DAE.Exp, Integer> conditionAndHindex;
-algorithm
-  conditionAndHindex :=
-  matchcontinue (icondition, helpVarInfo, helpVarInfo1)
-    local
-      Integer hindex;
-      DAE.Exp e;
-      list<SimCode.HelpVarInfo> restHelpVarInfo;
-      Absyn.Path name;
-      list<DAE.Exp> args_;
-      DAE.Exp condition1;
-      DAE.CallAttributes attr;
-      DAE.Exp condition;
-      
-    case (_, {},_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for condition"});
-      then fail();
-    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo, _)
-      equation
-        args_ = listAppend(args_,{DAE.ICONST(hindex)});
-        condition1 = DAE.CALL(name, args_, attr);
-        true = Expression.expEqual(condition1, e);
-        
-        //s1 = ExpressionDump.printExpStr(condition1);
-        //s2 = ExpressionDump.printExpStr(e);
-        //print("Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +&  "\n");
-      then ((condition1, hindex));
-    case (condition, (hindex, e, _) :: restHelpVarInfo, _)
-      equation
-        ((condition,_)) = Expression.traverseExp(condition, addHForSample, helpVarInfo1);
-        true = Expression.expEqual(condition, e);
-        //s1 = ExpressionDump.printExpStr(condition);
-        //s2 = ExpressionDump.printExpStr(e);
-        //print("Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +& "\n");
-      then ((condition, hindex));
-    case (condition, (hindex, e, _) :: restHelpVarInfo, _)
-      equation
-        ((condition,_)) = Expression.traverseExp(condition, addHForSample, helpVarInfo1);
-        false = Expression.expEqual(condition, e);
-        //s1 = ExpressionDump.printExpStr(condition);
-        //s2 = ExpressionDump.printExpStr(e);
-        //print("NOT Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +& "\n");
-        conditionAndHindex = addHelpForCondition(condition, restHelpVarInfo, helpVarInfo1);
-      then conditionAndHindex;
-  end matchcontinue;
-end addHelpForCondition;
-
-protected function addHForSample
-    input tuple<DAE.Exp, list<SimCode.HelpVarInfo>> inTplExp;
-    output tuple<DAE.Exp, list<SimCode.HelpVarInfo>> outTplExp;
-algorithm 
- outTplExp := matchcontinue(inTplExp)
-   local
-   DAE.Exp condition;
-   list<SimCode.HelpVarInfo> helpvars;
-   String s1;
-  case ((condition, helpvars))
-    equation
-      s1 = ExpressionDump.printExpStr(condition);
-      //print("### start match for condition: " +& s1 +& "\n");
-      condition = matchwithHelpVars(condition,helpvars);
-    then ((condition,helpvars));
-  case ((condition, helpvars)) then ((condition,helpvars));
- end matchcontinue;
-end addHForSample;
-
-protected function matchwithHelpVars
-    input DAE.Exp inCondition;
-    input list<SimCode.HelpVarInfo> inHelpVars;
-    output DAE.Exp outCondition;
-algorithm 
- outCondition := matchcontinue(inCondition,inHelpVars)
-   local
-   DAE.Exp condition,condition1;
-   Integer hindex;
-   DAE.Exp e;
-   list<SimCode.HelpVarInfo> restHelpVarInfo;
-   Absyn.Path name;
-   list<DAE.Exp> args_;
-   DAE.CallAttributes attr;
-   
-  case(condition, {}) then condition;
-  case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo)
-      equation
-        args_ = listAppend(args_,{DAE.ICONST(hindex)});
-        condition1 = DAE.CALL(name, args_, attr);
-        true = Expression.expEqual(condition1, e);
-        
-        //s1 = ExpressionDump.printExpStr(condition1);
-        //s2 = ExpressionDump.printExpStr(e);
-        //print("** matchwithHelpVar TRUE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
-      then condition1;
-    case (condition, (hindex, e, _) :: restHelpVarInfo)
-      equation
-        false = Expression.expEqual(condition, e);
-        //s1 = ExpressionDump.printExpStr(condition);
-        //s2 = ExpressionDump.printExpStr(e);
-        //print("** matchwithHelpVar FALSE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
-        condition = matchwithHelpVars(condition, restHelpVarInfo);
-      then condition;
- end matchcontinue;
-end matchwithHelpVars;
 
 protected function createNonlinearResidualEquationsComplex
   input DAE.Exp inExp;
@@ -6518,7 +6379,6 @@ algorithm
       BackendDAE.WhenEquation elseWhen;
       list<DAE.Exp> conditions;
       list<BackendDAE.WhenClause> wcl;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<SimCode.SimEqSystem> resEqs;
       SimCode.SimEqSystem elseWhenEquation;
       list<SimCode.SimVar> tempvars;
@@ -6528,9 +6388,8 @@ algorithm
         crefs = List.map(inVars,BackendVariable.varCref);
         List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,left);
         conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,NONE(),source)},iuniqueEqIndex+1,itempvars);
+        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditions,NONE(),source)},iuniqueEqIndex+1,itempvars);
     // when eq with else
     case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)),source=source),_,_,BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),_,_)
       equation
@@ -6538,9 +6397,8 @@ algorithm
         List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,left);
         elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
         conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,SOME(elseWhenEquation),source)},iuniqueEqIndex+1,itempvars);       
+        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditions,SOME(elseWhenEquation),source)},iuniqueEqIndex+1,itempvars);       
     // failure
     else
       equation
@@ -6564,24 +6422,21 @@ algorithm
       DAE.Exp  right,cond;
       BackendDAE.WhenEquation elseWhenEquation;
       SimCode.SimEqSystem simElseWhenEq;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.Exp> conditions;
       // when eq without else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _, _)
       equation
         conditions = getConditionList(cond);
-        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        SimCode.SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
+        SimCode.SES_WHEN(0,left, right, conditions, NONE(), source);
         
         // when eq with else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), _, _, _)
       equation
         simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
         conditions = getConditionList(cond);
-        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        SimCode.SES_WHEN(0,left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
+        SimCode.SES_WHEN(0,left,right,conditions,SOME(simElseWhenEq),source);
   end match;
 end createElseWhenEquation;
 
@@ -11178,7 +11033,7 @@ algorithm
       list<SimCode.SimEqSystem> discEqs,discEqs1;
       list<Integer> values;
       list<Integer> value_dims;
-      list<tuple<DAE.Exp, Integer>> conditions;
+      list<DAE.Exp> conditions;
       DAE.ElementSource source;
       Option<SimCode.JacobianMatrix> symJac;
       
@@ -13936,7 +13791,7 @@ algorithm
       list<DAE.Exp> beqs;
       list<DAE.ComponentRef> crefs;
       list<Integer> values,values_dims;
-      list<tuple<DAE.Exp, Integer>> conditions;
+      list<DAE.Exp> conditions;
       Option<SimCode.SimEqSystem> elseWhen;
       list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
       list<SimCode.SimEqSystem> elsebranch;

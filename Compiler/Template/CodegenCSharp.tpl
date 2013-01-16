@@ -633,18 +633,10 @@ template genreinits(SimWhenClause whenClauses, Integer widx, SimCode simCode)
 
 match whenClauses
 case SIM_WHEN_CLAUSE(__) then
-if reinits then  
-  let &preExp = buffer "" /*BUFD*/
-  //let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp, simCode)
-      let &preExp += 'H[<%hidx%>] = <%helpInit%> ?1.0:0.0;'
-      edgeHelpVar(hidx)
-    ;separator=" || ")  
+if reinits then
+  let helpIf = (conditions |> e => '<%whenCondition(e, simCode)%>';separator=" || ")
   <<
-
   //For whenclause index: <%widx%>
-  <%preExp%>
   if (<%helpIf%>) { 
     <%functionWhenReinitStatementThen(reinits, simCode)%>
   }
@@ -1140,19 +1132,12 @@ case SES_NONLINEAR(__) then
   >>
   
 case SES_WHEN(__) then
+  let helpIf = (conditions |> e => '<%whenCondition(e, simCode)%>';separator=" || ")
   let &preExp = buffer ""
-  let helpIf = (conditions |> (e, hidx) =>
-      let hInit = daeExp(e, context, &preExp, simCode)
-      let &preExp += 'H[<%hidx%>] = <%hInit%> ? 1.0 : 0.0;<%\n%>' //TODO: ??? type
-      edgeHelpVar(hidx)
-      //'/*edge(H[<%hidx%>])*/(H[<%hidx%>]!=0.0 && preH[<%hidx%>]==0.0)'
-    ;separator=" || ")
-  let &preExp2 = buffer ""
-  let rightExp = daeExp(right, context, &preExp2, simCode)
+  let rightExp = daeExp(right, context, &preExp, simCode)
   <<
-  <%preExp%>
   if (<%helpIf%>) {
-    <%preExp2%>
+    <%preExp%>
     <%cref(left, simCode)%> = <%rightExp%>;
   } else {
     <%cref(left, simCode)%> = <%preCref(left, simCode)%>;
@@ -1163,6 +1148,25 @@ else
   "UNKNOWN_equation"
   
 end equation_;
+
+
+template whenCondition(DAE.Exp exp, SimCode simCode)
+::=
+  match exp
+    case CALL(path = IDENT(name = "initial"), expLst = {}) then
+      'initial()'
+    else '<%expCref(exp, simCode)%> && !$P$PRE<%expCref(exp, simCode)%> /* edge */'
+end whenCondition;
+
+template expCref(DAE.Exp ecr, SimCode simCode)
+::=
+  match ecr
+  case CREF(__) then cref(componentRef, simCode)
+  case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
+    '$P$DER<%cref(arg.componentRef, simCode)%>'
+  else "ERROR_NOT_A_CREF"
+end expCref;
+
 
 // SECTION: SIMULATION TARGET, FUNCTIONS FILE SPECIFIC TEMPLATES
 // not yet implemented

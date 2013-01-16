@@ -973,30 +973,30 @@ end functionWhenReinitStatement;
 template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 " Generates reinit statemeant"
 ::=
+  match whenClauses
+    case SIM_WHEN_CLAUSE(__) then
+      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
 
-match whenClauses
-case SIM_WHEN_CLAUSE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")
-  let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
-
-if reinits then  
-<<
-//Reinit inside whenclause index: <%int%>
-<%preExp%>
-<%helpInits%>
-if (atEvent) {
-   if (<%helpIf%>) { 
-   <%ifthen%>
-   }
-}
->>
+      if reinits then  
+      <<
+      //Reinit inside whenclause index: <%int%>
+      if (atEvent) {
+         if (<%helpIf%>) { 
+         <%ifthen%>
+         }
+      }
+      >>
 end genreinits;
+
+
+template whenCondition(DAE.Exp exp)
+::=
+  match exp
+    case CALL(path = IDENT(name = "initial"), expLst = {}) then
+      'initial()'
+    else '<%expCref(exp)%> && !$P$PRE<%expCref(exp)%> /* edge */'
+end whenCondition;
 
 
 template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
@@ -1236,13 +1236,7 @@ match eq
 
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")C*/, &varDecls /*BUFD*/)
+  let expPart = daeExp(exp, context, &preExp, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
     let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
@@ -1363,18 +1357,10 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
-  <%preExp%>
-  <%helpInits%>
   if (atEvent) {
       if (<%helpIf%>) {
           <%preExp2%>
@@ -1385,19 +1371,11 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
-  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
+  let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
-  <%preExp%>
-  <%helpInits%>
   if (atEvent) {
       if (<%helpIf%>) {
           <%preExp2%>
@@ -1411,16 +1389,12 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   >> 
 end equationWhen;
 
-template equationElseWhen(SimEqSystem eq, Context context, Text &preExp /*BUFD*/, Text &helpInits /*BUFD*/, Text &varDecls /*BUFP*/)
+template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a else when equation."
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1430,14 +1404,10 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
-      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
-    ;separator=" || ")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
-  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
+  let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
   else if (<%helpIf%>) {
     <%preExp2%>

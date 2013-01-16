@@ -914,7 +914,7 @@ algorithm
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
-    case (SimCode.SIM_WHEN_CLAUSE(conditions={(DAE.CALL(path=Absyn.IDENT(name="sample")),_)}) :: tail) 
+    case (SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))}) :: tail) 
       then simpleWhens(tail);
     case (head :: tail) 
       then listAppend({head},simpleWhens(tail));
@@ -932,7 +932,7 @@ algorithm
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
-    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={(DAE.CALL(path=Absyn.IDENT(name="sample")),_)})) :: tail) 
+    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail) 
       then listAppend({head},sampleWhens(tail));
     case (head :: tail) 
       then sampleWhens(tail);

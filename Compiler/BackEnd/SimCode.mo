@@ -444,7 +444,7 @@ uniontype SimEqSystem
     Integer index;
     DAE.ComponentRef left;
     DAE.Exp right;
-    list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
+    list<DAE.Exp> conditions;
     Option<SimEqSystem> elseWhen;
     DAE.ElementSource source;
   end SES_WHEN;
@@ -467,7 +467,7 @@ uniontype SimWhenClause
     list<DAE.ComponentRef> conditionVars;
     list<BackendDAE.WhenOperator> reinits;
     Option<BackendDAE.WhenEquation> whenEq;
-    list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
+    list<DAE.Exp> conditions;
   end SIM_WHEN_CLAUSE;
 end SimWhenClause;
 

@@ -4274,26 +4274,37 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
 ::=
 match eq
  case SES_WHEN(__) then
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let &preExp = buffer ""
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |>(e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      let &preExp +=""
-      '_event_handling.edge(_event_handling[<%hidx%>],"h<%hidx%>")'
-   ;separator="||")
-  let &preExp2 = buffer ""
-  let rightExp = daeExp(right, context, &preExp2,&varDecls,simCode)
+  let rightExp = daeExp(right, context, &preExp,&varDecls,simCode)
   <<
-  <%preExp%>
-  <%helpInits%>
   if (<%helpIf%>) {
-    <%preExp2%>
+    <%preExp%>
     <%cref1(left, simCode,context)%> = <%rightExp%>;
   } 
   >>
  else  
   "UNKNOWN_equation"
 end equationWhen;
+
+template whenCondition(DAE.Exp exp)
+::=
+  match exp
+    case CALL(path = IDENT(name = "initial"), expLst = {}) then
+      'initial()'
+    else '<expCref(exp)> && !$P$PRE<expCref(exp)> /* edge */'
+end whenCondition;
+
+/*
+template expCref(DAE.Exp ecr, SimCode simCode, Context context)
+::=
+  match ecr
+  case CREF(__) then cref1(componentRef, simCode, context)
+  case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
+    '$P$DER<%cref1(arg.componentRef, simCode, context)%>'
+  else "ERROR_NOT_A_CREF"
+end expCref;
+*/
 
 template helpvarvector(list<SimWhenClause> whenClauses,SimCode simCode)
 ::=
@@ -4312,14 +4323,13 @@ match whenClauses
 case SIM_WHEN_CLAUSE(__) then
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
+  let helpIf = (conditions |> e =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      let &preExp +='h[<%hidx%>]=<%helpInit%>;<%\n%>'
       ""
    ;separator="")      
 <<
  <%preExp%>
-  <%helpIf%>
+ <%helpIf%>
 >>
 end helpvarvector1;
 
@@ -4330,43 +4340,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::resetHelpVar(const int index)
    {
-    <%resethelpvar2(whenClauses,simCode)%>
+     // removed
    }
   >>
 end resethelpvar;
-
-template resethelpvar2(list<SimWhenClause> whenClauses,SimCode simCode)
-
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let reinit = (whenClauses |> when hasindex i0 =>
-      resethelpvar1(when, contextOther,&varDecls,i0,simCode)
-    ;separator="\n";empty)
-  <<
-    <%reinit%>
-  >>
-end resethelpvar2;
-
-template resethelpvar1(SimWhenClause whenClauses,Context context, Text &varDecls,Integer int,SimCode simCode)
-::=
-  match whenClauses
-  case SIM_WHEN_CLAUSE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let &preExp += ""
-    ' if(index==<%hidx%>)
-     _event_handling.setHelpVar(<%hidx%>,<%helpInit%>);
-    '
-   )
-   
- <<
-  <%preExp%>
-  <%helpIf%>
- >>
-
-end resethelpvar1;
 
 template preCref(ComponentRef cr, SimCode simCode, Context context) ::=
 'pre<%representationCref(cr, simCode,context)%>'
@@ -6699,21 +6676,12 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
 
 match whenClauses
 case SIM_WHEN_CLAUSE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      let &helpInits +=""
-      '_event_handling.edge(_event_handling[<%hidx%>],"h<%hidx%>")'
-   ;separator="||")
+  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/,simCode)                     
 
 if reinits then  
 <<
-
   //For whenclause index: <%int%>
-  <%preExp%>
-  <%helpInits%>
   if (<%helpIf%>) { 
     <%ifthen%>
   }

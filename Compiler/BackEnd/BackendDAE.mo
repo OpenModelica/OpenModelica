@@ -50,8 +50,8 @@ public constant Integer SymbolicJacobianBIndex = 2;
 public constant Integer SymbolicJacobianCIndex = 3;
 public constant Integer SymbolicJacobianDIndex = 4;
 public constant Integer SymbolicJacobianGIndex = 5;
-public constant String partialDerivativeNamePrefix="$pDER";
 
+public constant String partialDerivativeNamePrefix = "$pDER";
 
 public type Type = .DAE.Type 
 "Once we are in BackendDAE, the Type can be only basic types or enumeration. 
@@ -565,20 +565,19 @@ public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
 
 public 
-type SymbolicJacobian = tuple< BackendDAE,              // symbolic equation system 
-                                String,                 // Matrix name
-                                list<Var>,              // diff vars
-                                list<Var>,              // result diffed equation
-                                list<Var>              // all diffed equation
-                                >;
+type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system 
+                              String,                   // Matrix name
+                              list<Var>,                // diff vars
+                              list<Var>,                // result diffed equation
+                              list<Var>                 // all diffed equation
+                              >;
 
 public 
-type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>,  // column-wise sparse pattern
-                            tuple<list< .DAE.ComponentRef>,  // diff vars
-                                   list< .DAE.ComponentRef>>>; // diffed vars
+type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>,   // column-wise sparse pattern
+                           tuple<list< .DAE.ComponentRef>,                              // diff vars
+                                 list< .DAE.ComponentRef>>>;                            // diffed vars
 
 public 
 type SparseColoring = list<list< .DAE.ComponentRef>>;    // coloring
-
 
 end BackendDAE;
