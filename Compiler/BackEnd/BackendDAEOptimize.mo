@@ -3197,7 +3197,7 @@ algorithm
         eqnsNewton = List.intRange(l);
         varsNewton = List.intRange(l);
         jacNewton = BackendDAEUtil.calculateJacobian(variables,eqArray,m_new,false,sub_shared);
-        jacTypeNewton = BackendDAEUtil.analyzeJacobian(variables,eqArray,jacNewton);
+        (jacTypeNewton,_) = BackendDAEUtil.analyzeJacobian(variables,eqArray,jacNewton);
         comps_Newton = BackendDAE.EQUATIONSYSTEM(eqnsNewton,varsNewton,jacNewton,jacTypeNewton);
         matching = BackendDAE.MATCHING(match1,match1,{comps_Newton});
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching,{});

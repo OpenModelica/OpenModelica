@@ -5780,9 +5780,8 @@ algorithm
         res = adjacencyRowExpEnhanced1(varslst,p,pa,false,mark,rowmark,bs);
       then
         ((e,false,(vars,bs,(mark,rowmark),res)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,bs,(mark,rowmark),pa))))
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(_)}),(vars,bs,(mark,rowmark),pa))))
       equation
-        cr = ComponentReference.crefPrefixDer(cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = adjacencyRowExpEnhanced1(varslst,p,pa,false,mark,rowmark,bs);
       then
@@ -6538,27 +6537,30 @@ public function analyzeJacobian "function: analyzeJacobian
   input EquationArray eqns;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output BackendDAE.JacobianType outJacobianType;
+  output Boolean jacConstant "true if jac is constant, does not check rhs";
 algorithm
-  outJacobianType:=
+  (outJacobianType,jacConstant):=
   matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       Boolean b,b1;
+      BackendDAE.JacobianType jactype;
     case (_,_,SOME(jac))
       equation
         true = jacobianConstant(jac);
-        true = rhsConstant(vars,eqns);
+        b = rhsConstant(vars,eqns);
+        jactype = Util.if_(b,BackendDAE.JAC_CONSTANT(),BackendDAE.JAC_TIME_VARYING());
       then
-        BackendDAE.JAC_CONSTANT();
+        (jactype,true);
     case (_,_,SOME(jac))
       equation
         b = jacobianNonlinear(vars, jac);
         // check also if variables occure in if expressions
         ((_,false)) = Debug.bcallret3(not b,traverseBackendDAEExpsEqnsWithStop,eqns,varsNotInRelations,(vars,true),(vars,false));
       then
-        BackendDAE.JAC_NONLINEAR();
-    case (_,_,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
-    case (_,_,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
+        (BackendDAE.JAC_NONLINEAR(),false);
+    case (_,_,SOME(jac)) then (BackendDAE.JAC_TIME_VARYING(),false);
+    case (_,_,NONE()) then (BackendDAE.JAC_NO_ANALYTIC(),false);
   end matchcontinue;
 end analyzeJacobian;
 

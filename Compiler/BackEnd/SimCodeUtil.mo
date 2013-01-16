@@ -3435,7 +3435,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
+        (jac_tp,_) = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
         (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, constrs, clsAttrs, jac, jac_tp, helpVarInfo, funcs, vars, iuniqueEqIndex, itempvars);
@@ -3503,7 +3503,7 @@ algorithm
         rf = List.flatten(r);
         tf = List.flatten(t);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m_3, false, shared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
+        (jac_tp,_) = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
         (equation_, uniqueEqIndex, tempvars) = generateTearingSystem(v1_1, v2_1, comps_flat, rf, tf, subsystem_dae_2, jac, jac_tp, iuniqueEqIndex, itempvars);
       then
         ({equation_}, {equation_}, uniqueEqIndex, tempvars);
@@ -3907,7 +3907,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         (m, _) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
         jac = BackendDAEUtil.calculateJacobian(vars, eqns, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = BackendDAEUtil.analyzeJacobian(vars, eqns, jac);
+        (jac_tp,_) = BackendDAEUtil.analyzeJacobian(vars, eqns, jac);
       then
         (jac, jac_tp);          
   end match;

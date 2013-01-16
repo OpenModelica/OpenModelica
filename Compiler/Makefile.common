@@ -201,6 +201,7 @@ HashTable4.mo \
 HashTable5.mo \
 HashTableCG.mo \
 HashTableCrILst.mo \
+HashTableCrIntToExp.mo \
 HashTableCrToExpSourceTpl.mo \
 HashTablePathToFunction.mo \
 HashTableStringToPath.mo \

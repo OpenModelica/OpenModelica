@@ -5171,6 +5171,37 @@ algorithm
   end match;
 end mapFoldListTuple_tail;
 
+public function foldcallN
+  "Takes a value and a function operating on the value n times.
+     Example: foldcallN(1, intAdd, 4) => 4"
+  input Integer n;
+  input FoldFunc inFoldFunc;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  partial function FoldFunc
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult := match(n, inFoldFunc, inStartValue)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      FoldType arg;
+
+    case (0, _, _) then inStartValue;
+
+    case (_ , _, _)
+      equation
+        arg = inFoldFunc(inStartValue);
+      then 
+        foldcallN(n-1, inFoldFunc, arg);
+
+  end match;
+end foldcallN;
+
+
 public function reduce
   "Takes a list and a function operating on two elements of the list.
    The function performs a reduction of the list to a single value using the
