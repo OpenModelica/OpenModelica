@@ -1246,19 +1246,12 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let &preExp = buffer "" /*BUFD*/
-      let &helpInits = buffer "" /*BUFD*/
-      let helpIf = (conditions |> (e, hidx) =>
-        let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-        '<%whenCondition(e)%>';separator=" || ")
+      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
       if reinits then  
         <<
         //For whenclause index: <%int%>
-        <%preExp%>
-        <%helpInits%>
         if(<%helpIf%>)
         { 
           <%ifthen%>
@@ -2424,48 +2417,47 @@ end equationMixed;
 template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a non linear equation system."
 ::=
-match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
-  let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
-  let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")
-  let nonlinindx = indexNonLinear
-  <<
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
-  SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
-  #endif<%\n%>
-  /* extrapolate data */
-  <%crefs |> name hasindex i0 =>
-    let namestr = cref(name)
-    <<
-    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>] = <%namestr%>;
-    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
-    >>
-  ;separator="\n"%>
-  solve_nonlinear_system(data, <%indexNonLinear%>);
-  /* write solution */ 
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>];' ;separator="\n"%>
-  <%inlineCrefs(context,crefs)%>
-  <%eqncalls%>
-  <%otherinlines%>
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-  #endif<%\n%>
-  >>
+  match eq
+    case SES_NONLINEAR(__) then
+      let size = listLength(crefs)
+      let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
+      let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")
+      let nonlinindx = indexNonLinear
+      <<
+      #ifdef _OMC_MEASURE_TIME
+      SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
+      SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
+      #endif<%\n%>
+      /* extrapolate data */
+      <%crefs |> name hasindex i0 =>
+        let namestr = cref(name)
+        <<
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>] = <%namestr%>;
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+        >>
+      ;separator="\n"%>
+      solve_nonlinear_system(data, <%indexNonLinear%>);
+      /* write solution */ 
+      <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>];' ;separator="\n"%>
+      <%inlineCrefs(context,crefs)%>
+      <%eqncalls%>
+      <%otherinlines%>
+      #ifdef _OMC_MEASURE_TIME
+      SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
+      #endif<%\n%>
+      >>
 end equationNonlinear;
 
 template equationNamesExtraResidualsPreBodyInline(SimEqSystem eq, Context context)
  "Generates an inline call from a simple assignment."
 ::=
-match eq
-  case e as SES_SIMPLE_ASSIGN(__)
-  then 
-  <<
-  <%inlineCref(context,cref)%>;
-  >>
-  else ""
+  match eq
+    case e as SES_SIMPLE_ASSIGN(__) then 
+      <<
+      <%inlineCref(context,cref)%>;
+      >>
+    else ""
   end match
 end equationNamesExtraResidualsPreBodyInline;
 
@@ -2477,60 +2469,43 @@ end reverseLookupEquationNumber;
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
 ::=
-match eq
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-    '<%whenCondition(e)%>';separator=" || ")
-  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>
-  <%helpInits%>
-  if(<%helpIf%>)
-  {
-    <%assign%>
-  }
-  else
-  {
-    <%cref(left)%> = $P$PRE<%cref(left)%>;
-  }
-  >>
-  case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-    '<%whenCondition(e)%>';separator=" || ")
-  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
-  <<
-  <%preExp%>
-  <%helpInits%>
-  if(<%helpIf%>)
-  {
-    <%assign%>
-  }
-  <%elseWhen%>
-  else
-  {
-    <%cref(left)%> = $P$PRE<%cref(left)%>;
-  }
-  >> 
+  match eq
+    case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+      let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+      <<
+      if(<%helpIf%>)
+      {
+        <%assign%>
+      }
+      else
+      {
+        <%cref(left)%> = $P$PRE<%cref(left)%>;
+      }
+      >>
+    case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+      let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
+      let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+      let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
+      <<
+      if(<%helpIf%>)
+      {
+        <%assign%>
+      }
+      <%elseWhen%>
+      else
+      {
+        <%cref(left)%> = $P$PRE<%cref(left)%>;
+      }
+      >>
 end equationWhen;
 
-template equationElseWhen(SimEqSystem eq, Context context, Text &preExp /*BUFD*/, Text &helpInits /*BUFD*/, Text &varDecls /*BUFP*/)
+template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a else when equation."
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> (e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-    '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   else if(<%helpIf%>)
@@ -2539,12 +2514,9 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> (e, hidx) =>
-    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-    '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> (e, hidx) => '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
+  let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
   else if(<%helpIf%>)
   {
@@ -2593,8 +2565,8 @@ match ty
     let &preExp = buffer "" /*BUFD*/
     let exp = daeExp(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-      <%preExp%>
-      <%cref(left)%> = <%exp%>;
+    <%preExp%>
+    <%cref(left)%> = <%exp%>;
    >>
 end whenAssign;
 
