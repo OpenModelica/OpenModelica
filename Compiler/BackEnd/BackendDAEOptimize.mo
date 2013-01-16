@@ -60,6 +60,7 @@ protected import BaseHashTable;
 protected import BaseHashSet;
 protected import Builtin;
 protected import Ceval;
+protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -5653,13 +5654,13 @@ protected
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;    
 algorithm
-  System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
   (symJacA , sparsePattern, sparseColoring ):= createSymbolicJacobianforStates(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := Flags.enableDebug(Flags.JACOBIAN);
-  _ := System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+  _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
 
 public function generateSymbolicLinearizationPast
@@ -5670,13 +5671,13 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SymbolicJacobians linearModelMatrixes;
 algorithm
-  System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
   linearModelMatrixes := createLinearModelMatrixes(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := Flags.enableDebug(Flags.JACOBIAN);
-  _ := System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+  _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicLinearizationPast;
 
 protected function createSymbolicJacobianforStates
@@ -5871,7 +5872,7 @@ algorithm
         s1 =  intString(listLength(inVars));
  
         Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
-                       +& s +& " diffed equations: " +&  s1 +& "\n", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+                       +& s +& " diffed equations: " +&  s1 +& "\n", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
                        
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared)) = generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
@@ -5891,7 +5892,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
-        Debug.execStat("analytical Jacobians -> generated optimized jacobians", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated optimized jacobians", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);

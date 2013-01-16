@@ -125,14 +125,18 @@ public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 public constant Integer RT_CLOCK_EXECSTAT_MAIN = Inst.RT_CLOCK_EXECSTAT_MAIN /* 11 */;
-public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES /* 12 */;
+public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = 12;
 public constant Integer RT_CLOCK_FRONTEND = 13;
 public constant Integer RT_CLOCK_BACKEND = 14;
 public constant Integer RT_CLOCK_SIMCODE = 15;
 public constant Integer RT_CLOCK_LINEARIZE = 16;
 public constant Integer RT_CLOCK_TEMPLATES = 17;
 public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
-public constant Integer RT_CLOCK_USER_RESERVED = 19;
+public constant Integer RT_PROFILER0=19;
+public constant Integer RT_PROFILER1=20;
+public constant Integer RT_PROFILER2=21;
+public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=22;
+public constant Integer RT_CLOCK_USER_RESERVED = 23;
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
@@ -1468,6 +1472,7 @@ algorithm
       then
         (cache,simValue,newst);
  
+      /*
     case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
@@ -1492,6 +1497,7 @@ algorithm
         (cache,simValue,newst) = createDrModelicaSimulationResultFromcallModelExecutable(resI,timeSimulation,resultValues,cache,className,vals,st,result_file);
       then
         (cache,simValue,newst);
+      */
  
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
@@ -6457,7 +6463,8 @@ algorithm
   res := matchcontinue (val,env)
     local
       Absyn.Path path;
-    case (Values.CODE(Absyn.C_TYPENAME(path)),_)
+      Real t;
+    case (Values.CODE(Absyn.C_TYPENAME(path as Absyn.IDENT(_) /* We only want to lookup idents in the symboltable; also speeds up e.g. simulate(Modelica.A.B.C) so we do not instantiate all classes */)),_)
       equation
         (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
       then Values.CODE(Absyn.C_TYPENAME(path));

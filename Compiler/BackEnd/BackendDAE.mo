@@ -45,13 +45,6 @@ public import Values;
 public import HashTable3;
 public import HashTableCG;
 
-public constant Integer RT_PROFILER0=6;
-public constant Integer RT_PROFILER1=7;
-public constant Integer RT_PROFILER2=8;
-public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
-public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=16;
-
-
 public constant Integer SymbolicJacobianAIndex = 1;
 public constant Integer SymbolicJacobianBIndex = 2;
 public constant Integer SymbolicJacobianCIndex = 3;

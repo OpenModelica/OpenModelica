@@ -50,6 +50,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
+protected import CevalScript;
 protected import CheckModel;
 protected import ComponentReference;
 protected import ClassInf;
@@ -103,8 +104,8 @@ protected
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
 algorithm
-  System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  Debug.execStat("Enter Backend", BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("Enter Backend", CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems), functionTree) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
@@ -144,7 +145,7 @@ algorithm
                                                     symjacs));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, print, "No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
-  Debug.execStat("generate Backend Data Structure", BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("generate Backend Data Structure", CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 end lower;
 
 protected function lower2

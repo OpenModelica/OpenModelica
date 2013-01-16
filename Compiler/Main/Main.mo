@@ -999,6 +999,7 @@ algorithm
   _ := matchcontinue args
     case _
       equation
+        System.realtimeTick(CevalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
         main2(args_1);

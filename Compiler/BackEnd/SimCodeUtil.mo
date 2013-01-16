@@ -5089,7 +5089,7 @@ algorithm
     case (_,_,_)
       equation
         //true = Flags.isSet(Flags.JACOBIAN);
-        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         //b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
@@ -5097,8 +5097,8 @@ algorithm
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         //_ = Flags.set(Flags.EXEC_STAT, b);
-        Debug.execStat("generated analytical Jacobians SimCode. : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("generated analytical Jacobians SimCode. : ",CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        _ = System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
       then res;
     else
       equation

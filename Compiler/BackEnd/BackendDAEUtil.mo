@@ -63,6 +63,7 @@ protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BinaryTree;
 protected import Ceval;
+protected import CevalScript;
 protected import CheckModel;
 protected import ClassInf;
 protected import ComponentReference;
@@ -7932,11 +7933,11 @@ algorithm
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
-  System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  Debug.execStat("preOpt SimplifyAllExp",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("preOpt SimplifyAllExp",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
@@ -7946,13 +7947,13 @@ algorithm
   // past optimisation phase
   (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
-  Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("findZeroCrossings",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   outSODE := calculateValues(sode1);
   // moved to SimCodeUtil because of initial system 
-  //Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  //Debug.execStat("calculateValue",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   //outSODE := expandAlgorithmsbyInitStmts(sode2);
-  Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("expandAlgorithmsbyInitStmts",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
@@ -7995,14 +7996,14 @@ algorithm
     case (_,(optModule,moduleStr,_)::rest)
       equation
         dae = optModule(inDAE);
-        Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("preOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         (dae1,status) = preoptimiseDAE(dae,rest);
       then (dae1,status);
     case (_,(optModule,moduleStr,b)::rest)
       equation
-        Debug.execStat("<failed> preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("<failed> preOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
         (dae,status) = preoptimiseDAE(inDAE,rest);
@@ -8053,7 +8054,7 @@ algorithm
   // do state selection
   (_,_,sDfunc,methodstr) := stateDeselection;
   BackendDAE.DAE(systs,shared) := sDfunc(BackendDAE.DAE(systs,shared),args);
-  Debug.execStat("transformDAE -> state selection " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("transformDAE -> state selection " +& methodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // sort assigned equations to blt form
   (systs,shared) := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
@@ -8130,7 +8131,7 @@ algorithm
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
-        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_))
       equation
@@ -8189,7 +8190,7 @@ algorithm
         funcs = getFunctions(ishared);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);        
-        Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> sort components",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
     else
       equation
@@ -8225,7 +8226,7 @@ algorithm
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
         dae = optModule(inDAE);
-        Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("pastOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         dae1 = causalizeDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
@@ -8234,7 +8235,7 @@ algorithm
         (dae2,status);
     case (_,(optModule,moduleStr,b)::rest,_,_)
       equation
-        Debug.execStat("pastOpt <failed> " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("pastOpt <failed> " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
         (dae,status) = pastoptimiseDAE(inDAE,rest,matchingAlgorithm,daeHandler);
@@ -8657,14 +8658,14 @@ public function profilerinit
 algorithm
   setGlobalRoot(Global.profilerTime1Index, 0.0);
   setGlobalRoot(Global.profilerTime2Index, 0.0);
-  System.realtimeTick(BackendDAE.RT_PROFILER0);
+  System.realtimeTick(CevalScript.RT_PROFILER0);
 end profilerinit;
 
 public function profilerresults
 protected
    Real tg,t1,t2;
 algorithm
-  tg := System.realtimeTock(BackendDAE.RT_PROFILER0);
+  tg := System.realtimeTock(CevalScript.RT_PROFILER0);
   t1 := getGlobalRoot(Global.profilerTime1Index);
   t2 := getGlobalRoot(Global.profilerTime2Index);
   print("Time all: "); print(realString(tg)); print("\n");
@@ -8687,19 +8688,19 @@ end profilertime2;
 
 public function profilerstart1
 algorithm
-   System.realtimeTick(BackendDAE.RT_PROFILER1);
+   System.realtimeTick(CevalScript.RT_PROFILER1);
 end profilerstart1;
 
 public function profilerstart2
 algorithm
-   System.realtimeTick(BackendDAE.RT_PROFILER2);
+   System.realtimeTick(CevalScript.RT_PROFILER2);
 end profilerstart2;
 
 public function profilerstop1
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(BackendDAE.RT_PROFILER1);
+   t := System.realtimeTock(CevalScript.RT_PROFILER1);
    setGlobalRoot(Global.profilerTime1Index, 
      realAdd(getGlobalRoot(Global.profilerTime1Index),t));
 end profilerstop1;
@@ -8708,7 +8709,7 @@ public function profilerstop2
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(BackendDAE.RT_PROFILER2);
+   t := System.realtimeTock(CevalScript.RT_PROFILER2);
    setGlobalRoot(Global.profilerTime2Index, 
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
@@ -8726,7 +8727,7 @@ end profilerreset2;
 public function profilertock1
   output Real t;
 algorithm
-   t := System.realtimeTock(BackendDAE.RT_PROFILER1);
+   t := System.realtimeTock(CevalScript.RT_PROFILER1);
 end profilertock1;
 
 
