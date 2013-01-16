@@ -172,9 +172,9 @@ end Equation;
 public
 uniontype WhenEquation "- When Equation"
   record WHEN_EQ
-    .DAE.Exp condition     "The when-condition" ;
-    .DAE.ComponentRef left "Left hand side of equation" ;
-    .DAE.Exp right         "Right hand side of equation" ;
+    .DAE.Exp condition                "the when-condition" ;
+    .DAE.ComponentRef left            "left hand side of equation" ;
+    .DAE.Exp right                    "right hand side of equation" ;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
 end WhenEquation;
@@ -212,11 +212,12 @@ end WhenOperator;
 public
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
-    .DAE.Exp condition                  "The when-condition" ;
-    list<WhenOperator> reinitStmtLst    "List of reinit statements associated to the when clause." ;
+    .DAE.Exp condition                  "the when-condition" ;
+    list<WhenOperator> reinitStmtLst    "list of reinit statements associated to the when clause." ;
     Option<Integer> elseClause          "index of elsewhen clause" ;
 
-  // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
+    // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
+    // what is HL?
 
     // The equations associated to the clause are linked to this when clause by the index in the
     // when clause list where this when clause is stored.
@@ -227,24 +228,22 @@ public
 uniontype ZeroCrossing "- Zero Crossing"
   record ZERO_CROSSING
     .DAE.Exp relation_          "function" ;
-    list<Integer> occurEquLst  "List of equations where the function occurs" ;
-    list<Integer> occurWhenLst "List of when clauses where the function occurs" ;
+    list<Integer> occurEquLst   "list of equations where the function occurs" ;
+    list<Integer> occurWhenLst  "list of when clauses where the function occurs" ;
   end ZERO_CROSSING;
-
 end ZeroCrossing;
 
 public
 uniontype EventInfo "- EventInfo"
   record EVENT_INFO
-    list<WhenClause> whenClauseLst     "List of when clauses. The WhenEquation datatype refer to this list by position" ;
-    list<ZeroCrossing> zeroCrossingLst "List of zero crossing coditions";
-    list<ZeroCrossing> sampleLst "List of sample as before, used by cpp runtime";
+    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
+    list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
+    list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
     // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions 
-    list<ZeroCrossing> relationsLst "List of zero crossing function as before, used by cpp runtime";
-    Integer relationsNumber "stores the number of relation in all zero-crossings";
-    Integer numberMathEvents "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
+    Integer relationsNumber            "stores the number of relation in all zero-crossings";
+    Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
-
 end EventInfo;
 
 public
@@ -259,7 +258,6 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
     EqSystems eqs;
     Shared shared;
   end DAE;
-
 end BackendDAE;
 
 uniontype Shared "Data shared for all equation-systems"
@@ -340,7 +338,6 @@ uniontype CrefIndex "- Component Reference Index"
     .DAE.ComponentRef cref "cref" ;
     Integer index "index" ;
   end CREFINDEX;
-
 end CrefIndex;
 
 public
@@ -353,7 +350,6 @@ uniontype VariableArray "array of Equations are expandable, to amortize the cost
     Integer arrSize "arrSize ; array size" ;
     array<Option<Var>> varOptArr "varOptArr" ;
   end VARIABLE_ARRAY;
-
 end VariableArray;
 
 public
@@ -364,7 +360,6 @@ uniontype EquationArray "- Equation Array"
     Integer arrSize "arrSize ; array size" ;
     array<Option<Equation>> equOptArr "equOptArr" ;
   end EQUATION_ARRAY;
-
 end EquationArray;
 
 public
@@ -376,7 +371,6 @@ uniontype Assignments "Assignments of variables to equations and vice versa are 
     Integer allocatedSize "allocatedSize ; allocated size >= actual size" ;
     array<Integer> arrOfIndices "arrOfIndices ; array of indices" ;
   end ASSIGNMENTS;
-
 end Assignments;
 
 public
@@ -386,7 +380,6 @@ uniontype IndexType
   record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
   record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
 end IndexType;
-
 
 public
 type IncidenceMatrixElementEntry = Integer;
@@ -445,7 +438,6 @@ uniontype JacobianType "- Jacobian Type"
               solved" end JAC_NONLINEAR;
 
   record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
-
 end JacobianType;
 
 public
@@ -453,7 +445,6 @@ uniontype IndexReduction "- Index Reduction"
   record INDEX_REDUCTION "Use index reduction during matching" end INDEX_REDUCTION;
 
   record NO_INDEX_REDUCTION "do not use index reduction during matching" end NO_INDEX_REDUCTION;
-
 end IndexReduction;
 
 public
@@ -464,7 +455,6 @@ uniontype EquationConstraints "- Equation Constraints"
 
   record EXACT "exact as many equations
                    as variables" end EXACT;
-
 end EquationConstraints;
 
 public
@@ -472,7 +462,6 @@ type MatchingOptions = tuple<IndexReduction, EquationConstraints> "- Matching Op
 
 public
 type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
-
 
 public
 type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
@@ -555,7 +544,6 @@ uniontype StrongComponent
     list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
     Boolean linear;
   end TORNSYSTEM;
-
 end StrongComponent;
 
 public
@@ -573,11 +561,11 @@ type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation sys
                               >;
 
 public 
-type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>,   // column-wise sparse pattern
-                           tuple<list< .DAE.ComponentRef>,                              // diff vars
-                                 list< .DAE.ComponentRef>>>;                            // diffed vars
+type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>, // column-wise sparse pattern
+                           tuple<list< .DAE.ComponentRef>,                            // diff vars
+                                 list< .DAE.ComponentRef>>>;                          // diffed vars
 
 public 
-type SparseColoring = list<list< .DAE.ComponentRef>>;    // coloring
+type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
 
 end BackendDAE;

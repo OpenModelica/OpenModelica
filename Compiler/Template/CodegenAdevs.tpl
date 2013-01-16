@@ -975,7 +975,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+      let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
 
       if reinits then  
@@ -988,16 +988,6 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
       }
       >>
 end genreinits;
-
-
-template whenCondition(DAE.Exp exp)
-::=
-  match exp
-    case CALL(path = IDENT(name = "initial"), expLst = {}) then
-      'initial()'
-    else '<%expCref(exp)%> && !$P$PRE<%expCref(exp)%> /* edge */'
-end whenCondition;
-
 
 template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
@@ -1357,7 +1347,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1371,7 +1361,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -1394,7 +1384,7 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1404,7 +1394,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)

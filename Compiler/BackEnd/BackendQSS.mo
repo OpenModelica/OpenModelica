@@ -914,8 +914,10 @@ algorithm
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
+    /* lochel: conditions is now a list of ComponentRefs
     case (SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))}) :: tail) 
       then simpleWhens(tail);
+     */
     case (head :: tail) 
       then listAppend({head},simpleWhens(tail));
     end matchcontinue;
@@ -932,8 +934,10 @@ algorithm
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
+    /* lochel: conditions is now a list of ComponentRefs
     case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail) 
       then listAppend({head},sampleWhens(tail));
+     */
     case (head :: tail) 
       then sampleWhens(tail);
     end matchcontinue;

@@ -576,7 +576,7 @@ case SIM_WHEN_CLAUSE(__) then
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> e =>
-      let helpInit = daeExpXml(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let helpInit = crefStrXml(e)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")
   let ifthen = functionWhenReinitStatementThenXml(reinits, &varDecls /*BUFP*/)
@@ -870,7 +870,7 @@ match eq
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
     let helpIf = (conditions |> e =>
-        let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        let helpInit = crefStrXml(e)
         let &helpInits += '<%helpInit%>'
         '';separator=" || ")
     let &preExp2 = buffer "" /*BUFD*/
@@ -893,7 +893,7 @@ match eq
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
     let helpIf = (conditions |> e =>
-        let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        let helpInit = crefStrXml(e)
         let &helpInits += '<%helpInit%>'
         '';separator=" || ")
     let &preExp2 = buffer "" /*BUFD*/
@@ -922,7 +922,7 @@ template equationElseWhenXml(SimEqSystem eq, Context context, Text &preExp /*BUF
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> e =>
-      let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let helpInit = crefStrXml(e)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
@@ -943,7 +943,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> e =>
-      let helpInit = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let helpInit = crefStrXml(e)
       let &helpInits += '<%helpInit%>'
       '';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/

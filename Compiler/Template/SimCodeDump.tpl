@@ -154,7 +154,7 @@ template dumpEqs(list<SimEqSystem> eqs)
     case e as SES_WHEN(__) then
       <<
       <when>
-        <%conditions |> cond => '<cond><%printExpStrEscaped(cond)%></cond>' ; separator="\n" %>
+        <%conditions |> cond => '<cond><%crefStr(cond)%></cond>' ; separator="\n" %>
         <lhs><%crefStr(e.left)%></lhs>
         <rhs><%printExpStrEscaped(e.right)%></rhs>
       </when>

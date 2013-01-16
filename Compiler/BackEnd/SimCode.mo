@@ -61,15 +61,15 @@ public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>; // helpvarindex, expression, whenclause index
-type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
-type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
-type JacobianMatrix = tuple<list<JacobianColumn>,  // column
-                            list<SimVar>,           // seed vars
-                            String,                 // matrix name
+type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;                      // helpvarindex, expression, whenclause index
+type SampleCondition = tuple<DAE.Exp,Integer>;                            // helpvarindex, expression,
+type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;     // column equations, column vars, column length
+type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
+                            list<SimVar>,                                 // seed vars
+                            String,                                       // matrix name
                             tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
-                            list<list<DAE.ComponentRef>>,          // colored cols
-                            Integer>;               // max color used
+                            list<list<DAE.ComponentRef>>,                 // colored cols
+                            Integer>;                                     // max color used
 
   
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
@@ -256,7 +256,6 @@ uniontype SimVar
     Causality causality;
     Option<Integer> variable_index;
     list<String> numArrayElement;
-
   end SIMVAR;
 end SimVar;
 
@@ -398,28 +397,33 @@ uniontype SimEqSystem
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_RESIDUAL;
+  
   record SES_SIMPLE_ASSIGN
     Integer index;
     DAE.ComponentRef cref;
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_SIMPLE_ASSIGN;
+  
   record SES_ARRAY_CALL_ASSIGN
     Integer index;
     DAE.ComponentRef componentRef;
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_ARRAY_CALL_ASSIGN;
+  
   record SES_IFEQUATION
     Integer index;
     list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
     list<SimEqSystem> elsebranch;
     DAE.ElementSource source;
   end SES_IFEQUATION;
+  
   record SES_ALGORITHM
     Integer index;
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
+  
   record SES_LINEAR
     Integer index;
     Boolean partOfMixed;
@@ -427,6 +431,7 @@ uniontype SimEqSystem
     list<DAE.Exp> beqs;
     list<tuple<Integer, Integer, SimEqSystem>> simJac;
   end SES_LINEAR;
+  
   record SES_NONLINEAR
     Integer index;
     list<SimEqSystem> eqs;
@@ -434,17 +439,20 @@ uniontype SimEqSystem
     Integer indexNonLinear;
     Option<JacobianMatrix> jacobianMatrix; 
   end SES_NONLINEAR;
+  
   record SES_MIXED
     Integer index;
     SimEqSystem cont;
     list<SimVar> discVars;
     list<SimEqSystem> discEqs;
   end SES_MIXED;
+  
   record SES_WHEN
     Integer index;
+    list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
+    Boolean initialCall;                  // true, if top-level branch with initial()
     DAE.ComponentRef left;
     DAE.Exp right;
-    list<DAE.Exp> conditions;
     Option<SimEqSystem> elseWhen;
     DAE.ElementSource source;
   end SES_WHEN;
@@ -464,10 +472,11 @@ end StateSet;
 
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
-    list<DAE.ComponentRef> conditionVars;
+    list<DAE.ComponentRef> conditionVars; // is no longer needed 
+    list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
+    Boolean initialCall;                  // true, if top-level branch with initial()
     list<BackendDAE.WhenOperator> reinits;
     Option<BackendDAE.WhenEquation> whenEq;
-    list<DAE.Exp> conditions;
   end SIM_WHEN_CLAUSE;
 end SimWhenClause;
 

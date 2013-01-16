@@ -261,28 +261,33 @@ package SimCode
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_RESIDUAL;
+    
     record SES_SIMPLE_ASSIGN
       Integer index;
       DAE.ComponentRef cref;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_SIMPLE_ASSIGN;
+    
     record SES_ARRAY_CALL_ASSIGN
       Integer index;
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_ARRAY_CALL_ASSIGN;
-      record SES_IFEQUATION
-        Integer index;
-        list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
-        list<SimEqSystem> elsebranch;
-        DAE.ElementSource source;
-      end SES_IFEQUATION;
+    
+    record SES_IFEQUATION
+      Integer index;
+      list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
+      list<SimEqSystem> elsebranch;
+      DAE.ElementSource source;
+    end SES_IFEQUATION;
+    
     record SES_ALGORITHM
       Integer index;
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
+    
     record SES_LINEAR
       Integer index;
       Boolean partOfMixed;
@@ -290,6 +295,7 @@ package SimCode
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
     end SES_LINEAR;
+    
     record SES_NONLINEAR
       Integer index;
       list<SimEqSystem> eqs;
@@ -297,17 +303,20 @@ package SimCode
       Integer indexNonLinear;
       Option<JacobianMatrix> jacobianMatrix;
     end SES_NONLINEAR;
+    
     record SES_MIXED
       Integer index;
       SimEqSystem cont;
       list<SimVar> discVars;
       list<SimEqSystem> discEqs;
     end SES_MIXED;
+    
     record SES_WHEN
       Integer index;
+      list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
+      Boolean initialCall;                  // true, if top-level branch with initial()
       DAE.ComponentRef left;
       DAE.Exp right;
-      list<DAE.Exp> conditions;
       Option<SimEqSystem> elseWhen;
       DAE.ElementSource source;
     end SES_WHEN;
@@ -327,10 +336,11 @@ package SimCode
 
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
-      list<DAE.ComponentRef> conditionVars;
+      list<DAE.ComponentRef> conditionVars; // is no longer needed 
+      list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
+      Boolean initialCall;                  // true, if top-level branch with initial()
       list<BackendDAE.WhenOperator> reinits;
       Option<BackendDAE.WhenEquation> whenEq;
-      list<DAE.Exp> conditions;
     end SIM_WHEN_CLAUSE;
   end SimWhenClause;
 

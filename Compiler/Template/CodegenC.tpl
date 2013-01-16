@@ -1246,13 +1246,20 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
-      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
+      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let ifthen = functionWhenReinitStatementThen(false, reinits, &varDecls /*BUFP*/)
+      let initial_assign = match initialCall
+        case true then functionWhenReinitStatementThen(true, reinits, &varDecls /*BUFP*/)
+        else '; /* nothing to do */'
 
       if reinits then  
         <<
         //For whenclause index: <%int%>
-        if(<%helpIf%>)
+        if(initial() && !useSymbolicInitialization)
+        {
+          <%initial_assign%>
+        }
+        else if(0<%helpIf%>)
         { 
           <%ifthen%>
         }
@@ -1260,15 +1267,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 end genreinits;
 
 
-template whenCondition(DAE.Exp exp)
-::=
-  match exp
-    case CALL(path = IDENT(name = "initial"), expLst = {}) then
-      'initial() && !useSymbolicInitialization'
-    else '<%expCref(exp)%> && !$P$PRE<%expCref(exp)%> /* edge */'
-end whenCondition;
-
-template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
+template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
   "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
@@ -1281,11 +1280,14 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
            'copy_real_array_data_mem(&<%val%>, &<%cref(stateVar)%>);'
          else
            '<%cref(stateVar)%> = <%val%>;'
+      let needToIterate = match initialCall
+         case false then 'data->simulationInfo.needToIterate = 1;'
+         else ''
       <<
       INFO1(LOG_EVENTS, "|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
-      data->simulationInfo.needToIterate = 1;
+      <%needToIterate%>
       >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
@@ -2470,11 +2472,18 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
 ::=
   match eq
-    case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+    case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
+      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let initial_assign = match initialCall
+        case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+        else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       <<
-      if(<%helpIf%>)
+      if(initial() && !useSymbolicInitialization)
+      {
+        <%initial_assign%>
+      }
+      else if(0<%helpIf%>)
       {
         <%assign%>
       }
@@ -2483,12 +2492,19 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
         <%cref(left)%> = $P$PRE<%cref(left)%>;
       }
       >>
-    case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-      let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+    case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let initial_assign = match initialCall
+        case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+        else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
       <<
-      if(<%helpIf%>)
+      if(initial() && !useSymbolicInitialization)
+      {
+        <%initial_assign%>
+      }
+      else if(0<%helpIf%>)
       {
         <%assign%>
       }
@@ -2504,8 +2520,8 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
  "Generates a else when equation."
 ::=
 match eq
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   else if(<%helpIf%>)
@@ -2513,8 +2529,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     <%assign%>
   }
   >>
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '<%whenCondition(e)%>';separator=" || ")
+case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
