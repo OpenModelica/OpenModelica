@@ -642,8 +642,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "inputDerivativesUsed",
     "detectJacobianSparsePattern",
 //    "generateSymbolicJacobian",
-    "removeConstants" 
+    "removeConstants"
 //    "optimizeInitialSystem"
+//    "partitionIndependentBlocks"
   }),
   SOME(STRING_DESC_OPTION({
     ("lateInlineFunction", Util.gettext("perform function inlining for function with annotation LateInline=true")),
@@ -668,7 +669,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
     ("removeConstants", Util.gettext("remove all constants in the system")),
     ("optimizeInitialSystem", Util.gettext("simplifies time initial system")),
-    ("detectJacobianSparsePattern", Util.gettext("detects the sparse pattern for Jacobian A"))
+    ("detectJacobianSparsePattern", Util.gettext("detects the sparse pattern for Jacobian A")),
+    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",

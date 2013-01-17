@@ -7990,6 +7990,8 @@ algorithm
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean b;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
     case (_,{}) 
       equation
         Debug.fcall(Flags.OPT_DAE_DUMP, print, "Pre optimisation done.\n");
@@ -7997,7 +7999,9 @@ algorithm
         (inDAE,Util.SUCCESS());
     case (_,(optModule,moduleStr,_)::rest)
       equation
-        dae = optModule(inDAE);
+        BackendDAE.DAE(systs,shared) = optModule(inDAE);
+        systs = filterEmptySystems(systs);
+        dae = BackendDAE.DAE(systs,shared);
         Debug.execStat("preOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
@@ -8220,6 +8224,8 @@ algorithm
       list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean b;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
     case (_,{},_,_) 
       equation
         Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post optimisation done.\n");
@@ -8227,7 +8233,9 @@ algorithm
         (inDAE,Util.SUCCESS());
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
-        dae = optModule(inDAE);
+        BackendDAE.DAE(systs,shared) = optModule(inDAE);
+        systs = filterEmptySystems(systs);
+        dae = BackendDAE.DAE(systs,shared);
         Debug.execStat("pastOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
@@ -8577,7 +8585,8 @@ algorithm
   (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
   (BackendDAEOptimize.removeConstants,"removeConstants",false),
   (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
-  (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false)
+  (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
+  (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true)
   };
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

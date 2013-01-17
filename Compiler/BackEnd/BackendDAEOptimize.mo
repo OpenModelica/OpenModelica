@@ -7579,7 +7579,12 @@ algorithm
     case (BackendDAE.DAE({syst},shared))
       equation
         (systs,shared) = partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
-      then BackendDAE.DAE(systs,shared); // TODO: Add support for partitioned systems of equations
+      then BackendDAE.DAE(systs,shared);
+    else // TODO: Improve support for partitioned systems of equations
+      equation
+        BackendDAE.DAE({syst},shared) = collapseIndependentBlocks(dlow);
+        (systs,shared) = partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
+      then BackendDAE.DAE(systs,shared);
   end match;
 end partitionIndependentBlocks;
 
@@ -7611,9 +7616,10 @@ algorithm
         i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);
         // i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
         b = i > 1;
-        // Debug.bcall(b,BackendDump.dump,BackendDAE.DAE({syst},shared));
+        // Debug.bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
         systs = Debug.bcallret5(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,mT,throwNoError,{syst});
+        // print("Number of partitioned systems: " +& intString(listLength(systs)) +& "\n");
       then (systs,shared);
     else
       equation

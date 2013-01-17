@@ -1332,14 +1332,10 @@ end functionWhenReinitStatementElse;
 
 template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
 ::=
-  let &varDecls = buffer ""
-  let &tmp = buffer ""
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
   <<
-  <%&tmp%>
   static void functionODE_system<%n%>(DATA *data,int omc_thread_number)
   {
-    <%varDecls%>
     <%odeEqs%>
   }
   >>

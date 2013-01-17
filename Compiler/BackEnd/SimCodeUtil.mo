@@ -1475,7 +1475,7 @@ algorithm
       
       // generate initalsystem before replacing pre(alias)!
       (initDAE, varlst) = Initialization.solveInitialSystem(dlow, {}); 
-      BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=knownVars)) = dlow;
+      BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars=knownVars)) = dlow;
       tempvars = List.map2(varlst, dlowvarToSimvar, NONE(), knownVars);
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
@@ -1521,7 +1521,7 @@ algorithm
                                                         constraints=constrsarr, 
                                                         classAttrs=clsattrsarra, 
                                                         functionTree=functionTree, 
-                                                        symjacs=symJacs)) = dlow2;        
+                                                        symjacs=symJacs)) = dlow2;
 
       // Add model info
       modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
@@ -1530,8 +1530,6 @@ algorithm
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = createEquationsForSystems(systs, shared, helpVarInfo, uniqueEqIndex, {}, {}, {}, tempvars);
       modelInfo = addTempVars(tempvars, modelInfo);
       
-      odeEquations = makeEqualLengthLists(odeEquations, Config.noProc());
-
       // Assertions and crap
       // create parameter equations
       ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createStartValueEquations, (uniqueEqIndex, {}));
@@ -1569,6 +1567,8 @@ algorithm
       removedEquations = List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
       initialEquations = List.map(initialEquations, addDivExpErrorMsgtoSimEqSystem);
       
+      odeEquations = makeEqualLengthLists(odeEquations, Config.noProc());
+
       // generate jacobian or linear model matrices
       LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
       LinearMatrices = jacG::LinearMatrices;
@@ -1947,7 +1947,7 @@ algorithm
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1, algebraicEquations1, allEquations1, uniqueEqIndex, tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo, iuniqueEqIndex, itempvars);
-        odeEquations = odeEquations1::odeEquations;
+        odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,odeEquations);
         algebraicEquations = listAppend(algebraicEquations, algebraicEquations1);
         allEquations = listAppend(allEquations, allEquations1);
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = createEquationsForSystems(systs, shared, helpVarInfo, uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars);
