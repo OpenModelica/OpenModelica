@@ -86,6 +86,7 @@ protected import OnRelaxation;
 protected import RemoveSimpleEquations;
 protected import SCode;
 protected import System;
+protected import Tearing;
 protected import Types;
 protected import Values;
 
@@ -8571,7 +8572,6 @@ algorithm
   (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
   (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
   (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
-  (BackendDAEOptimize.tearingSystemNew,"tearingSystem",false),
   (OnRelaxation.relaxSystem,"relaxSystem",false),
   (BackendDAEOptimize.removeevaluateParameters,"removeevaluateParameters",false),
   (BackendDAEOptimize.countOperations,"countOperations",false),
@@ -8586,7 +8586,8 @@ algorithm
   (BackendDAEOptimize.removeConstants,"removeConstants",false),
   (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
   (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
-  (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true)
+  (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
+  (Tearing.tearingSystem, "tearingSystem", false)
   };
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

@@ -1285,6 +1285,26 @@ algorithm
 annotation(preferredView="text");
 end setPastOptModules;
 
+function getTearingMethod
+  output String selected;
+  external "builtin";
+end getTearingMethod;
+
+function getAvailableTearingMethods
+  output String[:] allChoices;
+  output String[:] allComments;
+  external "builtin";
+end getAvailableTearingMethods;
+
+function setTearingMethod "example input: omcTearing"
+  input String tearingMethod;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+tearingMethod=" + tearingMethod);
+annotation(preferredView="text");
+end setTearingMethod;
+
 function setCommandLineOptions
   "The input is a regular command-line flag given to OMC, e.g. +d=failtrace or +g=MetaModelica"
   input String option;

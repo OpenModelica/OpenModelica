@@ -655,7 +655,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system")),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time")),
-    ("tearingSystem",Util.notrans("DESCRIBE ME")),
+    ("tearingSystem",Util.notrans("for method selection use flag tearingMethod")),
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
     ("removeevaluateParameters", Util.gettext("remove parameter with evalute=true annotation")),
     ("coundOperations", Util.gettext("count the mathematic operations of the system")),
@@ -753,21 +753,25 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale",
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
-// The flag noTearing is just for easy activation and deactivation
-// of the tearing optimazation module.  
-constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
-  NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
-  Util.gettext("Disables tearing at all."));
-constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(44, "maxTraversals",
+constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(43, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
-constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(45, "dumpTarget",
+constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(44, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("rederect the dump to file. If file ends with .html HTML code is generated."));
-constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(46, "delayBreakLoop",
+constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(45, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
-
+constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
+  NONE(), EXTERNAL(), STRING_FLAG("omcTearing"),
+  SOME(STRING_DESC_OPTION({
+    ("noTearing", Util.gettext("skip tearing")),
+    ("omcTearing", Util.gettext("tearing method developed by TU Dresden:Frenkel,Schubert")),
+    ("cellier", Util.gettext("Cellier tearing")),
+    ("carpanzano2", Util.gettext("Carpanzano2 tearing")),
+    ("olleroAmselem", Util.gettext("Ollero-Amselem tearing")),
+    ("steward", Util.gettext("Steward tearing"))})),
+    Util.gettext("tearing method to use.select no tearing or choose tearing method"));
   
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -815,10 +819,10 @@ constant list<ConfigFlag> allConfigFlags = {
   PLOT_SILENT,
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
-  NO_TEARING,
   MAXTRAVERSALS,
   DUMP_TARGET,
-  DELAY_BREAK_LOOP
+  DELAY_BREAK_LOOP,
+  TEARING_METHOD
 };
 
 public function new

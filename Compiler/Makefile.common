@@ -153,6 +153,7 @@ SimCode.mo \
 SimCodeMain.mo \
 SimCodeUtil.mo \
 TaskGraph.mo \
+Tearing.mo \
 Uncertainties.mo \
 XMLDump.mo
 

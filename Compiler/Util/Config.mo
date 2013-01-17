@@ -353,6 +353,18 @@ algorithm
   Flags.setConfigString(Flags.MATCHING_ALGORITHM, inString);
 end setMatchingAlgorithm;
 
+public function getTearingMethod
+  output String outString;
+algorithm
+  outString := Flags.getConfigString(Flags.TEARING_METHOD);
+end getTearingMethod;
+
+public function setTearingMethod
+  input String inString;
+algorithm
+  Flags.setConfigString(Flags.TEARING_METHOD, inString);
+end setTearingMethod;
+
 public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;
 algorithm

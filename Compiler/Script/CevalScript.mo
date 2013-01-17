@@ -1891,6 +1891,19 @@ algorithm
         v = Values.TUPLE({v1,v2});
       then (cache,v,st);
     
+    case (cache,env,"getTearingMethod",_,st,_)
+      equation
+        str = Config.getTearingMethod();
+      then (cache,Values.STRING(str),st);
+
+    case (cache,env,"getAvailableTearingMethods",_,st,_)
+      equation
+        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.TEARING_METHOD);
+        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v = Values.TUPLE({v1,v2});
+      then (cache,v,st);
+    
     case (cache,env,"typeNameString",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
       equation
         str = Absyn.pathString(path);
