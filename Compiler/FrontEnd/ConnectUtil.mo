@@ -225,7 +225,6 @@ public function addConnection
   input SCode.ConnectorType inConnectorType;
   input DAE.ElementSource inSource;
   output Sets outSets;
-protected
 algorithm
   outSets := match(inSets, inCref1, inFace1, inCref2, inFace2, inConnectorType, inSource)
     local
