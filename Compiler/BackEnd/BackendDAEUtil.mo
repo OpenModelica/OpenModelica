@@ -6546,20 +6546,27 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       Boolean b,b1;
       BackendDAE.JacobianType jactype;
+      String str;
+    case (_,_,SOME(jac))
+      equation
+        //str = BackendDump.dumpJacobianStr(SOME(jac));
+        //print("analyze Jacobian: \n" +& str +& "\n");
+        b = jacobianNonlinear(vars, jac);
+        // check also if variables occure in if expressions
+        ((_,false)) = Debug.bcallret3(not b,traverseBackendDAEExpsEqnsWithStop,eqns,varsNotInRelations,(vars,true),(vars,false));
+        //print("jac type: JAC_NONLINEAR() \n");
+      then
+        (BackendDAE.JAC_NONLINEAR(),false);
+        
     case (_,_,SOME(jac))
       equation
         true = jacobianConstant(jac);
         b = rhsConstant(vars,eqns);
         jactype = Util.if_(b,BackendDAE.JAC_CONSTANT(),BackendDAE.JAC_TIME_VARYING());
+        //print("jac type: " +& Util.if_(b,"JAC_CONSTANT()","JAC_TIME_VARYING()")  +& "\n");
       then
         (jactype,true);
-    case (_,_,SOME(jac))
-      equation
-        b = jacobianNonlinear(vars, jac);
-        // check also if variables occure in if expressions
-        ((_,false)) = Debug.bcallret3(not b,traverseBackendDAEExpsEqnsWithStop,eqns,varsNotInRelations,(vars,true),(vars,false));
-      then
-        (BackendDAE.JAC_NONLINEAR(),false);
+
     case (_,_,SOME(jac)) then (BackendDAE.JAC_TIME_VARYING(),false);
     case (_,_,NONE()) then (BackendDAE.JAC_NO_ANALYTIC(),false);
   end matchcontinue;
@@ -6595,7 +6602,7 @@ algorithm
         ((e,false,(vars,b)));         
     case ((e as DAE.CALL(expLst=expLst),(vars,b)))
       equation
-        // check if vars not in condition
+        // check if vars occurs not in argument list
         ((_,(_,b))) = Expression.traverseExpListTopDown(expLst, getEqnsysRhsExp2, (vars,b));
       then
         ((e,false,(vars,b)));
@@ -6865,7 +6872,7 @@ public function getEqnsysRhsExp "function: getEqnsysRhsExp
 
   Retrieve the right hand side expression of an equation
   in an equation system, given a set of variables.
-  Uses f(x) = g(x) -> 0 = f(x)-g(x) -> x=0 -> rhs= f(0)-g(0).
+  Uses A1*x + b1= A2*x + b2 -> 0 = (A1 - A2)*x+(b1-b2) -> x=0 -> rhs= A*0+b=b.
   Does not work for nonlinear Equations. 
 
   inputs:  (DAE.Exp, BackendDAE.Variables /* variables of the eqn sys. */)
@@ -6918,7 +6925,7 @@ algorithm
         ((e,false,(repl,vars,funcs,b)));         
     case ((e as DAE.CALL(expLst=expLst),(repl,vars,funcs,b)))
       equation
-        // check if vars not in condition
+        // check if vars not in expList
         ((_,(_,b))) = Expression.traverseExpListTopDown(expLst, getEqnsysRhsExp2, (vars,b));
         (e,b) = getEqnsysRhsExp3(b,e,(repl,vars,funcs,true));
       then
