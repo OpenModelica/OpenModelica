@@ -62,7 +62,6 @@ protected:
   const DATA *data;
 
 public:
-
   simulation_result(const char* filename, long numpoints, const DATA* data) : filename(filename), numpoints(numpoints), data(data) {};
   virtual ~simulation_result() {};
   virtual void emit() = 0;

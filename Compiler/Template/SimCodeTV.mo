@@ -761,6 +761,18 @@ package BackendDAE
 end BackendDAE;
 
 package System
+  function substring
+    input String inString;
+    input Integer start;
+    input Integer stop;
+    output String outString;
+  end substring;
+  
+  function stringFind
+    input String str;
+    input String searchStr;
+    output Integer outInteger;
+  end stringFind;
 
   function stringReplace
     input String str;

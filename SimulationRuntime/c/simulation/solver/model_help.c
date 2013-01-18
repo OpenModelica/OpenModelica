@@ -756,7 +756,6 @@ void initializeDataStruc(DATA *data)
 
   for(i=0; i<data->modelData.nDelayExpressions; i++)
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
-
 }
 
 /*! \fn deInitializeDataStruc

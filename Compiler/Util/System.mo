@@ -133,7 +133,6 @@ public function strncmp
   external "C" outInteger=System_strncmp(inString1,inString2,len) annotation(Library = "omcruntime");
 end strncmp;
 
-
 public function stringReplace
   input String str;
   input String source;
