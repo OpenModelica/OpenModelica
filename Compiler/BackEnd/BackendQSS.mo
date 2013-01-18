@@ -1015,8 +1015,8 @@ algorithm
       list<DAE.Exp> literals "shared literals";
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
-      list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
+      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;

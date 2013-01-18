@@ -1425,7 +1425,7 @@ algorithm
       SimCode.ModelInfo modelInfo;
       list<SimCode.SimEqSystem> allEquations;
       list<list<SimCode.SimEqSystem>> odeEquations;   // --> functionODE
-      list<SimCode.SimEqSystem> algebraicEquations;   // --> functionAlgebraics
+      list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
       list<SimCode.SimEqSystem> residuals;            // --> initial_residual
       Boolean useSymbolicInitialization;              // true if a system to solve the initial problem symbolically is generated, otherwise false
       list<SimCode.SimEqSystem> initialEquations;     // --> initial_equations
@@ -1544,7 +1544,7 @@ algorithm
       
       //append removed equation to all equations, since these are actually 
       //just the algorithms without outputs
-      algebraicEquations = listAppend(algebraicEquations, removedEquations);
+      algebraicEquations = listAppend(algebraicEquations, removedEquations::{});
       allEquations = listAppend(allEquations, removedEquations);
       
       // update indexNonLinear in SES_NONLINEAR and count
@@ -1560,7 +1560,7 @@ algorithm
       // replace div operator with div operator with check of Division by zero
       allEquations = List.map(allEquations, addDivExpErrorMsgtoSimEqSystem);
       odeEquations = List.mapList(odeEquations, addDivExpErrorMsgtoSimEqSystem);
-      algebraicEquations = List.map(algebraicEquations, addDivExpErrorMsgtoSimEqSystem);
+      algebraicEquations = List.mapList(algebraicEquations, addDivExpErrorMsgtoSimEqSystem);
       residuals = List.map(residuals, addDivExpErrorMsgtoSimEqSystem);
       startValueEquations = List.map(startValueEquations, addDivExpErrorMsgtoSimEqSystem);
       parameterEquations = List.map(parameterEquations, addDivExpErrorMsgtoSimEqSystem);
@@ -1913,12 +1913,12 @@ protected function createEquationsForSystems "function createEquationsForSystems
   input list<SimCode.HelpVarInfo> helpVarInfo;
   input Integer iuniqueEqIndex;
   input list<list<SimCode.SimEqSystem>> inOdeEquations;
-  input list<SimCode.SimEqSystem> inAlgebraicEquations;
+  input list<list<SimCode.SimEqSystem>> inAlgebraicEquations;
   input list<SimCode.SimEqSystem> inAllEquations;
   input list<SimCode.SimVar> itempvars;
   output Integer ouniqueEqIndex;
   output list<list<SimCode.SimEqSystem>> oodeEquations;
-  output list<SimCode.SimEqSystem> oalgebraicEquations;
+  output list<list<SimCode.SimEqSystem>> oalgebraicEquations;
   output list<SimCode.SimEqSystem> oallEquations;
   output list<SimCode.SimVar> otempvars;
 algorithm
@@ -1929,8 +1929,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
-      list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> algebraicEquations;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
       list<SimCode.SimEqSystem> allEquations;
       Integer uniqueEqIndex;
       array<Integer> ass1, ass2, stateeqnsmark;
@@ -1948,7 +1947,7 @@ algorithm
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1, algebraicEquations1, allEquations1, uniqueEqIndex, tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo, iuniqueEqIndex, itempvars);
         odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,odeEquations);
-        algebraicEquations = listAppend(algebraicEquations, algebraicEquations1);
+        algebraicEquations = List.consOnTrue(not List.isEmpty(algebraicEquations1),algebraicEquations1,algebraicEquations);
         allEquations = listAppend(allEquations, allEquations1);
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = createEquationsForSystems(systs, shared, helpVarInfo, uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars);
      then (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars);
@@ -13150,8 +13149,9 @@ algorithm
       list<DAE.Exp> literals "shared literals";
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
-      list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> allEquations, algebraicEquations, residualEquations, startValueEquations, parameterEquations, inlineEquations, removedEquations, sampleEquations, algorithmAndEquationAsserts;
+      list<list<SimCode.SimEqSystem>> eqsTmp;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, parameterEquations, inlineEquations, removedEquations, sampleEquations, algorithmAndEquationAsserts;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
@@ -13191,8 +13191,9 @@ algorithm
         files = {};
         files = getFilesFromSimVars(vars, files);
         files = getFilesFromFunctions(functions, files);
-        files = getFilesFromSimEqSystems(allEquations::algebraicEquations::residualEquations::
+        files = getFilesFromSimEqSystems(allEquations::residualEquations::
                                          startValueEquations::parameterEquations::removedEquations::algorithmAndEquationAsserts::sampleEquations::odeEquations, files);
+        files = getFilesFromSimEqSystems(algebraicEquations, files);
         files = getFilesFromWhenClauses(whenClauses, files);   
         files = getFilesFromExtObjInfo(extObjInfo, files);
         files = getFilesFromJacobianMatrixes(jacobianMatrixes, files);
@@ -13463,7 +13464,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<SimCode.SimEqSystem> allEquations;
       list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> algebraicEquations;
+      list<list<SimCode.SimEqSystem>> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
@@ -13503,7 +13504,7 @@ algorithm
         (literals, a) = List.mapFoldTuple(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
         (odeEquations, a) = traverseExpsEqSystemsList(odeEquations, func, a, {});
-        (algebraicEquations, a) = traverseExpsEqSystems(algebraicEquations, func, a, {});
+        (algebraicEquations, a) = traverseExpsEqSystemsList(algebraicEquations, func, a, {});
         (residualEquations, a) = traverseExpsEqSystems(residualEquations, func, a, {});
         (initialEquations, a) = traverseExpsEqSystems(initialEquations, func, a, {});
         (startValueEquations, a) = traverseExpsEqSystems(startValueEquations, func, a, {});
@@ -13669,7 +13670,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<SimCode.SimEqSystem> allEquations;
       list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> algebraicEquations;
+      list<list<SimCode.SimEqSystem>> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;

@@ -125,7 +125,7 @@ package SimCode
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;
-      list<SimEqSystem> algebraicEquations;
+      list<list<SimEqSystem>> algebraicEquations;
       list<SimEqSystem> residualEquations;
       Boolean useSymbolicInitialization;
       list<SimEqSystem> initialEquations;

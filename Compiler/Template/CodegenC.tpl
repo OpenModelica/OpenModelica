@@ -1330,25 +1330,49 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
   >>
 end functionWhenReinitStatementElse;
 
-template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
+template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n)
 ::=
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
   <<
-  static void functionODE_system<%n%>(DATA *data,int omc_thread_number)
+  static void function<%name%>_system<%n%>(DATA *data,int omc_thread_number)
   {
     <%odeEqs%>
   }
   >>
-end functionODE_system;
+end functionXXX_system;
+
+template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls)
+::=
+  let funcs = eqs |> eq hasindex i1 fromindex 0 => functionXXX_system(eq,name,i1) ; separator="\n"
+  let nFuncs = listLength(eqs)
+  let funcNames = eqs |> e hasindex i1 fromindex 0 => 'function<%name%>_system<%i1%>' ; separator=",\n"
+  let &varDecls += 'int id, th_id;<%\n%>'
+  let &loop +=
+  /* Text for the loop body that calls the equations */
+  <<
+  <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
+  for(id=0; id<<%nFuncs%>; id++) {
+    th_id = omp_get_thread_num();
+    function<%name%>_systems[id](data,th_id);
+  }
+  >>
+  /* Text before the function head */
+  <<
+  <%funcs%>
+  static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, int) = {
+    <%funcNames%>
+  };
+  >>
+end functionXXX_systems;
 
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
-  let funcs = derivativEquations |> eqs hasindex i1 fromindex 0 => functionODE_system(eqs,i1) ; separator="\n"
-  let nFuncs = listLength(derivativEquations)
-  let funcNames = derivativEquations |> eqs hasindex i1 fromindex 0 => 'functionODE_system<%i1%>' ; separator=",\n"
   let &varDecls2 = buffer "" /*BUFD*/
+  let &varDecls = buffer ""
+  let &loop = buffer ""
+  let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls)
   let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
     equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp); separator="\n")
@@ -1356,10 +1380,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     
   <<
   <%tmp%>
-  <%funcs%>
-  static void (*functionODE_systems[<%nFuncs%>])(DATA *, int) = {
-    <%funcNames%>
-  };
+  <%systems%>
   
   void function_initMemoryState()
   {
@@ -1368,17 +1389,12 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   
   int functionODE(DATA *data)
   {
-    int id, th_id;
+    <%varDecls%>
     state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
     
     data->simulationInfo.discreteCall = 0;
-    <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
-    for(id=0; id<<%nFuncs%>; id++)
-    {
-      th_id = omp_get_thread_num();
-      functionODE_systems[id](data,th_id);
-    }
+    <%loop%>
     restore_memory_state(mem_state);
   
     return 0;
@@ -1420,17 +1436,14 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   >>
 end functionODE;
 
-template functionAlgebraic(list<SimEqSystem> algebraicEquations)
+template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let algEquations = (algebraicEquations |> eq =>
-    equationNames_(eq,contextSimulationNonDiscrete)
-    ;separator="\n")
-    
+  let &loop = buffer ""
+  let systems = functionXXX_systems(algebraicEquations, "Alg", &loop, &varDecls)
   <<
-  <%tmp%>
+  <%systems%>
   /* for continuous time variables */
   int functionAlgebraics(DATA *data)
   {
@@ -1438,7 +1451,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
     <%varDecls%>
     data->simulationInfo.discreteCall = 0;
     mem_state = get_memory_state();
-    <%algEquations%>
+    <%loop%>
     restore_memory_state(mem_state);
   
     return 0;

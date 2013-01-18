@@ -497,13 +497,13 @@ end functionCallExternalObjectConstructors;
 
 
 
-template functionAlgebraic(list<SimEqSystem> algebraicEquations, SimCode simCode) ::=
+template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 public override void FunAlgebraics()
 {
   <% localRepresentationArrayDefines %>
-  <% algebraicEquations |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
+  <% List.flatten(algebraicEquations) |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
 }
 >>
 end functionAlgebraic;

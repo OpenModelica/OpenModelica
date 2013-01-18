@@ -4038,7 +4038,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
  end generateAlgloopsolverVariables2;
 
 
-template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<list<SimEqSystem>> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>

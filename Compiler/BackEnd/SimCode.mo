@@ -84,7 +84,7 @@ uniontype SimCode
     list<String> externalFunctionIncludes;
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
-    list<SimEqSystem> algebraicEquations;
+    list<list<SimEqSystem>> algebraicEquations;
     list<SimEqSystem> residualEquations;
     Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
     list<SimEqSystem> initialEquations;
