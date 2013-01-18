@@ -10435,11 +10435,13 @@ algorithm
     local
       SCode.Mod mod;
       Boolean b;
+      String target;
 
     case (_, _, SOME(SCode.ANNOTATION(mod)))
       equation
         b = generateExtFunctionDynamicLoad(mod);
-        libs = generateExtFunctionIncludesLibstr(mod);
+        target = Flags.getConfigString(Flags.TARGET);
+        libs = generateExtFunctionIncludesLibstr(target,mod);
         includes = generateExtFunctionIncludesIncludestr(mod);
         libs = generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
         includeDirs = generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes);
@@ -10519,6 +10521,55 @@ algorithm
   end matchcontinue;
 end generateExtFunctionLibraryDirectoryFlags;
 
+protected function getLibraryStringInMSVCFormat
+"Takes an Absyn.STRING describing a library and outputs a list
+of strings corresponding to it.
+Note: Normally only outputs a single string, but Lapack on MinGW is special."
+  input Absyn.Exp exp;
+  output list<String> strs;
+algorithm
+  strs := matchcontinue exp
+    local
+      String str;
+      
+    // Lapack on MinGW/Windows is linked against f2c
+    case Absyn.STRING("Lapack")
+      then {"lapack_win32_MT.lib", "f2c.lib"};
+      
+    // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+    case Absyn.STRING(str as "omcruntime")
+      equation
+        true = "Windows_NT" ==& System.os();
+        strs = {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "util.lib", "lapack_win32_MT.lib"};
+      then 
+        strs;
+        
+    // Wonder if there may be issues if we have duplicates in the Corba libs
+    // and the other libs. Some other developer will probably swear over this
+    // hack some day, but at least I get an early weekend.
+    case Absyn.STRING("OpenModelicaCorba")
+      equation
+        str = System.getCorbaLibs();
+      then {str};
+        
+    // If the string starts with a -, it's probably -l or -L gcc flags
+    case Absyn.STRING(str)
+      equation
+        true = "-" ==& stringGetStringChar(str, 1);
+      then {str};
+        
+    case Absyn.STRING(str)
+      equation
+        str = str +& ".lib";
+      then {str};
+        
+    case _
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to process Library annotation for external function"});
+      then fail();
+  end matchcontinue;
+end getLibraryStringInMSVCFormat;
+
 protected function getLibraryStringInGccFormat
 "Takes an Absyn.STRING describing a library and outputs a list
 of strings corresponding to it.
@@ -10590,23 +10641,38 @@ algorithm
 end getLibraryStringInGccFormat;
 
 protected function generateExtFunctionIncludesLibstr
+  input String target;
   input SCode.Mod inMod;
   output list<String> outStringLst;
 algorithm
-  outStringLst:= matchcontinue (inMod)
+  outStringLst:= matchcontinue (target,inMod)
     local
       list<Absyn.Exp> arr;
       list<String> libs;
       list<list<String>> libsList;
       Absyn.Exp exp;
-    case (_)
+    case ("msvc",_)
+      equation
+        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+          Mod.getUnelabedSubMod(inMod, "Library");
+        libsList = List.map(arr, getLibraryStringInMSVCFormat);
+      then
+        List.flatten(libsList);
+    case ("msvc",_)
+      equation
+        SCode.MOD(binding = SOME((exp, _))) =
+          Mod.getUnelabedSubMod(inMod, "Library");
+        libs = getLibraryStringInMSVCFormat(exp);
+      then
+        libs;
+    case (_,_)
       equation
         SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
         libsList = List.map(arr, getLibraryStringInGccFormat);
       then
         List.flatten(libsList);
-    case (_)
+    case (_,_)
       equation
         SCode.MOD(binding = SOME((exp, _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
