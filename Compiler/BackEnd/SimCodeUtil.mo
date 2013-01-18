@@ -1568,6 +1568,7 @@ algorithm
       initialEquations = List.map(initialEquations, addDivExpErrorMsgtoSimEqSystem);
       
       odeEquations = makeEqualLengthLists(odeEquations, Config.noProc());
+      algebraicEquations = makeEqualLengthLists(algebraicEquations, Config.noProc());
 
       // generate jacobian or linear model matrices
       LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
