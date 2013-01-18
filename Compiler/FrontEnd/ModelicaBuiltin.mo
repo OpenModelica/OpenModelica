@@ -2209,9 +2209,9 @@ public function compareSimulationResults "compares simulation results."
   input String filename;
   input String reffilename;
   input String logfilename;
-  input Real relTol;
-  input Real absTol;
-  input String[:] vars;
+  input Real relTol := 0.01;
+  input Real absTol := 0.0001;
+  input String[:] vars := fill("",0);
   output String[:] result;
 external "builtin";
 annotation(preferredView="text");
