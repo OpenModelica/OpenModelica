@@ -10587,7 +10587,7 @@ algorithm
       (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
       vars = listAppend(vars, inVars);
       stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, stmts1, NONE(), helpVarIndices, source)});
-      
+
       (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       stmts_ = listAppend(stmts_, stmts);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
@@ -10597,7 +10597,7 @@ algorithm
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), helpVarIndices=helpVarIndices, source=source))::rest, _, _) equation
       (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
       vars = listAppend(vars, inVars);
-      
+
       ({elseWhen}, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
       preStmts = listAppend(preStmts, preStmts2);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
@@ -10657,7 +10657,7 @@ algorithm
     // array-condition
     case (DAE.ARRAY(array={condition}), _, index) equation
       crStr = "$whenCondition" +& intString(index);
-      
+
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
@@ -10674,7 +10674,7 @@ algorithm
     // simple condition
     case (condition, _, index) equation
       crStr = "$whenCondition" +& intString(index);
-      
+
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);

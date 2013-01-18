@@ -660,23 +660,16 @@ static int symbolic_initialization(DATA *data)
   stateSelection(data,0);
   functionInitialEquations(data);
 
-  updateDiscreteSystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  initializeStateSetPivoting(data);   /* reset state selection */
-  syncPreForHelpVars(data);           /* resetAllHelpVars(data); */
-  storeRelations(data);
-  storePreValues(data);
-
-  /* do pivoting for dynamic state selection */
-  stateSelection(data,0);
-  functionInitialEquations(data);
+  /* update saved value for
+     hysteresis relations */
+  updateHysteresis(data);             
 
   /* do pivoting for dynamic state selection if selection changed try again an */
   if(stateSelection(data,1) == 1)
   {
     functionInitialEquations(data);
+    updateHysteresis(data);
+
     if(stateSelection(data,1) == 1)
     {
       /* report a warning about strange start values */
