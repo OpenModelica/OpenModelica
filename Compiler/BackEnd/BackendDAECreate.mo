@@ -253,10 +253,7 @@ algorithm
       DAE.ElementSource source;
       list<DAE.Exp> explst;
       DAE.Exp e2;
-      Boolean b;
-      list<list<DAE.Element>> eqnslstlst;
-      list<DAE.Element> eqnslst;
-      
+
     // class for external object
     case (DAE.EXTOBJECTCLASS(path,source),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -270,105 +267,71 @@ algorithm
         (vars,knvars,extVars,eqns) = lowerVar(inElement,functionTree,inVars,inKnVars,inExVars,inEqnsLst);
       then
         (vars,knvars,extVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-    
-      /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
-    case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
-      then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-    case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
-      then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-        
-      /* Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
-    case(DAE.INITIALEQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
-      then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-    case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
-      then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-
-    // equalityConstraint equations, moved to removed equations
-    case (DAE.ARRAY_EQUATION(exp = DAE.ARRAY(array={}),array=DAE.CALL(path=path)),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        b = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
-        eqns = Util.if_(b,inREqnsLst,inEqnsLst);
-        eqns = lowerEqn(inElement,functionTree,eqns);
-        ((eqns,reqns)) = Util.if_(b,(inEqnsLst,eqns),(eqns,inREqnsLst));
-      then
-        (inVars,inKnVars,inExVars,eqns,reqns,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // scalar equations
     case (DAE.EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-    
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
     // initial equations
     case (DAE.INITIALEQUATION(exp1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // effort variable equality equations, seperated to generate alias variables
     case (DAE.EQUEQUATION(cr1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
         //eqns = inEqnsLst;
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,/*inElement::*/iAliaseqns);
-    
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,/*inElement::*/iAliaseqns);
+
     // a solved equation 
     case (DAE.DEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // a initial solved equation 
     case (DAE.INITIALDEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // complex equations
     case (DAE.COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
- 
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
     // complex initial equations
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // array equations
     case (DAE.ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-       
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
     // initial array equations
     case (DAE.INITIAL_ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-       
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
     // when equations
     case (DAE.WHEN_EQUATION(condition = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -376,28 +339,19 @@ algorithm
       then
         (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,whenclauses,inExtObjClasses,iAliaseqns);
 
-    // if equation that cannot be translated to if expression but have initial() as condition
-    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2=daeElts::{},equations3={}),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        ieqns = List.fold1(daeElts,lowerEqn,functionTree,inIEqnsLst);
-      then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-
     // if equation
-    case (DAE.IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        (eqnslstlst,eqnslst,daeElts) = lowerIfEquationAsserts(explst,eqnslstlst,eqnslst,{},{},{});
-        reqns = List.fold1(daeElts,lowerEqn,functionTree,inREqnsLst);
-        eqns = lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,inEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // initial if equation
     case (DAE.INITIAL_IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+        (eqns,reqns,ieqns) = lowerEqn(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // algorithm
     case (DAE.ALGORITHM(algorithm_ = _),_,_,_,_,_,_,_,_,_,_,_,_)
@@ -412,28 +366,28 @@ algorithm
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
         (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-   
+
     // flat class / COMP
     case (DAE.COMP(dAElist = daeElts),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) = lower2(listReverse(daeElts),functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns);
-    
+
     // assert in equation section is converted to ALGORITHM
     case (DAE.ASSERT(condition = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
         (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
- 
+
     // terminate in equation section is converted to ALGORITHM
     case (DAE.TERMINATE(message = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
         (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
-    
+
     case (DAE.NORETCALL(functionName = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
@@ -1016,10 +970,14 @@ protected function lowerEqn
   Transforms a DAE.Element to Equation."
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
-  input list<BackendDAE.Equation> inEqns;  
-  output list<BackendDAE.Equation> outEqns; 
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Equation> inREquations;
+  input list<BackendDAE.Equation> inIEquations;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Equation> outREquations;
+  output list<BackendDAE.Equation> outIEquations;
 algorithm
-  outEqns :=  match (inElement,functionTree,inEqns)
+  (outEquations,outREquations,outIEquations) :=  match (inElement,functionTree,inEquations,inREquations,inIEquations)
     local
       DAE.Exp e1,e2,cond,msg,level;
       DAE.ComponentRef cr1,cr2;
@@ -1029,71 +987,100 @@ algorithm
       DAE.Dimensions dims;
       list<DAE.Exp> explst,explst1;
       list<list<DAE.Element>> eqnslstlst;
-      list<DAE.Element> eqnslst;
+      list<DAE.Element> eqnslst,daeElts;
       String s;
       DAE.Algorithm alg;
-      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.Equation> eqns,reqns,ieqns;
+      Absyn.Path path;
       
     // tuple-tuple assignments are split into one equation for each tuple
     // element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6;
-    case (DAE.EQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_)
+    case (DAE.EQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_,_,_)
+      equation
+        eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inEquations);
       then
-        lowerTupleAssignment(explst,explst1,source,functionTree,inEqns);
-    case (DAE.INITIALEQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_)
+        (eqns,inREquations,inIEquations);
+    case (DAE.INITIALEQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_,_,_)
+      equation
+        eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inIEquations);
       then
-        lowerTupleAssignment(explst,explst1,source,functionTree,inEqns);
-      
-    case (DAE.EQUATION(exp = e1,scalar = e2,source = source),_,_)
+        (inEquations,inREquations,eqns);
+      /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
+      equation
+       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+    case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+
+    /* Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    case(DAE.INITIALEQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
+      equation
+       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+    case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+        
+    case (DAE.EQUATION(exp = e1,scalar = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
+        (BackendDAE.EQUATION(e1,e2,source,false)::inEquations,inREquations,inIEquations);
 
-    case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source),_,_)
+    case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
+        (inEquations,inREquations,BackendDAE.EQUATION(e1,e2,source,false)::inIEquations);
 
-    case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source),_,_)
+    case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source),_,_,_,_)
       equation
         e1 = Expression.crefExp(cr1);
         e2 = Expression.crefExp(cr2);
+        eqns = lowerextendedRecordEqn(e1,e2,source,functionTree,inEquations);
       then
-        lowerextendedRecordEqn(e1,e2,source,functionTree,inEqns);
-
-    case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source),_,_)
+       (eqns,inREquations,inIEquations);
+    case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source),_,_,_,_)
       equation
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);        
         e1 = Expression.crefExp(cr1);
       then
-        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
+        (BackendDAE.EQUATION(e1,e2,source,false)::inEquations,inREquations,inIEquations);
 
-    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source),_,_)
+    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source),_,_,_,_)
       equation
         e1 = Expression.crefExp(cr1);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
+        (inEquations,inREquations,BackendDAE.EQUATION(e1,e2,source,false)::inIEquations);
 
-    case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
+    case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.forceInlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
         (e2,source,_) = Inline.forceInlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);        
+        eqns = lowerextendedRecordEqn(e1,e2,source,functionTree,inEquations);
       then
-        lowerextendedRecordEqn(e1,e2,source,functionTree,inEqns);
+        (eqns,inREquations,inIEquations);
         
-    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
+    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
@@ -1101,51 +1088,94 @@ algorithm
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         size = Expression.sizeOf(Expression.typeof(e1));
       then
-        BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,false)::inEqns;
+        (inEquations,inREquations,BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,false)::inIEquations);
 
-    case (DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
+    // equalityConstraint equations, moved to removed equations
+    case (DAE.ARRAY_EQUATION(dimension=dims, exp = e1 as DAE.ARRAY(array={}),array = e2 as DAE.CALL(path=path),source = source),_,_,_,_)
+      equation
+        b1 = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        eqns = Util.if_(b1,inREquations,inEquations);
+        eqns = lowerArrayEqn(dims,e1,e2,source,eqns);
+        ((eqns,reqns)) = Util.if_(b1,(inEquations,eqns),(eqns,inREquations));
+      then
+        (eqns,inREquations,inIEquations);
+
+    case (DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        eqns = lowerArrayEqn(dims,e1,e2,source,inEquations);
       then
-        lowerArrayEqn(dims,e1,e2,source,inEqns);
+        (eqns,inREquations,inIEquations);
       
-    case (DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
+    case (DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_,_,_)
       equation
         (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);    
+        eqns = lowerArrayEqn(dims,e1,e2,source,inIEquations); 
       then
-        lowerArrayEqn(dims,e1,e2,source,inEqns); 
-         
-    case (DAE.IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_)
-      then
-        lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
+        (inEquations,inREquations,eqns);
 
-    case (DAE.INITIAL_IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_)
-      then
-        lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
-          
-    case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_)
+   // if equation that cannot be translated to if expression but have initial() as condition
+    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2={eqnslst},equations3={}),_,_,_,_)
       equation
-        ({},eqns,{}) = lowerAlgorithm(inElement,functionTree,{},inEqns,{});
+        (eqns,reqns,ieqns) = lowerEqns(eqnslst,functionTree,{},{},{});
+        ieqns = List.flatten({eqns,reqns,ieqns,inIEquations});
       then
-        eqns;  
-
-    case (DAE.TERMINATE(message=msg,source=source),_,_)
-      then
-        BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source)::inEqns;          
-
-    case (DAE.NORETCALL(functionName = _),_,_)
+        (inEquations,inREquations,ieqns);
+           
+    case (DAE.IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_,_,_)
       equation
-        ({},eqns,{}) = lowerAlgorithm(inElement,functionTree,{},inEqns,{});
+        // move out assert, terminate, message stuff from if equation
+        (eqnslstlst,eqnslst,daeElts) = lowerIfEquationAsserts(explst,eqnslstlst,eqnslst,{},{},{});
+        (eqns,reqns,ieqns) = lowerEqns(daeElts,functionTree,inEquations,inREquations,inIEquations);
+        eqns = lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,eqns);
       then
-        eqns;
+        (eqns,reqns,ieqns);
 
-    case (_,_,_)
+    case (DAE.INITIAL_IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_,_,_)
+      equation
+        eqns = lowerIfEquation(explst,eqnslstlst,eqnslst,{},{},source,functionTree,inIEquations);
+      then
+       (inEquations,inREquations,eqns);
+       
+    // algorithm
+    case (DAE.ALGORITHM(algorithm_ = _),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+
+    // initial algorithm
+    case (DAE.INITIALALGORITHM(algorithm_ = _),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+
+    case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);  
+
+    case (DAE.TERMINATE(message=msg,source=source),_,_,_,_)
+      then
+        (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source)::inIEquations);          
+
+    case (DAE.NORETCALL(functionName = _),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+      then
+        (eqns,reqns,ieqns);
+
+    case (_,_,_,_,_)
       equation
         s = "BackendDAECreate.lowerEqn failed for " +& DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
@@ -1162,42 +1192,43 @@ protected function lowerIfEquation
   input list<list<DAE.Element>> theneqns1;
   input DAE.ElementSource inSource;
   input DAE.FunctionTree functionTree;
-  input list<BackendDAE.Equation> inEqns;
-  output list<BackendDAE.Equation> outEqns;
+  input list<BackendDAE.Equation> inEquations;
+  output list<BackendDAE.Equation> outEquations;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,inSource,functionTree,inEqns)
+  outEquations := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,inSource,functionTree,inEquations)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
       list<list<DAE.Element>> eqnslst;
-      list<DAE.Element> eqns; 
+      list<DAE.Element> eqns;
       DAE.ElementSource source;
-
       list<list<BackendDAE.Equation>> beqnslst;
-      list<BackendDAE.Equation> beqns; 
-      
+      list<BackendDAE.Equation> beqns,breqns,bieqns; 
+
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_,_) 
+    case ({},{},_,{},{},_,_,_)
       equation
-        beqns = List.fold1(elseenqs,lowerEqn,functionTree,inEqns);
-      then 
-        beqns;   
+        (beqns,breqns,bieqns) = lowerEqns(elseenqs,functionTree,{},{},{});
+        beqns = List.flatten({beqns,breqns,bieqns,inEquations});
+      then
+        beqns;
     // true case left with condition<>false
     case ({},{},_,_,_,_,_,_)
-      equation 
-        explst = listReverse(conditions1);  
-        eqnslst = listReverse(theneqns1);  
-        beqnslst = List.map2(eqnslst,lowerEqns,functionTree,{});
-        beqns = List.fold1(elseenqs,lowerEqn,functionTree,{});        
-      then 
-        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,inSource)::inEqns;
+      equation
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+        beqnslst = lowerEqnsLst(eqnslst,functionTree,{});
+        (beqns,breqns,bieqns) = lowerEqns(elseenqs,functionTree,{},{},{});
+        beqns = List.flatten({beqns,breqns,bieqns});
+      then
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, inSource)::inEquations;
     // all other cases
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
       equation
-        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), inSource);    
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), inSource);
         (e,_) = ExpressionSimplify.simplify(e);
       then
-        lowerIfEquation1(e,explst,eqns,eqnslst,elseenqs,conditions1,theneqns1,source,functionTree,inEqns);
+        lowerIfEquation1(e,explst,eqns,eqnslst,elseenqs,conditions1,theneqns1,source,functionTree,inEquations);
   end matchcontinue;
 end lowerIfEquation;
 
@@ -1218,25 +1249,26 @@ algorithm
     local
       list<DAE.Exp> explst;
       list<list<DAE.Element>> eqnslst;
-
       list<list<BackendDAE.Equation>> beqnslst;
-      list<BackendDAE.Equation> beqns;
+      list<BackendDAE.Equation> beqns,breqns,bieqns;
 
     // if true use it if it is the first one
     case(DAE.BCONST(true),_,_,_,_,{},{},_,_,_)
       equation
-        beqns = List.fold1(theneqn,lowerEqn,functionTree,inEqns);
-      then 
-        beqns; 
+        (beqns,breqns,bieqns) = lowerEqns(theneqn,functionTree,{},{},{});
+        beqns = List.flatten({beqns,breqns,bieqns,inEqns});
+      then
+        beqns;
     // if true use it as new else if it is not the first one
     case(DAE.BCONST(true),_,_,_,_,{},{},_,_,_)
       equation
-        explst = listReverse(conditions1);  
-        eqnslst = listReverse(theneqns1);  
-        beqnslst = List.map2(eqnslst,lowerEqns,functionTree,{});
-        beqns = List.fold1(theneqn,lowerEqn,functionTree,{});        
-      then 
-        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,source)::inEqns;        
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+        beqnslst = lowerEqnsLst(eqnslst,functionTree,{});
+        (beqns,breqns,bieqns) = lowerEqns(theneqn,functionTree,{},{},{});
+        beqns = List.flatten({beqns,breqns,bieqns});
+      then
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, source)::inEqns;
     // if false skip it
     case(DAE.BCONST(false),_,_,_,_,_,_,_,_,_)
       then
@@ -1252,11 +1284,49 @@ protected function lowerEqns
 "Author: Frenkel TUD 2012-06"
   input list<DAE.Element> inElements;
   input DAE.FunctionTree functionTree;
-  input list<BackendDAE.Equation> inEqns;  
-  output list<BackendDAE.Equation> outEqns;
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Equation> inREquations;
+  input list<BackendDAE.Equation> inIEquations;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Equation> outREquations;
+  output list<BackendDAE.Equation> outIEquations;
 algorithm
-  outEqns := List.fold1(inElements,lowerEqn,functionTree,inEqns);
+  (outEquations,outREquations,outIEquations) := match(inElements,functionTree,inEquations,inREquations,inIEquations)
+    local
+      DAE.Element element;
+      list<DAE.Element> elements;
+      list<BackendDAE.Equation> eqns,reqns,ieqns;
+  case({},_,_,_,_) then (inEquations,inREquations,inIEquations);
+  case(element::elements,_,_,_,_)
+    equation
+      (eqns,reqns,ieqns) = lowerEqn(element,functionTree,inEquations,inREquations,inIEquations);
+      (eqns,reqns,ieqns) = lowerEqns(elements,functionTree,eqns,reqns,ieqns);
+    then
+      (eqns,reqns,ieqns);
+  end match; 
 end lowerEqns;
+
+protected function lowerEqnsLst
+"Author: Frenkel TUD 2012-06"
+  input list<list<DAE.Element>> inElements;
+  input DAE.FunctionTree functionTree;
+  input list<list<BackendDAE.Equation>> inEquations;
+  output list<list<BackendDAE.Equation>> outEquations;
+algorithm
+  outEquations := match(inElements,functionTree,inEquations)
+    local
+      list<DAE.Element> element;
+      list<list<DAE.Element>> elements;
+      list<BackendDAE.Equation> eqns,reqns,ieqns;
+  case({},_,_) then inEquations;
+  case(element::elements,_,_)
+    equation
+      (eqns,reqns,ieqns) = lowerEqns(element,functionTree,{},{},{});
+      eqns = List.flatten({eqns,reqns,ieqns});
+    then
+      lowerEqnsLst(elements,functionTree,eqns::inEquations);
+  end match; 
+end lowerEqnsLst;
 
 protected function lowerIfEquationAsserts
 "function: lowerIfEquationAsserts

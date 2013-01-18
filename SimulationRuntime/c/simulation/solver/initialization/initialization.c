@@ -662,7 +662,7 @@ static int symbolic_initialization(DATA *data)
 
   /* update saved value for
      hysteresis relations */
-  updateHysteresis(data);             
+  updateHysteresis(data);
 
   /* do pivoting for dynamic state selection if selection changed try again an */
   if(stateSelection(data,1) == 1)
@@ -673,7 +673,7 @@ static int symbolic_initialization(DATA *data)
     if(stateSelection(data,1) == 1)
     {
       /* report a warning about strange start values */
-      THROW("Error, cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+      WARNING(LOG_STDOUT,"Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
     }
   }
 
