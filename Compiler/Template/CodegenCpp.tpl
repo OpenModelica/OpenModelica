@@ -1836,7 +1836,7 @@ template Update(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-    <%update(allEquations,whenClauses,simCode)%>
+    <%update(allEquations,whenClauses,simCode,contextOther)%>
   >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
@@ -4276,7 +4276,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
 ::=
   match eq
     case SES_WHEN(__) then
-      let helpIf = (conditions |> e => ' || <%cref1(e, simCode, context)%> && !$P$PRE<%cref1(e, simCode, context)%> /* edge */')
+      let helpIf = (conditions |> e => ' || <%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>")')
       let &preExp = buffer ""
       let rightExp = daeExp(right, context, &preExp,&varDecls,simCode)
       <<
@@ -6632,7 +6632,7 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
   >>
 end update;
 */
-template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses,SimCode simCode)
+template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses,SimCode simCode, Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
@@ -6640,7 +6640,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
     ;separator="\n")
   
   let reinit = (whenClauses |> when hasindex i0 =>
-         genreinits(when, &varDecls,i0,simCode)
+         genreinits(when, &varDecls,i0,simCode,context)
     ;separator="\n";empty) 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then    
@@ -6657,11 +6657,11 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 end update;
 
 
-template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCode simCode)
+template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCode simCode, Context context)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => ' || <cref(cref1(e, simCode, context))> && !$P$PRE<cref1(e, simCode, context)> /* edge */')
+      let helpIf = (conditions |> e => ' || <%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>, "<%cref(e)%>")')
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode)
       let initial_assign = match initialCall
         case true then functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode)
