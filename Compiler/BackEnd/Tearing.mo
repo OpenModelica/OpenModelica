@@ -2030,31 +2030,24 @@ author:Waurich TUD 2013-01"
   output list<Integer> valOut;
   output list<Integer> numOut;
 algorithm
-(num,value) := matchcontinue(lstIn,set,indx,valIn,numIn)
-  local
-    Integer value,number;
-    list<Integer> val,num;
-  case(_,_,_,_,_)
-    equation
-      true = listLength(set) == 0;
-      (valOut,numOut) = ({0},{0});
-    then
-      (valOut,numOut);
-  case(_,_,_,_,_)
-    equation
-      true = indx <= listLength(set);
-      value = listGet(set,indx);
-      number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
-      num = number::numIn;
-      val = value::valIn;
-      (valOut,numOut) = countMultiples3(lstIn,set,indx+1,val,num);
-    then
-      (valOut,numOut);
-  case(_,_,_,_,_)
-    equation
-      true = indx > listLength(set);
-    then
-      (valIn,numIn);
+  (valOut,numOut) := matchcontinue(lstIn,set,indx,valIn,numIn)
+    local
+      Integer value,number;
+      list<Integer> val,num;
+    case(_,{},_,_,_) then ({0},{0});
+    case(_,_,_,_,_)
+      equation
+        true = indx <= listLength(set);
+        value = listGet(set,indx);
+        number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
+        (val,num) = countMultiples3(lstIn,set,indx+1,value::valIn,number::numIn);
+      then
+        (val,num);
+    case(_,_,_,_,_)
+      equation
+        true = indx > listLength(set);
+      then
+        (valIn,numIn);
   end matchcontinue;
 end countMultiples3;
  
