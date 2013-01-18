@@ -1790,23 +1790,26 @@ algorithm
       print("variable"+&intString(var)+&"\n");
       vars = var::varsIn;
       tVars = StewardConvertToTearingVar2(vertParent,vertChild,vars,ass1,ass2,indx+1);
-        then
-          tVars;
+    then
+      tVars;
   case(_,_,_,_,_,_)
     equation
       true = indx > listLength(vertChild);
-        then
-          varsIn;
+    then
+      varsIn;
   end matchcontinue;
 end StewardConvertToTearingVar2;
 
 protected function tearingSteward "selects the tearing vertices from the loop-occurence-matrix.
 author: Waurich TUD 2013-01"
-  input array<list<Integer>> lIn,ltIn;
-  input list<Integer> parentIn, childIn;
-  output list<Integer> parentOut,childOut;
+  input array<list<Integer>> lIn;
+  input array<list<Integer>> ltIn;
+  input list<Integer> parentIn;
+  input list<Integer> childIn;
+  output list<Integer> parentOut;
+  output list<Integer> childOut;
 algorithm
-  vertsOut := matchcontinue(lIn,ltIn,parentIn,childIn)
+  (parentOut,childOut) := matchcontinue(lIn,ltIn,parentIn,childIn)
   local
     array<list<Integer>> l,lt;
     list<Integer> counter,values,potentials;
@@ -1829,7 +1832,7 @@ algorithm
       //print("lt\n");
       //BackendDump.dumpIncidenceMatrix(lt);
       (parentIn,childIn) = tearingSteward(l,lt,parentLst,childLst);
-      then 
+    then 
         (parentIn,childIn);
   case(_,_,_,_)
     equation
@@ -1846,10 +1849,10 @@ author: Waurich TUD 2013-01"
   output array<list<Integer>> lOut,ltOut;
 algorithm
   (lOut,ltOut) := matchcontinue(lIn,ltIn,parent,child)
-  local
-    array<list<Integer>> l,lt;
-    list<Integer> row,loops,broken,leftovers; 
-    Integer size;
+    local
+      array<list<Integer>> l,lt;
+      list<Integer> row,loops,broken,leftovers; 
+      Integer size;
     case(_,_,_,_)
       equation
         row = arrayGet(ltIn,parent);
@@ -1860,10 +1863,10 @@ algorithm
         (broken,leftovers,_) = List.intersection1OnTrue(loops,broken,intEq);
         l = Util.arraySelect(lIn,leftovers);
         lt = arrayDeleteColumns(ltIn,broken); 
-        then 
+      then 
           (l,lt);
-    end matchcontinue;
-  end updateLoopOccurenceMatrix;      
+  end matchcontinue;
+end updateLoopOccurenceMatrix;      
 
 protected function arrayDeleteColumns "deletes columns from array<list<Integer>>
 given by indexes(starting with 1).
@@ -1897,9 +1900,9 @@ algorithm
         outArr;
   case(_,_,_)
     equation
-    true = indx > arrayLength(inArr);
-      then
-        inArr;
+      true = indx > arrayLength(inArr);
+    then
+      inArr;
   end matchcontinue;
 end arrayDeleteColumns2;
 
@@ -1921,31 +1924,31 @@ end listSeries;
   
 protected function listSeries2 "implementation of listSeries.
 author: Waurich TUD 2013-01"
-    input Integer n;
-    input list<Integer> lstIn;
-    output list<Integer> lstOut;
-  algorithm   
-    lstOut := matchcontinue(n,lstIn)
+  input Integer n;
+  input list<Integer> lstIn;
+  output list<Integer> lstOut;
+algorithm   
+  lstOut := matchcontinue(n,lstIn)
     local
       list<Integer> lst;
       Integer entry;
-      case(_,_)
-        equation
-          true = listLength(lstIn) <= n-1;
-          entry = n-listLength(lstIn);
-          lst = entry::lstIn;
-          lst = listSeries2(n,lst);
-          then
-            lst;
+    case(_,_)
+      equation
+        true = listLength(lstIn) <= n-1;
+        entry = n-listLength(lstIn);
+        lst = entry::lstIn;
+        lst = listSeries2(n,lst);
+      then
+        lst;
       case(_,_)
         equation
           true = listLength(lstIn) > n-1;
-          then
-            lstIn;
+        then
+          lstIn;
    end matchcontinue;
- end listSeries2;         
+end listSeries2;         
 
-  protected function listGetPositions " gets the indexes of the entries equal to value.
+protected function listGetPositions " gets the indexes of the entries equal to value.
 author: Waurich TUD 2013-01"
   input list<Integer> lstIn;
   input Integer value;
@@ -1974,13 +1977,13 @@ algorithm
         lst = List.deleteMember(lstIn,value);
         positions = pos::posIn;
         posOut = listGetPositions2(lst,value,num,indx+1,positions);
-          then
-            posOut;
+      then
+        posOut;
     case(_,_,_,_,_)
       equation
         true = indx > num;
-          then
-            posIn;
+      then
+        posIn;
   end matchcontinue;
 end listGetPositions2;            
 
@@ -2019,10 +2022,13 @@ end countMultiples2;
  
 protected function countMultiples3 " helper function for countMultiples2.
 author:Waurich TUD 2013-01"
-  input list<Integer> lstIn,set;
+  input list<Integer> lstIn;
+  input list<Integer> set;
   input Integer indx;
-  input list<Integer> valIn,numIn;
-  output list<Integer> valOut,numOut;
+  input list<Integer> valIn;
+  input list<Integer> numIn;
+  output list<Integer> valOut;
+  output list<Integer> numOut;
 algorithm
 (num,value) := matchcontinue(lstIn,set,indx,valIn,numIn)
   local
@@ -2098,17 +2104,17 @@ algorithm
         (lOut,ltOut);
     case(_,_,_,_,_)
       equation
-          true = indxLoop <= listLength(loops);
-          currLoop = listGet(loops,indxLoop);
-          true = indxVert > listLength(currLoop);
+         true = indxLoop <= listLength(loops);
+         currLoop = listGet(loops,indxLoop);
+         true = indxVert > listLength(currLoop);
         (lOut,ltOut) = getLoopOccurenceMatrix2(loops,lIn,ltIn,indxLoop+1,1);
-        then
+      then
         (lOut,ltOut);
     case(_,_,_,_,_)
       equation
         true = indxLoop > listLength(loops);
-        then
-          (lIn,ltIn);
+      then
+        (lIn,ltIn);
   end matchcontinue;
 end getLoopOccurenceMatrix2;        
       
@@ -2119,19 +2125,19 @@ author: Wauricht TUD 2013-01"
   output Integer child;
 algorithm
   child := matchcontinue(loopIn,parent)
-  local
-    Integer parentIndx,childIndx;
+    local
+      Integer parentIndx,childIndx;
     case(_,_)
       equation
-      parentIndx = List.position(parent,loopIn)+1;
-      true = parentIndx == 1;     
-      child = List.last(loopIn);
-        then
-          child;
+        parentIndx = List.position(parent,loopIn)+1;
+        true = parentIndx == 1;     
+        child = List.last(loopIn);
+      then
+        child;
     else
-    equation
-    parentIndx = List.position(parent,loopIn)+1;
-    child = listGet(loopIn,parentIndx-1);
+      equation
+        parentIndx = List.position(parent,loopIn)+1;
+        child = listGet(loopIn,parentIndx-1);
       then
         child;
   end matchcontinue;
@@ -2157,55 +2163,55 @@ author:Waurich TUD 2012-12"
   output list<list<Integer>> loopsOut;
 algorithm
   loopsOut := matchcontinue(aIn,atIn,finLoops,unfinLoops,currLoop,indxRow,indxCol)
-  local
-    Integer parent,child,position;
-    list<Integer> row,openLoop;
-    Boolean empty;
-  case(_,_,_,_,_,0,_)
-    equation
-      print("loopfinding ready\n");
-      print("found Loop "+&stringDelimitList(List.map(List.flatten(finLoops),intString),",")+&"\n");
-        then finLoops;
-  case(_,_,_,_,_,_,_)
-    equation
-      parent = indxRow;
-      openLoop = List.deleteMember(currLoop,parent);
-      true = List.isMemberOnTrue(parent,openLoop,intEq);
-      position = List.position(parent,openLoop)+2;
-      (currLoop,_) = List.split(currLoop,position);
-      print("found Loop "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
-      currLoop = listDelete(currLoop,0);
-      finLoops = currLoop::finLoops;
-      currLoop = List.flatten(List.firstOrEmpty(unfinLoops));
-      indxRow = firstOrEmpty(currLoop,0);
-      indxCol = 1;
-      unfinLoops = deleteOrEmpty(unfinLoops,0);
-      loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,indxRow,indxCol);      
-        then loopsOut;
-  case(_,_,_,_,_,_,_)
-    equation
-      true = listLength(currLoop) > 0;
-      true = indxCol == listLength(arrayGet(aIn,indxRow));
-      parent = indxRow;
-      child = listGet(arrayGet(aIn,indxRow),indxCol);
-      currLoop = child::currLoop;
-      print("append loop and jump to next vertex "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
-      loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
-      then loopsOut;        
-  case(_,_,_,_,_,_,_)
-    equation
-      true = indxCol < listLength(arrayGet(aIn,indxRow));
-      print("now we have more loops\n");
-      parent = indxRow;
-      row = arrayGet(aIn,indxRow);
-      unfinLoops = traceMooreLoops(unfinLoops,currLoop,row,2);
-      child = listGet(arrayGet(aIn,indxRow),indxCol);
-      currLoop = child::currLoop;
-      print("unfinished"+&stringDelimitList(List.map(List.flatten(unfinLoops),intString),",")+&"\n");
+    local
+      Integer parent,child,position;
+      list<Integer> row,openLoop;
+      Boolean empty;
+    case(_,_,_,_,_,0,_)
+      equation
+        print("loopfinding ready\n");
+        print("found Loop "+&stringDelimitList(List.map(List.flatten(finLoops),intString),",")+&"\n");
+      then finLoops;
+    case(_,_,_,_,_,_,_)
+      equation
+        parent = indxRow;
+        openLoop = List.deleteMember(currLoop,parent);
+        true = List.isMemberOnTrue(parent,openLoop,intEq);
+        position = List.position(parent,openLoop)+2;
+        (currLoop,_) = List.split(currLoop,position);
+        print("found Loop "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
+        currLoop = listDelete(currLoop,0);
+        finLoops = currLoop::finLoops;
+        currLoop = List.flatten(List.firstOrEmpty(unfinLoops));
+        indxRow = firstOrEmpty(currLoop,0);
+        indxCol = 1;
+        unfinLoops = deleteOrEmpty(unfinLoops,0);
+        loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,indxRow,indxCol);      
+      then loopsOut;
+    case(_,_,_,_,_,_,_)
+      equation
+        true = listLength(currLoop) > 0;
+        true = indxCol == listLength(arrayGet(aIn,indxRow));
+        parent = indxRow;
+        child = listGet(arrayGet(aIn,indxRow),indxCol);
+        currLoop = child::currLoop;
+        print("append loop and jump to next vertex "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
         loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
-        then loopsOut; 
-     end matchcontinue;
-   end findLoops2;   
+      then loopsOut;        
+    case(_,_,_,_,_,_,_)
+      equation
+        true = indxCol < listLength(arrayGet(aIn,indxRow));
+        print("now we have more loops\n");
+        parent = indxRow;
+        row = arrayGet(aIn,indxRow);
+        unfinLoops = traceMooreLoops(unfinLoops,currLoop,row,2);
+        child = listGet(arrayGet(aIn,indxRow),indxCol);
+        currLoop = child::currLoop;
+        print("unfinished"+&stringDelimitList(List.map(List.flatten(unfinLoops),intString),",")+&"\n");
+        loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
+      then loopsOut; 
+   end matchcontinue;
+end findLoops2;   
  
   protected function deleteOrEmpty " deletes the indexed position(index starts at 0), or if list is empty gives empty list back.
 author: Waurich TUD 2013-01"
@@ -2805,19 +2811,15 @@ author:Waurich TUD 2012-11"
   input list<Integer> lst;
   input tuple<Integer,Integer,list<Integer>> inValue;
   output tuple<Integer,Integer,list<Integer>> outValue;
+protected
+  Integer length,numIn,numOut,indx;
+  list<Integer> lstIn,lstOut;
 algorithm
-  ((indx,numOut,lstOut)):= matchcontinue(lst,inValue)
-  local
-    Integer length,numIn,numOut,indx;
-    list<Integer> lstIn,lstOut;
-  case(_,(indx,numIn,lstIn))
-    equation      
-      length = listLength(lst);
-      numOut = numIn+length;
-      lstOut = List.set(lstIn,indx,numIn+1);
-      then
-        ((indx+1,numOut,lstOut));
-  end matchcontinue;          
+  (indx,numIn,lstIn) := inValue;
+  length := listLength(lst);
+  numOut := numIn+length;
+  lstOut := List.set(lstIn,indx,numIn+1);
+  outValue := (indx+1,numOut,lstOut);
 end countEntries;
 
 protected function TearingSystemCellier " selects Tearing Set and assigns Vars
