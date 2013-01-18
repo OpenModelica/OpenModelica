@@ -1795,7 +1795,8 @@ algorithm
       DAE.ComponentRef cr;
       Boolean iterIsArray;
       DAE.Ident ident;
-      list<Integer> helpVarIndices;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       Integer index;
       Boolean b,b1,b2,b3;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
@@ -1898,7 +1899,7 @@ algorithm
       then
         ( es_1,b);
     
-    case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::es),repl,_,_,_)
+    case ((DAE.STMT_WHEN(exp=e1,conditions=conditions,initialCall=initialCall,statementLst=statementLst,elseWhen=NONE(),source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (e1_1,b2) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -1906,11 +1907,11 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,statementLst_1,NONE(),helpVarIndices,source)::inAcc,true);
+        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,NONE(),source)::inAcc,true);
       then
         ( es_1,b);
     
-    case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=SOME(statement),helpVarIndices=helpVarIndices,source=source)::es),repl,_,_,_)
+    case ((DAE.STMT_WHEN(exp=e1,conditions=conditions,initialCall=initialCall,statementLst=statementLst,elseWhen=SOME(statement),source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (statement_1::{},b2) = replaceStatementLst({statement}, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1919,7 +1920,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b3,e1_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,statementLst_1,SOME(statement_1),helpVarIndices,source)::inAcc,true);
+        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,SOME(statement_1),source)::inAcc,true);
       then
         ( es_1,b);
     

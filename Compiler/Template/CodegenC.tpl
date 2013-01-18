@@ -1154,6 +1154,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     <%info%>
     data->simulationInfo.discreteCall = 1;
     <%body%>
+    data->simulationInfo.discreteCall = 0;
     restore_memory_state(mem_state);
   
     return 0;
@@ -1250,7 +1251,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
       let ifthen = functionWhenReinitStatementThen(false, reinits, &varDecls /*BUFP*/)
       let initial_assign = match initialCall
         case true then functionWhenReinitStatementThen(true, reinits, &varDecls /*BUFP*/)
@@ -1259,11 +1260,11 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
       if reinits then  
         <<
         //For whenclause index: <%int%>
-        if(initial() && !useSymbolicInitialization)
+        if(initial())
         {
           <%initial_assign%>
         }
-        else if(0<%helpIf%>)
+        else if(!initial() && (0<%helpIf%>))
         { 
           <%ifthen%>
         }
@@ -2486,17 +2487,17 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
   match eq
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
       let initial_assign = match initialCall
         case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
         else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       <<
-      if(initial() && !useSymbolicInitialization)
+      if(initial())
       {
         <%initial_assign%>
       }
-      else if(0<%helpIf%>)
+      else if(!initial() && (0<%helpIf%>))
       {
         <%assign%>
       }
@@ -2506,18 +2507,18 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
       }
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-      let helpIf = (conditions |> e => ' || <%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */')
+      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
       let initial_assign = match initialCall
         case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
         else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
       <<
-      if(initial() && !useSymbolicInitialization)
+      if(initial())
       {
         <%initial_assign%>
       }
-      else if(0<%helpIf%>)
+      else if(!initial() && (0<%helpIf%>))
       {
         <%assign%>
       }
@@ -2534,20 +2535,20 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
+  let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
-  else if(<%helpIf%>)
+  else if(!initial() && (0<%helpIf%>))
   {
     <%assign%>
   }
   >>
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */';separator=" || ")
+  let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
-  else if(<%helpIf%>)
+  else if(!initial() && (0<%helpIf%>))
   {
     <%assign%>
   }
@@ -6008,68 +6009,35 @@ end algStmtNoretcall;
 template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/)
  "Generates a when algorithm statement."
 ::=
-match context
-case SIMULATION(__) then
-  match when
-  case STMT_WHEN(__) then
-    let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/)
-    let statements = (statementLst |> stmt =>
-        algStatement(stmt, context, &varDecls /*BUFD*/)
-      ;separator="\n")
-    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
-    <<
-    if(data->simulationInfo.discreteCall == 1)
-    {
-      <%preIf%>
-      if(<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>)
-      {
-        <%statements%>
-      }
-      <%else%>
-    }  
-    >>
+  match context
+    case SIMULATION(__) then
+      match when
+        case STMT_WHEN(__) then
+          let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
+          let statements = (statementLst |> stmt =>
+              algStatement(stmt, context, &varDecls /*BUFD*/)
+            ;separator="\n")
+          let initial_statements = match initialCall
+            case true then '<%statements%>'
+            else '; /* nothing to do */'
+          let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
+          <<
+          if(data->simulationInfo.discreteCall == 1)
+          {
+            if(initial())
+            {
+              <%initial_statements%>
+            }
+            else if(!initial() && (0<%helpIf%>))
+            {
+              <%statements%>
+            }
+            <%else%>
+          }  
+          >>
+      end match
   end match
-end match
 end algStmtWhen;
-
-
-template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
- "Helper to algStmtWhen."
-::=
-  match stmt
-  case STMT_WHEN(exp=ARRAY(array=el)) then
-    let restPre = match elseWhen case SOME(ew) then
-        algStatementWhenPre(ew, &varDecls /*BUFD*/)
-      else
-        ""
-    let &preExp = buffer "" /*BUFD*/
-
-
-    let assignments = algStatementWhenPreAssigns(el, helpVarIndices,
-                                               &preExp /*BUFC*/,
-                                               &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    <%assignments%>
-    <%restPre%>
-    >>
-  case when as STMT_WHEN(__) then
-    match helpVarIndices
-    case {i} then
-      let restPre = match when.elseWhen case SOME(ew) then
-          algStatementWhenPre(ew, &varDecls /*BUFD*/)
-        else
-          ""
-      let &preExp = buffer "" /*BUFD*/
-
-      let res = daeExp(when.exp, contextSimulationDiscrete,
-                     &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%preExp%>
-      data->simulationInfo.helpVars[<%i%>] = <%res%>;
-      <%restPre%>
-      >>
-end algStatementWhenPre;
 
 
 template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/)
@@ -6081,11 +6049,9 @@ case SOME(when as STMT_WHEN(__)) then
       algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
-  let elseCondStr = (when.helpVarIndices |> hidx =>
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
+  let elseCondStr = (when.conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
   <<
-  else if(<%elseCondStr%>)
+  else if(!initial() && (0<%elseCondStr%>))
   {
     <%statements%>
   }
@@ -6093,28 +6059,6 @@ case SOME(when as STMT_WHEN(__)) then
   >>
 end algStatementWhenElse;
 
-
-template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
-                           Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
- "Helper to algStatementWhenPre.
-  The lists exps and ints should be of the same length. Iterating over two
-  lists like this is not so well supported in Susan, so it looks a bit ugly."
-::=
-  match exps
-  case {} then ""
-  case (firstExp :: restExps) then
-    match ints
-    case (firstInt :: restInts) then
-      let rest = algStatementWhenPreAssigns(restExps, restInts,
-
-                                          &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
-                              &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      data->simulationInfo.helpVars[<%firstInt%>] = <%firstExpPart%>;
-      <%rest%>
-      >>
-end algStatementWhenPreAssigns;
 
 template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an assigment algorithm statement."

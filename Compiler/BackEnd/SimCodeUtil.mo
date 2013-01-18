@@ -2375,7 +2375,7 @@ algorithm
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
-        (conditions, initialCall) = getConditionList(cond);
+        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       then
         ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, NONE(), source)}, iuniqueEqIndex+1, itempvars);
         
@@ -2385,7 +2385,7 @@ algorithm
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen, wcl, source);
-        (conditions, initialCall) = getConditionList(cond);
+        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       then
         ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);
         
@@ -2683,12 +2683,12 @@ algorithm
       Boolean initialCall;
       
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()), _, _) equation
-      (conditions, initialCall) = getConditionList(cond);
+      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       conditionVars = Expression.extractCrefsFromExp(cond);        
     then SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, {}, SOME(inWhenEquation))::inSimWhenClause;
     
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)), _, _) equation
-      (conditions, initialCall) = getConditionList(cond);
+      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       conditionVars = Expression.extractCrefsFromExp(cond);        
     then findWhenEquation1(we, inHelpVarInfo, SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, {}, SOME(inWhenEquation))::inSimWhenClause);        
   end match;
@@ -2708,7 +2708,7 @@ protected
 algorithm
   BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits) := whenClause;
 
-  (conditions, initialCall) := getConditionList(cond);
+  (conditions, initialCall) := BackendDAEOptimize.getConditionList(cond);
   conditionVars := Expression.extractCrefsFromExp(cond);
 
   osimWhenClauses := SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, reinits, NONE())::isimWhenClauses;
@@ -6269,7 +6269,7 @@ algorithm
       equation
         crefs = List.map(inVars, BackendVariable.varCref);
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
-        (conditions, initialCall) = getConditionList(cond);
+        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, NONE(), source)}, iuniqueEqIndex+1, itempvars);
       
     // when eq with else
@@ -6278,7 +6278,7 @@ algorithm
         crefs = List.map(inVars, BackendVariable.varCref);
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
         elseWhenEquation = createElseWhenEquation(elseWhen, wcl, source);
-        (conditions, initialCall) = getConditionList(cond);
+        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
       then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);       
     
     // failure
@@ -6306,13 +6306,13 @@ algorithm
     
     // when eq without else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _) equation
-      (conditions, initialCall) = getConditionList(cond);
+      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
     then SimCode.SES_WHEN(0, conditions, initialCall, left, right, NONE(), inElementSource);
         
     // when eq with else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart = SOME(elseWhenEquation)), _, _) equation
       simElseWhenEq = createElseWhenEquation(elseWhenEquation, inWhenClause, inElementSource);
-      (conditions, initialCall) = getConditionList(cond);
+      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
     then SimCode.SES_WHEN(0, conditions, initialCall, left, right, SOME(simElseWhenEq), inElementSource);
   end match;
 end createElseWhenEquation;
@@ -9139,38 +9139,6 @@ algorithm
       list<DAE.Exp> args_;
       DAE.CallAttributes attr;
       DAE.Type type_;
-      
-    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty, scalar, el), statementLst, NONE(), _, source)) equation
-      (helpvars1, el1, nextInd1) = generateHelpVarsInArrayCondition(nextInd, el);
-      helpVarIndices1 = List.intRange(nextInd1-nextInd);
-      helpVarIndices = List.map1(helpVarIndices1, intAdd, nextInd-1);
-    then (helpvars1, DAE.STMT_WHEN(DAE.ARRAY(ty, scalar, el1), statementLst, NONE(), helpVarIndices, source), nextInd1);
-      
-    case (nextInd, DAE.STMT_WHEN(DAE.CALL(path=name as Absyn.IDENT("sample"), expLst=args_, attr=attr), statementLst, NONE(), _, source)) equation
-      args_ = listAppend(args_, {DAE.ICONST(nextInd)});
-      condition = DAE.CALL(name, args_, attr);
-    then ({(nextInd, condition, -1)}, DAE.STMT_WHEN(condition, statementLst, NONE(), {nextInd}, source), nextInd+1);
-    
-    case (nextInd, DAE.STMT_WHEN(condition, statementLst, NONE(), _, source))
-    then ({(nextInd, condition, -1)}, DAE.STMT_WHEN(condition, statementLst, NONE(), {nextInd}, source), nextInd+1);
-    
-    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty, scalar, el), statementLst, SOME(elseWhen), _, source)) equation
-      (helpvars1, el1, nextInd1) = generateHelpVarsInArrayCondition(nextInd, el);
-      helpVarIndices1 = List.intRange(nextInd1-nextInd);
-      helpVarIndices = List.map1(helpVarIndices1, intAdd, nextInd-1);
-      (helpvars2, statement, nextInd2) = generateHelpVarsInStatement(nextInd1, elseWhen);
-      helpvars = listAppend(helpvars1, helpvars2);
-    then (helpvars, DAE.STMT_WHEN(DAE.ARRAY(ty, scalar, el1), statementLst, SOME(statement), helpVarIndices, source), nextInd1);
-      
-    case (nextInd, DAE.STMT_WHEN(condition as DAE.CALL(path = name as Absyn.IDENT("sample"), expLst=args_, attr=attr), statementLst, SOME(elseWhen), _, source)) equation
-      args_ = listAppend(args_, {DAE.ICONST(nextInd)});
-      condition = DAE.CALL(name, args_, attr);
-      (helpvars1, statement, nextInd1) = generateHelpVarsInStatement(nextInd+1, elseWhen);
-    then ((nextInd, condition, -1)::helpvars1, DAE.STMT_WHEN(condition, statementLst, SOME(statement), {nextInd}, source), nextInd1);
-      
-    case (nextInd, DAE.STMT_WHEN(condition, statementLst, SOME(elseWhen), _, source)) equation
-      (helpvars1, statement, nextInd1) = generateHelpVarsInStatement(nextInd+1, elseWhen);
-    then ((nextInd, condition, -1)::helpvars1, DAE.STMT_WHEN(condition, statementLst, SOME(statement), {nextInd}, source), nextInd1);
 
     case (nextInd, DAE.STMT_ASSIGN(type_=type_, exp1=exp1, exp=exp, source=source)) equation
       ((exp, (nextInd1, helpvars))) = Expression.traverseExp(exp, findSampleInExps, (nextInd, {}));
@@ -9373,61 +9341,6 @@ algorithm
      case ((e, (helpVarInfoList, helpVarIndex))) then ((e, (helpVarInfoList, helpVarIndex)));
     end matchcontinue;
 end addHindexSample;
-
-protected function getConditionList "function getConditionList
-  author: lochel
-  This function extracts all when-conditions. A when-condition can only be a 
-  ComponentRef or initial()-call. If one condion is equal to >initial()<, the
-  second output is true."
-  input DAE.Exp inCondition;
-  output list<DAE.ComponentRef> outConditionVarList;
-  output Boolean outInitialCall;
-algorithm
-  (outConditionVarList, outInitialCall) := match (inCondition)
-    local
-      list<DAE.Exp> conditionList;
-      list<DAE.ComponentRef> conditionVarList;
-      Boolean initialCall;
-    
-    case DAE.ARRAY(array=conditionList) equation 
-      (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
-    then (conditionVarList, initialCall);
-    
-    else equation 
-      (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
-    then (conditionVarList, initialCall);
-  end match;
-end getConditionList;
-
-protected function getConditionList1 "function getConditionList1
-  author: lochel"
-  input list<DAE.Exp> inConditionList;
-  input list<DAE.ComponentRef> inConditionVarList;
-  input Boolean inInitialCall;
-  output list<DAE.ComponentRef> outConditionVarList;
-  output Boolean outInitialCall;
-algorithm
-  (outConditionVarList, outInitialCall) := matchcontinue (inConditionList, inConditionVarList, inInitialCall)
-    local
-      list<DAE.Exp> conditionList;
-      list<DAE.ComponentRef> conditionVarList;
-      Boolean initialCall;
-      DAE.ComponentRef componentRef;
-      
-    case ({}, conditionVarList, initialCall)
-    then (conditionVarList, initialCall);
-    
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, conditionVarList, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, conditionVarList, true);
-    then (conditionVarList, initialCall);
-    
-    case (DAE.CREF(componentRef=componentRef)::conditionList, conditionVarList, initialCall) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::conditionVarList, initialCall);
-    then (conditionVarList, initialCall);
-    
-    else then fail();
-  end matchcontinue;
-end getConditionList1;
 
 protected function addMissingEquations "function: addMissingEquations
   Helper function to build_when_condition_checks

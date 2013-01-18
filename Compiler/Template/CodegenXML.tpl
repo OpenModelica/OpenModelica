@@ -1920,7 +1920,7 @@ match context
 case SIMULATION(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
-    let preIf = algStatementWhenPreXml(when, &varDecls /*BUFD*/)
+    let helpIf = (conditions |> e => '<%crefStrXml(e)%>';separator=" || ")
     let statements = (statementLst |> stmt =>
         algStatementXml(stmt, context, &varDecls /*BUFD*/)
       ;separator="\n")
@@ -1928,7 +1928,7 @@ case SIMULATION(genDiscrete=true) then
       <<
       <fun:When>
         <fun:Condition>
-          <%preIf%>
+          <%helpIf%>
         </fun:Condition>
         <fun:Statements>
           <%statements%> 
@@ -1937,44 +1937,6 @@ case SIMULATION(genDiscrete=true) then
       >>
   end match
 end algStmtWhenXml;
-
-
-template algStatementWhenPreXml(DAE.Statement stmt, Text &varDecls /*BUFP*/)
- "Helper to algStmtWhen."
-::=
-  match stmt
-  case STMT_WHEN(exp=ARRAY(array=el)) then
-    let restPre = match elseWhen case SOME(ew) then
-        algStatementWhenPreXml(ew, &varDecls /*BUFD*/)
-      else
-        ""
-    let &preExp = buffer "" /*BUFD*/
-
-
-    let assignments = algStatementWhenPreAssignsXml(el, helpVarIndices,
-                                               &preExp /*BUFC*/,
-                                               &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    <%assignments%>
-    <%restPre%>
-    >>
-  case when as STMT_WHEN(__) then
-    match helpVarIndices
-    case {i} then
-      let restPre = match when.elseWhen case SOME(ew) then
-          algStatementWhenPreXml(ew, &varDecls /*BUFD*/)
-        else
-          ""
-      let &preExp = buffer "" /*BUFD*/
-
-      let res = daeExpXml(when.exp, contextSimulationDiscrete,
-                     &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%preExp%>
-      <%restPre%>
-      >>
-end algStatementWhenPreXml;
 
 
 template algStatementWhenElseXml(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/)
@@ -1986,8 +1948,7 @@ case SOME(when as STMT_WHEN(__)) then
       algStatementXml(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let else = algStatementWhenElseXml(when.elseWhen, &varDecls /*BUFD*/)
-  let elseCondStr = (when.helpVarIndices |> hidx =>
-      '';separator=" || ")
+  let elseCondStr = (when.conditions |> e => '<%crefStrXml(e)%>';separator=" || ")
     <<
     <fun:Condition>
       <%elseCondStr%>
@@ -2000,29 +1961,6 @@ case SOME(when as STMT_WHEN(__)) then
     >>
 end algStatementWhenElseXml;
 
-
-template algStatementWhenPreAssignsXml(list<Exp> exps, list<Integer> ints,
-                           Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
- "Helper to algStatementWhenPre.
-  The lists exps and ints should be of the same length. Iterating over two
-  lists like this is not so well supported in Susan, so it looks a bit ugly."
-::=
-  match exps
-  case {} then ""
-  case (firstExp :: restExps) then
-    match ints
-    case (firstInt :: restInts) then
-      let rest = algStatementWhenPreAssignsXml(restExps, restInts,
-
-                                          &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let firstExpPart = daeExpXml(firstExp, contextSimulationDiscrete,
-                              &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%firstInt%>
-      <%firstExpPart%>
-      <%rest%>
-      >>
-end algStatementWhenPreAssignsXml;
 
 template algStmtReinitXml(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an assigment algorithm statement."

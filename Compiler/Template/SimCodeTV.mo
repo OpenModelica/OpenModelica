@@ -1333,9 +1333,10 @@ package DAE
     end STMT_WHILE;
     record STMT_WHEN
       Exp exp;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       list<Statement> statementLst;
       Option<Statement> elseWhen;
-      list<Integer> helpVarIndices;
       ElementSource source;
     end STMT_WHEN;
     record STMT_TERMINATE

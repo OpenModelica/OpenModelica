@@ -4276,7 +4276,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
 ::=
   match eq
     case SES_WHEN(__) then
-      let helpIf = (conditions |> e => ' || <%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>")')
+      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>"))')
       let &preExp = buffer ""
       let rightExp = daeExp(right, context, &preExp,&varDecls,simCode)
       <<
@@ -5850,10 +5850,9 @@ template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*
 ::=
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let elseCondStr = (when.helpVarIndices |> idx => edgeHelpVar(idx)
-                      ;separator=" || ")
+  let elseCondStr = (when.conditions |> e => ' || (<cref(cref1(e, simCode, context))> && !$P$PRE<cref1(e, simCode, context)> /* edge */)')
   <<
-  else if (<%elseCondStr%>) {
+  else if (0<%elseCondStr%>) {
     <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete,&varDecls,simCode)
        ;separator="\n"%>
   }
@@ -5861,9 +5860,6 @@ case SOME(when as STMT_WHEN(__)) then
   >>
 end algStatementWhenElse;
 
-template edgeHelpVar(String idx) ::=
-   '_event_handling.edge(_event_handling[<%idx%>],"h<%idx%>")'
-end edgeHelpVar;
 
 
 
@@ -6661,7 +6657,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => ' || <%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>, "<%cref(e)%>")')
+      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>, "<%cref(e)%>"))')
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode)
       let initial_assign = match initialCall
         case true then functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode)
@@ -7220,84 +7216,21 @@ match context
 case SIMULATION(__) then
   match when
   case STMT_WHEN(__) then
-    let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/,simCode)
+    let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>"))')
     let statements = (statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/,simCode)
       ;separator="\n")
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/,simCode)
     <<
-      <%preIf%>
-      if (<%helpVarIndices |> idx => '_event_handling[<%idx%>] && !_event_handling.pre(_event_handling[<%idx%>],"h<%idx%>") ' ;separator=" || "%>) {
-        <%statements%>
-      }
-      <%else%>
+    if (0<%helpIf%>) {
+      <%statements%>
+    }
+    <%else%>
     >>
    end match
 end match
 end algStmtWhen;
 
-
-template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/,SimCode simCode)
- "Helper to algStmtWhen."
-::=
-  match stmt
-  case STMT_WHEN(exp=ARRAY(array=el)) then
-    let restPre = match elseWhen case SOME(ew) then
-        algStatementWhenPre(ew, &varDecls /*BUFD*/,simCode)
-      else
-        ""
-    let &preExp = buffer "" /*BUFD*/
-
-
-    let assignments = algStatementWhenPreAssigns(el, helpVarIndices,
-                                               &preExp /*BUFC*/,
-                                               &varDecls /*BUFD*/,simCode)
-    <<
-    <%preExp%>
-    <%assignments%>
-    <%restPre%>
-    >>
-  case when as STMT_WHEN(__) then
-    match helpVarIndices
-    case {i} then
-      let restPre = match when.elseWhen case SOME(ew) then
-          algStatementWhenPre(ew, &varDecls /*BUFD*/,simCode)
-        else
-          ""
-      let &preExp = buffer "" /*BUFD*/
-
-      let res = daeExp(when.exp, contextSimulationDiscrete,
-                     &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      <<
-      <%preExp%>
-      _event_handling.setHelpVar(<%i%>,<%res%>);
-      <%restPre%>
-      >>
-end algStatementWhenPre;
-
-
-
-template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &preExp /*BUFP*/, Text &varDecls ,SimCode simCode)
- "Helper to algStatementWhenPre.
-  The lists exps and ints should be of the same length. Iterating over two
-  lists like this is not so well supported in Susan, so it looks a bit ugly."
-::=
-  match exps
-  case {} then ""
-  case (firstExp :: restExps) then
-    match ints
-    case (firstInt :: restInts) then
-      let rest = algStatementWhenPreAssigns(restExps, restInts,
-
-                                          &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
-                              &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      <<
-      _event_handling.setHelpVar(<%firstInt%>,<%firstExpPart%>);
-     
-      <%rest%>
-      >>
-end algStatementWhenPreAssigns;
 
 template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls,SimCode simCode)
  "Generates an assert algorithm statement."

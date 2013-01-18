@@ -105,27 +105,27 @@ public function splitReinits ""
   input list<Algorithm> inAlgs;
   output list<Algorithm> reinits;
   output list<Statement> rest;
-algorithm (reinits,rest) := matchcontinue(inAlgs)
+algorithm (reinits, rest) := matchcontinue(inAlgs)
   local
     Statement a;
     list<Statement> al;
-  case({}) then ({},{});
+  case({}) then ({}, {});
   case(DAE.ALGORITHM_STMTS(al as {a as DAE.STMT_REINIT(var = _)})::inAlgs)
     equation
-      (reinits,rest) = splitReinits(inAlgs);
+      (reinits, rest) = splitReinits(inAlgs);
     then
-      (DAE.ALGORITHM_STMTS({a})::reinits,rest);
+      (DAE.ALGORITHM_STMTS({a})::reinits, rest);
   case(DAE.ALGORITHM_STMTS(al as {a})::inAlgs)
     equation
-      (reinits,rest) = splitReinits(inAlgs);
+      (reinits, rest) = splitReinits(inAlgs);
     then
-      (reinits,a::rest);
+      (reinits, a::rest);
   case( DAE.ALGORITHM_STMTS((a::al)):: inAlgs )
     equation
-      inAlgs = listAppend({DAE.ALGORITHM_STMTS({a}),DAE.ALGORITHM_STMTS(al)},inAlgs);
-      (reinits,rest) = splitReinits(inAlgs);
+      inAlgs = listAppend({DAE.ALGORITHM_STMTS({a}), DAE.ALGORITHM_STMTS(al)}, inAlgs);
+      (reinits, rest) = splitReinits(inAlgs);
     then
-      (reinits,rest);
+      (reinits, rest);
 end matchcontinue;
 end splitReinits;
 
@@ -146,56 +146,56 @@ public function makeAssignment
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAttributes,initial_,source)
+  outStatement := matchcontinue (inExp1, inProperties2, inExp3, inProperties4, inAttributes, initial_, source)
     local
-      Ident lhs_str,rhs_str,lt_str,rt_str;
-      DAE.Exp lhs,rhs;
-      DAE.Properties lprop,rprop,lhprop,rhprop;
+      Ident lhs_str, rhs_str, lt_str, rt_str;
+      DAE.Exp lhs, rhs;
+      DAE.Properties lprop, rprop, lhprop, rhprop;
       DAE.ComponentRef cr;
-      DAE.Type lt,rt;
+      DAE.Type lt, rt;
       Absyn.Direction direction;
 
     // assign to parameter in algorithm okay if record
-    case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),_)
+    case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL(), _)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
         true = ComponentReference.isRecord(cr);
-        outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
+        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     // assign to parameter in algorithm produce error
-    case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),_)
+    case (lhs, lprop, rhs, rprop, _, SCode.NON_INITIAL(), _)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     
     // assignment to a constant, report error
-    case (lhs,_,rhs,_,DAE.ATTR(variability = SCode.CONST()),_,_)
+    case (lhs, _, rhs, _, DAE.ATTR(variability = SCode.CONST()), _, _)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
-        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
     // assignment to parameter ok in initial algorithm
-    case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),_)
+    case (lhs, lhprop, rhs, rhprop, _, SCode.INITIAL(), _)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
-        outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
+        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
-    case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,_)
+    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(direction=direction), _, _)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
-        outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
+        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     /* report an error */
-    case (lhs,lprop,rhs,rprop,_,_,_)
+    case (lhs, lprop, rhs, rprop, _, _, _)
       equation
         lt = Types.getPropType(lprop);
         rt = Types.getPropType(rprop);
@@ -204,13 +204,13 @@ algorithm
         rhs_str = ExpressionDump.printExpStr(rhs);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
-        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
-          {lhs_str,rhs_str,lt_str,rt_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, 
+          {lhs_str, rhs_str, lt_str, rt_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
      /* failing */
-    case (lhs,lprop,rhs,rprop,_,_,_)
+    case (lhs, lprop, rhs, rprop, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
@@ -232,45 +232,45 @@ protected function makeAssignment2
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue(lhs,lhprop,rhs,rhprop,source)
+  outStatement := matchcontinue(lhs, lhprop, rhs, rhprop, source)
     local
       DAE.ComponentRef c;
-      DAE.Exp rhs_1,e3,e1;
-      DAE.Type t,ty;
+      DAE.Exp rhs_1, e3, e1;
+      DAE.Type t, ty;
       list<DAE.Exp> ea2;
     
-    case (DAE.CREF(componentRef = c,ty = _),_,_,_,_)
+    case (DAE.CREF(componentRef = c, ty = _), _, _, _, _)
       equation
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
+        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        DAE.STMT_ASSIGN(t,lhs,rhs_1,source);
+        DAE.STMT_ASSIGN(t, lhs, rhs_1, source);
         /* TODO: Use this when we have fixed states in BackendDAE .lower(...)
-        case (e1 as DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
+        case (e1 as DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(_, _)}, _, _, _), lhprop, rhs, rhprop)
       equation
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
+        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        DAE.STMT_ASSIGN(t,e1,rhs_1);
+        DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
-    case (DAE.CREF(componentRef = c,ty = _),_,_,_,_)
+    case (DAE.CREF(componentRef = c, ty = _), _, _, _, _)
       equation
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
+        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
         ty = Types.getPropType(lhprop);
         t = Types.simplifyType(ty);
       then
-        DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
+        DAE.STMT_ASSIGN_ARR(t, c, rhs_1, source);
 
-    case(e3 as DAE.ASUB(e1,ea2),_,_,_,_)
+    case(e3 as DAE.ASUB(e1, ea2), _, _, _, _)
       equation
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
+        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        DAE.STMT_ASSIGN(t,e3,rhs_1,source);
+        DAE.STMT_ASSIGN(t, e3, rhs_1, source);
   end matchcontinue;
 end makeAssignment2;
 
@@ -315,42 +315,42 @@ public function makeTupleAssignment "function: makeTupleAssignment
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inExpExpLst,inTypesPropertiesLst,inExp,inProperties,initial_,source)
+  outStatement := matchcontinue (inExpExpLst, inTypesPropertiesLst, inExp, inProperties, initial_, source)
     local
       list<DAE.Const> bvals;
       list<Ident> sl;
-      Ident s,lhs_str,rhs_str,str1,str2,strInitial;
-      list<DAE.Exp> lhs,expl;
-      list<DAE.Properties> lprop,lhprops;
+      Ident s, lhs_str, rhs_str, str1, str2, strInitial;
+      list<DAE.Exp> lhs, expl;
+      list<DAE.Properties> lprop, lhprops;
       DAE.Exp rhs;
       DAE.Properties rprop;
-      list<DAE.Type> lhrtypes,tpl;
+      list<DAE.Type> lhrtypes, tpl;
       list<DAE.TupleConst> clist;
       
-    case (lhs,lprop,rhs,rprop,_,_)
+    case (lhs, lprop, rhs, rprop, _, _)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_CONST() = List.reduce(bvals, Types.constOr);
         sl = List.map(lhs, ExpressionDump.printExpStr);
         s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(", s, ")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    case (lhs,lprop,rhs,rprop,SCode.NON_INITIAL(),_)
+    case (lhs, lprop, rhs, rprop, SCode.NON_INITIAL(), _)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
         sl = List.map(lhs, ExpressionDump.printExpStr);
         s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(", s, ")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl,lhprops,rhs,DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)),_,_)
+    case (expl, lhprops, rhs, DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -359,9 +359,9 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of 
             several output args are not clearly defined. */ 
       then
-        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
+        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
     // a tuple in rhs        
-    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,_)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -369,13 +369,13 @@ algorithm
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
-        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
-    case (lhs,lprop,rhs,rprop,_,_)
+        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
+    case (lhs, lprop, rhs, rprop, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         sl = List.map(lhs, ExpressionDump.printExpStr);
         s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(", s, ")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         str1 = stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
@@ -414,32 +414,32 @@ public function makeIf "function: makeIf
   output list<Statement> outStatements;
 algorithm
   outStatements :=
-  matchcontinue (inExp1,inProperties2,inStatementLst3,inTplExpExpTypesPropertiesStatementLstLst4,inStatementLst5,source)
+  matchcontinue (inExp1, inProperties2, inStatementLst3, inTplExpExpTypesPropertiesStatementLstLst4, inStatementLst5, source)
     local
       Else else_;
       DAE.Exp e;
-      list<Statement> tb,fb;
+      list<Statement> tb, fb;
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> eib;
-      Ident e_str,t_str;
+      Ident e_str, t_str;
       DAE.Type t;
       DAE.Properties prop;
-    case (DAE.BCONST(true),_,tb,eib,fb,_)
+    case (DAE.BCONST(true), _, tb, eib, fb, _)
       then tb;
-    case (DAE.BCONST(false),_,_,{},fb,_)
+    case (DAE.BCONST(false), _, _, {}, fb, _)
       then fb;
-    case (DAE.BCONST(false),_,_,(e,prop,tb)::eib,fb,_)
-      then makeIf(e,prop,tb,eib,fb,source);
-    case (e,DAE.PROP(type_ = t),tb,eib,fb,_)
+    case (DAE.BCONST(false), _, _, (e, prop, tb)::eib, fb, _)
+      then makeIf(e, prop, tb, eib, fb, source);
+    case (e, DAE.PROP(type_ = t), tb, eib, fb, _)
       equation
-        (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
+        (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
         else_ = makeElse(eib, fb);
       then
-        {DAE.STMT_IF(e,tb,else_,source)};
-    case (e,DAE.PROP(type_ = t),_,_,_,_)
+        {DAE.STMT_IF(e, tb, else_, source)};
+    case (e, DAE.PROP(type_ = t), _, _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -447,21 +447,21 @@ end makeIf;
 
 public function makeIfFromBranches "
   Create an if-statement from branches, optimizing as needed."
-  input list<tuple<DAE.Exp,list<Statement>>> branches;
+  input list<tuple<DAE.Exp, list<Statement>>> branches;
   input DAE.ElementSource source;
   output list<Statement> outStatements;
 algorithm
-  outStatements := match (branches,source)
+  outStatements := match (branches, source)
     local
       Else else_;
       DAE.Exp e;
       list<Statement> br;
-      list<tuple<DAE.Exp,list<Statement>>> rest;
-    case ({},_) then {};
-    case ((e,br)::rest,_)
+      list<tuple<DAE.Exp, list<Statement>>> rest;
+    case ({}, _) then {};
+    case ((e, br)::rest, _)
       equation
         else_ = makeElseFromBranches(rest);
-      then {DAE.STMT_IF(e,br,else_,source)};
+      then {DAE.STMT_IF(e, br, else_, source)};
   end match;
 end makeIfFromBranches;
 
@@ -476,11 +476,11 @@ algorithm
       DAE.Exp e;
       list<tuple<DAE.Exp, list<Statement>>> xs;
     case {} then DAE.NOELSE();
-    case {(DAE.BCONST(true),b)} then DAE.ELSE(b);
-    case ((e,b)::xs)
+    case {(DAE.BCONST(true), b)} then DAE.ELSE(b);
+    case ((e, b)::xs)
       equation
         else_ = makeElseFromBranches(xs);
-      then DAE.ELSEIF(e,b,else_);
+      then DAE.ELSEIF(e, b, else_);
   end match;
 end makeElseFromBranches;
 
@@ -492,18 +492,18 @@ public function optimizeIf
   input DAE.ElementSource isource;
   output list<Statement> ostmts "can be empty or selected branch";
 algorithm
-  ostmts := match (icond,istmts,iels,isource)
+  ostmts := match (icond, istmts, iels, isource)
     local 
       list<Statement> stmts; 
       DAE.Else els; 
       DAE.ElementSource source;
       DAE.Exp cond;
       
-    case (DAE.BCONST(true),stmts,_,source) then stmts;
-    case (DAE.BCONST(false),stmts,DAE.NOELSE(),source) then {};
-    case (DAE.BCONST(false),_,DAE.ELSE(stmts),source) then stmts;
-    case (DAE.BCONST(false),_,DAE.ELSEIF(cond,stmts,els),source) then optimizeIf(cond,stmts,els,source);
-    else DAE.STMT_IF(icond,istmts,iels,isource)::{};
+    case (DAE.BCONST(true), stmts, _, source) then stmts;
+    case (DAE.BCONST(false), stmts, DAE.NOELSE(), source) then {};
+    case (DAE.BCONST(false), _, DAE.ELSE(stmts), source) then stmts;
+    case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) then optimizeIf(cond, stmts, els, source);
+    else DAE.STMT_IF(icond, istmts, iels, isource)::{};
   end match;
 end optimizeIf;
 
@@ -514,10 +514,10 @@ public function optimizeElseIf
   input DAE.Else els;
   output DAE.Else oelse;
 algorithm
-  oelse := match (cond,stmts,els)
-    case (DAE.BCONST(true),_,_) then DAE.ELSE(stmts);
-    case (DAE.BCONST(false),_,_) then els;
-    else DAE.ELSEIF(cond,stmts,els);
+  oelse := match (cond, stmts, els)
+    case (DAE.BCONST(true), _, _) then DAE.ELSE(stmts);
+    case (DAE.BCONST(false), _, _) then els;
+    else DAE.ELSEIF(cond, stmts, els);
   end match;
 end optimizeElseIf;
 
@@ -528,29 +528,29 @@ protected function makeElse "function: makeElse
   output Else outElse;
 algorithm
   outElse:=
-  matchcontinue (inTplExpExpTypesPropertiesStatementLstLst,inStatementLst)
+  matchcontinue (inTplExpExpTypesPropertiesStatementLstLst, inStatementLst)
     local
-      list<Statement> fb,b;
+      list<Statement> fb, b;
       Else else_;
       DAE.Exp e;
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> xs;
-      Ident e_str,t_str;
+      Ident e_str, t_str;
       DAE.Type t;
-    case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */
-    case ({},fb) then DAE.ELSE(fb);
-    case (((DAE.BCONST(true),DAE.PROP(type_ = t),b) :: xs),fb) then DAE.ELSE(b);
-    case (((DAE.BCONST(false),DAE.PROP(type_ = t),b) :: xs),fb) then makeElse(xs,fb);
-    case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
+    case ({}, {}) then DAE.NOELSE();  /* This removes empty else branches */
+    case ({}, fb) then DAE.ELSE(fb);
+    case (((DAE.BCONST(true), DAE.PROP(type_ = t), b) :: xs), fb) then DAE.ELSE(b);
+    case (((DAE.BCONST(false), DAE.PROP(type_ = t), b) :: xs), fb) then makeElse(xs, fb);
+    case (((e, DAE.PROP(type_ = t), b) :: xs), fb)
       equation
-        (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
+        (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
         else_ = makeElse(xs, fb);
       then
-        DAE.ELSEIF(e,b,else_);
-    case (((e,DAE.PROP(type_ = t),_) :: _),_)
+        DAE.ELSEIF(e, b, else_);
+    case (((e, DAE.PROP(type_ = t), _) :: _), _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
+        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str});
       then
         fail();
   end matchcontinue;
@@ -566,28 +566,28 @@ public function makeFor "function: makeFor
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inIdent,inExp,inProperties,inStatementLst,source)
+  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, source)
     local
       Boolean isArray;
       DAE.Type et;
-      Ident i,e_str,t_str;
+      Ident i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
       list<Statement> stmts;
       DAE.Dimensions dims;
     
-    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_)
+    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
-        DAE.STMT_FOR(t,isArray,i,-1,e,stmts,source);
+        DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
     
-    case (_,e,DAE.PROP(type_ = t),_,_)
+    case (_, e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -600,32 +600,32 @@ public function makeParFor "function: makeParFor
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input list<Statement> inStatementLst;
-  input list<tuple<DAE.ComponentRef,Absyn.Info>> inLoopPrlVars;
+  input list<tuple<DAE.ComponentRef, Absyn.Info>> inLoopPrlVars;
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inIdent,inExp,inProperties,inStatementLst,inLoopPrlVars,source)
+  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, inLoopPrlVars, source)
     local
       Boolean isArray;
       DAE.Type et;
-      Ident i,e_str,t_str;
+      Ident i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
       list<Statement> stmts;
       DAE.Dimensions dims;
     
-    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_,_)
+    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
-        DAE.STMT_PARFOR(t,isArray,i,-1,e,stmts,inLoopPrlVars,source);
+        DAE.STMT_PARFOR(t, isArray, i, -1, e, stmts, inLoopPrlVars, source);
     
-    case (_,e,DAE.PROP(type_ = t),_,_,_)
+    case (_, e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -641,25 +641,25 @@ public function makeWhile "function: makeWhile
   output Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp,inProperties,inStatementLst,source)
+  matchcontinue (inExp, inProperties, inStatementLst, source)
     local
       DAE.Exp e;
       list<Statement> stmts;
-      Ident e_str,t_str;
+      Ident e_str, t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,_) then DAE.STMT_WHILE(e,stmts,source);
-    case (e,DAE.PROP(type_ = t),_,_)
+    case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
+    case (e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
 end makeWhile;
 
 public function makeWhenA "function: makeWhenA
-  This function creates a DAE.STMT_WHEN algorithm construct,
+  This function creates a DAE.STMT_WHEN algorithm construct, 
   checking that the types of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
@@ -669,20 +669,20 @@ public function makeWhenA "function: makeWhenA
   output Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp,inProperties,inStatementLst,elseWhenStmt,source)
+  matchcontinue (inExp, inProperties, inStatementLst, elseWhenStmt, source)
     local
       DAE.Exp e;
       list<Statement> stmts;
       Option<Statement> elsew;
-      Ident e_str,t_str;
+      Ident e_str, t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,elsew,_) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
-    case (e,DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))),stmts,elsew,_) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
-    case (e,DAE.PROP(type_ = t),_,_,_)
+    case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -699,17 +699,17 @@ public function makeReinit "function: makeReinit
   output Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp1,inExp2,inProperties3,inProperties4,source)
-    local DAE.Exp var,val,var_1,val_1; DAE.Properties prop1,prop2;
-      DAE.Type tp1,tp2;
-    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_),_)
+  matchcontinue (inExp1, inExp2, inProperties3, inProperties4, source)
+    local DAE.Exp var, val, var_1, val_1; DAE.Properties prop1, prop2;
+      DAE.Type tp1, tp2;
+    case (var as DAE.CREF(_, _), val, DAE.PROP(tp1, _), DAE.PROP(tp2, _), _)
       equation
-        (val_1,_) = Types.matchType(val,tp2,DAE.T_REAL_DEFAULT,true);
-        (var_1,_) = Types.matchType(var,tp1,DAE.T_REAL_DEFAULT,true);
-      then DAE.STMT_REINIT(var_1,val_1,source);
+        (val_1, _) = Types.matchType(val, tp2, DAE.T_REAL_DEFAULT, true);
+        (var_1, _) = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
+      then DAE.STMT_REINIT(var_1, val_1, source);
 
-   case (_,_,prop1,prop2,_)  equation
-      Error.addSourceMessage(Error.INTERNAL_ERROR,{"reinit called with wrong args"},DAEUtil.getElementSourceFileInfo(source));
+   case (_, _, prop1, prop2, _)  equation
+      Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
     then fail();
 
     // TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.
@@ -728,28 +728,28 @@ public function makeAssert "function: makeAssert
   input DAE.ElementSource source;
   output list<Statement> outStatement;
 algorithm
-  outStatement := matchcontinue (cond,msg,level,inProperties3,inProperties4,inProperties5,source)
+  outStatement := matchcontinue (cond, msg, level, inProperties3, inProperties4, inProperties5, source)
     local
       Absyn.Info info;
-      DAE.Type t1,t2,t3;
-      String strTy,strExp;
-    case (DAE.BCONST(true),_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),_)
+      DAE.Type t1, t2, t3;
+      String strTy, strExp;
+    case (DAE.BCONST(true), _, _, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), DAE.PROP(type_ = DAE.T_STRING(varLst = _)), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
       then {};
-    case (_,_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),_)
-      then {DAE.STMT_ASSERT(cond,msg,level,source)};
-    case (_,_,_,DAE.PROP(type_ = t1),DAE.PROP(type_ = t2),DAE.PROP(type_ = t3),_)
+    case (_, _, _, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), DAE.PROP(type_ = DAE.T_STRING(varLst = _)), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
+      then {DAE.STMT_ASSERT(cond, msg, level, source)};
+    case (_, _, _, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3), _)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         strExp = ExpressionDump.printExpStr(cond);
         strTy = Types.unparseType(t1);
-        Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1),Error.EXP_TYPE_MISMATCH,{strExp,"Boolean",strTy},info);
+        Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1), Error.EXP_TYPE_MISMATCH, {strExp, "Boolean", strTy}, info);
         strExp = ExpressionDump.printExpStr(msg);
         strTy = Types.unparseType(t2);
-        Error.assertionOrAddSourceMessage(Types.isString(t2),Error.EXP_TYPE_MISMATCH,{strExp,"String",strTy},info);
+        Error.assertionOrAddSourceMessage(Types.isString(t2), Error.EXP_TYPE_MISMATCH, {strExp, "String", strTy}, info);
         failure(DAE.T_ENUMERATION(path=Absyn.IDENT("AssertionLevel")) = t3);
         strExp = ExpressionDump.printExpStr(level);
         strTy = Types.unparseType(t3);
-        Error.assertionOrAddSourceMessage(Types.isString(t3),Error.EXP_TYPE_MISMATCH,{strExp,"AssertionLevel",strTy},info);
+        Error.assertionOrAddSourceMessage(Types.isString(t3), Error.EXP_TYPE_MISMATCH, {strExp, "AssertionLevel", strTy}, info);
       then fail();
   end matchcontinue;
 end makeAssert;
@@ -762,8 +762,8 @@ public function makeTerminate "
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := match (msg,props,source)
-    case (_,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),_) then DAE.STMT_TERMINATE(msg,source);
+  outStatement := match (msg, props, source)
+    case (_, DAE.PROP(type_ = DAE.T_STRING(varLst = _)), _) then DAE.STMT_TERMINATE(msg, source);
   end match;
 end makeTerminate;
 
@@ -771,7 +771,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
 output list<DAE.ComponentRef> crs;
 algorithm
-  crs := List.unionOnTrueList(List.map(getAllExps(alg),Expression.extractCrefsFromExp),ComponentReference.crefEqual);
+  crs := List.unionOnTrueList(List.map(getAllExps(alg), Expression.extractCrefsFromExp), ComponentReference.crefEqual);
 end getCrefFromAlg;
 
 
@@ -804,18 +804,18 @@ public function getAllExpsStmts "function: getAllExpsStmts
   input list<Statement> stmts;
   output list<DAE.Exp> exps;
 algorithm
-  (_,exps) := DAEUtil.traverseDAEEquationsStmts(stmts,getAllExpsStmtsCollector,{});
+  (_, exps) := DAEUtil.traverseDAEEquationsStmts(stmts, getAllExpsStmtsCollector, {});
 end getAllExpsStmts;
 
 function getAllExpsStmtsCollector
-  input tuple<DAE.Exp,list<DAE.Exp>> itpl;
-  output tuple<DAE.Exp,list<DAE.Exp>> otpl;
+  input tuple<DAE.Exp, list<DAE.Exp>> itpl;
+  output tuple<DAE.Exp, list<DAE.Exp>> otpl;
 algorithm
   otpl := match itpl
     local
       DAE.Exp exp;
       list<DAE.Exp> inExps;
-    case ((exp,inExps)) then Expression.traverseExp(exp,Expression.expressionCollector,inExps);
+    case ((exp, inExps)) then Expression.traverseExp(exp, Expression.expressionCollector, inExps);
   end match;
 end getAllExpsStmtsCollector;
 

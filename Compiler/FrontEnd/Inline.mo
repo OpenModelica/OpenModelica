@@ -1112,8 +1112,9 @@ algorithm
       Boolean b,b1,b2,b3;
       Ident i;
       Integer ix;
-      list<Integer> ilst;
       DAE.ElementSource source;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
         (e1_1,source,b1) = inlineExp(e1,fns,source);
@@ -1155,21 +1156,21 @@ algorithm
         true = b1 or b2;        
       then
         (DAE.STMT_WHILE(e_1,stmts_1,source),true);
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source),fns)
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source),fns)
       equation
         (e_1,source,b1) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         (stmt_1,b3) = inlineStatement(stmt,fns);
         true = b1 or b2 or b3;
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source),true);
-    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source),fns)
+        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source),true);
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source),fns)
       equation
         (e_1,source,b1) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         true = b1 or b2;
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source),true);
+        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source),true);
     case(DAE.STMT_ASSERT(e1,e2,e3,source),fns)
       equation
         (e1_1,source,b1) = inlineExp(e1,fns,source);

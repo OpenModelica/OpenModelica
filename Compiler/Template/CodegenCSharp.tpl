@@ -1502,9 +1502,9 @@ match context
 case SIMULATION(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
+    let helpIf = (conditions |> e => ' || (<%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */)')
     <<
-    <%algStatementWhenPre(when, simCode)%>
-    if (<%helpVarIndices |> idx => edgeHelpVar(idx) ;separator=" || "%>) {
+    if (false<%helpIf%>) {
       <% statementLst |> stmt =>  algStatement(stmt, context, simCode)
          ;separator="\n" %>
     }
@@ -1514,40 +1514,14 @@ case SIMULATION(genDiscrete=true) then
 end algStmtWhen;
 
 
-template algStatementWhenPre(DAE.Statement stmt, SimCode simCode)
- "Helper to algStmtWhen."
-::=
-  match stmt
-  case STMT_WHEN(exp=ARRAY(array=el)) then
-    let &preExp = buffer "" /*BUFD*/
-    let assignments = algStatementWhenPreAssigns(el, helpVarIndices, &preExp, simCode)
-    <<
-    <%preExp%>
-    <%assignments%>
-    <%match elseWhen case SOME(ew) then  algStatementWhenPre(ew, simCode)%>
-    >>
-  case when as STMT_WHEN(__) then
-    match helpVarIndices
-    case {i} then
-      let &preExp = buffer "" /*BUFD*/
-      let res = daeExp(when.exp, contextSimulationDiscrete, &preExp, simCode) //TODO: ??? type conversion
-      <<
-      <%preExp%>
-      H[<%i%>] = <%res%> ? 1.0 : 0.0;
-      <%match when.elseWhen case SOME(ew) then  algStatementWhenPre(ew, simCode)%>
-      >>
-end algStatementWhenPre;
-
-
 template algStatementWhenElse(Option<DAE.Statement> stmt, SimCode simCode)
  "Helper to algStmtWhen."
 ::=
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let elseCondStr = (when.helpVarIndices |> idx => edgeHelpVar(idx)
-                      ;separator=" || ")
+  let elseCondStr = (when.conditions |> e => ' || (<%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */)')
   <<
-  else if (<%elseCondStr%>) {
+  else if (false<%elseCondStr%>) {
     <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete, simCode)
        ;separator="\n"%>
   }
@@ -1555,22 +1529,6 @@ case SOME(when as STMT_WHEN(__)) then
   >>
 end algStatementWhenElse;
 
-
-template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &preExp, SimCode simCode)
- "Helper to algStatementWhenPre.
-  The lists exps and ints should be of the same length. Iterating over two
-  lists like this is not so well supported in Susan, so it looks a bit ugly."
-::=
-  match exps
-  case (firstExp :: restExps) then
-    match ints
-    case (firstInt :: restInts) then
-      <<
-      H[<%firstInt%>] = <%daeExp(firstExp, contextSimulationDiscrete, &preExp, simCode)%>;
-      <%algStatementWhenPreAssigns(restExps, restInts, &preExp, simCode)%>
-      >>
-end algStatementWhenPreAssigns;
-    
 
 template scalarLhsCref(Exp ecr, Context context, Text &preExp, SimCode simCode) ::=
 match ecr

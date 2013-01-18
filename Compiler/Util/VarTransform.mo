@@ -648,9 +648,11 @@ algorithm
       DAE.ElementSource source;
       Absyn.Path fnName;
       Option<DAE.Statement> ew,ew_1;
-      list<Integer> li;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       Algorithm.Else el,el_1;
       Integer ix;
+      
     case ({},_,_) then ({},false);
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
@@ -714,7 +716,7 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,true);
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li,source = source)) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=ew,source=source))::xs),repl,condExpFunc)
       equation
         (ew_1,b1) = replaceOptEquationsStmts(ew,repl,condExpFunc);
         (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
@@ -723,7 +725,7 @@ algorithm
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li,source) :: xs_1, true);
+        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,ew_1,source)::xs_1, true);
     case (((x as DAE.STMT_ASSERT(cond=e,msg=e2,level=e3,source=source)) :: xs),repl,condExpFunc)
       equation
         (e_1,b1) = replaceExp(e, repl, condExpFunc);

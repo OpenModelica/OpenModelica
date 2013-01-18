@@ -459,7 +459,8 @@ algorithm
       DAE.Else els,els_1;
       Boolean b;
       Ident i;
-      list<Integer> ilst;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       DAE.Statement stmt,stmt_1;
       DAE.ElementSource source;
       Integer ix;
@@ -509,21 +510,21 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_WHILE(e_1,stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source) :: cdr,dae)
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         ({stmt_1},dae) = elabStmts({stmt},dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1,dae);
-    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source) :: cdr,dae)
+        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source) :: cdr_1,dae);
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1,dae);
+        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source) :: cdr_1,dae);
     case(DAE.STMT_ASSERT(e1,e2,e3,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
@@ -1162,8 +1163,7 @@ algorithm
   end matchcontinue;
 end fixCalls;
 
-protected function fixCallsAlg
-"function: fixCallsAlg
+protected function fixCallsAlg "function fixCallsAlg
   fixes calls in algorithm sections of the new function"
   input list<DAE.Statement> inStmts;
   input list<DAE.Function> inDAE;
@@ -1184,7 +1184,8 @@ algorithm
       Ident i;
       Boolean b;
       DAE.Statement stmt,stmt_1;
-      list<Integer> ilst;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
@@ -1241,21 +1242,21 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHILE(e_1,stmts_1,source) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         {stmt,stmt_1} = fixCallsAlg({stmt},dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source) :: cdr,dae,p,inputs,current)
+        DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source) :: cdr_1;
+    case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1;
+        DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source) :: cdr_1;
     case(DAE.STMT_ASSERT(e1,e2,e3,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Expression.traverseExp(e1,fixCall,(p,inputs,dae,current));

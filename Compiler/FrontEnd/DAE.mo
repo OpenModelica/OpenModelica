@@ -556,7 +556,7 @@ uniontype ClassAttributes "currently for Optimica extension: these are the objec
   end OPTIMIZATION_ATTRS;
 end ClassAttributes;
 
-
+/* TODO: create a backend and a simcode uniontype */
 public
 uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
     if statements (`if A then B; elseif C; else D;\'), for loops
@@ -619,9 +619,10 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
 
   record STMT_WHEN
     Exp exp;
+    list<ComponentRef> conditions;        // list of boolean variables as conditions  (this is simcode stuff)
+    Boolean initialCall;                  // true, if top-level branch with initial() (this is simcode stuff)
     list<Statement> statementLst;
     Option<Statement> elseWhen;
-    list<Integer> helpVarIndices "this should be removed soon" ;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_WHEN;
 

@@ -10570,23 +10570,25 @@ algorithm
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
       DAE.Statement stmt, elseWhen;
-      list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2;
+      list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2, elseWhenList;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
       list<BackendDAE.Var> vars1, vars2;
-      list<Integer> helpVarIndices;
       list<BackendDAE.Equation> eqns, additionalInitialEquations, additionalInitialEquations1;
       Integer index;
       DAE.ElementSource source;
       list<BackendDAE.Var> vars;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
       
     case ({}, _, _)
     then ({}, {}, inVars, {}, inIndex);
     
     // when statement
-    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), helpVarIndices=helpVarIndices, source=source))::rest, _, _) equation
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source))::rest, _, _) equation
       (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      (conditions, initialCall) = getConditionList(condition);
       vars = listAppend(vars, inVars);
-      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, stmts1, NONE(), helpVarIndices, source)});
+      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)});
 
       (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       stmts_ = listAppend(stmts_, stmts);
@@ -10594,14 +10596,18 @@ algorithm
     then (stmts_, preStmts, vars, additionalInitialEquations, index);
     
     // when - elsewhen statement
-    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), helpVarIndices=helpVarIndices, source=source))::rest, _, _) equation
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest, _, _) equation
       (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      (conditions, initialCall) = getConditionList(condition);
       vars = listAppend(vars, inVars);
 
-      ({elseWhen}, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
+      (elseWhenList, _, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
+      elseWhen = List.last(elseWhenList);
+      preStmts2 = List.stripLast(elseWhenList);
+      
       preStmts = listAppend(preStmts, preStmts2);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
-      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, stmts1, SOME(elseWhen), helpVarIndices, source)});
+      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)});
 
       (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       stmts_ = listAppend(stmts_, stmts);
@@ -10731,6 +10737,71 @@ algorithm
     then (condition::conditionList, vars1, stmt1, additionalInitialEquations, index);
   end matchcontinue;
 end encapsulateWhenConditionsForAlgorithmsWithArrayConditions;
+
+// =============================================================================
+// section for ???
+// 
+// =============================================================================
+
+public function getConditionList "function getConditionList
+  author: lochel
+  This function extracts all when-conditions. A when-condition can only be a 
+  ComponentRef or initial()-call. If one condion is equal to >initial()<, the
+  second output is true."
+  input DAE.Exp inCondition;
+  output list<DAE.ComponentRef> outConditionVarList;
+  output Boolean outInitialCall;
+algorithm
+  (outConditionVarList, outInitialCall) := match (inCondition)
+    local
+      list<DAE.Exp> conditionList;
+      list<DAE.ComponentRef> conditionVarList;
+      Boolean initialCall;
+    
+    case DAE.ARRAY(array=conditionList) equation 
+      (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
+    then (conditionVarList, initialCall);
+    
+    else equation 
+      (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
+    then (conditionVarList, initialCall);
+  end match;
+end getConditionList;
+
+protected function getConditionList1 "function getConditionList1
+  author: lochel"
+  input list<DAE.Exp> inConditionList;
+  input list<DAE.ComponentRef> inConditionVarList;
+  input Boolean inInitialCall;
+  output list<DAE.ComponentRef> outConditionVarList;
+  output Boolean outInitialCall;
+algorithm
+  (outConditionVarList, outInitialCall) := matchcontinue (inConditionList, inConditionVarList, inInitialCall)
+    local
+      list<DAE.Exp> conditionList;
+      list<DAE.ComponentRef> conditionVarList;
+      Boolean initialCall;
+      DAE.ComponentRef componentRef;
+      
+    case ({}, conditionVarList, initialCall)
+    then (conditionVarList, initialCall);
+    
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, conditionVarList, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, conditionVarList, true);
+    then (conditionVarList, initialCall);
+    
+    case (DAE.CREF(componentRef=componentRef)::conditionList, conditionVarList, initialCall) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::conditionVarList, initialCall);
+    then (conditionVarList, initialCall);
+    
+    else then fail();
+  end matchcontinue;
+end getConditionList1;
+
+// =============================================================================
+// section for ???
+// 
+// =============================================================================
 
 public function solvabilityWights "function: solvabilityWights
   author: Frenkel TUD 2012-05,
