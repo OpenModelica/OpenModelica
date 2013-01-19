@@ -1218,8 +1218,7 @@ algorithm
     case ({}, {}, _, _, _, _, _, _)
       equation
         explst = listReverse(conditions1);
-        eqnslst = listReverse(theneqns1);
-        beqnslst = lowerEqnsLst(eqnslst,functionTree,{});
+        beqnslst = lowerEqnsLst(theneqns1,functionTree,{});
         (beqns,breqns,bieqns) = lowerEqns(elseenqs,functionTree,{},{},{});
         beqns = List.flatten({beqns,breqns,bieqns});
       then
@@ -1267,8 +1266,7 @@ algorithm
     case(DAE.BCONST(true), _, _, _, _, {}, {}, _, _, _)
       equation
         explst = listReverse(conditions1);
-        eqnslst = listReverse(theneqns1);
-        beqnslst = lowerEqnsLst(eqnslst,functionTree,{});
+        beqnslst = lowerEqnsLst(theneqns1,functionTree,{});
         (beqns,breqns,bieqns) = lowerEqns(theneqn,functionTree,{},{},{});
         beqns = List.flatten({beqns,breqns,bieqns});
       then
