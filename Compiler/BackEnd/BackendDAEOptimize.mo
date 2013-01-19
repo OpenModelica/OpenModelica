@@ -59,6 +59,7 @@ protected import BaseHashSet;
 protected import Builtin;
 protected import Ceval;
 protected import CevalScript;
+protected import CheckModel;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -10214,8 +10215,15 @@ algorithm
                         numberMathEvents=numberMathEvents) := eventInfo;
   
   ht := HashTableExpToIndex.emptyHashTable();
+  
+  // equation system
   (systs, (additionalInitialEquations, index, ht)) := List.mapFold(systs, encapsulateWhenConditions1, ({}, 1, ht));
+  
+  // when clauses
   (whenClauseLst, vars, eqns, additionalInitialEquations, ht, index) := encapsulateWhenConditionsFromWhenClause(whenClauseLst, {}, {}, {}, additionalInitialEquations, ht, index);
+  
+  // removed equations
+  ((removedEqs, vars, eqns, additionalInitialEquations, index, ht)) := BackendEquation.traverseBackendDAEEqns(removedEqs, encapsulateWhenConditions2, (BackendEquation.emptyEqns(), vars, eqns, additionalInitialEquations, index, ht));
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})});
@@ -10308,10 +10316,6 @@ algorithm
   
   ((orderedEqs, varLst, eqnLst, additionalInitialEquations, index, ht)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, encapsulateWhenConditions2, (BackendEquation.emptyEqns(), {}, {}, additionalInitialEquations, index, ht));
 
-  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpVarList, varLst, "when-condition | vars");
-  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpEquationList, eqnLst, "when-condition | equations");
-  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpEquationList, additionalInitialEquations, "when-condition | initial equations");
-  
   orderedVars := BackendVariable.addVars(varLst, orderedVars);
   orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
 
@@ -10332,7 +10336,7 @@ algorithm
       list<BackendDAE.Equation> eqns, eqns1, additionalInitialEquations, additionalInitialEquations1;
       BackendDAE.WhenEquation whenEquation;
       DAE.ElementSource source;
-      Integer index, size;
+      Integer index, size, sizePre;
       BackendDAE.EquationArray equationArray;
       DAE.Algorithm alg_;
       list<DAE.Statement> stmts, preStmts;
@@ -10347,18 +10351,39 @@ algorithm
       eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source);
       equationArray = BackendEquation.addEquations({eqn}, equationArray);
     then ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht)));
-
+/*
+    // removed algorithm
+    case ((BackendDAE.ALGORITHM(size=0, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = -index;
+      (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
+      size = size+index;
+      
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(0, alg_, source);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      
+      alg_ = DAE.ALGORITHM_STMTS(preStmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source);    
+    then ((eqn, (equationArray, vars1, eqn::eqns, additionalInitialEquations, index, ht)));
+    */
     // algorithm
     case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = size-index;
       (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
-      size = size+index;
-      stmts = listAppend(preStmts, stmts);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      sizePre = listLength(preStmts);
+      size = size+index-sizePre;
+      
       alg_ = DAE.ALGORITHM_STMTS(stmts);
       eqn = BackendDAE.ALGORITHM(size, alg_, source);
       equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      
+      alg_ = DAE.ALGORITHM_STMTS(preStmts);
+      eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source);
+      eqns = Util.if_(intGt(sizePre, 0), eqn2::eqns, eqns);
     then ((eqn, (equationArray, vars1, eqns, additionalInitialEquations, index, ht)));
 
     case ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
@@ -10410,6 +10435,10 @@ algorithm
       eqns = listAppend(eqns, eqns1);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
     then (whenEquation, vars, eqns, additionalInitialEquations, index, ht);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForEquations failed"});
+    then fail();
   end matchcontinue;
 end encapsulateWhenConditionsForEquations;
 
@@ -10550,6 +10579,10 @@ algorithm
       eqns1 = listAppend(eqns1, eqns2);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
     then (condition::conditionList, vars1, eqns1, additionalInitialEquations, index, ht);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForEquationsWithArrayConditions failed"});
+    then fail();
   end matchcontinue;
 end encapsulateWhenConditionsForEquationsWithArrayConditions;
 
@@ -10568,7 +10601,7 @@ algorithm
   (outStmts, outPreStmts, outVars, outAdditionalInitialEquations, outIndex) := matchcontinue(inStmts, inVars, inIndex)
     local
       DAE.Exp condition;
-      list< DAE.ComponentRef> crefLst;
+      list<DAE.ComponentRef> crefLst;
       DAE.Statement stmt, elseWhen;
       list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2, elseWhenList;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
@@ -10583,16 +10616,52 @@ algorithm
     case ({}, _, _)
     then ({}, {}, inVars, {}, inIndex);
     
+    // when statement (without outputs)
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source))::rest, _, _) equation
+      (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      (conditions, initialCall) = getConditionList(condition);
+      vars = listAppend(vars, inVars);
+      
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)});
+
+      (stmts, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      preStmts = listAppend(preStmts, preStmts2);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts);
+      
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (stmts_, preStmts, vars, additionalInitialEquations, index);
+    
     // when statement
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source))::rest, _, _) equation
       (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
       (conditions, initialCall) = getConditionList(condition);
       vars = listAppend(vars, inVars);
-      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)});
-
-      (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      
+      (stmts, stmts_, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts_);
       stmts_ = listAppend(stmts_, stmts);
+      
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (stmts_, preStmts, vars, additionalInitialEquations, index);
+    
+    // when - elsewhen statement (without outputs)
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest, _, _) equation
+      (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      (conditions, initialCall) = getConditionList(condition);
+      vars = listAppend(vars, inVars);
+
+      (elseWhenList, _, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      elseWhen = List.last(elseWhenList);
+      preStmts2 = List.stripLast(elseWhenList);
+      preStmts = listAppend(preStmts, preStmts2);
+      
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)});
+
+      (stmts, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      preStmts = listAppend(preStmts, preStmts2);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts);
     then (stmts_, preStmts, vars, additionalInitialEquations, index);
     
     // when - elsewhen statement
@@ -10601,17 +10670,16 @@ algorithm
       (conditions, initialCall) = getConditionList(condition);
       vars = listAppend(vars, inVars);
 
-      (elseWhenList, _, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
-      elseWhen = List.last(elseWhenList);
-      preStmts2 = List.stripLast(elseWhenList);
-      
+      ({elseWhen}, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      //elseWhen = List.last(elseWhenList);
+      //preStmts2 = List.stripLast(elseWhenList);
       preStmts = listAppend(preStmts, preStmts2);
-      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
-      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)});
 
-      (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
-      stmts_ = listAppend(stmts_, stmts);
+      (stmts, stmts_, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts_);
+      stmts_ = listAppend(stmts_, stmts);
     then (stmts_, preStmts, vars, additionalInitialEquations, index);
     
     // no when statement
@@ -10619,6 +10687,10 @@ algorithm
       (stmts, preStmts, vars, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms(rest, inVars, inIndex);
       stmts = listAppend(preStmts, stmts);
     then (stmt::stmts, {}, vars, additionalInitialEquations, index);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForAlgorithms failed"});
+    then fail();
   end matchcontinue;
 end encapsulateWhenConditionsForAlgorithms;
 
@@ -10680,7 +10752,7 @@ algorithm
     // simple condition
     case (condition, _, index) equation
       crStr = "$whenCondition" +& intString(index);
-
+      
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
@@ -10735,6 +10807,10 @@ algorithm
       stmt1 = listAppend(stmt1, stmt2);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
     then (condition::conditionList, vars1, stmt1, additionalInitialEquations, index);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForAlgorithmsWithArrayConditions failed"});
+    then fail();
   end matchcontinue;
 end encapsulateWhenConditionsForAlgorithmsWithArrayConditions;
 
@@ -10747,7 +10823,7 @@ public function getConditionList "function getConditionList
   author: lochel
   This function extracts all when-conditions. A when-condition can only be a 
   ComponentRef or initial()-call. If one condion is equal to >initial()<, the
-  second output is true."
+  second output becomes true."
   input DAE.Exp inCondition;
   output list<DAE.ComponentRef> outConditionVarList;
   output Boolean outInitialCall;
