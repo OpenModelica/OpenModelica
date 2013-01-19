@@ -10351,27 +10351,11 @@ algorithm
       eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source);
       equationArray = BackendEquation.addEquations({eqn}, equationArray);
     then ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht)));
-/*
+    
     // removed algorithm
     case ((BackendDAE.ALGORITHM(size=0, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = -index;
-      (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
-      size = size+index;
-      
-      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
-      alg_ = DAE.ALGORITHM_STMTS(stmts);
-      eqn = BackendDAE.ALGORITHM(0, alg_, source);
-      equationArray = BackendEquation.addEquations({eqn}, equationArray);
-      
-      alg_ = DAE.ALGORITHM_STMTS(preStmts);
-      eqn = BackendDAE.ALGORITHM(size, alg_, source);    
-    then ((eqn, (equationArray, vars1, eqn::eqns, additionalInitialEquations, index, ht)));
-    */
-    // algorithm
-    case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
-      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
-      size = size-index;
       (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
       sizePre = listLength(preStmts);
@@ -10384,6 +10368,21 @@ algorithm
       alg_ = DAE.ALGORITHM_STMTS(preStmts);
       eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source);
       eqns = Util.if_(intGt(sizePre, 0), eqn2::eqns, eqns);
+    then ((eqn, (equationArray, vars1, eqns, additionalInitialEquations, index, ht)));
+    
+    // algorithm
+    case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = size-index;
+      (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      size = size+index;
+      
+      stmts = listAppend(preStmts, stmts);
+      
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
     then ((eqn, (equationArray, vars1, eqns, additionalInitialEquations, index, ht)));
 
     case ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
