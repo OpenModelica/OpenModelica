@@ -7210,7 +7210,7 @@ algorithm
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
       SCode.Element cl,scodeClass,recordCl;
-      Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath;
+      Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath,path;
       list<Absyn.Exp> args,t4;
       Absyn.Exp argexp;
       list<Absyn.NamedArg> nargs, translatedNArgs;
@@ -7235,6 +7235,8 @@ algorithm
       list<Absyn.Path> operNames;
       Absyn.ComponentRef cref;
       DAE.ComponentRef daecref;
+      DAE.Function func;
+      DAE.ElementSource source;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -7322,66 +7324,35 @@ algorithm
         // For unrolling errors if an overloaded 'constructor' matches later.
         ErrorExt.setCheckpoint("RecordConstructor");
 
-        // print(" inst record: " +& name +& " \n");
-        // adrpo: do lookup class first as lookupType is much more complex!
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache, env, fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         
-        (cache,
-         t as DAE.T_FUNCTION(
-                funcArg = fargs, 
-                funcResultType = outtype as DAE.T_COMPLEX(complexClassType = complexClassType as ClassInf.RECORD(path=_))),_)
-          = Lookup.lookupType(cache,env, fn, NONE());
         
-        // we might still have to look for overloaded constructors if the defualt doesn't match
-        // Util.setStatefulBoolean(stopElab,true);
+        (cache,func) = Inst.getRecordConstructorFunction(cache,env,fn);
         
-        lastId = Absyn.pathLastIdent(fn);
-        fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
+        DAE.RECORD_CONSTRUCTOR(path,tp1,source) = func;
+        DAE.T_FUNCTION(fargs, outtype, _, {path}) = tp1;
+        
         
         slots = makeEmptySlots(fargs);
-        // here we get the constantness of INPUT ARGUMENTS!
-        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},st,pre,info);
-        //print(" args: " +& stringDelimitList(List.map(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
-        (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
-        // here we get the constantness of DEFAULT ARGUMENTS!
-        // print("Record env: " +& Env.printEnvStr(env_2) +& "\nclass: " +& SCodeDump.printClassStr(cl) +& "\n");
+        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true  ,impl, {},st,pre,info);
+        
         newslots2 = List.map1(newslots,fillDefaultSlot,info);
         vect_dims = slotsVectorizable(newslots2);
-                
-        // adrpo 2010-11-09, 
-        //  constantness should be based on the full argument list, 
-        //  *INCLUDING DEFAULT VALUES* not only on the input arguments  
-        //  as input arguments might be *EMPTY*, i.e.
-        //  parameter Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData
-        //            material = Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData();
         
-        constlist = constInputArgs; //listAppend(constInputArgs, constDefaultArgs);
-        
+        constlist = constInputArgs;
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
+        
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
         
-        // adrpo: 2010-11-09 
-        //   TODO! FIXME! i think we should NOT expand the default slots here!
-        //                and leave just the ones given as input 
         args_2 = expListFromSlots(newslots2);
-                        
-        tp = complexTypeFromSlots(newslots2,ClassInf.RECORD(fn));
-        callExp = DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-        
-        // create a replacement for input variables -> their binding
-        // inputVarsRepl = createInputVariableReplacements(newslots2, VarTransform.emptyReplacements());
-        // print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
-        // replace references to inputs in the arguments  
-        // callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
+        callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
-        // print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
-        // Instantiate the function and add to dae function tree
-        (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
-        expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
+        expProps = SOME((call_exp,prop_1));
         
+        Util.setStatefulBoolean(stopElab,true);
         ErrorExt.rollBack("RecordConstructor");
         
       then

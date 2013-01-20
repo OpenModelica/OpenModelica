@@ -1228,6 +1228,50 @@ algorithm
   end matchcontinue;
 end setVarInput;
 
+public function setVarDefaultInput "Sets a DAE.Var to input"
+  input Var var;
+  output Var outV;
+algorithm
+  outV := matchcontinue(var)
+    local
+      Ident name;
+      SCode.ConnectorType ct;
+      SCode.Visibility vis;
+      Type tp;
+      Binding bind;
+      SCode.Parallelism prl;
+      SCode.Variability v;
+      Absyn.InnerOuter io;
+      Option<DAE.Const> cnstForRange;
+    
+    case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,_,io,vis),tp,bind,cnstForRange)
+    then DAE.TYPES_VAR(name,DAE.ATTR(SCode.POTENTIAL(),prl,SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),tp,bind,cnstForRange);
+
+  end matchcontinue;
+end setVarDefaultInput;
+
+public function setVarProtected "Sets a DAE.Var to input"
+  input Var var;
+  output Var outV;
+algorithm
+  outV := matchcontinue(var)
+    local
+      Ident name;
+      SCode.ConnectorType ct;
+      Absyn.Direction dir;
+      Type tp;
+      Binding bind;
+      SCode.Parallelism prl;
+      SCode.Variability v;
+      Absyn.InnerOuter io;
+      Option<DAE.Const> cnstForRange;
+    
+    case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,_),tp,bind,cnstForRange)
+    then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,SCode.PROTECTED()),tp,bind,cnstForRange);
+
+  end matchcontinue;
+end setVarProtected;
+
 protected function setVarType "Sets a DAE.Var's type"
   input Var var;
   input Type ty;
@@ -3003,6 +3047,62 @@ algorithm
     else false;
   end match;
 end isPublicAttr;
+
+public function isPublicVar
+"Succeds if variable is a public variable."
+  input Var inVar;
+  output Boolean b;
+algorithm
+  b := match (inVar)
+    local
+      Attributes attr;
+    
+    case DAE.TYPES_VAR(attributes = attr) then isPublicAttr(attr);
+  end match;
+end isPublicVar;
+
+
+public function isModifiableTypesVar
+  input DAE.Var inVar;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inVar)
+  local
+    DAE.Attributes attrs;
+    case(DAE.TYPES_VAR(attributes = attrs))
+      equation
+        false = isPublicAttr(attrs);
+      then false;
+        
+    case(DAE.TYPES_VAR(attributes = attrs, binding = DAE.UNBOUND()))
+      equation
+        true = isConstAttr(attrs);
+      then true;
+   
+    case(DAE.TYPES_VAR(attributes = attrs))
+      equation
+        true = isConstAttr(attrs);
+      then false;
+     /*   
+    case(DAE.TYPES_VAR(attributes = attrs))
+      equation
+        true = Types.isConstAttr(attrs);
+      then false;
+       */
+    else true;
+    
+  end matchcontinue;  
+end isModifiableTypesVar;
+
+public function isConstAttr
+  input Attributes inAttributes;
+  output Boolean outIsPublic;
+algorithm
+  outIsPublic := match(inAttributes)
+    case DAE.ATTR(variability = SCode.CONST()) then true;
+    else false;
+  end match;
+end isConstAttr;
 
 public function makeFargsList
   "Makes a function argument list from a list of variables."

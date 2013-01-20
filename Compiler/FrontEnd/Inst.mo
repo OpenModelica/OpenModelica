@@ -6869,6 +6869,8 @@ algorithm
     case (_, _, _, _, _, ClassInf.FUNCTION(path = path), _, 
           SCode.CLASS(name = name, restriction = SCode.R_RECORD()), _)
       equation
+        print("Depreciated record constructor used: Inst.addRecordConstructorsToTheCache");
+        
         // false = Config.acceptMetaModelicaGrammar();
         true = Absyn.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
@@ -7124,7 +7126,7 @@ algorithm
         
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!
-        (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims); 
+        // (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims); 
         
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
@@ -18518,6 +18520,55 @@ algorithm
   end match;
 end findUnboundVariableUseInCase;
 
+public function getRecordConstructorFunction
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
+  output Env.Cache outCache;
+  output DAE.Function outFunc;
+algorithm
+  (outCache,outFunc)  := matchcontinue (inCache,inEnv,inPath)
+    local
+      Absyn.Path path;
+      SCode.Element recordCl;
+      Env.Env recordEnv;
+      DAE.Function func;
+      Env.Cache cache;
+      DAE.Type recType;
+      Ident lastId;
+      
+      case(_, _, _)
+        equation
+          path = Absyn.makeFullyQualified(inPath);
+          func = Env.getCachedInstFunc(inCache,path);
+        then
+          (inCache,func);
+          
+      case(_, _, _)
+        equation
+
+          (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath, false);
+          true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
+          (cache,_,_,_,_,_,recType,_,_,_) = instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
+            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
+            {}, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+          cache = addRecordConstructorFunction(cache,recType);
+          lastId = Absyn.pathLastIdent(inPath);
+          path = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
+          func = Env.getCachedInstFunc(cache,path);
+        then
+          (cache,func);
+      
+      case(_, _, _)
+        equation
+          print("Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
+        then
+          fail();
+          
+  end matchcontinue;
+      
+end getRecordConstructorFunction;
+
 protected function addRecordConstructorFunction "Add record constructor whenever we instantiate a variable. Needed so we can cast to this constructor freely."
   input Env.Cache inCache;
   input DAE.Type inType;
@@ -18527,17 +18578,35 @@ algorithm
     local
       Absyn.Path p1;
       DAE.Function fun;
-      list<DAE.Var> vars;
+      list<DAE.Var> vars, inputs, locals;
       list<DAE.FuncArg> fargs;
-      DAE.Type ty;
-    case (_,ty as DAE.T_COMPLEX(varLst=vars,complexClassType=ClassInf.RECORD(p1)))
+      DAE.Type ty, fixedTy;
+      DAE.EqualityConstraint eqCo;
+      DAE.TypeSource src;
+      Env.Cache cache;
+    
+    case (_,ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
       equation
         p1 = Absyn.makeFullyQualified(p1);
-        failure(_ = DAEUtil.avlTreeGet(Env.getFunctionTree(inCache),p1));
-        fargs = Types.makeFargsList(vars);
-        ty = DAE.T_FUNCTION(fargs, ty, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        fun = Env.getCachedInstFunc(inCache,p1);
+        // print("found cached function " +& Absyn.pathString(p1) +& "\n");
+      then
+        (inCache);
+      
+    case (_,ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
+      equation
+        p1 = Absyn.makeFullyQualified(p1);
+        (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
+        inputs = List.map(inputs,Types.setVarDefaultInput);
+        locals = List.map(locals,Types.setVarProtected);
+        vars = List.union(inputs,locals);
+        fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src);
+        fargs = Types.makeFargsList(inputs);
+        ty = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {p1});
         fun = DAE.RECORD_CONSTRUCTOR(p1,ty,DAE.emptyElementSource);
-      then addFunctionsToDAE(inCache, {fun}, SCode.NOT_PARTIAL());
+        cache = addFunctionsToDAE(inCache, {fun}, SCode.NOT_PARTIAL());
+      then 
+        (cache);
 
     else inCache;
     

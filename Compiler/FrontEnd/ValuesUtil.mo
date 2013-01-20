@@ -2089,7 +2089,7 @@ algorithm
     
     case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
-        recordName = Absyn.pathString(recordPath);
+        recordName = Absyn.pathStringNoQual(recordPath);
         
         Print.printBuf("record " +& recordName +& "\n");
         valRecordString(xs,ids);

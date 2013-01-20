@@ -6897,6 +6897,7 @@ algorithm
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
+        varLst = List.filterOnTrue(varLst,Types.isPublicVar);
         varNames = List.map(varLst,Expression.varName);
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 
