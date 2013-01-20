@@ -8414,7 +8414,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -8434,7 +8434,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -18534,12 +18534,8 @@ algorithm
       Env.Env recordEnv;
       DAE.Function func;
       Env.Cache cache;
-      DAE.Type recType,fixedTy,funcTy;
+      DAE.Type recType;
       Ident lastId;
-      list<DAE.Var> vars, inputs, locals;
-      list<DAE.FuncArg> fargs;
-      DAE.EqualityConstraint eqCo;
-      DAE.TypeSource src;
       
       case(_, _, _)
         equation
@@ -18553,26 +18549,13 @@ algorithm
 
           (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath, false);
           true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
-          
           (cache,_,_,_,_,_,recType,_,_,_) = instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
             UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
             {}, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-          DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src) = recType;
-          
-          (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
-          inputs = List.map(inputs,Types.setVarDefaultInput);
-          locals = List.map(locals,Types.setVarProtected);
-          vars = List.union(inputs,locals);
-          
-          // path = Env.joinEnvPath(recordEnv, path);
-          path = Absyn.makeFullyQualified(path);
-          
-          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
-          fargs = Types.makeFargsList(inputs);
-          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
-          
-          cache = addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
+          cache = addRecordConstructorFunction(cache,recType);
+          lastId = Absyn.pathLastIdent(inPath);
+          path = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
+          func = Env.getCachedInstFunc(cache,path);
         then
           (cache,func);
       
@@ -18588,11 +18571,10 @@ end getRecordConstructorFunction;
 
 protected function addRecordConstructorFunction "Add record constructor whenever we instantiate a variable. Needed so we can cast to this constructor freely."
   input Env.Cache inCache;
-  input Env.Env inEnv;
   input DAE.Type inType;
   output Env.Cache outCache;
 algorithm
-  outCache := matchcontinue (inCache,inEnv,inType)
+  outCache := matchcontinue (inCache,inType)
     local
       Absyn.Path p1;
       DAE.Function fun;
@@ -18603,10 +18585,26 @@ algorithm
       DAE.TypeSource src;
       Env.Cache cache;
     
-    case (_, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
+    case (_,ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
       equation
         p1 = Absyn.makeFullyQualified(p1);
-        (cache, _) = getRecordConstructorFunction(inCache, inEnv, p1);
+        fun = Env.getCachedInstFunc(inCache,p1);
+        // print("found cached function " +& Absyn.pathString(p1) +& "\n");
+      then
+        (inCache);
+      
+    case (_,ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
+      equation
+        p1 = Absyn.makeFullyQualified(p1);
+        (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
+        inputs = List.map(inputs,Types.setVarDefaultInput);
+        locals = List.map(locals,Types.setVarProtected);
+        vars = List.union(inputs,locals);
+        fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src);
+        fargs = Types.makeFargsList(inputs);
+        ty = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {p1});
+        fun = DAE.RECORD_CONSTRUCTOR(p1,ty,DAE.emptyElementSource);
+        cache = addFunctionsToDAE(inCache, {fun}, SCode.NOT_PARTIAL());
       then 
         (cache);
 
