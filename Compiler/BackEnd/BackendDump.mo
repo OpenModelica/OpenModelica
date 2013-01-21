@@ -81,6 +81,7 @@ protected import Util;
 //   - printEquationArray
 //   - printEquationList
 //   - printEquations
+//   - printClassAttributes
 //   - printShared
 //   - printStateSets
 //   - printVar
@@ -203,6 +204,20 @@ algorithm
         ();
   end match;
 end printEquationNo;
+
+public function printClassAttributes "function printClassAttributes
+  This unction print the  Optimica ClassAttributes: objetiveE, objetiveE"
+  input DAE.ClassAttributes optimicaFun;
+  protected
+    Option<DAE.Exp> e1,e2;
+  algorithm
+    DAE.OPTIMIZATION_ATTRS(objetiveE = e1, objectiveIntegrandE = e2) := optimicaFun;
+    print("Mayer" +& "\n" +& UNDERLINE +& "\n\n");
+    print(ExpressionDump.printOptExpStr(e1));
+    print("Lagrange" +& "\n" +& UNDERLINE +& "\n\n");
+    print(ExpressionDump.printOptExpStr(e2));
+    print("\n");
+end printClassAttributes;
 
 public function printShared "function printShared
   This function dumps the BackendDAE.Shared representaton to stdout."

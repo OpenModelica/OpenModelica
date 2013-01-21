@@ -193,6 +193,7 @@ template simulationFile(SimCode simCode, String guid)
     <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
     
     <%functionAnalyticJacobians(jacobianMatrixes)%>
+    <%objectiveFunction(classAttributes, simCode)%>
     
     <%functionlinearmodel(modelInfo)%>
     
@@ -9015,6 +9016,92 @@ template endModelicaLine()
 ::=
   '<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>'
 end endModelicaLine;
+
+/*****************************************************************************
+ *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE
+ *****************************************************************************/
+
+template objectiveFunction( list<DAE.ClassAttributes> classAttributes ,SimCode simCode)
+  "Generates C for Objective Functions."
+::=
+    (classAttributes |> classAttribute => classAttributes(classAttribute,simCode); separator="\n")
+    
+end objectiveFunction;
+
+template classAttributes(ClassAttributes classAttribute, SimCode simCode)
+"Generates C for class attributes of objective function."
+::=
+  match classAttribute
+    case OPTIMIZATION_ATTRS(__) then
+      let &varDecls = buffer "" /*BUFD*/
+      let &preExp = buffer "" /*BUFD*/
+      let &varDecls1 = buffer "" /*BUFD*/
+      let &preExp1 = buffer "" /*BUFD*/
+      
+      let objectiveFunction = match objetiveE 
+        case SOME(exp) then
+        <<
+        &res = <%daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>
+        >> 
+      let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
+        <<
+        &res =<%daeExp(exp, contextSimulationNonDiscrete, &preExp1 /*BUFC*/, &varDecls1 /*BUFD*/)%>
+        >> 
+      let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraints(constraints)              
+        <<
+         /* objectiveFunction */
+         int mayer(DATA* data, modelica_real* res)
+         {
+          <%varDecls%>
+          <%preExp%>
+          <%objectiveFunction%>;
+          return  0;
+          }
+          
+         /* objectiveIntegrand */
+         int lagrange(DATA* data, modelica_real* res)
+         {
+            <%varDecls1%>
+            <%preExp1%>
+            <%objectiveIntegrand%>;
+            return 0; 
+         }
+         
+         /* constraints */
+         /* ToDo
+         int pathContrainst(DATA* data, modelica_real* res)
+         {
+          <%constraints%>
+         }
+          */
+        >> 
+    else error(sourceInfo(), 'Unknown Constraint List')
+end classAttributes;
+
+template constraints( list<DAE.Constraint> constraints)
+  "Generates C for Optimization."
+::=
+    (constraints |> constraint => constraint(constraint); separator="\n")
+    
+end constraints;
+
+template constraint(Constraint cons)
+"Generates C for List of Constraints."
+::=
+  match cons
+    case CONSTRAINT_EXPS(__) then
+      let &varDecls = buffer "" /*BUFD*/
+      let &preExp = buffer "" /*BUFD*/
+      let constrain = (constraintLst |> constraint =>
+         daeExp(constraint, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+          ;separator="\n")
+      <<
+      <%varDecls%>
+      <%preExp%>
+      <%constrain%>
+      >> 
+    else error(sourceInfo(), 'Unknown Constraint List')
+end constraint;
 
 end CodegenC;
 
