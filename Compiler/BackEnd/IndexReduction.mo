@@ -73,6 +73,7 @@ protected import Inline;
 protected import List;
 protected import Matching;
 protected import SCode;
+protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -1029,12 +1030,20 @@ algorithm
       DAE.ComponentRef dcr,cr;
       String ident;
       DAE.CallAttributes attr;
+      Integer index;
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
       equation
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
         e = Expression.crefExp(dcr);
       then
         ((e,false,vars));
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars))
+      equation
+        true = intEq(index,2);
+        ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
+        e = Expression.crefExp(dcr);
+      then
+        ((DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars));
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),vars))
       equation
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
@@ -2384,7 +2393,7 @@ algorithm
         // get scalar incidence matrix solvable
         funcs = BackendDAEUtil.getFunctions(ishared);
         // replace der(x,n) with DERn.Der(n-1)..DER.x and add variables
-        (syst,so) = replaceHigherDerivatives(isyst,so);
+        syst = replaceHigherDerivatives(isyst);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // do state selection for each level
         (syst,shared,ht,setIndex) = selectStatesWork(1,hov,syst,ishared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iHt,iSetIndex);
@@ -2521,8 +2530,7 @@ algorithm
     // dummy derivatives from states with higher derivatives and no known derivative variable
     case (BackendDAE.VAR(varName=dcr as DAE.CREF_QUAL(ident="$DER",componentRef=cr),varKind=BackendDAE.STATE(index=1))::dummyVars,_,_,_,_)
       equation
-         ({var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount))},_) = BackendVariable.getVar(cr,iVars);
-         true = intGt(diffcount,1);
+         false = intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),"$DER",4),0);
          exp = Expression.crefExp(cr);
          exp = Expression.makeBuiltinCall("der", {exp}, Expression.typeof(exp));
          repl = BaseHashTable.add((dcr,exp),iRepl);
@@ -2554,9 +2562,14 @@ algorithm
       DAE.ComponentRef dcr;
       list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> vlst;
-    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx)),_,_,_,_)
+    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx,derName=NONE())),_,_,_,_)
       equation
-        true = intEq(diffindx,level);
+        true = intEq(diffindx,1);
+      then
+        iVars;
+    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx,derName=SOME(_))),_,_,_,_)
+      equation
+        true = intEq(diffindx,1);
         crlst = BackendDAETransform.getDerStateOrder(dcr,so);
         vlst = List.map1(crlst,getVar,vars);
         vlst = listAppend(vlst,iVars);
@@ -6063,6 +6076,7 @@ algorithm
       BackendDAE.Var var;
       DAE.Exp e;
       Integer diffcount,n;
+      Option<DAE.ComponentRef> derName;
    // state no derivative known
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE()),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,comment=comment,connectorType=ct),_,_) 
       equation
@@ -6077,9 +6091,15 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
-        kind = Util.if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
-        var = BackendDAE.VAR(cr,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
+        //kind = Util.if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
+        var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
       then (var,ht);
+   // state
+    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=derName),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,comment=comment,connectorType=ct),_,_) 
+      equation
+        true = intGt(diffcount,1);
+        var = BackendVariable.setVarKind(inVar, BackendDAE.STATE(1,derName));
+      then (var,iHt);
     else then (inVar,iHt);
   end matchcontinue;
 end getLevelStates;
@@ -6089,9 +6109,7 @@ protected function replaceHigherDerivatives
   author: Frenkel TUD 2013-01
   change for var:STATE(2): der(var,2) to der($DER.var), der(var) -> DER.var, add Var $DER.var:STATE(1)"
   input BackendDAE.EqSystem isyst;
-  input BackendDAE.StateOrder so;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.StateOrder oso;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -6108,7 +6126,7 @@ algorithm
   // traverse vars and generate dummy vars and replacement rules
   ht := HashTableCrIntToExp.emptyHashTable();
   nv := BackendVariable.varsSize(vars);
-  (vars,(_,oso,_,nv1,addassign,dummyvars,ht)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,makeHigherStatesRepl,(vars,so,1,nv,{},{},ht));
+  (vars,(_,_,nv1,addassign,dummyvars,ht)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,makeHigherStatesRepl,(vars,1,nv,{},{},ht));
   // BaseHashTable.dumpHashTable(ht);
   // add dummy Vars;
   dummyvars := listReverse(dummyvars);
@@ -6143,8 +6161,8 @@ protected function makeHigherStatesRepl
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
-  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,BackendDAE.StateOrder,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> inTpl;
-  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,BackendDAE.StateOrder,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> oTpl;
+  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> inTpl;
+  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> oTpl;
 algorithm
   oTpl := matchcontinue inTpl
     local
@@ -6156,14 +6174,8 @@ algorithm
       Integer diffcount,i,j;
       list<BackendDAE.Var> varlst;
       list<tuple<Integer,Integer>> addassign;
-    // state with known derivative
-    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(derName=SOME(dcr))),(vars,so,i,j,addassign,varlst,ht)))
-      equation
-        so = BackendDAETransform.addStateOrder(name, dcr, so);
-      then
-        ((var,(vars,so,i+1,j,addassign,varlst,ht)));
     // state diffed more than once
-    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE())),(vars,so,i,j,addassign,varlst,ht)))
+    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE())),(vars,i,j,addassign,varlst,ht)))
       equation
         true = intGt(diffcount,1);
         // dummy_der name
@@ -6171,8 +6183,8 @@ algorithm
         // add replacement for each derivative
         (varlst,ht,j) = makeHigherStatesRepl1(diffcount-2,2,name,cr,var,vars,varlst,ht,j);
       then
-        ((var,(vars,so,i+1,j,(i,j)::addassign,varlst,ht)));
-    case ((var,(vars,so,i,j,addassign,varlst,ht))) then ((var,(vars,so,i+1,j,addassign,varlst,ht)));
+        ((var,(vars,i+1,j,(i,j)::addassign,varlst,ht)));
+    case ((var,(vars,i,j,addassign,varlst,ht))) then ((var,(vars,i+1,j,addassign,varlst,ht)));
   end matchcontinue;
 end makeHigherStatesRepl;
 
@@ -6299,7 +6311,9 @@ algorithm
       then
         ((var,(vars,so,varlst,ht)));
     // state with stateSelect.always, diffed more than once, known derivative
-    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(derName=SOME(_)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht)))
+    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht)))
+      equation
+        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,SOME(cr)));
       then
         ((var,(vars,so,varlst,ht)));
     // state with stateSelect.always, diffed more than once, unknown derivative
@@ -6309,6 +6323,7 @@ algorithm
         cr = ComponentReference.crefPrefixDer(name);
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount-1,2,name,cr,var,vars,so,varlst,ht);
+        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
       then
         ((var,(vars,so,varlst,ht)));
     // state, replaceable with known derivative
@@ -7107,14 +7122,13 @@ algorithm
         (vars,ilst) = increaseDifferentiation(varlst,changedVars,2,vars,ilst);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e,DAE.ICONST(2)},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
-    /* der(der(var,index)), set differentiation counter = index+1 */
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr),DAE.ICONST(index)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
+    /* der(var,index), set differentiation counter = index+1 */
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         (varlst,changedVars) = BackendVariable.getVar(cr,vars);
-        index = index + 2;
         (vars,ilst) = increaseDifferentiation(varlst,changedVars,index,vars,ilst);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e,DAE.ICONST(index)},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
+        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
     case _ then inExp;
   end match;
 end changeDerVariablestoStatesFinderNew;

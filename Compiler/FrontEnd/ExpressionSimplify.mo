@@ -220,6 +220,7 @@ algorithm
       DAE.Dimensions dims;
       DAE.Dimension dim;
       Options options;
+      DAE.CallAttributes attr;
 
     // noEvent propagated to relations and event triggering functions
     case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),(b,options)))
@@ -230,6 +231,14 @@ algorithm
         // TODO: Do this better?
       then 
         ((e3,(b,options)));
+
+    // der(-v) -> -der(v)
+    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
+      then
+        ((DAE.UNARY(DAE.UMINUS(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS_ARR(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
+      then
+        ((DAE.UNARY(DAE.UMINUS_ARR(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
 
     case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
       then

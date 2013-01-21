@@ -1964,7 +1964,7 @@ algorithm
       EquationAttributes eqnAttributes;
       DAE.ElementSource source;
       Boolean negate,replacable,constExp,isState;
-      DAE.Exp exp,exp1,expcr;
+      DAE.Exp exp,exp1,expcr,dexp;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
@@ -2004,12 +2004,13 @@ algorithm
        exp1 = Debug.bcallret1(negate,Expression.negate,exp,exp);
        v = BackendVariable.getVarAt(iVars,i);
        replacable = replaceableAlias(v,unreplacable);
-       (vars,eqnslst,shared,repl) = handleSetVar(replacable,SOME(DAE.RCONST(1.0)),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
+       dexp = Debug.bcallret1(negate,Expression.negate,exp,DAE.RCONST(1.0));
+       (vars,eqnslst,shared,repl) = handleSetVar(replacable,SOME(dexp),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
        expcr = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v,negate,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
        _ = arrayUpdate(iMT,i,{});
-       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp1,SOME(expcr),negate,SOME(DAE.RCONST(1.0)),mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
+       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp1,SOME(expcr),negate,SOME(dexp),mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
      then
        (vars,eqnslst,shared,repl);
    // constant set
@@ -2322,6 +2323,7 @@ algorithm
       Boolean negate,replacable,state,globalnegate1,diffed;
       DAE.ElementSource source;
       DAE.Exp crexp,exp1;
+      Option<DAE.Exp> dexp;
       String msg;
       VarSetAttributes vsattr;
     case (ALIAS(cr1,i1,cr2,i2,(source,diffed),negate,_),_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -2333,6 +2335,7 @@ algorithm
         // negate if necessary
         globalnegate1 = Util.if_(negate,not globalnegate,globalnegate);
         exp1 = Debug.bcallret1(globalnegate1,Expression.negate,exp,exp);
+        dexp = Debug.bcallret1(globalnegate1,negateOptExp,derReplaceState,derReplaceState);
         // replace alias with selected variable if replacable
         source = Debug.bcallret3(replacable,addSubstitutionOption,optExp,crexp,source,source);
         (vars,eqnslst,shared,repl) = handleSetVar(replacable,derReplaceState,v,i,(source,diffed),exp1,iMT,iVars,iEqnslst,ishared,iRepl);
@@ -2373,6 +2376,22 @@ algorithm
         fail();
   end match;   
 end traverseAliasTree1;
+
+protected function negateOptExp
+"function negateOptExp
+  author: Frenkel TUD 2012-12"
+  input Option<DAE.Exp> iExp;
+  output Option<DAE.Exp> oExp;
+algorithm
+  oExp := match(iExp)
+    local DAE.Exp e;
+      case(SOME(e)) 
+        equation
+          e = Expression.negate(e);
+        then SOME(e);
+      else then iExp;
+  end match;
+end negateOptExp;
 
 protected function addSubstitutionOption
 "author: Frenkel TUD 2012-12"

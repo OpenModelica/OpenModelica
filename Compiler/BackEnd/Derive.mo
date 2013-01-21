@@ -490,12 +490,16 @@ algorithm
         e3_1 = differentiateExpTime(e3, inVariables);
       then
         DAE.IFEXP(e1,e2_1,e3_1);
-    
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,attr=attr),_)
-      equation
-        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
+
+    case (DAE.CALL(path = a as Absyn.IDENT(name = "der"),expLst = {e},attr=attr),_)
       then
-        DAE.CALL(a,expl_1,attr);
+        DAE.CALL(a,{e,DAE.ICONST(2)},attr);
+    
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {e,DAE.ICONST(i)},attr=attr),_)
+      equation
+        i = i + 1;
+      then
+        DAE.CALL(a,{e,DAE.ICONST(i)},attr);
     
     case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),(timevars,_))
       equation
