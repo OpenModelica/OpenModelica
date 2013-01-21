@@ -56,6 +56,8 @@ void match_pr_fifo_fair(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids
 void pr_global_relabel(int* l_label, int* r_label, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
 
 void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m, int cheap_id);
+
+void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int cheap_id, int clear_match);
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int match_id, int cheap_id, double relabel_period, int clear_match);
 
 #endif /* MATCHMAKER_H_ */

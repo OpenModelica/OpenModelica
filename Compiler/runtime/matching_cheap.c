@@ -522,3 +522,53 @@ void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     mind_cheap(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m);
   }
 }
+
+void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int cheap_id, int clear_match) {
+  int* row_ptrs;
+  int* row_ids;
+  int i, sp, ep, row;
+
+  if (clear_match==1)
+  {
+    for (i = 0; i < n; i++) {
+      match[i] = -1;
+    }
+    for (i = 0; i < m; i++) {
+      row_match[i] = -1;
+    }
+  }
+
+  if(cheap_id > do_old_cheap) {
+
+    row_ptrs = (int*) malloc((m+1) * sizeof(int));
+    memset(row_ptrs, 0, (m+1) * sizeof(int));
+
+    int nz = col_ptrs[n];
+
+    for(i = 0; i < nz; i++) {row_ptrs[col_ids[i]+1]++;}
+    for(i = 0; i < m; i++) {row_ptrs[i+1] += row_ptrs[i];}
+
+    int* t_row_ptrs = (int*) malloc(m * sizeof(int));
+    memcpy(t_row_ptrs, row_ptrs, m * sizeof(int));
+
+    row_ids = (int*) malloc(nz * sizeof(int));
+
+    for(i = 0; i < n; i++) {
+      sp = col_ptrs[i];
+      ep = col_ptrs[i+1];
+
+      for(;sp < ep; sp++) {
+        row = col_ids[sp];
+        row_ids[t_row_ptrs[row]++] = i;
+      }
+    }
+    free(t_row_ptrs);
+  }
+
+  cheap_matching(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m, cheap_id);
+
+  if(cheap_id > do_old_cheap) {
+    free(row_ids);
+    free(row_ptrs);
+  }
+}

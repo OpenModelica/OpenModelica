@@ -406,7 +406,7 @@ algorithm
       DAE.Exp dt;
  
     // state
-    case((var0 as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
+    case((var0 as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
       var = BackendVariable.setVarKind(var0, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
     

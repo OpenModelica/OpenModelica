@@ -1229,7 +1229,7 @@ algorithm
       DAE.ElementSource source;
       
     case (BackendDAE.VAR(varName = cr,
-      varKind = BackendDAE.STATE(_),
+      varKind = BackendDAE.STATE(index=_),
       varDirection = dir,
       varParallelism = prl,
       varType = tp,
@@ -2991,7 +2991,7 @@ algorithm
     case (_,(cr :: crs))
       equation
         ((v :: _),_) = BackendVariable.getVar(cr, vars);
-        BackendDAE.STATE(_) = BackendVariable.varKind(v);
+        BackendDAE.STATE(index=_) = BackendVariable.varKind(v);
       then
         cr;
     case (_,(cr :: crs))
@@ -3558,7 +3558,7 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,i)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.STATE(_),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(cr,BackendDAE.STATE(index=_),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);

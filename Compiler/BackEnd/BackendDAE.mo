@@ -81,6 +81,7 @@ uniontype VarKind "- Variabile kind"
   record VARIABLE end VARIABLE;
   record STATE
     Integer index "how often this states was differentiated";
+    Option< .DAE.ComponentRef> derName "the name of the derivative";
   end STATE;
   record STATE_DER end STATE_DER;
   record DUMMY_DER end DUMMY_DER;

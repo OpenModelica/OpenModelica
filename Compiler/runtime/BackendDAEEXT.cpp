@@ -229,6 +229,66 @@ int BackendDAEEXTImpl__getV(int i)
   return v[i-1];
 }
 
+void BackendDAEExtImpl__cheapmatching(int nvars, int neqns, int cheapID, int clear_match)
+{
+  int i=0;
+  if (clear_match==0){
+    if (neqns>n) {
+      if(match)
+      {
+        int* tmp = (int*) malloc(neqns * sizeof(int));
+        memcpy(tmp,match,n*sizeof(int));
+        free(match);
+        match = tmp;
+        for (i = n; i < neqns; i++) {
+          match[i] = -1;
+        }
+      } else {
+         match = (int*) malloc(neqns * sizeof(int));
+         memset(match,-1,neqns * sizeof(int));
+      }
+      n = neqns;
+    }
+    if (nvars>m) {
+      if(row_match)
+      {
+        int* tmp = (int*) malloc(nvars * sizeof(int));
+        memcpy(tmp,row_match,m*sizeof(int));
+        free(row_match);
+        row_match = tmp;
+        for (i = m; i < nvars; i++) {
+          row_match[i] = -1;
+        }
+      } else {
+        row_match = (int*) malloc(nvars * sizeof(int));
+         memset(row_match,-1,nvars * sizeof(int));
+      }
+      m = nvars;
+    }
+  }
+  else {
+  if (neqns>n) {
+      if (match) free(match);
+      match = (int*) malloc(neqns * sizeof(int));
+      memset(match,-1,neqns * sizeof(int));
+  } else {
+      memset(match,-1,n * sizeof(int));
+  }
+    n = neqns;
+    if (nvars>m) {
+      if (row_match) free(row_match);
+      row_match = (int*) malloc(nvars * sizeof(int));
+      memset(row_match,-1,nvars * sizeof(int));
+    } else {
+      memset(row_match,-1,m * sizeof(int));
+    }
+    m = nvars;
+  }
+  if ((match != NULL) && (row_match != NULL)) {
+    cheapmatching(col_ptrs,col_ids,match,row_match,neqns,nvars,cheapID,clear_match);
+  }
+}
+
 void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheapID, double relabel_period, int clear_match)
 {
   int i=0;

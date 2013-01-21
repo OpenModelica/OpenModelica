@@ -2388,8 +2388,10 @@ algorithm
     local 
       Absyn.Path path;
       Integer i;
+      DAE.ComponentRef dcr;
     case BackendDAE.VARIABLE()    then "VARIABLE";
-    case BackendDAE.STATE(i)      then "STATE(" +& intString(i) +& ")";
+    case BackendDAE.STATE(index=i,derName=NONE())      then "STATE(" +& intString(i) +& ")";
+    case BackendDAE.STATE(index=i,derName=SOME(dcr))      then "STATE(" +& intString(i) +& "," +& ComponentReference.printComponentRefStr(dcr) +& ")";
     case BackendDAE.STATE_DER()   then "STATE_DER";
     case BackendDAE.DUMMY_DER()   then "DUMMY_DER";
     case BackendDAE.DUMMY_STATE() then "DUMMY_STATE";

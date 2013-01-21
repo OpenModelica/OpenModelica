@@ -2947,13 +2947,11 @@ algorithm
   end matchcontinue;
 end checkLinearSystem;
 
-
-
-
 // =============================================================================
 // tearing system of equations stuff
 //
 // =============================================================================
+
 public function tearingSystem
 " function: tearingSystem
   author: Frenkel TUD
@@ -3308,7 +3306,6 @@ algorithm
            BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,m,mT,matching,stateSets)::eqlist,shared);   
   end match;
 end setDaeVarsAndEqs;  
-
 
 protected function printEquationArr
   "prints an array of BackendDAE.Equations"
@@ -6161,7 +6158,7 @@ algorithm
       (r2,res) = generateJacobianVars2(var, restVar, inMatrixName);
     then (r2,res);
     
-    case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(_)), currVar::restVar, _) equation
+    case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=_)), currVar::restVar, _) equation
       cref = ComponentReference.crefPrefixDer(cref);
       derivedCref = differentiateVarWithRespectToX(cref, currVar, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -6209,7 +6206,7 @@ algorithm
      then
        creatallDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);    
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(_))::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(index=_))::restVar,cref,_,_, _, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
@@ -6224,7 +6221,7 @@ algorithm
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars); 
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(_))::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(index=_))::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -10482,6 +10479,10 @@ algorithm
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index, ht)
     then (condition, {}, {}, {}, index, ht);
     
+    // we do not replace symbols
+    case (condition as DAE.CREF(componentRef=_), _, index, ht)
+    then (condition, {}, {}, {}, index, ht);
+    
     // array-condition with dim = 1 [already in ht]
     case (DAE.ARRAY(array={condition}), _, index, ht) equation
       localIndex = BaseHashTable.get(condition, ht);
@@ -10731,6 +10732,10 @@ algorithm
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index)
     then (condition, {}, {}, {}, index);
     
+    // we do not replace symbols
+    case (condition as DAE.CREF(componentRef=_), _, index)
+    then (condition, {}, {}, {}, index);
+    
     // array-condition
     case (DAE.ARRAY(array={condition}), _, index) equation
       crStr = "$whenCondition" +& intString(index);
@@ -10873,29 +10878,6 @@ algorithm
   end matchcontinue;
 end getConditionList1;
 
-// =============================================================================
-// section for ???
-// 
-// =============================================================================
 
-public function solvabilityWights "function: solvabilityWights
-  author: Frenkel TUD 2012-05,
-  return a integer for the solvability, this function is used
-  to calculade wights for variables to select the tearing variable."
-  input BackendDAE.Solvability solva;
-  output Integer i;
-algorithm
-  i := match(solva)
-    case BackendDAE.SOLVABILITY_SOLVED() then 0;
-    case BackendDAE.SOLVABILITY_CONSTONE() then 2;
-    case BackendDAE.SOLVABILITY_CONST() then 5;
-    case BackendDAE.SOLVABILITY_PARAMETER(b=false) then 0;
-    case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
-    case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
-    case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
-  end match;
-end solvabilityWights;
 
 end BackendDAEOptimize;

@@ -2215,7 +2215,7 @@ algorithm
   match (inVarKind)
     local Absyn.Path path; String error_msg;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
-    case BackendDAE.STATE(_)        then (VARIABILITY_CONTINUOUS_STATE);
+    case BackendDAE.STATE(index=_)        then (VARIABILITY_CONTINUOUS_STATE);
     case BackendDAE.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
     case BackendDAE.DUMMY_STATE()  then (VARIABILITY_CONTINUOUS_DUMMYSTATE);
     case BackendDAE.DISCRETE()     then (VARIABILITY_DISCRETE);

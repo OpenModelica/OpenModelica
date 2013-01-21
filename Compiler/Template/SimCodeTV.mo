@@ -703,6 +703,7 @@ package BackendDAE
     record VARIABLE end VARIABLE;
     record STATE
       Integer index;
+      Option<DAE.ComponentRef> derName;
     end STATE;
     record STATE_DER end STATE_DER;
     record DUMMY_DER end DUMMY_DER;

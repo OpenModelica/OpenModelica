@@ -798,10 +798,10 @@ algorithm
   (outVarKind) := matchcontinue (inVarKind, inType, inComponentRef, inVarDirection, inConnectorType, daeAttr)
     // variable -> state if have stateSelect=StateSelect.always
     case (DAE.VARIABLE(), _, _, _, _, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
-      then (BackendDAE.STATE(1));
+      then (BackendDAE.STATE(1,NONE()));
     // variable -> state if have stateSelect=StateSelect.prefer
     case (DAE.VARIABLE(), _, _, _, _, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-      then (BackendDAE.STATE(1));
+      then (BackendDAE.STATE(1,NONE()));
 
     case (DAE.VARIABLE(), DAE.T_BOOL(varLst = _), _, _, _, _)
       equation
@@ -2631,7 +2631,7 @@ algorithm
       Boolean b, b1, b2;
       DAE.Exp e, ae;
     // state variable
-    case (BackendDAE.VAR(varKind=BackendDAE.STATE(_)), _, 1, _, 
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)), _, 1, _, 
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
       equation
         // check if replacable
@@ -2656,7 +2656,7 @@ algorithm
         (vars, iKnVars, iExtVars, avars, repl);
     // state variable
     case (BackendDAE.VAR(varName=cr1), _, 1, _, 
-          BackendDAE.VAR(varKind=BackendDAE.STATE(_)), _, 1, _, _, _, _, _, _, _)
+          BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)), _, 1, _, _, _, _, _, _, _)
       equation
         // check if replacable
         false = BackendVariable.isStateVar(v1);
@@ -3300,7 +3300,7 @@ algorithm
       equation
         false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
-        var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1));
+        var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var1, inVars);
       then (vars, iExp);
     case(_, _, _)
@@ -3333,7 +3333,7 @@ algorithm
       equation
         false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
-        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1));
+        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var, inVars);
         vars = updateStatesVars(vars, newStates, true);
       then vars;

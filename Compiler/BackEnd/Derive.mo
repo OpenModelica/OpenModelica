@@ -246,7 +246,7 @@ algorithm
     // Continuous-time variables (and for shared eq-systems, also unknown variables: keep them as-is)
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
-        // ({BackendDAE.VAR(varKind = BackendDAE.STATE(_))},_) = BackendVariable.getVar(cr, timevars);
+        // ({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
       then DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     // der(sign(x)) -> 0

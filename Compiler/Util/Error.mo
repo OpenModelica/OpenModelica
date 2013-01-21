@@ -190,7 +190,7 @@ public constant Message UNDERDET_EQN_SYSTEM = MESSAGE(32, SYMBOLIC(), ERROR(),
 public constant Message OVERDET_EQN_SYSTEM = MESSAGE(33, SYMBOLIC(), ERROR(),
   Util.gettext("Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"));
 public constant Message STRUCT_SINGULAR_SYSTEM = MESSAGE(34, SYMBOLIC(), ERROR(),
-  Util.gettext("Model is structurally singular, error found sorting equations %s for variables %s"));
+  Util.gettext("Model is structurally singular, error found sorting equations \n %s for variables \n %s"));
 public constant Message UNSUPPORTED_LANGUAGE_FEATURE = MESSAGE(35, TRANSLATION(), ERROR(),
   Util.gettext("The language feature %s is not supported. Suggested workaround: %s"));
 public constant Message NON_EXISTING_DERIVATIVE = MESSAGE(36, SYMBOLIC(), ERROR(),

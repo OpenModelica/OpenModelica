@@ -60,6 +60,7 @@ protected import HashTable2;
 protected import HashSet;
 protected import List;
 protected import SCode;
+protected import System;
 protected import Util;
 protected import Types;
 
@@ -176,7 +177,7 @@ algorithm
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
   case (v) // states are by default fixed. 
       equation
-        BackendDAE.STATE(_) = varKind(v);
+        BackendDAE.STATE(index=_) = varKind(v);
         fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
       then
         not fixed;
@@ -520,7 +521,7 @@ end varBindExpStartValue;
 public function varStateSelect
 "function varStateSelect
   author: PA
-  Extacts the state select attribute of a variable. If no stateselect explicilty set, return
+  Extracts the state select attribute of a variable. If no stateselect explicilty set, return
   StateSelect.default"
   input BackendDAE.Var inVar;
   output DAE.StateSelect outStateSelect;
@@ -595,6 +596,70 @@ algorithm
 
   end match;
 end setVarStateSelect;
+
+public function varStateDerivative
+"function varStateDerivative
+  author: Frenkel TUD 2013-01
+  Returns the name of the Derivative. Is no Derivative known the function will fail."
+  input BackendDAE.Var inVar;
+  output DAE.ComponentRef dcr;
+algorithm
+  BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr))) := inVar;
+end varStateDerivative;
+
+public function varHasStateDerivative
+"function varHasStateDerivative
+  author: Frenkel TUD 2013-01
+  Returns the name of the Derivative. Is no Derivative known the function will fail."
+  input BackendDAE.Var inVar;
+  output Boolean b;
+algorithm
+  b := match(inVar)
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_))) then true;
+    else then false;
+end match;
+end varHasStateDerivative;
+
+public function setStateDerivative
+"function setStateDerivative
+  author: Frenkel TUD
+  sets the state derivative."
+  input BackendDAE.Var inVar;
+  input Option<DAE.ComponentRef> dcr;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,dcr)
+    local
+      DAE.ComponentRef a;
+      Integer indx;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr;
+      Option<SCode.Comment> s;
+      DAE.ConnectorType ct;
+      Boolean fixed;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = BackendDAE.STATE(index=indx),
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = oattr,
+              comment = s,
+              connectorType = ct),_)
+      then BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,s,ct);
+  end match;
+end setStateDerivative;
 
 public function getVariableAttributefromType
   input DAE.Type inType;
@@ -890,7 +955,7 @@ public function isStateVar
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_))) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))) then true;
     case (_) then false;
   end matchcontinue;
 end isStateVar;
@@ -907,7 +972,7 @@ algorithm
       BackendDAE.Variables vars;
     case(cr,vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: _),_) = getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(cr, vars);
       then 
         true;
     case(_,_) then false;
@@ -1078,7 +1143,7 @@ public function isStateorStateDerVar
 algorithm
   outBoolean:=
   match (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_))) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
   else
    then false;
@@ -1138,7 +1203,7 @@ algorithm
       list<BackendDAE.Var> vs;
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;            
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ARRAY(ty=DAE.T_REAL(source = _))) :: _)) then true;            
-    case ((BackendDAE.VAR(varKind=BackendDAE.STATE(_)) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
@@ -1584,6 +1649,19 @@ algorithm
   end matchcontinue;
 end isOutputVar;
 
+public function isProtectedVar
+"function isProtectedVar
+  author: Frenkel TUD 2013-01
+  Returns the DAE.Protected attribute."
+  input BackendDAE.Var v;
+  output Boolean prot;
+protected
+  Option<DAE.VariableAttributes> attr;
+algorithm
+  BackendDAE.VAR(values = attr) := v;
+  prot := DAEUtil.getProtectedAttr(attr);
+end isProtectedVar;
+
 public function createpDerVar "function createpDerVar
   author: wbraun
   Create variable with $pDER.v as cref for jacobian variables."
@@ -1605,7 +1683,7 @@ public function createDummyVar "function createDummyVar
   output DAE.ComponentRef outCr;
 algorithm
   outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
+  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR());
@@ -2541,7 +2619,7 @@ algorithm
   _:=
   match (inVarKind)
     case (BackendDAE.VARIABLE()) then ();
-    case (BackendDAE.STATE(_)) then ();
+    case (BackendDAE.STATE(index=_)) then ();
     case (BackendDAE.DUMMY_STATE()) then ();
     case (BackendDAE.DUMMY_DER()) then ();
     case (BackendDAE.DISCRETE()) then ();
@@ -3865,20 +3943,15 @@ end getAllStateVarFromVariables;
 
 protected function traversingisStateVarFinder
 "author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
- output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+  input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
+  output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+protected
+  BackendDAE.Var v;
+  list<BackendDAE.Var> v_lst;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> v_lst;
-    case ((v,v_lst))
-      equation
-        true = isStateVar(v);
-      then ((v,v::v_lst));
-    case _ then inTpl;
-  end matchcontinue;
+  (v,v_lst) := inTpl;
+  v_lst := List.consOnTrue(isStateVar(v),v,v_lst);
+  outTpl := (v,v_lst);
 end traversingisStateVarFinder;
 
 public function getAllStateVarIndexFromVariables
@@ -3891,8 +3964,8 @@ end getAllStateVarIndexFromVariables;
 
 protected function traversingisStateVarIndexFinder
 "author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
- output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
+  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
+  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -4524,6 +4597,9 @@ algorithm
   // array elements
   b := ComponentReference.isArrayElement(cr);
   i := intAdd(i,Util.if_(b,-1,0));
+  // protected
+  b := isProtectedVar(var);
+  i := intAdd(i,Util.if_(b,5,0));
   // connectors
   b := isVarConnector(var);
   i := intAdd(i,Util.if_(b,1,0));
@@ -4542,12 +4618,13 @@ public function selfGeneratedVar
   output Boolean b;
 algorithm
   b := match(inCref)
+    local String ident;
     case DAE.CREF_QUAL(ident = "$ZERO") then true;
-    case DAE.CREF_QUAL(ident = "$_DER") then true;
     case DAE.CREF_QUAL(ident = "$pDER") then true;
-    case DAE.CREF_QUAL(ident = "$DER",componentRef=DAE.CREF_QUAL(ident = "$_DER")) then true;
+    case DAE.CREF_QUAL(ident = "$DER",componentRef=DAE.CREF_QUAL(ident = "$DER")) then true;
     // keep them a while untill we know which are needed  
     //case DAE.CREF_QUAL(ident = "$DER") then true;
+    case DAE.CREF_IDENT(ident = ident) then intEq(System.strncmp(ident,"$when",5),0);
     else then false;
   end match;
 end selfGeneratedVar;
@@ -4559,9 +4636,13 @@ public function varStateSelectPrioAlias "function varStateSelectPrioAlias
   output Integer prio;
   protected
   DAE.StateSelect ss;
+  Boolean knownDer;
 algorithm
   ss := varStateSelect(v);
   prio := stateSelectToInteger(ss);
+  knownDer := varHasStateDerivative(v);
+  prio := prio*2;
+  prio := Util.if_(knownDer,prio+1,prio);
 end varStateSelectPrioAlias;
 
 public function stateSelectToInteger "function stateSelectToInteger

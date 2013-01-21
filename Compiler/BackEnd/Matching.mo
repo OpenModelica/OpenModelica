@@ -96,7 +96,8 @@ end matchingAlgorithmFunc;
 /*************************************/
 
 public function DFSLH
-"function: DFSLH"
+"function: DFSLH
+  deapth first search with look ahead feature. basically the same like MC21A."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -6305,7 +6306,7 @@ algorithm
     case (_,_,_,_,_,_,_,_)
       equation
         true = intEq(nvars,neqns);
-        singularSystemCheck(nvars,neqns,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+        (_,_) = singularSystemCheck(nvars,neqns,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
       then
         ();
     case (_,_,_,_,_,_,_,_)
@@ -6344,34 +6345,27 @@ protected function singularSystemCheck
   input BackendDAE.Shared ishared;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
-  input Integer extMatchingAlgorithmFunc;  
+  input Integer extMatchingAlgorithmFunc;
+  output array<Integer> ass1;
+  output array<Integer> ass2;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  array<Integer> stateindexs,vec1,vec2;
-  Integer nStates,nVars1,nEqns1;
-  BackendDAE.IncidenceMatrix m,mO;
+  BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrixT mT;
-  list<Integer> derstatesindexs;
   BackendDAE.StateSets stateSets;
   list<list<Integer>> comps;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(mO),stateSets=stateSets) := isyst;
-  // get State Indexes
-  stateindexs := arrayCreate(nVars,-1);
-  ((stateindexs,_,nStates,derstatesindexs)) := BackendVariable.traverseBackendDAEVars(vars,getStateIndexes,(stateindexs,1,nVars,{}));
-  nStates := nStates-nVars;
-  // generate Incidence Matrix with entries for states, map negative entries to positive + nVars
-  nVars1 := nVars+nStates;
-  nEqns1 := nEqns+nStates;
-  m := arrayCreate(nEqns1,{});
-  mT := arrayCreate(nVars1,{});
-  singularSystemCheckGetIncidenceMatrixStates(derstatesindexs,nVars1,nEqns1,m,mT);
-  singularSystemCheckGetIncidenceMatrix(nEqns,m,mT,mO,stateindexs);
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets) := isyst;
+  // get absolute Incidence Matrix
+  m := BackendDAEUtil.absIncidenceMatrix(m);
+  mT := BackendDAEUtil.absIncidenceMatrix(mT);
   // try to match
-  vec1 := arrayCreate(nVars1,-1);
-  vec2 := arrayCreate(nEqns1,-1);
-  (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+  ass1 := arrayCreate(nVars,-1);
+  ass2 := arrayCreate(nEqns,-1);
+  (ass1,ass2) := singularSystemCheckMatch(nVars,nEqns,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,ass1,ass2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+  // free states matching information because there it is unkown if the state or the state derivative was matched
+  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
   /*
     matchingExternalsetIncidenceMatrix(nVars1, nEqns1, m);
     BackendDAEEXT.matching(nVars1, nEqns1, 5, -1, 0.0, 1);
@@ -6383,100 +6377,31 @@ algorithm
     BackendDump.dumpMatching(vec1);
     comps := BackendDAETransform.tarjanAlgorithm(mT,vec2);
     BackendDump.dumpComponentsOLD(comps);
+    IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),"SingularSystemCheck" +& intString(nVars) +& ".graphml");
   */
 end singularSystemCheck;
 
-protected function getStateIndexes
-  input tuple<BackendDAE.Var, tuple<array<Integer>,Integer,Integer,list<Integer>>> inTpl;
-  output tuple<BackendDAE.Var, tuple<array<Integer>,Integer,Integer,list<Integer>>> outTpl;
+protected function freeStateAssignments
+"function freeStateAssignments
+  author Frenkel TUD 2013-01
+  unset assignments of statevariables."
+  input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> inTpl;
+  output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> outTpl;
 algorithm
   outTpl := match(inTpl)
     local
-      BackendDAE.Var v;
-      array<Integer> stateindexs;
-      Integer indx,s;
-      list<Integer> derstatesindexs;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE(_)),(stateindexs,indx,s,derstatesindexs)))
+      Integer e,index;
+      array<Integer> ass1,ass2;
+      BackendDAE.Var var;
+    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2)))
       equation
-        s = s+1;
-        _= arrayUpdate(stateindexs,indx,s);
-      then 
-        ((v,(stateindexs,indx+1,s,indx::derstatesindexs)));
-    case ((v,(stateindexs,indx,s,derstatesindexs)))
-      then 
-        ((v,(stateindexs,indx+1,s,derstatesindexs)));
+        e = ass1[index];
+        ass1 = arrayUpdate(ass1,index,-1);
+        ass2 = arrayUpdate(ass2,e,-1);
+      then ((var,(index+1,ass1,ass2)));
+    case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
   end match;
-end getStateIndexes;
-
-protected function singularSystemCheckGetIncidenceMatrixStates
-  input list<Integer> iDerstatesindexs;
-  input Integer nVars;
-  input Integer nEqns;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-algorithm
-  _ := match(iDerstatesindexs,nVars,nEqns,m,mT)
-    local
-      Integer sd;
-      list<Integer> derstatesindexs;
-    case ({},_,_,_,_) then ();
-    case (sd::derstatesindexs,_,_,_,_)
-      equation
-        _= arrayUpdate(m,nEqns,{nVars,sd});
-        _= arrayUpdate(mT,nVars,{nEqns});
-        _= arrayUpdate(mT,sd,{nEqns});
-        singularSystemCheckGetIncidenceMatrixStates(derstatesindexs,nVars-1,nEqns-1,m,mT);
-      then
-        ();
-  end match;
-end singularSystemCheckGetIncidenceMatrixStates;
-
-protected function singularSystemCheckGetIncidenceMatrix
-  input Integer nEqns;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input BackendDAE.IncidenceMatrix mo;
-  input array<Integer> stateindexs;
-algorithm
-  _ := match(nEqns,m,mT,mo,stateindexs)
-    local
-      list<Integer> row;
-    case (0,_,_,_,_) then ();
-    case (_,_,_,_,_)
-      equation
-        // get row
-        row = mo[nEqns];
-        // replace negative index with index from stateindexs
-        row = List.map1(row,replaceStateIndex,stateindexs);
-        // update m
-        _ = arrayUpdate(m,nEqns,row);
-        // update mT
-        _ = List.fold1(row,Util.arrayCons,nEqns,mT);
-        // next
-        singularSystemCheckGetIncidenceMatrix(nEqns-1,m,mT,mo,stateindexs);
-      then
-        ();
-  end match;
-end singularSystemCheckGetIncidenceMatrix;
-
-protected function replaceStateIndex
-  input Integer iR;
-  input array<Integer> stateindexs;
-  output Integer oR;
-algorithm
-  oR := matchcontinue(iR,stateindexs)
-    local
-      Integer s,r;
-    case (_,_)
-      equation
-        false = intGt(iR,0);
-        r = intAbs(iR);
-        s = stateindexs[r];
-      then
-        s;
-    case (_,_) then iR;
-  end matchcontinue;
-end replaceStateIndex;
+end freeStateAssignments;
 
 protected function singularSystemCheckMatch
 "function: singularSystemCheckMatch
@@ -6565,13 +6490,12 @@ algorithm
     IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" +& intString(n) +& ".graphml");
   */
   // get from scalar eqns indexes the indexes in the equation array
-  unmatched := List.select1(List.flatten(eqns),intLe,n);
+  unmatched := List.flatten(eqns);
   unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
   unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
   eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
   vars := getUnassigned(n, inAssignments2, {});
   vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
-  vars := List.select1(vars,intLe,n);
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
   source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
   info := DAEUtil.getElementSourceFileInfo(source);

@@ -214,8 +214,27 @@ public function setIncidenceMatrix
   external "C" BackendDAEEXT_setIncidenceMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
 end setIncidenceMatrix;
 
+public function cheapmatching
+"function: cheapmatching
+  author: Frenkel TUD 2012-04
+  calls cheapmatching algorithms
+  cheapID: id of cheap algo (1-4)
+      1: Simple Greedy
+      2: Karp-Sipser
+      3: Random Karp-Sipser (DEFAULT)
+      4: Minimum Degree (two-sided)
+ 
+     Other than these two, non-positive values are not allowed.  
+  "
+  input Integer nv;
+  input Integer ne;
+  input Integer cheapID;
+  input Integer clear_match;
+  external "C" BackendDAEEXT_cheapmatching(nv,ne,cheapID,clear_match) annotation(Library = "omcruntime");
+end cheapmatching;
+
 public function matching
-"function: matchingExternal
+"function: matching
   author: Frenkel TUD 2012-04
   calls matching algorithms
   matchingID: id of match algo (1-9)
@@ -230,7 +249,8 @@ public function matching
       9: ABMP-BFS (ABMP + BFS)
      10: PR-FIFO-FAIR (DEFAULT)
  
-  cheapID: id of cheap algo (1-4)
+  cheapID: id of cheap algo (0-4)
+      0: No Cheap Matching
       1: Simple Greedy
       2: Karp-Sipser
       3: Random Karp-Sipser (DEFAULT)

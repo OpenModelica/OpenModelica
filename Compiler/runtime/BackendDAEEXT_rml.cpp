@@ -282,6 +282,17 @@ RML_BEGIN_LABEL(BackendDAEEXT__setIncidenceMatrix)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(BackendDAEEXT__cheapmatching)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  int neqns = RML_UNTAGFIXNUM(rmlA1);
+  int cheapID = RML_UNTAGFIXNUM(rmlA2);
+  int clear_match = RML_UNTAGFIXNUM(rmlA3);
+  BackendDAEExtImpl__cheapmatching(nvars, neqns, cheapID, clear_match);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(BackendDAEEXT__matching)
 {
   int nvars = RML_UNTAGFIXNUM(rmlA0);
