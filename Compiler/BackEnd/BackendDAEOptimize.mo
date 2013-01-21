@@ -10479,10 +10479,6 @@ algorithm
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index, ht)
     then (condition, {}, {}, {}, index, ht);
     
-    // we do not replace symbols
-    case (condition as DAE.CREF(componentRef=_), _, index, ht)
-    then (condition, {}, {}, {}, index, ht);
-    
     // array-condition with dim = 1 [already in ht]
     case (DAE.ARRAY(array={condition}), _, index, ht) equation
       localIndex = BaseHashTable.get(condition, ht);
@@ -10730,10 +10726,6 @@ algorithm
 
     // we do not replace initial()
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index)
-    then (condition, {}, {}, {}, index);
-    
-    // we do not replace symbols
-    case (condition as DAE.CREF(componentRef=_), _, index)
     then (condition, {}, {}, {}, index);
     
     // array-condition
