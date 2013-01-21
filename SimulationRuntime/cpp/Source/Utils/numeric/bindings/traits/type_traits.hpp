@@ -14,9 +14,9 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_TYPE_TRAITS_HPP
 #define BOOST_NUMERIC_BINDINGS_TRAITS_TYPE_TRAITS_HPP
 
-#include <boost/numeric/bindings/traits/config.hpp>
-#include <boost/numeric/bindings/traits/type.h>
-#include <boost/numeric/bindings/traits/type.hpp>
+#include <utils/numeric/bindings/traits/config.hpp>
+#include <utils/numeric/bindings/traits/type.h>
+#include <utils/numeric/bindings/traits/type.hpp>
 
 namespace boost { namespace numeric { namespace bindings { namespace traits {
 
