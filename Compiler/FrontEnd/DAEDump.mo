@@ -2071,6 +2071,7 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
+      DAE.ElementSource source;
     
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
@@ -2127,6 +2128,18 @@ algorithm
         s4 = ppStmtListStr(stmts, i_1);
         s5 = indentStr(i);
         str = stringAppendList({s1,"for ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
+      then
+        str;
+        
+    case (DAE.STMT_PARFOR(iter = id,index = index,range = e,statementLst = stmts),i)
+      equation
+        s1 = indentStr(i);
+        s2 = Util.if_(index == -1, "", "/* iter index " +& intString(index) +& " */");
+        s3 = ExpressionDump.printExpStr(e);
+        i_1 = i + 2;
+        s4 = ppStmtListStr(stmts, i_1);
+        s5 = indentStr(i);
+        str = stringAppendList({s1,"parfor ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
     
@@ -2206,6 +2219,33 @@ algorithm
         s1 = indentStr(i);
         s2 = ppStmtListStr(stmts, i+2);
         str = stringAppendList({s1,"failure(\n",s2,s1,");\n"});
+      then str;
+        
+    case (DAE.STMT_ARRAY_INIT(name=s2),i)
+      equation
+        s1 = indentStr(i);
+        str = stringAppendList({s1,"arrayInit(\n",s2,s1,");\n"});
+      then str;
+
+    case (DAE.STMT_TRY(tryBody=stmts),i)
+      equation
+        s1 = indentStr(i);
+        s2 = ppStmtListStr(stmts, i+2);
+        str = stringAppendList({s1,"try(\n",s2,s1,");\n"});
+      then str;
+
+    case (DAE.STMT_CATCH(catchBody=stmts),i)
+      equation
+        s1 = indentStr(i);
+        s2 = ppStmtListStr(stmts, i+2);
+        str = stringAppendList({s1,"catch(\n",s2,s1,");\n"});
+      then str;
+
+    case (DAE.STMT_THROW(source=source),i)
+      equation
+        s1 = indentStr(i);
+        s2 = getSourceInformationStr(source);
+        str = stringAppendList({s1,"throw(\n",s2,s1,");\n"});
       then str;
         
     case (_,i)
