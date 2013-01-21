@@ -431,6 +431,13 @@ algorithm
         (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
         ht = List.fold(stmts,statementOutputs,iht);
       then ht;
+   case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts),_)
+      equation
+        // replace the iterator variable with the range expression
+        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+        ht = List.fold(stmts,statementOutputs,iht);
+      then ht;
     case(DAE.STMT_WHILE(statementLst = stmts),_)
       equation
         ht = List.fold(stmts,statementOutputs,iht);
@@ -452,6 +459,7 @@ algorithm
     case(DAE.STMT_NORETCALL(exp = _),_) then iht;
     case(DAE.STMT_RETURN(_),_) then iht;
     case(DAE.STMT_BREAK(_),_) then iht;
+    case(DAE.STMT_ARRAY_INIT(name=_),_) then iht;
     // MetaModelica extension. KS  
     case(DAE.STMT_FAILURE(body = stmts),_)
       equation
