@@ -29,6 +29,7 @@
  *
  */
 #include "simulation_data.h"
+#include "stateset.h"
 
 // array of value references of states
 #if NUMBER_OF_STATES>0
