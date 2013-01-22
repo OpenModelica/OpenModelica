@@ -141,6 +141,7 @@ package SimCode
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
       list<list<SimVar>> zeroCrossingsNeedSave;
+      BackendDAE.SampleLookup sampleLookup;
       list<SampleCondition> sampleConditions;
       list<SimEqSystem> sampleEquations;
       list<HelpVarInfo> helpVarInfo;
@@ -721,6 +722,13 @@ package BackendDAE
       list<Integer> occurWhenLst;
     end ZERO_CROSSING;
   end ZeroCrossing;
+  
+  uniontype SampleLookup
+    record SAMPLE_LOOKUP
+      Integer nSamples                              "total number of different sample calls" ;
+      list<tuple<Integer, DAE.Exp, DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
+    end SAMPLE_LOOKUP;
+  end SampleLookup;
   
   uniontype WhenOperator "- Reinit Statement"
     record REINIT

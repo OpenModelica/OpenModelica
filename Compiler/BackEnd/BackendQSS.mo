@@ -1036,10 +1036,11 @@ algorithm
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
+      BackendDAE.SampleLookup sampleLookup;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
-          sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
+          sampleLookup,sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
     equation
       {eqs} = odeEquations;
@@ -1048,7 +1049,7 @@ algorithm
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
                          initialEquations, startValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, 
-                         zeroCrossings, relations, sampleConditions, sampleEquations,
+                         zeroCrossings, relations, sampleLookup, sampleConditions, sampleEquations,
                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
                          makefileParams, delayedExps, jacobianMatrixes, 
                          simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);

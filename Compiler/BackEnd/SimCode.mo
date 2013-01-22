@@ -99,6 +99,7 @@ uniontype SimCode
     list<DAE.ClassAttributes> classAttributes;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<BackendDAE.ZeroCrossing> relations;
+    BackendDAE.SampleLookup sampleLookup;
     list<SampleCondition> sampleConditions;
     list<SimEqSystem> sampleEquations;
     list<HelpVarInfo> helpVarInfo;

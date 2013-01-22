@@ -79,6 +79,13 @@ typedef struct FUNCTION_INFO
   const FILE_INFO info;
 }FUNCTION_INFO;
 
+typedef struct SAMPLE_INFO
+{
+  long index;
+  double start;
+  double interval;
+} SAMPLE_INFO;
+
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
 /* Sample times */
@@ -328,6 +335,9 @@ typedef struct MODEL_DATA
   modelica_string_t modelFilePrefix;
   modelica_string_t modelDir;
   modelica_string_t modelGUID;
+  
+  long nSamples;                /* number of different sample-calls */
+  SAMPLE_INFO* samples;         /* array containing each sample-call */
 
   fortran_integer nStates;
   long nVariablesReal;          /* all Real Variables of the model (states, statesderivatives, algebraics) */
@@ -343,7 +353,6 @@ typedef struct MODEL_DATA
   long nHelpVars;               /* results of relations in when equation */
 
   long nZeroCrossings;
-  long nSamples;
   long nRelations;
   long nMathEvents;             /* number of math triggering functions e.g. cail, floor, integer */
   long nDelayExpressions;
@@ -390,6 +399,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean found_solution;    /* helper for mixed systems */
 
   void** extObjs; /* External objects */
+  
+  double nextSampleEvent;             /* point in time of next sample-call */
 
   /* An array containing the initial data of samples used in the sim */
   SAMPLE_RAW_TIME* rawSampleExps;

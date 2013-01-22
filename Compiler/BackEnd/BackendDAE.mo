@@ -228,15 +228,24 @@ end WhenClause;
 public
 uniontype ZeroCrossing "- Zero Crossing"
   record ZERO_CROSSING
-    .DAE.Exp relation_          "function" ;
-    list<Integer> occurEquLst   "list of equations where the function occurs" ;
-    list<Integer> occurWhenLst  "list of when clauses where the function occurs" ;
+    .DAE.Exp relation_         "function" ;
+    list<Integer> occurEquLst  "list of equations where the function occurs" ;
+    list<Integer> occurWhenLst "list of when clauses where the function occurs" ;
   end ZERO_CROSSING;
 end ZeroCrossing;
 
 public
+uniontype SampleLookup
+  record SAMPLE_LOOKUP
+    Integer nSamples                                "total number of different sample calls" ;
+    list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
+  end SAMPLE_LOOKUP;
+end SampleLookup;
+
+public
 uniontype EventInfo "- EventInfo"
   record EVENT_INFO
+    SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";

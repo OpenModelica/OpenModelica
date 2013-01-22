@@ -536,11 +536,9 @@ end expandAlgorithmStmts;
   Util function at Backend using for lowering and other stuff
  ************************************************************/
 
-public  function createEmptyBackendDAE
-" function: createEmptyBackendDAE
+public function createEmptyBackendDAE "function createEmptyBackendDAE
   author: wbraun
-  Copy the dae to avoid changes in
-  vectors."
+  Copy the dae to avoid changes in vectors."
   input BackendDAEType inBDAEType;
   output BackendDAE.BackendDAE outBDAE;
 protected 
@@ -559,38 +557,30 @@ algorithm
   clsAttrs := listArray({});
   cache := Env.emptyCache();
   funcTree := DAEUtil.avlTreeNew();
-  outBDAE := BackendDAE.DAE({BackendDAE.EQSYSTEM(
-                              emptyvars,
-                              emptyEqns,
-                              NONE(),
-                              NONE(),
-                              BackendDAE.NO_MATCHING(),{}
-                            )},
-                            BackendDAE.SHARED(
-                              emptyvars,
-                              emptyvars, 
-                              emptyAliasVars, 
-                              emptyEqns, 
-                              emptyEqns, 
-                              constrs,
-                              clsAttrs,
-                              cache, 
-                              {},
-                              funcTree,
-                              BackendDAE.EVENT_INFO({},{},{},{},0, 0),
-                              {},
-                              inBDAEType,
-                              {}
-                            )
-                          );
+  outBDAE := BackendDAE.DAE({BackendDAE.EQSYSTEM(emptyvars,
+                                                 emptyEqns,
+                                                 NONE(),
+                                                 NONE(),
+                                                 BackendDAE.NO_MATCHING(),{})},
+                            BackendDAE.SHARED(emptyvars,
+                                              emptyvars, 
+                                              emptyAliasVars, 
+                                              emptyEqns, 
+                                              emptyEqns, 
+                                              constrs,
+                                              clsAttrs,
+                                              cache, 
+                                              {},
+                                              funcTree,
+                                              BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
+                                              {},
+                                              inBDAEType,
+                                              {}));
 end createEmptyBackendDAE;
 
-
-public  function copyBackendDAE
-" function: copyBackendDAE
+public function copyBackendDAE "function copyBackendDAE
   author: Frenkel TUD, wbraun
-  Copy the dae to avoid changes in
-  vectors."
+  Copy the dae to avoid changes in vectors."
   input BackendDAE.BackendDAE inBDAE;
   output BackendDAE.BackendDAE outBDAE;
 algorithm
@@ -2472,10 +2462,11 @@ algorithm
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAEType btp;
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs))
+      BackendDAE.SampleLookup sampleLookup;
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(sampleLookup,wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(sampleLookup,wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs);
   end match;
 end whenClauseAddDAE;
 

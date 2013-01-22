@@ -677,7 +677,9 @@ void initializeDataStruc(DATA *data)
   data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(DATA_INTEGER_ALIAS));
   data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(DATA_BOOLEAN_ALIAS));
   data->modelData.stringAlias = (DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(DATA_STRING_ALIAS));
-
+  
+  data->modelData.samples = (SAMPLE_INFO*) calloc(data->modelData.nSamples, sizeof(SAMPLE_INFO));
+  
   /* initialized in events.c initSample */
   data->simulationInfo.sampleTimes = 0;
   data->simulationInfo.rawSampleExps = (SAMPLE_RAW_TIME*) calloc(data->modelData.nSamples, sizeof(SAMPLE_RAW_TIME));
@@ -828,6 +830,8 @@ void deInitializeDataStruc(DATA *data)
   for(i=0; i < data->modelData.nAliasString;i++)
     freeVarInfo(&((data->modelData.stringAlias[i]).info));
   free(data->modelData.stringAlias);
+  
+  free(data->modelData.samples);
 
   /* free simulationInfo arrays */
   free(data->simulationInfo.sampleTimes);

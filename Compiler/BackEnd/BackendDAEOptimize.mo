@@ -3184,7 +3184,7 @@ algorithm
         emptyEqns = BackendEquation.emptyEqns();
         emptyVars = BackendVariable.emptyVars();
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.SIMULATION(),{});
+        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}),{},{},{},{},0,0),{},BackendDAE.SIMULATION(),{});
         (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,BackendDAE.NORMAL(),NONE());
         match1 = arrayCreate(l,1);
         matching = BackendDAE.MATCHING(match1,match1,{});
@@ -6018,7 +6018,7 @@ algorithm
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
-      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0);
+      jacEventInfo = BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
       
       jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
@@ -6059,7 +6059,7 @@ algorithm
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
-      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0);
+      jacEventInfo = BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
       
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}));
@@ -8100,16 +8100,17 @@ protected function traverseEventInfoExps
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 protected
+  BackendDAE.SampleLookup sampleLookup;
   list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst,sampleLst,relationsLst;
   Integer relationsNumber,numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents) := iEventInfo;
+  BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents) := iEventInfo;
   (whenClauseLst,outTypeA) := traverseWhenClauseExps(whenClauseLst,func,inTypeA,{});
   (zeroCrossingLst,outTypeA) := traverseZeroCrossingExps(zeroCrossingLst,func,outTypeA,{});
   (sampleLst,outTypeA) := traverseZeroCrossingExps(sampleLst,func,outTypeA,{});
   (relationsLst,outTypeA) := traverseZeroCrossingExps(relationsLst,func,outTypeA,{});
-  oEventInfo := BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents);
+  oEventInfo := BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents);
 end traverseEventInfoExps;
 
 protected function traverseWhenClauseExps
@@ -10175,12 +10176,13 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   list<BackendDAE.Equation> additionalInitialEquations;
   
-    list<BackendDAE.WhenClause> whenClauseLst     "List of when clauses. The WhenEquation datatype refer to this list by position" ;
-    list<BackendDAE.ZeroCrossing> zeroCrossingLst "List of zero crossing coditions";
-    list<BackendDAE.ZeroCrossing> sampleLst "List of sample as before, used by cpp runtime";
-    list<BackendDAE.ZeroCrossing> relationsLst "List of zero crossing function as before, used by cpp runtime";
-    Integer relationsNumber "stores the number of relation in all zero-crossings";
-    Integer numberMathEvents "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+  BackendDAE.SampleLookup sampleLookup;
+  list<BackendDAE.WhenClause> whenClauseLst;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+  list<BackendDAE.ZeroCrossing> sampleLst;
+  list<BackendDAE.ZeroCrossing> relationsLst;
+  Integer relationsNumber;
+  Integer numberMathEvents;
     
   Integer index;
   HashTableExpToIndex.HashTable ht;   // is used to avoid redundant condition-variables
@@ -10204,7 +10206,8 @@ algorithm
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := shared;
-  BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst,
+  BackendDAE.EVENT_INFO(sampleLookup=sampleLookup,
+                        whenClauseLst=whenClauseLst,
                         zeroCrossingLst=zeroCrossingLst,
                         sampleLst=sampleLst,
                         relationsLst=relationsLst,
@@ -10226,7 +10229,8 @@ algorithm
   systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})});
   
   initialEqs := BackendEquation.addEquations(additionalInitialEquations, initialEqs);
-  eventInfo := BackendDAE.EVENT_INFO(whenClauseLst,
+  eventInfo := BackendDAE.EVENT_INFO(sampleLookup,
+                                     whenClauseLst,
                                      zeroCrossingLst,
                                      sampleLst,
                                      relationsLst,

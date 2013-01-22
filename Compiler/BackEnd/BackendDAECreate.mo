@@ -103,11 +103,12 @@ protected
   list<DAE.Element> elems, aliaseqns;
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
+  BackendDAE.SampleLookup sampleLookup;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.execStat("Enter Backend", CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
-  (DAE.DAE(elems), functionTree) := processBuiltinExpressions(lst, functionTree);
+  (DAE.DAE(elems), functionTree, sampleLookup) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();
   extVars := BackendVariable.emptyVars();
@@ -122,7 +123,7 @@ algorithm
   ieqnarr := BackendEquation.listEquation(ieqns);
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
-  einfo := BackendDAE.EVENT_INFO(whenclauses_1, {}, {}, {}, 0, 0);
+  einfo := BackendDAE.EVENT_INFO(sampleLookup, whenclauses_1, {}, {}, {}, 0, 0);
   symjacs := {(NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1, 
                                                       eqnarr, 
@@ -431,21 +432,22 @@ protected function processBuiltinExpressions "function processBuiltinExpressions
   input DAE.FunctionTree functionTree;
   output DAE.DAElist outDAE;
   output DAE.FunctionTree outTree;
+  output BackendDAE.SampleLookup outSampleLookup;
 protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
-  (outDAE, outTree, _) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 1, 1));
+  (outDAE, outTree, (ht, _, outSampleLookup)) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 0, BackendDAE.SAMPLE_LOOKUP(0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpressions "function transformBuiltinExpressions
   author: lochel
   Helper for processBuiltinExpressions"
-  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> itpl;
-  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> otpl;
+  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> itpl;
+  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> otpl;
 protected
   DAE.Exp e;
-  tuple<HashTableExpToIndex.HashTable, Integer, Integer> i;
+  tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup> i;
 algorithm
   (e, i) := itpl;
   otpl := Expression.traverseExp(e, transformBuiltinExpression, i);
@@ -454,36 +456,41 @@ end transformBuiltinExpressions;
 protected function transformBuiltinExpression "function transformBuiltinExpression
   author: lochel
   Helper for transformBuiltinExpressions"
-  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> inTuple;
-  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> outTuple;
+  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> inTuple;
+  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      DAE.Exp e;
+      DAE.Exp e, start, interval;
       list<DAE.Exp> es;
       HashTableExpToIndex.HashTable ht;
       Integer iDelay, iSample, i;
+      list<tuple<Integer, DAE.Exp, DAE.Exp>> samples;
+      BackendDAE.SampleLookup sampleLookup;
       DAE.CallAttributes attr;
     
     // delay [already in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample))) equation
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, sampleLookup))) equation
       i = BaseHashTable.get(e, ht);
-    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample)));
+    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, sampleLookup)));
 
     // delay [not yet in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample))) equation
-      ht = BaseHashTable.add((e, iDelay), ht);
-    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample)));
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, sampleLookup))) equation
+      ht = BaseHashTable.add((e, iDelay+1), ht);
+    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, sampleLookup)));
     
     // sample [already in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample))) equation
+    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, sampleLookup))) equation
       i = BaseHashTable.get(e, ht);
-    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample)));
+    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, sampleLookup)));
 
     // sample [not yet in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample))) equation
+    case ((e as DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, BackendDAE.SAMPLE_LOOKUP(iSample, samples)))) equation
+      iSample = iSample+1;
+      samples = listAppend(samples, {(iSample, start, interval)});
       ht = BaseHashTable.add((e, iSample), ht);
-    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample+1)));
+      sampleLookup = BackendDAE.SAMPLE_LOOKUP(iSample, samples);
+    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, sampleLookup)));
 
     else inTuple;
   end matchcontinue;
@@ -3382,6 +3389,7 @@ algorithm
       array<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo, einfo1;
       BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SampleLookup sampleLookup;
       list<BackendDAE.WhenClause> whenclauses, whenclauses1;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.ZeroCrossing> zero_crossings;
@@ -3394,7 +3402,7 @@ algorithm
       Env.Env env;
       BackendDAE.EqSystems systs;
     case (BackendDAE.DAE(systs, (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, 
-          cache, env, funcs, einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings, relationsLst=relationsLst, 
+          cache, env, funcs, einfo as BackendDAE.EVENT_INFO(sampleLookup=sampleLookup, zeroCrossingLst=zero_crossings, relationsLst=relationsLst, 
           sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations, 
           numberMathEvents=countMathFunctions), eoc, btp, symjacs))), _)
       equation
@@ -3406,7 +3414,7 @@ algorithm
         (zero_crossings, eqs_lst1, _, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst);
         inieqns = BackendEquation.listEquation(eqs_lst1);
         Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
-        einfo1 = BackendDAE.EVENT_INFO(whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
+        einfo1 = BackendDAE.EVENT_INFO(sampleLookup, whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
       then
         BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs));
   end match;
@@ -3431,6 +3439,7 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
+      BackendDAE.SampleLookup sampleLookup;
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relations, sampleLst;
       Integer countRelations;
@@ -3445,7 +3454,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), 
           (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, 
-          cache, env, funcs, einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings, 
+          cache, env, funcs, einfo as BackendDAE.EVENT_INFO(sampleLookup=sampleLookup, zeroCrossingLst=zero_crossings, 
           sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations, 
           relationsNumber=countRelations, numberMathEvents=countMathFunctions), 
           eoc, btp, symjacs), allvars))
@@ -3455,7 +3464,7 @@ algorithm
         Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 number of relations : " +& intString(countRelations) +& "\n");
         Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
         eqns1 = BackendEquation.listEquation(eqs_lst1);
-        einfo1 = BackendDAE.EVENT_INFO(whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
+        einfo1 = BackendDAE.EVENT_INFO(sampleLookup, whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
         allvars = listAppend(allvars, BackendVariable.varList(vars));
       then
         (BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets), (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs), allvars));
