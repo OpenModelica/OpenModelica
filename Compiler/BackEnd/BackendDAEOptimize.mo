@@ -10467,6 +10467,7 @@ algorithm
       list<BackendDAE.Var> vars;
       list<BackendDAE.Equation> eqns;
       String crStr;
+      DAE.Exp crefPreExp;
       
       DAE.Exp condition;
       DAE.ComponentRef left;
@@ -10476,33 +10477,11 @@ algorithm
       DAE.Type ty;
       Boolean scalar "scalar for codegen" ;
       
-      DAE.ComponentRef preCR;
       HashTableExpToIndex.HashTable ht;
 
     // we do not replace initial()
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index, ht)
     then (condition, {}, {}, {}, index, ht);
-    
-    // array-condition with dim = 1 [already in ht]
-    case (DAE.ARRAY(array={condition}), _, index, ht) equation
-      localIndex = BaseHashTable.get(condition, ht);
-      crStr = "$whenCondition" +& intString(localIndex);
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
-    then (condition, {}, {}, {}, index, ht);
-    
-    // array-condition with dim = 1 [not yet in ht]
-    case (DAE.ARRAY(array={condition}), _, index, ht) equation
-      ht = BaseHashTable.add((condition, index), ht);
-      crStr = "$whenCondition" +& intString(index);
-      
-      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, false);
-      
-      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
-      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
-      
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
-    then (condition, {var}, {eqn}, {initialEqn}, index+1, ht);
 
     // array-condition
     case (condition as DAE.ARRAY(ty=ty, scalar=scalar, array=array), _, _, ht) equation
@@ -10523,11 +10502,10 @@ algorithm
       
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, false);
-      
-      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
-      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
-      
+
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      crefPreExp = Expression.makeBuiltinCall("pre", {condition}, DAE.T_BOOL_DEFAULT);
+      initialEqn = BackendDAE.EQUATION(condition, crefPreExp, inSource, false);
     then (condition, {var}, {eqn}, {initialEqn}, index+1, ht);
     
     else equation
@@ -10715,6 +10693,7 @@ algorithm
       list<BackendDAE.Var> vars;
       list<DAE.Statement> stmts;
       String crStr;
+      DAE.Exp crefPreExp;
       
       DAE.Exp condition;
       DAE.ComponentRef left;
@@ -10724,7 +10703,6 @@ algorithm
       DAE.Type ty;
       Boolean scalar "scalar for codegen" ;
       
-      DAE.ComponentRef preCR;
       BackendDAE.Equation initialEqn;
       list<BackendDAE.Equation> initialEqns;
 
@@ -10738,10 +10716,10 @@ algorithm
 
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
       
-      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
-      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      crefPreExp = Expression.makeBuiltinCall("pre", {condition}, DAE.T_BOOL_DEFAULT);
+      initialEqn = BackendDAE.EQUATION(condition, crefPreExp, inSource, false);
     then (condition, {var}, {stmt}, {initialEqn}, index+1);
 
     // array-condition
@@ -10755,10 +10733,10 @@ algorithm
       
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
       
-      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
-      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      crefPreExp = Expression.makeBuiltinCall("pre", {condition}, DAE.T_BOOL_DEFAULT);
+      initialEqn = BackendDAE.EQUATION(condition, crefPreExp, inSource, false);
     then (condition, {var}, {stmt}, {initialEqn}, index+1);
     
     else equation

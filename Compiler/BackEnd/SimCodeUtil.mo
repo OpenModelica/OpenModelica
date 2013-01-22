@@ -1422,14 +1422,14 @@ algorithm
       // new variables
       SimCode.ModelInfo modelInfo;
       list<SimCode.SimEqSystem> allEquations;
-      list<list<SimCode.SimEqSystem>> odeEquations;   // --> functionODE
+      list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
       list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
-      list<SimCode.SimEqSystem> residuals;            // --> initial_residual
-      Boolean useSymbolicInitialization;              // true if a system to solve the initial problem symbolically is generated, otherwise false
-      list<SimCode.SimEqSystem> initialEquations;     // --> initial_equations
-      list<SimCode.SimEqSystem> startValueEquations;  // --> updateBoundStartValues
-      list<SimCode.SimEqSystem> parameterEquations;   // --> updateBoundParameters
-      list<SimCode.SimEqSystem> inlineEquations;      // --> inline solver
+      list<SimCode.SimEqSystem> residuals;                  // --> initial_residual
+      Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
+      list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
+      list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
+      list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+      list<SimCode.SimEqSystem> inlineEquations;            // --> inline solver
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> sampleEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
@@ -1513,7 +1513,7 @@ algorithm
       (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
       
       // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars, helpVarInfo);
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
 
       // expandAlgorithmsbyInitStmts
@@ -6871,7 +6871,6 @@ protected function createInitialResiduals "function createInitialResiduals
   input Option<BackendDAE.BackendDAE> inInitDAE;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
   output list<SimCode.SimEqSystem> outResiduals;
   output list<SimCode.SimEqSystem> outInitialEqns;
   output Integer outNumberOfInitialEquations;
@@ -6881,7 +6880,7 @@ protected function createInitialResiduals "function createInitialResiduals
   output Boolean useSymbolicInitialization;
 algorithm
   (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, useSymbolicInitialization) := 
-  matchcontinue(inDAE, inInitDAE, iuniqueEqIndex, itempvars, helpVarInfo)
+  matchcontinue(inDAE, inInitDAE, iuniqueEqIndex, itempvars)
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs, removedEqs;
@@ -6900,7 +6899,7 @@ algorithm
     case (_, SOME(BackendDAE.DAE(systs, 
                                  shared as BackendDAE.SHARED(knownVars=knvars, 
                                                              aliasVars=aliasVars, 
-                                                             removedEqs=removedEqs))), _, _, _) equation
+                                                             removedEqs=removedEqs))), _, _) equation
 //      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
 
       // generate equations from the solved systems
@@ -6920,7 +6919,7 @@ algorithm
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, uniqueEqIndex, tempvars);
     then (residual_equations, allEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, true);
     
-    case (_, _, _, _, _) equation
+    case (_, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
       Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
@@ -6933,7 +6932,6 @@ algorithm
     then fail();
   end matchcontinue;
 end createInitialResiduals;
-
 
 protected function traverseKnVarsToSimEqSystem
   "author: Frenkel TUD 2012-10"
@@ -7152,7 +7150,6 @@ algorithm
       list<Integer> lv1, lv2;
       BackendDAE.StrongComponents comps;
       list<BackendDAE.Var> lv, lkn;
-      list<SimCode.HelpVarInfo> helpVarInfo;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       BackendDAE.Variables aliasVars, alisvars;
@@ -12440,10 +12437,10 @@ algorithm
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
       list<SimCode.SampleCondition> sampleConditions;
-      list<SimCode.HelpVarInfo> helpVarInfo;
       list<SimCode.SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
+      list<SimCode.HelpVarInfo> helpVarInfo;
       SimCode.MakefileParams makefileParams;
       SimCode.DelayedExpression delayedExps;
       list<SimCode.JacobianMatrix> jacobianMatrixes;
