@@ -2605,7 +2605,7 @@ algorithm
   end if;
   annotation(Documentation(info="<html>
 <h2>Usage</h2>
-<p>Modelica3d requires some changes to the standard libraries in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an m3d object. This API call will load the modified MSL 3.1 and MS 1.0 so Modelica3D runs. It will also load the Pendulum and DoublePendulum examples so they simulate properly.</p>
+<p>Modelica3D requires some changes to the standard ModelicaServices in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an inner ModelicaServices.Modelica3D.Controller object. This API call will load the modified ModelicaServices 3.2.1 so Modelica3D runs.</p>
 <p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
 <p>For more information and example models, visit the <a href=\"https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public/wiki\">Modelica3D wiki</a>.</p>
  </html>"));
