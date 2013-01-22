@@ -528,6 +528,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
+  /* do not forget to set nlsMethod! */
+  comp->fmuData->simulationInfo.nlsMethod = NS_HYBRID;
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(comp->fmuData);
   /* allocate memory for state selection */
