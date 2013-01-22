@@ -1164,27 +1164,22 @@ algorithm
   end matchcontinue;
 end calculateVarSizes;
 
-
-public function numberOfZeroCrossings "function: numberOfZeroCrossings
-  author: Frenkel TUD"
+public function numberOfZeroCrossings "function numberOfZeroCrossings
+  author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outng        "number of zerocrossings";
-  output Integer outng_sample "number of zerocrossings that are samples";
-  output Integer outng_rel    "number of relation in zerocrossings";
-  output Integer outng_math    "number of relation in zerocrossings";    
+  output Integer outNumZeroCrossings "number of zerocrossings" ;
+  output Integer outNumTimeEvents    "number of zerocrossings that are samples" ;
+  output Integer outNumRelations;
+  output Integer outNumMathEventFunctions;
+protected
+  list<ZeroCrossing> zeroCrossingLst;
 algorithm
-  (outng,outng_sample,outng_rel,outng_math):=
-  match (inBackendDAE)
-    local
-      Integer ng,nsam, ngrel, ngmath;
-      list<ZeroCrossing> zc, samples;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc, sampleLst =samples, relationsNumber=ngrel, numberMathEvents = ngmath))))
-      equation
-        ng = listLength(zc);
-        nsam = listLength(samples);
-      then
-        (ng,nsam,ngrel,ngmath);
-  end match;
+  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLookup=BackendDAE.SAMPLE_LOOKUP(nSamples=outNumTimeEvents),
+                                                                          zeroCrossingLst=zeroCrossingLst,
+                                                                          relationsNumber=outNumRelations,
+                                                                          numberMathEvents=outNumMathEventFunctions))) := inBackendDAE;
+
+  outNumZeroCrossings := listLength(zeroCrossingLst);
 end numberOfZeroCrossings;
 
 protected function calculateValues "function: calculateValues

@@ -7062,15 +7062,6 @@ algorithm
   end matchcontinue;
 end filterNonConstant;
 
-
-protected function failUnlessResidual
-  input BackendDAE.Equation eq;
-algorithm
-  _ := match (eq)
-    case (BackendDAE.RESIDUAL_EQUATION(exp=_)) then ();
-  end match;
-end failUnlessResidual;
-
 protected function createVarNominalAssertFromVars
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -7544,14 +7535,14 @@ protected function createVarInfo
   input Integer numStateSets;
   output SimCode.VarInfo varInfo;
 protected
-  Integer ng, ng_sam, ng_rel, ng_math, numInitialResiduals;
+  Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numInitialResiduals;
 algorithm
-  (ng, ng_sam, ng_rel, ng_math) := BackendDAEUtil.numberOfZeroCrossings(dlow);
-  ng := filterNg(ng);
-  ng_sam := filterNg(ng_sam);
-  ng_rel := filterNg(ng_rel);        
+  (numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions) := BackendDAEUtil.numberOfZeroCrossings(dlow);
+  numZeroCrossings := filterNg(numZeroCrossings);
+  numTimeEvents := filterNg(numTimeEvents);
+  numRelations := filterNg(numRelations);        
   numInitialResiduals := numInitialEquations+numInitialAlgorithms;
-  varInfo := SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, numInlineVars, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars, 
+  varInfo := SimCode.VARINFO(numHelpVars, numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, numInlineVars, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars, 
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, numStateSets, SOME(dim_1), SOME(dim_2));
 end createVarInfo;
 

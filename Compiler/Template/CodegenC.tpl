@@ -142,7 +142,7 @@ template simulationFile(SimCode simCode, String guid)
     int measure_time_flag = 0;
     #endif
     
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, sampleLookup)%>
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
     
     <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations, inlineEquations)%>
     
@@ -241,7 +241,7 @@ template simulationFileHeader(SimCode simCode)
   end match
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, BackendDAE.SampleLookup sampleLookup)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -272,7 +272,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nAliasString = <%varInfo.numStringAliasVars%>;
     
     data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
-    data->modelData.nSamples = <%varInfo.numTimeEvents%>; /* <%match sampleLookup case BackendDAE.SAMPLE_LOOKUP(__) then nSamples else -1%> */
+    data->modelData.nSamples = <%varInfo.numTimeEvents%>;
     data->modelData.nRelations = <%varInfo.numRelations%>;
     data->modelData.nMathEvents = <%varInfo.numMathEventFunctions%>;        
     data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
@@ -291,14 +291,14 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, BackendDAE.SampleLookup sampleLookup)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
   <<
   void setupDataStruc(DATA *data)
   {  
     ASSERT(data, "Error while initialize Data");
-    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed, sampleLookup)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
   }
   >>
 end functionInitializeDataStruc;
