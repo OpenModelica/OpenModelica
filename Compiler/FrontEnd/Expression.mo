@@ -5999,14 +5999,14 @@ algorithm
     case (DAE.WHOLEDIM()::rest, _, arg)
       equation
         (res,arg) = traverseExpSubs(rest,rel,arg);
-        res = Util.if_(referenceEq(rest,res),inSubscript,DAE.WHOLEDIM()::rest);
+        res = Util.if_(referenceEq(rest,res),inSubscript,DAE.WHOLEDIM()::res);
       then (res, arg);
 
     case (DAE.SLICE(exp = sub_exp)::rest, _, arg)
       equation
         ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
-        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.SLICE(sub_exp_1)::rest);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.SLICE(sub_exp_1)::res);
       then
         (res, arg);
 
@@ -6014,7 +6014,7 @@ algorithm
       equation
         ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
-        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.INDEX(sub_exp_1)::rest);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.INDEX(sub_exp_1)::res);
       then
         (res, arg);
 
@@ -6022,7 +6022,7 @@ algorithm
       equation
         ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
-        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.WHOLE_NONEXP(sub_exp_1)::rest);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.WHOLE_NONEXP(sub_exp_1)::res);
       then
         (res, arg);
 
