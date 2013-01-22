@@ -73,6 +73,7 @@ protected import HashSet;
 protected import Inline;
 protected import List;
 protected import Util;
+protected import System;
 
 protected type EquationAttributes = tuple<DAE.ElementSource,Boolean> "eqnAttributes";
 
@@ -1344,6 +1345,7 @@ algorithm
     case((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "delay")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "terminal")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
@@ -2023,8 +2025,6 @@ algorithm
        _= arrayUpdate(simpleeqnsarr,r,setVisited(mark,s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars,i);
        (replacable,replaceble1) = replaceableAlias(v,unreplacable);
-       // set fixed=true if replacable
-       v = Debug.bcallret2(replacable,BackendVariable.setVarFixed,v,true,v);
        (vars,shared,isState,eqnslst) = optMoveVarShared(replacable,v,i,eqnAttributes,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
        constExp = Expression.isConst(exp);
        // add to replacements if constant
@@ -3566,19 +3566,20 @@ author: Frenkel TUD 2010-12"
   input tuple<DAE.Exp,HashSet.HashSet> inExp;
   output tuple<DAE.Exp,HashSet.HashSet> outExp;
 algorithm 
-  outExp := match(inExp)
+  outExp := matchcontinue(inExp)
     local
       HashSet.HashSet hs;
       DAE.ComponentRef cr;
       DAE.Exp e;
     case((e as DAE.CREF(componentRef=cr), hs))
       equation
+        true = isNotWhen(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         hs = BaseHashSet.add(cr,hs);
       then
         ((e, hs ));
     case _ then inExp;
-  end match;
+  end matchcontinue;
 end addUnreplacableFromEqnsExp;
 
 protected function addUnreplacableFromWhensSystem
@@ -3752,12 +3753,20 @@ algorithm
       equation
         crlst = List.flatten(List.map(explst,Expression.extractCrefsFromExp));
         crlst = List.map(crlst,ComponentReference.crefStripLastSubs);
+        crlst = List.select(crlst, isNotWhen);
         unreplacable = List.fold(crlst,BaseHashSet.add,unreplacable);
       then
         ((e, unreplacable));
     case _ then inExp;
   end matchcontinue;
 end traverserExpUnreplacable;
+ 
+protected function isNotWhen
+  input DAE.ComponentRef iCr;
+  output Boolean b;
+algorithm
+  b := not intEq(System.strncmp(ComponentReference.crefFirstIdent(iCr),"$when",5),0);
+end isNotWhen;
  
 protected function traverseCrefUnreplacable
  "@author: Frenkel TUD 2012-12"

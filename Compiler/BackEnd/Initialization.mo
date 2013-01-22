@@ -1770,8 +1770,7 @@ algorithm
       
       vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
-      vars = Debug.bcallret2(preused and not isFixed, BackendVariable.addVar, preVar, vars, vars);
-      fixvars = Debug.bcallret2(preused and isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
+      vars = Debug.bcallret2(preused, BackendVariable.addVar, preVar, vars, vars);
     then ((var, (vars, fixvars, hs)));
     
     case ((var, _)) equation

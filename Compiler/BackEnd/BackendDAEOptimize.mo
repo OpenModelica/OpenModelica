@@ -10836,19 +10836,29 @@ algorithm
       list<DAE.ComponentRef> conditionVarList;
       Boolean initialCall;
       DAE.ComponentRef componentRef;
+      DAE.Exp exp;
+      String msg;
       
-    case ({}, conditionVarList, initialCall)
+    case ({}, _, _)
+    then (inConditionVarList, inInitialCall);
+    
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
     then (conditionVarList, initialCall);
     
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, conditionVarList, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, conditionVarList, true);
+    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
+    then (conditionVarList, initialCall);
+
+    case (DAE.BCONST(_)::conditionList, _, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, inInitialCall);
     then (conditionVarList, initialCall);
     
-    case (DAE.CREF(componentRef=componentRef)::conditionList, conditionVarList, initialCall) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::conditionVarList, initialCall);
-    then (conditionVarList, initialCall);
-    
-    else then fail();
+    case (exp::_,_,_)
+      equation
+        msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+     then fail();
   end matchcontinue;
 end getConditionList1;
 
