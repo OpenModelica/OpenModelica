@@ -696,10 +696,13 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       fixCommaInName(&var2,len);
       dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
       if (dataref.n==0) {
+        char buf[WARNINGBUFFSIZE];
         msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
         msg[1] = var;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
+        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
+        res = mk_cons(mk_scon(buf),res);
         continue;
       }
     }
@@ -710,11 +713,14 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       fixCommaInName(&var1,len);
       data = getData(var1,filename,size,&simresglob_c);
       if (data.n==0)  {
+        char buf[WARNINGBUFFSIZE];
         if (data.data) free(data.data);
         msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
         msg[1] = var;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
+        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
+        res = mk_cons(mk_scon(buf),res);
         continue;
       }
     }
