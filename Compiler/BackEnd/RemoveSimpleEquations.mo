@@ -1706,25 +1706,25 @@ algorithm
       Option<Integer> unremovable,const;
       BackendDAE.Var v;
       Integer i1,i2,i;
-      Boolean state,replacable,continue;
+      Boolean state,replacable,continue,replaceble1;
     case (ALIAS(i1=i1,i2=i2),_,NONE(),_,_,_,_,_,_,_,_,_)
       equation
         // collect next rows
         next = List.removeOnTrue(r,intEq,iMT[i1]);
         v = BackendVariable.getVarAt(vars,i1);
         // update max
-        replacable = replaceableAlias(v,unreplacable);
+        (replacable,replaceble1) = replaceableAlias(v,unreplacable);
         state = BackendVariable.isStateVar(v);
-        (rmax,smax,unremovable) = getAlias3(v,i1,state,replacable,r,iRmax,iSmax,iUnremovable);
+        (rmax,smax,unremovable) = getAlias3(v,i1,state,replacable and replaceble1,r,iRmax,iSmax,iUnremovable);
         // go deeper
         (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i1),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,iConst);    
         // collect next rows
         next = List.removeOnTrue(r,intEq,iMT[i2]);
         v = BackendVariable.getVarAt(vars,i2);
         // update max
-        replacable = replaceableAlias(v,unreplacable);
+        (replacable,replaceble1) = replaceableAlias(v,unreplacable);
         state = BackendVariable.isStateVar(v);
-        (rmax,smax,unremovable) = getAlias3(v,i2,state,replacable,r,rmax,smax,unremovable);
+        (rmax,smax,unremovable) = getAlias3(v,i2,state,replacable and replaceble1,r,rmax,smax,unremovable);
         // go deeper
         (rmax,smax,unremovable,const,continue) = getAliasContinue(continue,next,SOME(i2),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,const);    
        then 
@@ -1736,9 +1736,9 @@ algorithm
         next = List.removeOnTrue(r,intEq,iMT[i]);
         v = BackendVariable.getVarAt(vars,i);
         // update max
-        replacable = replaceableAlias(v,unreplacable);
+        (replacable,replaceble1) = replaceableAlias(v,unreplacable);
         state = BackendVariable.isStateVar(v);
-        (rmax,smax,unremovable) = getAlias3(v,i,state,replacable,r,iRmax,iSmax,iUnremovable);
+        (rmax,smax,unremovable) = getAlias3(v,i,state,replacable and replaceble1,r,iRmax,iSmax,iUnremovable);
         // go deeper
         (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,iConst);    
        then 
@@ -1912,11 +1912,13 @@ protected function replaceableAlias
   input BackendDAE.Var var;
   input HashSet.HashSet unreplacable;
   output Boolean res;
+  output Boolean res1 "true if not in unreplacable Map";
 algorithm
-  res := matchcontinue (var,unreplacable)
+  (res,res1) := matchcontinue (var,unreplacable)
     local
       BackendDAE.VarKind kind;
       DAE.ComponentRef cr;
+      Boolean b;
     case (BackendDAE.VAR(varName=cr,varKind=kind),_)
       equation
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
@@ -1924,12 +1926,12 @@ algorithm
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         false = BackendVariable.varHasUncertainValueRefine(var);
         cr = ComponentReference.crefStripLastSubs(cr);
-        false = BaseHashSet.has(cr, unreplacable);
+        b = not BaseHashSet.has(cr, unreplacable);
       then
-        true;        
+        (true,b);        
     else
       then
-        false;
+        (false,false);
   end matchcontinue;
 end replaceableAlias;
 
@@ -1963,7 +1965,7 @@ algorithm
       DAE.ComponentRef pcr,cr;
       EquationAttributes eqnAttributes;
       DAE.ElementSource source;
-      Boolean negate,replacable,constExp,isState;
+      Boolean negate,replacable,replaceble1,constExp,isState;
       DAE.Exp exp,exp1,expcr,dexp;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqnslst;
@@ -1982,8 +1984,8 @@ algorithm
        exp = Expression.crefExp(pcr);
        exp1 = Debug.bcallret1(negate,Expression.negate,exp,exp);
        v = BackendVariable.getVarAt(iVars,i);
-       replacable = replaceableAlias(v,unreplacable);
-       (vars,eqnslst,shared,repl) = handleSetVar(replacable,SOME(DAE.RCONST(0.0)),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
+       (replacable,replaceble1) = replaceableAlias(v,unreplacable);
+       (vars,eqnslst,shared,repl) = handleSetVar(replacable and replaceble1,SOME(DAE.RCONST(0.0)),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
        expcr = Expression.crefExp(cr);
        pv = BackendVariable.getVarSharedAt(i2,ishared);
        vsattr = addVarSetAttributes(pv,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
@@ -2003,9 +2005,9 @@ algorithm
        exp = Expression.crefExp(DAE.crefTime);
        exp1 = Debug.bcallret1(negate,Expression.negate,exp,exp);
        v = BackendVariable.getVarAt(iVars,i);
-       replacable = replaceableAlias(v,unreplacable);
+       (replacable,replaceble1) = replaceableAlias(v,unreplacable);
        dexp = Debug.bcallret1(negate,Expression.negate,exp,DAE.RCONST(1.0));
-       (vars,eqnslst,shared,repl) = handleSetVar(replacable,SOME(dexp),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
+       (vars,eqnslst,shared,repl) = handleSetVar(replacable and replaceble1,SOME(dexp),v,i,eqnAttributes,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
        expcr = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v,negate,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
@@ -2020,13 +2022,13 @@ algorithm
        TIMEINDEPENTVAR(cr=cr,i=i,exp=exp,eqnAttributes=eqnAttributes) =  s;
        _= arrayUpdate(simpleeqnsarr,r,setVisited(mark,s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars,i);
-       replacable = replaceableAlias(v,unreplacable);
+       (replacable,replaceble1) = replaceableAlias(v,unreplacable);
        // set fixed=true if replacable
        v = Debug.bcallret2(replacable,BackendVariable.setVarFixed,v,true,v);
        (vars,shared,isState,eqnslst) = optMoveVarShared(replacable,v,i,eqnAttributes,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
        constExp = Expression.isConst(exp);
        // add to replacements if constant
-       repl = Debug.bcallret4(replacable and constExp, BackendVarTransform.addReplacement,iRepl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),iRepl);
+       repl = Debug.bcallret4(replacable and constExp and replaceble1, BackendVarTransform.addReplacement,iRepl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),iRepl);
        // if state der(var) has to replaced to 0
        repl = Debug.bcallret3(isState,BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
        exp = Expression.crefExp(cr);
@@ -2320,7 +2322,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef cr,cr1,cr2;
-      Boolean negate,replacable,state,globalnegate1,diffed;
+      Boolean negate,replacable,state,globalnegate1,diffed,replaceble1;
       DAE.ElementSource source;
       DAE.Exp crexp,exp1;
       Option<DAE.Exp> dexp;
@@ -2330,7 +2332,7 @@ algorithm
       equation
         i = Util.if_(intEq(i1,ilast),i2,i1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars,i);
-        replacable = replaceableAlias(v,unreplacable);
+        (replacable,replaceble1) = replaceableAlias(v,unreplacable);
         crexp = Expression.crefExp(cr);
         // negate if necessary
         globalnegate1 = Util.if_(negate,not globalnegate,globalnegate);
@@ -2338,7 +2340,7 @@ algorithm
         dexp = Debug.bcallret1(globalnegate1,negateOptExp,derReplaceState,derReplaceState);
         // replace alias with selected variable if replacable
         source = Debug.bcallret3(replacable,addSubstitutionOption,optExp,crexp,source,source);
-        (vars,eqnslst,shared,repl) = handleSetVar(replacable,derReplaceState,v,i,(source,diffed),exp1,iMT,iVars,iEqnslst,ishared,iRepl);
+        (vars,eqnslst,shared,repl) = handleSetVar(replacable and replaceble1,derReplaceState,v,i,(source,diffed),exp1,iMT,iVars,iEqnslst,ishared,iRepl);
         vsattr = addVarSetAttributes(v,globalnegate1,mark,simpleeqnsarr,iAttributes);
         // negate if necessary
         crexp = Debug.bcallret1(negate,Expression.negate,crexp,crexp);
@@ -3531,7 +3533,9 @@ end addUnreplacableFromStateSet;
 
 protected function addUnreplacableFromWhens
 "function addUnreplacableFromWhens
- author: Frenkel TUD 2012-12"
+ author: Frenkel TUD 2012-12
+  collect all lhs of whens and array assign statement because these are not
+  replaceable or if they are replaced the initial system get in trouble"
   input BackendDAE.BackendDAE inDAE;
   input HashSet.HashSet inUnreplacable;
   output HashSet.HashSet outUnreplacable;
@@ -3630,6 +3634,7 @@ algorithm
       DAE.Statement stmt;
       list< DAE.Statement> stmts;
       HashSet.HashSet hs;
+      DAE.ComponentRef cr;
     case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()),_)
       equation
         hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
@@ -3640,7 +3645,14 @@ algorithm
         hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
         hs = addUnreplacableFromWhenStmt(stmt,hs);
       then
-        hs;    
+        hs;
+    // add also lhs of array assign stmts because these are not replacable with array(...)
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr),_)
+      equation
+        cr = ComponentReference.crefStripLastSubs(cr);
+        hs = BaseHashSet.add(cr, iHs);
+      then
+        hs;  
     else then iHs;    
   end match;
 end addUnreplacableFromWhenStmt;
