@@ -738,7 +738,8 @@ algorithm
     match (cond)
     local
       DAE.Exp start;
-    case ((DAE.CALL(path=Absyn.IDENT(name="sample"),expLst=(start:: _)),_) )
+    // lochel: first argument of sample becomes an unique index in BackendDAECreate
+    case ((DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=(_::start:: _)),_) )
       then ExpressionDump.printExpStr(replaceVars(start,{},{},{}));
     end match; 
 end getStartTime;

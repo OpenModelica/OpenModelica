@@ -1317,8 +1317,8 @@ algorithm
        BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar);
 end toplevelInputOrUnfixed;
 
-protected function traversingTimeVarsFinder "
-author: Frenkel 2012-12"
+protected function traversingTimeVarsFinder "function traversingTimeVarsFinder
+  author: Frenkel 2012-12"
   input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > inExp;
   output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > outExp;
 algorithm 

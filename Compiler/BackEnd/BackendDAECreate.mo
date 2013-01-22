@@ -3714,11 +3714,10 @@ algorithm
    := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
 end findZeroCrossings3;
 
-protected function collectZC "function: collectZeroCrossings
-
-  Collects zero crossings in equations
+protected function collectZC "function collectZC
+  author: unknown
   modified: 2011-01 by wbraun
-"
+  Collects zero crossings in equations"
   input tuple<DAE.Exp, tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp, Boolean, tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>>> outTplExpExpTplExpExpLstVariables;
 algorithm

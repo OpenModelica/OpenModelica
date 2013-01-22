@@ -1005,7 +1005,8 @@ algorithm
   end match;
 end calculateSizes;
 
-protected function calculateNumberZeroCrossings
+protected function calculateNumberZeroCrossings "function calculateNumberZeroCrossings
+  author: unknown"
   input list<ZeroCrossing> zcLst;
   input Integer inZc_index;
   input Integer inSample_index;
