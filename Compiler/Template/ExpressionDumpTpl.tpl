@@ -15,7 +15,7 @@ match exp
   case BCONST(__) then bool
   case ENUM_LITERAL(__) then
     (if typeinfo() then '/* <%index%> */') + AbsynDumpTpl.dumpPath(name)
-  case CREF(__) then dumpCref(componentRef)
+  case CREF(__) then (if typeinfo() then '/*<%unparseType(ty)%>*/ ') + dumpCref(componentRef)
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
@@ -44,6 +44,10 @@ match exp
     let then_str = dumpExp(expThen, stringDelimiter)
     let else_str = dumpExp(expElse, stringDelimiter)
     'if <%cond_str%> then <%then_str%> else <%else_str%>'
+  case CALL(attr=attr as CALL_ATTR(builtin=true)) then
+    let func_str = AbsynDumpTpl.dumpPathNoQual(path)
+    let argl = dumpExpList(expLst, stringDelimiter, ", ")
+    '<%if typeinfo() then '/*<%unparseType(attr.ty)%>*/ ' %><%func_str%>(<%argl%>)'
   case CALL(__) then
     let func_str = AbsynDumpTpl.dumpPathNoQual(path)
     let argl = dumpExpList(expLst, stringDelimiter, ", ")

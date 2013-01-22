@@ -4022,9 +4022,9 @@ algorithm
         (cache,exp_1 as DAE.MATRIX(matrix=_),
          DAE.PROP(t as DAE.T_ARRAY(dims = {dim}, ty = tp),c),_) = elabExp(cache, env, exp, impl,NONE(), true,pre,info);
 
-        true = Types.isArray(t,{});
+        true = Types.isArray(tp,{});
 
-        t2 = Types.unliftArray(t);
+        t2 = Types.unliftArray(tp);
         etp = Types.simplifyType(t2);
 
         call = Expression.makeBuiltinCall("pre", {exp_1}, etp);

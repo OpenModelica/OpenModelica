@@ -258,6 +258,7 @@ package DAE
     record CALL
       Absyn.Path path;
       list<Exp> expLst;
+      CallAttributes attr;
     end CALL;
 
     record PARTEVALFUNCTION
@@ -575,6 +576,13 @@ package DAE
       Pattern pat;
     end PAT_SOME;
   end Pattern;
+
+  uniontype CallAttributes
+    record CALL_ATTR
+      Type ty;
+      Boolean builtin;
+    end CALL_ATTR;
+  end CallAttributes;
 
   uniontype ReductionInfo
     record REDUCTIONINFO
