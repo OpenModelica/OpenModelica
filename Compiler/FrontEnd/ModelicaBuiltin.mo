@@ -2590,14 +2590,19 @@ external "builtin";
 end extendsFrom;
 
 function loadModelica3D
+  input String version := "3.2.1";
   output Boolean status;
 protected
   String m3d;
 algorithm
-  status := loadModel(Modelica,{"3.1"});
-  status := status and loadModel(ModelicaServices,{"1.0 modelica3d"});
-  m3d:=getInstallationDirectoryPath()+"/lib/omlibrary-modelica3d/";
-  status := status and min(loadFile({m3d + file for file in {"DoublePendulum.mo","Engine1b.mo","Internal.mo","Pendulum.mo"}}));
+  status := loadModel(Modelica,{version});
+  if version == "3.1" then
+    status := status and loadModel(ModelicaServices,{"1.0 modelica3d"});
+    m3d:=getInstallationDirectoryPath()+"/lib/omlibrary-modelica3d/";
+    status := status and min(loadFile({m3d + file for file in {"DoublePendulum.mo","Engine1b.mo","Internal.mo","Pendulum.mo"}}));
+  elseif status then
+    status := loadModel(ModelicaServices,{version + " modelica3d"});
+  end if;
   annotation(Documentation(info="<html>
 <h2>Usage</h2>
 <p>Modelica3d requires some changes to the standard libraries in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an m3d object. This API call will load the modified MSL 3.1 and MS 1.0 so Modelica3D runs. It will also load the Pendulum and DoublePendulum examples so they simulate properly.</p>
