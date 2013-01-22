@@ -2464,6 +2464,7 @@ algorithm
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) = List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDummyDerivatives, ht);
+        (eqnslst1,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, replaceDummyDerivatives, ht);
         // remove stateSelect=StateSelect.always vars
         varlst = List.filter1(hov, notVarStateSelectAlways, level);
         neqns = BackendEquation.equationLstSize(eqnslst);
@@ -2484,7 +2485,7 @@ algorithm
         // change dummy states, update Assignments
         (syst,ht) = addDummyStates(dummyVars,level,repl,syst,iHt);
         // fix derivative indexes
-        vars = List.fold1(iHov, fixDerivativeIndex, level, vars);
+        vars = List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
         // update IncidenceMatrix
         (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // genereate new Matching
@@ -2594,7 +2595,7 @@ algorithm
     case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffindx,derName=derName)),_,_)
       equation
         true = intGt(diffindx,level);
-        diffindx = diffindx-1;
+        diffindx = diffindx-level;
         v = BackendVariable.setVarKind(inVar, BackendDAE.STATE(diffindx,derName));
         vars = BackendVariable.addVar(v, iVars);
       then
@@ -7546,7 +7547,7 @@ algorithm
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs)));
         (syst,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
-        graph = GraphML.getGraph("G",false);  
+        graph = GraphML.getGraph("G",false);
         ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
         //neqns = BackendDAEUtil.equationArraySize(eqns);
         neqns = BackendDAEUtil.equationSize(eqns);
