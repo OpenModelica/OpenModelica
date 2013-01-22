@@ -2656,6 +2656,10 @@ algorithm
     local
       DAE.Exp exp;
 
+    // An index subscript from range.
+    case (DAE.INDEX(exp = exp as DAE.RANGE(ty=_)), _)
+      then getRangeContents(exp);
+
     // An index subscript, return it as an array.
     case (DAE.INDEX(exp = _), _) then {inSubscript};
 
@@ -2669,6 +2673,29 @@ algorithm
 
   end match;
 end expandSubscript;
+
+protected function getRangeContents 
+  input DAE.Exp e;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match e
+    local
+      Integer istart,istep,istop;
+      list<Integer> ilst;
+      list<DAE.Exp> explst;
+    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop))
+      equation
+        ilst = List.intRange3(istart, 1, istop);
+        explst = List.map(ilst, Expression.makeIntegerExp);
+      then List.map(explst, Expression.makeIndexSubscript);
+        
+    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop))
+      equation
+        ilst = List.intRange3(istart, istep, istop);
+        explst = List.map(ilst, Expression.makeIntegerExp);
+      then List.map(explst, Expression.makeIndexSubscript);
+  end match;
+end getRangeContents;
 
 protected function expandDimension
   "Generates a list of subscripts given an array dimension."
