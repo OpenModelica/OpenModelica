@@ -1704,7 +1704,6 @@ algorithm
         // do late Inline also in orgeqnslst
         orgEqnsLst = inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),{});
         Debug.fcall(Flags.BLT_DUMP, print, "Dynamic State Selection\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDAETransform.dumpStateOrder, so);
         Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, isyst, "Index Reduced System");
         // geth the number of states without stateSelect.always (free states), if the number of differentiated equations is equal to the number of free states no selection is necessary 
         freestatevars = BackendVariable.traverseBackendDAEVars(v,countStateCandidates,0);
@@ -2390,6 +2389,7 @@ algorithm
         ErrorExt.setCheckpoint("DynamicStateSelection");
         // get highest order derivatives
         (hov,so) = highestOrderDerivatives(BackendVariable.daeVars(isyst),iSo);
+        Debug.fcall(Flags.BLT_DUMP, BackendDAETransform.dumpStateOrder, so);
         // get scalar incidence matrix solvable
         funcs = BackendDAEUtil.getFunctions(ishared);
         // replace der(x,n) with DERn.Der(n-1)..DER.x and add variables
@@ -2562,12 +2562,7 @@ algorithm
       DAE.ComponentRef dcr;
       list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> vlst;
-    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx,derName=NONE())),_,_,_,_)
-      equation
-        true = intEq(diffindx,1);
-      then
-        iVars;
-    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx,derName=SOME(_))),_,_,_,_)
+    case(BackendDAE.VAR(varName=dcr,varKind=BackendDAE.STATE(index=diffindx)),_,_,_,_)
       equation
         true = intEq(diffindx,1);
         crlst = BackendDAETransform.getDerStateOrder(dcr,so);
