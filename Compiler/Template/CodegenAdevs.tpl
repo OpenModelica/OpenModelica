@@ -897,8 +897,7 @@ template initialResidualEqns(list<SimEqSystem> residualEquations)
   let &varDecls = buffer "" /*BUFD*/
   let body = (residualEquations |> SES_RESIDUAL(__) =>
       match exp 
-      case DAE.SCONST(__) then
-        ''
+      case DAE.SCONST(__) then ''
       else
         let &preExp = buffer "" /*BUFD*/
         let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
@@ -975,7 +974,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+      let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
 
       if reinits then  
@@ -1347,7 +1346,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1361,7 +1360,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -1384,7 +1383,7 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1394,7 +1393,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -1448,8 +1447,12 @@ template crefToCStr(ComponentRef cr)
  "Helper function to cref."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case CREF_IDENT(__) then
+    '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
+  case CREF_QUAL(ident="$PRE") then
+    '$old<%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case CREF_QUAL(__) then
+    '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -3242,7 +3245,7 @@ match context
 case SIMULATION(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
-    let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+    let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
     let statements = (statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/)
       ;separator="\n")
@@ -3267,7 +3270,7 @@ case SOME(when as STMT_WHEN(__)) then
       algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
-  let elseCondStr = (when.conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let elseCondStr = (when.conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
   <<
   else if(<%elseCondStr%>)
   {
