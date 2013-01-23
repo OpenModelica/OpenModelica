@@ -165,7 +165,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
          AdevsSampleData** samples;
          int numTimeEvents() const { return <%vi.numTimeEvents%>; }
-         bool sample(double tStart, double tInterval, int index);
+         bool sample(int bogus, double tStart, double tInterval, int index);
 
          AdevsDelayData** delays;
          int numDelays() const { return <%match simCode.delayedExps case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>; }
@@ -516,7 +516,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       restore_vars();
   }
 
-  bool <%lastIdentOfPath(modelInfo.name)%>::sample(double tStart, double tInterval, int index)
+  bool <%lastIdentOfPath(modelInfo.name)%>::sample(int bogus, double tStart, double tInterval, int index)
   {
       if (samples[index] == NULL)
           samples[index] = new AdevsSampleData(tStart,tInterval);
@@ -4123,7 +4123,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={s1}, attr=CALL_ATTR(__)) then
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, attr.ty, &preExp, &varDecls)
-  
+ 
   case exp as CALL(attr=CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
