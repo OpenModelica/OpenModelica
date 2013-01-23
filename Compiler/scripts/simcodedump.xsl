@@ -113,17 +113,17 @@
 </xsl:template>
 
 <xsl:template match="operations/substitution">
-  <p><span title="substitution">Operation <xsl:number count="*" />: </span>
-    <xsl:value-of select="before"/>
-    <xsl:for-each select="exp">
+  <p><span title="substitution">Operation <xsl:number count="*" /> Substitution: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="before"/>','<xsl:value-of select="exp[last()]"/>');</script>
+    <!-- <xsl:for-each select="exp">
       <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
       <xsl:value-of select="."/>
-    </xsl:for-each>
+    </xsl:for-each> -->
   </p>
 </xsl:template>
 
 <xsl:template match="operations/dummyderivative">
-  <p><span title="dummy derivative">Operation <xsl:number count="*" />: </span>
+  <p><span title="dummy derivative">Operation <xsl:number count="*" /> Dummyderivative: </span>
     <xsl:value-of select="chosen"/>
     <xsl:for-each select="candidate">
       <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
@@ -133,54 +133,45 @@
 </xsl:template>
 
 <xsl:template match="operations/simplify">
-  <p><span title="simplify">Operation <xsl:number count="*" />: </span>
-    <xsl:value-of select="before"/>
-    <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
-    <xsl:value-of select="after"/>
+  <p><span title="simplify">Operation <xsl:number count="*" /> Simplify: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="before"/>','<xsl:value-of select="after"/>');</script>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/inline">
-  <p><span title="inline">Operation <xsl:number count="*" />: </span>
-    <xsl:value-of select="before"/>
-    <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
-    <xsl:value-of select="after"/>
+  <p><span title="inline">Operation <xsl:number count="*" /> Inline: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="before"/>','<xsl:value-of select="after"/>');</script>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/op-residual">
-  <p><span title="make an equality equation into residual form">Operation <xsl:number count="*" />: </span>
-    <xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/>
-    <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
-    0.0 = <xsl:value-of select="result"/>
+  <p><span title="make an equality equation into residual form">Operation <xsl:number count="*" /> Residual: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/>','0.0 = <xsl:value-of select="result"/>');</script>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/solve">
-  <p><span title="solve equation">Operation <xsl:number count="*" />: </span>
-    <xsl:value-of select="old/lhs"/> = <xsl:value-of select="old/rhs"/>
-    <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
-    <xsl:value-of select="new/lhs"/> = <xsl:value-of select="new/rhs"/>
+  <p><span title="solve equation">Operation <xsl:number count="*" /> Solve: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="old/lhs"/> = <xsl:value-of select="old/rhs"/>','<xsl:value-of select="new/lhs"/> = <xsl:value-of select="new/rhs"/>');</script>
     <xsl:if test="assertions/assertion">assertion...</xsl:if></p>
 </xsl:template>
 
 <xsl:template match="operations/solved">
-  <p><span title="already solved equation">Operation <xsl:number count="*" />: </span>
+  <p><span title="already solved equation">Operation <xsl:number count="*" /> Solved: </span>
     <xsl:value-of select="lhs"/><xsl:text> = </xsl:text><xsl:value-of select="rhs"/>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/linear-solved">
-  <p><span title="solved known linear system of equations">Operation <xsl:number count="*" />: </span>
+  <p><span title="solved known linear system of equations">Operation <xsl:number count="*" /> Linear-solved: </span>
     TODO: Fix this crap: <xsl:value-of select="."/>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/derivative">
-  <p><span title="solve">Operation <xsl:number count="*" />: </span>
-   d/d<xsl:value-of select="with-respect-to"/><xsl:text> </xsl:text><xsl:value-of select="exp"/>
-   <b class="arrow"><xsl:text disable-output-escaping="yes">&amp;rarr;</xsl:text></b>
-   <xsl:value-of select="result"/>
+  <p><span title="solve">Operation <xsl:number count="*" /> d/dx: </span>
+   d/d<xsl:value-of select="with-respect-to"/><xsl:text> </xsl:text>
+   <script type="text/javascript">show_diff('<xsl:value-of select="exp"/>','<xsl:value-of select="result"/>');</script>
   </p>
 </xsl:template>
 
@@ -222,6 +213,17 @@ b.arrow
   text-shadow: -1px 0 blue, 0 1px blue, 1px 0 blue, 0 -1px blue;
 }
 </style>
+  <script type="text/javascript" src="diff_match_patch.js"></script>
+  <script type="text/javascript">
+    var dmp = new diff_match_patch();
+    dmp.Diff_EditCost = 4;
+    function show_diff(before,after) {
+      var diffs = dmp.diff_main(before, after, false);
+      dmp.diff_cleanupEfficiency(diffs);
+      var html = dmp.diff_prettyHtml(diffs);
+      document.write(html);
+    }
+  </script>
   </head>
   <body>
   <h2>Equations (<xsl:value-of select="count(simcodedump/equations/equation)"/>)</h2>
