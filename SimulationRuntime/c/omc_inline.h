@@ -33,10 +33,14 @@
 #define INLINE_H_
 
 #if defined(_MSC_VER)
-/* Visual C++ */
+/* Visual C/C++
+   "inline" is a proper keyword in Visual C++ and it is an error to macroize it from VS2012 (_MSC_VER=1700);
+   so, macroize it only for Visual C where "inline" is not available  */
+#ifndef __cplusplus
 # ifndef inline
 #  define inline __inline
 # endif
+#endif
 #elif defined(__GNUC__)
 /* GCC */
 # ifndef inline

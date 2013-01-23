@@ -32,6 +32,8 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
   {
     <%modelDataMembers(modelInfo, simCode)%>
     
+    <%sharedLiteralDefinitions(literals, simCode)%>
+    
     <%let fbody = simulationFunctionsBody(simCode)
       if fbody then 
         <<
@@ -93,6 +95,48 @@ template lastIdentOfPath(Path modelName) ::=
   case IDENT(__)     then name
   case FULLYQUALIFIED(__) then lastIdentOfPath(path)
 end lastIdentOfPath;
+
+template sharedLiteralDefinitions(list<Exp> literals, SimCode simCode) 
+::=
+  <<
+  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal, i0, simCode) ; separator="\n";empty%>
+  >>  
+end sharedLiteralDefinitions;
+
+template literalExpConst(Exp lit, Integer index, SimCode simCode)
+::=
+  let name = '_OMC_LIT<%index%>'
+  
+  match lit
+  case SCONST(__) then
+    let escstr = Util.escapeModelicaStringToCString(string)
+    <<
+    const string <%name%> = "<%Util.escapeModelicaStringToCString(string)%>";
+    >>
+  case lit as MATRIX(ty=ty as T_ARRAY(__))
+  case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+    let arrType = expTypeArray(ty, listLength(getDimensionSizes(ty)))
+    let sty = expTypeShort(ty)
+    let dims = (getDimensionSizes(ty) |> dim => dim ;separator=", ")
+    let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
+    <<
+    static <%arrType%> <%name%> = new <%arrType%>(<%dims%>,-1, new <%sty%>[] { <%data%> });
+    >>  
+  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+end literalExpConst;
+
+//should be identical to call daeExp()
+//but it is more specific, maybe can catch an illegal exp which is expected to be a constant 
+template literalExpConstArrayVal(Exp lit)
+::=
+  match lit
+    case ICONST(__) then integer
+    case BCONST(__) then if bool then "true" else "false"
+    case RCONST(__) then real
+    case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+    case SHARED_LITERAL(__) then '_OMC_LIT<%index%>'
+    else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
+end literalExpConstArrayVal;
 
 template simulationFunctionsBody(SimCode simCode) ::=
 match simCode
@@ -626,6 +670,13 @@ public override bool FunDAE()
 >>
 end functionDAE;
 
+template whenConditions(list<ComponentRef> conditions, SimCode simCode)
+" Generates reinit statemeant"
+::=
+  if conditions then
+    (conditions |> cr => '<%cref(cr, simCode)%> && !<%preCref(cr, simCode)%> /* edge */';separator=" || ")
+  else "false"  
+end whenConditions;
 
 template genreinits(SimWhenClause whenClauses, Integer widx, SimCode simCode)
 " Generates reinit statemeant"
@@ -633,14 +684,14 @@ template genreinits(SimWhenClause whenClauses, Integer widx, SimCode simCode)
 
 match whenClauses
 case SIM_WHEN_CLAUSE(__) then
-if reinits then
-  let helpIf = (conditions |> e => ' || <%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */')
+if reinits then  
   <<
   //For whenclause index: <%widx%>
-  if (false<%helpIf%>) { 
+  if (<%whenConditions(conditions, simCode)%>) { 
     <%functionWhenReinitStatementThen(reinits, simCode)%>
   }
   >>
+  
 end genreinits;
 
 
@@ -1132,11 +1183,10 @@ case SES_NONLINEAR(__) then
   >>
   
 case SES_WHEN(__) then
-  let helpIf = (conditions |> e => ' || <%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */')
   let &preExp = buffer ""
   let rightExp = daeExp(right, context, &preExp, simCode)
   <<
-  if (false<%helpIf%>) {
+  if (<%whenConditions(conditions, simCode)%>) {
     <%preExp%>
     <%cref(left, simCode)%> = <%rightExp%>;
   } else {
@@ -1160,6 +1210,7 @@ template cref(ComponentRef cr, SimCode simCode) ::=
   case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
   case CREF_IDENT(ident = "time") then "time"
   case CREF_IDENT(ident = "$_lambda") then "_lambda"
+  //case CREF_QUAL(ident = "$PRE") then preCref(componentRef, simCode)
   else '/*<% crefStr(cr, simCode) %>*/<% representationCref(cr, simCode) %>'
   // not needed ... //the space at the start is important to avoid ambiguity with "/" operator to become "//" line comment
 /*
@@ -1174,6 +1225,36 @@ template representationCref(ComponentRef inCref, SimCode simCode) ::=
   cref2simvar(inCref, simCode) |> SIMVAR(__) =>
     '<%representationArrayName(varKind, type_)%>[<% index %>]'
 end representationCref;
+
+//TODO: a HACK ?
+template crefToReal(ComponentRef cr, SimCode simCode) ::=
+<</*(double)<% crefStr(cr, simCode) 
+            %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
+                   '<%representationArrayName(varKind, type_)%>[<% index %>]'
+                   + (match type_ case T_BOOL(__) 
+                      then "?1.0:0.0")
+                %>
+>>
+end crefToReal;
+
+//TODO: a HACK ?
+template daeExpRealConversionPostfix(Exp exp, SimCode simCode) ::=
+  match exp
+  case CREF(__) then
+     match cref2simvar(componentRef, simCode) 
+     case SIMVAR(type_ = T_BOOL(__)) then "?1.0:0.0"
+  //TODO: make conversion also for other expressions
+end daeExpRealConversionPostfix;
+
+//TODO: a HACK ?
+template convertRealExpForCref(Text realExp, ComponentRef cr, SimCode simCode) ::=
+  cref2simvar(cr, simCode) |> SIMVAR(__) =>
+     match type_ 
+     case T_BOOL(__) then '(<%realExp%>) != 0.0'
+     case T_INTEGER(__) then '(int)(<%realExp%>)'
+     else realExp                
+
+end convertRealExpForCref;
 
 template representationArrayName(VarKind varKind, Type type_) ::=
   match varKind 
@@ -1197,36 +1278,6 @@ template representationArrayNameTypePostfix(Type type_) ::=
   case T_REAL(__) then ""
   else "BAD_ARRAY_NAME_POSTFIX"
 end representationArrayNameTypePostfix;
-
-//TODO: a HACK ?
-template daeExpRealConversionPostfix(Exp exp, SimCode simCode) ::=
-  match exp
-  case CREF(__) then
-     match cref2simvar(componentRef, simCode) 
-     case SIMVAR(type_ = T_BOOL(__)) then "?1.0:0.0"
-  //TODO: make conversion also for other expressions
-end daeExpRealConversionPostfix;
-
-//TODO: a HACK ?
-template crefToReal(ComponentRef cr, SimCode simCode) ::=
-<</*(double)<% crefStr(cr, simCode) 
-            %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
-                   '<%representationArrayName(varKind, type_)%>[<% index %>]'
-                   + (match type_ case T_BOOL(__) 
-                      then "?1.0:0.0")
-                %>
->>
-end crefToReal;
-
-//TODO: a HACK ?
-template convertRealExpForCref(Text realExp, ComponentRef cr, SimCode simCode) ::=
-  cref2simvar(cr, simCode) |> SIMVAR(__) =>
-     match type_ 
-     case T_BOOL(__) then '(<%realExp%>) != 0.0'
-     case T_INTEGER(__) then '(int)(<%realExp%>)'
-     else realExp                
-
-end convertRealExpForCref;
 
 template preCref(ComponentRef cr, SimCode simCode) ::=
 '/*pre(<%crefStr(cr, simCode)%>)*/pre<%representationCref(cr, simCode)%>'
@@ -1502,9 +1553,8 @@ match context
 case SIMULATION(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
-    let helpIf = (conditions |> e => ' || (<%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */)')
     <<
-    if (false<%helpIf%>) {
+    if (<%whenConditions(conditions, simCode)%>) {
       <% statementLst |> stmt =>  algStatement(stmt, context, simCode)
          ;separator="\n" %>
     }
@@ -1519,9 +1569,8 @@ template algStatementWhenElse(Option<DAE.Statement> stmt, SimCode simCode)
 ::=
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let elseCondStr = (when.conditions |> e => ' || (<%cref(e, simCode)%> && !$P$PRE<%cref(e, simCode)%> /* edge */)')
   <<
-  else if (false<%elseCondStr%>) {
+  else if (<%whenConditions(when.conditions, simCode)%>) {
     <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete, simCode)
        ;separator="\n"%>
   }
@@ -1608,13 +1657,7 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   //case VALUEBLOCK(__) then "VALUEBLOCK_NOT_IMPLEMENTED"
   case LIST(__)       then "LIST_NOT_IMPLEMENTED"
   case CONS(__)       then "CONS_NOT_IMPLEMENTED"
-  case sl as SHARED_LITERAL(__) then
-    match simCode
-    case SIMCODE(__) then
-      match listNth(literals, sl.index)
-      case DAE.SCONST(__) then string
-      else "TemplErr:SHARED_LITERAL() expected to be a string"
-    end match
+  case SHARED_LITERAL(__) then '_OMC_LIT<%index%>'    
   // META_TUPLE
   // META_OPTION
   // METARECORDCALL
@@ -2008,11 +2051,11 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
          //else 
          '<%var1%> / <%var2%>'
     case _ then
-         let string = daeExp(e3, context, &preExp, simCode)
-         let msg = Util.escapeModelicaStringToCString(string)
+         let msg = daeExp(e3, context, &preExp, simCode)
+         //let msg = Util.escapeModelicaStringToCString(string)
          let &tmpVar2 = buffer "" 
          let &preExp += 
-            '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException("<%msg%>");<%\n%>'         
+            '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException(<%msg%>);<%\n%>'         
          '<%var1%> / <%tmpVar2%>' 
     end match 
     

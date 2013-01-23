@@ -421,7 +421,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       else if(mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
         it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
-        if(it != r_indx_map.end())
+        if(it != r_indx_parammap.end())
         {
           table = 1;
           aliascol = it->second+1;
@@ -461,7 +461,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       else if(mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
         it = i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if(it != i_indx_map.end())
+        if(it != i_indx_parammap.end())
           table = 1;
       }
       if(table)
@@ -499,7 +499,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
         else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
         {
           it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-          if(it != b_indx_map.end())
+          if(it != b_indx_parammap.end())
             table = 1;
         }
       }

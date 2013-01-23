@@ -475,7 +475,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, string outputVariablesAtEnd)
 {
   int retVal = -1;
-  const char* outVars = (outputVariablesAtEnd[0] == '\0') ? NULL : outputVariablesAtEnd.c_str();
+  const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
   long maxSteps = 4 * simData->simulationInfo.numSteps;
   if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
