@@ -3477,6 +3477,7 @@ end replaceEquationTraverser;
  *   - variables set in when-clauses
  *   - variables used in pre
  *   - statescandidates of statesets
+ *   - lhs of array assign statement, because there is a cref used and this is not replacable with array of crefs
  */
 
 protected function addUnreplacableFromStateSets
@@ -3566,20 +3567,19 @@ author: Frenkel TUD 2010-12"
   input tuple<DAE.Exp,HashSet.HashSet> inExp;
   output tuple<DAE.Exp,HashSet.HashSet> outExp;
 algorithm 
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       HashSet.HashSet hs;
       DAE.ComponentRef cr;
       DAE.Exp e;
     case((e as DAE.CREF(componentRef=cr), hs))
       equation
-        true = isNotWhen(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         hs = BaseHashSet.add(cr,hs);
       then
         ((e, hs ));
     case _ then inExp;
-  end matchcontinue;
+  end match;
 end addUnreplacableFromEqnsExp;
 
 protected function addUnreplacableFromWhensSystem
@@ -3753,20 +3753,12 @@ algorithm
       equation
         crlst = List.flatten(List.map(explst,Expression.extractCrefsFromExp));
         crlst = List.map(crlst,ComponentReference.crefStripLastSubs);
-        crlst = List.select(crlst, isNotWhen);
         unreplacable = List.fold(crlst,BaseHashSet.add,unreplacable);
       then
         ((e, unreplacable));
     case _ then inExp;
   end matchcontinue;
 end traverserExpUnreplacable;
- 
-protected function isNotWhen
-  input DAE.ComponentRef iCr;
-  output Boolean b;
-algorithm
-  b := not intEq(System.strncmp(ComponentReference.crefFirstIdent(iCr),"$when",5),0);
-end isNotWhen;
  
 protected function traverseCrefUnreplacable
  "@author: Frenkel TUD 2012-12"
