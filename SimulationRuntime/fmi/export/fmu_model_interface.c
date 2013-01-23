@@ -539,7 +539,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
-  if (initialization(comp->fmuData, "numeric", "nelder_mead_ex","",0)){
+  if (initialization(comp->fmuData, "", "","",0)){
     comp->state = modelError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiInitialization: failed");
