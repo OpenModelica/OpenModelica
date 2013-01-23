@@ -395,6 +395,8 @@ constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(114, "dumpInlineSolver",
     Util.gettext("dumps the inline solver equation system"));
 constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(115, "dumpEncapsulateWhenConditions",
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions"));
+constant DebugFlag ON_RELAXATION = DEBUG_FLAG(116, "onRelaxation",
+    Util.gettext("perform O(n) Relaxation"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -515,7 +517,8 @@ constant list<DebugFlag> allDebugFlags = {
   NLS_ANALYTIC_JACOBIAN,
   INLINE_SOLVER,
   DUMP_INLINE_SOLVER,
-  DUMP_ENCAPSULATEWHENCONDITIONS
+  DUMP_ENCAPSULATEWHENCONDITIONS,
+  ON_RELAXATION
 };
 
 // CONFIGURATION FLAGS
@@ -628,7 +631,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
     Util.gettext("Sets the index reduction method to use. See +help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-//    "relaxSystem",
+    "relaxSystem",
     "removeFinalParameters",
     "removeevaluateParameters",
     "inlineArrayEqn",
@@ -643,7 +646,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "detectJacobianSparsePattern",
 //    "generateSymbolicJacobian",
     "removeConstants"
-//    "optimizeInitialSystem"
 //    "partitionIndependentBlocks"
   }),
   SOME(STRING_DESC_OPTION({

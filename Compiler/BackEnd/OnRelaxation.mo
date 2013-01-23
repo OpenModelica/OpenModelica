@@ -54,6 +54,7 @@ protected import Derive;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import HashSet;
 protected import HashTable4;
 protected import IndexReduction;
@@ -73,7 +74,15 @@ public function relaxSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,relaxSystem0,false);
+  outDAE := matchcontinue(inDAE)
+    case (_)
+      equation
+        true = Flags.isSet(Flags.ON_RELAXATION);
+        (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
+      then
+        outDAE;
+    else then inDAE;
+end matchcontinue;
 end relaxSystem;
 
 protected function relaxSystem0
