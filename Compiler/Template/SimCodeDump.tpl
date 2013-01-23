@@ -197,8 +197,8 @@ template dumpOperation(SymbolicOperation op, Info info)
     case SIMPLIFY(__) then
       <<
       <simplify>
-        <before><%printExpStrEscaped(before)%></before>
-        <after><%printExpStrEscaped(after)%></after>
+        <before><%printEquationExpStrEscaped(before)%></before>
+        <after><%printEquationExpStrEscaped(after)%></after>
       </simplify>
       >>
     case SUBSTITUTION(__) then
@@ -211,8 +211,8 @@ template dumpOperation(SymbolicOperation op, Info info)
     case op as OP_INLINE(__) then
       <<
       <inline>
-        <before><%printExpStrEscaped(op.before)%></before>
-        <after><%printExpStrEscaped(op.after)%></after>
+        <before><%printEquationExpStrEscaped(op.before)%></before>
+        <after><%printEquationExpStrEscaped(op.after)%></after>
       </inline>
       >>
     case op as SOLVED(__) then
@@ -252,7 +252,7 @@ template dumpOperation(SymbolicOperation op, Info info)
         </assertions>
       </solve>
       >>
-    case op as OP_DERIVE(__) then
+    case op as OP_DIFFERENTIATE(__) then
       <<
       <derivative>
         <exp><%printExpStrEscaped(op.before)%></exp>
@@ -282,6 +282,16 @@ template printExpStrEscaped(Exp exp)
 ::=
   escapeModelicaStringToXmlString(printExpStr(exp))
 end printExpStrEscaped;
+
+template printEquationExpStrEscaped(EquationExp eq)
+::=
+  match eq
+  case PARTIAL_EQUATION(__)
+  case RESIDUAL_EXP(__) then
+    printExpStrEscaped(exp)
+  case EQUALITY_EXPS(__) then
+    '<%printExpStrEscaped(lhs)%> = <%printExpStrEscaped(rhs)%>'
+end printEquationExpStrEscaped;
 
 end SimCodeDump;
 

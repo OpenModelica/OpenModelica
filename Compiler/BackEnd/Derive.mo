@@ -97,8 +97,8 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,shared));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
-        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        op1 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         BackendDAE.EQUATION(e1_2,e2_2,source,false);
@@ -110,8 +110,8 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,shared));
        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
-        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        op1 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,false);
@@ -123,8 +123,8 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,shared));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
-        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        op1 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,false);     
@@ -136,7 +136,7 @@ algorithm
         e1_1 = differentiateFunctionTime(e1,(timevars,shared));
         (e2,source,_) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,expExpLst,(timevars,shared));
-        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e2);
+        op1 = DAE.OP_DIFFERENTIATE(DAE.crefTime,e1,e2);
         source = DAEUtil.addSymbolicTransformation(source,op1);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
        then

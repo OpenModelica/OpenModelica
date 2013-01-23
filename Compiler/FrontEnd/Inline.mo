@@ -1296,8 +1296,8 @@ algorithm
     case (e,fns,source)
       equation
         ((e_1,(fns,true))) = Expression.traverseExp(e,inlineCall,(fns,false));
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(e,e_1));
-        (e_2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e_1, source);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
         (e_2,source,true);
     else (inExp,inSource,false);
@@ -1323,12 +1323,11 @@ algorithm
       
     case (e,fns,source)
       equation
-        ((e_1,(fns,b))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
-        source = DAEUtil.condAddSymbolicTransformation(b,source,DAE.OP_INLINE(e,e_1));
-        (e_2,b1) = ExpressionSimplify.simplify(e_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e_1,e_2);
+        ((e_1,(fns,true))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
+        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
-        (e_2,source,b);
+        (e_2,source,true);
     else (inExp,inSource,false);
   end matchcontinue;
 end forceInlineExp;
@@ -2095,5 +2094,84 @@ algorithm
     case(DAE.NORM_INLINE()) then "Inline before index reduction";
   end matchcontinue;
 end printInlineTypeStr;
+
+public function simplifyAndInlineEquationExp "
+  Takes a residual or equality equation, then
+  simplifies, inlines and simplifies again
+"
+  input DAE.EquationExp inExp;
+  input Functiontuple fns;
+  input DAE.ElementSource inSource;
+  output DAE.EquationExp exp;
+  output DAE.ElementSource source;
+algorithm
+  (exp,source) := ExpressionSimplify.simplifyAddSymbolicOperation(inExp,inSource);
+  (exp,source) := inlineEquationExp(exp,inlineCall,fns,source);
+end simplifyAndInlineEquationExp;
+
+public function simplifyAndForceInlineEquationExp "
+  Takes a residual or equality equation, then
+  simplifies, inlines and simplifies again
+"
+  input DAE.EquationExp inExp;
+  input Functiontuple fns;
+  input DAE.ElementSource inSource;
+  output DAE.EquationExp exp;
+  output DAE.ElementSource source;
+algorithm
+  (exp,source) := ExpressionSimplify.simplifyAddSymbolicOperation(inExp,inSource);
+  (exp,source) := inlineEquationExp(exp,forceInlineCall,fns,source);
+end simplifyAndForceInlineEquationExp;
+
+public function inlineEquationExp "
+  Takes a residual or equality equation, then
+  simplifies, inlines and simplifies again
+"
+  input DAE.EquationExp inExp;
+  input Func fn;
+  input Functiontuple infns;
+  input DAE.ElementSource inSource;
+  output DAE.EquationExp outExp;
+  output DAE.ElementSource source;
+
+  partial function Func
+    input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
+    output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
+  end Func;  
+algorithm
+  (outExp,source) := match (inExp,fn,infns,inSource)
+    local
+      Boolean changed;
+      DAE.Exp e,e_1,e_2,e1,e1_1,e2,e2_1;
+      DAE.EquationExp eq1,eq2;
+      Functiontuple fns;
+    case (DAE.PARTIAL_EQUATION(e),_,fns,_)
+      equation
+        ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
+        eq2 = DAE.PARTIAL_EQUATION(e_1);
+        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+      then (eq2,source);
+    case (DAE.RESIDUAL_EXP(e),_,fns,_)
+      equation
+        ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
+        eq2 = DAE.RESIDUAL_EXP(e_1);
+        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+      then (eq2,source);
+    case (DAE.EQUALITY_EXPS(e1,e2),_,fns,_)
+      equation
+        ((e1_1,(fns,changed))) = Expression.traverseExp(e1,fn,(fns,false));
+        ((e2_1,(fns,changed))) = Expression.traverseExp(e2,fn,(fns,changed));
+        eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
+        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+      then (eq2,source);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Inline.inlineEquationExp failed"});
+      then fail();
+  end match;
+end inlineEquationExp;
 
 end Inline;

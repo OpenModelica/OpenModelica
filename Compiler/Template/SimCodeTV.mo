@@ -1613,13 +1613,23 @@ package DAE
 
   uniontype SymbolicOperation
     record SIMPLIFY
-      Exp before;
-      Exp after;
+      EquationExp before;
+      EquationExp after;
     end SIMPLIFY;
-    record SUBSTITUTION "A chain of substitutions"
+    record SUBSTITUTION
       list<Exp> substitutions;
       Exp source;
     end SUBSTITUTION;
+    record OP_INLINE
+      EquationExp before;
+      EquationExp after;
+    end OP_INLINE;
+    record OP_DIFFERENTIATE
+      ComponentRef cr;
+      Exp before;
+      Exp after;
+    end OP_DIFFERENTIATE;
+
     record SOLVE
       ComponentRef cr;
       Exp exp1;
@@ -1637,25 +1647,29 @@ package DAE
       list<Real> rhs;
       list<Real> result;
     end LINEAR_SOLVED;
-    record OP_INLINE
-      Exp before;
-      Exp after;
-    end OP_INLINE;
     record NEW_DUMMY_DER
       ComponentRef chosen;
       list<ComponentRef> candidates;
     end NEW_DUMMY_DER;
-    record OP_DERIVE
-      ComponentRef cr;
-      Exp before;
-      Exp after;
-    end OP_DERIVE;
-    record OP_RESIDUAL "e1=e2 => 0=e"
+    record OP_RESIDUAL
       Exp e1;
       Exp e2;
       Exp e;
     end OP_RESIDUAL;
   end SymbolicOperation;
+
+  uniontype EquationExp
+    record PARTIAL_EQUATION
+      Exp exp;
+    end PARTIAL_EQUATION;
+    record RESIDUAL_EXP
+      Exp exp;
+    end RESIDUAL_EXP;
+    record EQUALITY_EXPS
+      Exp lhs;
+      Exp rhs;
+    end EQUALITY_EXPS;
+  end EquationExp;
 
   uniontype TailCall
     record NO_TAIL

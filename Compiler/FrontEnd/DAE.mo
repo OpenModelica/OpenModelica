@@ -106,14 +106,24 @@ public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},
 
 public uniontype SymbolicOperation
   record SIMPLIFY
-    Exp before;
-    Exp after;
+    EquationExp before;
+    EquationExp after;
   end SIMPLIFY;
   record SUBSTITUTION "A chain of substitutions"
     list<Exp> substitutions;
     Exp source;
   end SUBSTITUTION;
-  record SOLVE
+  record OP_INLINE
+    EquationExp before;
+    EquationExp after;
+  end OP_INLINE;
+  record OP_DIFFERENTIATE "d/dcr before => after"
+    ComponentRef cr;
+    Exp before;
+    Exp after;
+  end OP_DIFFERENTIATE;
+
+  record SOLVE "exp1 = exp2 => cr = exp"
     ComponentRef cr;
     Exp exp1;
     Exp exp2;
@@ -130,25 +140,28 @@ public uniontype SymbolicOperation
     list<Real> rhs;
     list<Real> result;
   end LINEAR_SOLVED;
-  record OP_INLINE
-    Exp before;
-    Exp after;
-  end OP_INLINE;
   record NEW_DUMMY_DER
     ComponentRef chosen;
     list<ComponentRef> candidates;
   end NEW_DUMMY_DER;
-  record OP_DERIVE
-    ComponentRef cr;
-    Exp before;
-    Exp after;
-  end OP_DERIVE;
   record OP_RESIDUAL "e1=e2 => 0=e"
     Exp e1;
     Exp e2;
     Exp e;
   end OP_RESIDUAL;
 end SymbolicOperation;
+
+public uniontype EquationExp "An equation on residual or equality form has 1 or 2 expressions. For use with symbolic operation tracing."
+  record PARTIAL_EQUATION "An expression that is part of the whole equation"
+    Exp exp;
+  end PARTIAL_EQUATION;
+  record RESIDUAL_EXP "0 = exp"
+    Exp exp;
+  end RESIDUAL_EXP;
+  record EQUALITY_EXPS "lhs = rhs"
+    Exp lhs, rhs;
+  end EQUALITY_EXPS;
+end EquationExp;
 
 public uniontype Element
   record VAR

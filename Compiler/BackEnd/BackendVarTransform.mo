@@ -1390,10 +1390,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-        (e1_2,b1) = ExpressionSimplify.condsimplify(b1,e1_1);
-        (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
+        (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
         (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
@@ -1404,10 +1401,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-        (e1_2,b1) = ExpressionSimplify.condsimplify(b1,e1_1);
-        (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
+        (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
         (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
@@ -1418,10 +1412,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-        (e1_2,b1) = ExpressionSimplify.condsimplify(b1,e1_1);
-        (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
+        (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
         (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.EQUATION(e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
@@ -1824,7 +1815,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (e2_2,b1) = ExpressionSimplify.simplify(e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e2_1,e2_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e2_1),DAE.PARTIAL_EQUATION(e2_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source)::inAcc,true);
       then
         ( es_1,b);
@@ -1837,8 +1828,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e2_1,e2_2);
+        (DAE.EQUALITY_EXPS(e1_1,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
         es_1 = validLhsArrayAssignSTMT(cr,e1_1,e2_2,type_,source,inAcc);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,es_1,true);
       then
@@ -1850,16 +1840,8 @@ algorithm
         (e1_2,_) = ExpressionSimplify.condsimplify(b1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
         (es_1,b) = replaceSTMT_IF(e1_2,statementLst,else_,source,es,repl,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc or b1);
-         
-        //(statementLst_1,b2) = replaceStatementLst(statementLst, repl);
-        //(else_1,b3) = replaceElse(else_,repl);
-        //true = b1 or b2 or b3;
-        //(e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        //source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        //(es_1,_) = replaceStatementLst(es, repl);
       then
         (es_1,b);
-        //(DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1,b2);
     
     case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,source=source)::es),repl,_,_,_)
       equation
@@ -1869,7 +1851,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         repl = removeIterationVar(repl,ident);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source)::inAcc,true);
       then
@@ -1882,7 +1864,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_PARFOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,loopPrlVars,source)::inAcc,true);
       then
         ( es_1,b);
@@ -1894,7 +1876,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHILE(e1_2,statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
@@ -1906,7 +1888,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,NONE(),source)::inAcc,true);
       then
         ( es_1,b);
@@ -1919,7 +1901,7 @@ algorithm
         true = b1 or b2 or b3;
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b3,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,SOME(statement_1),source)::inAcc,true);
       then
         ( es_1,b);
@@ -1945,7 +1927,7 @@ algorithm
         (e1_1,true) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_TERMINATE(e1_2,source)::inAcc,true);
       then
         ( es_1,b);
@@ -1968,7 +1950,7 @@ algorithm
         (e1_1,true) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_NORETCALL(e1_2,source)::inAcc,true);
       then
         ( es_1,b);

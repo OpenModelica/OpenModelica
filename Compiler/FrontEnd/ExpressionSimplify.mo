@@ -4804,16 +4804,57 @@ algorithm
 end checkZeroLengthArrayOp;
 
 public function simplifyAddSymbolicOperation
-  input DAE.Exp exp;
+  input DAE.EquationExp exp;
   input DAE.ElementSource source;
-  output DAE.Exp outExp;
+  output DAE.EquationExp outExp;
   output DAE.ElementSource outSource;
-protected
-  Boolean changed;
 algorithm
-  (outExp,changed) := simplify(exp);
-  outSource := DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+  (outExp,outSource) := match (exp,source)
+    local
+      Boolean changed,changed1,changed2;
+      DAE.Exp e,e1,e2;
+    case (DAE.PARTIAL_EQUATION(e),_)
+      equation
+        (e,changed) = simplify(e);
+        outExp = Util.if_(changed,DAE.PARTIAL_EQUATION(e),exp);
+        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+      then (outExp,outSource);
+    case (DAE.RESIDUAL_EXP(e),_)
+      equation
+        (e,changed) = simplify(e);
+        outExp = Util.if_(changed,DAE.RESIDUAL_EXP(e),exp);
+        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+      then (outExp,outSource);
+    case (DAE.EQUALITY_EXPS(e1,e2),_)
+      equation
+        (e1,changed1) = simplify(e1);
+        (e2,changed2) = simplify(e2);
+        changed = changed1 or changed2;
+        outExp = Util.if_(changed,DAE.EQUALITY_EXPS(e1,e2),exp);
+        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+      then (outExp,outSource);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"ExpressionSimplify.simplifyAddSymbolicOperation failed"});
+      then fail();
+  end match;
 end simplifyAddSymbolicOperation;
+
+public function condSimplifyAddSymbolicOperation
+  input Boolean cond;
+  input DAE.EquationExp exp;
+  input DAE.ElementSource source;
+  output DAE.EquationExp outExp;
+  output DAE.ElementSource outSource;
+algorithm
+  (outExp,outSource) := match (cond,exp,source)
+    case (true,_,_)
+      equation
+        (outExp,outSource) = simplifyAddSymbolicOperation(exp,source);
+      then (outExp,outSource);
+    else (exp,source);
+  end match;
+end condSimplifyAddSymbolicOperation;
 
 end ExpressionSimplify;
 

@@ -6299,7 +6299,7 @@ algorithm
     case(_,{},_) then isource;
     case(_,exp1::rexplst1,exp2::rexplst2)
       equation
-        op = DAE.OP_DERIVE(DAE.crefTime,exp1,exp2);
+        op = DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
         source = addSymbolicTransformation(isource,op);        
       then
         addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
@@ -6322,7 +6322,7 @@ algorithm
     case({},_,_,_) then isource;
     case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
       equation
-        source = addSymbolicTransformationSubstitution(true,isource, exp1,exp2);
+        source = addSymbolicTransformationSubstitution(true,isource,exp1,exp2);
       then
         addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_,_::rexplst1,_::rexplst2)
@@ -6357,7 +6357,7 @@ algorithm
     case({},_,_,_) then isource;
     case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
       equation
-        source = addSymbolicTransformation(isource, DAE.SIMPLIFY(exp1,exp2));
+        source = addSymbolicTransformation(isource, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
       then
         addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_,_::rexplst1,_::rexplst2)
@@ -6369,8 +6369,8 @@ end addSymbolicTransformationSimplifyLst;
 public function addSymbolicTransformationSimplify
   input Boolean add;
   input DAE.ElementSource source;
-  input DAE.Exp exp1;
-  input DAE.Exp exp2;
+  input DAE.EquationExp exp1;
+  input DAE.EquationExp exp2;
   output DAE.ElementSource outSource;
 algorithm
   outSource := condAddSymbolicTransformation(add,source,DAE.SIMPLIFY(exp1,exp2));

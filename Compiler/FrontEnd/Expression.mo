@@ -9115,5 +9115,20 @@ algorithm
   exp := makeCrefExp(ComponentReference.crefPrependIdent(cr, n, {}, ty), ty);
 end splitRecord2;
 
+public function equationExpEqual
+  input DAE.EquationExp exp1;
+  input DAE.EquationExp exp2;
+  output Boolean b;
+algorithm
+  b := match (exp1,exp2)
+    local
+      DAE.Exp e1,e2,e3,e4;
+    case (DAE.PARTIAL_EQUATION(e1),DAE.PARTIAL_EQUATION(e2)) then expEqual(e1,e2);
+    case (DAE.RESIDUAL_EXP(e1),DAE.RESIDUAL_EXP(e2)) then expEqual(e1,e2);
+    case (DAE.EQUALITY_EXPS(e1,e2),DAE.EQUALITY_EXPS(e3,e4)) then expEqual(e1,e3) and expEqual(e2,e4);
+    else false;
+  end match;
+end equationExpEqual;
+
 end Expression;
 
