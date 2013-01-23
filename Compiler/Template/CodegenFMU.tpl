@@ -1061,7 +1061,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib ModelicaExternalC.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib
+  LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib ModelicaExternalC.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib
 
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/msvc/debug
@@ -1088,7 +1088,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       copy modelDescription.xml <%fileNamePrefix%>\modelDescription.xml
       copy <%stringReplace(makefileParams.omhome,"/","\\")%>\lib\omc\libexec\gnuplot\binary\libexpat-1.dll <%fileNamePrefix%>\binaries\$(PLATWIN32)
       cd <%fileNamePrefix%>
-      zip -r ../<%fileNamePrefix%>.fmu *
+      "$(MINGW)\bin\zip.exe" -r ../<%fileNamePrefix%>.fmu *
       cd ..
       rmdir /S /Q <%fileNamePrefix%>
     
