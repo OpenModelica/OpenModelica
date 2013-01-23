@@ -10849,16 +10849,11 @@ algorithm
     case (DAE.CREF(componentRef=componentRef)::conditionList, _, _) equation
       (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
     then (conditionVarList, initialCall);
-
-    case (DAE.BCONST(_)::conditionList, _, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, inInitialCall);
-    then (conditionVarList, initialCall);
     
-    case (exp::_,_,_)
-      equation
-        msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
-     then fail();
+    case (exp::_, _ ,_) equation
+      msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
+      Error.addMessage(Error.INTERNAL_ERROR, {msg});
+   then fail();
   end matchcontinue;
 end getConditionList1;
 

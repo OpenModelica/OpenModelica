@@ -8510,8 +8510,7 @@ protected
   list<tuple<preoptimiseDAEModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
-  allPreOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
-                       (RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
+  allPreOptModules := {(RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
                        (RemoveSimpleEquations.allAcausal, "removeAllSimpleEquations", false),
                        (BackendDAEOptimize.inlineArrayEqn, "inlineArrayEqn", false),
                        (BackendDAEOptimize.evaluateFinalParameters, "evaluateFinalParameters", false),
@@ -8549,32 +8548,33 @@ protected
   list<tuple<pastoptimiseDAEModule,String,Boolean>> allPastOptModules;
   list<String> strPastOptModules;
 algorithm
-  allPastOptModules := {(BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
-  (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
-  (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
-  (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
-  (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
-  (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
-  (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
-  (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
-  (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
-  (OnRelaxation.relaxSystem,"relaxSystem",false),
-  (BackendDAEOptimize.removeevaluateParameters,"removeevaluateParameters",false),
-  (BackendDAEOptimize.countOperations,"countOperations",false),
-  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
-  (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),
-  (BackendDAEOptimize.generateSymbolicLinearizationPast,"generateSymbolicLinearization",false),
-  (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
-  (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
-  (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
-  (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
-  (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
-  (BackendDAEOptimize.removeConstants,"removeConstants",false),
-  (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
-  (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
-  (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
-  (Tearing.tearingSystem, "tearingSystem", false)
-  };
+  allPastOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
+                        (BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
+                        (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
+                        (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
+                        (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
+                        (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
+                        (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
+                        (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
+                        (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
+                        (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
+                        (OnRelaxation.relaxSystem,"relaxSystem",false),
+                        (BackendDAEOptimize.removeevaluateParameters,"removeevaluateParameters",false),
+                        (BackendDAEOptimize.countOperations,"countOperations",false),
+                        (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
+                        (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),
+                        (BackendDAEOptimize.generateSymbolicLinearizationPast,"generateSymbolicLinearization",false),
+                        (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
+                        (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
+                        (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
+                        (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
+                        (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
+                        (BackendDAEOptimize.removeConstants,"removeConstants",false),
+                        (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
+                        (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
+                        (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
+                        (Tearing.tearingSystem, "tearingSystem", false)};
+  
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{});

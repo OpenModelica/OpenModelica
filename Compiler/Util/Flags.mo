@@ -569,11 +569,9 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "findStateOrder",
     "replaceEdgeChange",
     "inlineArrayEqn",
-    "encapsulateWhenConditions",
     "removeSimpleEquations"
 }),
   SOME(STRING_DESC_OPTION({
-    ("encapsulateWhenConditions", Util.gettext("replace each when-condition with an discrete variable")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
@@ -638,6 +636,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "simplifysemiLinear",
     "removeSimpleEquations",
     "tearingSystem",
+    "encapsulateWhenConditions",  // must called after remove simple equations
 //    "countOperations",
     "removeUnusedFunctions",
     "inputDerivativesUsed",
@@ -648,6 +647,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 //    "partitionIndependentBlocks"
   }),
   SOME(STRING_DESC_OPTION({
+    ("encapsulateWhenConditions", Util.gettext("replace each when-condition with an discrete variable")),
     ("lateInlineFunction", Util.gettext("perform function inlining for function with annotation LateInline=true")),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
