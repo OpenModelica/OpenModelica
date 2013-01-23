@@ -4666,5 +4666,17 @@ algorithm
   end match;
 end componentMod;
 
+public function isBuiltinElement
+  input Element inElement;
+  output Boolean outIsBuiltin;
+algorithm
+  outIsBuiltin := match(inElement)
+    case CLASS(classDef = PARTS(externalDecl =
+      SOME(EXTERNALDECL(lang = SOME("builtin"))))) then true;
+
+    else false;
+  end match;
+end isBuiltinElement;
+
 end SCode;
 

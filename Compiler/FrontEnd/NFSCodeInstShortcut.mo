@@ -45,6 +45,7 @@ encapsulated package NFSCodeInstShortcut
 public import Absyn;
 public import DAE;
 public import NFInstTypes;
+public import NFInstTypesOld;
 public import SCode;
 public import NFSCodeEnv;
 
@@ -60,17 +61,16 @@ protected import NFSCodeFlattenRedeclare;
 protected import NFSCodeLookup;
 protected import NFSCodeMod;
 protected import Util;
-protected import NFSCodeInst;
 protected import NFSCodeApplyRedeclare;
 protected import NFSCodeAnalyseRedeclare;
 
-public type Binding = NFInstTypes.Binding;
+public type Binding = NFInstTypesOld.Binding;
 public type Class = SCode.Element;
 public type Component = SCode.Element;
 public type Dimension = NFInstTypes.Dimension;
 public type Element = SCode.Element;
 public type Env = NFSCodeEnv.Env;
-public type Modifier = NFInstTypes.Modifier;
+public type Modifier = NFInstTypesOld.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
 public type Prefix = NFInstTypes.Prefix;
@@ -169,7 +169,7 @@ algorithm
         (classes, _, _) = 
               mkClassItem(
                 item, 
-                NFInstTypes.NOMOD(),
+                NFInstTypesOld.NOMOD(),
                 NFInstTypes.NO_PREFIXES(), 
                 env, 
                 NFInstTypes.EMPTY_PREFIX(SOME(path)), 
@@ -494,7 +494,7 @@ algorithm
 
     case (elem :: rest_el, _, exts, _, _, accum_el, _)
       equation
-        (elem, orig_mod, env, _) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (elem, orig_mod, env, _) = NFSCodeAnalyseRedeclare.resolveRedeclaredElement(elem, inEnv, inPrefix);
         (accum_el, exts, ii) = mkElement_dispatch(elem, orig_mod, inPrefixes, exts, env, inPrefix, accum_el, inInstInfo);
         (accum_el, ii) = mkElementList(rest_el, inPrefixes, exts, inEnv, inPrefix, accum_el, ii);
       then
@@ -820,7 +820,7 @@ algorithm
         // Look up the base class in the environment.
         (item, path, env) = NFSCodeLookup.lookupBaseClassName(path, inEnv, info);
         path = NFSCodeEnv.mergePathWithEnvPath(path, env);
-        NFSCodeInst.checkRecursiveExtends(path, inEnv, info);
+        NFSCodeAnalyseRedeclare.checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
         (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(

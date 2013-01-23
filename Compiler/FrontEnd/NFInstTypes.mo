@@ -32,18 +32,18 @@
 encapsulated package NFInstTypes
 " file:        NFInstTypes.mo
   package:     NFInstTypes
-  description: Types used by NFSCodeInst.
+  description: Types used by NFInst.
 
   RCS: $Id$
 
-  Types used by NFSCodeInst.
+  Types used by NFInst.
 "
 
 public import Absyn;
 public import NFConnect2;
 public import DAE;
 public import SCode;
-public import NFSCodeEnv;
+public import NFEnv;
 
 public uniontype Prefix
   record EMPTY_PREFIX
@@ -71,7 +71,7 @@ public uniontype Element
   end CONDITIONAL_ELEMENT;
 
   record EXTENDED_ELEMENTS
-    "This record is used by NFSCodeInst.instElementList to store elements from
+    "This record is used by NFInst.instElementList to store elements from
      extends, but is removed by instFlatten. Most functions which handle
      elements should therefore be able to ignore this record."
     Absyn.Path baseClass;
@@ -97,7 +97,9 @@ end Class;
 
 public uniontype Function
   
-  record FUNCTION "A function has inputs,output and locals without binding. These are resolved to statements in the algorithm section"
+  record FUNCTION
+    "A function has inputs, output and locals without binding.
+     These are resolved to statements in the algorithm section"
     Absyn.Path path;
     list<Element> inputs;
     list<Element> outputs;
@@ -105,7 +107,8 @@ public uniontype Function
     list<Statement> algorithms "TODO: Add default bindings";
   end FUNCTION;
   
-  record RECORD_CONSTRUCTOR "A record constructor has inputs and locals (with bindings)?"
+  record RECORD_CONSTRUCTOR
+    "A record constructor has inputs and locals (with bindings)?"
     Absyn.Path path;
     DAE.Type recType;
     list<Element> inputs "componets of the original record which CAN be modified";
@@ -131,7 +134,7 @@ public uniontype Binding
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
-    NFSCodeEnv.Env env;
+    NFEnv.Env env;
     Prefix prefix;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
     Absyn.Info info;
@@ -178,7 +181,7 @@ public uniontype Component
     SCode.Element element;
     Modifier modifier;
     Prefixes prefixes;
-    NFSCodeEnv.Env env;
+    NFEnv.Env env;
     Prefix prefix;
     Absyn.Info info;
   end CONDITIONAL_COMPONENT; 

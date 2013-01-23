@@ -75,12 +75,6 @@ public uniontype LookupStrategy
   record LOOKUP_ANY end LOOKUP_ANY;
 end LookupStrategy;
 
-public uniontype Origin
-  record INSTANCE_ORIGIN end INSTANCE_ORIGIN;
-  record CLASS_ORIGIN end CLASS_ORIGIN;
-  record BUILTIN_ORIGIN end BUILTIN_ORIGIN;
-end Origin;
-
 // Default parts of the declarations for builtin elements and types.
 public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
   SCode.PUBLIC(), SCode.NOT_REDECLARE(), SCode.NOT_FINAL(),
@@ -866,7 +860,7 @@ protected
   Env env;
 algorithm
   env := NFSCodeEnv.getEnvTopScope(inEnv);
-  (outItem, outPath, outEnv, _) := lookupNameInPackage(inName, env);
+  (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
   outPath := Absyn.makeFullyQualified(outPath);
 end lookupFullyQualified;
 
@@ -878,25 +872,22 @@ public function lookupNameInPackage
   output Item outItem;
   output Absyn.Path outPath;
   output Env outEnv;
-  output Origin outOrigin;
 algorithm
-  (outItem, outPath, outEnv, outOrigin) := match(inName, inEnv)
+  (outItem, outPath, outEnv) := match(inName, inEnv)
     local
       Absyn.Ident name;
       Absyn.Path path, new_path;
       Frame top_scope;
       Env  env;
       Item item;
-      Origin origin;
 
     // Simple name, look in the local scope.
     case (Absyn.IDENT(name = name), _)
       equation
         (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv, {});
         env = NFSCodeEnv.setImportTableHidden(env, false);
-        origin = itemOrigin(item);
       then
-        (item, path, env, origin);
+        (item, path, env);
 
     // Qualified name.
     case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
@@ -904,13 +895,12 @@ algorithm
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
           lookupInLocalScope(name, inEnv, {});
-        origin = itemOrigin(item);
         env = NFSCodeEnv.setImportTableHidden(env, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = joinPaths(new_path, path);
       then
-        (item, path, env, origin);
+        (item, path, env);
 
   end match;
 end lookupNameInPackage;
@@ -998,7 +988,7 @@ algorithm
       equation
         // Look in the class's environment.
         env = NFSCodeEnv.enterFrame(class_env, inEnv);
-        (item, path, env, _) = lookupNameInPackage(inName, env);
+        (item, path, env) = lookupNameInPackage(inName, env);
       then
         (item, path, env);
 
@@ -1324,9 +1314,8 @@ protected function lookupName
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
-  output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv, outOrigin) := 
+  (outItem, outName, outEnv) := 
   matchcontinue(inName, inEnv, inLookupStrategy, inInfo, inErrorType)
     local
       Absyn.Ident id;
@@ -1335,41 +1324,38 @@ algorithm
       Env env;
       String name_str, env_str;
       Error.Message error_id;
-      Origin origin;
 
     // Builtin types.
     case (_, _, LOOKUP_ANY(), _, _)
       equation
         (item, env) = lookupBuiltinName(inName);
       then
-        (item, inName, env, BUILTIN_ORIGIN());
+        (item, inName, env);
 
     // Simple name.
     case (Absyn.IDENT(name = id), _, _, _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
-        origin = itemOrigin(item);
       then
-        (item, new_path, env, origin);
+        (item, new_path, env);
         
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _, _, _, _)
       equation
         // Look up the first identifier.
         (item, new_path, env) = lookupSimpleName(id, inEnv);
-        origin = itemOrigin(item);
         // Look up the rest of the name in the environment of the first
         // identifier.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = joinPaths(new_path, path);
       then
-        (item, path, env, origin);
+        (item, path, env);
              
     case (Absyn.FULLYQUALIFIED(path = path), _, _, _, _)
       equation
         (item, path, env) = lookupFullyQualified(path, inEnv);
       then
-        (item, path, env, CLASS_ORIGIN());
+        (item, path, env);
 
     case (_, _, _, _, SOME(error_id))
       equation
@@ -1427,9 +1413,8 @@ public function lookupNameSilent
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
-  output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv,
+  (outItem, outName, outEnv) := lookupName(inName, inEnv,
     LOOKUP_ANY(), inInfo, NONE());
 end lookupNameSilent;
 
@@ -1442,7 +1427,7 @@ public function lookupClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, LOOKUP_ANY(),
+  (outItem, outName, outEnv) := lookupName(inName, inEnv, LOOKUP_ANY(),
     inInfo, SOME(Error.LOOKUP_ERROR));
 end lookupClassName;
 
@@ -1480,7 +1465,7 @@ algorithm
     // Normal baseclass.
     else
       equation
-        (item, path, env, _) = lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
+        (item, path, env) = lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
           SOME(Error.LOOKUP_BASECLASS_ERROR));
       then
         (item, path, env);
@@ -1497,7 +1482,7 @@ public function lookupVariableName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, NO_BUILTIN_TYPES(),
+  (outItem, outName, outEnv) := lookupName(inName, inEnv, NO_BUILTIN_TYPES(),
     inInfo, SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
@@ -1509,9 +1494,8 @@ public function lookupFunctionName
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
-  output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv,
+  (outItem, outName, outEnv) := lookupName(inName, inEnv,
     NO_BUILTIN_TYPES(), inInfo, SOME(Error.LOOKUP_FUNCTION_ERROR));
 end lookupFunctionName;
 
@@ -1784,7 +1768,7 @@ algorithm
 
     case (_, _, _, _)
       equation
-        (_, path, env, _) = lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
+        (_, path, env) = lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
           inInfo, inErrorType);
         path = NFSCodeEnv.mergePathWithEnvPath(path, env);
         path = Absyn.makeFullyQualified(path);
@@ -1801,163 +1785,5 @@ algorithm
         fail();
   end matchcontinue;
 end qualifyPath;
-
-public function itemOrigin
-  input Item inItem;
-  output Origin outOrigin;
-algorithm
-  outOrigin := match(inItem)
-    local
-      Item item;
-
-    case NFSCodeEnv.VAR(var = _) then INSTANCE_ORIGIN();
-    case NFSCodeEnv.CLASS(classType = NFSCodeEnv.BUILTIN()) then BUILTIN_ORIGIN();
-    case NFSCodeEnv.CLASS(cls = _) then CLASS_ORIGIN();
-    case NFSCodeEnv.REDECLARED_ITEM(item = item) then itemOrigin(item);
-  end match;
-end itemOrigin;
-
-public function originIsGlobal
-  input Origin inOrigin;
-  output Boolean outRes;
-algorithm
-  outRes := match(inOrigin)
-    case CLASS_ORIGIN() then true;
-    case BUILTIN_ORIGIN() then true;
-    else false;
-  end match;
-end originIsGlobal;
-
-public function lookupCrefUnique
-  "This function tries to look up a cref and returns whether it's a global name
-   or not, i.e. found in the class or the instance hierarchy, and the
-   environment it was found in. The environment is the environment the name is
-   defined in after flattening extends, e.g. if class A extends B, and x is
-   defined in B, then A will be returned if we're looking for x in A. This is
-   contrary to e.g. lookupName, which would return B. Also note that only the
-   first identifier of the cref is looked up, since that's enough to determine
-   the scope, so the returned environment is the environment where the first
-   identifier of the cref is defined.
-   
-   The Unique part of the function name comes from the fact that this function
-   is used by NFSCodeInst.prefixCref to find a unique name for all crefs."
-  input DAE.ComponentRef inCref;
-  input Env inEnv;
-  output Boolean outIsGlobal;
-  output Env outEnv;
-algorithm
-  (outIsGlobal, outEnv) := match(inCref, inEnv)
-    local
-      String id;
-      Boolean is_global;
-      Env env;
-
-    case (DAE.CREF_IDENT(ident = "time"), _)
-      then (false, NFSCodeEnv.emptyEnv);
-
-    // A simple identifier.
-    case (DAE.CREF_IDENT(ident = id), _)
-      equation
-        (is_global, env) = lookupCrefUnique2(id, inEnv);
-      then
-        (is_global, env);
-
-    // A qualified identifier.
-    case (DAE.CREF_QUAL(ident = id), _)
-      equation
-        // We only need to know were the first identifier is defined, the cref
-        // itself already contains the rest of the path.
-        (is_global, env) = lookupCrefUnique2(id, inEnv);
-      then
-        (is_global, env);
-
-    // We shouldn't get any other types of crefs here.
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeLookup.lookupCrefUnique failed on unknown cref!\n");
-      then
-        fail();
-
-  end match;
-end lookupCrefUnique;
-
-protected function lookupCrefUnique2
-  "Helper function to lookupCrefUnique, does the actual work."
-  input String inIdentifier;
-  input Env inEnv;
-  output Boolean outIsGlobal;
-  output Env outEnv;
-algorithm
-  (outIsGlobal, outEnv) := matchcontinue(inIdentifier, inEnv)
-    local
-      DAE.ComponentRef cref;
-      Env env;
-      Item item;
-      Boolean is_global;
-
-    case (_, _)
-      equation
-        _ = lookupBuiltinType(inIdentifier);
-      then
-        (false, NFSCodeEnv.emptyEnv);
-
-    // Try to find the identifier in the local scope.
-    case (_, _)
-      equation
-        (SOME(item), _, _) = lookupInLocalScope(inIdentifier, inEnv, {});
-        // If the name was found in a local class, say that it's a global
-        // name. Otherwise it's a local name.
-        is_global = NFSCodeEnv.isClassItem(item);
-      then
-        (is_global, inEnv);
-
-    // Otherwise, try to find the identifier in one of the scopes above.
-    case (_, _)
-      equation
-        SOME(env) = lookupCrefUnique3(inIdentifier, inEnv);
-      then
-        (true, env);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeLookup.lookupCrefUnique2 failed on " +&
-          inIdentifier +& "\n");
-      then
-        fail();
-
-  end matchcontinue;
-end lookupCrefUnique2;
-
-protected function lookupCrefUnique3
-  "Helper function to lookupCrefUnique2. Tries to find an identifier in one of
-   the given scopes, and if successful returns the identifiers enclosing scopes.
-   Returns NONE if the search was aborted due to an encapsulated scope, or fails
-   if the identifier couldn't be found."
-  input String inIdentifier;
-  input Env inEnv;
-  output Option<Env> outEnv;
-algorithm
-  outEnv := matchcontinue(inIdentifier, inEnv)
-    local
-      Env env;
-
-    // Stop looking if we encounter an encapsulated scope.
-    case (_, NFSCodeEnv.FRAME(frameType = NFSCodeEnv.ENCAPSULATED_SCOPE()) :: _)
-      then NONE();
-
-    // Look the identifier up in the scope above.
-    case (_, _ :: env)
-      equation
-        (SOME(_), _, _) = lookupInLocalScope(inIdentifier, env, {});
-      then
-        SOME(env);
-
-    // If previous case failed, look in the scope above.
-    case (_, _ :: env) then lookupCrefUnique3(inIdentifier, env);
-
-  end matchcontinue;
-end lookupCrefUnique3;
 
 end NFSCodeLookup;

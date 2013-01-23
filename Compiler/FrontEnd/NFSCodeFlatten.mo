@@ -149,7 +149,7 @@ algorithm
   _ := matchcontinue(inEnv)
     case _
       equation
-        (_, _, _, _) = NFSCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
+        (_, _, _) = NFSCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
           inEnv, Absyn.dummyInfo);
         System.setUsesCardinality(true);
       then

@@ -43,7 +43,9 @@ encapsulated package NFSCodeApplyRedeclare
 "
 
 public import Absyn;
+
 public import NFInstTypes;
+public import NFInstTypesOld;
 public import SCode;
 public import NFSCodeEnv;
 
@@ -55,15 +57,15 @@ protected import System;
 protected import Util;
 protected import NFSCodeAnalyseRedeclare;
 
-public type Binding = NFInstTypes.Binding;
-public type Dimension = NFInstTypes.Dimension;
+public type Binding = NFInstTypesOld.Binding;
+public type Dimension = NFInstTypesOld.Dimension;
 public type Element = SCode.Element;
 public type Program = SCode.Program;
 public type Env = NFSCodeEnv.Env;
-public type Modifier = NFInstTypes.Modifier;
-public type ParamType = NFInstTypes.ParamType;
-public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
+public type Modifier = NFInstTypesOld.Modifier;
+public type ParamType = NFInstTypesOld.ParamType;
+public type Prefixes = NFInstTypesOld.Prefixes;
+public type Prefix = NFInstTypesOld.Prefix;
 public type Scope = Absyn.Within;
 public type Item = NFSCodeEnv.Item;
 

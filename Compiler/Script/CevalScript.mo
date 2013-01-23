@@ -96,9 +96,10 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import SCodeDump;
+protected import NFEnv;
+protected import NFInst;
 protected import NFSCodeEnv;
 protected import NFSCodeFlatten;
-protected import NFSCodeInst;
 protected import NFSCodeInstShortcut;
 protected import SCodeSimplify;
 protected import SimCodeMain;
@@ -2992,6 +2993,7 @@ algorithm
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
       NFSCodeEnv.Env senv;
+      NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
       Absyn.Path newClassName;
       
@@ -3017,8 +3019,9 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (_, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodeP);
-        (dae, funcs) = NFSCodeInst.instClass(className, senv);
+
+        nfenv = NFEnv.buildInitialEnv(scodeP);
+        (dae, funcs) = NFInst.instClass(className, nfenv);
 
         cache = Env.emptyCache();
         cache = Env.setCachedFunctionTree(cache, funcs);

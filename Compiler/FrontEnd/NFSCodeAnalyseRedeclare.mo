@@ -44,6 +44,7 @@ encapsulated package NFSCodeAnalyseRedeclare
 public import Absyn;
 public import DAE;
 public import NFInstTypes;
+public import NFInstTypesOld;
 public import SCode;
 public import NFSCodeEnv;
 public import NFSCodeFlattenRedeclare;
@@ -58,16 +59,15 @@ protected import NFSCodeCheck;
 protected import SCodeDump;
 protected import NFSCodeLookup;
 protected import NFSCodeMod;
-protected import NFSCodeInst;
 protected import Util;
 protected import System;
 
-public type Binding = NFInstTypes.Binding;
+public type Binding = NFInstTypesOld.Binding;
 public type Dimension = NFInstTypes.Dimension;
 public type Element = SCode.Element;
 public type Program = SCode.Program;
 public type Env = NFSCodeEnv.Env;
-public type Modifier = NFInstTypes.Modifier;
+public type Modifier = NFInstTypesOld.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefix = NFInstTypes.Prefix;
 public type Scope = Absyn.Within;
@@ -160,7 +160,7 @@ algorithm
         (islist, _) = analyseItem(
                        item, 
                        env, 
-                       NFInstTypes.NOMOD(), 
+                       NFInstTypesOld.NOMOD(), 
                        NFInstTypes.EMPTY_PREFIX(SOME(path)), 
                        emptyIScopes,
                        emptyInstStack);        
@@ -447,7 +447,7 @@ algorithm
 
     case (elem :: rest_el, exts, _, _, islist, _)
       equation
-        (new_elem, orig_mod, env, previousItem) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (new_elem, orig_mod, env, previousItem) = resolveRedeclaredElement(elem, inEnv, inPrefix);
         (islist, exts, ii) = analyseElement_dispatch(new_elem, elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
         (islist, ii) = analyseElementList(rest_el, exts, inEnv, inPrefix, islist, ii);
       then
@@ -470,6 +470,77 @@ algorithm
 
   end match;
 end analyseElementList;
+
+public function resolveRedeclaredElement
+  "This function makes sure that an element is up-to-date in case it has been
+   redeclared. This is achieved by looking the element up in the environment. In
+   the case that the element has been redeclared, the environment where it should
+   be instantiated is returned, otherwise the old environment."
+  input tuple<SCode.Element, Modifier> inElement;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output tuple<SCode.Element, Modifier> outElement;
+  output Modifier outOriginalMod;
+  output Env outEnv;
+  output list<tuple<NFSCodeEnv.Item, Env>> outPreviousItem;
+algorithm
+  (outElement, outOriginalMod, outEnv, outPreviousItem) := match(inElement, inEnv, inPrefix)
+    local
+      Modifier mod, omod;
+      String name;
+      Item item;
+      SCode.Element orig_el, new_el;
+      Env env;
+      Boolean b;
+      list<tuple<NFSCodeEnv.Item, Env>> previousItem;
+      
+    // Only components which are actually replaceable needs to be looked up,
+    // since non-replaceable components can't have been replaced.
+    case ((orig_el as SCode.COMPONENT(name = name, prefixes =
+        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
+      equation
+        (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
+        (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
+        omod = getOriginalMod(orig_el, inEnv, inPrefix);
+      then
+        ((new_el, mod), omod, env, previousItem);
+
+    // Other elements doesn't need to be looked up. Extends may not be
+    // replaceable, and classes are looked up in the environment anyway. The
+    // exception is packages with constants, but those are handled in
+    // instPackageConstants.
+    else (inElement, NFInstTypesOld.NOMOD(), inEnv, {});
+
+  end match;
+end resolveRedeclaredElement;
+
+protected function getOriginalMod
+  input SCode.Element inOriginalElement;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Modifier outModifier;
+algorithm
+  outModifier := match(inOriginalElement, inEnv, inPrefix)
+    local
+      SCode.Ident name;
+      Absyn.ArrayDim ad;
+      Integer dim_count;
+      SCode.Mod smod;
+      Modifier mod;
+
+    case (SCode.COMPONENT(modifications = SCode.NOMOD()), _, _)
+      then NFInstTypesOld.NOMOD(); 
+
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
+        modifications = smod), _, _)
+      equation
+        dim_count = listLength(ad);
+        mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+      then
+        mod;
+
+  end match;
+end getOriginalMod;
 
 protected function analyseElement_dispatch
 "Helper function to analyseElementList. 
@@ -760,7 +831,7 @@ algorithm
         itemOld = item;
         
         path = NFSCodeEnv.mergePathWithEnvPath(path, env);
-        NFSCodeInst.checkRecursiveExtends(path, inEnv, info);
+        checkRecursiveExtends(path, inEnv, info);
 
         // Instantiate the class.
         mod = NFSCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
@@ -786,6 +857,33 @@ algorithm
 
   end match;
 end analyseExtends;
+
+public function checkRecursiveExtends
+  input Absyn.Path inExtendedClass;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inExtendedClass, inEnv, inInfo)
+    local
+      Absyn.Path env_path;
+      String env_str, path_str;
+
+    case (_, _, _)
+      equation
+        env_path = NFSCodeEnv.getEnvPath(inEnv);
+        false = Absyn.pathPrefixOf(inExtendedClass, env_path);
+      then
+        ();
+
+    else
+      equation
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkRecursiveExtends;
 
 protected function analyseClassExtends
   input Element inClassExtends;

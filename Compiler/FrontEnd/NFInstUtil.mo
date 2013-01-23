@@ -45,7 +45,7 @@ public import DAE;
 public import NFInstSymbolTable;
 public import NFInstTypes;
 public import SCode;
-public import NFSCodeEnv;
+public import NFEnv;
 
 protected import ComponentReference;
 protected import Debug;
@@ -65,7 +65,7 @@ public type Condition = NFInstTypes.Condition;
 public type DaePrefixes = NFInstTypes.DaePrefixes;
 public type Dimension = NFInstTypes.Dimension;
 public type Element = NFInstTypes.Element;
-public type Env = NFSCodeEnv.Env;
+public type Env = NFEnv.Env;
 public type Equation = NFInstTypes.Equation;
 public type Function = NFInstTypes.Function;
 public type Modifier = NFInstTypes.Modifier;
@@ -1368,25 +1368,25 @@ algorithm
   end match;
 end pathPrefix2;
 
-public function envPrefix
-  input Env inEnv;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := matchcontinue(inEnv)
-    local
-      Absyn.Path path;
-
-    case _
-      equation
-        path = NFSCodeEnv.getEnvPath(inEnv);
-      then
-        pathPrefix(path);
-
-    else NFInstTypes.emptyPrefix;
-
-  end matchcontinue;
-end envPrefix;
-
+//public function envPrefix
+//  input Env inEnv;
+//  output Prefix outPrefix;
+//algorithm
+//  outPrefix := matchcontinue(inEnv)
+//    local
+//      Absyn.Path path;
+//
+//    case _
+//      equation
+//        path = NFSCodeEnv.getEnvPath(inEnv);
+//      then
+//        pathPrefix(path);
+//
+//    else NFInstTypes.emptyPrefix;
+//
+//  end matchcontinue;
+//end envPrefix;
+//
 public function restPrefix
   input Prefix inPrefix;
   output Prefix outRestPrefix;

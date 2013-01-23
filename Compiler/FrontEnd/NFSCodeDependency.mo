@@ -166,7 +166,7 @@ algorithm
 
     case (Absyn.IDENT(name = _), _, _, _)
       equation
-        (item, _, env, _) = 
+        (item, _, env) = 
           NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
@@ -181,7 +181,7 @@ algorithm
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _)
       equation
-        (item, _, env, _) = 
+        (item, _, env) = 
           NFSCodeLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
         (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
         analyseItem(item, env);
@@ -1107,7 +1107,7 @@ algorithm
 
     case (_, _, _)
       equation
-        (item, _, env, _) = NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
+        (item, _, env) = NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
         (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
       then
         (SOME(item), SOME(env));
@@ -1295,7 +1295,7 @@ protected
   Item item;
   Env env;
 algorithm
-  (item, _, env, _) := 
+  (item, _, env) := 
     NFSCodeLookup.lookupNameSilent(Absyn.IDENT(inName), inEnv, inInfo);
   (item, env, _) := NFSCodeEnv.resolveRedeclaredItem(item, env);
   analyseItem(item, env);

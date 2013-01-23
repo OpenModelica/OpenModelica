@@ -32,11 +32,11 @@
 encapsulated package NFInstSymbolTable
 " file:        NFInstSymbolTable.mo
   package:     NFInstSymbolTable
-  description: Symboltable for NFSCodeInst.
+  description: Symboltable for NFInst.
 
   RCS: $Id$
 
-  A symboltable type and utility functions used by NFSCodeInst.
+  A symboltable type and utility functions used by NFInst.
 "
 
 public import Absyn;
@@ -632,7 +632,7 @@ algorithm
       equation
         /*********************************************************************/
         // TODO: Check if this is still needed, since we check duplicate
-        // elements in NFSCodeInst.instClassItem now.
+        // elements in NFInst.instClassItem now.
         /*********************************************************************/
         //checkEqualComponents
       then

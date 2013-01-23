@@ -718,6 +718,15 @@ algorithm
   end match;
 end last;
 
+public function secondLast
+  "Returns the second last element of a list, or fails if such an element does
+   not exist."
+  input list<ElementType> inList;
+  output ElementType outSecondLast;
+algorithm
+  _ :: outSecondLast :: _ := listReverse(inList);
+end secondLast;
+
 public function lastN
   "Returns the last N elements of a list."
   input list<ElementType> inList;
