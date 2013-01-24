@@ -1,0 +1,334 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+encapsulated package Causalize
+" file:        Causalize.mo
+  package:     Causalize
+  description: Causalize contains functions to causalize the equation system.
+               This includes algorithms to check if the system is singulare, 
+			   match the equations with variables and sorting to BLT-Form.
+			   
+               
+  RCS: $Id: Causalize.mo 14235 2013-01-23 04:34:35Z jfrenkel $"
+
+public import BackendDAE;
+public import DAE;
+public import Env;
+
+protected import Absyn;
+protected import BackendDAEUtil;
+protected import BackendDump;
+protected import BackendEquation;
+protected import BackendVariable;
+protected import Config;
+protected import DAEUtil;
+protected import Debug;
+protected import Error;
+protected import Flags;
+protected import IndexReduction;
+protected import Inline;
+protected import List;
+protected import Matching;
+protected import Util;
+
+/*
+ * types
+ *
+ * 
+ *
+ */
+
+public partial function StructurallySingularSystemHandlerFunc
+  input list<list<Integer>> eqns;
+  input Integer actualEqn;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output list<Integer> changedEqns;
+  output Integer continueEqn;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output array<Integer> outAssignments1;
+  output array<Integer> outAssignments2; 
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+end StructurallySingularSystemHandlerFunc; 
+
+public partial function matchingAlgorithmFunc
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
+  input BackendDAE.MatchingOptions inMatchingOptions;
+  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+end matchingAlgorithmFunc;
+
+
+public partial function stateDeselectionFunc
+  input BackendDAE.BackendDAE inDAE;
+  input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> inArgs;
+  output BackendDAE.BackendDAE outDAE;
+end stateDeselectionFunc;
+
+public type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
+
+/*
+ * public part
+ *
+ * 
+ *
+ */
+
+/*
+ * protected part
+ *
+ */
+ 
+
+
+/*****************************************
+ Singular System check
+ *****************************************/
+
+public function singularSystemCheck
+"function: singularSystemCheck
+  author: Frenkel TUD 2012-06
+
+  Checks that the system is qualified for matching, i.e. that the number of variables
+  is the same as the number of equations. If not, the function fails and
+  prints an error message.
+  If matching options indicate that underconstrained systems are ok, no
+  check is performed."
+  input Integer nvars;
+  input Integer neqns;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.MatchingOptions inMatchingOptions;
+  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
+  input BackendDAE.StructurallySingularSystemHandlerArg arg;
+  input BackendDAE.Shared ishared;
+  output BackendDAE.EqSystem outSyst;
+algorithm
+  outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
+    local
+      String esize_str,vsize_str;
+    case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
+      then
+        singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
+    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+      equation
+        true = intEq(nvars,neqns);
+      then
+        singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
+    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+      equation
+        true = intGt(nvars,neqns);
+        esize_str = intString(neqns);
+        vsize_str = intString(nvars);
+        Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
+      then
+        fail();
+    case (_,_,_,_,_,_,_)
+      equation
+        true = intLt(nvars,neqns);
+        esize_str = intString(neqns) ;
+        vsize_str = intString(nvars);
+        Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
+      then
+        fail();
+    else
+      equation
+        Debug.fprint(Flags.FAILTRACE, "- Causalize.singularSystemCheck failed\n");
+      then
+        fail();
+  end matchcontinue;
+end singularSystemCheck;
+
+protected function singularSystemCheck1
+"function: singularSystemCheck1
+  author: Frenkel TUD 2012-12
+  check if the system is singular"
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.EqSystem iSyst;
+  input BackendDAE.EquationConstraints eqnConstr;
+  input tuple<Matching.matchingAlgorithmFunc,String> matchingAlgorithm;
+  input BackendDAE.StructurallySingularSystemHandlerArg arg;
+  input BackendDAE.Shared iShared;
+  output BackendDAE.EqSystem outSyst;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mT;
+  BackendDAE.StateSets stateSets;
+  list<list<Integer>> comps;
+  array<Integer> ass1,ass2;
+  Matching.matchingAlgorithmFunc matchingFunc;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets) := iSyst;
+  (matchingFunc,_) :=  matchingAlgorithm;
+  // get absolute Incidence Matrix
+  m := BackendDAEUtil.absIncidenceMatrix(m);
+  mT := BackendDAEUtil.absIncidenceMatrix(mT);
+  // try to match
+  ass1 := arrayCreate(nVars,-1);
+  ass2 := arrayCreate(nEqns,-1);
+  outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets);
+  // do matching
+  (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
+  // free states matching information because there it is unkown if the state or the state derivative was matched
+  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
+  outSyst := BackendDAEUtil.setEqSystemMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));
+  /*
+    matchingExternalsetIncidenceMatrix(nVars1, nEqns1, m);
+    BackendDAEEXT.matching(nVars1, nEqns1, 5, -1, 0.0, 1);
+    BackendDAEEXT.getAssignment(vec2, vec1);
+
+    print("singularSystemCheck:\n");
+    BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
+    BackendDump.dumpMatching(vec2);
+    BackendDump.dumpMatching(vec1);
+    comps := BackendDAETransform.tarjanAlgorithm(mT,vec2);
+    BackendDump.dumpComponentsOLD(comps);
+    IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),"SingularSystemCheck" +& intString(nVars) +& ".graphml");
+  */
+end singularSystemCheck1;
+ 
+protected function freeStateAssignments
+"function freeStateAssignments
+  author Frenkel TUD 2013-01
+  unset assignments of statevariables."
+  input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> inTpl;
+  output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      Integer e,index;
+      array<Integer> ass1,ass2;
+      BackendDAE.Var var;
+    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2)))
+      equation
+        e = ass1[index];
+        ass1 = arrayUpdate(ass1,index,-1);
+        ass2 = arrayUpdate(ass2,e,-1);
+      then ((var,(index+1,ass1,ass2)));
+    case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
+  end match;
+end freeStateAssignments;
+ 
+protected function foundSingularSystem
+"function: foundSingularSystem
+  author: Frenkel TUD 2012-12
+  check if the system is singular"
+  input list<list<Integer>> eqns;
+  input Integer actualEqn;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output list<Integer> changedEqns;
+  output Integer continueEqn;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output array<Integer> outAssignments1;
+  output array<Integer> outAssignments2; 
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+algorithm
+  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) := 
+  match(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
+    case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+    case (_::_,_,_,_,_,_,_)
+      equation
+        singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+      then 
+        fail();
+  end match;
+end foundSingularSystem;
+
+protected function singularSystemError
+  input list<list<Integer>> eqns;
+  input Integer actualEqn;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+protected  
+  Integer n;
+  list<Integer> unmatched,unmatched1,vars;
+  String eqn_str,var_str;
+  DAE.ElementSource source;
+  Absyn.Info info;
+  array<Integer> mapIncRowEqn;
+  BackendDAE.EqSystem syst;
+algorithm
+  (_,_,_,mapIncRowEqn,_) := inArg;
+  n := BackendDAEUtil.systemSize(isyst);
+  // for debugging
+    BackendDump.printEqSystem(isyst);
+    BackendDump.dumpMatching(inAssignments1);
+    BackendDump.dumpMatching(inAssignments2);
+    syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+  //  IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" +& intString(n) +& ".graphml");
+  
+  // get from scalar eqns indexes the indexes in the equation array
+  unmatched := List.flatten(eqns);
+  unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
+  unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+  eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
+  vars := Matching.getUnassigned(n, inAssignments2, {});
+  vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
+  var_str := BackendDump.dumpMarkedVars(isyst, vars);
+  source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
+  info := DAEUtil.getElementSourceFileInfo(source);
+  Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+end singularSystemError;
+
+protected function getAssignedVars
+  input Integer e;
+  input array<Integer> ass;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+protected
+  Integer i;
+  Boolean b;
+algorithm
+  i := ass[e];
+  b := intGt(i,0);
+  oAcc := List.consOnTrue(b,i,iAcc); 
+end getAssignedVars;
+ 
+end Causalize;
