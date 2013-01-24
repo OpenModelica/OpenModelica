@@ -70,18 +70,19 @@ end QSSinfo;
 
 public function generateStructureCodeQSS 
   input BackendDAE.BackendDAE inBackendDAE;
-  input array<Integer> equationIndices;
+  /*input array<Integer> equationIndices;
   input array<Integer> variableIndices;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input BackendDAE.StrongComponents strongComponents;
+  */
   input SimCode.SimCode simCode;
   
   output QSSinfo QSSinfo_out;
   output SimCode.SimCode simC;
 algorithm
   (QSSinfo_out,simC) :=
-  matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents,simCode)
+  matchcontinue (inBackendDAE, /*equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents,*/ simCode)
     local
       BackendDAE.BackendDAE dlow;
       list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst;
@@ -100,8 +101,7 @@ algorithm
       SimCode.SimCode sc;
       Integer offset;
        
-    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), ass1, ass2, 
-          m, mt, comps,sc as SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions,zeroCrossings=zeroCrossings))
+    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), sc as SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions,zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
@@ -114,12 +114,12 @@ algorithm
         (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
         offset = listLength(disc);
         disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
-        states = List.map(stateVarsList,BackendVariable.varCref);
-        algs = computeAlgs(eqs,states,{});
-        s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
+        //states = List.map(stateVarsList,BackendVariable.varCref);
+        //algs = computeAlgs(eqs,states,{});
+        //s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
         sc = replaceDiscontsInOde(sc,zc_exps);
       then
-        (QSSINFO(s,states,disc,algs,eqsdae,zc_exps,offset),sc);
+        (QSSINFO({},{},disc,{},eqsdae,zc_exps,0),sc);
     else
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");

@@ -406,12 +406,11 @@ algorithm
       equation
         Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
       then ();
-    case (_,outIndexedBackendDAE as BackendDAE.DAE(eqs={
-        BackendDAE.EQSYSTEM(m=SOME(incidenceMatrix), mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents))
-      }),"QSS")
+    case (_,outIndexedBackendDAE,"QSS")
+/* as BackendDAE.DAE(eqs={ BackendDAE.EQSYSTEM( m=SOME(incidenceMatrix) ,mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents)*/
       equation
         Debug.trace("Generating code for QSS solver\n");
-        (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
+        (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE,simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
         Tpl.tplNoret2(CodegenQSS.translateModel, sc,qssInfo);
       then ();
     case (_,_,"C")
