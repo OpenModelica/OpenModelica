@@ -8344,6 +8344,7 @@ algorithm
   str_eline := intString(el);
   str_ecol := intString(ec);
   dim_str := getClassDimensions(cdef);
+  file := Util.testsuiteFriendly(file);
   res_1 := stringAppendList(
           {"{\"",res,"\",\"",cmt,"\",\"",file,"\",{",strPartial,",",
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
@@ -16702,6 +16703,7 @@ algorithm
         pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP(),ts), p);
       then
         pnew;
+    case (_,Absyn.WITHIN(path=Absyn.QUALIFIED(name="OpenModelica")),p) then p;
     case ((c1 as Absyn.CLASS(name = name)),w,p)
       equation
         s1 = Dump.unparseWithin(0, w);

@@ -86,6 +86,7 @@ public uniontype DateTime
 end DateTime;
 
 public import Absyn;
+protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;
@@ -3693,5 +3694,18 @@ algorithm
         ();
   end match;
 end addInternalError;
+
+public function testsuiteFriendly "Testsuite friendly name (start after testsuite/ or build/)"
+  input String name;
+  output String friendly;
+protected
+  Integer i;
+  list<String> strs;
+algorithm
+  // TODO: Enable me instead of stupid basename!!!
+  // (i,strs) := System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)", 4, true, false);
+  // friendly := listGet(strs,i+1);
+  friendly := Debug.bcallret1(Config.getRunningTestsuite(),System.basename,name,name);
+end testsuiteFriendly;
 
 end Util;

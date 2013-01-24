@@ -1115,22 +1115,6 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
     
-    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,_)
-      equation
-        (n,strs) = System.regex(str,re,i,extended,insensitive);
-        vals = List.map(strs,ValuesUtil.makeString);
-        v = Values.ARRAY(vals,{i});
-      then
-        (cache,Values.TUPLE({Values.INTEGER(n),v}),st);
-
-    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,_)
-      equation
-        strs = List.fill("",i);
-        vals = List.map(strs,ValuesUtil.makeString);
-        v = Values.ARRAY(vals,{i});
-      then
-        (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
-
     case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.BOOL(anyCode)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         str = Debug.bcallret2(not anyCode, Dump.unparseStr, p, false, "");
@@ -1803,12 +1787,6 @@ algorithm
 
     case (cache,env,"timerTock",_,st,_)
       then (cache,Values.REAL(-1.0),st);
-
-    case (cache,env,"regularFileExists",{Values.STRING(str)},st,_)
-      equation
-        b = System.regularFileExists(str);
-      then
-        (cache,Values.BOOL(b),st);
 
     case (cache,env,"readFile",{Values.STRING(str)},st,_)
       equation
@@ -2820,14 +2798,6 @@ algorithm
       equation
         str = Error.printMessagesStr();
       then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING(str)}),st);
-        
-    case (cache,env,"uriToFilename",{Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast = p),_)
-      equation
-        str = getFullPathFromUri(p,str,true);
-      then (cache,Values.STRING(str),st);
-
-    case (cache,env,"uriToFilename",_,st,_)
-      then (cache,Values.STRING(""),st);
         
     case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,_)
       equation

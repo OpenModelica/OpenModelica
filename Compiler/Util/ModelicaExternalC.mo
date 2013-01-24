@@ -60,6 +60,18 @@ function Streams_countLines
   external "C" numberOfLines=ModelicaInternal_countLines(fileName) annotation(Library="ModelicaExternalC");
 end Streams_countLines;
 
+function File_fullPathName
+  input String fileName;
+  output String outName;
+  external "C" outName=ModelicaInternal_fullPathName(fileName) annotation(Library="ModelicaExternalC");
+end File_fullPathName;
+
+function File_stat
+  input String name;
+  output Integer fileType;
+  external "C" fileType=ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
+end File_stat;
+
 function Streams_close
   input String fileName;
   external "C" ModelicaStreams_closeFile(fileName) annotation(Library="ModelicaExternalC");

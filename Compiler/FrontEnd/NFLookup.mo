@@ -106,7 +106,7 @@ public function lookupBaseClassName
   output Entry outEntry;
   output Env outEnv;
 algorithm
-  (outEntry, outName, outEnv) := match(inName, inEnv, inInfo)
+  (outEntry, outEnv) := match(inName, inEnv, inInfo)
     local
       Absyn.Ident id;
       Env env;

@@ -273,8 +273,8 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   char* oldfilename;
 
   // Only use the basename of the file when running the testsuite
-  ModelicaParser_filename_C = runningTestsuite ?
-    SystemImpl__basename(ModelicaParser_filename_C) :
+  ModelicaParser_filename_C = /* runningTestsuite ?
+    SystemImpl__basename(ModelicaParser_filename_C) : */
     ModelicaParser_filename_C;
   oldfilename = (char*) ModelicaParser_filename_C;
   ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8",1);

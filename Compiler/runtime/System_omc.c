@@ -553,6 +553,18 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
   return res;
 }
 
+extern int System_regexModelica(const char* str, const char* re, int maxn, int extended, int sensitive, char **matches)
+{
+  int nmatch = 0, i=0;
+  void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,&nmatch);
+  if (res==NULL) MMC_THROW();
+  for (i=0; i<maxn; i++) {
+    matches[i] = MMC_CAR(res);
+    res = MMC_CDR(res);
+  }
+  return nmatch;
+}
+
 extern char* System_escapedString(char* str, int nl)
 {
   char *res = omc__escapedString(str,nl);

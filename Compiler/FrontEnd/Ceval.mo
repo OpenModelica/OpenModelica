@@ -1072,6 +1072,7 @@ algorithm
     case "anyString" equation true = Config.acceptMetaModelicaGrammar(); then cevalAnyString;
     case "numBits" then cevalNumBits;
     case "integerMax" then cevalIntegerMax;
+    case "getLoadedLibraries" then cevalGetLoadedLibraries;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -1142,9 +1143,12 @@ algorithm
     case ("ModelicaInternal_print") then ();
     case ("ModelicaInternal_countLines") then ();
     case ("ModelicaInternal_readLine") then ();
+    case ("ModelicaInternal_stat") then ();
+    case ("ModelicaInternal_fullPathName") then ();
     case ("ModelicaStrings_scanReal") then ();
     case ("ModelicaStrings_skipWhiteSpace") then ();
     case ("ModelicaError") then ();
+    case ("System_regexModelica") then ();
   end match;
 end isKnownExternalFunc;
 
@@ -1157,9 +1161,13 @@ algorithm
   outValue := match (id,inValuesValueLst,inMsg)
     local 
       Real rv_1,rv,rv1,rv2,sv,cv,r;
-      String str,fileName;
-      Integer start, stop, i, lineNumber;
-      Boolean b;
+      String str,fileName,re;
+      Integer start, stop, i, lineNumber, n;
+      Boolean b, extended, insensitive;
+      list<String> strs;
+      list<Values.Value> vals;
+      Values.Value v;
+      Absyn.Path p;
       
     case ("acos",{Values.REAL(real = rv)},_)
       equation
@@ -1260,6 +1268,17 @@ algorithm
       equation
         (str,b) = ModelicaExternalC.Streams_readLine(fileName,lineNumber);
       then Values.TUPLE({Values.STRING(str),Values.BOOL(b)});
+    case ("ModelicaInternal_fullPathName",{Values.STRING(fileName)},_)
+      equation
+        fileName = ModelicaExternalC.File_fullPathName(fileName);
+      then Values.STRING(fileName);
+    case ("ModelicaInternal_stat",{Values.STRING(str)},_)
+      equation
+        i = ModelicaExternalC.File_stat(str);
+        str = listGet({"NoFile", "RegularFile", "Directory", "SpecialFile"}, i);
+        p = Absyn.stringListPath({"OpenModelica","Scripting","Internal","FileType",str});
+        v = Values.ENUM_LITERAL(p,i);
+      then v;
         
     case ("ModelicaStrings_scanReal",{Values.STRING(str),Values.INTEGER(i),Values.BOOL(b)},_)
       equation
@@ -1271,8 +1290,41 @@ algorithm
         i = ModelicaExternalC.Strings_advanced_skipWhiteSpace(str,i);
       then Values.INTEGER(i);
 
+    case ("System_regexModelica",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},_)
+      equation
+        v = cevalRegex(str,re,i,extended,insensitive);
+      then v;
+
   end match;
 end cevalKnownExternalFuncs2;
+
+protected function cevalRegex
+  input String str;
+  input String re;
+  input Integer i;
+  input Boolean extended;
+  input Boolean insensitive;
+  output Values.Value v;
+algorithm
+  v := matchcontinue (str,re,i,extended,insensitive)
+    local
+      Integer n;
+      list<String> strs;
+      list<Values.Value> vals;
+    case (_,_,_,_,_)
+      equation
+        (n,strs) = System.regex(str,re,i,extended,insensitive);
+        vals = List.map(strs,ValuesUtil.makeString);
+        v = Values.ARRAY(vals,{i});
+      then Values.TUPLE({Values.INTEGER(n),v});
+    else
+      equation
+        strs = List.fill("",i);
+        vals = List.map(strs,ValuesUtil.makeString);
+        v = Values.ARRAY(vals,{i});
+      then Values.TUPLE({Values.INTEGER(-1),v});
+  end matchcontinue;
+end cevalRegex;
 
 protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
@@ -2684,6 +2736,82 @@ algorithm
         (inCache,Values.INTEGER(i),inST);
   end match;
 end cevalIntegerMax;
+
+protected function cevalGetLoadedLibraries
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Env.Frame fr;
+      list<SCode.Element> classes;
+      list<Absyn.Class> absynclasses;
+      Values.Value v;
+    case (cache,env,{},_,SOME(Interactive.SYMBOLTABLE(ast=Absyn.PROGRAM(classes=absynclasses))),_)
+      equation
+        v = ValuesUtil.makeArray(List.fold(absynclasses,makeLoadLibrariesEntryAbsyn,{}));
+      then (cache,v,inST);
+    case (cache,env,{},_,_,_)
+      equation
+        fr::_ = listReverse(env);
+        classes = Env.getClassesInFrame(fr);
+        v = ValuesUtil.makeArray(List.fold(classes,makeLoadLibrariesEntry,{}));
+      then (cache,v,inST);
+  end match;
+end cevalGetLoadedLibraries;
+
+protected function makeLoadLibrariesEntry "Needed to be able to resolve modelica:// during runtime, etc.
+Should not be part of CevalScript since ModelicaServices needs this feature and the frontend needs to take care of it."
+  input SCode.Element cl;
+  input list<Values.Value> acc;
+  output list<Values.Value> out;
+algorithm
+  out := match (cl,acc)
+    local
+      String name,fileName,dir;
+      Values.Value v;
+      Boolean b;
+    case (SCode.CLASS(info=Absyn.INFO(fileName="<interactive>")),_) then acc;
+    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+      equation
+        dir = System.dirname(fileName);
+        fileName = System.basename(fileName);
+        v = ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
+        b = stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
+      then List.consOnTrue(not b,v,acc);
+  end match;
+end makeLoadLibrariesEntry;
+
+protected function makeLoadLibrariesEntryAbsyn "Needed to be able to resolve modelica:// during runtime, etc.
+Should not be part of CevalScript since ModelicaServices needs this feature and the frontend needs to take care of it."
+  input Absyn.Class cl;
+  input list<Values.Value> acc;
+  output list<Values.Value> out;
+algorithm
+  out := match (cl,acc)
+    local
+      String name,fileName,dir;
+      Values.Value v;
+      Boolean b;
+    case (Absyn.CLASS(info=Absyn.INFO(fileName="<interactive>")),_) then acc;
+    case (Absyn.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+      equation
+        dir = System.dirname(fileName);
+        fileName = System.basename(fileName);
+        v = ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
+        b = stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
+      then List.consOnTrue(not b,v,acc);
+  end match;
+end makeLoadLibrariesEntryAbsyn;
 
 protected function cevalListFirst
   input Env.Cache inCache;

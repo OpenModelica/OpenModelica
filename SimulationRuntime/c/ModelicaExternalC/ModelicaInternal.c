@@ -436,25 +436,21 @@ const char* ModelicaInternal_fullPathName(const char* name)
 
 #if defined(_WIN32)
     char* tempName = _fullpath(buffer, name, sizeof(buffer));
+#else
+    /* realpath availability: 4.4BSD, POSIX.1-2001. Using the behaviour of NULL: POSIX.1-2008 */
+    char* tempName = realpath(name, NULL);
+#endif
     if(tempName == NULL) {
         ModelicaFormatError("Not possible to construct full path name of \"%s\"\n%s",
             name, strerror(errno));
         return "";
     }
-    fullName = ModelicaAllocateString(strlen(tempName));
+    fullName = ModelicaAllocateString(strlen(tempName) + 1);
     strcpy(fullName, tempName);
+#if defined(_WIN32)
     ModelicaConvertToUnixDirectorySeparator(fullName);
 #else
-    /* No such system call in _POSIX_ available */
-    char* cwd = getcwd(buffer, sizeof(buffer));
-    if(cwd == NULL) {
-        ModelicaFormatError("Not possible to get current working directory:\n%s",
-            strerror(errno));
-    }
-    fullName = ModelicaAllocateString(strlen(cwd) + strlen(name) + 1);
-    strcpy(fullName, cwd);
-    strcat(fullName, "/");
-    strcat(fullName, name);
+    free(tempName);
 #endif
 
     return fullName;

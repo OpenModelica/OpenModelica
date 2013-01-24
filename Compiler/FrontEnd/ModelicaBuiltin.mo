@@ -925,6 +925,14 @@ end timerClear;
 
 end Time;
 
+type FileType = enumeration(NoFile, RegularFile, Directory, SpecialFile);
+
+function stat
+  input String name;
+  output FileType fileType;
+external "C" fileType=ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
+end stat;
+
 end Internal;
 
 function checkSettings "Display some diagnostics."
@@ -1321,13 +1329,18 @@ annotation(preferredView="text");
 end getVersion;
 
 function regularFileExists
-  "The contents of the given file are returned.
-  Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
   output Boolean exists;
-external "builtin" annotation(__OpenModelica_Impure=true);
-annotation(preferredView="text");
+algorithm
+  exists := Internal.stat(fileName) == Internal.FileType.RegularFile;
 end regularFileExists;
+
+function directoryExists
+  input String dirName;
+  output Boolean exists;
+algorithm
+  exists := Internal.stat(dirName) == Internal.FileType.Directory;
+end directoryExists;
 
 function readFile
   "The contents of the given file are returned.
@@ -1427,7 +1440,7 @@ function regex  "Sets the error buffer and returns -1 if the regex does not comp
   input Boolean caseInsensitive := false;
   output Integer numMatches "-1 is an error, 0 means no match, else returns a number 1..maxMatches";
   output String matchedSubstrings[maxMatches] "unmatched strings are returned as empty";
-external "builtin";
+external "C" numMatches = System_regexModelica(str,re,maxMatches,extended,caseInsensitive,matchedSubstrings) annotation(Library = {"omcruntime"});
 annotation(preferredView="text");
 end regex;
 
@@ -1444,6 +1457,17 @@ algorithm
   matches := numMatches == 1;
 annotation(preferredView="text");
 end regexBool;
+
+function testsuiteFriendlyName
+  input String path;
+  output String fixed;
+protected
+  Integer i;
+  String matches[4];
+algorithm
+  (i,matches) := regex(path, "^(.*/testsuite/)?(.*/build/)?(.*)",4);
+  fixed := matches[i+1];
+end testsuiteFriendlyName;
 
 function readFileNoNumeric
   "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:
@@ -1886,13 +1910,91 @@ empty string is returned.</p>
   preferredView="text");
 end list;
 
+function realpath "Get full path name of file or directory name"
+  input String name "Absolute or relative file or directory name";
+  output String fullName "Full path of 'name'";
+external "C" fullName = ModelicaInternal_fullPathName(name) annotation(Library="ModelicaExternalC");
+  annotation (Documentation(info="<html>
+Return the canonicalized absolute pathname.
+Similar to <a href=\"http://linux.die.net/man/3/realpath\">realpath(3)</a>, but with the safety of Modelica strings.
+</html>"));
+end realpath;
+
 function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
   The result depends on the current MODELICAPATH. Returns the empty string on failure."
   input String uri;
-  output String filename;
-external "builtin";
-annotation(preferredView="text");
+  output String filename := "";
+protected
+  String [:,2] libraries;
+  Integer numMatches;
+  String [:] matches,matches2;
+  String path, schema, str;
+  Boolean isUri,isMatch:=false,isModelicaUri,isFileUri,isFileUriAbsolute;
+  Integer i := 0;
+algorithm
+  isUri := regexBool(uri, "^[A-Za-z]*://");
+  if isUri then
+    (numMatches,matches) := regex(uri,"^([A-Za-z]*://)?([^/]*)(.*)$",4);
+    schema := matches[2];
+    isModelicaUri := regexBool(schema, "^modelica://", caseInsensitive=true);
+    isFileUriAbsolute := regexBool(uri, "^file:///", caseInsensitive=true);
+    isFileUri := regexBool(schema, "^file://", caseInsensitive=true);
+    if isModelicaUri then
+      libraries := getLoadedLibraries();
+      path := matches[3];
+      while path <> "" loop
+        (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
+        path := matches2[3];
+        if isMatch then
+          /* We already have a match for the first part. The full name was e.g. Modelica.Blocks, so we now see if the Blocks directory exists, and so on */
+          if directoryExists(filename + "/" + matches2[2]) then
+            filename := filename + "/" + matches2[2];
+          else
+            break;
+          end if;
+        else
+          /* It is the first part of the name (Modelica.XXX) - look among the loaded classes for the name Modelica and use that path */
+          for f in libraries[:,1] loop
+            i := i + 1;
+            if libraries[i,1] == matches2[2] then
+              filename := libraries[i,2];
+              isMatch := true;
+              break;
+            end if;
+          end for;
+          print(if not isMatch then "Could not resolve URI: " + uri + "\n" else "");
+          assert(isMatch,"Could not resolve URI: " + uri);
+        end if;
+      end while;
+      filename := if isMatch then realpath(filename + "/" + matches[4]) else filename;
+    elseif isFileUriAbsolute then
+      (,matches) := regex(uri,"file://(/.*)?",2);
+      filename := matches[2];
+    elseif isFileUri and not isFileUriAbsolute then
+      str := "file:// schema without absolute paths are not supported: " + uri;
+      print(str + "\n");
+      assert(false, str);
+    elseif not (isModelicaUri or isFileUri) then
+      /* Not using else because OpenModelica handling of assertions at runtime is not very good */
+      str := "Unknown URI schema: " + schema;
+      print(str + "\n");
+      assert(false, str);
+    else
+      /* empty */
+    end if;
+  else
+    filename := uri;
+  end if;
 end uriToFilename;
+
+function getLoadedLibraries
+  output String [:,2] libraries;
+external "builtin";
+annotation(Documentation(info="<html>
+Returns a list of names of libraries and their path on the system, for example:
+<pre>{{\"Modelica\",\"/usr/lib/omlibrary/Modelica 3.2.1\"},{\"ModelicaServices\",\"/usr/lib/omlibrary/ModelicaServices 3.2.1\"}}</pre>
+</html>"));
+end getLoadedLibraries;
 
 type LinearSystemSolver = enumeration(dgesv,lpsolve55);
 function solveLinearSystem

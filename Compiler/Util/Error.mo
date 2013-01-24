@@ -731,7 +731,7 @@ protected
   Boolean ro;
 algorithm
   Absyn.INFO(filename, ro, ls, cs, le, ce, _) := info;
-  ErrorExt.updateCurrentComponent(component, ro, filename, ls, le, cs, ce);
+  ErrorExt.updateCurrentComponent(component, ro, Util.testsuiteFriendly(filename), ls, le, cs, ce);
 end updateCurrentComponent;
 
 public function addMessage "Implementation of Relations
@@ -783,7 +783,7 @@ algorithm
       equation
         msg_str = Util.translateContent(msg);
         ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol,
-          eline, ecol, isReadOnly, file, msg_str, tokens);
+          eline, ecol, isReadOnly, Util.testsuiteFriendly(file), msg_str, tokens);
       then ();
   end match;
 end addSourceMessage;
@@ -986,7 +986,7 @@ algorithm
     case (Absyn.INFO(fileName = filename, lineNumberStart = line_start, 
         columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
         equation
-          info_str = "[" +& filename +& ":" +& 
+          info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +& 
                      intString(line_start) +& ":" +& intString(col_start) +& "-" +& 
                      intString(line_end) +& ":" +& intString(col_end) +& "]";
       then info_str;

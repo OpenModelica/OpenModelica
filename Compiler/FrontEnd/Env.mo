@@ -139,10 +139,8 @@ public uniontype Cache
 end Cache;
 
 public uniontype EnvCache
- record ENVCACHE
-   "Cache for environments. The cache consists of a tree
-    of environments from which lookupcan be performed."
-       CacheTree envTree;
+  record ENVCACHE "Cache for environments. The cache consists of a tree of environments from which lookup can be performed."
+    CacheTree envTree;
   end ENVCACHE;
 end EnvCache;
 
@@ -1438,38 +1436,6 @@ algorithm
         res;
   end match;
 end printFrameElementStr;
-
-protected function isVarItem "function: isVarItem
-  Succeeds if item is a VAR."
-  input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  _:=
-  matchcontinue (inTplTypeAItem)
-    case ((_,VAR(instantiated = _))) then ();
-  end matchcontinue;
-end isVarItem;
-
-protected function isClassItem "function: isClassItem
-  Succeeds if item is a CLASS."
-  input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  _ := matchcontinue (inTplTypeAItem)
-    case ((_,CLASS(cls = _))) then ();
-  end matchcontinue;
-end isClassItem;
-
-protected function isTypeItem "function: isTypeItem
-  Succeds if item is a TYPE."
-  input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  _:=
-  matchcontinue (inTplTypeAItem)
-    case ((_,TYPE(tys = _))) then ();
-  end matchcontinue;
-end isTypeItem;
 
 public function getCachedInitialEnv "get the initial environment from the cache"
   input Cache cache;
@@ -2910,6 +2876,48 @@ algorithm
         AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeReplace2;
+
+public function getClassesInFrame
+  input Frame fr;
+  output list<SCode.Element> elts;
+protected
+  AvlTree ht;
+  list<AvlTreeValue> vals;
+algorithm
+  FRAME(clsAndVars=ht) := fr;
+  vals := getAvlTreeItems(SOME(ht)::{},{});
+  elts := List.fold(vals,getClassesFromItem,{});
+end getClassesInFrame;
+
+protected function getClassesFromItem
+  input AvlTreeValue v;
+  input list<SCode.Element> acc;
+  output list<SCode.Element> res;
+algorithm
+  res := match (v,acc)
+    local
+      SCode.Element c;
+    case (AVLTREEVALUE(value=CLASS(cls=c)),_) then c::acc;
+    else acc;
+  end match;
+end getClassesFromItem;
+
+protected function getAvlTreeItems
+  input list<Option<AvlTree>> tree;
+  input list<AvlTreeValue> acc;
+  output list<AvlTreeValue> res;
+algorithm
+  res := match (tree,acc)
+    local
+      Option<AvlTreeValue> value;
+      Option<AvlTree> left,right;
+      list<Option<AvlTree>> rest;
+    case ({},_) then acc;
+    case (SOME(AVLTREENODE(value=value,left=left,right=right))::rest,_)
+      then getAvlTreeItems(left::right::rest,List.consOption(value,acc));
+    case (NONE()::rest,_) then getAvlTreeItems(rest,acc);
+  end match;
+end getAvlTreeItems;
 
 end Env;
 

@@ -5466,7 +5466,7 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
   let cref = contextArrayCref(cr, context)
   match context
   case FUNCTION_CONTEXT(__) then
-    'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
+    'copy_<%type%><%if dimensionsKnown(ty) then "_data" /* else we make allocate and copy data */%>(&<%exp%>, &<%cref%>);'
   case PARALLEL_FUNCTION_CONTEXT(__) then
     'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
   else

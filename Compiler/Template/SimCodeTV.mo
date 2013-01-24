@@ -2704,6 +2704,10 @@ package Types
     input DAE.Type inType;
     output String str;
   end unparseType;
+  function dimensionsKnown
+    input DAE.Type inType;
+    output Boolean outRes;
+  end dimensionsKnown;
 end Types;
 
 package FMI
