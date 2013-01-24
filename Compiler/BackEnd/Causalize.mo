@@ -34,8 +34,8 @@ encapsulated package Causalize
   package:     Causalize
   description: Causalize contains functions to causalize the equation system.
                This includes algorithms to check if the system is singulare, 
-			   match the equations with variables and sorting to BLT-Form.
-			   
+               match the equations with variables and sorting to BLT-Form.
+         
                
   RCS: $Id: Causalize.mo 14235 2013-01-23 04:34:35Z jfrenkel $"
 
