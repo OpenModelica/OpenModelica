@@ -10250,7 +10250,7 @@ algorithm
                               extObjClasses,
                               backendDAEType,
                               symjacs);
-  outDAE := BackendDAE.DAE(systs, shared);
+  outDAE := Util.if_(intGt(index, 1), BackendDAE.DAE(systs, shared), inDAE);
   Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
 end encapsulateWhenConditions;
 
@@ -10650,8 +10650,6 @@ algorithm
 
       ({elseWhen}, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
-      //elseWhen = List.last(elseWhenList);
-      //preStmts2 = List.stripLast(elseWhenList);
       preStmts = listAppend(preStmts, preStmts2);
 
       (stmts, stmts_, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
