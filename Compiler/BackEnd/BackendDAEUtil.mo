@@ -8129,7 +8129,7 @@ algorithm
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
         // match the system and reduce index if neccessary
-        (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
+        (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, true, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_))
