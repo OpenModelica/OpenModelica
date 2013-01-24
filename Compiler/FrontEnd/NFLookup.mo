@@ -148,6 +148,34 @@ algorithm
     SOME(Error.LOOKUP_FUNCTION_ERROR));
 end lookupFunctionName;
 
+public function lookupUnresolvedSimpleName
+  "Looks up a name and returns the unresolved entry from the environment."
+  input String inName;
+  input Env inEnv;
+  output Entry outEntry;
+algorithm
+  outEntry := matchcontinue(inName, inEnv)
+    local
+      Entry entry;
+      Env env;
+
+    case (_, _)
+      equation
+        entry = NFEnv.lookupEntry(inName, inEnv);
+      then
+        entry;
+
+    else
+      equation
+        true = NFEnv.isScopeEncapsulated(inEnv);
+        env = NFEnv.builtinScope(inEnv);
+        entry = lookupUnresolvedSimpleName(inName, env);
+      then
+        entry;
+
+  end matchcontinue;
+end lookupUnresolvedSimpleName;
+
 protected function lookupBuiltinType
   input String inName;
   input Env inEnv;
@@ -236,7 +264,7 @@ algorithm
       then
         (entry, env);
 
-    case (_, _)
+    else
       equation
         true = NFEnv.isScopeEncapsulated(inEnv);
         env = NFEnv.builtinScope(inEnv);
@@ -259,7 +287,7 @@ algorithm
   (outEntry, outEnv) := lookupNameInPackage(inName, inEnv);
 end lookupFullyQualified;
 
-protected function lookupInLocalScope
+public function lookupInLocalScope
   input String inName;
   input Env inEnv;
   output Entry outEntry;

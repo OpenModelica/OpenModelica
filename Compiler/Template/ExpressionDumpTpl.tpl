@@ -75,12 +75,18 @@ match exp
     let ty_str = dumpType(ty)
     '/*<%ty_str%>*/(<%exp_str%>)'
   case ASUB(__) then
+    let needs_paren = parenthesizeSubExp(exp)
+    let lparen = if needs_paren then "("
+    let rparen = if needs_paren then ")"
     let exp_str = dumpExp(exp, stringDelimiter)
     let sub_str = dumpExpList(sub, stringDelimiter, ", ")
-    '<%exp_str%>[<%sub_str%>]'
+    '<%lparen%><%exp_str%><%rparen%>[<%sub_str%>]'
   case TSUB(__) then
+    let needs_paren = parenthesizeSubExp(exp)
+    let lparen = if needs_paren then "("
+    let rparen = if needs_paren then ")"
     let exp_str = dumpExp(exp, stringDelimiter)
-    '<%exp_str%>[<%ix%>]'
+    '<%lparen%><%exp_str%><%rparen%>[<%ix%>]'
   case SIZE(__) then
     let exp_str = dumpExp(exp, stringDelimiter)
     let dim_str = match sz case SOME(dim) then ', <%dumpExp(dim, stringDelimiter)%>'
@@ -131,6 +137,25 @@ match exp
   case PATTERN(__) then dumpPattern(pattern)
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;
+
+template parenthesizeSubExp(DAE.Exp exp)
+::=
+match exp
+  case ICONST(__) then ""
+  case RCONST(__) then ""
+  case SCONST(__) then ""
+  case BCONST(__) then ""
+  case ENUM_LITERAL(__) then ""
+  case CREF(__) then ""
+  case CALL(__) then ""
+  case ARRAY(__) then ""
+  case MATRIX(__) then ""
+  case TUPLE(__) then  ""
+  case CAST(__) then ""
+  case SIZE(__) then ""
+  case REDUCTION(__) then ""
+  else "y"
+end parenthesizeSubExp;
 
 template dumpExpList(list<DAE.Exp> expl, String stringDelimiter, String expDelimiter)
 ::= (expl |> exp => dumpExp(exp, stringDelimiter) ;separator=expDelimiter)
