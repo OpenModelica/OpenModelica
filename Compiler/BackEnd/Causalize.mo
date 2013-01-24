@@ -297,13 +297,13 @@ protected
 algorithm
   (_,_,_,mapIncRowEqn,_) := inArg;
   n := BackendDAEUtil.systemSize(isyst);
-  // for debugging
+  /* for debugging
     BackendDump.printEqSystem(isyst);
     BackendDump.dumpMatching(inAssignments1);
     BackendDump.dumpMatching(inAssignments2);
     syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
   //  IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" +& intString(n) +& ".graphml");
-  
+  */
   // get from scalar eqns indexes the indexes in the equation array
   unmatched := List.flatten(eqns);
   unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
