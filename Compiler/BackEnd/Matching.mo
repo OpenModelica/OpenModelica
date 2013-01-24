@@ -4449,7 +4449,7 @@ algorithm
   outUnMatched := match(algorithmid,nv,ne,m,mT,ass1,ass2,intRangeUsed)
     case(1,_,_,_,_,_,_,_) then cheapmatching(1,nv,ne,m,mT,ass1,ass2,{});
     case(3,_,_,_,_,_,_,_) then ks_rand_cheapmatching(nv,ne,m,mT,ass1,ass2);
-    case(_,_,_,_,_,_,_,true) then List.intRange(ne);
+    case(_,_,_,_,_,_,_,true) then getUnassigned(ne, ass1, {});
     else then {};
   end match;
 end cheapmatchingalgorithm1;
@@ -4963,7 +4963,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5015,7 +5015,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5067,7 +5067,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5119,7 +5119,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5171,7 +5171,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5223,7 +5223,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5275,7 +5275,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5327,7 +5327,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5379,7 +5379,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -5962,8 +5962,8 @@ protected function getAssignment
   input Integer nVars;
   input Integer nEqns;
   input BackendDAE.EqSystem iSyst;
-  output array<Integer> ass1;
-  output array<Integer> ass2;
+  output array<Integer> ass1 "ass[eqnindx]=varindx";
+  output array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
   (ass1,ass2) := matchcontinue(clearMatching,nVars,nEqns,iSyst)
     case(false,_,_,BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
@@ -5971,13 +5971,13 @@ algorithm
         true = intGe(nVars,arrayLength(ass1));
         true = intGe(nEqns,arrayLength(ass2));
       then
-        (ass1,ass2);
+        (ass2,ass1);
     else
       equation
+        ass2 = arrayCreate(nEqns,-1);
         ass1 = arrayCreate(nVars,-1);
-        ass2 = arrayCreate(nVars,-1);
       then
-        (ass1,ass2);
+        (ass2,ass1);
   end matchcontinue;
 end getAssignment;
 
