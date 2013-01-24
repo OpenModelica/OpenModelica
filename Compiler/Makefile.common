@@ -138,6 +138,7 @@ BackendVariable.mo \
 BackendVarTransform.mo \
 BinaryTree.mo \
 BinaryTreeInt.mo \
+Causalize.mo \
 DAEQuery.mo \
 Derive.mo \
 DumpHTML.mo \

@@ -79,9 +79,10 @@ public partial function StructurallySingularSystemHandlerFunc
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 end StructurallySingularSystemHandlerFunc; 
 
-partial function matchingAlgorithmFunc
+public partial function matchingAlgorithmFunc
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -100,6 +101,7 @@ public function DFSLH
   deapth first search with look ahead feature. basically the same like MC21A."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -108,7 +110,7 @@ public function DFSLH
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2,emark,vmark;
@@ -118,24 +120,22 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;  
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vmark = arrayCreate(nvars,-1);
         emark = arrayCreate(neqns,-1);
-        vec1 = arrayCreate(nvars,-1);
-        vec2 = arrayCreate(neqns,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -190,7 +190,7 @@ algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outArg):=
   matchcontinue (isyst,ishared,nv,nf,i,emark,vmark,ass1,ass2,match_opts,sssHandler,inArg)
     local
-      array<Integer> ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3;
+      array<Integer> ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3,emark1,vmark1;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       Integer i_1,nv_1,nf_1;
@@ -249,9 +249,9 @@ algorithm
         nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ass1_2 = assignmentsArrayExpand(ass1_1, nv_1,arrayLength(ass1_1),-1);
         ass2_2 = assignmentsArrayExpand(ass2_1, nf_1,arrayLength(ass2_1),-1);
-        vmark = assignmentsArrayExpand(vmark, nv_1,arrayLength(vmark),-1);
-        emark = assignmentsArrayExpand(emark, nf_1,arrayLength(emark),-1);
-        (ass1_3,ass2_3,syst,shared,arg1) = DFSLH2(syst,shared,nv_1,nf_1,i_1,emark, vmark,ass1_2,ass2_2,match_opts,sssHandler,arg);
+        vmark1 = assignmentsArrayExpand(vmark, nv_1,arrayLength(vmark),-1);
+        emark1 = assignmentsArrayExpand(emark, nf_1,arrayLength(emark),-1);
+        (ass1_3,ass2_3,syst,shared,arg1) = DFSLH2(syst,shared,nv_1,nf_1,i_1,emark1, vmark1,ass1_2,ass2_2,match_opts,sssHandler,arg);
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
@@ -453,6 +453,7 @@ public function BFSB
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -461,7 +462,7 @@ public function BFSB
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;    
       array<Integer> vec1,vec2;
@@ -472,24 +473,22 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
         parentcolum = arrayCreate(nvars,-1);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -785,6 +784,7 @@ public function DFSB
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -793,7 +793,7 @@ public function DFSB
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -804,23 +804,21 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -1049,6 +1047,7 @@ public function MC21A
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -1057,35 +1056,33 @@ public function MC21A
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;      
+      BackendDAE.IncidenceMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
-        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);      
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
+        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -1093,7 +1090,7 @@ algorithm
         false = intGt(neqns,0);
         vec1 = listArray({});
         vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
+        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -1416,6 +1413,7 @@ public function PF
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -1424,7 +1422,7 @@ public function PF
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -1435,15 +1433,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;      
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
@@ -1452,7 +1448,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -1819,6 +1815,7 @@ public function PFPlus
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -1827,7 +1824,7 @@ public function PFPlus
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns,i;
       BackendDAE.IncidenceMatrix m;
@@ -1838,15 +1835,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;      
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
@@ -1855,7 +1850,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -2175,6 +2170,7 @@ public function HK
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -2183,7 +2179,7 @@ public function HK
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -2194,15 +2190,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;      
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         rowmarks = arrayCreate(nvars,-1);
         collummarks = arrayCreate(neqns,-1);
         level = arrayCreate(neqns,-1);      
@@ -2212,7 +2206,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -2827,6 +2821,7 @@ public function HKDW
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -2835,7 +2830,7 @@ public function HKDW
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -2846,15 +2841,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;      
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         rowmarks = arrayCreate(nvars,-1);
         collummarks = arrayCreate(neqns,-1);
         level = arrayCreate(neqns,-1);      
@@ -2864,7 +2857,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -3148,6 +3141,7 @@ public function ABMP
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -3156,7 +3150,7 @@ public function ABMP
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -3167,15 +3161,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks,rlevel,colptrs;
       list<Integer> unmatched;      
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         rowmarks = arrayCreate(nvars,-1);
         collummarks = arrayCreate(neqns,-1);
         level = arrayCreate(neqns,-1);     
@@ -3187,7 +3179,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -3858,6 +3850,7 @@ public function PR_FIFO_FAIR
  author: Frenkel TUD 2012-04"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -3866,7 +3859,7 @@ public function PR_FIFO_FAIR
   output BackendDAE.StructurallySingularSystemHandlerArg outArg; 
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
@@ -3878,15 +3871,13 @@ algorithm
       array<Integer> l_label,r_label;
       list<Integer> unmatched;      
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);   
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         l_label = arrayCreate(neqns,-1);
         r_label = arrayCreate(nvars,-1);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
@@ -3895,7 +3886,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -4950,6 +4941,7 @@ public function DFSBExternal
 "function: DFSBExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -4958,28 +4950,26 @@ public function DFSBExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),1);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5002,6 +4992,7 @@ public function BFSBExternal
 "function: BFSBExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5010,28 +5001,26 @@ public function BFSBExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),2);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5054,6 +5043,7 @@ public function MC21AExternal
 "function: MC21AExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5062,28 +5052,26 @@ public function MC21AExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),3);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5106,6 +5094,7 @@ public function PFExternal
 "function: PFExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5114,28 +5103,26 @@ public function PFExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),4);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5158,6 +5145,7 @@ public function PFPlusExternal
 "function: PFExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5166,28 +5154,26 @@ public function PFPlusExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5210,6 +5196,7 @@ public function HKExternal
 "function: HKExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5218,28 +5205,26 @@ public function HKExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),6);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5262,6 +5247,7 @@ public function HKDWExternal
 "function: HKDWExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5270,28 +5256,26 @@ public function HKDWExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),7);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5314,6 +5298,7 @@ public function ABMPExternal
 "function: ABMPExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5322,28 +5307,26 @@ public function ABMPExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),8);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5366,6 +5349,7 @@ public function PR_FIFO_FAIRExternal
 "function: PR_FIFO_FAIRExternal"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5374,28 +5358,26 @@ public function PR_FIFO_FAIRExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),10);
-        vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
+        (vec2,vec1) = getAssignment(clearMatching,nvars,neqns,isyst);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
@@ -5966,6 +5948,30 @@ algorithm
   end matchcontinue;
 end checkAssignment;
 
+protected function getAssignment
+  input Boolean clearMatching;
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.EqSystem iSyst;
+  output array<Integer> ass1;
+  output array<Integer> ass2;
+algorithm
+  (ass1,ass2) := matchcontinue(clearMatching,nVars,nEqns,iSyst)
+    case(false,_,_,BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
+      equation
+        true = intGe(nVars,arrayLength(ass1));
+        true = intGe(nEqns,arrayLength(ass2));
+      then
+        (ass1,ass2);
+    else
+      equation
+        ass1 = arrayCreate(nVars,-1);
+        ass2 = arrayCreate(nVars,-1);
+      then
+        (ass1,ass2);
+  end matchcontinue;
+end getAssignment;
+
 /*************************************/
 /*   tests */
 /*************************************/
@@ -5999,7 +6005,6 @@ algorithm
                          ("HKDW:     ",HKDW),
                          ("ABMP:     ",ABMP),
                          ("PR:       ",PR_FIFO_FAIR)};
-
   syst := randSortSystem(isyst,ishared);
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
   
@@ -6039,32 +6044,6 @@ public function testMatchingAlgorithms1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions; 
-  partial function matchingAlgorithmFunc
-    input BackendDAE.EqSystem isyst;
-    input BackendDAE.Shared ishared;
-    input BackendDAE.MatchingOptions inMatchingOptions;
-    input StructurallySingularSystemHandlerFunc sssHandler;
-    input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-    output BackendDAE.EqSystem osyst;
-    output BackendDAE.Shared oshared;
-    output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-    partial function StructurallySingularSystemHandlerFunc
-      input list<list<Integer>> eqns;
-      input Integer actualEqn;
-      input BackendDAE.EqSystem isyst;
-      input BackendDAE.Shared ishared;
-      input array<Integer> inAssignments1;
-      input array<Integer> inAssignments2;
-      input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-      output list<Integer> changedEqns;
-      output Integer continueEqn;
-      output BackendDAE.EqSystem osyst;
-      output BackendDAE.Shared oshared;
-      output array<Integer> outAssignments1;
-      output array<Integer> outAssignments2; 
-      output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-    end StructurallySingularSystemHandlerFunc;  
-  end matchingAlgorithmFunc;   
 algorithm
   _ :=
   matchcontinue (matchingAlgorithms,isyst,ishared,inMatchingOptions)    
@@ -6101,32 +6080,6 @@ public function testMatchingAlgorithm
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions; 
-  partial function matchingAlgorithmFunc
-    input BackendDAE.EqSystem isyst;
-    input BackendDAE.Shared ishared;
-    input BackendDAE.MatchingOptions inMatchingOptions;
-    input StructurallySingularSystemHandlerFunc sssHandler;
-    input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-    output BackendDAE.EqSystem osyst;
-    output BackendDAE.Shared oshared;
-    output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-    partial function StructurallySingularSystemHandlerFunc
-      input list<list<Integer>> eqns;
-      input Integer actualEqn;
-      input BackendDAE.EqSystem isyst;
-      input BackendDAE.Shared ishared;
-      input array<Integer> inAssignments1;
-      input array<Integer> inAssignments2;
-      input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-      output list<Integer> changedEqns;
-      output Integer continueEqn;
-      output BackendDAE.EqSystem osyst;
-      output BackendDAE.Shared oshared;
-      output array<Integer> outAssignments1;
-      output array<Integer> outAssignments2; 
-      output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-    end StructurallySingularSystemHandlerFunc;  
-  end matchingAlgorithmFunc; 
 algorithm
   _ :=
   matchcontinue (index,matchingAlgorithm,isyst,ishared,inMatchingOptions) 
@@ -6137,7 +6090,7 @@ algorithm
     else
       equation
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared,listArray({}),listArray({}));
-        (_,_,_) = matchingAlgorithm(isyst,ishared,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
+        (_,_,_) = matchingAlgorithm(isyst,ishared,true,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
         testMatchingAlgorithm(index-1,matchingAlgorithm,isyst,ishared,inMatchingOptions);
       then
         ();
@@ -6271,197 +6224,6 @@ algorithm
   end match; 
 end randSortSystem1;
 
-
-/*****************************************
- Singular System check
- *****************************************/
-
-protected function checkSystemForMatching
-"function: checkSystemForMatching
-  author: Frenkel TUD 2012-06
-
-  Checks that the system is qualified for matching, i.e. that the number of variables
-  is the same as the number of equations. If not, the function fails and
-  prints an error message.
-  If matching options indicate that underconstrained systems are ok, no
-  check is performed."
-  input Integer nvars;
-  input Integer neqns;
-  input BackendDAE.MatchingOptions inMatchingOptions;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
-  input Integer extMatchingAlgorithmFunc;
-algorithm
-  _ := matchcontinue (nvars,neqns,inMatchingOptions,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc)
-    local
-      String esize_str,vsize_str;
-    case (_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_,_,_) then ();
-    case (_,_,(BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT()),_,_,_,_,_)
-      equation
-        true = intEq(nvars,neqns);
-      then
-        ();
-    case (_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(nvars,neqns);
-        (_,_) = singularSystemCheck(nvars,neqns,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
-      then
-        ();
-    case (_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(nvars,neqns);
-        esize_str = intString(neqns);
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
-      then
-        fail();
-    case (_,_,_,_,_,_,_,_)
-      equation
-        true = intLt(nvars,neqns);
-        esize_str = intString(neqns) ;
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
-      then
-        fail();
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.checkSystemForMatching failed\n");
-      then
-        fail();
-  end matchcontinue;
-end checkSystemForMatching;
-
-//protected import BackendDAETransform;
-
-protected function singularSystemCheck
-"function: singularSystemCheck
-  author: Frenkel TUD 2012-12
-  check if the system is singular"
-  input Integer nVars;
-  input Integer nEqns;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
-  input Integer extMatchingAlgorithmFunc;
-  output array<Integer> ass1;
-  output array<Integer> ass2;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mT;
-  BackendDAE.StateSets stateSets;
-  list<list<Integer>> comps;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets) := isyst;
-  // get absolute Incidence Matrix
-  m := BackendDAEUtil.absIncidenceMatrix(m);
-  mT := BackendDAEUtil.absIncidenceMatrix(mT);
-  // try to match
-  ass1 := arrayCreate(nVars,-1);
-  ass2 := arrayCreate(nEqns,-1);
-  (ass1,ass2) := singularSystemCheckMatch(nVars,nEqns,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,ass1,ass2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
-  // free states matching information because there it is unkown if the state or the state derivative was matched
-  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
-  /*
-    matchingExternalsetIncidenceMatrix(nVars1, nEqns1, m);
-    BackendDAEEXT.matching(nVars1, nEqns1, 5, -1, 0.0, 1);
-    BackendDAEEXT.getAssignment(vec2, vec1);
-
-    print("singularSystemCheck:\n");
-    BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
-    BackendDump.dumpMatching(vec2);
-    BackendDump.dumpMatching(vec1);
-    comps := BackendDAETransform.tarjanAlgorithm(mT,vec2);
-    BackendDump.dumpComponentsOLD(comps);
-    IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),"SingularSystemCheck" +& intString(nVars) +& ".graphml");
-  */
-end singularSystemCheck;
-
-protected function freeStateAssignments
-"function freeStateAssignments
-  author Frenkel TUD 2013-01
-  unset assignments of statevariables."
-  input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> inTpl;
-  output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> outTpl;
-algorithm
-  outTpl := match(inTpl)
-    local
-      Integer e,index;
-      array<Integer> ass1,ass2;
-      BackendDAE.Var var;
-    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2)))
-      equation
-        e = ass1[index];
-        ass1 = arrayUpdate(ass1,index,-1);
-        ass2 = arrayUpdate(ass2,e,-1);
-      then ((var,(index+1,ass1,ass2)));
-    case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
-  end match;
-end freeStateAssignments;
-
-protected function singularSystemCheckMatch
-"function: singularSystemCheckMatch
-  author: Frenkel TUD 2012-12
-  check if the system is singular"
-  input Integer nVars;
-  input Integer nEqns;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> vec1;
-  input array<Integer> vec2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
-  input Integer extMatchingAlgorithmFunc;  
-  output array<Integer> v1;
-  output array<Integer> v2;
-algorithm
-  (v1,v2) := match(nVars,nEqns,isyst,ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc)
-    case(_,_,_,_,_,_,_,NONE(),_)
-      equation
-        (v1,v2,_,_,_) = matchingExternal({},false,extMatchingAlgorithmFunc,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nVars, nEqns, vec1, vec2, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT()), foundSingularSystem, inArg);
-      then
-        (v1,v2);
-    case(_,_,_,_,_,_,_,SOME(_),_)
-      equation
-        (v1,v2,_,_,_) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nVars, nEqns, vec1, vec2, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT()), foundSingularSystem, inArg);
-      then
-        (v1,v2);        
-  end match;
-end singularSystemCheckMatch;
-
-protected function foundSingularSystem
-"function: foundSingularSystem
-  author: Frenkel TUD 2012-12
-  check if the system is singular"
-  input list<list<Integer>> eqns;
-  input Integer actualEqn;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output list<Integer> changedEqns;
-  output Integer continueEqn;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2; 
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-algorithm
-  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) := 
-  match(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
-    case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-    case (_::_,_,_,_,_,_,_)
-      equation
-        singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-      then 
-        fail();
-  end match;
-end foundSingularSystem;
 
 protected function singularSystemError
   input list<list<Integer>> eqns;

@@ -62,6 +62,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BinaryTree;
+protected import Causalize;
 protected import Ceval;
 protected import CevalScript;
 protected import CheckModel;
@@ -7880,6 +7881,7 @@ partial function matchingAlgorithmFunc
   This is the interface for the matching algorithm"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -8110,7 +8112,8 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
       DAE.FunctionTree funcs;
-
+      Integer nvars,neqns;
+       
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_)
       then
         (isyst,ishared,NONE());      
@@ -8121,8 +8124,12 @@ algorithm
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs));
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
+        // check singular system
+        nvars = BackendVariable.daenumVariables(syst);
+        neqns = systemSize(syst);
+        syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
         // match the system and reduce index if neccessary
-        (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
+        (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_))

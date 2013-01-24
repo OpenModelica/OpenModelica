@@ -99,6 +99,7 @@ public function matchingAlgorithm
               BackendDAE,IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg; 
@@ -123,7 +124,7 @@ public function matchingAlgorithm
   end StructurallySingularSystemHandlerFunc;   
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns,memsize;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
@@ -137,7 +138,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
     // fail case if daelow is empty
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),stateSets=stateSets),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),stateSets=stateSets),_,_,_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -147,7 +148,7 @@ algorithm
         vec2 = listArray({});
       then
         (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),stateSets),ishared,inArg);
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
         BackendDAEEXT.clearDifferentiated();
         checkMatching(isyst, inMatchingOptions);

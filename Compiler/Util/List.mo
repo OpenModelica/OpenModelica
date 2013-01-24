@@ -5017,6 +5017,77 @@ algorithm
   end match;
 end map3Fold_tail;
 
+public function map4Fold
+  "Takes a list, four extra constant arguments, an extra argument, and a function.
+  The function will be applied to each element in the list, and the extra
+  argument will be passed to the function and updated."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input ArgType4 inConstArg4;
+  input FoldType inArg;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input ArgType4 inConstArg4;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := map4Fold_tail(inList, inFunc, inConstArg, inConstArg2, inConstArg3, inConstArg4, inArg, {});
+end map4Fold;
+
+public function map4Fold_tail
+  "Tail recursive implementation of map4Fold."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input ArgType4 inConstArg4;
+  input FoldType inArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input ArgType4 inConstArg4;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := match(inList, inFunc, inConstArg, inConstArg2, inConstArg3, inConstArg4, inArg, inAccumList)
+    local
+      ElementInType e1;
+      list<ElementInType> rest_e1;
+      ElementOutType res;
+      list<ElementOutType> rest_res, acc;
+      FoldType arg;
+      
+    case ({}, _, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
+    case (e1 :: rest_e1, _, _, _, _, _, _, _)
+      equation
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inConstArg4, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map4Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, inConstArg4, arg, acc);
+      then
+        (rest_res, arg);
+  end match;
+end map4Fold_tail;
+
 public function mapFoldTuple
   "Takes a list, an extra argument and a function. The function will be applied
   to each element in the list, and the extra argument will be passed to the

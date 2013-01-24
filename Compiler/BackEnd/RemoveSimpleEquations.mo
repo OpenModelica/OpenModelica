@@ -1991,7 +1991,7 @@ algorithm
        expcr = Expression.crefExp(cr);
        pv = BackendVariable.getVarSharedAt(i2,ishared);
        vsattr = addVarSetAttributes(pv,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
-       vsattr = addVarSetAttributes(v,negate,mark,simpleeqnsarr,vsattr);
+       vsattr = Debug.bcallret5(replacable and replaceble1, addVarSetAttributes,v,negate,mark,simpleeqnsarr,vsattr,vsattr);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
        _ = arrayUpdate(iMT,i,{});
        (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp1,SOME(expcr),negate,SOME(DAE.RCONST(0.0)),mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
@@ -2341,7 +2341,7 @@ algorithm
         // replace alias with selected variable if replacable
         source = Debug.bcallret3(replacable,addSubstitutionOption,optExp,crexp,source,source);
         (vars,eqnslst,shared,repl) = handleSetVar(replacable and replaceble1,derReplaceState,v,i,(source,diffed),exp1,iMT,iVars,iEqnslst,ishared,iRepl);
-        vsattr = addVarSetAttributes(v,globalnegate1,mark,simpleeqnsarr,iAttributes);
+        vsattr = Debug.bcallret5(replacable and replaceble1, addVarSetAttributes,v,globalnegate1,mark,simpleeqnsarr,iAttributes,iAttributes);
         // negate if necessary
         crexp = Debug.bcallret1(negate,Expression.negate,crexp,crexp);
         rows = List.removeOnTrue(r,intEq,iMT[i]);
