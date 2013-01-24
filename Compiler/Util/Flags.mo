@@ -638,8 +638,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "constantLinearSystem",
     "simplifysemiLinear",
     "removeSimpleEquations",
-    "tearingSystem",
     "encapsulateWhenConditions",  // must called after remove simple equations
+    "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
 //    "countOperations",
     "removeUnusedFunctions",
     "inputDerivativesUsed",
