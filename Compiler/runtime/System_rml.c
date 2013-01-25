@@ -1910,12 +1910,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__regex)
 {
-  int nmatch = 0;
-  rmlA1 = SystemImpl__regex(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_UNTAGFIXNUM(rmlA2),RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4),&nmatch);
+  void *res;
+  int nmatch, i = 0, maxn = RML_UNTAGFIXNUM(rmlA2);
+  void *matches[maxn];
+  nmatch = OpenModelica_regexImpl(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),maxn,RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4),mk_scon,(void**)&matches);
+  res = mk_nil();
+  for (i=maxn-1; i>=0; i--) {
+    res = mk_cons(matches[i],res);
+  }
   rmlA0 = mk_icon(nmatch);
-  if (rmlA1)
-    RML_TAILCALLK(rmlSC);
-  RML_TAILCALLK(rmlFC);
+  rmlA1 = res;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

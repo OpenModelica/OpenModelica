@@ -1440,7 +1440,7 @@ function regex  "Sets the error buffer and returns -1 if the regex does not comp
   input Boolean caseInsensitive := false;
   output Integer numMatches "-1 is an error, 0 means no match, else returns a number 1..maxMatches";
   output String matchedSubstrings[maxMatches] "unmatched strings are returned as empty";
-external "C" numMatches = System_regexModelica(str,re,maxMatches,extended,caseInsensitive,matchedSubstrings) annotation(Library = {"omcruntime"});
+external "C" numMatches = OpenModelica_regex(str,re,maxMatches,extended,caseInsensitive,matchedSubstrings);
 annotation(preferredView="text");
 end regex;
 

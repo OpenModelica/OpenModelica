@@ -116,5 +116,9 @@ static inline modelica_integer modelica_integer_max(modelica_integer x,modelica_
 
 /* pow(), but for integer exponents (faster implementation) */
 extern modelica_real real_int_pow(modelica_real base,modelica_integer n);
+/* Returns 0 on failure. The first element in nmatches contains the error-message. */
+extern int OpenModelica_regexImpl(const char* str, const char* re, int maxn, int extended, int sensitive, void*(*)(const char*), void **result);
+/* Wrapper for the builtin call */
+extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **result);
 
 #endif

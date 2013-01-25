@@ -552,24 +552,15 @@ extern void* System_getRuntimeLibs()
 
 extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
-  *nmatch = 0;
-  void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,nmatch);
-  if (res==NULL) MMC_THROW();
-  return res;
-}
-
-extern int System_regexModelica(const char* str, const char* re, int maxn, int extended, int sensitive, char **matches)
-{
-  int nmatch = 0, i=0;
-  void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,&nmatch);
-  if (res==NULL) MMC_THROW();
-  for (i=0; i<maxn; i++) {
-    char *tmp = MMC_STRINGDATA(MMC_CAR(res));
-    matches[i] = alloc_modelica_string(strlen(tmp));
-    strcpy(matches[i],tmp);
-    res = MMC_CDR(res);
+  void *res;
+  int i = 0;
+  void *matches[maxn];
+  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
+  res = mmc_mk_nil();
+  for (i=maxn-1; i>=0; i--) {
+    res = mmc_mk_cons(matches[i],res);
   }
-  return nmatch;
+  return res;
 }
 
 extern char* System_escapedString(char* str, int nl)

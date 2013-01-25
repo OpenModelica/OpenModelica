@@ -1148,7 +1148,7 @@ algorithm
     case ("ModelicaStrings_scanReal") then ();
     case ("ModelicaStrings_skipWhiteSpace") then ();
     case ("ModelicaError") then ();
-    case ("System_regexModelica") then ();
+    case ("OpenModelica_regex") then ();
   end match;
 end isKnownExternalFunc;
 
@@ -1290,41 +1290,15 @@ algorithm
         i = ModelicaExternalC.Strings_advanced_skipWhiteSpace(str,i);
       then Values.INTEGER(i);
 
-    case ("System_regexModelica",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},_)
-      equation
-        v = cevalRegex(str,re,i,extended,insensitive);
-      then v;
-
-  end match;
-end cevalKnownExternalFuncs2;
-
-protected function cevalRegex
-  input String str;
-  input String re;
-  input Integer i;
-  input Boolean extended;
-  input Boolean insensitive;
-  output Values.Value v;
-algorithm
-  v := matchcontinue (str,re,i,extended,insensitive)
-    local
-      Integer n;
-      list<String> strs;
-      list<Values.Value> vals;
-    case (_,_,_,_,_)
+    case ("OpenModelica_regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},_)
       equation
         (n,strs) = System.regex(str,re,i,extended,insensitive);
         vals = List.map(strs,ValuesUtil.makeString);
         v = Values.ARRAY(vals,{i});
       then Values.TUPLE({Values.INTEGER(n),v});
-    else
-      equation
-        strs = List.fill("",i);
-        vals = List.map(strs,ValuesUtil.makeString);
-        v = Values.ARRAY(vals,{i});
-      then Values.TUPLE({Values.INTEGER(-1),v});
-  end matchcontinue;
-end cevalRegex;
+
+  end match;
+end cevalKnownExternalFuncs2;
 
 protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"

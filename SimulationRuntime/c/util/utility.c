@@ -31,6 +31,9 @@
 
 
 #include "utility.h"
+#include "modelica_string.h"
+#include <regex.h>
+#include <string.h>
 
 modelica_real real_int_pow(modelica_real base, modelica_integer n)
 {
@@ -48,4 +51,58 @@ modelica_real real_int_pow(modelica_real base, modelica_integer n)
     n /= 2;
   }
   return m ? (1 / result) : result;
+}
+
+extern int OpenModelica_regexImpl(const char* str, const char* re, int maxn, int extended, int sensitive, void*(*mystrdup)(const char*), void **outMatches)
+{
+  char *dup;
+  regex_t myregex;
+  regmatch_t matches[maxn];
+  int nmatch=0,i,rc,res;
+  int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
+  memset(&myregex, 1, sizeof(regex_t));
+  rc = regcomp(&myregex, re, flags);
+  if (rc && maxn == 0) {
+    return 0;
+  }
+  if (rc) {
+    char err_buf[2048] = {0};
+    int len = 0;
+    len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
+    len += regerror(rc, &myregex, err_buf+len, 2048-len);
+    len += snprintf(err_buf+len,2040-len,".");
+    len += snprintf(err_buf+len,2040-len,".");
+    regfree(&myregex);
+    if (maxn) {
+      outMatches[0] = mystrdup(err_buf);
+      for (i=1; i<maxn; i++)
+        outMatches[i] = mystrdup("");
+    }
+    return 0;
+  }
+  res = regexec(&myregex, str, maxn, matches, 0);
+  if (!maxn)
+    nmatch += res == 0 ? 1 : 0;
+  else if (maxn) {
+    dup = strdup(str);
+    for (i=maxn-1; i>=0; i--) {
+      if (!res && matches[i].rm_so != -1) {
+        memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
+        dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
+        outMatches[i] = mystrdup(dup);
+        nmatch++;
+      } else {
+        outMatches[i] = mystrdup("");
+      }
+    }
+    free(dup);
+  }
+
+  regfree(&myregex);
+  return nmatch;
+}
+
+extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **outMatches)
+{
+  return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) init_modelica_string,(void**)outMatches);
 }

@@ -39,7 +39,6 @@ extern "C" {
  */
 #if !defined(_MSC_VER)
 #include <libgen.h>
-#include <regex.h>
 #endif
 
 #include "meta_modelica.h"
@@ -1168,56 +1167,6 @@ extern char* SystemImpl__unescapedString(const char* str)
   }
   res[i] = '\0';
   return res;
-}
-
-extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
-{
-  void *lst = mk_nil();
-#if !defined(_MSC_VER) /* crap compiler doesn't have regex */
-  char *dup;
-  regex_t myregex;
-  regmatch_t matches[maxn];
-  int i,rc,res;
-  int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
-  memset(&myregex, 1, sizeof(regex_t));
-  rc = regcomp(&myregex, re, flags);
-  lst = mk_nil();
-  if (rc) {
-    char err_buf[2048] = {0};
-    int len = 0;
-    len += snprintf(err_buf+len,2040-len,gettext("Failed to compile regular expression: %s with error: "), re);
-    len += regerror(rc, &myregex, err_buf+len, 2048-len);
-    len += snprintf(err_buf+len,2040-len,".");
-    len += snprintf(err_buf+len,2040-len,".");
-    c_add_message(-1, ErrorType_scripting,ErrorLevel_error, err_buf, NULL, 0);
-    regfree(&myregex);
-    return NULL;
-  }
-  res = regexec(&myregex, str, maxn, matches, 0);
-  lst = mk_nil();
-  *nmatch = 0;
-  if (!maxn)
-    (*nmatch)+= res == 0 ? 1 : 0;
-  else {
-    if (maxn) {
-      dup = strdup(str);
-      for (i=maxn-1; i>=0; i--) {
-        if (!res && matches[i].rm_so != -1) {
-          memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
-          dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
-          lst = mk_cons(mk_scon(dup),lst);
-          (*nmatch)++;
-        } else {
-          lst = mk_cons(mk_scon(""),lst);
-        }
-      }
-      free(dup);
-    }
-  }
-
-  regfree(&myregex);
-#endif /* !defined(_MSC_VER) crap compiler doesn't have regex */
-  return lst;
 }
 
 char* SystemImpl__unquoteIdentifier(const char* str)
