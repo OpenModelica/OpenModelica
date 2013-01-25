@@ -14714,11 +14714,13 @@ algorithm
       DAE.Type ty;
       Integer paramDim;
       DAE.ComponentRef cr,crName,crParams,crParamNames;
+      Absyn.Path path;
     
     //Record constructor
     case (mod, _, index_list, bind_name, _)
       equation
-        SOME(DAE.CALL(path = Absyn.IDENT("Distribution"), expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        SOME(DAE.CALL(path = path, expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
     
