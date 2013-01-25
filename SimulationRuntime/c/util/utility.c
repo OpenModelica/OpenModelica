@@ -53,16 +53,19 @@ modelica_real real_int_pow(modelica_real base, modelica_integer n)
   return m ? (1 / result) : result;
 }
 
-extern int OpenModelica_regexImpl(const char* str, const char* re, int maxn, int extended, int sensitive, void*(*mystrdup)(const char*), void **outMatches)
+extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int sensitive, void*(*mystrdup)(const char*), void **outMatches)
 {
   char *dup;
   regex_t myregex;
-  regmatch_t matches[maxn];
+  regmatch_t *matches;
   int nmatch=0,i,rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
+  matches = (regmatch_t*)malloc(maxn*sizeof(regmatch_t));
+  assert(matches != NULL);
   memset(&myregex, 1, sizeof(regex_t));
   rc = regcomp(&myregex, re, flags);
   if (rc && maxn == 0) {
+    free(matches);
     return 0;
   }
   if (rc) {
@@ -78,6 +81,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, int maxn, int
       for (i=1; i<maxn; i++)
         outMatches[i] = mystrdup("");
     }
+    free(matches);
     return 0;
   }
   res = regexec(&myregex, str, maxn, matches, 0);
@@ -99,6 +103,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, int maxn, int
   }
 
   regfree(&myregex);
+  free(matches);
   return nmatch;
 }
 
