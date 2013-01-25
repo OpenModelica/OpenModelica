@@ -594,41 +594,9 @@ algorithm
     case (true, true, _, _, _, _, _)
       then makeExtendsError(inBaseClass, inPartName, BASECLASS_INHERITED_ERROR);
 
-    // Not inherited and not replaceable, ok!
-    case (_, _, _, NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _, _)
-      then NONE();
-
-    // If the parent class contains no elements it might be a short class
-    // definition, which is allowed to have a replaceable base class part. It
-    // might also be a long definition equivalent to a short definition, but
-    // we'll allow that too since they're equivalent.
-    case (_, _, _, NFSCodeEnv.CLASS(cls = _), _,
-        NFSCodeEnv.FRAME(clsAndVars = NFSCodeEnv.AVLTREENODE(value = NONE(),
-          left = NONE(), right = NONE())) :: _, _)
-      equation
-        // Also check that the parent class contains no extends. A short class
-        // definition should contain exactly one extends, but it's removed in
-        // the look up process.
-        {} = NFSCodeEnv.getEnvExtendsFromTable(inOriginEnv);
-      then
-        NONE();
-
-    // If we're using Modelica 2.x or earlier we don't care, since replaceable
-    // base classes weren't explicitly forbidden in older versions.
+    // Not inherited class, ok!
     case (_, _, _, NFSCodeEnv.CLASS(cls = _), _, _, _)
-      equation
-        true = Config.languageStandardAtMost(Config.MODELICA_2_X());
-      then
-        NONE();
-
-    // A replaceable base class part in any other circumstance is not allowed.
-    case (_, _, _, NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes =
-        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _, _, _)
-      equation
-        part = NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
-      then 
-        makeExtendsError(inBaseClass, part, BASECLASS_REPLACEABLE_ERROR);
+      then NONE();
 
     // The base class part is actually not a class but a component, which is not
     // allowed either.
