@@ -250,6 +250,7 @@ int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
     }
     x[i] = xsave;
   }
+  /*
   if(DEBUG_STREAM(LOG_NLS_V))
   {
     INFO(LOG_NLS_V,"Print jac:");
@@ -260,6 +261,7 @@ int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
       printf("\n");
     }
   }
+  */
 
   return 0;
 }
@@ -286,15 +288,10 @@ int getAnalyticalJacobian(DATA* data, double* jac)
 
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
+    /* activate seed variable for the corresponding color */
     for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
-
-    if(DEBUG_STREAM(LOG_NLS_V)){
-      INFO(LOG_NLS_V,"Caluculate one col:\n");
-      for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
-        INFO2(LOG_NLS_V,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
-    }
 
     ((systemData->analyticalJacobianColumn))(data);
 
@@ -306,21 +303,21 @@ int getAnalyticalJacobian(DATA* data, double* jac)
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        INFO2(LOG_NLS_V," take for %d -> %d\n",j,ii);
         while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
           solverData->fjacobian[k] = jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          INFO7(LOG_NLS_V,"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[index].resultVars[l]);
           ii++;
         };
       }
+      /* de-activate seed variable for the corresponding color */
+      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
+        data->simulationInfo.analyticJacobians[index].seedVars[j] = 0;
     }
-    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
 
   }
+  /*
   if(DEBUG_STREAM(LOG_NLS_V))
   {
     INFO(LOG_NLS_V,"Print jac:");
@@ -331,6 +328,7 @@ int getAnalyticalJacobian(DATA* data, double* jac)
       printf("\n");
     }
   }
+  */
 
   return 0;
 }

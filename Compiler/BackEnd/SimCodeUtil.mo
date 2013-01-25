@@ -3962,7 +3962,7 @@ algorithm
          //get tearing vars
          tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
          tvars = List.map(tvars, transformXToXd);
-         diffVars = BackendVariable.listVar1(tvars);
+         
          // get residual eqns
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = replaceDerOpInEquationList(reqns);
@@ -3982,6 +3982,9 @@ algorithm
          otherVarsInts = List.unionList(otherVarsIntsLst);
          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, vars);
          ovars = BackendVariable.listVar1(ovarsLst);
+
+         tvars = listReverse(tvars);
+         diffVars = BackendVariable.listVar1(tvars);
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, "NLSJac", uniqueEqIndex, tempvars);
        then
          ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix)}, uniqueEqIndex+1, tempvars);
