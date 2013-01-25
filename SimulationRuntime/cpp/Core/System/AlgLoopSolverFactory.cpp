@@ -1,0 +1,51 @@
+#include "stdafx.h"
+#include "AlgLoopSolverFactory.h"
+#include <LibrariesConfig.h>
+
+AlgLoopSolverFactory::AlgLoopSolverFactory()
+{
+}
+
+AlgLoopSolverFactory::~AlgLoopSolverFactory()
+{
+
+}
+
+/// Creates a solver according to given system of equations of type algebraic loop
+ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
+{
+    if(algLoop->getDimVars() > 0)
+    {
+        std::string newton_name(NEWTON_LIB );
+        type_map types;
+        if(!load_single_library(types, newton_name))
+            throw std::invalid_argument(" Newton library could not be loaded");
+        std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >::iterator iter;
+        std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& Newtonfactory(types.get());
+        std::map<std::string, factory<INonLinSolverSettings> >::iterator iter2;
+        std::map<std::string, factory<INonLinSolverSettings> >& Newtonsettingsfactory(types.get());
+        iter2 = Newtonsettingsfactory.find("NewtonSettings");
+        if (iter2 ==Newtonsettingsfactory.end()) 
+        {
+            throw std::invalid_argument("No such Newton Settings");
+        }
+    boost::shared_ptr<INonLinSolverSettings> algsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter2->second.create());
+    _algsolversettings.push_back(algsolversetting);
+        //Todo load or configure settings
+        //_algsolversettings->load("config/Newtonsettings.xml");
+        iter = Newtonfactory.find("Newton");
+        if (iter ==Newtonfactory.end()) 
+        {
+            throw std::invalid_argument("No such Newton Solver");
+        }
+
+    boost::shared_ptr<IAlgLoopSolver> algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,algsolversetting.get()));
+    _algsolvers.push_back(algsolver);
+    return algsolver;
+  }
+  else
+  {
+    // TODO: Throw an error message here.
+    throw   std::invalid_argument("Algloop system is not of tpye real");
+  }
+}
