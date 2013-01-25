@@ -10,7 +10,7 @@ builddir_inc=$(top_builddir)/build/include/omc
 
 runtimeCpp: 
 	cd ./Build; echo "change to Build";	\
-	cmake -D  CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../Source; \
+	cmake -D  CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../; \
 	make
 
 
