@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_IMPORT_DECL
  
 #include <Solver/SolverDefaultImplementation.h>

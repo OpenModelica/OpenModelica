@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "Newton.h"
  
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack

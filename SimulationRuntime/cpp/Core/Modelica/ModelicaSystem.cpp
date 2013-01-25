@@ -1,4 +1,4 @@
-﻿#include "Modelica.h"
+#include "Modelica.h"
 #include "ModelicaSystem.h"
  
 

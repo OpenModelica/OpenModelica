@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /********************************
 *  DGESV computes the solution to a real system of linear equations

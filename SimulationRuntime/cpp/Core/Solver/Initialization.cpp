@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include  <Solver/Initialization.h>
 #include  <System/IMixedSystem.h>
  

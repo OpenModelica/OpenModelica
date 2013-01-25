@@ -1,4 +1,4 @@
-﻿
+
 #pragma once
  
 #include <System/IAlgLoop.h>                // Interface to AlgLoo

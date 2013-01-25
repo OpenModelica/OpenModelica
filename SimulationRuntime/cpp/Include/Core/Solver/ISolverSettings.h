@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <SimulationSettings/IGlobalSettings.h>
 //#include "Math/Implementation/Constants.h"
 /*****************************************************************************/

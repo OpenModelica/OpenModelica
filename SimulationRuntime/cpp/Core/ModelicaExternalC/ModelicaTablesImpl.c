@@ -1,4 +1,4 @@
-﻿
+
 /*
    The content of this file is free software; it can be redistributed
    and/or modified under the terms of the Modelica License 2, see the

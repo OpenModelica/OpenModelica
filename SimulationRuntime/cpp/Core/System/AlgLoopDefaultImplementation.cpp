@@ -1,4 +1,4 @@
-﻿
+
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "stdafx.h"
 #include <System/AlgLoopDefaultImplementation.h>

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
  
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>

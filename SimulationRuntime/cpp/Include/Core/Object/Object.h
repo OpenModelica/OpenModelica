@@ -1,4 +1,4 @@
-ï»¿// ObjectBase.h: Schnittstelle für die Klasse Object.
+// ObjectBase.h: Schnittstelle für die Klasse Object.
 //
 //////////////////////////////////////////////////////////////////////
  

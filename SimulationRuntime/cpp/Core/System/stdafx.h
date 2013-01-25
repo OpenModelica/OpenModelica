@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
  
 #pragma warning (disable: 4996)
 #ifndef BOOST_THREAD_USE_DLL

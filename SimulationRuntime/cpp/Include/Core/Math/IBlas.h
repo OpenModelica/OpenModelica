@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /************************* 
     copies a vector, x, to a vector, y.

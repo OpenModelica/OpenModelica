@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include <Solver/SolverSettings.h>
 #include <CVode/ICVodeSettings.h>

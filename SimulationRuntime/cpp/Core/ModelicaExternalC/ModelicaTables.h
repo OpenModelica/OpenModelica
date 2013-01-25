@@ -1,4 +1,4 @@
-﻿#ifndef MODELICA_TABLES_H
+#ifndef MODELICA_TABLES_H
 #define MODELICA_TABLES_H
  
 /* Definition of interface to external functions for table computation

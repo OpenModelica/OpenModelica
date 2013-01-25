@@ -1,4 +1,4 @@
-﻿
+
 #include "stdafx.h"
 #include "Configuration.h"
 #include "System/ISystemProperties.h"

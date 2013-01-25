@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
  
 #include <System/IAlgLoop.h>        // Interface for algebraic loops
 #include <System/IAlgLoopSolverFactory.h>

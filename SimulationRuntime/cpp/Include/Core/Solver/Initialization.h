@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <System/ISystemInitialization.h>
 #include <System/IEvent.h>
 #include <System/IContinuous.h>

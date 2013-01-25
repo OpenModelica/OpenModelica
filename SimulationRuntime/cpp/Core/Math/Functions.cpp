@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include <Math/Functions.h>
 #include <stdexcept>
  
