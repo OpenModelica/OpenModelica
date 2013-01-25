@@ -1,7 +1,4 @@
-#if defined(_MSC_VER)
-#include "StdAfx.h"
-#endif
-
+#include "stdafx.h"
 #include "Factory.h"
 #include "GlobalSettings.h"
 #include <Solver/ISolverSettings.h>
