@@ -39,6 +39,7 @@
 #define ADD_METARECORD_DEFINTIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 #include "systemimpl.c"
+#include "ModelicaUtilities.h"
 
 extern void System_writeFile(const char* filename, const char* data)
 {
@@ -559,7 +560,9 @@ extern int System_regexModelica(const char* str, const char* re, int maxn, int e
   void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,&nmatch);
   if (res==NULL) MMC_THROW();
   for (i=0; i<maxn; i++) {
-    matches[i] = MMC_CAR(res);
+    char *tmp = MMC_STRINGDATA(MMC_CAR(res));
+    matches[i] = ModelicaAllocateString(strlen(tmp));
+    strcpy(matches[i],tmp);
     res = MMC_CDR(res);
   }
   return nmatch;

@@ -65,7 +65,7 @@ Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
 System_rml.o : System_rml.c systemimpl.c config.h errorext.h $(configUnix)
 	$(CC) -c -o $@ $(CPPFLAGS) $(CFLAGS) $(OPENMP) $<
 System_omc.o : System_omc.c systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
-	$(CC) -c -o $@ $(CPPFLAGS) $(CFLAGS) $(OPENMP) $<
+	$(CC) -c -o $@ $(CPPFLAGS) -I$(SimRuntimeCDir)/../ModelicaExternalC/ $(CFLAGS) $(OPENMP) $<
 Lapack_rml.o : lapackimpl.c config.h $(configUnix)
 Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
 IOStreamExt_rml.o : IOStreamExt.c

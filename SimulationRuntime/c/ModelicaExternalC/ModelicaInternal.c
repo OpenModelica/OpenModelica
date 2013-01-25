@@ -445,7 +445,7 @@ const char* ModelicaInternal_fullPathName(const char* name)
             name, strerror(errno));
         return "";
     }
-    fullName = ModelicaAllocateString(strlen(tempName) + 1);
+    fullName = ModelicaAllocateString(strlen(tempName));
     strcpy(fullName, tempName);
 #if defined(_WIN32)
     ModelicaConvertToUnixDirectorySeparator(fullName);
