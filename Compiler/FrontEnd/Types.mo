@@ -3094,6 +3094,28 @@ algorithm
   end matchcontinue;  
 end isModifiableTypesVar;
 
+public function getBindingExp
+  input DAE.Var inVar;
+  input Absyn.Path inPath;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inVar, inPath)
+  local
+    DAE.Exp exp;
+    String str;
+    Ident name;
+    
+    case(DAE.TYPES_VAR(binding=DAE.EQBOUND(exp=exp)), _) then exp;
+    case(DAE.TYPES_VAR(name=name, binding=DAE.UNBOUND()), _)
+      equation
+        str = "Record '" +& Absyn.pathString(inPath) +& "' member '" +& name +& "' has no default value and is not modifiable by a constructor function.\n";
+        Error.addCompilerWarning(str);
+      then
+        DAE.ICONST(0);
+  end match;  
+end getBindingExp;
+
+
 public function isConstAttr
   input Attributes inAttributes;
   output Boolean outIsPublic;

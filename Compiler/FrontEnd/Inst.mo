@@ -18562,7 +18562,7 @@ algorithm
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
           inputs = List.map(inputs,Types.setVarDefaultInput);
           locals = List.map(locals,Types.setVarProtected);
-          vars = List.union(inputs,locals);
+          vars = listAppend(inputs,locals);
           
           // path = Env.joinEnvPath(recordEnv, path);
           path = Absyn.makeFullyQualified(path);

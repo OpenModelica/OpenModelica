@@ -6840,13 +6840,13 @@ algorithm
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
-      list<Values.Value> vallst;
+      list<Values.Value> vallst, pubVallst, proVallst;
       Ceval.Msg msg;
       Env.Cache cache;
       Option<Interactive.SymbolTable> st;
       Absyn.Path complexName;
-      list<Expression.Var> varLst;
-      list<String> varNames;
+      list<Expression.Var> pubVarLst, proVarLst, varLst;
+      list<String> pubVarNames, proVarNames, varNames;
       DAE.Type ty;
       Absyn.Info info;
       String str;
@@ -6866,12 +6866,17 @@ algorithm
         fail();
        
     // Record constructors
-    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,_,st,msg)
+    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),pubVallst,_,st,msg)
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
-        varLst = List.filterOnTrue(varLst,Types.isPublicVar);
-        varNames = List.map(varLst,Expression.varName);
+        (pubVarLst,proVarLst) = List.splitOnTrue(varLst,Types.isPublicVar);
+        expl = List.map1(proVarLst, Types.getBindingExp, funcpath);
+        (cache,proVallst,st) = cevalList(cache, env, expl, impl, st, msg);
+        pubVarNames = List.map(pubVarLst,Expression.varName);
+        proVarNames = List.map(proVarLst,Expression.varName);
+        varNames = listAppend(pubVarNames, proVarNames);
+        vallst = listAppend(pubVallst, proVallst);
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
