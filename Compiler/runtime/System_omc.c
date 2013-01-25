@@ -32,6 +32,11 @@
 #include <Windows.h>
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <ctype.h> /* for toupper */
 #include "openmodelica.h"
 #include "meta_modelica.h"
@@ -678,3 +683,7 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   buf[1023] = 0;
   return buf;
 }
+
+#ifdef __cplusplus
+}
+#endif

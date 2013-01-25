@@ -95,7 +95,12 @@ typedef void* iconv_t;
 #define S_IFLNK  0120000  /* symbolic link */
 
 #include <sys/types.h>
-#include <dirent.h>
+#if defined(_MSC_VER)
+  #include <win32_dirent.h>
+  #define PATH_MAX MAX_PATH
+#else
+  #include <dirent.h>
+#endif
 
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
@@ -1892,7 +1897,7 @@ int SystemImpl__intRand(int n)
 
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
 {
-  char *loc = malloc(sizeof(char) * (llen + slen + 1));
+  char *loc = (char*)malloc(sizeof(char) * (llen + slen + 1));
   assert(loc != NULL);
   strncpy(loc, locale, llen);
   strncpy(loc + llen, suffix, slen + 1);
@@ -2004,7 +2009,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     else
     {
       //Non standard extension that glibc uses
-      return_path = malloc(PATH_MAX);
+      return_path = (char*)malloc(PATH_MAX);
     }
 
     if (return_path) //Else EINVAL
@@ -2020,7 +2025,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
           size_t new_size;
 
           free(return_path);
-          return_path = malloc(size);
+          return_path = (char*)malloc(size);
 
           if (return_path)
           {
