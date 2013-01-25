@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 //#define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
 #include <boost/algorithm/minmax_element.hpp>
-
+ 
 /*****************************************************************************/
 /**
 

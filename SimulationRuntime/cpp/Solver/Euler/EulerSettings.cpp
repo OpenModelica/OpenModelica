@@ -1,7 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 //#define BOOST_EXTENSION_EULERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "EulerSettings.h"
-
+ 
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
 : SolverSettings        (globalSettings)
 , _method                (EULERFORWARD)

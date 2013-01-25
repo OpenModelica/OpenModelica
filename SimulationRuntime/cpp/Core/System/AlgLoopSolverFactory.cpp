@@ -1,7 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "AlgLoopSolverFactory.h"
 #include <LibrariesConfig.h>
-
+ 
 AlgLoopSolverFactory::AlgLoopSolverFactory()
 {
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-
+  
 project(${ModelicaName})
 
 add_library(${ModelicaName} SHARED ModelicaSystem.cpp )

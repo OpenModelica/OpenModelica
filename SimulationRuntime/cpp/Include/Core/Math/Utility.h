@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-CurrentYear, Linköping University,
@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
+ 
 
 #ifndef UTILITY_H
 #define UTILITY_H

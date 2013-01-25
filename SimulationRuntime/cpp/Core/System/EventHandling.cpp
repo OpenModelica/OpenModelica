@@ -1,11 +1,11 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
 #include <System/EventHandling.h>
 #include <System/IContinuous.h>                
 #include <boost/math/tools/real_cast.hpp>
 #include <Math/Functions.h>
 #include <sstream>
-
+ 
 /**
 Constructor 
 \param system Modelica system object

@@ -1,6 +1,6 @@
-#include "Modelica.h"
+﻿#include "Modelica.h"
 #include "ModelicaSystem.h"
-
+ 
 
 using boost::extensions::factory;
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {

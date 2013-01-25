@@ -1,5 +1,5 @@
-#pragma once
-
+﻿#pragma once
+ 
 #pragma warning (disable: 4996)
 #ifndef BOOST_THREAD_USE_DLL
 #define BOOST_THREAD_USE_DLL
@@ -25,7 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
-/* Vor�bergehend deaktiviert
+/* Vorübergehend deaktiviert
 #include <boost/log/common.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/utility/init/from_stream.hpp>

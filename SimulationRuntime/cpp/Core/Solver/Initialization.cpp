@@ -1,7 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include  <Solver/Initialization.h>
 #include  <System/IMixedSystem.h>
-
+ 
 Initialization::Initialization(ISystemInitialization* system_initialization)
 :_system(system_initialization)
 {

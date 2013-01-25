@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /********************************
 *  DGESV computes the solution to a real system of linear equations
@@ -16,7 +16,7 @@
 extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot, 
                       double *b, long int *ldb, long int *idid);
 
-
+ 
 
 /********************************
 * DGESVX uses the LU factorization to compute the solution to a real

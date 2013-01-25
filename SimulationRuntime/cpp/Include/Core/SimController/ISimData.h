@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include  <DataExchange/ISimVar.h>
 using std::string;
 class ISimData
 {
-
+ 
 public:
     
     virtual ~ISimData()    {};

@@ -1,10 +1,10 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "Factory.h"
 #include "GlobalSettings.h"
 #include <Solver/ISolverSettings.h>
 #include <LibrariesConfig.h>
 #define BOOST_NO_WCHAR
-
+ 
 SettingsFactory::SettingsFactory(void)
 {
     

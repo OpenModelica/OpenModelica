@@ -1,6 +1,6 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
-
+ 
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
 //#include "../Interfaces/API.h"

@@ -1,7 +1,7 @@
-// ObjectBase.h: Schnittstelle für die Klasse IObject.
+ï»¿// ObjectBase.h: Schnittstelle für die Klasse IObject.
 //
 //////////////////////////////////////////////////////////////////////
-
+ 
 #pragma once
 
 

@@ -1,5 +1,5 @@
-#pragma once
-
+ï»¿#pragma once
+ 
 
 
 
@@ -7,9 +7,9 @@
 /*****************************************************************************/
 /**
 
-Algeimeine Klasse zur Kapselung der Parameter (Einstellungen) für einen nicht linearen Solver
+Algeimeine Klasse zur Kapselung der Parameter (Einstellungen) fÃ¼r einen nicht linearen Solver
 Hier werden default-Einstellungen entsprechend der allgemeinen Simulations-
-einstellugnen gemacht, diese können überprüft und ev. Fehleinstellungen korrigiert 
+einstellugnen gemacht, diese kÃ¶nnen Ã¼berprÃ¼ft und ev. Fehleinstellungen korrigiert 
 werden.
 *****************************************************************************/
 class INonLinSolverSettings 

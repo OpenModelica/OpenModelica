@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <SimulationSettings/IGlobalSettings.h>
 //#include "Math/Implementation/Constants.h"
 /*****************************************************************************/
@@ -13,7 +13,7 @@ Abstract interface class for general solver settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-
+ 
 class ISolverSettings
 {
 public:

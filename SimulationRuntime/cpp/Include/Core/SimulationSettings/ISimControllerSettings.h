@@ -1,5 +1,5 @@
-#pragma once
-
+﻿#pragma once
+ 
 
 #include <SimulationSettings/IGlobalSettings.h>
 #include <Math/Constants.h>

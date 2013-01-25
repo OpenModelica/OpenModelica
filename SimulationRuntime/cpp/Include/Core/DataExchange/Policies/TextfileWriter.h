@@ -1,5 +1,5 @@
-#pragma once
-
+﻿#pragma once
+ 
 // Output
 #include <fstream>
 using std::ios;

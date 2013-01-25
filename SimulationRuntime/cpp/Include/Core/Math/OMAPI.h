@@ -1,4 +1,4 @@
-#if !defined(OMC_INTERFACE)
+﻿#if !defined(OMC_INTERFACE)
 #define OMC_INTERFACE
 
 #if (defined _MSC_VER) && _MSC_VER<1300
@@ -21,3 +21,4 @@
 #endif
 
 #pragma warning(  disable : 4297 )        // Issue warning 4297
+ 

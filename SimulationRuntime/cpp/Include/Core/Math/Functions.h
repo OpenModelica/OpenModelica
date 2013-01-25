@@ -1,5 +1,5 @@
-#pragma once
-
+﻿#pragma once
+ 
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>
 #include "ILapack.h"        ///< For the use of DGESV, etc.

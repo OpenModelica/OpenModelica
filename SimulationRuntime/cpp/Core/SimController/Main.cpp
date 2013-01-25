@@ -1,10 +1,10 @@
-
+﻿
 #include "stdafx.h"
 #include "Configuration.h"
 #include "System/ISystemProperties.h"
 #include "LibrariesConfig.h"
 #include <boost/program_options.hpp>
-
+ 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace std;

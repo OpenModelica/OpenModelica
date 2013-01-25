@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
  #include "System/SystemDefaultImplementation.h"
@@ -8,7 +8,7 @@
  #include "DataExchange/IHistory.h"
  #include "HistoryImpl.h"
  #include "DataExchange/Policies/TextfileWriter.h"
-
+ 
 
 
 /*****************************************************************************

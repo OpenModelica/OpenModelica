@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <!DOCTYPE boost_serialization>
 <boost_serialization signature="serialization::archive"
                      version="5">
@@ -22,3 +22,4 @@
     <UseSturm>0</UseSturm>
   </EulerSettings>
 </boost_serialization>
+ 

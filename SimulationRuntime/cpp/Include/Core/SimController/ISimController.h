@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 #include  "ISimData.h"
 class ISimController
 {
-
+ 
 public:
     /// Enumeration to control the time integration 
     

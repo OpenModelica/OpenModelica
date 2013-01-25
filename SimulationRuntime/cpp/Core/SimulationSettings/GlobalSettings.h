@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <SimulationSettings/IGlobalSettings.h>
-
+ 
 
 class  GlobalSettings : public IGlobalSettings
 {

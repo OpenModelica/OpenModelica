@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-
+ 
 
 #include <algorithm>        ///< use of min, max, etc.
 #include <limits>

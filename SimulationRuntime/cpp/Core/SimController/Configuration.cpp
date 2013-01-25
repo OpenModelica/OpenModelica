@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
 #include "LibrariesConfig.h"
@@ -23,7 +23,7 @@ Configuration::Configuration(fs::path libraries_path,fs::path config_path)
   _settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create());
   tie(_global_settings,_solver_settings) =_settings_factory->create(libraries_path,config_path);
   _simcontroller_settings = boost::shared_ptr<ISimControllerSettings>(new ISimControllerSettings(_global_settings.get()) );
-
+ 
 }
 IGlobalSettings* Configuration::getGlobalSettings()
 {

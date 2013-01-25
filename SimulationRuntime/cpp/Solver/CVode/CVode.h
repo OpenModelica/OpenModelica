@@ -1,6 +1,6 @@
-
+﻿
 #pragma once
-
+ 
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_EXPORT_DECL
 
 #include <Solver/SolverDefaultImplementation.h>

@@ -1,7 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include <Math/Functions.h>
 #include <stdexcept>
-
+ 
 
 double division (const double &a,const double &b,std::string text)
 {

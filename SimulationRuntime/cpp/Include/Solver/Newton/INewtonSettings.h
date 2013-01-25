@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include <Solver/ISolverSettings.h>
-
+ 
 
 
 /*****************************************************************************/

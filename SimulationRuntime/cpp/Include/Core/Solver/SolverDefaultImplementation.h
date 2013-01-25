@@ -1,5 +1,5 @@
-#pragma once
-
+﻿#pragma once
+ 
 #include <System/IMixedSystem.h>
 #include <System/IContinuous.h>        
 #include <System/IEvent.h>
@@ -68,7 +68,7 @@ public:
 
 
     double
-        _tInit,                            ///< (initiale) Startzeit (wird nicht vom Solver ver�ndert)
+        _tInit,                            ///< (initiale) Startzeit (wird nicht vom Solver verändert)
         _tCurrent,                        ///< current time (is changed by the solver)
         _tEnd,                            ///< end time
         _tLastSuccess,                    ///< time of last successfull integration step (before zero crossing)

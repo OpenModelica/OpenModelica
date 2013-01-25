@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-
+ 
 #include <SimulationSettings/ISettingsFactory.h>
 
 class  SettingsFactory : public ISettingsFactory

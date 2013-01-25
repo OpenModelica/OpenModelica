@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <boost/filesystem/path.hpp>
 #include <SimulationSettings/IGlobalSettings.h>
 #include <Solver/ISolverSettings.h>
@@ -24,4 +24,4 @@ private:
      boost::shared_ptr<IDAESolver> _solver;
    fs::path _libraries_path;
    fs::path _config_path;
-};
+}; 

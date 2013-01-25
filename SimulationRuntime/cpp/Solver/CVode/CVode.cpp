@@ -1,9 +1,9 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "CVode.h"
 #include "CVodeSettings.h"
 #include <Math/Functions.h>
 #include <System/ISystemProperties.h>  
-
+ 
 
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)

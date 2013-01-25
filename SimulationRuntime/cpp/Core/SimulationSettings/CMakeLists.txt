@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-
+ 
 project(${SimulationSettings})
 # add the solver default implementation library
 add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp  )

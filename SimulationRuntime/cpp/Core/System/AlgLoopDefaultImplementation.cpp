@@ -1,8 +1,8 @@
-
+ï»¿
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "stdafx.h"
 #include <System/AlgLoopDefaultImplementation.h>
-
+ 
 
 
 AlgLoopDefaultImplementation::AlgLoopDefaultImplementation()
@@ -35,7 +35,7 @@ int AlgLoopDefaultImplementation::getDimRHS() const
 void AlgLoopDefaultImplementation::init()
 {
   // Anfangswerte einlesen: InitialValue = ConstrValue
-    // und Dimension der Bindungsgleichungen zur Lösung der Schleife bestimmen
+    // und Dimension der Bindungsgleichungen zur LÃ¶sung der Schleife bestimmen
     _dimAEq = 0;
     if(_constraintType ==IAlgLoop::REAL)
     {
@@ -83,7 +83,7 @@ void AlgLoopDefaultImplementation::init()
         }
     }
     //nach default algloop verschieben
-    // Prüfen ob min. eine Bindungsgleichung vorhanden
+    // PrÃ¼fen ob min. eine Bindungsgleichung vorhanden
     if ( _dimAEq == 0 )
         throw std::invalid_argument("AlgLoop::init(): No constraint defined.");
 
@@ -194,7 +194,7 @@ void AlgLoopDefaultImplementation::giveVars(double* lambda)
 
         double* lambda_iter = lambda;
 
-        // lambda zurückgeben: lambda = ConstrValue
+        // lambda zurÃ¼ckgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
     
@@ -208,7 +208,7 @@ void AlgLoopDefaultImplementation::giveVars(int* lambda)
 
         int* lambda_iter = lambda;
 
-        // lambda zurückgeben: lambda = ConstrValue
+        // lambda zurÃ¼ckgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
    
@@ -222,7 +222,7 @@ void AlgLoopDefaultImplementation::giveVars(bool* lambda)
 
         bool* lambda_iter = lambda;
 
-        // lambda zurückgeben: lambda = ConstrValue
+        // lambda zurÃ¼ckgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
    
@@ -238,7 +238,7 @@ void AlgLoopDefaultImplementation::giveRHS(double* res)
 
         double* res_iter = res;
 
-        // resiudum zurückgeben: res = InitialValue - ResultValue
+        // resiudum zurÃ¼ckgeben: res = InitialValue - ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = *init_iter++ - *constr_iter;
    
@@ -255,7 +255,7 @@ void AlgLoopDefaultImplementation::giveRHS(int* res)
 
         int* res_iter = res;
 
-        // resiudum zurückgeben: res = InitialValue - ResultValue
+        // resiudum zurÃ¼ckgeben: res = InitialValue - ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = *init_iter++ - *constr_iter;
     
@@ -273,7 +273,7 @@ void AlgLoopDefaultImplementation::giveRHS(bool* res)
 
         bool* res_iter = res;
 
-        // resiudum zurückgeben: res = InitialValue XNOR ResultValue
+        // resiudum zurÃ¼ckgeben: res = InitialValue XNOR ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = !(*init_iter++ ^ *constr_iter);
     

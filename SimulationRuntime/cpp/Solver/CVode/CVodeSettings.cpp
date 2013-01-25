@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "stdafx.h"
 #include "CVodeSettings.h"
-
+ 
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
   : SolverSettings    (globalSettings)
   ,_denseOutput(false)

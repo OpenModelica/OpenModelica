@@ -1,6 +1,6 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Newton.h"
-
+ 
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Math/Constants.h>        // definition of constants like uround
 

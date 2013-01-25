@@ -1,6 +1,6 @@
-
+﻿
 #pragma once
-
+ 
 #include <System/IAlgLoop.h>                // Interface to AlgLoo
 #include <Solver/IAlgLoopSolver.h>        // Export function from dll
 #include "NewtonSettings.h"

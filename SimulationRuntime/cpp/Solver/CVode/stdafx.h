@@ -1,8 +1,8 @@
-// stdafx.h : Includedatei für Standardsystem-Includedateien
+﻿// stdafx.h : Includedatei für Standardsystem-Includedateien
 // oder häufig verwendete projektspezifische Includedateien,
 // die nur in unregelmäßigen Abständen geändert werden.
 //
-
+ 
 #pragma once
 #pragma once
 #ifndef BOOST_THREAD_USE_DLL
