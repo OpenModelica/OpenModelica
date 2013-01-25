@@ -65,13 +65,13 @@ public:
     virtual void giveAMatrix(double* A_matrix) = 0;
     virtual bool isLinear() = 0;
 
-    /// Fügt das übergebene Objekt als Across-Kante hinzu
+    /// FÃ¼gt das Ã¼bergebene Objekt als Across-Kante hinzu
     void addAcrossEdge(IObject& new_obj);
 
-    /// Fübt das übergebene Objekt als Through-Kante hinzu
+    /// FÃ¼bt das Ã¼bergebene Objekt als Through-Kante hinzu
     void addThroughEdge(IObject& new_obj); 
 
-    /// Definiert die übergebene Größe als Schnittgröße
+    /// Definiert die Ã¼bergebene GrÃ¶ÃŸe als SchnittgrÃ¶ÃŸe
     void addConstraint(double& constr_value);
     /*
     void addConstraint(int& constr_value);

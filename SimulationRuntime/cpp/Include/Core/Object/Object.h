@@ -1,4 +1,4 @@
-// ObjectBase.h: Schnittstelle für die Klasse Object.
+// ObjectBase.h: Schnittstelle fÃ¼r die Klasse Object.
 //
 //////////////////////////////////////////////////////////////////////
  
@@ -18,7 +18,7 @@ using std::endl;
 /*****************************************************************************/
 /**
 
-Basisklasse aller Elemente. Hält einen userdefinierten Namen und
+Basisklasse aller Elemente. HÃ¤lt einen userdefinierten Namen und
 eine eindeutige ID als std::string.
 
 */
@@ -44,7 +44,7 @@ public:
     DCS_API virtual void setName(const string name);
 
     
-    /// (Re-)Initialisiert das Objekt und schließt den Aufbau ab
+    /// (Re-)Initialisiert das Objekt und schlieÃŸt den Aufbau ab
     DCS_API virtual void init();
 
 
@@ -54,7 +54,7 @@ public:
 
     /*! Sicheres Auslesen einer Object::PtrMap.
     \param map:        map in dem das gesuchte Objekt enthalten ist
-    \param obj_id:    Bezeichner des übergeordneten Objektes
+    \param obj_id:    Bezeichner des Ã¼bergeordneten Objektes
     \param param_id:    Innerhalb des Objektes verwendeter Bezeichners des Parameters
     */
     template <class T>  static T& lookUp(const PtrMap& map, std::string obj_id, std::string param_id)
@@ -84,9 +84,9 @@ protected:
 
 
 /** Map allgemeiner Objekte (Bauteil-Objektliste).
-Physikalische Anschlüsse, andere Container oder Funktionsobjekte, die
-sich nicht auf einen ISimType<T> abbilden lassen, können als Objekte übergeben
-werden. Die dazu verwendete Map verwendet als Schlüssel einen ID-String der 
+Physikalische AnschlÃ¼sse, andere Container oder Funktionsobjekte, die
+sich nicht auf einen ISimType<T> abbilden lassen, kÃ¶nnen als Objekte Ã¼bergeben
+werden. Die dazu verwendete Map verwendet als SchlÃ¼ssel einen ID-String der 
 sich wie folgt zusammen setzt:
 
 Physikalischer Anschluss
@@ -97,20 +97,20 @@ id = <Bezeichner des Objekt-Typs>_<fortlaufende Nummer>
 
 Innerhalb der create-Methode des Bauteils werden die Objekte von ObjectBase*
 auf den entsprechenden Typ gecastet und dereferenziert um den eigentlichen 
-Konstruktor mit ein Referenz auf den "echten" Typen aufrufen zu können.
-Übersichtshalber werden die Objekte in der folgenden Reihenfolge übergeben:
+Konstruktor mit ein Referenz auf den "echten" Typen aufrufen zu kÃ¶nnen.
+Ãœbersichtshalber werden die Objekte in der folgenden Reihenfolge Ã¼bergeben:
 
-Physikalische Eingänge:
+Physikalische EingÃ¤nge:
 CInputHyd:        hydraulisch
 CInputLin:        transl. mechanisch
 CInputAng:        angular mechanisch
-CInputMech3D:    räumlich mechanisch
+CInputMech3D:    rÃ¤umlich mechanisch
 
-Physikalische Ausgänge:
+Physikalische AusgÃ¤nge:
 COutputHyd:        hydraulisch
 COutputLin:        transl. mechanisch
 COutputAng:        angular mechanisch
-COutputMech3D:    räumlich mechanisch
+COutputMech3D:    rÃ¤umlich mechanisch
 
 Andere Objekte:
 */

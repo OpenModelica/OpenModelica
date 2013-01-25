@@ -85,7 +85,7 @@ protected:
    __xb;       ///< Boolean values after update of loop
    
     IAlgLoop::CONSTRTYPE
-        _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
+        _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binÃ¤r)
     ostream
         *_outputStream;                ///< Output stream for results
 };

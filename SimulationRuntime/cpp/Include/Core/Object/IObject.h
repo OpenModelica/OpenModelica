@@ -1,4 +1,4 @@
-// ObjectBase.h: Schnittstelle für die Klasse IObject.
+// ObjectBase.h: Schnittstelle fÃ¼r die Klasse IObject.
 //
 //////////////////////////////////////////////////////////////////////
  
@@ -14,10 +14,10 @@ enum OUTPUTTYPE
     UNDEF_OUTPUT    =    0x00000000,
 
     WRITE            =    0x00000001,            ///< aktuelle Curser-Position speichern und Ausgabe schreiben
-    RESET            =    0x00000002,            ///< Curser auf letzte gültige Position im File setzten
-    OVERWRITE        =    0x00000003,            ///< RESET|WRITE (Curser zurücksetzen, Curserpositon neu speichern und Ausgabe schreiben)
+    RESET            =    0x00000002,            ///< Curser auf letzte gÃ¼ltige Position im File setzten
+    OVERWRITE        =    0x00000003,            ///< RESET|WRITE (Curser zurÃ¼cksetzen, Curserpositon neu speichern und Ausgabe schreiben)
 
-    HEAD_LINE        =    0x00000010,            ///< Ausgabe der Überschriftenzeile passend zu den Ergebnissen
+    HEAD_LINE        =    0x00000010,            ///< Ausgabe der Ãœberschriftenzeile passend zu den Ergebnissen
     RESULTS            =    0x00000020,            ///< Ausgabe der Ergebnisse
     PROPERTIES        =    0x00000040,            ///< Ausgabe der Eigenschaften
     INITIALIZE_OUTPUT=    0x00000100,            ///< Initialize FAMOS output
@@ -39,7 +39,7 @@ public:
     virtual void setName(const std::string name) = 0;
 
 
-    /// (Re-)Initialisiert das Objekt und schließt den Aufbau ab
+    /// (Re-)Initialisiert das Objekt und schlieÃŸt den Aufbau ab
     virtual void init()    = 0;
 
     
