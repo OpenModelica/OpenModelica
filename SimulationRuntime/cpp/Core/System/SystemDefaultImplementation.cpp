@@ -4,8 +4,8 @@
  
 #include <System/SystemDefaultImplementation.h>
 #include "AlgLoopSolverFactory.h"
-#include <System/Eventhandling.h>
-#include <System/Algloopdefaultimplementation.h>
+#include <System/EventHandling.h>
+#include <System/AlgLoopDefaultImplementation.h>
 #include <LibrariesConfig.h>
 SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& globalSettings)
 : time        (0.0)
