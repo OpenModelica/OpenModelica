@@ -1,4 +1,7 @@
+#if defined(_MSC_VER)
 #include "StdAfx.h"
+#endif
+
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
 #include "LibrariesConfig.h"
