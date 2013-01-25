@@ -63,7 +63,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   regmatch_t matches[maxn];
 #else
   /* Stupid compiler */
-  regmatch_t matches;
+  regmatch_t *matches;
   matches = (regmatch_t*)malloc(maxn*sizeof(regmatch_t));
   assert(matches != NULL);
 #endif
