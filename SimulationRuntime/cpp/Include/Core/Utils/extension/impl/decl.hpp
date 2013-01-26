@@ -13,12 +13,20 @@
  */
 
 #if (__GNUC__ >= 4) && !defined(__MINGW32__)
+
 #  define BOOST_EXTENSION_EXPORT_DECL __attribute__((visibility("default")))
-#  define BOOST_EXTENSION_IMPORT_DECL __attribute__((visibility("hidden")))
+/* adrpo: this doesn't seem to work yet.
+ * #  define BOOST_EXTENSION_IMPORT_DECL __attribute__((visibility("hidden")))
+ */
+#  define BOOST_EXTENSION_IMPORT_DECL __attribute__((visibility("default")))
+
 #elif defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(MSC_VER)
+
 #  define BOOST_EXTENSION_EXPORT_DECL __declspec(dllexport)
 #  define BOOST_EXTENSION_IMPORT_DECL __declspec(dllimport)
+
 #else
+
 #  define BOOST_EXTENSION_EXPORT_DECL 
 #  define BOOST_EXTENSION_IMPORT_DECL
 
