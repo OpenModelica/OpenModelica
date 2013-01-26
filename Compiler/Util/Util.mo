@@ -3698,14 +3698,26 @@ end addInternalError;
 public function testsuiteFriendly "Testsuite friendly name (start after testsuite/ or build/)"
   input String name;
   output String friendly;
-protected
-  Integer i;
-  list<String> strs;
 algorithm
-  // TODO: Enable me instead of stupid basename!!!
-  // (i,strs) := System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)", 4, true, false);
-  // friendly := listGet(strs,i+1);
-  friendly := Debug.bcallret1(Config.getRunningTestsuite(),System.basename,name,name);
+  friendly := testsuiteFriendly2(Config.getRunningTestsuite(),name);
 end testsuiteFriendly;
+
+protected function testsuiteFriendly2 "Testsuite friendly name (start after testsuite/ or build/)"
+  input Boolean cond;
+  input String name;
+  output String friendly;
+algorithm
+  friendly := match (cond,name)
+    local
+      Integer i;
+      list<String> strs;
+    case (true,_)
+      equation
+        (i,strs) = System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
+        friendly = listGet(strs,i);
+      then friendly;
+    else name;
+  end match;
+end testsuiteFriendly2;
 
 end Util;
