@@ -102,11 +102,11 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
       if (!res && matches[i].rm_so != -1) {
         memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
         dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
-        outMatches[i] = mystrdup(dup);
-        nmatch++;
-      } else {
-        outMatches[i] = mystrdup("");
+        outMatches[nmatch++] = mystrdup(dup);
       }
+    }
+    for (i=nmatch; i<maxn; i++) {
+      outMatches[i] = mystrdup("");
     }
     free(dup);
   }
