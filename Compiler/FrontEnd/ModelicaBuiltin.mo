@@ -1466,7 +1466,7 @@ protected
   String matches[4];
 algorithm
   (i,matches) := regex(path, "^(.*/testsuite/)?(.*/build/)?(.*)",4);
-  fixed := matches[i+1];
+  fixed := matches[i];
 end testsuiteFriendlyName;
 
 function readFileNoNumeric
@@ -1934,14 +1934,13 @@ protected
 algorithm
   isUri := regexBool(uri, "^[A-Za-z]*://");
   if isUri then
-    (numMatches,matches) := regex(uri,"^([A-Za-z]*://)?([^/]*)(.*)$",4);
-    schema := matches[2];
-    isModelicaUri := regexBool(schema, "^modelica://", caseInsensitive=true);
+    (numMatches,matches) := regex(uri,"^[A-Za-z]*://?([^/]*)(.*)$",4);
+    isModelicaUri := regexBool(uri, "^modelica://", caseInsensitive=true);
     isFileUriAbsolute := regexBool(uri, "^file:///", caseInsensitive=true);
-    isFileUri := regexBool(schema, "^file://", caseInsensitive=true);
+    isFileUri := regexBool(uri, "^file://", caseInsensitive=true);
     if isModelicaUri then
       libraries := getLoadedLibraries();
-      path := matches[3];
+      path := matches[2];
       while path <> "" loop
         (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
         path := matches2[3];
@@ -1966,7 +1965,7 @@ algorithm
           assert(isMatch,"Could not resolve URI: " + uri);
         end if;
       end while;
-      filename := if isMatch then realpath(filename + "/" + matches[4]) else filename;
+      filename := if isMatch then realpath(filename + "/" + matches[3]) else filename;
     elseif isFileUriAbsolute then
       (,matches) := regex(uri,"file://(/.*)?",2);
       filename := matches[2];
@@ -1976,7 +1975,7 @@ algorithm
       assert(false, str);
     elseif not (isModelicaUri or isFileUri) then
       /* Not using else because OpenModelica handling of assertions at runtime is not very good */
-      str := "Unknown URI schema: " + schema;
+      str := "Unknown URI schema: " + uri;
       print(str + "\n");
       assert(false, str);
     else

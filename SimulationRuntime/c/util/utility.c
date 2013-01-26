@@ -98,7 +98,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
     nmatch += res == 0 ? 1 : 0;
   else if (maxn) {
     dup = strdup(str);
-    for (i=maxn-1; i>=0; i--) {
+    for (i=0; i<maxn; i++) {
       if (!res && matches[i].rm_so != -1) {
         memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
         dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
