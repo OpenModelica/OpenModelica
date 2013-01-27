@@ -4289,16 +4289,22 @@ match fn
 case RECORD_CONSTRUCTOR(__) then
   let()= System.tmpTickReset(1)
   let &varDecls = buffer "" /*BUFD*/
+  let &varInits = buffer "" 
+  let &varFrees = buffer "" 
   let fname = underscorePath(name)
   let retType = '<%fname%>_rettype'
   let retVar = tempDecl(retType, &varDecls /*BUFD*/)
   let structType = 'struct <%fname%>'
   let structVar = tempDecl(structType, &varDecls /*BUFD*/)
+  let _ = (locals |> var hasindex i1 fromindex 1 =>
+      varInitRecord(var, i1, structVar, &varDecls /*BUFD*/, &varInits /*BUFC*/) ; empty /* increase the counter! */
+    )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   <%retType%> omc_<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
+    <%varInits%>
     <%funArgs |> VARIABLE(__) => '<%structVar%>.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
     <%retVar%>.c1 = <%structVar%>;
     return <%retVar%>;
@@ -4311,6 +4317,48 @@ case RECORD_CONSTRUCTOR(__) then
 
   >>
 end functionBodyRecordConstructor;
+
+template varInitRecord(Variable var, Integer i, String prefix, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
+ "Generates code to initialize variables.
+  Does not return anything: just appends declarations to buffers."
+::=
+match var
+case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
+  let varName = '<%prefix%>.<%crefToCStr(var.name)%>'
+  let &varInits += initRecordMembers(var)
+  let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+    ;separator=", ") 
+  if instDims then
+    (match var.value
+    case SOME(exp) then
+      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultValue = varDefaultValue(var, "", i, varName, &varDecls, &varInits)
+      let &varInits += defaultValue 
+      let defaultValue1 = '<%varName%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let &varInits += defaultValue1
+      " "
+    else
+      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultValue = varDefaultValue(var, "", i, varName, &varDecls, &varInits)
+      let &varInits += defaultValue
+      "")
+  else
+    (match var.value
+    case SOME(exp) then
+      let defaultValue = '<%varName%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let &varInits += defaultValue
+
+      " "
+    else
+      "")
+  
+case var as FUNCTION_PTR(__) then
+  let &ignore = buffer ""
+  let &varDecls += functionArg(var,&ignore)
+  ""
+else error(sourceInfo(), 'Unknown local variable type in record')
+end varInitRecord;
 
 template functionBodyBoxed(Function fn)
  "Generates code for a boxed version of a function. Extracts the needed data

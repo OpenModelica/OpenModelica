@@ -3049,7 +3049,7 @@ algorithm
 end isPublicAttr;
 
 public function isPublicVar
-"Succeds if variable is a public variable."
+"true if variable is a public variable."
   input Var inVar;
   output Boolean b;
 algorithm
@@ -3060,6 +3060,19 @@ algorithm
     case DAE.TYPES_VAR(attributes = attr) then isPublicAttr(attr);
   end match;
 end isPublicVar;
+
+public function isProtectedVar
+"true if variable is a protected variable."
+  input Var inVar;
+  output Boolean b;
+algorithm
+  b := match (inVar)
+    local
+      Attributes attr;
+    
+    case DAE.TYPES_VAR(attributes = attr) then not isPublicAttr(attr);
+  end match;
+end isProtectedVar;
 
 
 public function isModifiableTypesVar

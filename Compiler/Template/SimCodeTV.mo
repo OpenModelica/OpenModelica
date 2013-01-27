@@ -508,6 +508,7 @@ package SimCode
     record RECORD_CONSTRUCTOR
       Absyn.Path name;
       list<Variable> funArgs;
+      list<Variable> locals;
       Absyn.Info info;
     end RECORD_CONSTRUCTOR;
   end Function;

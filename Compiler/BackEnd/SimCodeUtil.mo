@@ -685,6 +685,7 @@ algorithm
       Boolean dynamicLoad;
       list<String> includeDirs;
       DAE.FunctionAttributes funAttrs;
+      list<DAE.Var> varlst; 
       
       // Modelica functions.
     case (_, DAE.FUNCTION(path = fpath, source = source, 
@@ -819,9 +820,12 @@ algorithm
       equation
         funArgs = List.map(args, typesSimFunctionArg);
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
+        DAE.T_COMPLEX(varLst = varlst) = restype;
+        varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
+        varDecls = List.map(varlst, typesVar);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
-        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, info), rt_1, recordDecls, includes, includeDirs, libs);
+        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, info), rt_1, recordDecls, includes, includeDirs, libs);
         
         // failure
     case (_, fn, _, _, _, _, _)
@@ -5446,7 +5450,7 @@ algorithm
       equation
         sname = Absyn.pathStringReplaceDot(name, "_");
         false = listMember(sname, rt);
-        vars = List.map(varlst, typesVar);
+        vars = List.map(varlst, typesVarNoBinding);
         rt_1 = sname :: rt;
         (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
         recDecl = SimCode.RECORD_DECL_FULL(sname, path, vars);
@@ -9399,7 +9403,7 @@ algorithm
   end match;
 end scodeParallelismToDAEParallelism;
 
-protected function typesVar
+protected function typesVarNoBinding
   input Types.Var inTypesVar;
   output SimCode.Variable outVar;
 algorithm
@@ -9419,6 +9423,31 @@ algorithm
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
       then SimCode.VARIABLE(cref_, ty, NONE(), {}, prl);
+  end match;
+end typesVarNoBinding;
+
+protected function typesVar
+  input Types.Var inTypesVar;
+  output SimCode.Variable outVar;
+algorithm
+  outVar := match (inTypesVar)
+    local
+      String name;
+      Types.Type ty;
+      DAE.ComponentRef cref_;
+      DAE.Attributes attr;
+      SCode.Parallelism scPrl;
+      DAE.VarParallelism prl;
+      DAE.Exp bindExp;
+      
+    case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
+      equation
+        ty = Types.simplifyType(ty);
+        cref_ = ComponentReference.makeCrefIdent(name, ty, {});
+        DAE.ATTR(parallelism = scPrl) = attr;
+        prl = scodeParallelismToDAEParallelism(scPrl);
+        bindExp = Types.getBindingExp(inTypesVar, Absyn.IDENT(name));
+      then SimCode.VARIABLE(cref_, ty, SOME(bindExp), {}, prl);
   end match;
 end typesVar;
 
