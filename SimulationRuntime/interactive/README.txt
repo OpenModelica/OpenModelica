@@ -10,7 +10,7 @@ more information on interactive simulation.
 Sample application:
 -------------------
 A complete application test is in:
-https://openmodelica.org/svn/OpenModelica/trunk/testsuite/interactive-simulation 
+https://openmodelica.org/svn/OpenModelica/trunk/testsuite/openmodelica/interactive-simulation 
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
