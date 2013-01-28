@@ -9,7 +9,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p align="right" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Version 2012-12-15&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p align="right" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Version 2013-01-28&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       <Rule name="TextAlignment">Right</Rule>
     </TextCell>
     <GroupCell closed="false">
@@ -31,7 +31,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;">Copyright: (c) Linköping University, PELAB, 2003-2009, Wiley-IEEE Press, Modelica Association.&lt;br />Contact: OpenModelica@ida.liu.se;  OpenModelica Project web site: www.ida.liu.se/projects/OpenModelica&lt;br />Book web page: www.mathcore.com/drModelica;  Book author: Peter.Fritzson@ida.liu.se&lt;br />&lt;br />DrModelica Authors: (2003 version) Susanna Monemar, Eva-Lena Lengquist Sandelin, Peter Fritzson, Peter Bunus &lt;br />DrModelica Authors: (2005 and later updates): Peter Fritzson, Adrian Pop&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;">Copyright: (c) Linköping University, PELAB, 2003-2009, Wiley-IEEE Press, Modelica Association.&lt;br />Contact: OpenModelica@ida.liu.se;  OpenModelica Project web site: www.ida.liu.se/projects/OpenModelica&lt;br />Book web page: www.mathcore.com/drModelica;  Book author: Peter.Fritzson@ida.liu.se&lt;br />&lt;br />DrModelica Authors: (2003 version) Susanna Monemar, Eva-Lena Lengquist Sandelin, Peter Fritzson, Peter Bunus &lt;br />DrModelica Authors: (2005 and later updates): Peter Fritzson, Adrian Pop, Alachew Shitahun&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         <Rule name="FontSize">14</Rule>
       </TextCell>
       <TextCell style="Text">
