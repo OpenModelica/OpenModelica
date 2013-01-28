@@ -34,19 +34,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include "omc_error.h"
 
 void ModelicaMessage(const char* string) {
   ModelicaFormatMessage("%s", string);
 }
 
+extern void ModelicaVFormatMessage(const char*string, va_list args) {
+  vfprintf(stdout, string, args);
+  fflush(stdout);
+}
+
 void ModelicaFormatMessage(const char* string,...) {
   va_list args;
   va_start(args, string);
-  vfprintf(stdout, string, args);
+  ModelicaVFormatMessage(string, args);
   va_end(args);
-  fflush(stdout);
 }
 
 void ModelicaError(const char* string) {
@@ -55,13 +58,17 @@ void ModelicaError(const char* string) {
   omc_throw();
 }
 
+extern void ModelicaVFormatError(const char*string, va_list args) {
+  vfprintf(stderr, string, args);
+  fflush(stderr);
+  omc_throw();
+}
+
 void ModelicaFormatError(const char* string, ...) {
   va_list args;
   va_start(args, string);
-  vfprintf(stderr, string, args);
+  ModelicaVFormatError(string, args);
   va_end(args);
-  fflush(stderr);
-  omc_throw();
 }
 
 char* ModelicaAllocateString(size_t len) {

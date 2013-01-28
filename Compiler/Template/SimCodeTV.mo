@@ -2282,6 +2282,11 @@ package Util
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end splitTuple212List;
+
+  function testsuiteFriendly
+    input String in;
+    output String out;
+  end testsuiteFriendly;
 end Util;
 
 package List
