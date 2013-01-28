@@ -1,8 +1,8 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
-  <GroupCell closed="false" >
-    <GroupCell closed="false" >
-      <TextCell style="Title" >
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -10,9 +10,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Design Optimization&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Design Optimization&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <TextCell style="Text" >
+      <TextCell style="Text">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -20,13 +20,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />An important use for modeling and simulation is to improve a system design, usually before it is physically realized and manufactured. In this process it is customary to perform a number of simulations for different values of the design parameters, until a design has been obtained that best fulfills a given set of design criteria. To automate this process it is very useful if the simulation environment has programmable scripting facilities that provide the glue between optimization algorithms, executing simulations and various computational functions.&lt;br />&lt;br />The following example demonstrates the solution of a small but non-trivial design optimization problem containing dynamic system simulations. First we define a Modelica model of a &lt;span style=" font-style:italic;">linear actuator&lt;/span> with a spring damped stopping, as well as a first order system that will be used to generate a kind of "reference" response. The goal is to find a damping for the translational spring-damper that minimizes the deviation between the step response of the linear actuator system and the step response from our "reference" first order system. &lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">See Section 15.7 in the Modelica Book&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />An important use for modeling and simulation is to improve a system design, usually before it is physically realized and manufactured. In this process it is customary to perform a number of simulations for different values of the design parameters, until a design has been obtained that best fulfills a given set of design criteria. To automate this process it is very useful if the simulation environment has programmable scripting facilities that provide the glue between optimization algorithms, executing simulations and various computational functions.&lt;br />&lt;br />The following example demonstrates the solution of a small but non-trivial design optimization problem containing dynamic system simulations. First we define a Modelica model of a &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">linear actuator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with a spring damped stopping, as well as a first order system that will be used to generate a kind of &amp;quot;reference&amp;quot; response. The goal is to find a damping for the translational spring-damper that minimizes the deviation between the step response of the linear actuator system and the step response from our &amp;quot;reference&amp;quot; first order system. &lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">See Section 15.7 in the Modelica Book&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -34,9 +34,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">LinearActuator Model&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">LinearActuator Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -44,9 +44,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">In this example we use the MathModelica environment with Mathematica as the scripting language providing the built-in optimization function &lt;span style=" font-family:'Courier New';">FindMinimum&lt;/span>. //??Change to OpenModelica&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In this example we use the MathModelica environment with Mathematica as the scripting language providing the built-in optimization function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FindMinimum&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. //??Change to OpenModelica&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -54,10 +54,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/146.png" width="357" height="265" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/146.png" >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</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/2.png" width="357" height="265" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/2.png">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</Image>
         </TextCell>
-        <TextCell style="" >
+        <TextCell style="">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -65,11 +65,11 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A LinearActuator model containing a spring damped connection to an anchoring point.&lt;/span>&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A LinearActuator model containing a spring damped connection to an anchoring point.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -77,35 +77,35 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Consider the following model of a linear actuator, depicted in Figure 1, with a spring-damped connection to an anchoring point:&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Consider the following model of a linear actuator, depicted in Figure 1, with a spring-damped connection to an anchoring point:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>model LinearActuator
   import Modelica.Mechanics.Translational;
   import Modelica.Mechanics.Rotational;
   import Modelica.Blocks.Sources;
-  Translational.SlidingMass   slidingMass1(m=0.5);
-  Translational.SpringDamper  springDamper1(d=3,c=20);
-  Translational.Fixed         fixed1;
-  Rotational.IdealGearR2T     idealGearR2T1;
-  Rotational.Inertia          inertia1(J=0.1);
-  Rotational.SpringDamper     springDamper2(c=15,d=2);
-  Rotational.Inertia   	 inertia2(J=0.1);
-  Rotational.Torque           torque1;
-  Sources.Step                step1;
+  Translational.Components.Mass mass1(m=0.5);
+  Translational.Components.SpringDamper springDamper1(d=3,c=20);
+  Translational.Components.Fixed fixed1;
+  Rotational.Components.IdealGearR2T idealGearR2T1;
+  Rotational.Components.Inertia inertia1(J=0.1);
+  Rotational.Components.SpringDamper springDamper2(c=15,d=2);
+  Rotational.Components.Inertia inertia2(J=0.1);
+  Rotational.Sources.Torque torque1;
+  Sources.Step step1;
 equation
-  connect(inertia1.flange_b,      idealGearR2T1.flange_a);
-  connect(idealGearR2T1.flange_b, slidingMass1.flange_a);
-  connect(slidingMass1.flange_b,  springDamper1.flange_a);
-  connect(springDamper1.flange_b, fixed1.flange_b);
-  connect(inertia1.flange_a,      springDamper2.flange_b);
+  connect(inertia1.flange_b, idealGearR2T1.flangeR);
+  connect(idealGearR2T1.flangeT, mass1.flange_a);
+  connect(mass1.flange_b, springDamper1.flange_a);
+  connect(springDamper1.flange_b, fixed1.flange);
+  connect(inertia1.flange_a, springDamper2.flange_b);
   connect(springDamper2.flange_a, inertia2.flange_b);
-  connect(inertia2.flange_a,      torque1.flange_b);
+  connect(inertia2.flange_a, torque1.flange);
   connect(torque1.tau, step1.y);
 end LinearActuator;</Input>
           <Output>{LinearActuator}</Output>
         </GraphCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -113,11 +113,11 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We first make a simulation of the step response for the above linear actuator with damping &lt;span style=" font-family:'Courier New';">d=2&lt;/span> and store the result in the scripting language variable called &lt;span style=" font-family:'Courier New';">resLinActFirst&lt;/span>. Then we plot the simulated position of the sliding mass as a function of time to take a closer look at the response.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We first make a simulation of the step response for the above linear actuator with damping &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d=2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and store the result in the scripting language variable called &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">resLinActFirst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. Then we plot the simulated position of the sliding mass as a function of time to take a closer look at the response.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -125,26 +125,27 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of LinearActuator&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of LinearActuator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>loadModel(Modelica);  // Load library if not already done</Input>
           <Output>[done]</Output>
         </GraphCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-          <Input>simulate( LinearActuator, stopTime=5 )</Input>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation( LinearActuator, stopTime=5 )</Input>
           <Output>record SimulationResult
-    resultFile = "LinearActuator_res.plt"
+    messages = "",
+    simulationTime = 0.14415330304804524
 end SimulationResult;</Output>
         </GraphCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.5" Antialiasing="false" MinorY="0.005" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="0.01" closed="false" YLabel="" Area="AAAAAAAAAAC/VxJQ3zrnYUAUHc8yh+0eP7ZZvlhBECY=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
-          <Data Id="0" Label="slidingMass1.s" >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</Data>
-          <Data Id="0" Label="time" >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</Data>
-          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="slidingMass1.s" Color="#ff0000" />
-          <Input>plot( slidingMass1.s )</Input>
-          <Output>true</Output>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time">
+            <Curve Title="mass1.s" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( mass1.s )</Input>
+          <Output>[done]</Output>
         </GraphCell>
-        <TextCell style="" >
+        <TextCell style="">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -152,12 +153,12 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot of step response from the linear actuator.&lt;/span>&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot of step response from the linear actuator.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -165,9 +166,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Different behavior with different values of d&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Different behavior with different values of d&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -175,16 +176,16 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">Assume that we have some freedom in choosing the damping in the translational spring-damper. A number of simulation runs show what kind of behavior we have for different values of the damping parameter &lt;span style=" font-family:'Courier New';">d&lt;/span>. The Mathematica &lt;span style=" font-family:'Courier New';">Table[]&lt;/span> function is used to collect the results from calls to &lt;span style=" font-family:'Courier New';">Simulate[]&lt;/span> into an array &lt;span style=" font-family:'Courier New';">res&lt;/span>. The array then contains the results from simulations of &lt;span style=" font-family:'Courier New';">LinearActuator&lt;/span> with a damping of 2 and 14 in increments of 2, i.e. seven simulations are performed. &lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">//?? Currently needs Mathematica and needs to be transformed to OpenModelica scripting.&lt;br /> &lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Assume that we have some freedom in choosing the damping in the translational spring-damper. A number of simulation runs show what kind of behavior we have for different values of the damping parameter &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The Mathematica &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Table[]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> function is used to collect the results from calls to &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Simulate[]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> into an array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">res&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The array then contains the results from simulations of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">LinearActuator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with a damping of 2 and 14 in increments of 2, i.e. seven simulations are performed. &lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">//?? Currently needs Mathematica and needs to be transformed to OpenModelica scripting.&lt;br /> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>res = Table[Simulate[LinearActuator,{t,0,4},
 	ParameterValues ->{springDamper1.d == s}], {s,2,15,2}];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -192,15 +193,23 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>PlotSimulation[slidingMass1.s[t], {t, 0, 4},
 	SimulationResult -> res, Legend -> False]</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="" >
+          <TextCell style="">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -208,9 +217,9 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plots of step responses from seven simulations of the linear actuator with different camping coefficients.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plots of step responses from seven simulations of the linear actuator with different camping coefficients.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -218,13 +227,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now assume that we would like to choose the damping parameter d so that the resulting linear actuator system behaves as closely as possible to the following "reference" first order system response, obtained by solving a first order ODE using the Mathematica differential equation solver &lt;span style=" font-family:'Courier New';">NDSolve&lt;/span>:&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now assume that we would like to choose the damping parameter d so that the resulting linear actuator system behaves as closely as possible to the following &amp;quot;reference&amp;quot; first order system response, obtained by solving a first order ODE using the Mathematica differential equation solver &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">NDSolve&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">:&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>resReference = NDSolve[{0.2*y'[t]+y[t]== 0.05, y[0] == 0}, {y}, {t,0,4}];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -232,14 +241,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We make a plot to compare the step response we simulated first for a damping value d=2 and the response from the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We make a plot to compare the step response we simulated first for a damping value d=2 and the response from the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>PlotSimulation[{slidingMass1.s[t], y[t] /. resReference, {t,0,4},
 	SimulationResult -> resLinActFirst]</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="" >
+          <TextCell style="">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -247,13 +256,13 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Comparison plot between the step response of the linear actuator and the "reference" first&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">-order system.&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Comparison plot between the step response of the linear actuator and the &amp;quot;reference&amp;quot; first&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-order system.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -261,9 +270,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of an integral&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of an integral&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -271,21 +280,21 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now, let us make things a little more automatic. Simulate and compute the integral of the square deviation from t = 0 to t = 4. This integral is a measure of the deviation from the "reference" response and is thus suitable as a goal function to be minimized.&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">//??Below needs Mathematica and needs to be transformed to OpenModelica scripting&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now, let us make things a little more automatic. Simulate and compute the integral of the square deviation from t = 0 to t = 4. This integral is a measure of the deviation from the &amp;quot;reference&amp;quot; response and is thus suitable as a goal function to be minimized.&lt;br />&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">//??Below needs Mathematica and needs to be transformed to OpenModelica scripting&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>Simulate[LinearActuator,{t,0,4},
 	ParameterValues -> {springDamper1.d == 3}];</Input>
             <Output></Output>
           </GraphCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>NIntegrate[First[(y[t] /. resReference) - slidingMass1.s[t]]^2, {t, 0, 4}]
 </Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -293,15 +302,15 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">We define a Mathematica function, &lt;span style=" font-family:'Courier New';">f[a_]&lt;/span>, doing the same thing as above, but for different values of the spring-damper design parameter &lt;span style=" font-family:'Courier New';">d&lt;/span>. The function contains two variables &lt;span style=" font-family:'Courier New';">res&lt;/span> and &lt;span style=" font-family:'Courier New';">t&lt;/span>. The expression &lt;span style=" font-family:'Courier New';">(y[t]/.resReference)&lt;/span> retrieves the interpolating function representing the variable &lt;span style=" font-family:'Courier New';">y[t]&lt;/span>, i.e. the reference response.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We define a Mathematica function, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">f[a_]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, doing the same thing as above, but for different values of the spring-damper design parameter &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The function contains two variables &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">res&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">t&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The expression &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">(y[t]/.resReference)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> retrieves the interpolating function representing the variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y[t]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, i.e. the reference response.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>f[a_] := Module[{res, t},
  res=Simulate[LinearActuator, {t, 0, 4},ParameterValues ->{springDamper1.d == a}];
   NIntegrate[First[(y[t]/.resReference)-slidingMass1.s[t]]2,{t,0,4}]];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -309,10 +318,18 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -320,13 +337,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">We tabulate some results for &lt;span style=" font-style:italic;">2 [LessEqual] d [LessEqual] 10&lt;/span> into an array &lt;span style=" font-family:'Courier New';">resDeviations&lt;/span>:&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We tabulate some results for &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">2 [LessEqual] d [LessEqual] 10&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> into an array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">resDeviations&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>resDeviations = Table[{d, f[d]}, {d, 2, 10, 0.5}];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -334,13 +351,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The tabulated values are interpolated into a Mathematica interpolating function. The default interpolation order is 3.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The tabulated values are interpolated into a Mathematica interpolating function. The default interpolation order is 3.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>fpre=Interpolation[resDeviations]</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -348,13 +365,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">A plot of the interpolationg function fpre:&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A plot of the interpolationg function fpre:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>Plot[fpre[d], {d, 2, 10}];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="" >
+          <TextCell style="">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -362,11 +379,11 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot of the deviation function for finding the value of the damping parameter that gives a minimum deviation from the reference response.&lt;/span>&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot of the deviation function for finding the value of the damping parameter that gives a minimum deviation from the reference response.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -374,13 +391,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The minimizing value of &lt;span style=" font-family:'Courier New';">d&lt;/span> can be computed using &lt;span style=" font-family:'Courier New';">FindMinimum&lt;/span>.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The minimizing value of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can be computed using &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FindMinimum&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>FindMinimum[fpre[d], {d, 4}]</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -388,14 +405,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">A simulation with the optimal parameter value:&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A simulation with the optimal parameter value:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>Simulate[LinearActuator, {t, 0, 4},
 	ParameterValues -> {springDamper1.d == 5.28642}];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -403,16 +420,16 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A plot comparing the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system and linear actuator system responses together with a plot of the squared deviation amplified by a factor 100.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A plot comparing the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system and linear actuator system responses together with a plot of the squared deviation amplified by a factor 100.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="true">
             <Input>PlotSimulation[{slidingMass1.s[t],
 	y[t] /. resReference,
 	100*(slidingMass1.s[t] - (y[t] /. resReference))^2},
 	{t, 0, 4}, Legend -> False];</Input>
             <Output></Output>
           </GraphCell>
-          <TextCell style="" >
+          <TextCell style="">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -420,9 +437,9 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Comparison plot of the first and second order system step responses together with the squared error.&lt;/span>&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p align="right" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Comparison plot of the first and second order system step responses together with the squared error.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
       </GroupCell>

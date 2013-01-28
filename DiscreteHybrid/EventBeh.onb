@@ -1,8 +1,8 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
-  <GroupCell closed="false" >
-    <GroupCell closed="false" >
-      <TextCell style="Title" >
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -10,10 +10,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Expressing Event Behavior in Modelica&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Expressing Event Behavior in Modelica&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -21,9 +21,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Expressing Event Behavior in Modelica&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Expressing Event Behavior in Modelica&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -31,12 +31,12 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The conditional equations associated with an event become active when the &lt;span style=" font-style:italic;">condition&lt;/span> of the equations switches from the value false and true. There are basically two groups of conditional equation constructs in Modelica: &lt;a href="Equations/IfEq.onb
-">&lt;span style=" text-decoration: underline; color:#0000ff;">if-equations&lt;/span>&lt;/a> and &lt;a href="Equations/WhenEq.onb
-">&lt;span style=" text-decoration: underline; color:#0000ff;">when-equations&lt;/span>&lt;/a>. In the Diode example below different equations are specified.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The conditional equations associated with an event become active when the &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">condition&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the equations switches from the value false and true. There are basically two groups of conditional equation constructs in Modelica: &lt;/span>&lt;a href="Equations/IfEq.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; text-decoration: underline; color:#0000ff;">if-equations&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;a href="Equations/WhenEq.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; text-decoration: underline; color:#0000ff;">when-equations&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. In the Diode example below different equations are specified.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GroupCell closed="true" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -44,13 +44,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Units&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>type Voltage = Real(unit = "V");</Input>
-            <Output></Output>
+            <Output>{Voltage}</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -58,16 +58,18 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>type Current = Real(unit = "A");</Input>
-            <Output></Output>
+            <Output>{Current}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="true" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -75,16 +77,16 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>connector Pin           "Pin of an electrical component"
    Voltage v           "Potential at the pin";
    flow Current i         "Current flowing into the pin";
 end Pin;              //From Modelica.Electrical.Analog.Interfaces</Input>
-            <Output></Output>
+            <Output>{Pin}</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -92,17 +94,19 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>connector PositivePin       "Positive pin of an electrical component"
    Voltage v           "Potential at the pin";
    flow Current i         "Current flowing into the pin";
 end PositivePin;          //From Modelica.Electrical.Analog.Interfaces</Input>
-            <Output></Output>
+            <Output>{PositivePin}</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -110,19 +114,21 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>connector NegativePin       "Negative pin of an electrical component"
    Voltage v           "Potential at the pin";
    flow Current i         "Current flowing into the pin";
 end NegativePin;          //From Modelica.Electrical.Analog.Interfaces</Input>
-            <Output></Output>
+            <Output>{NegativePin}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="true" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -130,9 +136,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Components&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>partial model TwoPin          // Same as OnePort in Modelica.Electrical.Analog.Interfaces
                     "Component with two electrical pins p and n and current i from p to n"
   Voltage v                "Voltage drop between the two pins (= p.v - n.v)";
@@ -144,11 +150,11 @@ equation
   0 = p.i + n.i;
   i = p.i;
 end TwoPin;  </Input>
-            <Output></Output>
+            <Output>{TwoPin}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -156,9 +162,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Diode&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Diode&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -166,9 +172,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;span style=" font-family:'Courier New';">if&lt;/span>-equation in the ideal &lt;span style=" font-family:'Courier New';">diode&lt;/span> example below, specifies different equations for the variable &lt;span style=" font-family:'Courier New';">v&lt;/span> in two different operating regions: the&lt;span style=" font-family:'Courier New';"> v = s&lt;/span> in the region &lt;span style=" font-family:'Courier New';">s  and the equation v = 0 in the region s &amp;gt;= 0.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-equation in the ideal &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">diode&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> example below, specifies different equations for the variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">v&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> in two different operating regions: the&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> v = s&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> in the region &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">s  and the equation v = 0 in the region s &amp;gt;= 0.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>model Diode           "Ideal diode"
   extends TwoPin;
   Real s;
@@ -182,7 +188,18 @@ equation
   end if;  
   i = if off then 0 else s;   // equation with conditional expression
 end Diode;</Input>
-            <Output></Output>
+            <Output>{Diode}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation(Diode)</Input>
+            <Output>record SimulationResult
+    messages = "Simulation failed for model: Diode
+Error: Internal error Found Equation without time dependent variables n.i = 0.0
+
+Error: Internal error Optimisation Module removeSimpleEquations failed.
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelites failed!
+"
+end SimulationResult;</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>

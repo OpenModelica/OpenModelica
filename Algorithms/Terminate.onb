@@ -165,6 +165,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="">
@@ -175,7 +179,7 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Vertical &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">velocity&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> relative to the lunar surface and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Altitude&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the Apollo rocket over the lunar surface.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Vertical &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">velocity&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> relative to the lunar surface and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Altitude&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the Apollo rocket over the lunar surface.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
     </GroupCell>

@@ -94,10 +94,7 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -125,6 +122,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
@@ -169,6 +168,15 @@ algorithm
 end ScalarIndex;
 </Input>
           <Output>{ScalarIndex}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation(ScalarIndex)</Input>
+          <Output>record SimulationResult
+    messages = "Simulation failed for model: ScalarIndex
+[&lt;interactive>:13:3-13:24:writable] Error: Type mismatch in assignment in M[4] := {{5, 5}, {5, 5}, {5, 5}, {5, 5}} of Real[2] := Integer[4, 2]
+Error: Error occurred while flattening model ScalarIndex
+"
+end SimulationResult;</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -216,6 +224,14 @@ algorithm
    w[3:4] := {1, 2};     // Assignment causing w to become {15, 16, 1, 2}
 end ArraySlice;</Input>
           <Output>{ArraySlice}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation(ArraySlice)</Input>
+          <Output>record SimulationResult
+    messages = "Simulation failed for model: ArraySlice
+Error: Too many equations, overdetermined system. The model has 43 equation(s) and 41 variable(s)
+"
+end SimulationResult;</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">

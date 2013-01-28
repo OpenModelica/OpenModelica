@@ -180,6 +180,15 @@ equation
 end BilinearSamplingTest;</Input>
           <Output>{BilinearSamplingTest}</Output>
         </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation(BilinearSamplingTest)</Input>
+          <Output>record SimulationResult
+    messages = "Simulation failed for model: BilinearSamplingTest
+[&lt;interactive>:1:1-5:8:writable] Error: An element with name log is already declared in this scope.
+Error: Error occurred while flattening model BilinearSamplingTest
+"
+end SimulationResult;</Output>
+        </GraphCell>
       </GroupCell>
     </GroupCell>
   </GroupCell>
