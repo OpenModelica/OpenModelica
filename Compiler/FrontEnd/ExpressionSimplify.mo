@@ -4655,6 +4655,7 @@ algorithm
         {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)} = iterators;
         values = Expression.getArrayOrRangeContents(range);
         // TODO: Use foldExp
+        //ty = Types.unliftArray(ty);
         ety = Types.simplifyType(ty);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
         values = List.map(List.map2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
@@ -4678,20 +4679,32 @@ algorithm
     local
       Integer len;
       Values.Value val;
+      DAE.Exp arr_exp;
+      DAE.Type aty;
+
     case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
     case (_,_,{},NONE()) then fail();
+
     case ("array",_,_,_)
-      then DAE.ARRAY(ty, true, exps);
+      equation
+        aty = Types.unliftArray(ty);
+      then
+        Expression.makeScalarArray(exps, aty);
+
     case ("min",_,_,_)
       equation
-        len = listLength(exps);
-      then Expression.makeBuiltinCall("min",{DAE.ARRAY(DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource), true, exps)},ty);
+        arr_exp = Expression.makeScalarArray(exps, ty);
+      then
+        Expression.makeBuiltinCall("min", {arr_exp}, ty);
+
     case ("max",_,_,_)
       equation
-        len = listLength(exps);
-      then Expression.makeBuiltinCall("max",{DAE.ARRAY(DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource), true, exps)},ty);
-    case ("product",_,_,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
-    case ("sum",_,_,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+        arr_exp = Expression.makeScalarArray(exps, ty);
+      then
+        Expression.makeBuiltinCall("max", {arr_exp}, ty);
+
+    case ("product",_,_,_) then Expression.makeProductLst(exps);
+    case ("sum",_,_,_) then Expression.makeSum(exps);
   end match;
 end simplifyReductionFoldPhase;
 
