@@ -65,7 +65,7 @@ void omc_throw_function();
 extern jmp_buf globalJmpbuf;
 
 #define USE_ASSERTS
-#define USE_DEBUG_OUTPUT
+//#define USE_DEBUG_OUTPUT
 
 enum LOG_STREAM
 {
