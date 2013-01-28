@@ -529,12 +529,8 @@ int solver_main(DATA* data, const char* init_initMethod,
       INFO1(LOG_STATS, "The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
       INFO1(LOG_STATS, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
+    rt_tick(SIM_TIMER_TOTAL);
 
-  }
-  else
-  {
-    if(measure_time_flag)
-      rt_accumulate(SIM_TIMER_TOTAL);
   }
 
   /* deintialize solver related workspace */
