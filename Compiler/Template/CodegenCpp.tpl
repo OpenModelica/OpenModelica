@@ -276,7 +276,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%init(simCode)%>
    void <%lastIdentOfPath(modelInfo.name)%>::resetTimeEvents()
    {
-    <%resetTimeEvents(sampleConditions,whenClauses,simCode)%>
+    <%resetTimeEvents(whenClauses,simCode)%>
    }
    <%Update(simCode)%>  
    <%writeoutput(simCode)%>
@@ -1451,7 +1451,6 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initVariables = initvar(modelInfo,simCode)
    let initFunctions = functionInitial(startValueEquations,varDecls,simCode)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
-   let initTimeEventFunctions = timeEventCondition(sampleConditions,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
    let initOutputIndices = outputIndices(modelInfo)
    let initBoundParameters = boundParameters(parameterEquations,varDecls,simCode)
@@ -1464,7 +1463,6 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initVariables%>
    <%initFunctions%>
    checkConditions(NULL,true);
-    <%initTimeEventFunctions%>
     <%initEventHandling%>
     _event_handling.init(this,<%helpvarlength(simCode)%>);
       map<unsigned int,string> var_ouputs_idx;
@@ -2008,7 +2006,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      EventHandling _event_handling;
      
      <%MemberVariable(modelInfo)%>
-     <%conditionvariable(zeroCrossings,sampleConditions,simCode)%>
+     <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;
      HistoryImplType* _historyImpl;
      SparseMatrix _jacobian;
@@ -2211,7 +2209,7 @@ bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
 
 void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
 {
- <%handleEvent(sampleConditions,simCode)%>
+ <%handleEvent(simCode)%>
 }
 >>
 end DefaultImplementationCode;
@@ -4575,12 +4573,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(arg, context, &preExp, &varDecls,simCode)
     '_event_handling.pre(<%var1%>,"<%cref(arg.componentRef)%>")'
     
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
+  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-    let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-     '_conditions[<%eIndex%>]'
+     '_conditions[<%intSub(index, 1)%>]'
   case CALL(path=IDENT(name="initial") ) then
      match context
     case ALGLOOP_CONTEXT(__) 
@@ -5361,9 +5358,8 @@ template helpvarlength(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(__) then
-  let size = listLength(helpVarInfo)
   <<
-   <%size%>
+  0
   >>
 end helpvarlength;
 
@@ -5970,16 +5966,6 @@ template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,
 end zeroCrossingTpl2;
 
 
-template timeEventCondition(list<SampleCondition> sampleConditions,Text &varDecls, SimCode simCode)
-::=
-  
-  let timeEventConditionCode = timeEventcondition(sampleConditions, &varDecls /*BUFD*/, simCode)
-  <<
-  
-    <%timeEventConditionCode%>
-  >>
-end timeEventCondition;
-
 template literalExpConst(Exp lit, Integer index) "These should all be declared static X const"
 ::=
   let name = '_OMC_LIT<%index%>'
@@ -6040,7 +6026,7 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConstImpl;
 
-
+/*
 template timeEventcondition(list<SampleCondition> sampleConditions,Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   (sampleConditions |> (relation_,index)  =>
@@ -6051,35 +6037,36 @@ end timeEventcondition;
 template timeEventcondition1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
+  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-    let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let res = tempDecl("bool", &varDecls /*BUFC*/)
      <<
      <%preExp%>
      <%res%>= false;
-     _condition<%eIndex%> = <%res%>;
-      event_times_type sample<%eIndex%> = _event_handling.makePeriodeEvents(<%eStart%>,te,<%eInterval%>,<%eIndex%>);
-     _event_handling.addTimeEvents(sample<%eIndex%>);
+     _condition<%intSub(index, 1)%> = <%res%>;
+      event_times_type sample<%intSub(index, 1)%> = _event_handling.makePeriodeEvents(<%eStart%>,te,<%eInterval%>,<%intSub(index, 1)%>);
+     _event_handling.addTimeEvents(sample<%intSub(index, 1)%>);
     >>
 end timeEventcondition1;
+*/
 
-template resetTimeEvents(list<SampleCondition> sampleConditions,list<SimWhenClause> whenClauses,SimCode simCode)
-::=
-match simCode
-case SIMCODE(sampleConditions=sam) then
-   let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
+
+template resetTimeEvents(list<SimWhenClause> whenClauses,SimCode simCode)
+::=''
+/*
+  let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
                                                     <%helpvarvector(whenClauses,simCode)%>
                                                     _event_handling.setHelpVars(h);'
                                                      
   << 
-      <%helpvars%>
-    
+  <%helpvars%>
   >> 
+*/
 end resetTimeEvents;
 
+/*
 template resetTimeEvent(list<SampleCondition> sampleConditions,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -6091,46 +6078,21 @@ end resetTimeEvent;
 template resetTimeEvent1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
+  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
-    let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      <<
-     _condition<%eIndex%> = false;
+     _condition<%intSub(index, 1)%> = false;
     >>
 end resetTimeEvent1;
+*/
 
-template handleEvent(list<SampleCondition> sampleConditions,SimCode simCode)
+template handleEvent(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(__) then
-  << 
-   
+  <<
   >>
- 
 end handleEvent;
-
-template handleEvent1(list<SampleCondition> sampleConditions,SimCode simCode)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  (sampleConditions |> (relation_,index)  =>
-    handleEvent2(index, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
-end handleEvent1;
-
-template handleEvent2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
-::=
-  match relation
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
-    let &preExp = buffer "" /*BUFD*/
-    let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-     <<
-     case <%eIndex%>:
-      {
-       _condition<%eIndex%> = true;
-       break;
-      }
-    >>
-end handleEvent2;
 
 template checkConditions(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenClauses,SimCode simCode)
 ::=
@@ -6181,9 +6143,6 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
  
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then 
-   let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
-                                                    <%helpvarvector(whenClauses,simCode)%>
-                                                    _event_handling.setHelpVars(h);'
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
    { 
@@ -6197,7 +6156,6 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     while(restart && !(iter++ > 15))
     {
       
-             <%helpvars%>
             //iterate and handle all events inside the eventqueue
             restart=_event_handling.IterateEventQueue(_conditions);
          
@@ -6398,37 +6356,26 @@ end saveconditionvar1;
 
 
 
-template conditionvarSample(list<SampleCondition> sampleConditions,SimCode simCode)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  (sampleConditions |> (relation_,index)  =>
-    conditionvarSample1(index, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
-end conditionvarSample;
 
 template conditionvarSample1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
+  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
-    let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      <<
-     bool _condition<%eIndex%>;
+     bool _condition<%intSub(index, 1)%>;
     >>
 end conditionvarSample1;
 
-template conditionvariable(list<ZeroCrossing> zeroCrossings,list<SampleCondition> sampleConditions,SimCode simCode) 
+template conditionvariable(list<ZeroCrossing> zeroCrossings,SimCode simCode) 
 ::=
   let conditionvariable = conditionvarZero(zeroCrossings,simCode)
-  let conditionvarsample = conditionvarSample(sampleConditions,simCode)
   /*
   <<
    <%conditionvariable%>
-   <%conditionvarsample%>
   >>
   */
   <<
-    <%conditionvarsample%>
   >>
 end conditionvariable;
 

@@ -52,9 +52,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
 
     <%functionOutput(modelInfo, simCode)%>
     
-    <%functionInitSample(sampleConditions, simCode)%>    
-    
-    <%functionSampleEquations(sampleEquations, simCode)%>
+    <%functionInitSample(sampleLookup, simCode)%>
     
     <%functionStoreDelayed(simCode)%>
 
@@ -70,7 +68,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
 
     <%functionAliasEquation(removedEquations, simCode)%>
 
-    <%functionDAE(allEquations, whenClauses, helpVarInfo, simCode)%>
+    <%functionDAE(allEquations, whenClauses, simCode)%>
 
     <%functionOnlyZeroCrossing(zeroCrossings, simCode)%>
     
@@ -331,7 +329,6 @@ case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 <<
 #region Model description
 const int 
-  NHELP = <%varInfo.numHelpVars%>, 
   NG = <%varInfo.numZeroCrossings%>,
   NREL = <%varInfo.numRelations%>,  
   NG_SAM = <%varInfo.numTimeEvents%>,
@@ -596,7 +593,7 @@ public override void OutputFun()
 end functionOutput;
 
 
-template functionInitSample(list<SampleCondition> sampleConditions, SimCode simCode)
+template functionInitSample(BackendDAE.SampleLookup sampleLookup, SimCode simCode)
   "Generates function initSample() in simulation file."
 ::=
   /* Initializes the raw time events of the simulation using the now
@@ -606,50 +603,26 @@ template functionInitSample(list<SampleCondition> sampleConditions, SimCode simC
   {
     <% localRepresentationArrayDefines %>
     var SA = Samples.SamplesArr;
-    <%if sampleConditions then "int i = 0; // Current index"%>
-    <%sampleConditions |> (relation, zcIndex)  =>
-        match relation
-        case RELATION(__) then
-          <<
-          /* <%zcIndex%> Not a time event */
-          >>
-        case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
+    
+    <%match sampleLookup
+      case BackendDAE.SAMPLE_LOOKUP(__) then
+        (lookup |> (index, start, interval)  =>
           let &preExp = buffer "" /*BUFD*/
           let startE = daeExp(start, contextOther, &preExp, simCode)
           let intervalE = daeExp(interval, contextOther, &preExp, simCode)
           <<
           <%preExp%>
-          SA[i++] = new OneSample(<%intervalE%>, <%startE%>, <%zcIndex%>, false);
-          >>
-        else
-         <<
-         /* UNKNOWN ZERO CROSSING for <%zcIndex%> */
-         >> 
-    %>
+          /* $P$sample<%index%> */
+          SA[i++] = new OneSample(<%intervalE%>, <%startE%>, <%intSub(index, 1)%>, false);
+          >>)%>
   }
   >>
 end functionInitSample;
 
-template functionSampleEquations(list<SimEqSystem> sampleEqns, SimCode simCode)
- "Generates function for sample equations."
-::=
-  <<
-  public override void FunUpdateSample()
-  {
-    <% localRepresentationArrayDefines %>
-    
-    <%sampleEqns |> eq =>
-      equation_(eq, contextSimulationDiscrete, simCode)
-     ;separator="\n"
-    %>
-  }
->>
-end functionSampleEquations;
 
 
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
-                     list<SimWhenClause> whenClauses,  list<HelpVarInfo> helpVarInfo,
-                     SimCode simCode) ::=
+                     list<SimWhenClause> whenClauses, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 public override bool FunDAE()
@@ -820,7 +793,7 @@ template zeroCrossing(Exp zcExp, Integer zcIndex, SimCode simCode) ::=
     <%preExp%>
     gout[<%zcIndex%>] = (<%e1%>)?1:-1;    
     >>  
-  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     let &preExp = buffer "" //is ignored
     let eStart = daeExp(start, contextOther, &preExp, simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, simCode)

@@ -550,12 +550,12 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   }
   /* due to an event overwrite old values */
   overwriteOldSimulationData(comp->fmuData);
-  resetAllHelpVars(comp->fmuData);
 
   return fmiOK;
 }
 
-fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
+fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo)
+{
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiEventUpdate", modelInitialized))
     return fmiError;
@@ -579,16 +579,18 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
               comp->fmuData->simulationInfo.helpVarsPre[i]?'T':'F');
   }
   }
-   */
-
+  */
+  
+  /*
   //Activate sample and evaluate again
-  if (activateSampleEvents(comp->fmuData)){
-    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-        "fmiEventUpdate: Sample Event!");
+  if (activateSampleEvents(comp->fmuData))
+  {
+    if (comp->loggingOn)
+      comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Sample Event!");
     storePreValues(comp->fmuData);
     functionDAE(comp->fmuData);
-    deactivateSampleEventsandEquations(comp->fmuData);
   }
+  */
   if(checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData)){
     intermediateResults = fmiTrue;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",

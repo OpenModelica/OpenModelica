@@ -61,8 +61,6 @@ public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;                      // helpvarindex, expression, whenclause index
-type SampleCondition = tuple<DAE.Exp,Integer>;                            // helpvarindex, expression,
 type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;     // column equations, column vars, column length
 type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
                             list<SimVar>,                                 // seed vars
@@ -100,9 +98,6 @@ uniontype SimCode
     list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<BackendDAE.ZeroCrossing> relations;
     BackendDAE.SampleLookup sampleLookup;
-    list<SampleCondition> sampleConditions;
-    list<SimEqSystem> sampleEquations;
-    list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
@@ -169,7 +164,6 @@ end FileInfo;
 // Number of variables of various types in a Modelica model.
 uniontype VarInfo
   record VARINFO
-    Integer numHelpVars;
     Integer numZeroCrossings;
     Integer numTimeEvents;
     Integer numRelations;
