@@ -79,9 +79,9 @@ void initSample(DATA* data, double startTime, double stopTime)
   }
   
   if(stopTime < data->simulationInfo.nextSampleEvent)
-    INFO(LOG_EVENTS, "there are no sample-events");
+    DEBUG(LOG_EVENTS, "there are no sample-events");
   else
-    INFO1(LOG_EVENTS, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
+    DEBUG1(LOG_EVENTS, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
 }
 
 
@@ -183,50 +183,44 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
  */
 void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
-  long event_id = 0;
-  LIST_NODE* it;
-  long i;
   double time = data->localData[0]->timeValue;
+  long i;
+  LIST_NODE* it;
   
   sim_result_emit(data);
   
   /* sample event */
   if(data->simulationInfo.sampleActivated)
-  { 
-    /*evaluate and emit results before sample events are activated */
-    /* update the whole system */
-    /*updateDiscreteSystem(data);*/
-
+  {
     storePreValues(data);
-    /*sim_result_emit(data);*/
     
     INFO1(LOG_EVENTS, "sample-event at time = %g", time);
+    INDENT(LOG_EVENTS);
     
-    /* activate sample events */  
+    /* activate sample event */
     for(i=0; i<data->modelData.nSamples; ++i)
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
+      {
         data->simulationInfo.samples[i] = 1;
+        DEBUG3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
+      }
+    RELEASE(LOG_EVENTS);
   }
   
   /* state event */
   if(listLen(eventLst)>0)
   {
-    INFO1(LOG_EVENTS, "state-event at time = %g", time);
+    INFO1(LOG_EVENTS, "state-event at time = %g", *eventTime);
     data->localData[0]->timeValue = *eventTime;
-    solverInfo->stateEvents++;
+    /* time = data->localData[0]->timeValue; */
 
-    /*
-    INFO(LOG_EVENTS, "handle Event caused by ZeroCrossings: ");
+    INDENT(LOG_EVENTS);
     for(it = listFirstNode(eventLst); it; it = listNextNode(it))
-    {
-      event_id = *((long*) listNodeData(it));
-      INFO1(LOG_EVENTS, "%ld", event_id);
-      if(listNextNode(it))
-        INFO(LOG_EVENTS, ", ");
-    }
-    INFO(LOG_EVENTS, "\n");
-    */
+      INFO1(LOG_EVENTS, "[%ld]", *((long*) listNodeData(it)));   /* that information does not help that much */
+    RELEASE(LOG_EVENTS);
+    
     listClear(eventLst);
+    solverInfo->stateEvents++;
   }
 
   /* update the whole system */
@@ -253,8 +247,10 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
 
     data->simulationInfo.sampleActivated = 0;
     
-    INFO1(LOG_EVENTS, "next sample-event at t = %g", data->simulationInfo.nextSampleEvent);
-  
+    INDENT(LOG_EVENTS);
+    DEBUG1(LOG_EVENTS, "next sample-event at t = %g", data->simulationInfo.nextSampleEvent);
+    RELEASE(LOG_EVENTS);
+    
     solverInfo->sampleEvents++;
   }
 }

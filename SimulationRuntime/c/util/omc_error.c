@@ -83,7 +83,9 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "final solution of the initialization",           /* LOG_SOTI */
   "???",                                            /* LOG_STATS */
   "???",                                            /* LOG_UTIL*/
-  "???"                                             /* LOG_ZEROCROSSINGS */
+  "???",                                            /* LOG_ZEROCROSSINGS */
+  "???",                                            /* LOG_DSS */
+  "???"                                             /* LOG_DSSJAC */
 };
 
 static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
