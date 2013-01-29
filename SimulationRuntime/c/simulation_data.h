@@ -88,6 +88,22 @@ typedef struct SAMPLE_INFO
 
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
+/* Sample times */
+typedef struct SAMPLE_RAW_TIME
+{
+  double start;
+  double interval;
+  int zc_index;
+} SAMPLE_RAW_TIME;
+
+typedef struct SAMPLE_TIME
+{
+  double events;
+  int zc_index;
+  int activated;
+} SAMPLE_TIME;
+
+
 /* SPARSE_PATTERN
   *
   * sparse pattern struct used by jacobians
@@ -321,7 +337,7 @@ typedef struct MODEL_DATA
   modelica_string_t modelGUID;
   
   long nSamples;                /* number of different sample-calls */
-  SAMPLE_INFO* samplesInfo;     /* array containing each sample-call */
+  SAMPLE_INFO* samples;         /* array containing each sample-call */
 
   fortran_integer nStates;
   long nVariablesReal;          /* all Real Variables of the model (states, statesderivatives, algebraics) */
@@ -334,6 +350,7 @@ typedef struct MODEL_DATA
   long nParametersString;
   long nInputVars;
   long nOutputVars;
+  long nHelpVars;               /* results of relations in when equation */
 
   long nZeroCrossings;
   long nRelations;
@@ -375,7 +392,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean terminal;          /* =1 at the end of the simulation, 0 otherwise. */
   modelica_boolean discreteCall;      /* =1 for a discrete step, otherwise 0 */
   modelica_boolean needToIterate;     /* =1 if reinit has been activated, iteration about the system is needed */
-  modelica_boolean simulationSuccess; /* =0 the simulation run successful, otherwise an error code is set */
+  modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
   modelica_boolean sampleActivated;   /* =1 a sample expresion if going to be actived, 0 otherwise */
   modelica_boolean solveContinuous;   /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
   modelica_boolean noThrowDivZero;    /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
@@ -384,8 +401,13 @@ typedef struct SIMULATION_INFO
   void** extObjs; /* External objects */
   
   double nextSampleEvent;             /* point in time of next sample-call */
-  double *nextSampleTimes;            /* array of next sample time */
-  modelica_boolean *samples;          /* array of the current value for all sample-calls */
+
+  /* An array containing the initial data of samples used in the sim */
+  SAMPLE_RAW_TIME* rawSampleExps;
+  /* The queue of sample time events to be processed. */
+  SAMPLE_TIME* sampleTimes;
+  modelica_integer curSampleTimeIx;
+  modelica_integer nSampleTimes;
 
   modelica_real* zeroCrossings;
   modelica_real* zeroCrossingsPre;
@@ -394,6 +416,10 @@ typedef struct SIMULATION_INFO
   modelica_boolean* hysteresisEnabled;
   modelica_real* mathEventsValuePre;
   long* zeroCrossingIndex;               /* pointer for a list events at event instants */
+
+  /* helpVars are the result when relations and samples */
+  modelica_boolean* helpVars;
+  modelica_boolean* helpVarsPre;
 
   /* old vars for event handling */
   modelica_real timeValueOld;

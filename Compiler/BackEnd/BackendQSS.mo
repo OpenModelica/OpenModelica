@@ -92,6 +92,7 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
       list<list<Integer>> s;
       list<DAE.ComponentRef> states,disc,algs;
+      list<SimCode.SampleCondition> sampleConditions;
       BackendDAE.EquationArray eqsdae;
       BackendDAE.Shared shared;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
@@ -100,7 +101,7 @@ algorithm
       SimCode.SimCode sc;
       Integer offset;
        
-    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), sc as SimCode.SIMCODE(odeEquations={eqs},zeroCrossings=zeroCrossings))
+    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), sc as SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions,zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
@@ -109,6 +110,7 @@ algorithm
         stateVarsList = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
         discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
         disc = List.map(discVarsLst,BackendVariable.varCref);
+        disc = listAppend(disc, createDummyVars(listLength(sampleConditions)));
         (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
         offset = listLength(disc);
         disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
@@ -728,16 +730,30 @@ algorithm
   end matchcontinue;
 end getInitExp;
 
+function getStartTime
+  input SimCode.SampleCondition cond;
+  output String s;
+algorithm
+  s:=
+    match (cond)
+    local
+      DAE.Exp start;
+    // lochel: first argument of sample becomes an unique index in BackendDAECreate
+    case ((DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=(_::start:: _)),_) )
+      then ExpressionDump.printExpStr(replaceVars(start,{},{},{}));
+    end match; 
+end getStartTime;
+
 public function generateDInit
   input  list<DAE.ComponentRef> disc;
-  //input  list<SimCode.SampleCondition> sample;
+  input  list<SimCode.SampleCondition> sample;
   input  SimCode.SimVars vars;
   input  Integer acc;
   input  Integer total;
   input  Integer nWhenClause;
   output String out;
 algorithm
-  out:=matchcontinue(disc,vars,acc,total,nWhenClause)
+  out:=matchcontinue(disc,sample,vars,acc,total,nWhenClause)
     local 
       list<DAE.ComponentRef> tail;
       DAE.ComponentRef cref;
@@ -745,25 +761,25 @@ algorithm
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
       list<SimCode.SimVar> algVars;
-    case ({},_,_,_,_) then "";
-    case (cref::tail,_,_,_,_) 
+    case ({},_,_,_,_,_) then "";
+    case (cref::tail,_,_,_,_,_) 
     equation
       true = total - acc -1  < nWhenClause;
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
       s=stringAppend(s,"]:=");
-      //s=stringAppend(s,getStartTime(listNth({},total-acc-2)));
+      s=stringAppend(s,getStartTime(listNth(sample,total-acc-2)));
       s=stringAppend(s,";\n");
-    then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
+    then stringAppend(s,generateDInit(tail,sample,vars,acc+1,total,nWhenClause));
  
-    case (cref::tail,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_) 
+    case (cref::tail,_,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_) 
     equation
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
       s=stringAppend(s,"]:=");
       s=stringAppend(s,getInitExp(listAppend(algVars,listAppend(intAlgVars,boolAlgVars)),cref));
       s=stringAppend(s,"\n");
-    then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
+    then stringAppend(s,generateDInit(tail,sample,vars,acc+1,total,nWhenClause));
  
   end matchcontinue;
 end generateDInit;
@@ -1008,6 +1024,8 @@ algorithm
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings,relations;
+      list<SimCode.SampleCondition> sampleConditions;
+      list<SimCode.HelpVarInfo> helpVarInfo;
       list<SimCode.SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
@@ -1022,7 +1040,7 @@ algorithm
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
-          sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
+          sampleLookup,sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
     equation
       {eqs} = odeEquations;
@@ -1031,8 +1049,8 @@ algorithm
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
                          initialEquations, startValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, 
-                         zeroCrossings, relations, sampleLookup,
-                         whenClauses, discreteModelVars, extObjInfo,
+                         zeroCrossings, relations, sampleLookup, sampleConditions, sampleEquations,
+                         helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
                          makefileParams, delayedExps, jacobianMatrixes, 
                          simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
 

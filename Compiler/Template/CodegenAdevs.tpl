@@ -139,6 +139,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          bool atEvent;
          // Are we initializing the model?
          bool atInit;
+         // Helping variables for when clauses
+         bool *helpVars, *helpVars_saved;
+         int numHelpVars() const { return <%vi.numHelpVars%>; }
 
          // Zero crossing variables
          int *zc;

@@ -153,6 +153,9 @@ void Message(int type, int stream, char *msg, int subline)
 {
   int i;
 
+  if((type != LOG_TYPE_ERROR) && !useStream[stream])
+    return;
+
   printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
   printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
   lastType[stream] = type;

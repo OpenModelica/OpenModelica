@@ -81,7 +81,7 @@ case SIMCODE(__) then
   let eqs = (odeEquations |> eq => generateOdeEqs(eq, BackendQSS.getStateIndexList(qssInfo), BackendQSS.getStates(qssInfo), BackendQSS.getDisc(qssInfo), BackendQSS.getAlgs(qssInfo), &funDecls, externalFuncs); separator="\n")
   let () = textFile(&externalFuncs,'<% getName(modelInfo)%>_external_functions.c')
   <<
-  <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),parameterEquations) %>
+  <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),sampleConditions,parameterEquations) %>
   <% funDecls %>
 
   <% generateAnnotation(simulationSettingsOpt) %>
@@ -92,7 +92,7 @@ case SIMCODE(__) then
   algorithm
   /* Discontinuities(<% listLength(zeroCrossings) %>) */ 
   <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
-                     whenClauses,BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
+                     whenClauses,BackendQSS.getEqs(qssInfo),listLength(sampleConditions),BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
   end <% getName(modelInfo) %>;
   >>
 end generateQsmModel;
@@ -109,7 +109,7 @@ end getName;
 
 template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states, 
                       list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
-                      list<SimEqSystem> parameterEquations)
+                      list<SimCode.SampleCondition> sampleConditions,list<SimEqSystem> parameterEquations)
  "Generates the first part a QSM model for simulation ."
 ::=
 match modelInfo
@@ -117,7 +117,7 @@ case MODELINFO(varInfo=varInfo as  VARINFO(__)) then
   <<
   model <% getName(modelInfo) %> 
 
-    <% generateInitFunction(modelInfo,states,disc,algs) %>
+    <% generateInitFunction(modelInfo,states,disc,algs,sampleConditions) %>
 
     /* Parameters */ 
     <% generateParameters(modelInfo,parameterEquations) %>
@@ -189,7 +189,8 @@ let () = textFile(generateHeader(modelInfo,parameterEquations),'<% getName(model
   >>
 end generateParameters;
 
-template generateInitFunction(ModelInfo modelInfo, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+template generateInitFunction(ModelInfo modelInfo, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc,
+                              list<DAE.ComponentRef> algs,list<SampleCondition> sampleConditions)
  "Generates the initial functions(s)"
 ::=
 match modelInfo
@@ -215,7 +216,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   function dinit
     output Real d[<% listLength(disc) %>];
   algorithm
-    <% BackendQSS.generateDInit(disc,vars,0,listLength(disc),1) %>
+    <% BackendQSS.generateDInit(disc,sampleConditions,vars,0,listLength(disc),1) %>
   end dinit;
   >>
 end generateInitFunction;

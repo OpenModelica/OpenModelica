@@ -43,12 +43,18 @@
 extern "C" {
 #endif
 
+modelica_boolean sample(DATA *data, double start, double interval, int hindex);
 void initSample(DATA *data, double start, double stop);
+modelica_boolean activateSampleEvents(DATA *data);
+void deactivateSampleEvents(DATA *data);
+void deactivateSampleEventsandEquations(DATA *data);
 
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+modelica_boolean checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
+modelica_boolean checkForNewEvent(DATA* data, LIST *eventList);
+modelica_boolean checkStateorSampleEvent(DATA* data, LIST* eventLst, double *eventTime);
 
-void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime);
+int handleSampleEvent(DATA* data);
 
 void findRoot(DATA *data, LIST *eventList, double*);
 

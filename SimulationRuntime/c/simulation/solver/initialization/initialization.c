@@ -608,6 +608,7 @@ static int numeric_initialization(DATA *data, int optiMethod)
   int retVal = 0;
 
   /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   initDelay(data, data->simulationInfo.startTime);
 
   /* initialize all relations that are ZeroCrossings */
@@ -616,11 +617,14 @@ static int numeric_initialization(DATA *data, int optiMethod)
 
   updateDiscreteSystem(data);
 
-  /* and restore start values */
+  /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
   initializeStateSetPivoting(data);   /* reset state selection */
+  syncPreForHelpVars(data);           /* resetAllHelpVars(data); */
   storeRelations(data);
   storePreValues(data);
+
+  resetAllHelpVars(data);              /* just a workaround - as long as this method do not support discrete systems at all */
 
   retVal = initialize(data, optiMethod);
 
@@ -645,6 +649,7 @@ static int numeric_initialization(DATA *data, int optiMethod)
 static int symbolic_initialization(DATA *data)
 {
   /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   initDelay(data, data->simulationInfo.startTime);
 
   /* initialize all relations that are ZeroCrossings */
@@ -963,12 +968,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   INFO(LOG_INIT, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
-  
-  /* initialization is done */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
 
-  /* TODO: remove following lines */
-  
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */

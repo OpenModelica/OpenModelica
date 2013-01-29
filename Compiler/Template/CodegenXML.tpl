@@ -49,7 +49,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     
     <%bindingEquationsXml(modelInfo)%>
   
-    <%equationsXml(allEquations, whenClauses)%>
+    <%equationsXml(allEquations, whenClauses, helpVarInfo)%>
   
     <%algorithmicEquationsXml(allEquations)%>
   
@@ -660,7 +660,8 @@ template bindingEquationXml(SimVar var)
 end bindingEquationXml;
  
 template equationsXml( list<SimEqSystem> allEquationsPlusWhen, 
-                list<SimWhenClause> whenClauses)
+                list<SimWhenClause> whenClauses,
+                list<HelpVarInfo> helpVarInfo)
   "Function for all equations"
 ::=
   let &varDecls = buffer "" /*BUFD*/

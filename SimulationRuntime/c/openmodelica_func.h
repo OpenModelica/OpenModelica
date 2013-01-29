@@ -58,6 +58,7 @@ extern "C" {
 #include "model_help.h"
 #include "delay.h"
 #include "nonlinearSystem.h"
+#include "events.h" /* sample*/ 
 
 /* DATA* initializeDataStruc(); */ /*create in model code */
 extern void setupDataStruc(DATA *data);
@@ -181,6 +182,14 @@ extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
  */
 extern int function_updateRelations(DATA *data, int evalZeroCross);
 
+/*! \fn function_updateSample
+ *
+ *  This function updates sample help variables.
+ *
+ *  \param [ref] [data]
+ */
+extern int function_updateSample(DATA *data);
+
 /*! \fn checkForDiscreteChanges
  *
  *  This function checks if any discrete variable changed
@@ -201,13 +210,13 @@ extern const char *zeroCrossingDescription[];
  */
 extern const char *relationDescription[];
 
-/*! \fn function_initSample
+/*! \fn function_sampleInit
  *
- *  This function initialize the sample-info struct.
+ *  This function initialize the sample events.
  *
  *  \param [ref] [data]
  */
-extern void function_initSample(DATA *data);
+extern void function_sampleInit(DATA *data);
 
 /*! \fn function_initMemoryState
  *
