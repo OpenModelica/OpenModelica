@@ -509,8 +509,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]   
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
-    #define $P$FILTEROUTPUT<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].filterOutput
-    #define $P$FILTEROUTPUT$P$PRE<%cref(name)%> $P$FILTEROUTPUT<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
@@ -521,8 +519,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
-    #define $P$FILTEROUTPUT<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].filterOutput
-    #define $P$FILTEROUTPUT$P$PRE<%cref(name)%> $P$FILTEROUTPUT<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
@@ -8725,15 +8721,6 @@ template literalExpConstArrayVal(Exp lit)
     else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
 end literalExpConstArrayVal;
 
-template internalVariableFilter(ComponentRef cref)
-::= 
-  let cref_str = crefStr(cref)
-  match System.stringFind(cref_str, "$whenCondition")
-    case 0 then '$P$FILTEROUTPUT<%cref(cref)%> = 1; <%\n%>'
-    case 5 then '$P$FILTEROUTPUT<%cref(cref)%> = 1; <%\n%>'
-    else ''
-end internalVariableFilter;
-
 template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines)
 ::=
   match eq
@@ -8745,7 +8732,6 @@ template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines)
       let var = '<%cref(cref)%>__varInfo'
       let &preBuf += 'const VAR_INFO** equationInfo_cref<%index%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += 'equationInfo_cref<%index%>[0] = &<%var%>;<%\n%>'
-      let &preBuf += '<%internalVariableFilter(cref)%>'
       '{<%index%>,"SES_SIMPLE_ASSIGN <%index%>",1,equationInfo_cref<%index%>}'
     case SES_ARRAY_CALL_ASSIGN(__) then
       // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
