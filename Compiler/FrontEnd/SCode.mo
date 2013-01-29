@@ -4678,5 +4678,78 @@ algorithm
   end match;
 end isBuiltinElement;
 
+public function partitionElements
+  input list<Element> inElements;
+  output list<Element> outComponents;
+  output list<Element> outClasses;
+  output list<Element> outExtends;
+  output list<Element> outImports;
+  output list<Element> outDefineUnits;
+algorithm
+  (outComponents, outClasses, outExtends, outImports, outDefineUnits) :=
+    partitionElements2(inElements, {}, {}, {}, {}, {});
+end partitionElements;
+
+protected function partitionElements2
+  input list<Element> inElements;
+  input list<Element> inComponents;
+  input list<Element> inClasses;
+  input list<Element> inExtends;
+  input list<Element> inImports;
+  input list<Element> inDefineUnits;
+  output list<Element> outComponents;
+  output list<Element> outClasses;
+  output list<Element> outExtends;
+  output list<Element> outImports;
+  output list<Element> outDefineUnits;
+algorithm
+  (outComponents, outClasses, outExtends, outImports, outDefineUnits) :=
+  match(inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits)
+    local
+      Element el;
+      list<Element> rest_el, comp, cls, ext, imp, def;
+
+    case ((el as COMPONENT(name = _)) :: rest_el, comp, cls, ext, imp, def)
+      equation
+        (comp, cls, ext, imp, def) = 
+          partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
+      then
+        (comp, cls, ext, imp, def);
+
+    case ((el as CLASS(name = _)) :: rest_el, comp, cls, ext, imp, def)
+      equation
+        (comp, cls, ext, imp, def) = 
+          partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
+      then
+        (comp, cls, ext, imp, def);
+
+    case ((el as EXTENDS(info = _)) :: rest_el, comp, cls, ext, imp, def)
+      equation
+        (comp, cls, ext, imp, def) = 
+          partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
+      then
+        (comp, cls, ext, imp, def);
+
+    case ((el as IMPORT(imp = _)) :: rest_el, comp, cls, ext, imp, def)
+      equation
+        (comp, cls, ext, imp, def) = 
+          partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
+      then
+        (comp, cls, ext, imp, def);
+
+    case ((el as DEFINEUNIT(name = _)) :: rest_el, comp, cls, ext, imp, def)
+      equation
+        (comp, cls, ext, imp, def) = 
+          partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
+      then
+        (comp, cls, ext, imp, def);
+
+    case ({}, comp, cls, ext, imp, def)
+      then (listReverse(comp), listReverse(cls), listReverse(ext),
+            listReverse(imp), listReverse(def));
+
+  end match;
+end partitionElements2;
+
 end SCode;
 

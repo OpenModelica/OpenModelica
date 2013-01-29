@@ -42,6 +42,7 @@ public import SCode;
 
 protected import Error;
 protected import List;
+protected import NFLookup;
 protected import Util;
 
 public uniontype Entry
@@ -110,6 +111,17 @@ algorithm
   ENV(scopes = outEnv :: _) := inEnv;
 end exitScope;
   
+public function exitScopes
+  input Env inEnv;
+  input Integer inScopes;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEnv, inScopes)
+    case (_, 0) then inEnv;
+    else exitScopes(exitScope(inEnv), inScopes - 1);
+  end match;
+end exitScopes;
+
 public function topScope
   input Env inEnv;
   output Env outEnv;
@@ -130,6 +142,26 @@ algorithm
   outEnv := List.last(scopes);
 end builtinScope;
   
+public function isTopScope
+  input Env inEnv;
+  output Boolean outIsTopScope;
+algorithm
+  outIsTopScope := match(inEnv)
+    case ENV(scopes = {_}) then true;
+    else false;
+  end match;
+end isTopScope;
+
+public function isBuiltinScope
+  input Env inEnv;
+  output Boolean outIsBuiltinScope;
+algorithm
+  outIsBuiltinScope := match(inEnv)
+    case ENV(scopes = {}) then true;
+    else false;
+  end match;
+end isBuiltinScope;
+
 public function makeEntry
   input SCode.Element inElement;
   input Env inEnv;
@@ -194,8 +226,12 @@ algorithm
       then
         inEnv;
 
-    case (ENTRY(scopeLevel = scope_lvl), ENV(scopes = scopes))
-      then listGet(scopes, scope_lvl);
+    case (ENTRY(scopeLevel = scope_lvl),
+          ENV(scopeCount = scope_count, scopes = scopes))
+      equation
+        scope_lvl = scope_count - scope_lvl;
+      then
+        listGet(scopes, scope_lvl);
 
   end matchcontinue;
 end entryEnv;
@@ -270,14 +306,39 @@ algorithm
   ENTRY(element = outElement) := inEntry;
 end entryElement;
 
-public function scopeNameList
+public function isClassEntry
+  input Entry inEntry;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match(inEntry)
+    case ENTRY(element = SCode.CLASS(name = _)) then true;
+    else false;
+  end match;
+end isClassEntry;
+
+public function scopeName
+  input Env inEnv;
+  output String outString;
+algorithm
+  outString := match(inEnv)
+    local
+      String name;
+
+    case ENV(name = SOME(name)) then name;
+    case ENV(scopes = {}) then "<builtin>";
+    else "<global>";
+  
+  end match;
+end scopeName;
+
+public function scopeNames
   input Env inEnv;
   output list<String> outNames;
 algorithm
-  outNames := scopeNameList2(inEnv, {});
-end scopeNameList;
+  outNames := scopeNames2(inEnv, {});
+end scopeNames;
 
-public function scopeNameList2
+protected function scopeNames2
   input Env inEnv;
   input list<String> inAccumNames;
   output list<String> outNames;
@@ -288,27 +349,123 @@ algorithm
       Env env;
 
     case (ENV(name = SOME(name), scopes = env :: _), _)
-      then scopeNameList2(env, name :: inAccumNames);
+      then scopeNames2(env, name :: inAccumNames);
 
     case (ENV(scopes = env :: _), _)
-      then scopeNameList2(env, inAccumNames);
+      then scopeNames2(env, inAccumNames);
 
     case (ENV(name = SOME(name), scopes = {}), _)
-      then listReverse(name :: inAccumNames);
+      then name :: inAccumNames;
 
     case (ENV(scopes = {}), _)
-      then listReverse(inAccumNames);
+      then inAccumNames;
 
   end match;
-end scopeNameList2;
+end scopeNames2;
 
+public function envPath
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inEnv)
+    local
+      String name;
+      Absyn.Path path;
+      Env env;
+
+    case ENV(name = SOME(name), scopes = ENV(name = NONE()) :: _)
+      then Absyn.IDENT(name);
+
+    case ENV(name = SOME(name))
+      equation
+        env = exitScope(inEnv);
+        path = envPath(env);
+      then
+        Absyn.QUALIFIED(name, path);
+
+  end match;
+end envPath;
+
+public function prefixIdentWithEnv
+  input String inIdent;
+  input Env inEnv;
+  output Absyn.Path outPath;
+protected
+  list<String> strl;
+algorithm
+  strl := listReverse(scopeNames(inEnv));
+  strl := inIdent :: strl;
+  outPath := Absyn.stringListPathReversed(strl);
+end prefixIdentWithEnv;
+        
+public function isEqual
+  "Checks if two environments are equal, with regards to the scope names."
+  input Env inEnv1;
+  input Env inEnv2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := matchcontinue(inEnv1, inEnv2)
+    local
+      String n1, n2;
+      Env rest1, rest2;
+
+    case (ENV(name = SOME(n1)), ENV(name = SOME(n2)))
+      equation
+        false = stringEq(n1, n2);
+      then
+        false;
+
+    case (ENV(scopes = {}), ENV(scopes = {})) then true;
+
+    else
+      equation
+        rest1 = exitScope(inEnv1);
+        rest2 = exitScope(inEnv2);
+      then
+        isEqual(rest1, rest2);
+
+  end matchcontinue;
+end isEqual;
+
+public function isPrefix
+  "Checks if one environment is a prefix of another."
+  input Env inPrefixEnv;
+  input Env inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
+    local
+      String n1, n2;
+      Env rest1, rest2;
+      Integer sc1, sc2, sc_diff;
+
+    // If the first environment has more scopes than the second, then it can't
+    // be a prefix.
+    case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
+      equation
+        true = intGt(sc1, sc2);
+      then
+        false;
+
+    // Otherwise, remove scopes from the second environment until they are the
+    // same length, and check if they are equal or not.
+    case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
+      equation
+        sc_diff = sc2 - sc1;
+        rest2 = exitScopes(inEnv, sc_diff);
+      then
+        isEqual(inPrefixEnv, rest2);
+
+  end matchcontinue;
+end isPrefix;
+  
 public function printEnvPathStr
   input Env inEnv;
   output String outString;
 protected
   list<String> scopes;
 algorithm
-  scopes := scopeNameList(inEnv);
+  scopes := scopeNames(inEnv);
   outString := stringDelimitList(scopes, ".");
 end printEnvPathStr;
 
@@ -343,7 +500,7 @@ algorithm
         encapsulatedPrefix = ep, classDef = cdef)), _)
       equation
         env = openScope(SOME(name), ep, inEnv);
-        env = populateEnvWithClassDef(cdef, env);
+        env = populateEnvWithClassDef(cdef, env, env);
       then
         env;
 
@@ -359,16 +516,20 @@ end enterEntryScope;
 protected function populateEnvWithClassDef
   input SCode.ClassDef inClassDef;
   input Env inEnv;
+  input Env inAccumEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassDef, inEnv)
+  outEnv := match(inClassDef, inEnv, inAccumEnv)
     local
-      list<SCode.Element> elems;
+      list<SCode.Element> elems, comps, cls, exts, imps;
       Env env;
 
-    case (SCode.PARTS(elementLst = elems), _)
+    case (SCode.PARTS(elementLst = elems), _, env)
       equation
-        env = List.fold(elems, populateEnvWithElement, inEnv);
+        (comps, cls, exts, imps, _) = SCode.partitionElements(elems);
+        env = List.fold(comps, insertElement, env);
+        env = List.fold(cls, insertElement, env);
+        env = List.fold1(exts, populateEnvWithExtends, inEnv, env);
       then
         env;
 
@@ -381,32 +542,48 @@ algorithm
   end match;
 end populateEnvWithClassDef;
 
-protected function populateEnvWithElement
-  input SCode.Element inElement;
+protected function populateEnvWithExtends
+  input SCode.Element inExtends;
   input Env inEnv;
-  output Env outEnv;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
 algorithm
-  outEnv := match(inElement, inEnv)
+  outAccumEnv := match(inExtends, inEnv, inAccumEnv)
     local
       Entry entry;
       Env env;
+      Absyn.Path bc;
+      Absyn.Info info;
 
-    case (SCode.EXTENDS(baseClassPath = _), _)
+    case (SCode.EXTENDS(baseClassPath = bc, info = info), _, _)
       equation
-        print("NFEnv.populateEnvWithElement: EXTENDS!\n");
+        (entry, env) = NFLookup.lookupBaseClassName(bc, inEnv, info);
+        env = populateEnvWithEntry(entry, env, inAccumEnv);
       then
-        fail();
-
-    case (SCode.IMPORT(imp = _), _)
-      equation
-        print("NFEnv.populateEnvWithElement: IMPORT!\n");
-      then
-        fail();
-
-    else insertElement(inElement, inEnv);
+        env;
 
   end match;
-end populateEnvWithElement;
+end populateEnvWithExtends;
+
+protected function populateEnvWithEntry
+  input Entry inEntry;
+  input Env inEnv;
+  input Env inAccumEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEntry, inEnv, inAccumEnv)
+    local
+      SCode.ClassDef cdef;
+      Env env;
+
+    case (ENTRY(element = SCode.CLASS(classDef = cdef)), _, _)
+      equation
+        env = populateEnvWithClassDef(cdef, inEnv, inAccumEnv);
+      then
+        env;
+
+  end match;
+end populateEnvWithEntry;
 
 // AVL Tree implementation
 public type AvlKey = String;
@@ -492,6 +669,9 @@ algorithm
     //      {inKey}, info);
     //  then
     //    fail();
+
+    case (AVLTREENODE(height = h, left = left, right = right), 0, key, value)
+      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),

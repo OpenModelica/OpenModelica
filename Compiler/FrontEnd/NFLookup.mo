@@ -148,6 +148,53 @@ algorithm
     SOME(Error.LOOKUP_FUNCTION_ERROR));
 end lookupFunctionName;
 
+public function lookupTypeSpec
+  "Looks up a type specification and returns the environment entry and enclosing
+   scopes of the type."
+  input Absyn.TypeSpec inTypeSpec;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Entry outEntry;
+  output Env outEnv;
+algorithm
+  (outEntry, outEnv) := match(inTypeSpec, inEnv, inInfo)
+    local
+      Absyn.Path path;
+      Absyn.Ident name;
+      Entry entry;
+      Env env;
+      SCode.Element cls;
+      
+    // A normal type.
+    case (Absyn.TPATH(path = path), _, _)
+      equation
+        (entry, env) = lookupClassName(path, inEnv, inInfo);
+      then
+        (entry, env);
+
+    // A MetaModelica type such as list or tuple.
+    case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
+      equation
+        cls = makeDummyMetaType(name);
+        entry = NFEnv.makeEntry(cls, NFEnv.emptyEnv);
+      then
+        (entry, NFEnv.emptyEnv);
+
+  end match;
+end lookupTypeSpec;
+   
+protected function makeDummyMetaType
+  input String inTypeName;
+  output SCode.Element outClass;
+algorithm
+  outClass := 
+  SCode.CLASS(
+    inTypeName, 
+    SCode.defaultPrefixes, 
+    SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+end makeDummyMetaType;
+
 public function lookupUnresolvedSimpleName
   "Looks up a name and returns the unresolved entry from the environment."
   input String inName;
@@ -302,7 +349,7 @@ algorithm
   outEnv := NFEnv.entryEnv(outEntry, env);
 end lookupInLocalScope;
 
-protected function lookupNameInPackage 
+public function lookupNameInPackage 
   input Absyn.Path inName;
   input Env inEnv;
   output Entry outEntry;

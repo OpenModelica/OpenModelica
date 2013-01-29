@@ -1368,25 +1368,25 @@ algorithm
   end match;
 end pathPrefix2;
 
-//public function envPrefix
-//  input Env inEnv;
-//  output Prefix outPrefix;
-//algorithm
-//  outPrefix := matchcontinue(inEnv)
-//    local
-//      Absyn.Path path;
-//
-//    case _
-//      equation
-//        path = NFSCodeEnv.getEnvPath(inEnv);
-//      then
-//        pathPrefix(path);
-//
-//    else NFInstTypes.emptyPrefix;
-//
-//  end matchcontinue;
-//end envPrefix;
-//
+public function envPrefix
+  input Env inEnv;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := matchcontinue(inEnv)
+    local
+      Absyn.Path path;
+
+    case _
+      equation
+        path = NFEnv.envPath(inEnv);
+      then
+        pathPrefix(path);
+
+    else NFInstTypes.emptyPrefix;
+
+  end matchcontinue;
+end envPrefix;
+
 public function restPrefix
   input Prefix inPrefix;
   output Prefix outRestPrefix;
