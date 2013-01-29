@@ -47,12 +47,15 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
 
   "LOG_DDASRT",
   "LOG_DEBUG",
+  "LOG_DSS",
+  "LOG_DSSJAC",
   "LOG_ENDJAC",
   "LOG_EVENTS",
   "LOG_INIT",
   "LOG_JAC",
   "LOG_NLS",
   "LOG_NLS_V",
+  "LOG_NLS_JAC",
   "LOG_RES_INIT",
   "LOG_SIMULATION",
   "LOG_SOLVER",
@@ -60,32 +63,31 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_STATS",
   "LOG_UTIL",
   "LOG_ZEROCROSSINGS",
-  "LOG_DSS",
-  "LOG_DSSJAC"
 };
 
 const char *LOG_STREAM_DESC[LOG_MAX] = {
   "unknown",
-  "this stream is always active",                   /* LOG_STDOUT */
-  "this stream is always active",                   /* LOG_ASSERT */
+  "this stream is always active",                       /* LOG_STDOUT */
+  "this stream is always active",                       /* LOG_ASSERT */
 
-  "???",                                            /* LOG_DDASRT */
-  "???",                                            /* LOG_DEBUG */
-  "???",                                            /* LOG_ENDJAC */
-  "additional information during event iteration",  /* LOG_EVENTS */
-  "additional information during initialization",   /* LOG_INIT */
-  "???",                                            /* LOG_JAC */
-  "logging for nonlinear systems",                  /* LOG_NLS */
-  "verbose logging of nonlinear systems",           /* LOG_NLS_V */
-  "???",                                            /* LOG_RES_INIT */
-  "???",                                            /* LOG_SIMULATION */
-  "???",                                            /* LOG_SOLVER */
-  "final solution of the initialization",           /* LOG_SOTI */
-  "???",                                            /* LOG_STATS */
-  "???",                                            /* LOG_UTIL*/
-  "???",                                            /* LOG_ZEROCROSSINGS */
-  "???",                                            /* LOG_DSS */
-  "???"                                             /* LOG_DSSJAC */
+  "additional information about dassl solver",          /* LOG_DDASRT */
+  "additional debug information",                       /* LOG_DEBUG */
+  "outputs information about dynamic state selection",  /* LOG_DSS */
+  "outputs jacobain of the dynamic state selection",    /* LOG_DSSJAC */
+  "outputs the jacobian and exits the simulation",      /* LOG_ENDJAC */
+  "additional information during event iteration",      /* LOG_EVENTS */
+  "additional information during initialization",       /* LOG_INIT */
+  "outputs the jacobian matrix used by the integrator", /* LOG_JAC */
+  "logging for nonlinear systems",                      /* LOG_NLS */
+  "verbose logging of nonlinear systems",               /* LOG_NLS_V */
+  "outputs the jacobian of nonlinear systems",          /* LOG_NLS_JAC */
+  "outputs residuals of the initialization",            /* LOG_RES_INIT */
+  "additional information about simulation process",    /* LOG_SIMULATION */
+  "additional information about solver process",        /* LOG_SOLVER */
+  "final solution of the initialization",               /* LOG_SOTI */
+  "additional statistics about the initialization",     /* LOG_STATS */
+  "???",                                                /* LOG_UTIL*/
+  "additional information about the zerocrossings"      /* LOG_ZEROCROSSINGS */
 };
 
 static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {

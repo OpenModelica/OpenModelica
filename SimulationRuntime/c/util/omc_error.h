@@ -74,12 +74,15 @@ enum LOG_STREAM
 
   LOG_DDASRT,
   LOG_DEBUG,
+  LOG_DSS,
+  LOG_DSSJAC,
   LOG_ENDJAC,
   LOG_EVENTS,
   LOG_INIT,
   LOG_JAC,
   LOG_NLS,
   LOG_NLS_V,
+  LOG_NLS_JAC,
   LOG_RES_INIT,
   LOG_SIMULATION,
   LOG_SOLVER,
@@ -87,8 +90,7 @@ enum LOG_STREAM
   LOG_STATS,
   LOG_UTIL,
   LOG_ZEROCROSSINGS,
-  LOG_DSS,
-  LOG_DSSJAC,
+
 
   LOG_MAX
 };
@@ -134,17 +136,17 @@ void Message(int type, int stream, char *msg, int subline);
 #define  INFO9(stream, msg, a, b, c, d, e, f, g, h, i)       do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)
 #define INFO10(stream, msg, a, b, c, d, e, f, g, h, i, j)    do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)
 
-#define   WARNING(stream, msg)                               do{if(useStream[stream]){sprintf(logBuffer, msg);                               Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING1(stream, msg, a)                            do{if(useStream[stream]){sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING2(stream, msg, a, b)                         do{if(useStream[stream]){sprintf(logBuffer, msg, a, b);                         Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING3(stream, msg, a, b, c)                      do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c);                      Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING4(stream, msg, a, b, c, d)                   do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d);                   Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING5(stream, msg, a, b, c, d, e)                do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e);                Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING6(stream, msg, a, b, c, d, e, f)             do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f);             Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING7(stream, msg, a, b, c, d, e, f, g)          do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g);          Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING8(stream, msg, a, b, c, d, e, f, g, h)       do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h);       Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define  WARNING9(stream, msg, a, b, c, d, e, f, g, h, i)    do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
-#define WARNING10(stream, msg, a, b, c, d, e, f, g, h, i, j) do{if(useStream[stream]){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}}while(0)
+#define   WARNING(stream, msg)                               do{sprintf(logBuffer, msg);                               Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING1(stream, msg, a)                            do{sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING2(stream, msg, a, b)                         do{sprintf(logBuffer, msg, a, b);                         Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING3(stream, msg, a, b, c)                      do{sprintf(logBuffer, msg, a, b, c);                      Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING4(stream, msg, a, b, c, d)                   do{sprintf(logBuffer, msg, a, b, c, d);                   Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING5(stream, msg, a, b, c, d, e)                do{sprintf(logBuffer, msg, a, b, c, d, e);                Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING6(stream, msg, a, b, c, d, e, f)             do{sprintf(logBuffer, msg, a, b, c, d, e, f);             Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING7(stream, msg, a, b, c, d, e, f, g)          do{sprintf(logBuffer, msg, a, b, c, d, e, f, g);          Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING8(stream, msg, a, b, c, d, e, f, g, h)       do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h);       Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define  WARNING9(stream, msg, a, b, c, d, e, f, g, h, i)    do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
+#define WARNING10(stream, msg, a, b, c, d, e, f, g, h, i, j) do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
 
 #define  ERROR0(stream, msg)                                 do{sprintf(logBuffer, msg);                               Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
 #define  ERROR1(stream, msg, a)                              do{sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)

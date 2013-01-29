@@ -189,7 +189,9 @@ void setGlobalVerboseLevel(int argc, char**argv)
         flagList = flagList.substr(pos+1);
       }
       else
+      {
         flag = flagList;
+      }
 
       for(i=1; i<LOG_MAX; ++i)
       {
@@ -218,6 +220,9 @@ void setGlobalVerboseLevel(int argc, char**argv)
     useStream[LOG_STATS] = 1;
 
   if(useStream[LOG_NLS_V])
+    useStream[LOG_NLS] = 1;
+
+  if(useStream[LOG_NLS_JAC])
     useStream[LOG_NLS] = 1;
 
   if(error)

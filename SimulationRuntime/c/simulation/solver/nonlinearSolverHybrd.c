@@ -231,7 +231,7 @@ int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
   double delta_hh,delta_hhh, deltaInv;
   double xsave;
   integer iflag = 1;
-  int i,j;
+  int i, j, l;
 
   for(i = 0; i < solverData->n ; ++i)
   {
@@ -246,22 +246,11 @@ int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
 
     for(j = 0; j < solverData->n; ++j)
     {
-      solverData->fjacobian[i*solverData->n+j] = jac[i*solverData->n+j] = (solverData->wa1[j] - f[j]) * deltaInv;
+      l = i*solverData->n+j;
+      solverData->fjacobian[l] = jac[l] = (solverData->wa1[j] - f[j]) * deltaInv;
     }
     x[i] = xsave;
   }
-  /*
-  if(DEBUG_STREAM(LOG_NLS_V))
-  {
-    INFO(LOG_NLS_V,"Print jac:");
-    for(i=0;  i < solverData->n;i++)
-    {
-      for(j=0;  j < solverData->n;j++)
-        printf("% .5e ",jac[i*solverData->n+j]);
-      printf("\n");
-    }
-  }
-  */
 
   return 0;
 }
@@ -317,18 +306,6 @@ int getAnalyticalJacobian(DATA* data, double* jac)
     }
 
   }
-  /*
-  if(DEBUG_STREAM(LOG_NLS_V))
-  {
-    INFO(LOG_NLS_V,"Print jac:");
-    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
-    {
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i*data->simulationInfo.analyticJacobians[index].sizeCols+j]);
-      printf("\n");
-    }
-  }
-  */
 
   return 0;
 }
@@ -343,7 +320,6 @@ void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, 
   int i,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
-
 
   /* Debug output */
   INFO1(LOG_NLS_V, "# Call wrapper function with mode %d", *iflag);
@@ -368,6 +344,7 @@ void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, 
       if (DEBUG_STREAM(LOG_NLS_V)){
         printVector(x, n, LOG_NLS_V, "Iteration variable values:");
       }
+
       /* call residual function */
       (systemData->residualFunc)(data, x, f, iflag);
 
@@ -376,14 +353,13 @@ void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, 
       if (DEBUG_STREAM(LOG_NLS_V)){
         printVector(f, n, LOG_NLS_V, "Residual values:");
       }
+
       /* Scaling x vector */
       if (solverData->useXScaling ){
         for(i=0;i<*n;i++){
           x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
         }
       }
-      RELEASE(LOG_NLS_V);
-
 
       break;
     case 2:
@@ -400,7 +376,7 @@ void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, 
       THROW("Well, this is embarrassing. The non-linear solver should never called this case.");
       break;
   }
-
+  RELEASE(LOG_NLS_V);
 }
 
 
@@ -422,7 +398,7 @@ int solveHybrd(DATA *data, int sysNumber)
    */
   int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
 
-  int i, iflag=1;
+  int i, j, iflag=1;
   double xerror, xerror_scaled;
   int success = 0;
   double local_tol = 1e-12;
@@ -443,7 +419,6 @@ int solveHybrd(DATA *data, int sysNumber)
       data->localData[0]->timeValue);
     INDENT(LOG_NLS);
 
-    INDENT(LOG_NLS);
     for(i = 0; i < solverData->n; i++)
     {
       INDENT(LOG_NLS);
@@ -486,12 +461,14 @@ int solveHybrd(DATA *data, int sysNumber)
     if (DEBUG_STREAM(LOG_NLS_V)){
       printVector(solverData->x, &(solverData->n), LOG_NLS_V, "Iteration variable values:");
     }
+
     /* Scaling x vector */
     if(solverData->useXScaling){
       for(i=0;i<solverData->n;i++){
         solverData->x[i] = (1.0/solverData->xScalefactors[i]) * solverData->x[i];
       }
     }
+
     /* Debug output */
     if (DEBUG_STREAM(LOG_NLS_V)){
       printVector(solverData->x, &solverData->n, LOG_NLS_V, "Iteration variable values (scaled):");
@@ -549,35 +526,9 @@ int solveHybrd(DATA *data, int sysNumber)
       storeRelations(data);
     }
 
-    /* Debug output */
-    if(DEBUG_STREAM(LOG_NLS_V)) {
-      int i,j,l=0;
-      INFO(LOG_NLS_V,"Jacobi-Matrix");
-      for(i=0;i<solverData->n;i++){
-        printf("%d : ", i);
-        for(j=0;j<solverData->n;j++){
-          printf("%e ",solverData->fjac[l++]);
-        }
-        printf("\n");
-      }
-    }
-    /* Debug output */
-    if(DEBUG_STREAM(LOG_NLS_V)) {
-      int i,j,l=0;
-      INFO(LOG_NLS_V,"Jacobi-Matrix");
-      for(i=0;i<solverData->n;i++){
-        printf("%d : ", i);
-        for(j=0;j<solverData->n;j++){
-          printf("%e ",solverData->fjacobian[l++]);
-        }
-        printf("\n");
-      }
-    }
-
-
     /* Scaling residual vector */
     {
-      int i,j,l=0;
+      int l=0;
       for(i=0;i<solverData->n;i++){
         solverData->resScaling[i] = 1e-16;
         for(j=0;j<solverData->n;j++){
@@ -587,16 +538,32 @@ int solveHybrd(DATA *data, int sysNumber)
         }
         solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
       }
-      if(DEBUG_STREAM(LOG_NLS_V)) {
-        INFO(LOG_NLS_V, "scaling factors for residual vector");
+    }
+
+
+    /*  Debug output */
+    if(DEBUG_STREAM(LOG_NLS_V)) {
+      INFO(LOG_NLS_V, "scaling factors for residual vector");
+      INDENT(LOG_NLS_V);
+      for(i=0;i<solverData->n;i++){
+        INFO2(LOG_NLS_V, "scaled residual [%d] : %.20e", i, solverData->fvecScaled[i]);
         INDENT(LOG_NLS_V);
-        for(i=0;i<solverData->n;i++){
-          INFO2(LOG_NLS_V, "scaling factor [%d] : %.20e", i, solverData->fvecScaled[i]);
-          INDENT(LOG_NLS_V);
-          INFO2(LOG_NLS_V, "scaled residual [%d] : %.20e", i, solverData->resScaling[i]);
-          RELEASE(LOG_NLS_V);
-        }
+        INFO2(LOG_NLS_V, "scaling factor [%d] : %.20e", i, solverData->resScaling[i]);
         RELEASE(LOG_NLS_V);
+      }
+      RELEASE(LOG_NLS_V);
+    }
+
+    /*  Debug output */
+    if(DEBUG_STREAM(LOG_NLS_JAC))
+    {
+      INFO(LOG_NLS_JAC,"Print jacobian matrix:");
+      for(i=0;  i < solverData->n;i++)
+      {
+        printf("%d : ", i);
+        for(j=0;  j < solverData->n;j++)
+          printf("%f ",solverData->fjacobian[i*solverData->n+j]);
+        printf("\n");
       }
     }
 
