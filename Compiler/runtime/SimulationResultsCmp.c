@@ -515,13 +515,9 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
       isdifferent = 1;
       if (ddf->n >= ddf->n_max) {
         DiffData *diffdatafild;
-        ddf->n_max += 10;
-        diffdatafild = (DiffData*) malloc(sizeof(DiffData)*(ddf->n_max));
-        for (k=0;k<ddf->n;k++) {
-          diffdatafild[k] = ddf->data[k];
-        }
-        if(ddf->data) free(ddf->data);
-        ddf->data = diffdatafild;
+        ddf->n_max = ddf->n_max ? ddf->n_max*2 : 1024;
+        ddf->data = (DiffData*) realloc(ddf->data, sizeof(DiffData)*(ddf->n_max));
+        /* TODO: Check for errors? */
       }
       ddf->data[ddf->n].name = varname;
       ddf->data[ddf->n].data = d;
