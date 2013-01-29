@@ -474,6 +474,21 @@ algorithm
   outEqn := listAppend(inEqn1, inEqn2);
 end appendLists;
 
+protected function compareEqSystems
+  input SimCode.SimEqSystem eq1;
+  input SimCode.SimEqSystem eq2;
+  output Boolean b;
+algorithm
+  b := eqIndex(eq1) > eqIndex(eq2);
+end compareEqSystems;
+
+public function sortEqSystems
+  input list<SimCode.SimEqSystem> eqs;
+  output list<SimCode.SimEqSystem> outEqs;
+algorithm
+  outEqs := List.sort(eqs,compareEqSystems);
+end sortEqSystems;
+
 /** end of TypeView published functions **/
 
 // =============================================================================
@@ -1554,6 +1569,7 @@ algorithm
       (allEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       nonLinIndexMap = List.fold(allEquations, getNonLinSysIndexMap, arrayCreate(uniqueEqIndex, -1));
       odeEquations = List.mapList1_1(odeEquations, setNonLinSysIndexMap, nonLinIndexMap);
+      numberofEqns = uniqueEqIndex; /* This is a *much* better estimate than the guessed number of equations */
       modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
       
       // replace div operator with div operator with check of Division by zero
@@ -1764,7 +1780,7 @@ end addTempVars1;
 
 protected function addNumEqnsandNonLinear
   input SimCode.ModelInfo modelInfo;
-  input Integer numEqns;  
+  input Integer numEqns;
   input Integer numNonLinearSys;
   output SimCode.ModelInfo omodelInfo;
 algorithm
@@ -3098,7 +3114,7 @@ algorithm
       tempvars = greateArrayTempVar(left, ds, explst1, itempvars);
       (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, uniqueEqIndex+1, tempvars);
       eqSystemsRest = listAppend(eqSystlst, eqSystemsRest);                
-    then  (eqSystemsRest, uniqueEqIndex+1, tempvars);
+    then  (eqSystemsRest, uniqueEqIndex, tempvars);
 
     // An complex equation
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source) :: rest, _, _) equation
@@ -3619,12 +3635,13 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
         uniqueEqIndex2 = uniqueEqIndex;
+        uniqueEqIndex = uniqueEqIndex + 1;
         // create symbolic jacobian for simulation
         emptyEqns = BackendEquation.listEquation({});
         emptyVars =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars); 
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
         
     // No analytic jacobian available. Generate non-linear system.
     case (_, _, v, kv, eqn, constrs, clsAttrs, NONE(), BackendDAE.JAC_NO_ANALYTIC(), _, _, _, _)
@@ -3634,12 +3651,13 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
         uniqueEqIndex2 = uniqueEqIndex;
+        uniqueEqIndex = uniqueEqIndex + 1;
         // create symbolic jacobian for simulation
         emptyEqns = BackendEquation.listEquation({});
         emptyVars =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
         
     // failure
     else equation
@@ -3948,6 +3966,7 @@ algorithm
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
          simequations = listAppend(simequations, resEqs);
          uniqueEqIndex2 = uniqueEqIndex;
+         uniqueEqIndex = uniqueEqIndex + 1;
          // create symbolic jacobian for simulation
          otherEqnsInts = List.map(otherEqns, Util.tuple21);
          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, eqns);
@@ -3962,7 +3981,7 @@ algorithm
          diffVars = BackendVariable.listVar1(tvars);
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, "NLSJac", uniqueEqIndex, tempvars);
        then
-         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix)}, uniqueEqIndex+1, tempvars);
+         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
    end matchcontinue;
 end createTornSystem;
 
@@ -4801,7 +4820,7 @@ algorithm
                                           knvars, 
                                           dependentVars, 
                                           dependentVarsLst, 
-                                          Name +& intString(iuniqueEqIndex));
+                                          Name +& intString(iuniqueEqIndex-1));
         
         (BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, 
                                     shared=shared), name, 
@@ -4818,7 +4837,7 @@ algorithm
 
         // createSymbolicJacobianssSimCode
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex+1, itempvars);
+        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex, itempvars);
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         // create SimCode.SimVars from jacobian vars
@@ -7158,19 +7177,17 @@ algorithm
         Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching, v1);
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
         (syst, comps) = BackendDAETransform.strongComponents(syst, shared);
-        
         (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, false, syst, shared, comps, iuniqueEqIndex, {});
     
         ialgs = BackendEquation.traverseBackendDAEEqns(ie, traverseAlgorithmFinder, {});
         ialgs = listReverse(ialgs);
-        (inalgs, uniqueEqIndex) = List.mapFold(ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
+        (inalgs, uniqueEqIndex) = List.mapFold(Util.if_(initialSystemSolved,{},ialgs), dlowAlgToSimEqSystem, uniqueEqIndex);
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
         (simvarasserts, uniqueEqIndex) = List.mapFold(varasserts, dlowAlgToSimEqSystem, uniqueEqIndex);
         
         // do not append the inital algorithms to the parameter equation if the system is solved symbolically
-        parameterEquations = Debug.bcallret2(not initialSystemSolved, listAppend, parameterEquations, inalgs, parameterEquations);
-        parameterEquations = listAppend(parameterEquations, simvarasserts);
+        parameterEquations = listAppend(parameterEquations, listAppend(simvarasserts,inalgs));
         parameterEquations = listAppend(parameterEquations, acc);
       then
         (uniqueEqIndex, parameterEquations);
@@ -10631,6 +10648,27 @@ algorithm
     case SimCode.SES_WHEN(source=DAE.SOURCE(info=info)) then info;
   end match;
 end eqInfo;
+
+public function eqIndex
+  input SimCode.SimEqSystem eq;
+  output Integer index;
+algorithm
+  index := match eq
+    case SimCode.SES_RESIDUAL(index=index) then index;
+    case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
+    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
+    case SimCode.SES_IFEQUATION(index=index) then index;
+    case SimCode.SES_ALGORITHM(index=index) then index;
+    case SimCode.SES_LINEAR(index=index) then index;
+    case SimCode.SES_NONLINEAR(index=index) then index;
+    case SimCode.SES_MIXED(index=index) then index;
+    case SimCode.SES_WHEN(index=index) then index;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.eqIndex failed"});
+      then fail();
+  end match;
+end eqIndex;
 
 function twodigit
   input Integer i;

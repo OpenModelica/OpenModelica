@@ -1406,13 +1406,6 @@ algorithm
         simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
       then (cache,simValue,st);
 
-    case (cache,env,"simulation",vals,st,_)
-      equation
-        true = System.regularFileExists("output.log");
-        false = 0 == System.removeFile("output.log");
-        simValue = createDrModelicaSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
-      then (cache,simValue,st);
-        
     // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
@@ -1423,15 +1416,6 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
-      equation
-        crefCName = Absyn.pathToCref(className);
-        false = Interactive.existClass(crefCName, p);
-        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
-        simValue = createDrModelicaSimulationResultFailure(errMsg, simOptionsAsString(vals));
-      then
-        (cache,simValue,st);
-     
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
@@ -1457,33 +1441,6 @@ algorithm
       then
         (cache,simValue,newst);
  
-      /*
-    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
-      equation
-        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
-        
-        cit = winCitation();
-        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
-        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc/cpp" ;
-        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
-        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);           
-        executable1=Util.if_(ifcpp,"OMCppSimulation",executable); 
-        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
-        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
-        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
-        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        resI = System.systemCall(sim_call);
-        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
-        //timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,simValue,newst) = createDrModelicaSimulationResultFromcallModelExecutable(resI,timeSimulation,resultValues,cache,className,vals,st,result_file);
-      then
-        (cache,simValue,newst);
-      */
- 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -1494,16 +1451,6 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
-      equation
-        omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        errorStr = Error.printMessagesStr();
-        str = Absyn.pathString(className);
-        res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
-        simValue = createDrModelicaSimulationResultFailure(res, simOptionsAsString(vals));
-      then
-        (cache,simValue,st);
-      
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         str = Absyn.pathString(className);
@@ -1514,16 +1461,6 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
-      equation
-        str = Absyn.pathString(className);
-        simValue = createDrModelicaSimulationResultFailure(
-          "Simulation failed for model: " +& str +& 
-          "\nEnvironment variable OPENMODELICAHOME not set.", 
-          simOptionsAsString(vals));
-      then
-        (cache,simValue,st);
-       
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 

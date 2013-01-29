@@ -690,6 +690,11 @@ package SimCodeUtil
     output list<list<Integer>> outIndexes;
   end dimsToAllIndexes;
 
+  function sortEqSystems
+    input list<SimCode.SimEqSystem> eqs;
+    output list<SimCode.SimEqSystem> outEqs;
+  end sortEqSystems;
+
 end SimCodeUtil;
 
 

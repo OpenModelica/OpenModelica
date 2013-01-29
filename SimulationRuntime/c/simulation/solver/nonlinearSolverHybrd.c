@@ -416,8 +416,10 @@ int solveHybrd(DATA *data, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
-  /* We are given the number of the non-linear system.
-   * We want to look it up among all equations. */
+  /*
+   * We are given the number of the non-linear system.
+   * We want to look it up among all equations.
+   */
   int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
 
   int i, iflag=1;

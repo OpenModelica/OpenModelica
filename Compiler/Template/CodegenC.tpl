@@ -144,7 +144,15 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations, inlineEquations)%>
+    <%functionInitializeDataStruc2(modelInfo, SimCodeUtil.sortEqSystems(
+        listAppend(residualEquations,
+        listAppend(inlineEquations,
+        listAppend(startValueEquations,
+        listAppend(parameterEquations,
+        listAppend(initialEquations,
+        listAppend(algorithmAndEquationAsserts,
+        allEquations))))))),
+        stateSets)%>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
@@ -300,35 +308,28 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   >>
 end functionInitializeDataStruc;
 
-template functionSimProfDef(SimEqSystem eq, Integer value)
+template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
   "Generates function in simulation file."
 ::=
   match eq
   case SES_MIXED(__)
   case SES_LINEAR(__)
   case SES_NONLINEAR(__) then
+    let &reverseProf += 'data->modelData.equationInfo_reverse_prof_index[<%value%>] = <%index%>;<%\n%>'
     <<
     #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
     >>
   end match
 end functionSimProfDef;
 
-template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations)
+template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<StateSet> stateSets)
   "Generates function in simulation file."
 ::=
   match modelInfo
-  case MODELINFO(varInfo=VARINFO(__)) then
-     /*
-     This fragment produces some empty lines, since emptyCount is not implemented in susan!
-     */
-     /*
+  case MODELINFO(varInfo=vi as VARINFO(__)) then
      let &eqnsDefines = buffer ""
-     let allEqsPlusParamEqns = listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) 
-     let eqnsDefines = (allEqsPlusParamEqns |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
-      <%equationInfo(allEquations)%>
-     */
-     let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
+     let &reverseProf = buffer ""
+     let eqnInfo = equationInfo(allEquations,stateSets,&eqnsDefines,&reverseProf,vi.numEquations)
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -339,20 +340,9 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       
       <%eqnInfo%>
       memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
-      
-      data->modelData.nProfileBlocks = 0 <% listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) |> eq => match eq
-        case SES_MIXED(__) then "+1"
-        case SES_LINEAR(__) then "+1"
-        case SES_NONLINEAR(__) then "+1"
-      %>;
+      data->modelData.nProfileBlocks = <%System.tmpTick() /* tmpTick() was called in equationInfo(). Calling it again will get the size since it started at 0. */%>;
       data->modelData.equationInfo_reverse_prof_index = (int*) malloc(data->modelData.nProfileBlocks*sizeof(int));
-      <%System.tmpTickReset(0)%>
-      <% listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) |> eq hasindex i0 => match eq
-        case SES_MIXED(__)     then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
-        case SES_LINEAR(__)    then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
-        case SES_NONLINEAR(__) then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
-      ; empty
-      %>
+      <%reverseProf%>
     }
     >>
   end match
@@ -8721,67 +8711,76 @@ template literalExpConstArrayVal(Exp lit)
     else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
 end literalExpConstArrayVal;
 
-template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines)
+template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines, Text &reverseProf)
 ::=
   match eq
     case SES_RESIDUAL(__) then
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
       '{<%index%>,"SES_RESIDUAL <%index%>",0,NULL}'
     case SES_SIMPLE_ASSIGN(__) then
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>'
       let var = '<%cref(cref)%>__varInfo'
       let &preBuf += 'const VAR_INFO** equationInfo_cref<%index%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += 'equationInfo_cref<%index%>[0] = &<%var%>;<%\n%>'
       '{<%index%>,"SES_SIMPLE_ASSIGN <%index%>",1,equationInfo_cref<%index%>}'
     case SES_ARRAY_CALL_ASSIGN(__) then
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
-      //let var = '<%cref(componentRef)%>__varInfo'
-      //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
       '{<%index%>,"SES_ARRAY_CALL_ASSIGN <%index%>",0,NULL}'
     case SES_IFEQUATION(__) then
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
-      //let var = '<%cref(componentRef)%>__varInfo'
-      //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
-      '{<%index%>,"SES_IFEQUATION <%index%>",0,NULL}'
+      let branches = ifbranches |> (_,eqs) => (eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
+      let elsebr = (elsebranch |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
+      '<%branches%><%elsebr%>{<%index%>,"SES_IFEQUATION <%index%>",0,NULL}'
     case SES_ALGORITHM(__) then 
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
       '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'
     case SES_WHEN(__) then 
-      // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
       '{<%index%>,"SES_WHEN <%index%>", 0, NULL}'
     case SES_LINEAR(__) then
-      let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
       let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
       '{<%index%>,"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%index%>}'
     case SES_NONLINEAR(__) then
-      let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+      let residuals = SimCodeUtil.sortEqSystems(eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
+      let jac = match jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
+      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
       let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-      '{<%index%>,"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%index%>}'
+      '<%residuals%>{<%index%>,"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%index%>}<%if jac then ',<%\n%><%jac%>'%>'
     case SES_MIXED(__) then 
-      let conEqn = equationInfo1(cont,preBuf,eqnsDefines) 
-      let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+      let conEqn = equationInfo1(cont,preBuf,eqnsDefines,reverseProf) 
+      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
       let &preBuf += '<%\n%>const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(discVars)%>*sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += '<%discVars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
       '<%conEqn%>,<%\n%>{<%index%>,"MIXED<%index%>", <%listLength(discVars)%>, equationInfo_crefs<%index%>}'
     else '<%error(sourceInfo(), 'Unkown Equation Type in equationInfo1')%>'
 end equationInfo1;
 
-template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines, Integer numEqns)
+template equationInfoMatrix(JacobianMatrix jacobianMatrix, Text &preBuf, Text &eqnsDefines, Text &reverseProf)
 ::=
+  match jacobianMatrix case (cols,_,_,_,_,_) then (cols |> (eqs,_,_) => (eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) ; separator = ',<%\n%>') ; separator = ',<%\n%>')
+end equationInfoMatrix;
+
+template equationInfo(list<SimEqSystem> eqs, list<StateSet> stateSets, Text &eqnsDefines, Text &reverseProf, Integer numEquations)
+::=
+  let() = System.tmpTickReset(0)
   match eqs
     case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
     else
-      let() = System.tmpTickReset(0)
       let &preBuf = buffer ""
       let res =
         <<
-        const struct EQUATION_INFO equationInfo[<%numEqns%>] = {
-          <% eqs |> eq =>
-            <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
-            >> ; separator=",\n"%>
+        const struct EQUATION_INFO equationInfo[<%numEquations%>] = {
+          {0, "Dummy Equation so we can index from 1", 0, NULL},
+          <% listReverse(stateSets) |> st as SES_STATESET(__) =>
+            '{<%index%>,"SES_STATESET <%index%>",0,NULL},<%\n%><%equationInfoMatrix(jacobianMatrix,preBuf,eqnsDefines,reverseProf)%>,<%\n%>'
+          %>
+          <% eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) ; separator=",\n"%>
         };
+        /* Verify the data in the array to make sure certain assumptions hold */
+        int i;
+        for (i=0; i<<%numEquations%>; i++) {
+          if (equationInfo[i].id != i) {
+            fprintf(stderr, "equationInfo[i].id=%d, i=%d\n", equationInfo[i].id, i);
+            assert(equationInfo[i].id == i);
+          }
+        }
         >>
       <<
       <%preBuf%>
