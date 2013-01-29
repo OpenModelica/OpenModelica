@@ -90,7 +90,6 @@ void updateContinuousSystem(DATA *data);
 void saveZeroCrossings(DATA *data);
 
 void copyStartValuestoInitValues(DATA *data);
-void syncPreForHelpVars(DATA *data);
 
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printParameters(DATA *data, int stream);
@@ -109,7 +108,6 @@ void storeRelations(DATA *data);
 
 modelica_boolean checkRelations(DATA *data);
 
-void resetAllHelpVars(DATA* data);
 void printHysteresisRelations(DATA *data);
 void activateHysteresis(DATA* data);
 void updateHysteresis(DATA* data);

@@ -181,14 +181,14 @@ algorithm
         (daevars,_,allEquations,allInitEquations) = generateEquationscollectVars(elementLst,{},1,{},{});
         // generate variable definitions
         simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
-        varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
+        varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
         
         modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});
         extObjInfo = SimCode.EXTOBJINFO({},{});
         makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"");
         delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
         hashTable = SimCodeUtil.emptyHashTable();
-        rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},{},{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable);
+        rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable);
       then
         rescmp;
     else

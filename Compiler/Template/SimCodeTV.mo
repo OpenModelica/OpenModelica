@@ -107,8 +107,6 @@ package SimCode
   type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-  type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
-  type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
   type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
                             list<SimVar>,           // seed vars
@@ -142,9 +140,6 @@ package SimCode
       list<BackendDAE.ZeroCrossing> relations;
       list<list<SimVar>> zeroCrossingsNeedSave;
       BackendDAE.SampleLookup sampleLookup;
-      list<SampleCondition> sampleConditions;
-      list<SimEqSystem> sampleEquations;
-      list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
@@ -365,7 +360,6 @@ package SimCode
 
   uniontype VarInfo
     record VARINFO
-      Integer numHelpVars;
       Integer numZeroCrossings;
       Integer numTimeEvents;
       Integer numRelations;
@@ -2611,7 +2605,7 @@ package BackendQSS
 
   function generateDInit
     input  list<DAE.ComponentRef> disc;
-    input  list<SimCode.SampleCondition> sample;
+    //input  list<SimCode.SampleCondition> sample;
     input  SimCode.SimVars vars;
     input  Integer acc;
     input  Integer total;

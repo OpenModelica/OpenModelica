@@ -66,7 +66,7 @@ void updateDiscreteSystem(DATA *data)
     printRelations(data);
 
   functionDAE(data);
-  INFO(LOG_EVENTS, "updated discrete System");
+  DEBUG(LOG_EVENTS, "updated discrete System");
 
   if(DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
@@ -76,11 +76,11 @@ void updateDiscreteSystem(DATA *data)
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
     if(data->simulationInfo.needToIterate)
-      INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
+      DEBUG(LOG_EVENTS, "reinit() call. Iteration needed!");
     if(relationChanged)
-      INFO(LOG_EVENTS,"relations changed. Iteration needed.");
+      DEBUG(LOG_EVENTS,"relations changed. Iteration needed.");
     if(discreteChanged)
-      INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed.");
+      DEBUG(LOG_EVENTS, "discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
     storeRelations(data);
@@ -261,44 +261,6 @@ void printParameters(DATA *data, int stream)
   RELEASE(stream);
 }
 
-/*! \fn printAllHelpVars
- *
- *  print all helpVars and corresponding pre values
- *
- *  \param [ref] [data]
- *
- *  \author wbraun
- */
-void printAllHelpVars(DATA *data)
-{
-  long i;
-
-  INFO(LOG_STDOUT, "Status of help vars:");
-  INDENT(LOG_STDOUT);
-  for(i=0; i<data->modelData.nHelpVars; i++)
-  {
-    INFO3(LOG_STDOUT, "[%ld] helpVars = %c | helpVarsPre = %c", i, data->simulationInfo.helpVars[i] ? 'T' : 'F', data->simulationInfo.helpVarsPre[i] ? 'T' : 'F');
-  }
-  RELEASE(LOG_STDOUT);
-}
-
-/*! \fn syncPreForHelpVars
- *
- *  This functions copies all values of the help vars to their pre-help vars.
- *
- *  \param [ref] [data]
- *
- *  \author lochel
- */
-void syncPreForHelpVars(DATA *data)
-{
-  long i;
-
-  for(i=0; i<data->modelData.nHelpVars; i++)
-    data->simulationInfo.helpVarsPre[i] = data->simulationInfo.helpVars[i];
-}
-
-
 /*! \fn printRelations
  *
  *  print all relations
@@ -311,11 +273,11 @@ void printRelations(DATA *data)
 {
   long i;
 
-  INFO(LOG_EVENTS, "status of relations");
+  DEBUG(LOG_EVENTS, "status of relations");
   INDENT(LOG_EVENTS);
 
   for(i=0; i<data->modelData.nRelations; i++)
-    INFO5(LOG_EVENTS, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+    DEBUG5(LOG_EVENTS, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
 
   RELEASE(LOG_EVENTS);
 }
@@ -480,7 +442,6 @@ void storePreValues(DATA *data)
   memcpy(sInfo->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
   memcpy(sInfo->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
   memcpy(sInfo->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
-  memcpy(sInfo->helpVarsPre, sInfo->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
 }
 
 /*! \fn storeRelations
@@ -523,25 +484,6 @@ modelica_boolean checkRelations(DATA *data){
   }
 
   return check;
-}
-
-/*! \fn resetAllHelpVars
- *
- *  workaround function to reset all helpvar that are used for when-equations.
- *  Need be done before initialization, to ensure the continuous integration.
- *
- *  \param [out] [data]
- *
- *  \author wbraun
- */
-void resetAllHelpVars(DATA *data)
-{
-  int i;
-  for(i=0; i<data->modelData.nHelpVars; i++)
-  {
-    data->simulationInfo.helpVars[i] = 0;
-    data->simulationInfo.helpVarsPre[i] = 0;
-  }
 }
 
 /*! \fn printHysteresisRelations
@@ -614,14 +556,10 @@ void updateHysteresis(DATA* data){
  */
 double getNextSampleTimeFMU(DATA *data)
 {
-  if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
-  {
-    return((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events);
-  }
-  else
-  {
-    return -1;
-  }
+  if(0 < data->modelData.nSamples)
+    return data->simulationInfo.nextSampleEvent;
+  
+  return -1;
 }
 
 /*! \fn initializeDataStruc
@@ -678,11 +616,10 @@ void initializeDataStruc(DATA *data)
   data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(DATA_BOOLEAN_ALIAS));
   data->modelData.stringAlias = (DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(DATA_STRING_ALIAS));
   
-  data->modelData.samples = (SAMPLE_INFO*) calloc(data->modelData.nSamples, sizeof(SAMPLE_INFO));
-  
-  /* initialized in events.c initSample */
-  data->simulationInfo.sampleTimes = 0;
-  data->simulationInfo.rawSampleExps = (SAMPLE_RAW_TIME*) calloc(data->modelData.nSamples, sizeof(SAMPLE_RAW_TIME));
+  data->modelData.samplesInfo = (SAMPLE_INFO*) calloc(data->modelData.nSamples, sizeof(SAMPLE_INFO));
+  data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
+  data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
+  data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
   data->simulationInfo.nlsMethod = NS_NONE;
 
@@ -696,9 +633,6 @@ void initializeDataStruc(DATA *data)
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingIndex[i] = (long)i;
-
-  data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
-  data->simulationInfo.helpVarsPre = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
 
   /* buffer for old state variables */
   data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nStates, sizeof(modelica_real));
@@ -831,14 +765,11 @@ void deInitializeDataStruc(DATA *data)
     freeVarInfo(&((data->modelData.stringAlias[i]).info));
   free(data->modelData.stringAlias);
   
-  free(data->modelData.samples);
+  free(data->modelData.samplesInfo);
+  free(data->simulationInfo.nextSampleTimes);
+  free(data->simulationInfo.samples);
 
   /* free simulationInfo arrays */
-  free(data->simulationInfo.sampleTimes);
-  free(data->simulationInfo.rawSampleExps);
-
-  free(data->simulationInfo.helpVars);
-  free(data->simulationInfo.helpVarsPre);
   free(data->simulationInfo.zeroCrossings);
   free(data->simulationInfo.zeroCrossingsPre);
   free(data->simulationInfo.relations);
@@ -954,8 +885,8 @@ modelica_boolean GreaterEq(double a, double b)
 
 /*! \fn _event_integer
  *
- *  \param [in] [x]
- *  \param [in] [index]
+ *  \param [in]  [x]
+ *  \param [in]  [index]
  *  \param [ref] [data]
  *
  * Returns the largest integer not greater than x.
@@ -963,13 +894,16 @@ modelica_boolean GreaterEq(double a, double b)
 modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
-    value = data->simulationInfo.mathEventsValuePre[index];
-  } else{
-    data->simulationInfo.mathEventsValuePre[index] = x;
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
+  {
     value = data->simulationInfo.mathEventsValuePre[index];
   }
-  return (modelica_integer)floor(value);
+  else
+  {
+    data->simulationInfo.mathEventsValuePre[index] = (modelica_integer)floor(x);
+    value = data->simulationInfo.mathEventsValuePre[index];
+  }
+  return value;
 }
 
 /*! \fn _event_floor
