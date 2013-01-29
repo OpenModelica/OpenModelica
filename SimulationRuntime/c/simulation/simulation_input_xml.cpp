@@ -546,10 +546,10 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bAlg[i]["fixed"], &(modelData->booleanVarsData[i].attribute.fixed));
 
     INFO5(LOG_DEBUG, "| Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
-	
-	/* filter internal variables */
-	if(modelData->booleanVarsData[i].info.name[0] == '$')
-		modelData->booleanVarsData[i].filterOutput = 1;
+  
+  /* filter internal variables */
+  if(modelData->booleanVarsData[i].info.name[0] == '$')
+    modelData->booleanVarsData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->booleanVarsData[i].info.name)]= i;
