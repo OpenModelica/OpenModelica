@@ -7593,11 +7593,61 @@ algorithm
   ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
-  restype := Debug.bcallret2(didInline, Types.fixUnknownDimensions, Types.getPropType(prop_1), Debug.bcallret1(didInline, Expression.typeof, call_exp, DAE.T_UNKNOWN_DEFAULT), Types.getPropType(prop_1));
+  (cache,restype) := fixUnknownDimensions(didInline, cache, inEnv, Types.getPropType(prop_1), call_exp);
   prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, restype, prop_1, prop_1);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;
+
+protected function fixUnknownDimensions
+  input Boolean didInline;
+  input Env.Cache inCache;
+  input Env.Env env;
+  input DAE.Type ty1;
+  input DAE.Exp call_exp;
+  output Env.Cache cache;
+  output DAE.Type oty;
+algorithm
+  (cache,oty) := match (didInline,inCache,env,ty1,call_exp)
+    local
+      DAE.Type ty2;
+    case (false,_,_,_,_) then (inCache,ty1);
+    else
+      equation
+        ty2 = Expression.typeof(call_exp);
+        (cache,oty) = fixUnknownDimensions2(inCache,env,ty1,ty2);
+      then (cache,oty);
+  end match;
+end fixUnknownDimensions;
+
+protected function fixUnknownDimensions2 "Fixes unknown dimensions by getting hints from the final expression"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input DAE.Type ty1;
+  input DAE.Type ty2 "Simplified type, but might have more dimensions known";
+  output Env.Cache cache;
+  output DAE.Type ty;
+algorithm
+  (cache,ty) := matchcontinue (inCache,env,ty1,ty2)
+    local
+      DAE.Type inner1,inner2;
+      DAE.TypeSource ts1,ts2;
+      DAE.Dimensions dims2;
+      DAE.Dimension d;
+      DAE.Exp exp;
+      Integer i;
+    case (cache,_,DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims=(d as DAE.DIM_INTEGER(_))::dims2,source=ts2))
+      equation
+        (cache,inner1) = fixUnknownDimensions2(cache,env,inner1,DAE.T_ARRAY(inner2,dims2,ts2));
+      then (cache,DAE.T_ARRAY(inner1,d::{},ts1));
+    case (cache,_,DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims=(d as DAE.DIM_EXP(exp))::dims2,source=ts2))
+      equation
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG());
+        (cache,inner1) = fixUnknownDimensions2(cache,env,inner1,DAE.T_ARRAY(inner2,dims2,ts2));
+      then (cache,DAE.T_ARRAY(inner1,DAE.DIM_INTEGER(i)::{},ts1));
+    else (inCache,ty1);
+  end matchcontinue;
+end fixUnknownDimensions2;
 
 protected function isValidWRTParallelScope
   input Absyn.Path inFn;

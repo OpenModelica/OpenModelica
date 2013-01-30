@@ -6210,6 +6210,16 @@ algorithm
   end matchcontinue;
 end isRange;
 
+public function isReduction
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inExp)
+    case DAE.REDUCTION(expr = _) then true;
+    case _ then false;
+  end matchcontinue;
+end isReduction;
+
 public function isOne
 "function: isOne
   Returns true if an expression is constant

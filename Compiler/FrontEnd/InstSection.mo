@@ -493,7 +493,6 @@ algorithm
         (cache,e2_1,prop2,_) = Static.elabExp(cache, env, e2, impl, NONE(), true /*do vectorization*/, pre, info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
-         
         (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre,info);
         
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
@@ -505,7 +504,7 @@ algorithm
         source = DAEUtil.addCommentToSource(source,comment);
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
-                          
+        
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
@@ -1305,8 +1304,7 @@ algorithm
         (e1,_) = ExpressionSimplify.simplify(e1);
         (e2_1,_) = ExpressionSimplify.simplify(e2_1);
         dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
-      then
-        dae;
+      then dae;
 
     case (e1, (p1 as DAE.PROP_TUPLE(type_ = t1)),
           e2, (p2 as DAE.PROP_TUPLE(type_ = t2, tupleConst = tp)), _, initial_, impl) /* PR. */ 
@@ -1769,7 +1767,7 @@ algorithm
       equation
         true = Config.splitArrays();
         true = Expression.dimensionKnown(dim);
-        true = Expression.isRange(lhs) or Expression.isRange(rhs);
+        true = Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds = Types.getDimensions(tp);
       then
         DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});

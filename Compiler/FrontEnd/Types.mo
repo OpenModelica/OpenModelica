@@ -7640,25 +7640,6 @@ algorithm
   end match;
 end ifExpMakeDimsUnknown;
 
-public function fixUnknownDimensions "Fixes unknown dimensions by getting hints from the final expression"
-  input DAE.Type ty1;
-  input DAE.Type ty2 "Simplified type, but might have more dimensions known";
-  output DAE.Type ty;
-algorithm
-  ty := match (ty1,ty2)
-    local
-      DAE.Type inner1,inner2;
-      DAE.TypeSource ts1,ts2;
-      DAE.Dimensions dims2;
-      DAE.Dimension d;
-    case (DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims=(d as DAE.DIM_INTEGER(_))::dims2,source=ts2))
-      equation
-        inner1 = fixUnknownDimensions(inner1,DAE.T_ARRAY(inner2,dims2,ts2));
-      then DAE.T_ARRAY(inner1,d::{},ts1);
-    else ty1;
-  end match;
-end fixUnknownDimensions;
-
 public function isFixedWithNoBinding
 "check if the type has bindings for everything
  if is parameter or constant without fixed = false 
