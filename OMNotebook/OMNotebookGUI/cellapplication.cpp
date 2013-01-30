@@ -141,6 +141,9 @@ namespace IAEX
 
     // Avoid cluttering the whole disk with omc temp-files
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
+    env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
+    QString cmdLine = env->getResult();
+    cout << "Set shortOutput flag: " << cmdLine.toStdString() << std::endl;
     QString tmpDir = OmcInteractiveEnvironment::TmpPath();
     if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
     tmpDir = QDir(tmpDir).canonicalPath();
