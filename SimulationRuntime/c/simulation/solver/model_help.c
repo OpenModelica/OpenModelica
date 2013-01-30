@@ -62,13 +62,13 @@ void updateDiscreteSystem(DATA *data)
   storeRelations(data);
   updateHysteresis(data);
 
-  if(DEBUG_STREAM(LOG_EVENTS))
+  if(DEBUG_STREAM(LOG_EVENTS_V))
     printRelations(data);
 
   functionDAE(data);
-  DEBUG(LOG_EVENTS, "updated discrete System");
+  DEBUG(LOG_EVENTS_V, "updated discrete System");
 
-  if(DEBUG_STREAM(LOG_EVENTS))
+  if(DEBUG_STREAM(LOG_EVENTS_V))
     printRelations(data);
 
   relationChanged = checkRelations(data);
@@ -76,15 +76,15 @@ void updateDiscreteSystem(DATA *data)
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
     if(data->simulationInfo.needToIterate)
-      DEBUG(LOG_EVENTS, "reinit() call. Iteration needed!");
+      DEBUG(LOG_EVENTS_V, "reinit() call. Iteration needed!");
     if(relationChanged)
-      DEBUG(LOG_EVENTS,"relations changed. Iteration needed.");
+      DEBUG(LOG_EVENTS_V, "relations changed. Iteration needed.");
     if(discreteChanged)
-      DEBUG(LOG_EVENTS, "discrete Variable changed. Iteration needed.");
+      DEBUG(LOG_EVENTS_V, "discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
     storeRelations(data);
-    if(DEBUG_STREAM(LOG_EVENTS))
+    if(DEBUG_STREAM(LOG_EVENTS_V))
       printRelations(data);
 
     functionDAE(data);

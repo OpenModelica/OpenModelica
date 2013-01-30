@@ -51,6 +51,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_DSSJAC",
   "LOG_ENDJAC",
   "LOG_EVENTS",
+  "LOG_EVENTS_V",
   "LOG_INIT",
   "LOG_JAC",
   "LOG_NLS",
@@ -76,6 +77,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "outputs jacobain of the dynamic state selection",    /* LOG_DSSJAC */
   "outputs the jacobian and exits the simulation",      /* LOG_ENDJAC */
   "additional information during event iteration",      /* LOG_EVENTS */
+  "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
   "outputs the jacobian matrix used by the integrator", /* LOG_JAC */
   "logging for nonlinear systems",                      /* LOG_NLS */
@@ -103,6 +105,7 @@ int useStream[LOG_MAX];
 int level[LOG_MAX];
 int lastType[LOG_MAX];
 int lastStream = LOG_UNKNOWN;
+int showAllWarnings = 0;
 char logBuffer[2048];
 
 void initDumpSystem()

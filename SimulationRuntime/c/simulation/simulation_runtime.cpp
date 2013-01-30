@@ -150,14 +150,16 @@ void setTermMsg(const char *msg)
 
 /* \brief determine verboselevel by investigating flag -lv flags
  *
- * Flags are or'ed to a returnvalue.
- * Valid flags: LOG_EVENTS, LOG_NLS
+ * Valid flags: see LOG_STREAM_NAME in omc_error.c
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
   const string *flags = getFlagValue("lv", argc, argv);
   int i;
-  int error = 0;
+  int error;
+  
+  if(flagSet("w", argc, argv))
+    showAllWarnings = 1;
 
   if(!flags)
   {
@@ -177,11 +179,10 @@ void setGlobalVerboseLevel(int argc, char**argv)
     string flagList = *flags;
     string flag;
     unsigned long pos;
-    int localError;
 
     do
     {
-      localError = 1;
+      error = 1;
       pos = flagList.find(",", 0);
       if(pos != string::npos)
       {
@@ -193,17 +194,24 @@ void setGlobalVerboseLevel(int argc, char**argv)
         flag = flagList;
       }
 
-      for(i=1; i<LOG_MAX; ++i)
+      for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
       {
         if(flag == string(LOG_STREAM_NAME[i]))
         {
           useStream[i] = 1;
-          localError = 0;
+          error = 0;
         }
       }
 
-      if(localError)
-        error = 1;
+      if(error)
+      {
+        WARNING(LOG_STDOUT, "current options are:");
+        INDENT(LOG_STDOUT);
+        for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+          WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
+        RELEASE(LOG_STDOUT);
+        THROW1("unrecognized option -lv %s", flags->c_str());
+      }
     }while(pos != string::npos);
   }
 
@@ -215,26 +223,20 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(useStream[LOG_INIT])
     useStream[LOG_SOTI] = 1;
 
-  /* print states if LOG_SOLVER if active */
+  /* print LOG_STATS if LOG_SOLVER if active */
   if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
 
+  /* print LOG_NLS if LOG_NLS_V if active */
   if(useStream[LOG_NLS_V])
     useStream[LOG_NLS] = 1;
+    
+  /* print LOG_EVENTS if LOG_EVENTS_V if active */
+  if(useStream[LOG_EVENTS_V])
+    useStream[LOG_EVENTS] = 1;
 
   if(useStream[LOG_NLS_JAC])
     useStream[LOG_NLS] = 1;
-
-  if(error)
-  {
-    WARNING1(LOG_STDOUT, "unrecognized option -lv %s", flags->c_str());
-    WARNING(LOG_STDOUT, "current options are:");
-    INDENT(LOG_STDOUT);
-    for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
-      WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
-    RELEASE(LOG_STDOUT);
-    THROW("see last warning");
-  }
 
   delete flags;
 }
@@ -611,6 +613,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     INFO(LOG_STDOUT, "\tspecify the logging level");
     for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
       INFO2(LOG_STDOUT, "\t%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
+    INFO(LOG_STDOUT, "<-w>");
+    INFO(LOG_STDOUT, "\tshow all warnings");
+      
     RELEASE(LOG_STDOUT);
     EXIT(0);
   }

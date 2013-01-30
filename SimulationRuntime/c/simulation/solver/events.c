@@ -194,30 +194,23 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   {
     storePreValues(data);
     
-    INFO1(LOG_EVENTS, "sample-event at time = %g", time);
-    INDENT(LOG_EVENTS);
-    
     /* activate sample event */
     for(i=0; i<data->modelData.nSamples; ++i)
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
       {
         data->simulationInfo.samples[i] = 1;
-        DEBUG3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
+        INFO3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
       }
-    RELEASE(LOG_EVENTS);
   }
   
   /* state event */
   if(listLen(eventLst)>0)
   {
-    INFO1(LOG_EVENTS, "state-event at time = %g", *eventTime);
     data->localData[0]->timeValue = *eventTime;
     /* time = data->localData[0]->timeValue; */
 
-    INDENT(LOG_EVENTS);
     for(it = listFirstNode(eventLst); it; it = listNextNode(it))
-      INFO1(LOG_EVENTS, "[%ld]", *((long*) listNodeData(it)));   /* that information does not help that much */
-    RELEASE(LOG_EVENTS);
+      INFO2(LOG_EVENTS, "[%ld] %s", *((long*) listNodeData(it)), zeroCrossingDescription[*((long*) listNodeData(it))]);
     
     listClear(eventLst);
     solverInfo->stateEvents++;

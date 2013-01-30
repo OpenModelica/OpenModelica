@@ -255,7 +255,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* If an event is triggered and processed restart dassl. */
   if(solverInfo->didEventStep)
   {
-    INFO(LOG_EVENTS, "Event-management forced reset of DDASRT");
+    DEBUG(LOG_EVENTS_V, "Event-management forced reset of DDASRT");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
