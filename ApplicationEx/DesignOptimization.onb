@@ -132,7 +132,7 @@ p, li { white-space: pre-wrap; }
           <Output>[done]</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( LinearActuator, stopTime=5 )</Input>
+          <Input>simulate( LinearActuator, stopTime=5 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14415330304804524

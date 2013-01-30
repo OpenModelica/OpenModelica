@@ -73,7 +73,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Below the error message is shown, after trying to simulate the Constants model. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Constants )  //?? Error - should have emitted variability error</Input>
+          <Input>simulate( Constants )  //?? Error - should have emitted variability error</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: Constants
 [&lt;interactive>:3:3-3:29:writable] Error: Component c1 of variability CONST has binding 2.0 + p1 of higher variability PARAM.
@@ -123,7 +123,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of ConstantsCorrect&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( ConstantsCorrect )</Input>
+          <Input>simulate( ConstantsCorrect )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1520338231784241
@@ -198,7 +198,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Below the error message is shown, after trying to simulate the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TestEquations&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TestEquations ) //??Error message could have been more informative.</Input>
+          <Input>simulate( TestEquations ) //??Error message could have been more informative.</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: TestEquations
 [&lt;interactive>:3:3-3:23:writable] Error: Variable c2: In modifier (p2 = 7), class or component p2 not found in &lt;Constants>

@@ -360,7 +360,7 @@ p, li { white-space: pre-wrap; }
             <Output>[done]</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( JobShopSystem, stopTime = 1 ) //??Error - not yet implemented</Input>
+            <Input>simulate( JobShopSystem, stopTime = 1 ) //??Error - not yet implemented</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: JobShopSystem
 [&lt;interactive>:2:3-2:67:writable] Error: Variable arrival.condition: In modifier (start = true), class or component start not found in &lt;ConditionPort>

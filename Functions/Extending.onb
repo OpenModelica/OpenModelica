@@ -175,7 +175,7 @@ p, li { white-space: pre-wrap; }
       </GroupCell>
       <GroupCell closed="false">
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( myTanCall ) </Input>
+          <Input>simulate( myTanCall ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.25478633835446235
@@ -240,7 +240,7 @@ p, li { white-space: pre-wrap; }
       </GroupCell>
       <GroupCell closed="false">
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( addTenCall ) </Input>
+          <Input>simulate( addTenCall ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1966635955986328

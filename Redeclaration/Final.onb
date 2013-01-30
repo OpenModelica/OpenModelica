@@ -80,7 +80,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When we simulate the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">AngleInst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> we see that there is an error, since we try to modify the unit which is declared as final. We also get a warning because &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">a1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">a2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> do not have any default values.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( AngleInst )</Input>
+          <Input>simulate( AngleInst )</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: AngleInst
 [&lt;interactive>:2:3-2:35:writable] Error: Variable a1: Trying to override final variable in component a1 and scope  by using modifiers:  = (typed)\"deg\" DAE.PROP(String, C_CONST), value: \"deg\" and final  = (typed)\"rad\" DAE.PROP(String, C_CONST), value: \"rad\" that do not agree.
@@ -201,7 +201,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of PI&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TransferBlock )  </Input>
+          <Input>simulate( TransferBlock )  </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1642634001159258
@@ -219,7 +219,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( PI )</Input>
+          <Input>simulate( PI )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.21033088711093645
@@ -237,7 +237,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Test2 )</Input>
+          <Input>simulate( Test2 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.147048676733855
@@ -265,7 +265,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We see in the simulation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Test&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> that an error occurs because we try to modify b, which is declared as final.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Test )</Input>
+          <Input>simulate( Test )</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: Test
 Error: Trying to override final variable in component c2 and scope PI by using modifiers:  = (typed){1} DAE.PROP(Integer[1], C_CONST), value: {1} and final  = (typed){c2.T, 1.0} DAE.PROP(Real[2], C_PARAM), value: {1.0,1.0} that do not agree.

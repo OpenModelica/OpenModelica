@@ -35,7 +35,7 @@ end Resistor1;
         <Output>{Resistor1}</Output>
       </GraphCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(Resistor1)</Input>
+        <Input>simulate(Resistor1)</Input>
         <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1447867848512812

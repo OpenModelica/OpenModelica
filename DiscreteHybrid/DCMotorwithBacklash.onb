@@ -96,7 +96,7 @@ p, li { white-space: pre-wrap; }
             <Output>[done]</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DCMotorCircuit, stopTime=10 )</Input>
+            <Input>simulate( DCMotorCircuit, stopTime=10 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.2746881252023286
@@ -233,7 +233,7 @@ p, li { white-space: pre-wrap; }
             <Output>[done]</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DCMotorCircuitBacklash, stopTime=25 )</Input>
+            <Input>simulate( DCMotorCircuitBacklash, stopTime=25 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.17004770097854646
@@ -328,7 +328,7 @@ p, li { white-space: pre-wrap; }
             <Output>{DCMotorCircuitBacklash2}</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DCMotorCircuitBacklash2, stopTime=25 )</Input>
+            <Input>simulate( DCMotorCircuitBacklash2, stopTime=25 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.22047633520395277
@@ -467,7 +467,7 @@ end ElastoBacklash;</Input>
             <Output>[done]</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(ElastoBacklash)</Input>
+            <Input>simulate(ElastoBacklash)</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: ElastoBacklash
 [&lt;interactive>:5:3-5:68:writable] Error: Class SIunits.Angle not found in scope ElastoBacklash.

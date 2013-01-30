@@ -191,7 +191,7 @@ end Diode;</Input>
             <Output>{Diode}</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(Diode)</Input>
+            <Input>simulate(Diode)</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: Diode
 Error: Internal error Found Equation without time dependent variables n.i = 0.0

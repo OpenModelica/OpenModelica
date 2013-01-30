@@ -142,7 +142,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of LowPassFilter &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( LowPassFilter1, stopTime=15 )</Input>
+          <Input>simulate( LowPassFilter1, stopTime=15 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.19534813977284768
@@ -191,7 +191,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( LowPassFilter20, stopTime=20 )</Input>
+          <Input>simulate( LowPassFilter20, stopTime=20 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1360967181002179
@@ -225,7 +225,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate the second filter:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( LowPassFilter20B, stopTime=20 )</Input>
+          <Input>simulate( LowPassFilter20B, stopTime=20 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14458697527530642

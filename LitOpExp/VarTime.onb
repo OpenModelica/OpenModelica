@@ -46,7 +46,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of TimeEventTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TimeEventTest )  //??Need to investigate this model further</Input>
+          <Input>simulate( TimeEventTest )  //??Need to investigate this model further</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: TimeEventTest
 [&lt;interactive>:3:3-3:46:writable] Error: Variable time.start not found in scope TimeEventTest

@@ -181,7 +181,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WatchDogSystem&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WatchDogSystem1, stopTime=2 ) </Input>
+          <Input>simulate( WatchDogSystem1, stopTime=2 ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15839943804427087
@@ -302,7 +302,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WatchDogSystem2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WatchDogSystem2, stopTime=4 ) </Input>
+          <Input>simulate( WatchDogSystem2, stopTime=4 ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.11738451549466072

@@ -84,7 +84,7 @@ p, li { white-space: pre-wrap; }
             <Output>true</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( SamplingClock, stopTime=10 ) </Input>
+            <Input>simulate( SamplingClock, stopTime=10 ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13809738022149168

@@ -99,7 +99,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of AddSub and AddSub2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( AddSub )</Input>
+            <Input>simulate( AddSub )</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: AddSub
 [&lt;interactive>:2:3-2:28:writable] Error: Cannot resolve type of expression {1,2,3} + 1. The operands have types Integer[3], Integer in component &lt;NO COMPONENT>.
@@ -108,7 +108,7 @@ Error: Error occurred while flattening model AddSub
 end SimulationResult;</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( AddSub2 )</Input>
+            <Input>simulate( AddSub2 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16722497045945403
@@ -196,7 +196,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of Div and Div2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( Div )  //Error in model</Input>
+            <Input>simulate( Div )  //Error in model</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: Div
 [&lt;interactive>:5:3-5:23:writable] Error: Cannot resolve type of expression 6 / {1,2,3}. The operands have types Integer, Integer[3] in component &lt;NO COMPONENT>.
@@ -205,7 +205,7 @@ Error: Error occurred while flattening model Div
 end SimulationResult;</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( Div2 )</Input>
+            <Input>simulate( Div2 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.12734422517613425
@@ -280,7 +280,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of Multiplication&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( Multiplication )</Input>
+            <Input>simulate( Multiplication )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.22890577711525156
@@ -347,7 +347,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of Exponentiation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( Exp )  </Input>
+            <Input>simulate( Exp )  </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1592194183399588

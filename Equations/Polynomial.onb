@@ -73,7 +73,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here the simulation of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">XPowers1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is shown. The variables can then be plotted as below.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Xpowers1 )</Input>
+          <Input>simulate( Xpowers1 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15718634387704636
@@ -170,7 +170,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here the simulation of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">XPowers2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is shown. The variables can then be plotted as below.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Xpowers2 )</Input>
+          <Input>simulate( Xpowers2 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.22743939078976844
@@ -264,7 +264,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here the simulation of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">XPowers3&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is shown. The variables can then be plotted as below.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Xpowers3 )</Input>
+          <Input>simulate( Xpowers3 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1946288252993386

@@ -54,7 +54,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">To illustrate the behavior of the model, we give a command to simulate the Van der Pol oscillator during 25 seconds starting at time 0.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(VanDerPol, startTime=0, stopTime=25 )</Input>
+        <Input>simulate(VanDerPol, startTime=0, stopTime=25 )</Input>
         <Output>record SimulationResult
     messages = "",
     simulationTime = 0.18590361441366005

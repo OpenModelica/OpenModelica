@@ -101,7 +101,7 @@ p, li { white-space: pre-wrap; }
           <Output>[done]</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( RevoluteLoop2D, stopTime=10 )</Input>
+          <Input>simulate( RevoluteLoop2D, stopTime=10 )</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: RevoluteLoop2D
 [C:/OpenModelica1.9.0/lib/omlibrary/ModelicaAdditions/MultiBody/CutJoints.mo:332:7-332:76:writable] Error: The language feature constrain function is not supported. Suggested workaround: rewrite code without using constrainequation

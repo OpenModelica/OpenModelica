@@ -337,7 +337,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We simulate the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPI&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model and obtain the same response as for the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FlatTank&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model, which is not surprising given that both models have the same basic equations. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TankPI, stopTime=250 )</Input>
+          <Input>simulate( TankPI, stopTime=250 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16151153740256569
@@ -489,7 +489,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We simulate the tank model once more but now including the PID controller:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TankPID, stopTime=250 )</Input>
+          <Input>simulate( TankPID, stopTime=250 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.2037217971650608
@@ -616,7 +616,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of TanksConnectedPI&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( TanksConnectedPI, stopTime=400 )</Input>
+          <Input>simulate( TanksConnectedPI, stopTime=400 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14025737578764097

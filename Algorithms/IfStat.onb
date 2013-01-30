@@ -128,7 +128,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">After we have simulated &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">SumVector&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> we see that the sum of the absolute value of the elements in the vecor is 1500.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( SumVector ) </Input>
+          <Input>simulate( SumVector ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1291919987006926
@@ -217,7 +217,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssign&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( CondAssign ) </Input>
+            <Input>simulate( CondAssign ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.18605346043957535
@@ -302,7 +302,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssignFuncCall&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( CondAssignFuncCall )  </Input>
+            <Input>simulate( CondAssignFuncCall )  </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.18091609238427678

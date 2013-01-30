@@ -84,7 +84,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of Tank &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Tank )</Input>
+          <Input>simulate( Tank )</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: Tank
 Error: Too many equations, overdetermined system. The model has 7 equation(s) and 5 variable(s)
@@ -221,7 +221,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate it:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(HeatTank)</Input>
+          <Input>simulate(HeatTank)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: HeatTank
 [&lt;interactive>:1:1-4:15:writable] Warning: Connector TankStream is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).
@@ -348,7 +348,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate it:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(HeatTankExpanded)</Input>
+          <Input>simulate(HeatTankExpanded)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: HeatTankExpanded
 [&lt;interactive>:7:3-11:17:writable] Warning: Connector HeatTankExpanded.TankStream is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).
@@ -433,7 +433,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate it:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(HeatTankExpanded)</Input>
+          <Input>simulate(HeatTankExpanded)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: HeatTankExpanded
 [&lt;interactive>:7:3-11:17:writable] Warning: Connector HeatTankExpanded.TankStream is not balanced: The number of potential variables (2) is not equal to the number of flow variables (1).

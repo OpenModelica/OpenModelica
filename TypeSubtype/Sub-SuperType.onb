@@ -94,7 +94,7 @@ end Resistor;</Input>
           <Output>{Resistor}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Resistor)</Input>
+          <Input>simulate(Resistor)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: Resistor
 Warning: Parameter R has neither value nor start value, and is fixed during initialization (fixed=true)
@@ -128,7 +128,7 @@ end TempResistor;</Input>
           <Output>{TempResistor}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(TempResistor)</Input>
+          <Input>simulate(TempResistor)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: TempResistor
 Warning: Parameter R has neither value nor start value, and is fixed during initialization (fixed=true)

@@ -64,7 +64,7 @@ end Equations;
 "</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(Equations)</Input>
+            <Input>simulate(Equations)</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.11920126030348326

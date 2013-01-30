@@ -84,7 +84,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WhenStat )  </Input>
+          <Input>simulate( WhenStat )  </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16105627428199357
@@ -165,7 +165,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WhenStat2 )  </Input>
+          <Input>simulate( WhenStat2 )  </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.129899064631119
@@ -252,7 +252,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat3&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WhenStat3 )  </Input>
+          <Input>simulate( WhenStat3 )  </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.11316742600694313
@@ -421,7 +421,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of DoubleWhenSequential&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DoubleWhenSequential )  
+            <Input>simulate( DoubleWhenSequential )  
 </Input>
             <Output>record SimulationResult
     messages = "",
@@ -476,7 +476,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of WhenPriority&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( WhenPriority )  </Input>
+            <Input>simulate( WhenPriority )  </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14782076612038406

@@ -81,7 +81,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WhenEquation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated. Then as below the variables can be plotted.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WhenEquation, stopTime=10 )</Input>
+          <Input>simulate( WhenEquation, stopTime=10 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.23332992373873412
@@ -188,7 +188,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WhenSet&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( WhenSet, stopTime=10 )</Input>
+          <Input>simulate( WhenSet, stopTime=10 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.19688722344246604
@@ -284,7 +284,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Activate&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Activate, stopTime=10 )</Input>
+          <Input>simulate( Activate, stopTime=10 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1929933711367835
@@ -387,7 +387,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WhenNotValid&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated. Since the code &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">2*x + y = 7; &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">is not valid Modelica code the error message&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> Illegal left hand equation in when equation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is shown in the failed simulation message below.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( WhenNotValid )  //Should fail!</Input>
+            <Input>simulate( WhenNotValid )  //Should fail!</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: WhenNotValid
 [&lt;interactive>:6:5-6:16:writable] Error: Invalid left-hand side of when-equation: 2.0 * x + y.
@@ -442,7 +442,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WhenValidResult&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( WhenValidResult )</Input>
+            <Input>simulate( WhenValidResult )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14431461601830461
@@ -524,7 +524,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ErrorNestedWhen&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is simulated. Since it is not allowed to have nested when-clauses. there will be an error.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( ErrorNestedWhen ) // Simulation should fail</Input>
+            <Input>simulate( ErrorNestedWhen ) // Simulation should fail</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: ErrorNestedWhen
 [&lt;interactive>:4:3-8:11:writable] Error: Nested when statements are not allowed.
@@ -605,7 +605,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Since the variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">close&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> cannot be defined by two equations the model could not be translated.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DoubleWhenConflict )</Input>
+            <Input>simulate( DoubleWhenConflict )</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: DoubleWhenConflict
 Error: Internal error BackendDAETransform.selectDummyState: no state to select

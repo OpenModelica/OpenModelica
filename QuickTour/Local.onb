@@ -68,7 +68,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
       </GroupCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(C1)</Input>
+        <Input>simulate(C1)</Input>
         <Output>record SimulationResult
     messages = "Simulation failed for model: C1
 [&lt;interactive>:6:3-6:34:writable] Error: Restriction violation: Real is a Real, not a CLASS

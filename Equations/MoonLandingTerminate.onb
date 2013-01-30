@@ -325,7 +325,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
       </GroupCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(MoonLanding, stopTime=230)</Input>
+        <Input>simulate(MoonLanding, stopTime=230)</Input>
         <Output>record SimulationResult
     messages = "stdout            | info    | Simulation call terminate() at time 212.101081
 |                 | |       | Message : The moon lander touches the ground of moon

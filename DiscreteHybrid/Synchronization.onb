@@ -52,7 +52,7 @@ end SynchCounters;</Input>
           <Output>{SynchCounters}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(SynchCounters, stopTime=200)</Input>
+          <Input>simulate(SynchCounters, stopTime=200)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.22536411820281219
@@ -103,7 +103,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of DeadLock&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DeadLock ) </Input>
+            <Input>simulate( DeadLock ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15647431439237988

@@ -96,7 +96,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of FlatTank&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( FlatTank, stopTime=250 )</Input>
+            <Input>simulate( FlatTank, stopTime=250 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14981313091687937
@@ -226,7 +226,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( FlatTank, stopTime=250 )</Input>
+          <Input>simulate( FlatTank, stopTime=250 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16996434199131977
@@ -652,7 +652,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationDiscretePI, stopTime=200 ) //??warning in Simulation</Input>
+            <Input>simulate( TankApplicationDiscretePI, stopTime=200 ) //??warning in Simulation</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.29732275300651345
@@ -739,7 +739,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationDiscretePInew, stopTime=200 ) //??warning in Simulation</Input>
+            <Input>simulate( TankApplicationDiscretePInew, stopTime=200 ) //??warning in Simulation</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.28687208945078746
@@ -837,7 +837,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationContinuousPI, stopTime=200 )</Input>
+            <Input>simulate( TankApplicationContinuousPI, stopTime=200 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15081951826858847
@@ -943,7 +943,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationContinuousPInew, stopTime=200 ) </Input>
+            <Input>simulate( TankApplicationContinuousPInew, stopTime=200 ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.4273322339452804
@@ -1134,7 +1134,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of TankApplicationModified&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationModified, stopTime=250 ) //??warning in Simulation</Input>
+            <Input>simulate( TankApplicationModified, stopTime=250 ) //??warning in Simulation</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13319252465007417
@@ -1441,7 +1441,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of TankApplicationModifiedPIController&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationModifiedPIController, stopTime=250 )</Input>
+            <Input>simulate( TankApplicationModifiedPIController, stopTime=250 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1652990308618122
@@ -1513,7 +1513,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of TankApplicationModifiedPIDController&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TankApplicationModifiedPIDController, stopTime=250 )</Input>
+            <Input>simulate( TankApplicationModifiedPIDController, stopTime=250 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.2078386025990824
@@ -1613,7 +1613,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of TanksConnected&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TanksConnected, stopTime=250 )</Input>
+            <Input>simulate( TanksConnected, stopTime=250 )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13014403254462384

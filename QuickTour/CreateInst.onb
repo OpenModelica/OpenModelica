@@ -162,7 +162,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of MyPointsInst1 and MyPointsInst2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( MyPointsInst1 )</Input>
+          <Input>simulate( MyPointsInst1 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14810418069758582
@@ -190,7 +190,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( MyPointsInst2 )</Input>
+          <Input>simulate( MyPointsInst2 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.184562512121431

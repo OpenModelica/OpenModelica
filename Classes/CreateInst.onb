@@ -131,7 +131,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
       </GroupCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(MyPointsInst2)</Input>
+        <Input>simulate(MyPointsInst2)</Input>
         <Output>record SimulationResult
     messages = "",
     simulationTime = 0.3633998592905796
@@ -147,7 +147,7 @@ end SimulationResult;</Output>
         <Output>[done]</Output>
       </GraphCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(MyPoints)</Input>
+        <Input>simulate(MyPoints)</Input>
         <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14615155335794341

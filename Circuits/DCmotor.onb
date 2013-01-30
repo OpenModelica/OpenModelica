@@ -186,7 +186,7 @@ end DCMotor;
 "</Output>
       </GraphCell>
       <GraphCell style="Graph" closed="false">
-        <Input>simulation(DCMotor, startTime=0, stopTime=25)</Input>
+        <Input>simulate(DCMotor, startTime=0, stopTime=25)</Input>
         <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1548192243237387

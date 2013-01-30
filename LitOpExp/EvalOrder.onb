@@ -57,7 +57,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( GuardTest )  </Input>
+          <Input>simulate( GuardTest )  </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.23008054342338696
@@ -122,7 +122,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTestInvalid&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( GuardTestInvalid )</Input>
+          <Input>simulate( GuardTestInvalid )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.08720423141688453
@@ -201,7 +201,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The simulation shows that the value of h decreases and at t=2 is becomes a small negative number.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( GuardContinuousVar, stopTime = 5, /* outputInterval=1, */ numberOfIntervals=5 )   //?? Error - not yet implemented or error in model</Input>
+          <Input>simulate( GuardContinuousVar, stopTime = 5, /* outputInterval=1, */ numberOfIntervals=5 )   //?? Error - not yet implemented or error in model</Input>
           <Output>record SimulationResult
     messages = "Simulation execution failed for model: GuardContinuousVar
 [:0:0-0:0:writable]
@@ -273,7 +273,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVarCorrect&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( GuardContinuousVarCorrect, stopTime = 5, numberOfIntervals=5 ) </Input>
+          <Input>simulate( GuardContinuousVarCorrect, stopTime = 5, numberOfIntervals=5 ) </Input>
           <Output>record SimulationResult
     messages = "Simulation execution failed for model: GuardContinuousVarCorrect
 [:0:0-0:0:writable]

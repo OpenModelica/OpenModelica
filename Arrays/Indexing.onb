@@ -80,7 +80,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here we simulate the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ArrayIndex&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> above.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( ArrayIndex )  </Input>
+            <Input>simulate( ArrayIndex )  </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13258838241726173
@@ -170,7 +170,7 @@ end ScalarIndex;
           <Output>{ScalarIndex}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(ScalarIndex)</Input>
+          <Input>simulate(ScalarIndex)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: ScalarIndex
 [&lt;interactive>:13:3-13:24:writable] Error: Type mismatch in assignment in M[4] := {{5, 5}, {5, 5}, {5, 5}, {5, 5}} of Real[2] := Integer[4, 2]
@@ -226,7 +226,7 @@ end ArraySlice;</Input>
           <Output>{ArraySlice}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(ArraySlice)</Input>
+          <Input>simulate(ArraySlice)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: ArraySlice
 Error: Too many equations, overdetermined system. The model has 43 equation(s) and 41 variable(s)

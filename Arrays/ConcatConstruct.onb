@@ -79,7 +79,7 @@ p, li { white-space: pre-wrap; }
           </GraphCell>
         </GroupCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Concat)</Input>
+          <Input>simulate(Concat)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.23781129621163322
@@ -159,7 +159,7 @@ p, li { white-space: pre-wrap; }
           </GraphCell>
         </GroupCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Concat2)</Input>
+          <Input>simulate(Concat2)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15753075864668187
@@ -241,7 +241,7 @@ p, li { white-space: pre-wrap; }
           </GraphCell>
         </GroupCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Concat3)</Input>
+          <Input>simulate(Concat3)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.24456052503164863
@@ -314,7 +314,7 @@ p, li { white-space: pre-wrap; }
           </GraphCell>
         </GroupCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Concat4)</Input>
+          <Input>simulate(Concat4)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15255753486481008

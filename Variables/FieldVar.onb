@@ -94,7 +94,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">As we can see when simulating &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">IllegalDuplicate&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, the class generates an error for trying to redefine the field &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">duplicate&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(IllegalDuplicate)
+          <Input>simulate(IllegalDuplicate)
 </Input>
           <Output>record SimulationResult
     messages = "Simulation Failed. Model: IllegalDuplicate does not exist! Please load it first before simulation."
@@ -225,7 +225,7 @@ end LegalVoltage;
 "</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(LegalVoltage)</Input>
+            <Input>simulate(LegalVoltage)</Input>
             <Output>record SimulationResult
     messages = "Simulation failed for model: LegalVoltage
 Error: Too few equations, underdetermined system. The model has 0 equation(s) and 2 variable(s)

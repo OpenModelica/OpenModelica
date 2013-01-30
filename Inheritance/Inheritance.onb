@@ -163,7 +163,7 @@ end Color;
 "</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Color )</Input>
+          <Input>simulate( Color )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.20977145817362317
@@ -204,7 +204,7 @@ end CorrectColor;
 "</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( CorrectColor )</Input>
+          <Input>simulate( CorrectColor )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1576306910441682
@@ -221,7 +221,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ErrorColor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> gives error since we try to declare a new variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">red&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, of the type &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Integer&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, although it alredy exists with the type &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Real&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( ErrorColor )</Input>
+          <Input>simulate( ErrorColor )</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: ErrorColor
 [&lt;interactive>:4:3-4:14:writable] Error: Duplicate elements (due to inherited elements) not identical:
@@ -324,7 +324,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When simulating the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Color3&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> we get too many equations.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( Color3 )</Input>
+          <Input>simulate( Color3 )</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.15080233626888428

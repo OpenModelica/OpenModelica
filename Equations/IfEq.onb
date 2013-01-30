@@ -103,7 +103,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here the simulation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">IfEquation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is shown.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation( IfEquation ) </Input>
+          <Input>simulate( IfEquation ) </Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13678047013543423

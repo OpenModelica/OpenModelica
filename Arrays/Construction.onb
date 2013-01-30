@@ -78,7 +78,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of ArrayConstruction&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( ArrayConstruction )</Input>
+            <Input>simulate( ArrayConstruction )</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16293329647562863
@@ -179,7 +179,7 @@ p, li { white-space: pre-wrap; }
           </GraphCell>
         </GroupCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Range)</Input>
+          <Input>simulate(Range)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1241300524599035

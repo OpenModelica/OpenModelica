@@ -137,7 +137,7 @@ end WeakAxis;
             <Output>{WeakAxis}</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(WeakAxis, stopTime=200)</Input>
+            <Input>simulate(WeakAxis, stopTime=200)</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.21992237179926655

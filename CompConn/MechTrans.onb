@@ -215,7 +215,7 @@ end Spring;    </Input>
           <Output>[done]</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(Spring)</Input>
+          <Input>simulate(Spring)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: Spring
 Error: Internal error Found Equation without time dependent variables flange_b.f = 0.0

@@ -44,7 +44,7 @@ end SampleSignalGenerator;</Input>
           <Output>{SampleSignalGenerator}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(SampleSignalGenerator)</Input>
+          <Input>simulate(SampleSignalGenerator)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.17332875787735505

@@ -55,7 +55,7 @@ end SimplePeriodicSampler;</Input>
           <Output>[done]</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(SimplePeriodicSampler, stopTime=100)</Input>
+          <Input>simulate(SimplePeriodicSampler, stopTime=100)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.13907597730913102
@@ -132,7 +132,7 @@ end PeriodicSampler;</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(SimplePeriodicSampler)</Input>
+          <Input>simulate(SimplePeriodicSampler)</Input>
           <Output>record SimulationResult
     messages = "",
     simulationTime = 0.14479195576211762
@@ -182,7 +182,7 @@ end APeriodicSampler;</Input>
           <Output>{APeriodicSampler}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(APeriodicSampler)</Input>
+          <Input>simulate(APeriodicSampler)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: APeriodicSampler
 [&lt;interactive>:6:3-6:33:writable] Error: Model is structurally singular, error found sorting equations 5: $whenCondition1 = time > nextSampling;
@@ -350,7 +350,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of DVSSTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( DVSSTest, stopTime=200 ) </Input>
+            <Input>simulate( DVSSTest, stopTime=200 ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.1746022260456655
@@ -441,7 +441,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of TwoRateSampler&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation( TwoRateSampler, stopTime=100 ) </Input>
+            <Input>simulate( TwoRateSampler, stopTime=100 ) </Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.16193255871333842

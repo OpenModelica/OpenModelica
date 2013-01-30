@@ -48,7 +48,7 @@ end WhenConflictX;
           <Output>{WhenConflictX}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulation(WhenConflictX)</Input>
+          <Input>simulate(WhenConflictX)</Input>
           <Output>record SimulationResult
     messages = "Simulation failed for model: WhenConflictX
 Error: Too many equations, overdetermined system. The model has 4 equation(s) and 3 variable(s)
@@ -91,7 +91,7 @@ end WhenPriorityX;
             <Output>{WhenPriorityX}</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(WhenPriorityX, stopTime=10)</Input>
+            <Input>simulate(WhenPriorityX, stopTime=10)</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.2510319447341764
@@ -160,7 +160,7 @@ end MultipleWhen;
             <Output>{MultipleWhen}</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
-            <Input>simulation(MultipleWhen,stopTime=10)</Input>
+            <Input>simulate(MultipleWhen,stopTime=10)</Input>
             <Output>record SimulationResult
     messages = "",
     simulationTime = 0.22235453144631376
