@@ -2087,6 +2087,15 @@ algorithm
       then
         ();
     
+    case ((r as Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
+      equation
+        Print.printBuf("record SimulationResult\n");
+        (xs,ids) = filterSimulationResults(Flags.isSet(Flags.SHORT_OUTPUT),xs,ids,{},{});
+        valRecordString(xs,ids);
+        Print.printBuf("end SimulationResult;");
+      then
+        ();
+
     case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
         recordName = Absyn.pathStringNoQual(recordPath);
@@ -2184,6 +2193,39 @@ algorithm
         fail();
   end matchcontinue;
 end valString2;
+
+protected function filterSimulationResults
+  input Boolean filter;
+  input list<Value> inValues;
+  input list<String> inIds;
+  input list<Value> valacc;
+  input list<String> idacc;
+  output list<Value> outValues;
+  output list<String> outIds;
+algorithm
+  (outValues,outIds) := match (filter,inValues,inIds,valacc,idacc)
+    local
+      Value v;
+      list<Value> vrest;
+      String id,str;
+      list<String> idrest;
+    case (_,{},{},_,_) then (listReverse(valacc),listReverse(idacc));
+    case (true,v::vrest,(id as "messages")::idrest,_,_)
+      equation
+        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,v::valacc,id::idacc);
+      then (outValues,outIds);
+    case (true,Values.STRING(str)::vrest,(id as "resultFile")::idrest,_,_)
+      equation
+        str = System.basename(str);
+        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,Values.STRING(str)::valacc,id::idacc);
+      then (outValues,outIds);
+    case (true,_::vrest,_::idrest,_,_)
+      equation
+        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,valacc,idacc);
+      then (outValues,outIds);
+    case (false,_,_,_,_) then (inValues,inIds);
+  end match;
+end filterSimulationResults;
 
 protected function valRecordString
 "function: valRecordString

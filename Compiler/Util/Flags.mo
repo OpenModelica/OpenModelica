@@ -397,6 +397,8 @@ constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(115, "dumpEncapsu
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions"));
 constant DebugFlag ON_RELAXATION = DEBUG_FLAG(116, "onRelaxation",
     Util.gettext("perform O(n) Relaxation"));
+constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(117, "shortOutput",
+    Util.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -518,7 +520,8 @@ constant list<DebugFlag> allDebugFlags = {
   INLINE_SOLVER,
   DUMP_INLINE_SOLVER,
   DUMP_ENCAPSULATEWHENCONDITIONS,
-  ON_RELAXATION
+  ON_RELAXATION,
+  SHORT_OUTPUT
 };
 
 // CONFIGURATION FLAGS
