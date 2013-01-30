@@ -39,6 +39,7 @@ enum _FLAG
   FLAG_UNKNOWN = 0,
   
   FLAG_F,
+  FLAG_HELP,
   FLAG_IIF,
   FLAG_IIM,
   FLAG_IIT,
@@ -76,6 +77,7 @@ enum _FLAG_TYPE
 
 extern const char *FLAG_NAME[FLAG_MAX];
 extern const char *FLAG_DESC[FLAG_MAX];
+extern const char *FLAG_DETAILED_DESC[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
 
 int checkCommandLineArguments(int argc, char **argv);

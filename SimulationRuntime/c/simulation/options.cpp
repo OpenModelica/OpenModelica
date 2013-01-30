@@ -39,6 +39,7 @@ const char *FLAG_NAME[FLAG_MAX] = {
   "LOG_UNKNOWN",
   
   /* FLAG_F */                     "f",
+  /* FLAG_HELP */                  "help",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
   /* FLAG_IIT */                   "iit",
@@ -65,6 +66,34 @@ const char *FLAG_DESC[FLAG_MAX] = {
   "unknown",
 
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
+  /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag",
+  /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
+  /* FLAG_IIM */                   "value specifies the initialization method",
+  /* FLAG_IIT */                   "value specifies a time for the initialization of the model",
+  /* FLAG_INTERACTIVE */           "specify interactive simulation",
+  /* FLAG_IOM */                   "value specifies the initialization optimization method",
+  /* FLAG_JAC */                   "specify jacobian",
+  /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
+  /* FLAG_LV */                    "value specifies the logging level",
+  /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
+  /* FLAG_MT */                    "this command line parameter is DEPRECATED",
+  /* FLAG_NLS */                   "value specifies the nonlinear solver",
+  /* FLAG_NOEMIT */                "do not emit any results to the result file",
+  /* FLAG_NUMJAC */                "specify numerical jacobian",                                                                                                      
+  /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output",
+  /* FLAG_OVERRIDE */              "override the variables or the simulation settings in the XML setup file",
+  /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file",
+  /* FLAG_PORT */                  "value specifies interactive simulation port",
+  /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
+  /* FLAG_S */                     "value specifies the solver",
+  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive"
+};
+
+const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
+  "unknown",
+
+  /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
+  /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag\n  e.g. -help=f prints detaild information for command-line flag f",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method\n  none\n  numeric\n  symbolic",
   /* FLAG_IIT */                   "value specifies a time for the initialization of the model",
@@ -78,12 +107,12 @@ const char *FLAG_DESC[FLAG_MAX] = {
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NUMJAC */                "specify numerical jacobian",                                                                                                      
-  /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value",
+  /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output\n  time = value, a = value, b = value, c = value",
   /* FLAG_OVERRIDE */              "override the variables or the simulation settings in the XML setup file\n  e.g. var1=start1,var2=start2,par3=start3,startTime=val1,stopTime=val2,stepSize=val3,\n       tolerance=val4,solver=\"see -s\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\"",
   /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file\n  note that: -overrideFile CANNOT be used with -override\n  use when variables for -override are too many and do not fit in command line size\n  overrideFileName contains lines of the form: var1=start1",
   /* FLAG_PORT */                  "value specifies interactive simulation port",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
-  /* FLAG_S */                     "value specifies the solver\n  dassl\n  euler\n  rungekutta\n  inline-euler\n  inline-rungekutta\n  qss",
+  /* FLAG_S */                     "value specifies the solver\n  dassl\n  euler\n  rungekutta\n  inline-euler\n  inline-rungekutta\n  dasslwort\n  dasslSymJac\n  dasslNumJac\n  dasslColorSymJac\n  dasslInternalNumJac\n  qss",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive"
 };
 
@@ -91,6 +120,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   FLAG_TYPE_UNKNOWN,
   
   /* FLAG_F */                     FLAG_TYPE_OPTION,
+  /* FLAG_HELP */                  FLAG_TYPE_OPTION,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
   /* FLAG_IIT */                   FLAG_TYPE_OPTION,

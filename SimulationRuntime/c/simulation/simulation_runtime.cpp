@@ -396,13 +396,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     data->simulationInfo.solverMethod = "dassl";
   }
 
-  int methodflag = flagSet("s", argc, argv);
-  if(methodflag)
+  if(optionSet("s", argc, argv))
   {
-    string* method = (string*) getOption("s", argc, argv);
-    if(!(method == NULL)){
+    const string *method = getOption("s", argc, argv);
+    if(method)
+    {
       data->simulationInfo.solverMethod = method->c_str();
-      INFO1(LOG_SOLVER, " | overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
   }
 
@@ -569,26 +569,51 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-        INFO1(LOG_STDOUT, "<-%s>", FLAG_NAME[i]);
+        INFO2(LOG_STDOUT, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-        INFO1(LOG_STDOUT, "<-%s=value>", FLAG_NAME[i]);
+        INFO2(LOG_STDOUT, "<-%s=value>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       else if(FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE)
-        INFO1(LOG_STDOUT, "<-%s value>", FLAG_NAME[i]);
+        INFO2(LOG_STDOUT, "<-%s value>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       else
-        WARNING1(LOG_STDOUT, "<-%s> [unknown flag-type]", FLAG_NAME[i]);
-      
-      INDENT(LOG_STDOUT);
-      INFO1(LOG_STDOUT, "%s", FLAG_DESC[i]);
-      
-      /* detailed information for some flags */
-      if(i == FLAG_LV)
-        for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
-          INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
-          
-      RELEASE(LOG_STDOUT);
+        WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
     }
       
     RELEASE(LOG_STDOUT);
+    EXIT(0);
+  }
+  
+  if(optionSet("help", argc, argv))
+  {
+    std::string option = *getOption("help", argc, argv);
+    
+    for(i=1; i<FLAG_MAX; ++i)
+    {
+      if(option == std::string(FLAG_NAME[i]))
+      {
+        if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
+          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+        else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
+          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s=value>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+        else if(FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE)
+          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s value>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+        else
+          WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+        
+        /* detailed information for some flags */
+        INDENT(LOG_STDOUT);
+        if(i == FLAG_LV)
+        {
+          for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
+            INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+        }
+        RELEASE(LOG_STDOUT);
+            
+        EXIT(0);
+      }
+    }
+    
+    WARNING1(LOG_STDOUT, "invalid command line option: -help=%s", option.c_str());
+    WARNING1(LOG_STDOUT, "use %s -help for a list of all command-line flags", argv[0]);
     EXIT(0);
   }
 
