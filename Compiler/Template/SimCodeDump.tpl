@@ -39,7 +39,7 @@ template dumpSimCode(SimCode code)
   </simcodedump><%\n%>
   >>
   let() = textFile(res,'<%name%>_dump.xml')
-  'Result dumped to <%name%>_dump.xml'
+  '<%name%>_dump'
 end dumpSimCode;
 
 template dumpVarsShort(list<SimVar> vars)

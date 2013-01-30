@@ -72,6 +72,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import Settings;
 protected import SimCodeDump;
 protected import SimCodeUtil;
 protected import System;
@@ -421,7 +422,9 @@ algorithm
     case (_,_,"Dump")
       equation
         // Yes, do this better later on...
-        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+        str = Tpl.tplString(SimCodeDump.dumpSimCode, simCode);
+        0 = System.systemCall("xsltproc -o '" +& str +& ".html' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl' '" +& str +& ".xml'");
+        print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
       then ();
     case (_,_,"XML")
       equation
