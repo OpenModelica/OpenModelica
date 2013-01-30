@@ -183,6 +183,7 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp stopTime "stop time, default 1.0";
     DAE.Exp numberOfIntervals "number of intervals, default 500";
     DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+    DAE.Exp shortOutput "shortOutput, default false";
     DAE.Exp tolerance "tolerance, default 1e-6";
     DAE.Exp method "method, default 'dassl'";
     DAE.Exp fileNamePrefix "file name prefix, default ''";
@@ -201,6 +202,7 @@ public constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default 
 public constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
 public constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
 public constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
+public constant DAE.Exp defaultShortOutput       = DAE.BCONST(false)   "default shortOutput";
 public constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
 public constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
 public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
@@ -219,6 +221,7 @@ public constant SimulationOptions defaultSimulationOptions =
     defaultStopTime,
     defaultNumberOfIntervals,
     defaultStepSize,
+    defaultShortOutput,
     defaultTolerance,
     defaultMethod,    
     defaultFileNamePrefix,
@@ -237,6 +240,7 @@ public constant list<String> simulationOptionsNames =
     "startTime",
     "stopTime",
     "numberOfIntervals",
+    "shortOutput",
     "tolerance",
     "method",
     "fileNamePrefix",
@@ -284,7 +288,7 @@ algorithm
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
 end createSimulationResult;
 
-public function createDrModelicaSimulationResult
+public function createShortOutputSimulationResult
   input String resultFile;
   input String options;
   input String message;
@@ -303,7 +307,7 @@ algorithm
   vals := Debug.bcallret2(notest, List.map, resultValues, Util.tuple22, {});
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),Values.STRING(message)::
     vals, "messages"::fields,-1);
-end createDrModelicaSimulationResult;
+end createShortOutputSimulationResult;
 
 public function createSimulationResultFailure
   input String message;
@@ -316,7 +320,7 @@ algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
-public function createDrModelicaSimulationResultFailure
+public function createShortOutputSimulationResultFailure
   input String message;
   input String options;
   output Values.Value res;
@@ -324,8 +328,8 @@ protected
   list<Values.Value> vals;
   list<String> fields;
 algorithm
-  res := createDrModelicaSimulationResult("", options, message, {});
-end createDrModelicaSimulationResultFailure;
+  res := createShortOutputSimulationResult("", options, message, {});
+end createShortOutputSimulationResultFailure;
 
 protected function buildCurrentSimulationResultExp
   output DAE.Exp outExp;
@@ -364,13 +368,14 @@ algorithm
     Real startTime,stopTime,stepSize,tolerance;
     Integer nIntervals;
     String method,format,varFilter,cflags,options;
-    Boolean measureTime;
+    Boolean measureTime, shortOutput;
     
     case(SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
       DAE.RCONST(stopTime),
       DAE.ICONST(nIntervals),
       DAE.RCONST(stepSize),
+      DAE.BCONST(shortOutput),
       DAE.RCONST(tolerance),
       DAE.SCONST(method),
       _, /* fileNamePrefix*/
@@ -384,7 +389,7 @@ algorithm
       _)) equation
         options = "";
         
-    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,measureTime,cflags);  
+    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,shortOutput,tolerance,method,options,format,varFilter,measureTime,cflags);  
   end match;
 end convertSimulationOptionsToSimCode;
 
@@ -395,6 +400,7 @@ public function buildSimulationOptions
   input DAE.Exp stopTime "stop time, default 1.0";
   input DAE.Exp numberOfIntervals "number of intervals, default 500";
   input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+  input DAE.Exp shortOutput "shortOutput, default false";
   input DAE.Exp tolerance "tolerance, default 1e-6";
   input DAE.Exp method "method, default 'dassl'";
   input DAE.Exp fileNamePrefix "file name prefix, default ''";
@@ -414,6 +420,7 @@ algorithm
     stopTime,
     numberOfIntervals,
     stepSize,
+    shortOutput,
     tolerance,
     method,
     fileNamePrefix,
@@ -443,6 +450,7 @@ algorithm
     case (SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
     case (SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
     case (SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
+    case (SIMULATION_OPTIONS(shortOutput = e),       "shortOutput")       then e;
     case (SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
     case (SIMULATION_OPTIONS(method = e),            "method")            then e;
     case (SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
@@ -519,10 +527,10 @@ protected function setFileNamePrefixInSimulationOptions
   input  String inFileNamePrefix;
   output SimulationOptions outSimOpt;
 protected
-  DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags;
+  DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags;
 algorithm
-  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
-  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags);
+  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize,shortOutput, tolerance, method, _, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
+  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance, method, DAE.SCONST(inFileNamePrefix), storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -581,6 +589,7 @@ algorithm
       DAE.Exp stopTime;
       DAE.Exp numberOfIntervals;
       DAE.Exp stepSize;
+      DAE.Exp shortOutput;
       DAE.Exp tolerance;
       DAE.Exp method;
       DAE.Exp fileNamePrefix;
@@ -595,56 +604,56 @@ algorithm
       
     case (_, {}) then inSimOpt;
     
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
       equation
         tolerance = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
     
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize,shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
       equation
         startTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize,shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
       equation
         stopTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize,shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
       equation
         numberOfIntervals = getConst(exp, DAE.T_INTEGER_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
       equation
         DAE.RCONST(rStepSize) = getConst(exp, DAE.T_REAL_DEFAULT);
         // a bit different for Interval, handle it LAST!!!!
-        SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+        SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                            fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags) = 
           populateSimulationOptions(inSimOpt, rest);
        
@@ -655,12 +664,12 @@ algorithm
        numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
        stepSize = DAE.RCONST(rStepSize);
        
-       simOpt = SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+       simOpt = SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,shortOutput,tolerance,method,
                                    fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags,simflags);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
       equation
         msg = "Ignoring unknown experiment annotation option: " +& name +& " = " +& Dump.printExpStr(exp);
@@ -1405,7 +1414,14 @@ algorithm
         false = 0 == System.removeFile("output.log");
         simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
       then (cache,simValue,st);
-
+        
+    case (cache,env,"shortOutput",vals,st,_)
+      equation
+        true = System.regularFileExists("output.log");
+        false = 0 == System.removeFile("output.log");
+        simValue = createShortOutputSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
+      then (cache,simValue,st);
+        
     // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
@@ -1413,6 +1429,15 @@ algorithm
         false = Interactive.existClass(crefCName, p);
         errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
         simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
+      equation
+        crefCName = Absyn.pathToCref(className);
+        false = Interactive.existClass(crefCName, p);
+        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
+        simValue = createShortOutputSimulationResultFailure(errMsg, simOptionsAsString(vals));
       then
         (cache,simValue,st);
 
@@ -1439,8 +1464,33 @@ algorithm
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file);
       then
+        (cache,simValue,newst); 
+     
+    case (cache,env,"shortOutput",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
+      equation
+        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        
+        cit = winCitation();
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
+        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc/cpp" ;
+        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);           
+        executable1=Util.if_(ifcpp,"OMCppSimulation",executable); 
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
+        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        resI = System.systemCall(sim_call);
+        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
+        //timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
+        (cache,simValue,newst) = createShortOutputSimulationResultFromcallModelExecutable(resI,timeSimulation,resultValues,cache,className,vals,st,result_file);
+      then
         (cache,simValue,newst);
- 
+      
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -1450,11 +1500,31 @@ algorithm
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
       then
         (cache,simValue,st);
+        
+    case (cache,env,"shortOutput",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
+        errorStr = Error.printMessagesStr();
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
+        simValue = createShortOutputSimulationResultFailure(res, simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         str = Absyn.pathString(className);
         simValue = createSimulationResultFailure(
+          "Simulation failed for model: " +& str +& 
+          "\nEnvironment variable OPENMODELICAHOME not set.", 
+          simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+        
+    case (cache,env,"shortOutput",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        str = Absyn.pathString(className);
+        simValue = createShortOutputSimulationResultFailure(
           "Simulation failed for model: " +& str +& 
           "\nEnvironment variable OPENMODELICAHOME not set.", 
           simOptionsAsString(vals));
@@ -1479,7 +1549,7 @@ algorithm
         Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        executable1=Util.if_(ifcpp,"Simulation",executable);
+        executable1=Util.if_(ifcpp,"shortOutput",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         strlinearizeTime = realString(linearizeTime);
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
@@ -1502,7 +1572,7 @@ algorithm
         //Reset PostOptModules flags
         Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
       then
-        (cache,simValue,newst);
+        (cache,simValue,newst); 
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
@@ -3229,15 +3299,15 @@ algorithm
       list<Env.Frame> env;
       Ceval.Msg msg;
       Env.Cache cache;
-      Boolean measureTime;
+      Boolean measureTime, shortOutput;
       String cflags,simflags;
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,_,_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.BOOL(measureTime),Values.STRING(cflags),Values.STRING(simflags)},
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i), Values.BOOL(shortOutput),tolerance_v,Values.STRING(method_str),_,_,_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.BOOL(measureTime),Values.STRING(cflags),Values.STRING(simflags)},
          (st as Interactive.SYMBOLTABLE(ast = _)),msg)
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime,cflags);
+        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,shortOutput,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime,cflags);
       then
         (cache, outSimSettings);
     else
@@ -3340,7 +3410,7 @@ algorithm
       Real edit,build,globalEdit,globalBuild,timeCompile;
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
-      Values.Value starttime,stoptime,interval,tolerance,method,noClean,options,outputFormat,variableFilter;
+      Values.Value starttime,stoptime,interval,shortoutput,tolerance,method,noClean,options,outputFormat,variableFilter;
       list<Values.Value> vals, values;
       Ceval.Msg msg;
       Env.Cache cache;
@@ -3353,23 +3423,24 @@ algorithm
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
         // buildModel expects these arguments:
-        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, 
+        // className, startTime, stopTime, numberOfIntervals,shortOutput, tolerance, method, fileNamePrefix, 
         // storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags
         (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
         (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
         (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
         (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (Values.STRING(method_str),vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
-        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (8 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the noClean (9 arg) from the buildModel arguments");
-        (options,vals) = getListFirstShowError(vals, "while retreaving the options (10 arg) from the buildModel arguments");
-        (Values.STRING(outputFormat_str),vals) = getListFirstShowError(vals, "while retreaving the outputFormat (11 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (12 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (13 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (14 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (15 arg) from the buildModel arguments");
+        (shortoutput,vals) = getListFirstShowError(vals, "while retreaving the shortOutput (5 arg) from the buildModel arguments");
+        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (6 arg) from the buildModel arguments");
+        (Values.STRING(method_str),vals) = getListFirstShowError(vals, "while retreaving the method (7 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (8 arg) from the buildModel arguments");
+        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (9 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the noClean (10 arg) from the buildModel arguments");
+        (options,vals) = getListFirstShowError(vals, "while retreaving the options (11 arg) from the buildModel arguments");
+        (Values.STRING(outputFormat_str),vals) = getListFirstShowError(vals, "while retreaving the outputFormat (12 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (13 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (14 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (15 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (16 arg) from the buildModel arguments");
         //cdef = Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
         // Only compile if change occured after last build.
@@ -3389,24 +3460,25 @@ algorithm
     case (cache,env,vals,(st_1 as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         // buildModel expects these arguments:
-        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, 
+        // className, startTime, stopTime, numberOfIntervals, shortOutput, tolerance, method, fileNamePrefix, 
         // storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags
         values = vals;
         (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
         (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
         (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
         (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (method,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
-        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (8 arg) from the buildModel arguments");
-        (noClean,vals) = getListFirstShowError(vals, "while retreaving the noClean (9 arg) from the buildModel arguments");
-        (options,vals) = getListFirstShowError(vals, "while retreaving the options (10 arg) from the buildModel arguments");
-        (outputFormat,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (11 arg) from the buildModel arguments");
-        (variableFilter,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (12 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (13 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (14 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (15 arg) from the buildModel arguments");
+        (shortoutput,vals) = getListFirstShowError(vals, "while retreaving the shortOutput (5 arg) from the buildModel arguments");
+        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (6 arg) from the buildModel arguments");
+        (method,vals) = getListFirstShowError(vals, "while retreaving the method (7 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (8 arg) from the buildModel arguments");
+        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (9 arg) from the buildModel arguments");
+        (noClean,vals) = getListFirstShowError(vals, "while retreaving the noClean (10 arg) from the buildModel arguments");
+        (options,vals) = getListFirstShowError(vals, "while retreaving the options (11 arg) from the buildModel arguments");
+        (outputFormat,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (12 arg) from the buildModel arguments");
+        (variableFilter,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (13 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (14 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (15 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (16 arg) from the buildModel arguments");
         
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
@@ -3442,7 +3514,7 @@ algorithm
     // failure
     case (_,_,vals,_,_)
       equation
-        Error.assertion(listLength(vals) == 15, "buildModel failure, length = " +& intString(listLength(vals)), Absyn.dummyInfo);
+        Error.assertion(listLength(vals) == 16, "buildModel failure, length = " +& intString(listLength(vals)), Absyn.dummyInfo);
       then
         fail();
   end matchcontinue;
@@ -3494,7 +3566,7 @@ algorithm
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
 
-protected function createDrModelicaSimulationResultFromcallModelExecutable
+protected function createShortOutputSimulationResultFromcallModelExecutable
 "function createSimulationResultFromcallModelExecutable
   This function calls the compiled simulation executable."
   input Integer callRet;
@@ -3518,7 +3590,7 @@ algorithm
 
     case (0,_,_,_,_,_,_,_)
       equation
-        simValue = createDrModelicaSimulationResult(
+        simValue = createShortOutputSimulationResult(
            result_file, 
            simOptionsAsString(inVals), 
            System.readFile("output.log"),
@@ -3533,11 +3605,11 @@ algorithm
         res = System.readFile("output.log");
         str = Absyn.pathString(className);
         res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
-        simValue = createDrModelicaSimulationResult("", simOptionsAsString(inVals), res, {});
+        simValue = createShortOutputSimulationResult("", simOptionsAsString(inVals), res, {});
       then
         (inCache,simValue,inSt);
   end matchcontinue;
-end createDrModelicaSimulationResultFromcallModelExecutable;
+end createShortOutputSimulationResultFromcallModelExecutable;
 
 protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
   input Env.Cache inCache;
