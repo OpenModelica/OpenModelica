@@ -29,46 +29,17 @@
  *
  */
 
-/*! \file nonlinearSystem.h
+/*! \file nonlinearSolverNewton.h
  */
 
-
-#ifndef _NONLINEARSYSTEM_H_
-#define _NONLINEARSYSTEM_H_
+#ifndef _NONLINEARSOLVERNEWTON_H_
+#define _NONLINEARSOLVERNEWTON_H_
 
 #include "simulation_data.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+int allocateNewtonData(int size, void** data);
+int freeNewtonData(void** data);
 
-#include "blaswrap.h"
-#include "f2c.h"
-
-#ifdef VOID
-#undef VOID
-#endif
-
-extern doublereal enorm_(integer *n, doublereal *x);
-
-#ifdef __cplusplus
-}
-#endif
-
-enum NONLINEAR_SOLVER
-{
-  NS_NONE = 0,
-  NS_HYBRID,
-  NS_KINSOL,
-  NS_NEWTON,
-  NS_MAX
-};
-
-typedef void* SOLVER_DATA;
-
-int allocateNonlinearSystem(DATA *data);
-int freeNonlinearSystem(DATA *data);
-int solve_nonlinear_system(DATA *data, int sysNumber);
-int check_nonlinear_solutions(DATA *data);
+int solveNewton(DATA *data, int sysNumber);
 
 #endif

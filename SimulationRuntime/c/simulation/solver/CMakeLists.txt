@@ -10,6 +10,7 @@ SET(solver_sources  dassl.c
                     model_help.c
                     nonlinearSystem.c
                     nonlinearSolverHybrd.c
+                    nonlinearSolverNewton.c
                     kinsolSolver.c
                     solver_main.c
 					stateset.c)
@@ -19,6 +20,7 @@ SET(solver_headers  dassl.h
                     events.h
                     model_help.h 
                     nonlinearSolverHybrd.h
+                    nonlinearSolverNewton.h
                     kinsolSolver.h
                     nonlinearSystem.h
                     solver_main.h

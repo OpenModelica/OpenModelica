@@ -250,12 +250,15 @@ int getNonlinearSolverMethod(int argc, char**argv)
     return NS_HYBRID;
   else if(*method == string("kinsol"))
     return NS_KINSOL;
+  else if(*method == string("newton"))
+    return NS_NEWTON;
 
   WARNING1(LOG_STDOUT, "unrecognized option -nls %s", method->c_str());
   WARNING(LOG_STDOUT, "current options are:");
   INDENT(LOG_STDOUT);
   WARNING2(LOG_STDOUT, "%-18s [%s]", "hybrid", "default method");
   WARNING2(LOG_STDOUT, "%-18s [%s]", "kinsol", "sundials/kinsol");
+  WARNING2(LOG_STDOUT, "%-18s [%s]", "newton", "newton Raphson");
   THROW("see last warning");
   return NS_NONE;
 }

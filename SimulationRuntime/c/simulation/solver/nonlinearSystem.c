@@ -38,6 +38,7 @@
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
+#include "nonlinearSolverNewton.h"
 
 /*! \fn int allocateNonlinearSystem(DATA *data)
  *
@@ -87,6 +88,9 @@ int allocateNonlinearSystem(DATA *data)
     case NS_KINSOL:
       nls_kinsol_allocate(data, &nonlinsys[i]);
       break;
+    case NS_NEWTON:
+      allocateNewtonData(size, &nonlinsys[i].solverData);
+      break;
     default:
       THROW("unrecognized nonlinear solver");
     }
@@ -123,6 +127,9 @@ int freeNonlinearSystem(DATA *data)
       break;
     case NS_KINSOL:
       nls_kinsol_free(&nonlinsys[i]);
+      break;
+    case NS_NEWTON:
+      freeNewtonData(&nonlinsys[i].solverData);
       break;
     default:
       THROW("unrecognized nonlinear solver");
@@ -166,6 +173,9 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     break;
   case NS_KINSOL:
     success = nonlinearSolve_kinsol(data, sysNumber);
+    break;
+  case NS_NEWTON:
+    success = solveNewton(data, sysNumber);
     break;
   default:
     THROW("unrecognized nonlinear solver");
