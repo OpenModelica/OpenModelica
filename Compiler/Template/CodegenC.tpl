@@ -330,6 +330,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
      let &eqnsDefines = buffer ""
      let &reverseProf = buffer ""
      let eqnInfo = equationInfo(allEquations,stateSets,&eqnsDefines,&reverseProf,vi.numEquations)
+     let nProfileBlocks = System.tmpTick() /* tmpTick() was called in equationInfo(). Calling it again will get the size since it started at 0. */
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -340,7 +341,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       
       <%eqnInfo%>
       memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
-      data->modelData.nProfileBlocks = <%System.tmpTick() /* tmpTick() was called in equationInfo(). Calling it again will get the size since it started at 0. */%>;
+      data->modelData.nProfileBlocks = <% nProfileBlocks %>;
       data->modelData.equationInfo_reverse_prof_index = (int*) malloc(data->modelData.nProfileBlocks*sizeof(int));
       <%reverseProf%>
     }
