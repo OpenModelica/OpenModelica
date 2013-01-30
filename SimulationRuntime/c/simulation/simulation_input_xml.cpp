@@ -221,7 +221,7 @@ void read_input_xml(int argc, char **argv,
   std::map<std::string, modelica_integer>::iterator it, itParam;
 
   /* read the filename from the command line (if any) */
-  filename = (std::string*)getFlagValue("f",argc,argv);
+  filename = (std::string*)getOption("f",argc,argv);
   /* no file given on the command line? use the default */
   if(filename == NULL)
     filename = new string(string(modelData->modelFilePrefix)+"_init.xml");  /* model_name defined in generated code for model.*/

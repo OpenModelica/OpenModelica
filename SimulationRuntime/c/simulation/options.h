@@ -29,18 +29,60 @@
  *
  */
 
-#ifndef _MYOPTIONS
-#define _MYOPTIONS
+#ifndef OPTIONS_H
+#define OPTIONS_H
 
 #include <string>
 
-/* -f */
-int flagSet(const char*, int, char**);
+enum _FLAG
+{
+  FLAG_UNKNOWN = 0,
+  
+  FLAG_F,
+  FLAG_IIF,
+  FLAG_IIM,
+  FLAG_IIT,
+  FLAG_INTERACTIVE,
+  FLAG_IOM,
+  FLAG_JAC,
+  FLAG_L,
+  FLAG_LV,
+  FLAG_MEASURETIMEPLOTFORMAT,
+  FLAG_MT,
+  FLAG_NLS,
+  FLAG_NOEMIT,
+  FLAG_NUMJAC,
+  FLAG_OUTPUT,
+  FLAG_OVERRIDE,
+  FLAG_OVERRIDE_FILE,
+  FLAG_PORT,
+  FLAG_R,
+  FLAG_S,
+  FLAG_W,
+  
+  FLAG_MAX
+};
 
-/* -f=value; returns NULL if not found */
-const std::string * getOption(const char*, int, char **);
+enum _FLAG_TYPE
+{
+  FLAG_TYPE_UNKNOWN = 0,
+  
+  FLAG_TYPE_FLAG,         /* e.g. -f */
+  FLAG_TYPE_OPTION,       /* e.g. -f=value */
+  FLAG_TYPE_FLAG_VALUE,   /* e.g. -f value */
+  
+  FLAG_TYPE_MAX
+};
 
-/* -f value; returns NULL if not found */
-const std::string* getFlagValue(const char *, int , char **);
+extern const char *FLAG_NAME[FLAG_MAX];
+extern const char *FLAG_DESC[FLAG_MAX];
+extern const int FLAG_TYPE[FLAG_MAX];
+
+int checkCommandLineArguments(int argc, char **argv);
+
+int flagSet(const char*, int, char**);                        /* -f */
+int optionSet(const char *option, int argc, char** argv);     /* -f=value */
+const std::string* getOption(const char*, int, char **);      /* -f=value; returns NULL if not found */
+const std::string* getFlagValue(const char *, int , char **); /* -f value; returns NULL if not found */
 
 #endif

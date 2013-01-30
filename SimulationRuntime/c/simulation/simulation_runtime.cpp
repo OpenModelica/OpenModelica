@@ -30,7 +30,7 @@
 
 
 #ifdef _MSC_VER
-#include <windows.h>
+  #include <windows.h>
 #endif
 
 #include <setjmp.h>
@@ -50,7 +50,7 @@
 #include <string>
 
 #ifndef _MSC_VER
-#include <regex.h>
+  #include <regex.h>
 #endif
 
 #include "omc_error.h"
@@ -72,31 +72,32 @@
 #include "rtclock.h"
 
 #ifdef _OMC_QSS_LIB
-#include "solver_qss/solver_qss.h"
+  #include "solver_qss/solver_qss.h"
 #endif
 
-// ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
-#ifndef NO_INTERACTIVE_DEPENDENCY
-/* #include "../../interactive/omi_ServiceInterface.h" */
-#endif
+/* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+ * 
+ * #ifndef NO_INTERACTIVE_DEPENDENCY
+ *   #include "../../interactive/omi_ServiceInterface.h"
+ * #endif
+ */
 
 using namespace std;
 
-int interactiveSimulation = 0; //This variable signals if an simulation session is interactive or non-interactive (by default)
+int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
-const char* version = "20110520_1120";
+/* const char* version = "20110520_1120"; */
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-Socket sim_communication_port;
-static int sim_communication_port_open = 0;
+  Socket sim_communication_port;
+  static int sim_communication_port_open = 0;
 #endif
 
-
-int modelTermination = 0; /* Becomes non-zero when simulation terminates. */
+int modelTermination = 0;     /* Becomes non-zero when simulation terminates. */
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
-int terminationAssert = 0; /* Becomes non-zero when model call assert simulation. */
-int warningLevelAssert = 0; /* Becomes non-zero when model call assert with warning level. */
-FILE_INFO TermInfo; /* message for termination. */
+int terminationAssert = 0;    /* Becomes non-zero when model call assert simulation. */
+int warningLevelAssert = 0;   /* Becomes non-zero when model call assert with warning level. */
+FILE_INFO TermInfo;           /* message for termination. */
 
 char* TermMsg; /* message for termination. */
 
@@ -114,11 +115,10 @@ int callSolver(DATA*, string, string, string, string, double, string);
 
 int isInteractiveSimulation();
 
-/*! \fn void setTermMsg(DATA* simData, const char* msg )
+/*! \fn void setTermMsg(const char* msg)
  *
  *  prints all values as arguments it need data
  *  and which part of the ring should printed.
- *
  */
 void setTermMsg(const char *msg)
 {
@@ -154,7 +154,7 @@ void setTermMsg(const char *msg)
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
-  const string *flags = getFlagValue("lv", argc, argv);
+  const string *flags = getOption("lv", argc, argv);
   int i;
   int error;
   
@@ -358,8 +358,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   int measureSimTime = 0;
 
   /* linear model option is set : <-l lintime> */
-  int create_linearmodel = flagSet("l", argc, argv);
-  string* lintime = (string*) getFlagValue("l", argc, argv);
+  int create_linearmodel = optionSet("l", argc, argv);
+  string* lintime = (string*) getOption("l", argc, argv);
 
   /* activated measure time option with LOG_STATS */
   if(DEBUG_STREAM(LOG_STATS) && !measure_time_flag)
@@ -399,7 +399,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   int methodflag = flagSet("s", argc, argv);
   if(methodflag)
   {
-    string* method = (string*) getFlagValue("s", argc, argv);
+    string* method = (string*) getOption("s", argc, argv);
     if(!(method == NULL)){
       data->simulationInfo.solverMethod = method->c_str();
       INFO1(LOG_SOLVER, " | overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
@@ -407,7 +407,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   }
 
   // Create a result file
-  string *result_file = (string*) getFlagValue("r", argc, argv);
+  string *result_file = (string*) getOption("r", argc, argv);
   string result_file_cstr;
   if(!result_file)
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
@@ -421,25 +421,22 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   double init_time = 0;
   string outputVariablesAtEnd = "";
 
-  if(flagSet("iim", argc, argv))
-    init_initMethod = *getFlagValue("iim", argc, argv);
-  if(flagSet("iom", argc, argv))
-    init_optiMethod = *getFlagValue("iom", argc, argv);
-  if(flagSet("iif", argc, argv))
-    init_file = *getFlagValue("iif", argc, argv);
-  if(flagSet("iit", argc, argv))
+  if(optionSet("iim", argc, argv))
+    init_initMethod = *getOption("iim", argc, argv);
+  if(optionSet("iom", argc, argv))
+    init_optiMethod = *getOption("iom", argc, argv);
+  if(optionSet("iif", argc, argv))
+    init_file = *getOption("iif", argc, argv);
+  if(optionSet("iit", argc, argv))
   {
-    init_time_string = *getFlagValue("iit", argc, argv);
+    init_time_string = *getOption("iit", argc, argv);
     init_time = atof(init_time_string.c_str());
   }
 
   if(flagSet("output", argc, argv))
-  {
     outputVariablesAtEnd = *getFlagValue("output", argc, argv);
-  }
 
-  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod,
-      init_file, init_time, outputVariablesAtEnd);
+  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, outputVariablesAtEnd);
 
   if(retVal == 0 && create_linearmodel)
   {
@@ -463,7 +460,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
-    string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
+    string* plotFormat = (string*) getOption("measureTimePlotFormat", argc, argv);
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg",
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
@@ -561,60 +558,35 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
  */
 int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
-  int i;
+  int i, j;
   initDumpSystem();
 
-  if(flagSet("?", argc, argv) || flagSet("help", argc, argv))
+  if(flagSet("?", argc, argv) || flagSet("help", argc, argv) || checkCommandLineArguments(argc, argv))
   {
     INFO1(LOG_STDOUT, "usage: %s", argv[0]);
     INDENT(LOG_STDOUT);
-    INFO(LOG_STDOUT, "<-f setup file>");
-    INFO(LOG_STDOUT, "\tspecify a new setup XML file to the generated simulation code");
-    INFO(LOG_STDOUT, "<-r result file>");
-    INFO(LOG_STDOUT, "\tspecify a new result file than the default Model_res.mat");
-    INFO(LOG_STDOUT, "<-m|s solver:{dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss}>");
-    INFO(LOG_STDOUT, "\tspecify the solver");
-    INFO(LOG_STDOUT, "<-nls={hybrid|kinsol}>");
-    INFO(LOG_STDOUT, "\tspecify the nonlinear solver");
-    INFO(LOG_STDOUT, "<-interactive> <-port value>");
-    INFO(LOG_STDOUT, "\tspecify interactive simulation and port");
-    INFO(LOG_STDOUT, "<-iim initialization method:{none,numeric,symbolic}>");
-    INFO(LOG_STDOUT, "\tspecify the initialization method");
-    INFO(LOG_STDOUT, "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}>");
-    INFO(LOG_STDOUT, "\tspecify the initialization optimization method");
-    INFO(LOG_STDOUT, "<-iif initialization file>");
-    INFO(LOG_STDOUT, "\tspecify an external file for the initialization of the model");
-    INFO(LOG_STDOUT, "<-iit initialization time>");
-    INFO(LOG_STDOUT, "\tspecify a time for the initialization of the model");
-    INFO(LOG_STDOUT, "<-override var1=start1,var2=start2,par3=start3,");
-    INFO(LOG_STDOUT, " startTime=val1,stopTime=val2,stepSize=val3,tolerance=val4,");
-    INFO(LOG_STDOUT, " solver=\"see -m\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\">");
-    INFO(LOG_STDOUT, "\toverride the variables or the simulation settings in the XML setup file");
-    INFO(LOG_STDOUT, "<-overrideFile overrideFileName>");
-    INFO(LOG_STDOUT, "\tnote that: -overrideFile CANNOT be used with -override");
-    INFO(LOG_STDOUT, "\tuse when variables for -override are too many and do not fit in command line size");
-    INFO(LOG_STDOUT, "\toverrideFileName contains lines of the form: var1=start1");
-    INFO(LOG_STDOUT, "\twill override the variables or the simulation settings in the XML setup file with the values from the file");
-    INFO(LOG_STDOUT, "<-output a,b,c>");
-    INFO(LOG_STDOUT, "\toutput the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value");
-    INFO(LOG_STDOUT, "<-noemit>");
-    INFO(LOG_STDOUT, "\tdo not emit any results to the result file");
-    INFO(LOG_STDOUT, "<-jac> ");
-    INFO(LOG_STDOUT, "\tspecify jacobian");
-    INFO(LOG_STDOUT, "<-numjac> ");
-    INFO(LOG_STDOUT, "\tspecify numerical jacobian");
-    INFO(LOG_STDOUT, "<-l linear time> ");
-    INFO(LOG_STDOUT, "\tspecify a time where the linearization of the model should be performed");
-    INFO(LOG_STDOUT, "<-mt> ");
-    INFO(LOG_STDOUT, "\tthis command line parameter is DEPRECATED!");
-    INFO(LOG_STDOUT, "<-measureTimePlotFormat svg|jpg|ps|gif|...> ");
-    INFO(LOG_STDOUT, "\tspecify the output format of the measure time functionality");
-    INFO(LOG_STDOUT, "<-lv [flag1][,flags2][,...]>");
-    INFO(LOG_STDOUT, "\tspecify the logging level");
-    for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
-      INFO2(LOG_STDOUT, "\t%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
-    INFO(LOG_STDOUT, "<-w>");
-    INFO(LOG_STDOUT, "\tshow all warnings");
+    
+    for(i=1; i<FLAG_MAX; ++i)
+    {
+      if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
+        INFO1(LOG_STDOUT, "<-%s>", FLAG_NAME[i]);
+      else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
+        INFO1(LOG_STDOUT, "<-%s=value>", FLAG_NAME[i]);
+      else if(FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE)
+        INFO1(LOG_STDOUT, "<-%s value>", FLAG_NAME[i]);
+      else
+        WARNING1(LOG_STDOUT, "<-%s> [unknown flag-type]", FLAG_NAME[i]);
+      
+      INDENT(LOG_STDOUT);
+      INFO1(LOG_STDOUT, "%s", FLAG_DESC[i]);
+      
+      /* detailed information for some flags */
+      if(i == FLAG_LV)
+        for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
+          INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+          
+      RELEASE(LOG_STDOUT);
+    }
       
     RELEASE(LOG_STDOUT);
     EXIT(0);
@@ -647,7 +619,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   /*
   if(interactiveSimulation && flagSet("port", argc, argv)) {
     cout << "userPort" << endl;
-    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    string *portvalue = (string*) getOption("port", argc, argv);
     std::istringstream stream(*portvalue);
     int userPort;
     stream >> userPort;
@@ -656,7 +628,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   */
   if(!interactiveSimulation && flagSet("port", argc, argv))
   {
-    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    string *portvalue = (string*) getOption("port", argc, argv);
     std::istringstream stream(*portvalue);
     int port;
     stream >> port;
