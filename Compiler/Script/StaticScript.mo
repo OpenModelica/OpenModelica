@@ -134,7 +134,7 @@ algorithm
       String cname_str;
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
-      DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime,shortOutput;
+      DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime;
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
@@ -153,12 +153,7 @@ algorithm
         
         (cache, startTime, stopTime, numberOfIntervals) = 
           calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
-
-        (cache,shortOutput) = 
-          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "shortOutput", DAE.T_BOOL_DEFAULT, 
-                              args,  CevalScript.getSimulationOption(defaulSimOpt, "shortOutput"),
-                              pre, info);
-
+        
         (cache,tolerance) = 
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
                               args, CevalScript.getSimulationOption(defaulSimOpt, "tolerance"),
@@ -219,7 +214,6 @@ algorithm
           startTime,
           stopTime,
           numberOfIntervals,
-          shortOutput,
           tolerance,
           method,
           fileNamePrefix,
@@ -379,19 +373,17 @@ public function elabCallInteractive "function: elabCallInteractive
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache,DAE.BCONST(false)) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"shortOutput",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache,DAE.BCONST(true)) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"shortOutput",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info); 
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
-        (cache,Expression.makeBuiltinCall("shortOutput",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "residualCMP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation

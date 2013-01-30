@@ -83,7 +83,6 @@ public function createSimulationSettings
   input Real startTime;
   input Real stopTime;
   input Integer inumberOfIntervals;
-  input Boolean shortOutput;
   input Real tolerance;
   input String method;
   input String options;
@@ -99,7 +98,7 @@ algorithm
   numberOfIntervals := Util.if_(inumberOfIntervals <= 0, 1, inumberOfIntervals);
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
-    startTime, stopTime, numberOfIntervals, stepSize, shortOutput, tolerance,
+    startTime, stopTime, numberOfIntervals, stepSize, tolerance,
     method, options, outputFormat, variableFilter, measureTime, cflags);
 end createSimulationSettings;
 

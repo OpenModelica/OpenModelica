@@ -509,7 +509,6 @@ uniontype SimulationSettings
     Real stopTime;
     Integer numberOfIntervals;
     Real stepSize;
-    Boolean shortOutput;
     Real tolerance;
     String method;
     String options;
