@@ -1887,7 +1887,7 @@ public function typeof "function typeof
   input DAE.Exp inExp;
   output Type outType;
 algorithm
-  outType := match (inExp)
+  outType := matchcontinue (inExp)
     local
       Type tp;
       Operator op;
@@ -1897,7 +1897,8 @@ algorithm
       String msg;
       DAE.Type ty;
       list<DAE.Type> tys;
-      Integer i;
+      Integer i,i1,i2;
+      DAE.Dimension dim;
     
     case (DAE.ICONST(integer = _)) then DAE.T_INTEGER_DEFAULT;
     case (DAE.RCONST(real = _)) then DAE.T_REAL_DEFAULT;
@@ -1915,6 +1916,12 @@ algorithm
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
     case (DAE.ARRAY(ty = tp)) then tp;
     case (DAE.MATRIX(ty = tp)) then tp;
+    case (DAE.RANGE(start=DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2),ty = tp as DAE.T_INTEGER(source=_)))
+      equation
+        i = intMax(0,i2-i1+1);
+      then DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
+    case (DAE.RANGE(start=DAE.ICONST(1),step=NONE(),stop=e,ty = tp as DAE.T_INTEGER(source=_)))
+      then DAE.T_ARRAY(tp, {DAE.DIM_EXP(e)}, DAE.emptyTypeSource);
     case (DAE.RANGE(ty = tp)) then DAE.T_ARRAY(tp, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
     case (DAE.CAST(ty = tp)) then tp;
     case (DAE.ASUB(exp = e,sub=explist)) 
@@ -1924,8 +1931,12 @@ algorithm
         tp;
     case (DAE.TSUB(ty = tp)) then tp;
     case (DAE.CODE(ty = tp)) then tp;
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
-      then liftArrayR(Types.simplifyType(ty),DAE.DIM_UNKNOWN());
+      /* array reduction with known size */
+    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
+      equation
+        DAE.T_ARRAY(dims={dim}) = typeof(e);
+        tp = liftArrayR(Types.unliftArray(Types.simplifyType(ty)),dim);
+      then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.simplifyType(ty);
     case (DAE.SIZE(_,NONE())) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
@@ -1963,7 +1974,7 @@ algorithm
         msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
-  end match;
+  end matchcontinue;
 end typeof;
 
 protected function typeofRelation
