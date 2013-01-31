@@ -110,7 +110,7 @@ void* alloc_elements(int ix, int n, int sz)
   _index_t start,nelem;
   assert(n>=0);
   start = current_states[ix].current_state.offset;
-  nelem = ((n * sz)/sizeof(int)) + (((n * sz) % sizeof(int)) ? 1 : 0);
+  nelem = (((n * sz)+(sizeof(int)-1))/sizeof(int));
   assert(nelem <= NR_ELEMENTS);
   if((start + nelem) > NR_ELEMENTS) {
     if(current_states[ix].nbuffers == (current_states[ix].current_state.buffer + 1)) {

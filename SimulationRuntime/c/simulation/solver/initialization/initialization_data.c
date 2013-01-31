@@ -191,10 +191,10 @@ INIT_DATA *initializeInitData(DATA *simData)
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
   ASSERT(initData->initialResiduals, "out of memory");
 
-  initData->residualScalingCoefficients = (double*)calloc(initData->nInitResiduals, sizeof(double));
+  initData->residualScalingCoefficients = (double*)malloc(initData->nInitResiduals * sizeof(double));
   ASSERT(initData->residualScalingCoefficients, "out of memory");
 
-  initData->startValueResidualScalingCoefficients = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
+  initData->startValueResidualScalingCoefficients = (double*)malloc(initData->nStartValueResiduals * sizeof(double));
   ASSERT(initData->startValueResidualScalingCoefficients, "out of memory");
 
   for(i=0; i<initData->nInitResiduals; ++i)

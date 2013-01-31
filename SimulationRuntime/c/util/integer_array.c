@@ -813,14 +813,14 @@ void range_alloc_integer_array(modelica_integer start, modelica_integer stop, mo
 {
     int n;
 
-    n = floor((stop-start)/inc)+1;
+    n = (int)floor((stop-start)/inc)+1;
     simple_alloc_1d_integer_array(dest,n);
     range_integer_array(start,stop,inc,dest);
 }
 
 void range_integer_array(modelica_integer start, modelica_integer stop, modelica_integer inc, integer_array_t* dest)
 {
-    int i;
+    size_t i;
     /* Assert that dest has correct size */
     for(i = 0; i < dest->dim_size[0]; ++i) {
         integer_set(dest, i, start + (i * inc));

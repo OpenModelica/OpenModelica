@@ -224,9 +224,10 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   if(measure_time_flag)
   {
-    char* filename = (char*) calloc(((size_t)strlen(data->modelData.modelFilePrefix)+1+11),sizeof(char));
-    filename = strncpy(filename,data->modelData.modelFilePrefix,strlen(data->modelData.modelFilePrefix));
-    filename = strncat(filename,"_prof.data",10);
+    size_t len = strlen(data->modelData.modelFilePrefix);
+    char* filename = (char*) malloc((len+11) * sizeof(char));
+    strncpy(filename,data->modelData.modelFilePrefix,len);
+    strncpy(&filename[len],"_prof.data",11);
     fmt = fopen(filename, "wb");
     if(!fmt)
     {
@@ -268,7 +269,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     else
       solverInfo.offset = 0;
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
-    
+
     /* adjust final step? */
     if(solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime)
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
@@ -293,14 +294,14 @@ int solver_main(DATA* data, const char* init_initMethod,
     /******** Event handling ********/
     if(measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
-    
+
     if(checkEvents(data, solverInfo.eventLst, &(solverInfo.currentTime), &solverInfo))
     {
       INFO1(LOG_EVENTS, "event handling at time %g", solverInfo.currentTime);
       INDENT(LOG_EVENTS);
       handleEvents(data, solverInfo.eventLst, &(solverInfo.currentTime), &solverInfo);
       RELEASE(LOG_EVENTS);
-      
+
       solverInfo.didEventStep = 1;
       overwriteOldSimulationData(data);
     }
