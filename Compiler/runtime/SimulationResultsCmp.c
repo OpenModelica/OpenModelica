@@ -324,7 +324,11 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         refevent = 0;
         t_event = t + t*reltol*0.1;
         /* do not exceed next time step */
-        t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
+        if (i+1<=data->n) {
+          t_event = (t_event > time->data[i])?time->data[i]:t_event;
+        }else{
+          t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
+        }
         j_event = j;
         while(tr < t_event) {
           if (j+1<reftime->n) {
