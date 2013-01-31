@@ -50,7 +50,7 @@ typedef struct DATA_NEWTON
   double* resScaling;
   double* fvecScaled;
 
-  int n;
+  integer n;
   double* x;
   double* fvec;
   double xtol;
@@ -61,13 +61,13 @@ typedef struct DATA_NEWTON
   double epsfcn;
   double* fjac;
   double* rwork;
-  int* iwork;
+  integer* iwork;
 } DATA_NEWTON;
 
 
-int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
-                  int* nfev, void(*f)(int*, double*, double*, int*, void*),
-                  double* fjac, double* rwork, int* iwork,
+static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
+                  int* nfev, void(*f)(integer*, double*, double*, int*, void*),
+                  double* fjac, double* rwork, integer* iwork,
                   int* info, void* userdata);
 
 #ifdef __cplusplus
@@ -106,7 +106,7 @@ int allocateNewtonData(int size, void** voiddata){
   data->fjac = (double*) malloc((size*size)*sizeof(double));
 
   data->rwork = (double*) malloc((size)*sizeof(double));
-  data->iwork = (int*) malloc(size*sizeof(int));
+  data->iwork = (integer*) malloc(size*sizeof(integer));
 
   ASSERT(*voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
@@ -193,7 +193,7 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac)
  *
  *
  */
-void wrapper_fvec_newton(int* n, double* x, double* f, int* iflag, void* data){
+static void wrapper_fvec_newton(integer* n, double* x, double* f, int* iflag, void* data){
 
   int i,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
@@ -371,8 +371,7 @@ int solveNewton(DATA *data, int sysNumber) {
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
-int
-fdjac(int* n, void(*f)(int*, double*, double*, int*, void*), double *x,
+static int fdjac(integer* n, void(*f)(integer*, double*, double*, int*, void*), double *x,
        double* fvec, double *fjac, double* eps, int* iflag, double* wa,
        void* userdata)
 {
@@ -422,9 +421,9 @@ fdjac(int* n, void(*f)(int*, double*, double*, int*, void*), double *x,
  *                [info]
  *
  */
-int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
-                  int* nfev, void(*f)(int*, double*, double*, int*, void*),
-                  double* fjac, double* work, int* iwork, int* info, void* userdata)
+static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
+                  int* nfev, void(*f)(integer*, double*, double*, int*, void*),
+                  double* fjac, double* work, integer* iwork, int* info, void* userdata)
 {
   int currentSys = ((DATA*)userdata)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
@@ -435,8 +434,8 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
   double error_x, error_f, scaledError_f;
   double tol_x = *eps, tol_f = solverData->ftol;
   double *wa;
-  int nrsh = 1;
-  int lapackinfo = 1;
+  integer nrsh = 1;
+  integer lapackinfo = 1;
 
   wa = work;
   l = *maxfev;

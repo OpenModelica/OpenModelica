@@ -61,13 +61,13 @@ typedef struct RK4
   int work_states_ndims;
 }RK4;
 
-int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
+static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 
-int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
+static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
 
-void checkTermination(DATA* data);
+static void checkTermination(DATA* data);
 
-void writeOutputVars(char* names, DATA* data);
+static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
 {
@@ -501,8 +501,7 @@ int solver_main(DATA* data, const char* init_initMethod,
 }
 
 /***************************************    EULER_EXP     *********************************/
-int
-euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
+static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -519,8 +518,7 @@ euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 
 /***************************************    RK4      ***********************************/
-int
-rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
+static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   double** k = ((RK4*)(solverInfo->solverData))->work_states;
   double sum;
@@ -571,7 +569,7 @@ rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  function checks if the model should really terminated.
  */
-void checkTermination(DATA *data)
+static void checkTermination(DATA *data)
 {
   if(terminationAssert)
   {
@@ -595,7 +593,7 @@ void checkTermination(DATA *data)
   }
 }
 
-void writeOutputVars(char* names, DATA* data)
+static void writeOutputVars(char* names, DATA* data)
 {
   int i = 0;
   char *p = strtok(names, ",");

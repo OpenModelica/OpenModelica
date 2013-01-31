@@ -103,12 +103,27 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   ASSERT(xbar, "out of memory");
 
   /* initialize simplex */
-  for(x=0; x<N+1; x++)
+  if (initData->nominal)
   {
     for(i=0; i<N; i++)
     {
-      /* vertex x / var i */
-      simplex[x*N + i] = initData->nominal ? initData->vars[i] / initData->nominal[i] : initData->vars[i];
+      double sx = initData->vars[i] / initData->nominal[i];
+      for(x=0; x<N+1; x++)
+      {
+        /* vertex x / var i */
+        simplex[x*N + i] = sx;
+      }
+    }
+  }
+  else
+  {
+    for(i=0; i<N; i++)
+    {
+      for(x=0; x<N+1; x++)
+      {
+        /* vertex x / var i */
+        simplex[x*N + i] = initData->vars[i];
+      }
     }
   }
   for(i=0; i<N; i++)

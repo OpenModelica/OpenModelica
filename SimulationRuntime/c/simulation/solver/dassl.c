@@ -42,7 +42,7 @@
 
 #include "dassl.h"
 
-const char *dasslMethodStr[DASSL_MAX] = {"unknown",
+static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                           "dassl",
                                           "dasslwort",
                                           "dasslSymJac",
@@ -52,7 +52,7 @@ const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                           "dassltest",
                                          };
 
-const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown", 
+static const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
                                                 "dassl with colored numerical jacobian, with interval root finding",
                                                 "dassl without internal root finding",
                                                 "dassl with symbolic jacobian",
@@ -65,29 +65,24 @@ const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
 
 
 /* provides a dummy Jacobian to be used with DASSL */
-int
+static int
 dummy_Jacobian(double *t, double *y, double *yprime, double *deltaD,
     double *delta, double *cj, double *h, double *wt, double *rpar, fortran_integer* ipar) {
   return 0;
 }
-int
+static int
 dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y,
                    fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar) {
   return 0;
 }
 
-int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
+static int JacobianSymbolic(double *t, double *y, double *yprime,  double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, fortran_integer* ipar);
-int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
+static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, fortran_integer* ipar);
-
-int JacobianSymbolic(double *t, double *y, double *yprime,  double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, fortran_integer* ipar);
-int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
-int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
-int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, fortran_integer* ipar);
 
 
@@ -116,7 +111,7 @@ void  DDASRT(
 );
 
 
-int
+static int
 continue_DASRT(fortran_integer* idid, double* tolarence);
 
 
@@ -311,7 +306,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
           function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
     }
     else if(dasslData->dasslMethod ==  DASSL_NUMJAC)
-    { 
+    {
       DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
@@ -420,7 +415,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   return retVal;
 }
 
-int
+static int
 continue_DASRT(fortran_integer* idid, double* atol)
 {
   int retValue = -1;
@@ -633,7 +628,7 @@ int functionJacASym(DATA* data, double* jac)
  * provides a analytical Jacobian to be used with DASSL
  */
 
-int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
          double *rpar, fortran_integer* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -667,7 +662,7 @@ int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD
 /*
  * provides a analytical Jacobian to be used with DASSL
  */
-int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
          double *rpar, fortran_integer* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -763,7 +758,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
 /*
  * provides a numerical Jacobian to be used with DASSL
  */
-int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, fortran_integer* ipar)
 {
   int i,j;
@@ -865,7 +860,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
 /*
  * provides a numerical Jacobian to be used with DASSL
  */
-int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, fortran_integer* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
