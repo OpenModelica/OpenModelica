@@ -17,6 +17,7 @@ AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a
 
 RTOBJ   = \
 $(srcdir)/runtime/runtime.a \
+-lModelicaExternalC \
 $(top_builddir)/build/lib/omc/libOpenModelicaRuntimeC.a \
 $(srcdir)/modpar/libmodpar.a
 
