@@ -405,31 +405,31 @@ void SimulationWidget::simulate()
     // setup Model Setup file flag
     if (!mpModelSetupFileTextBox->text().isEmpty())
     {
-      simulationFlags.append("-f");
+      simulationFlags.append("-f=");
       simulationFlags.append(mpModelSetupFileTextBox->text());
     }
     // setup initiaization method flag
     if (!mpInitializationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append("-iim");
+      simulationFlags.append("-iim=");
       simulationFlags.append(mpInitializationMethodComboBox->currentText());
     }
     // setup Optimization Method flag
     if (!mpOptimizationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append("-iom");
+      simulationFlags.append("-iom=");
       simulationFlags.append(mpOptimizationMethodComboBox->currentText());
     }
     // setup Equation System Initialization file flag
     if (!mpEquationSystemInitializationFileTextBox->text().isEmpty())
     {
-      simulationFlags.append("-iif");
+      simulationFlags.append("-iif=");
       simulationFlags.append(mpEquationSystemInitializationFileTextBox->text());
     }
     // setup Equation System Initialization time flag
     if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
     {
-      simulationFlags.append("-iit");
+      simulationFlags.append("-iit=");
       simulationFlags.append(mpEquationSystemInitializationTimeTextBox->text());
     }
     // setup Logging flags
@@ -437,7 +437,7 @@ void SimulationWidget::simulate()
         || mpLogSolverCheckBox->isChecked() || mpLogEventsCheckBox->isChecked() || mpLogNonLinearSystemsCheckBox->isChecked()
         || mpLogZeroCrossingsCheckBox->isChecked() || mpLogDebugCheckBox->isChecked())
     {
-      simulationFlags.append("-lv");
+      simulationFlags.append("-lv=");
       if (mpLogStatsCheckBox->isChecked())
         simulationFlags.append("LOG_STATS");
       if (mpLogInitializationCheckBox->isChecked())
