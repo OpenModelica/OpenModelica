@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="2.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:simcodedump="urn:simcodedump"
+    extension-element-prefixes="simcodedump">
 
 <xsl:template match="source">
   <xsl:value-of select="info/@file"/>:<xsl:value-of select="info/@lineStart"/>:<xsl:value-of select="info/@colStart"/>-<xsl:value-of select="info/@lineEnd"/>:<xsl:value-of select="info/@colEnd"/>
@@ -10,8 +14,13 @@
   </xsl:for-each>
 </xsl:template>
 
+<xsl:function name="simcodedump:escapeJS" as="xs:string">
+  <xsl:param name="str" as="xs:string"/>
+  <xsl:value-of select="replace(replace($str, '&quot;','\\&quot;'), '\n', '\\n')"/>
+</xsl:function>
+
 <xsl:template match="equation/assign">
-  <h3 title="{@type}assignment index={../@index}"><xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/></h3>
+  <h3 title="{@type}assignment index={../@index}"><script type="text/javascript">document.write(replaceSharedLiteral('<xsl:value-of select="simcodedump:escapeJS(lhs)"/> = <xsl:value-of select="simcodedump:escapeJS(rhs)"/>'));</script></h3>
 </xsl:template>
 
 <xsl:template match="equation/mixed">
@@ -291,6 +300,21 @@ this.diff_match_patch=diff_match_patch;this.DIFF_DELETE=-1;this.DIFF_INSERT=1;th
   <script type="text/javascript">
     var dmp = new diff_match_patch();
     dmp.Diff_EditCost = 4;
+    var literals = [
+      <xsl:for-each select="simcodedump/literals/exp">
+        "<xsl:value-of select="simcodedump:escapeJS(.)"/>",
+      </xsl:for-each>
+    ];
+    function replaceSharedLiteral(str) {
+      var re = /#SHARED_LITERAL_([0-9]*).*#/;
+      var match = str.match(re);
+      if (match) {
+        var ix = parseInt(match[1]);
+        var lit = '&lt;a href="#literal_' + match[1] + '">' + literals[ix-1] + '&lt;/a>';
+        str = replaceSharedLiteral(str.replace(re,lit));
+      }
+      return str;
+    }
     function show_diff(before,after) {
       var diffs = dmp.diff_main(before, after, false);
       dmp.diff_cleanupEfficiency(diffs);
@@ -300,6 +324,7 @@ this.diff_match_patch=diff_match_patch;this.DIFF_DELETE=-1;this.DIFF_INSERT=1;th
   </script>
   </head>
   <body>
+  <noscript>This html-page requires javascript to function correctly.</noscript>
   <h2>Equations (<xsl:value-of select="count(simcodedump/equations/equation)"/>)</h2>
     <xsl:for-each select="simcodedump/equations/equation">
       <a name="eq_{@index}"></a>
@@ -313,6 +338,12 @@ this.diff_match_patch=diff_match_patch;this.DIFF_DELETE=-1;this.DIFF_INSERT=1;th
       <p><xsl:apply-templates select="source"/></p>
       <xsl:apply-templates select="operations/*"/>
     </xsl:for-each>
+  <h2>Shared literals</h2>
+  <script type="text/javascript">
+    for (var i = 1; i &lt;= literals.length ; i++) {
+      document.write('<p>&lt;a name="literal_' + i + '">' + i + '&lt;/a>: ' + literals[i-1] + '</p>');
+    }
+  </script>
   </body>
   </html>
 </xsl:template>

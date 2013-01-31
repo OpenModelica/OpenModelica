@@ -133,7 +133,7 @@ match exp
     'unbox(<%dumpExp(exp, stringDelimiter)%>)'
   case SHARED_LITERAL(__) then
     let ty_str = dumpType(ty)
-    '#SHARED_LITERAL_<%index%>(<%ty_str%>#'
+    '#SHARED_LITERAL_<%index%>(<%ty_str%>)#'
   case PATTERN(__) then dumpPattern(pattern)
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;

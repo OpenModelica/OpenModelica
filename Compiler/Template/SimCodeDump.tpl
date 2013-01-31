@@ -36,6 +36,9 @@ template dumpSimCode(SimCode code)
     <%/* dumpEqs(listAppend(listAppend(sc.initialEquations,sc.parameterEquations),sc.allEquations)) */
     dumpEqs(sc.allEquations)%>
   </equations>
+  <literals>
+    <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
+  </literals>
   </simcodedump><%\n%>
   >>
   let() = textFile(res,'<%fileNamePrefix%>_dump.xml')

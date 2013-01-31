@@ -422,7 +422,7 @@ algorithm
       equation
         // Yes, do this better later on...
         str = Tpl.tplString(SimCodeDump.dumpSimCode, simCode);
-        0 = System.systemCall("xsltproc -o '" +& str +& ".html' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl' '" +& str +& ".xml'");
+        0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
         print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
       then ();
     case (_,_,"XML")
