@@ -870,7 +870,8 @@ algorithm
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile;
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile,
+             systemPath, gccVersion;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
@@ -2125,10 +2126,28 @@ algorithm
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,_)
       equation
-        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","HAVE_CORBA","CONFIGURE_CMDLINE"};
+        vars_1 = {"OPENMODELICAHOME",
+                  "OPENMODELICALIBRARY",
+                  "OMC_PATH",
+                  "SYSTEM_PATH",
+                  "OMDEV_PATH",
+                  "OMC_FOUND",
+                  "MODELICAUSERCFLAGS",
+                  "WORKING_DIRECTORY",
+                  "CREATE_FILE_WORKS",
+                  "REMOVE_FILE_WORKS",
+                  "OS",
+                  "SYSTEM_INFO",
+                  "RTLIBS",
+                  "C_COMPILER",
+                  "C_COMPILER_VERSION",
+                  "C_COMPILER_RESPONDING",
+                  "HAVE_CORBA",
+                  "CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath(Config.getRunningTestsuite());
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
+        systemPath = Util.makeValueOrDefault(System.readEnv,"PATH","");
         omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         omcfound = System.regularFileExists(omcpath);
         os = System.os();
@@ -2143,11 +2162,14 @@ algorithm
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
-        gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null 2>&1");
+        gcc_res = 0 == System.systemCall(gcc +& " -v > " +& touch_file +& " 2>&1");
+        gccVersion = System.readFile(touch_file);
+        _ = System.systemCall("rm " +& touch_file);
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),
                 Values.STRING(omcpath),
+                Values.STRING(systemPath),
                 Values.STRING(omdev),
                 Values.BOOL(omcfound),
                 Values.STRING(usercflags),
@@ -2158,6 +2180,7 @@ algorithm
                 Values.STRING(uname),
                 Values.STRING(senddata),
                 Values.STRING(gcc),
+                Values.STRING(gccVersion),
                 Values.BOOL(gcc_res),
                 Values.BOOL(have_corba),
                 Values.STRING(confcmd)};

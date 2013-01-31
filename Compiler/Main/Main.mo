@@ -988,6 +988,68 @@ algorithm
   end matchcontinue;
 end readSettingsFile;
 
+
+public function setWindowsPaths
+"@author: adrpo
+ set the windows paths for MinGW.
+ do some checks on where needed things are present.
+ BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW 
+              changes you will need to change here!"
+  input String inOMHome;
+algorithm
+  _ := matchcontinue(inOMHome)
+    local
+      String oldPath,newPath,mingwPath,omHome,omdevPath;
+    
+    // check if we have OMDEV set 
+    case (omHome)
+      equation
+        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+        omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
+        // we have something!
+        false = stringEq(omdevPath, "");
+        // do we have bin?
+        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\bin");
+        // do we have the correct libexec stuff?
+        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+        oldPath = System.readEnv("PATH");
+        newPath = stringAppendList({omHome,"\\bin;",
+                                    omHome,"\\lib;",
+                                    omdevPath,"\\tools\\mingw\\bin;",
+                                    omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
+                                    oldPath});
+        _ = System.setEnv("PATH",newPath,true);
+      then
+        ();
+    
+    case (omHome)
+      equation
+        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+        oldPath = System.readEnv("PATH");
+        // do we have bin?
+        true = System.directoryExists(omHome +& "\\mingw\\bin");
+        // do we have the correct libexec stuff?
+        true = System.directoryExists(omHome +& "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+        newPath = stringAppendList({omHome,"\\bin;",
+                                    omHome,"\\lib;",
+                                    omHome,"\\mingw\\bin;",
+                                    omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
+                                    oldPath});
+        _ = System.setEnv("PATH",newPath,true);
+      then 
+        ();
+    
+    else 
+      equation
+        print("We could not find any of:\n");
+        print("\t$OPENMODELICAHOME/MinGW/bin and $OPENMODELICAHOME/MinGW/libexec/gcc/mingw32/4.4.0\n");
+        print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
+      then
+        (); 
+  
+  end matchcontinue;
+end setWindowsPaths;
+
 public function main
 "function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
@@ -1022,16 +1084,32 @@ algorithm
   _ := matchcontinue (args)
     local
       String errstr;
-      String omhome,oldpath,newpath;
+      String omhome;
       Interactive.SymbolTable symbolTable;
       
-      /* Version requested using --version*/
+    // Version requested using --version
     case _ // try first to see if we had a version request among flags.
       equation
         true = Config.versionRequest();
         print(Settings.getVersionNr());
         print("\n");
       then ();
+
+    // Setup mingw path only once
+    // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT 
+    //        without asking Adrian.Pop@liu.se
+    case _
+      equation
+        true = "Windows_NT" ==& System.os();
+        omhome = Settings.getInstallationDirectoryPath();
+        setWindowsPaths(omhome);        
+        
+        // setup an file database (for in-memory use :memory: as name)
+        //Database.open(0, "omc.db");
+        //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
+        //_ = Database.query(0, "begin transaction;");
+      then 
+        fail();
 
     case _
       equation
@@ -1052,24 +1130,6 @@ algorithm
         symbolTable = readSettings(args);
         interactivemodeCorba(symbolTable);
       then ();
-
-      // Setup mingw path only once.
-    case _
-      equation
-        omhome = Settings.getInstallationDirectoryPath();
-        _ = System.setEnv("OPENMODELICAHOME",omhome,true) "sendData work-around";
-        // print("OMHOME:" +& omhome +& "|");
-        true = "Windows_NT" ==& System.os();
-        oldpath = System.readEnv("PATH");
-        newpath = stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
-        _ = System.setEnv("PATH",newpath,true);
-        
-        // setup an file database (for in-memory use :memory: as name)
-        //Database.open(0, "omc.db");
-        //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
-        //_ = Database.query(0, "begin transaction;");
-      then 
-        fail();
     
     case _::_
       equation
