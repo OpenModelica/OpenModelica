@@ -6,7 +6,7 @@
 
 AR = ar -ru
 
-MOEXTC_OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o ModelicaUtilities.o tables.o
+MOEXTC_OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o tables.o
 
 all: libModelicaExternalC.a
 

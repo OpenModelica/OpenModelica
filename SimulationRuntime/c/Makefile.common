@@ -26,7 +26,6 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./meta/meta_modelica.h \
 ./meta/meta_modelica_real.h \
 ./meta/meta_modelica_string_lit.h \
-./ModelicaExternalC/ModelicaUtilities.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
 ./simulation_data.h \
@@ -37,6 +36,7 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./simulation/solver/simulation_inline_solver.h \
 ./simulation/solver/stateset.h \
 ./simulation/results/simulation_result.h \
+./util/ModelicaUtilities.h \
 ./util/base_array.h \
 ./util/boolean_array.h \
 ./util/division.h \
