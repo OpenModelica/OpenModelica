@@ -193,23 +193,10 @@ int solver_main(DATA* data, const char* init_initMethod,
   if(DEBUG_STREAM(LOG_DEBUG))
     printParameters(data, LOG_DEBUG);
 
-  /* initial sample and delay again, due to maybe change
+  /* initial delay again, due to maybe change
    * parameters during Initialization */
-  /* lochel: ??? */
-  /* initSample(data, simInfo->startTime, simInfo->stopTime); */
   initDelay(data, simInfo->startTime);
 
-  saveZeroCrossings(data);
-  storePreValues(data);
-  storeRelations(data);
-
-  /* determined discrete system 
-  lochel: why should we do this?
-  if(checkForNewEvent(data, solverInfo.eventLst))
-    handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
-  else
-    updateDiscreteSystem(data);
-  */
 
   storePreValues(data);
   storeOldValues(data);
@@ -218,6 +205,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   storeRelations(data);
   updateHysteresis(data);
   saveZeroCrossings(data);
+
   sim_result_emit(data);
   overwriteOldSimulationData(data);
 

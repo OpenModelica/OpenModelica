@@ -794,12 +794,14 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      let size = listLength(crefs)
+     let newtonStep = if linearTearing then '1' else '0'
      let generatedJac = match jacobianMatrix case SOME(__) then 'functionJacNLSJac<%eq.index%>_column' case NONE() then 'NULL'
      let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
      let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
      <<
      nonLinearSystemData[<%indexNonLinear%>].simProfEqNr = SIM_PROF_EQ_<%index%>;
      nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
+     nonLinearSystemData[<%indexNonLinear%>].method = <%newtonStep%>;
      nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
      nonLinearSystemData[<%indexNonLinear%>].analyticalJacobianColumn = <%generatedJac%>;
      nonLinearSystemData[<%indexNonLinear%>].initialAnalyticalJacobian = <%initialJac%>;

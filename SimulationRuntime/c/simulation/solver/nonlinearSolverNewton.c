@@ -48,14 +48,13 @@ typedef struct DATA_NEWTON
 {
   int initialized; /* 1 = initialized, else = 0*/
   double* resScaling;
-  int useXScaling;
-  double* xScalefactors;
   double* fvecScaled;
 
   int n;
   double* x;
   double* fvec;
   double xtol;
+  double ftol;
   int nfev;
   int maxfev;
   int info;
@@ -91,18 +90,17 @@ int allocateNewtonData(int size, void** voiddata){
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
 
   *voiddata = (void*)data;
-  ASSERT(data, "allocationHybrdData() failed!");
+  ASSERT(data, "allocationNewtonData() failed!");
 
   data->initialized = 0;
   data->resScaling = (double*) malloc(size*sizeof(double));
   data->fvecScaled = (double*) malloc(size*sizeof(double));
-  data->useXScaling = 1;
-  data->xScalefactors = (double*) malloc(size*sizeof(double));
 
   data->n = size;
   data->x = (double*) malloc(size*sizeof(double));
   data->fvec = (double*) calloc(size,sizeof(double));
-  data->xtol = 1e-10;
+  data->xtol = 1e-8;
+  data->ftol = 1e-8;
   data->maxfev = size*100;
   data->epsfcn = DBL_EPSILON;
   data->fjac = (double*) malloc((size*size)*sizeof(double));
@@ -125,12 +123,66 @@ int freeNewtonData(void **voiddata){
 
   free(data->resScaling);
   free(data->fvecScaled);
-  free(data->xScalefactors);
   free(data->x);
   free(data->fvec);
   free(data->fjac);
   free(data->rwork);
   free(data->iwork);
+
+  return 0;
+}
+
+
+/*! \fn getAnalyticalJacobian
+ *
+ *  function calculates analytical jacobian
+ *
+ *  \param  [ref]  [data]
+ *  \param  [out]  [jac]
+ *
+ *  \author wbraun
+ *
+ */
+int getAnalyticalJacobianNewton(DATA* data, double* jac)
+{
+  int i,j,k,l,ii,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  const int index = systemData->jacobianIndex;
+
+  memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
+
+  for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
+  {
+    /* activate seed variable for the corresponding color */
+    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
+
+    ((systemData->analyticalJacobianColumn))(data);
+
+    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    {
+      if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      {
+        if(j==0)
+          ii = 0;
+        else
+          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+        {
+          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
+          k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
+          jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          ii++;
+        };
+      }
+      /* de-activate seed variable for the corresponding color */
+      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
+        data->simulationInfo.analyticJacobians[index].seedVars[j] = 0;
+    }
+
+  }
 
   return 0;
 }
@@ -147,22 +199,8 @@ void wrapper_fvec_newton(int* n, double* x, double* f, int* iflag, void* data){
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
 
-  /* re-scaling x vector */
-  if (solverData->useXScaling ){
-    for(i=0;i<*n;i++){
-      x[i] = x[i]*solverData->xScalefactors[i];
-    }
-  }
-
   (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data,
       x, f, iflag);
-
-  /* Scaling x vector */
-  if (solverData->useXScaling ){
-    for(i=0;i<*n;i++){
-      x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
-    }
-  }
 }
 
 
@@ -189,7 +227,6 @@ int solveNewton(DATA *data, int sysNumber) {
   int i, iflag=0;
   double xerror, xerror_scaled;
   char success = 0;
-  double local_tol = 1e-10;
   int nfunc_evals = 0;
   int continuous = 1;
 
@@ -200,10 +237,6 @@ int solveNewton(DATA *data, int sysNumber) {
 
   /* set x vector */
   memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
-
-  for(i=0;i<solverData->n;i++){
-    solverData->xScalefactors[i] = fmax(solverData->x[i], systemData->nominal[i]);
-  }
 
   /* debug output */
   if(DEBUG_STREAM(LOG_NLS))
@@ -229,13 +262,6 @@ int solveNewton(DATA *data, int sysNumber) {
   /* start solving loop */
   while (!giveUp && !success) {
 
-    /* Scaling x vector */
-    if(solverData->useXScaling){
-      for(i=0;i<solverData->n;i++){
-        solverData->x[i] = (1.0/solverData->xScalefactors[i]) * solverData->x[i];
-      }
-    }
-
     /* set residual function continuous
      */
     if (continuous)
@@ -258,13 +284,6 @@ int solveNewton(DATA *data, int sysNumber) {
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
 
-    /* re-scaling x vector */
-    if(solverData->useXScaling){
-      for(i=0;i<solverData->n;i++){
-        solverData->x[i] = solverData->x[i]*solverData->xScalefactors[i];
-      }
-    }
-
     /* check for proper inputs */
     if (solverData->info == 0) {
       printErrorEqSyst(IMPROPER_INPUT, data->modelData.equationInfo[systemData->simProfEqNr],
@@ -272,38 +291,12 @@ int solveNewton(DATA *data, int sysNumber) {
       data->simulationInfo.found_solution = -1;
     }
 
-    if (DEBUG_STREAM(LOG_NLS_JAC)) {
-      int i,j,l=0;
-      printf("Jacobi-Matrix\n");
-      for(i=0;i<solverData->n;i++){
-        printf("%d : ", i);
-        for(j=0;j<solverData->n;j++){
-          printf("%e ",solverData->fjac[l++]);
-        }
-        printf("\n");
-      }
-    }
-
-    /* Scaling Residual vector */
-    {
-      int i,j,l=0;
-      for(i=0;i<solverData->n;++i){
-        solverData->resScaling[i] = 1e-16;
-        for(j=0;j<solverData->n;++j){
-          solverData->resScaling[i] = (fabs(solverData->fjac[l]) > solverData->resScaling[i])
-              ? fabs(solverData->fjac[l]) : solverData->resScaling[i];
-          l++;
-        }
-        solverData->resScaling[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
-      }
-    }
-
     /* check for error  */
     xerror_scaled = enorm_(&solverData->n, solverData->resScaling);
     xerror = enorm_(&solverData->n, solverData->fvec);
 
     /* solution found */
-    if ((xerror <= local_tol || xerror_scaled <= local_tol) && solverData->info > 0) {
+    if ((xerror <= solverData->ftol || xerror_scaled <= solverData->ftol) && solverData->info > 0) {
       success = 1;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NLS)) {
@@ -317,9 +310,8 @@ int solveNewton(DATA *data, int sysNumber) {
       }
     /* Then try with old values (instead of extrapolating )*/
     } else if (retries < 1){
-      for (i=0; i< solverData->n; ++i){
-        solverData->x[i] = systemData->nlsxOld[i];
-      }
+      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -338,31 +330,17 @@ int solveNewton(DATA *data, int sysNumber) {
           INFO(LOG_NLS,
               " - iteration making no progress:\t vary solution point by 1%%.");
         }
-    /* try old values as x-Scaling factors */
-    } else if(retries < 3) {
-
-        for(i=0;i<solverData->n;i++){
-          solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nominal[i]);
-        }
+    /* try to vary the initial values */
+    } else if(retries < 2) {
+      for(i = 0; i < solverData->n; i++) {
+          solverData->x[i] = systemData->nominal[i];
+        };
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
         if(DEBUG_STREAM(LOG_NLS)) {
           INFO(LOG_NLS,
-              " - iteration making no progress:\t try without scaling at all.");
-        }
-    /* try to disable x-Scaling */
-    } else if(retries < 4) {
-        int scaling = solverData->useXScaling;
-        if(scaling)
-          solverData->useXScaling = 0;
-        memcpy(solverData->xScalefactors, systemData->nominal, solverData->n*(sizeof(double)));
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t try without scaling at all.");
+              " - iteration making no progress:\t try nominal values as initial solution.");
         }
     } else {
       data->simulationInfo.found_solution = -1;
@@ -404,13 +382,19 @@ fdjac(int* n, void(*f)(int*, double*, double*, int*, void*), double *x,
 
   int i,j,l;
 
+  int currentSys = ((DATA*)userdata)->simulationInfo.currentNonlinearSystemIndex;
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
+
+  int linear = systemData->method;
+
   for (i = 0; i < *n; i++) {
-    delta_hhh = delta_h * fvec[i];
-    delta_hh = delta_h * abs(x[i]);
-    delta_hh = delta_h * abs(x[i]);
-    delta_hh = fmax(delta_h, delta_hh);
-    delta_hh = ((delta_hhh >= 0) ? delta_hh : -delta_hh);
-    delta_hh = x[i] + delta_hh - x[i];
+    if (linear){
+      delta_hh = 1;
+    } else {
+      delta_hh = delta_h * fmax(1, abs(x[i]));
+      delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
+      delta_hh = x[i] + delta_hh - x[i];
+    }
     xsave = x[i];
     x[i] += delta_hh;
     delta_hh = 1. / delta_hh;
@@ -442,15 +426,23 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
                   int* nfev, void(*f)(int*, double*, double*, int*, void*),
                   double* fjac, double* work, int* iwork, int* info, void* userdata)
 {
+  int currentSys = ((DATA*)userdata)->simulationInfo.currentNonlinearSystemIndex;
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
   int i, j, l, k;
   int iflag;
-  double error, tmp;
+  double error_x, error_f, scaledError_f;
+  double tol_x = *eps, tol_f = solverData->ftol;
   double *wa;
   int nrsh = 1;
   int lapackinfo = 1;
+
   wa = work;
   l = *maxfev;
-  error = 1.0 + *eps;
+  error_x = 1.0 + tol_x;
+  error_f = 1.0 + tol_f;
+  scaledError_f = 1.0 + tol_f;
 
   if (DEBUG_STREAM(LOG_NLS_V)) {
     INFO1(LOG_NLS_V,"######### Start Newton maxfev :%d #########", *maxfev);
@@ -459,7 +451,7 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
   }
   *info = 1;
 
-  while (error >= *eps && *info >= 0)
+  while (*info >= 0)
   {
 
     DEBUG1(LOG_NLS_V, "**** start Iteration : %d  *****", *maxfev-l);
@@ -467,20 +459,24 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
     (*f)(n, x, fvec, &iflag, userdata);
     (*nfev)++;
 
+    /*  Debug output */
     if (DEBUG_STREAM(LOG_NLS_V)) {
       for(i=0;i<*n;i++)
         DEBUG2(LOG_NLS_V,"fvec[%d] : %e: ", i, fvec[i]);
     }
 
     /* calculate jacobian */
-    fdjac(n, f, x, fvec, fjac, fdeps, &iflag, wa, userdata);
-    (*nfev)=(*nfev)+*n;
-    /* (*df)(x, a, n); */
+    if (systemData->jacobianIndex != -1){
+      getAnalyticalJacobianNewton(userdata, fjac);
+    } else {
+      fdjac(n, f, x, fvec, fjac, fdeps, &iflag, wa, userdata);
+      (*nfev)=(*nfev)+*n;
+    }
 
     /*  Debug output */
     if(DEBUG_STREAM(LOG_NLS_JAC))
     {
-      DEBUG(LOG_NLS_JAC,"Print jacobian matrix:");
+      printf("Print jacobian matrix:");
       for(i=0;  i < *n;i++)
       {
         printf("%d : ", i);
@@ -490,9 +486,30 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
       }
     }
 
+    /* Scaling Residual vector */
+    {
+      int i,j,l=0;
+      for(i=0;i<solverData->n;++i){
+        solverData->resScaling[i] = 1e-16;
+        for(j=0;j<solverData->n;++j){
+          solverData->resScaling[i] = (fabs(solverData->fjac[l]) > solverData->resScaling[i])
+              ? fabs(solverData->fjac[l]) : solverData->resScaling[i];
+          l++;
+        }
+        solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
+      }
+    }
+
+    /* calculate error by 2-norm */
+    scaledError_f = enorm_(n, solverData->fvecScaled);
+    error_f = enorm_(n, fvec);
+    DEBUG1(LOG_NLS_V,"scaled error = %e", scaledError_f);
+    DEBUG1(LOG_NLS_V,"error = %e", error_f);
+    if (scaledError_f <= tol_f) break;
+    if (error_f <= tol_f) break;
+
     /* solve J*(x_{n+1} - x_n)=f */
     _omc_dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
-
 
     if (DEBUG_STREAM(LOG_NLS_V)) {
       DEBUG(LOG_NLS_V,"Solved J*x=b");
@@ -508,8 +525,14 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
       WARNING1(LOG_NLS,"illegal  input in argument %d", lapackinfo);
     }else{
       /* if no error occurs update x vector */
-      for (i = 0; i < *n; i++)
+      for (i = 0; i < *n; i++){
         x[i] = x[i] - fvec[i];
+      }
+
+      /* break if root convergence if reached */
+      error_x = enorm_(n, fvec);
+      if (error_x <= tol_x) break;
+
     }
 
     if (DEBUG_STREAM(LOG_NLS_V)) {
@@ -517,37 +540,11 @@ int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int
         DEBUG2(LOG_NLS_V,"x[%d] = %e ", i, x[i]);
     }
 
-    /* calculate the function values */
-    (*f)(n, x, fvec, &iflag, userdata);
-    (*nfev)++;
-
-    if (DEBUG_STREAM(LOG_NLS_V)) {
-      for(i=0;i<*n;i++)
-        DEBUG2(LOG_NLS_V,"fvec[%d] : %e: ", i, fvec[i]);
-    }
-
-    if (DEBUG_STREAM(LOG_NLS_V)) {
-      for(i=0;i<*n;i++)
-        INFO2(LOG_NLS_V,"x[%d] : %e ", i, x[i]);
-    }
-
-    /* calculate error by maximum norm */
-    error = 0.0;
-    for (i = 0; i < *n; i++) {
-      tmp = fabs(fvec[i]);
-      if (tmp > error)
-        error = tmp;
-    }
-    DEBUG2(LOG_NLS_V,"z = %e\t error = %e", z, error);
-
-
     /* check if maximum iteration is reached */
-    if (error >= *eps) {
-      l = l - 1;
-      if (l < 0) {
-        *info = -1;
-        return 0;
-      }
+    l = l - 1;
+    if (l < 0) {
+      *info = -1;
+      break;
     }
   }
   return 0;

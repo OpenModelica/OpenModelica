@@ -570,6 +570,7 @@ int solveHybrd(DATA *data, int sysNumber)
     /* check for error  */
     xerror_scaled = enorm_(&solverData->n, solverData->fvecScaled);
     xerror = enorm_(&solverData->n, solverData->fvec);
+
     if(solverData->info == 1 && (xerror > local_tol && xerror_scaled > local_tol))
       solverData->info = 4;
 

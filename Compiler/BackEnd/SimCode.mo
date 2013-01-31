@@ -433,7 +433,8 @@ uniontype SimEqSystem
     list<SimEqSystem> eqs;
     list<DAE.ComponentRef> crefs;
     Integer indexNonLinear;
-    Option<JacobianMatrix> jacobianMatrix; 
+    Option<JacobianMatrix> jacobianMatrix;
+    Boolean linearTearing;
   end SES_NONLINEAR;
   
   record SES_MIXED

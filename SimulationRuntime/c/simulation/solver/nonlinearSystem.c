@@ -80,20 +80,28 @@ int allocateNonlinearSystem(DATA *data)
     nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
 
     /* allocate solver data */
-    switch(data->simulationInfo.nlsMethod)
+    if (nonlinsys[i].method == 1)
     {
-    case NS_HYBRID:
-      allocateHybrdData(size, &nonlinsys[i].solverData);
-      break;
-    case NS_KINSOL:
-      nls_kinsol_allocate(data, &nonlinsys[i]);
-      break;
-    case NS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
-      break;
-    default:
-      THROW("unrecognized nonlinear solver");
     }
+    else
+    {
+      switch(data->simulationInfo.nlsMethod)
+      {
+      case NS_HYBRID:
+        allocateHybrdData(size, &nonlinsys[i].solverData);
+        break;
+      case NS_KINSOL:
+        nls_kinsol_allocate(data, &nonlinsys[i]);
+        break;
+      case NS_NEWTON:
+        allocateNewtonData(size, &nonlinsys[i].solverData);
+        break;
+      default:
+        THROW("unrecognized nonlinear solver");
+      }
+    }
+
   }
 
   return 0;
@@ -119,22 +127,28 @@ int freeNonlinearSystem(DATA *data)
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
 
-    /* allocate solver data */
-    switch(data->simulationInfo.nlsMethod)
+    /* free solver data */
+    if (nonlinsys[i].method == 1)
     {
-    case NS_HYBRID:
-      freeHybrdData(&nonlinsys[i].solverData);
-      break;
-    case NS_KINSOL:
-      nls_kinsol_free(&nonlinsys[i]);
-      break;
-    case NS_NEWTON:
       freeNewtonData(&nonlinsys[i].solverData);
-      break;
-    default:
-      THROW("unrecognized nonlinear solver");
     }
-
+    else
+    {
+      switch(data->simulationInfo.nlsMethod)
+      {
+      case NS_HYBRID:
+        freeHybrdData(&nonlinsys[i].solverData);
+        break;
+      case NS_KINSOL:
+        nls_kinsol_free(&nonlinsys[i]);
+        break;
+      case NS_NEWTON:
+        freeNewtonData(&nonlinsys[i].solverData);
+        break;
+      default:
+        THROW("unrecognized nonlinear solver");
+      }
+    }
     free(nonlinsys[i].solverData);
   }
 
@@ -166,19 +180,26 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
    */
 
   /* for now just use hybrd solver as before */
-  switch(data->simulationInfo.nlsMethod)
+  if (nonlinsys[sysNumber].method == 1)
   {
-  case NS_HYBRID:
-    success = solveHybrd(data, sysNumber);
-    break;
-  case NS_KINSOL:
-    success = nonlinearSolve_kinsol(data, sysNumber);
-    break;
-  case NS_NEWTON:
     success = solveNewton(data, sysNumber);
-    break;
-  default:
-    THROW("unrecognized nonlinear solver");
+  }
+  else
+  {
+    switch(data->simulationInfo.nlsMethod)
+    {
+    case NS_HYBRID:
+      success = solveHybrd(data, sysNumber);
+      break;
+    case NS_KINSOL:
+      success = nonlinearSolve_kinsol(data, sysNumber);
+      break;
+    case NS_NEWTON:
+      success = solveNewton(data, sysNumber);
+      break;
+    default:
+      THROW("unrecognized nonlinear solver");
+    }
   }
   nonlinsys[sysNumber].solved = success;
 

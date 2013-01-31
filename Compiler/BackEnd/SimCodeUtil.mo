@@ -1850,10 +1850,11 @@ algorithm
       list<SimCode.SimVar> discVars;
       list<SimCode.SimEqSystem> discEqs;
       Option<SimCode.JacobianMatrix> optSymJac;
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac), _)
+      Boolean linearTearing;
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac, linearTearing), _)
       equation
         nonLinSysIndex = nonLinSysIndexMap[index];
-      then SimCode.SES_NONLINEAR(index, eqs, crefs, nonLinSysIndex, optSymJac);
+      then SimCode.SES_NONLINEAR(index, eqs, crefs, nonLinSysIndex, optSymJac, linearTearing);
     case(SimCode.SES_MIXED(index, cont, discVars, discEqs), _)
       equation
         cont = setNonLinSysIndexMap(cont, nonLinSysIndexMap);
@@ -1887,19 +1888,22 @@ algorithm
       list<Integer> value_dims;
       list<SimCode.JacobianMatrix> symjacs;
       Option<SimCode.JacobianMatrix> optSymJac;
-      SimCode.JacobianMatrix symJac;     
+      SimCode.JacobianMatrix symJac;
+      
+      Boolean linearTearing;
+           
     case ({}, _, _, _)
     then ({}, inCountEquation, inNonLinSysIndex, inNLSsymjacs);
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as NONE())::rest, _, _, _)
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as NONE(), linearTearing)::rest, _, _, _)
       equation
         (res, indx1, indx2, symjacs) = indexNonLinSysandCountEqns(rest, inCountEquation+1, inNonLinSysIndex+1, inNLSsymjacs);
-        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac)}, res);
+        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
       then (res, indx1, indx2, symjacs);
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as SOME(symJac))::rest, _, _, _)
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as SOME(symJac), linearTearing)::rest, _, _, _)
       equation
         symjacs = symJac::inNLSsymjacs;
         (res, indx1, indx2, symjacs) = indexNonLinSysandCountEqns(rest, inCountEquation+1, inNonLinSysIndex+1, symjacs);
-        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac)}, res);
+        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
       then (res, indx1, indx2, symjacs);        
     case(SimCode.SES_MIXED(index, cont, discVars, discEqs)::rest, _, _, _)
       equation
@@ -2421,7 +2425,7 @@ algorithm
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE())}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false)}, uniqueEqIndex+1, tempvars);
         
     // non-linear
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, false, _, _, _)
@@ -2435,7 +2439,7 @@ algorithm
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE())}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false)}, uniqueEqIndex+1, tempvars);
         
     // Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, false, true, _, _)
@@ -3641,7 +3645,7 @@ algorithm
         emptyVars =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars); 
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix, false)}, uniqueEqIndex, tempvars);
         
     // No analytic jacobian available. Generate non-linear system.
     case (_, _, v, kv, eqn, constrs, clsAttrs, NONE(), BackendDAE.JAC_NO_ANALYTIC(), _, _, _, _)
@@ -3657,7 +3661,7 @@ algorithm
         emptyVars =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix, false)}, uniqueEqIndex, tempvars);
         
     // failure
     else equation
@@ -3894,7 +3898,7 @@ algorithm
    matchcontinue(liniear, skipDiscInAlgorithm, tearingVars, residualEqns, otherEqns, isyst, ishared, iuniqueEqIndex, itempvars)
      local
        list<BackendDAE.Var> tvars, ovarsLst;
-       list<BackendDAE.Equation> reqns, otherEqnsLst;
+       list<BackendDAE.Equation> reqns, reqns1, otherEqnsLst;
        BackendDAE.Variables vars, kv, v, diffVars, ovars;
        BackendDAE.EquationArray eqns, eqns1, oeqns;
        BackendVarTransform.VariableReplacements repl;
@@ -3914,42 +3918,7 @@ algorithm
        Option<SimCode.JacobianMatrix> jacobianMatrix;
        list<Integer> otherEqnsInts, otherVarsInts;
        list<list<Integer>> otherVarsIntsLst;
-     // linear case
-     case(true, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv, functionTree=functree), _, _)
-       equation
-         true = intLt(listLength(otherEqns), 10);
-         //get tearing vars
-         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
-         ((simVars, _)) = List.fold(tvars, traversingdlowvarToSimvarFold, ({}, kv));
-         simVars = listReverse(simVars);
-         // get residual eqns
-         reqns = BackendEquation.getEqns(residualEqns, eqns);
-         // solve other equations 
-         repl = BackendVarTransform.emptyReplacements();
-         repl = solveOtherEquations(otherEqns, eqns, vars, ishared, repl);
-         // replace other equations in residual equations
-         (reqns, _) = BackendVarTransform.replaceEquations(reqns, repl, SOME(BackendVarTransform.skipPreOperator));
-         // States are solved for der(x) not x.
-         reqns = replaceDerOpInEquationList(reqns);
-         tvars = List.map(tvars, transformXToXd);
-         // generatate jacobian
-         v = BackendVariable.listVar1(tvars);
-         eqns1 = BackendEquation.listEquation(reqns);
-         syst = BackendDAE.EQSYSTEM(v, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-         //  BackendDump.dumpEqSystem(syst);
-         (m, _) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
-         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true, ishared);
-         //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
-         // generate liniear System
-         ((_, beqs, _, _)) = BackendEquation.traverseBackendDAEEqns(eqns1, BackendEquation.equationToExp, (v, {}, {}, SOME(functree)));
-         beqs = listReverse(beqs);
-         simJac = List.map1(jac, jacToSimjac, v);
-         // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex+1, itempvars, {SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, simJac)});
-       then
-         (simequations, uniqueEqIndex, tempvars);
-     // nonliniear case  
+
      case(_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv, functionTree=functree), _, _)
        equation
          //get tearing vars
@@ -3981,7 +3950,7 @@ algorithm
          diffVars = BackendVariable.listVar1(tvars);
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, "NLSJac", uniqueEqIndex, tempvars);
        then
-         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix)}, uniqueEqIndex, tempvars);
+         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix, liniear)}, uniqueEqIndex, tempvars);
    end matchcontinue;
 end createTornSystem;
 
@@ -5840,7 +5809,7 @@ algorithm
         simeqnsystem = List.flatten(simeqnsystemlst);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
         simeqnsystem1 = listAppend(simeqnsystem, resEqs);
-      then (SimCode.SES_NONLINEAR(uniqueEqIndex, simeqnsystem1, tcrs, 0, NONE()), uniqueEqIndex+1, tempvars);
+      then (SimCode.SES_NONLINEAR(uniqueEqIndex, simeqnsystem1, tcrs, 0, NONE(), false), uniqueEqIndex+1, tempvars);
       
     else
       equation
@@ -6403,7 +6372,7 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(source=_), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({inEquation}, iuniqueEqIndex, itempvars);
-    then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE(), false)}, uniqueEqIndex+1, tempvars);
     
     // failure
     else equation
@@ -9768,6 +9737,7 @@ algorithm
       Boolean initialCall;
       DAE.ElementSource source;
       Option<SimCode.JacobianMatrix> symJac;
+      Boolean linearTearing;
       
     case SimCode.SES_RESIDUAL(index= index, exp = e, source = source)
       equation
@@ -9798,11 +9768,11 @@ algorithm
       then
         SimCode.SES_LINEAR(index, partOfMixed, vars, elst1, simJac1);
         
-    case SimCode.SES_NONLINEAR(index = index, eqs = discEqs, crefs = crefs, indexNonLinear = indexNonLinear, jacobianMatrix= symJac)
+    case SimCode.SES_NONLINEAR(index = index, eqs = discEqs, crefs = crefs, indexNonLinear = indexNonLinear, jacobianMatrix= symJac, linearTearing=linearTearing)
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
       then
-        SimCode.SES_NONLINEAR(index, discEqs, crefs, indexNonLinear, symJac);
+        SimCode.SES_NONLINEAR(index, discEqs, crefs, indexNonLinear, symJac, linearTearing);
         
     case SimCode.SES_MIXED(index, cont, vars, discEqs)
       equation
@@ -12542,6 +12512,7 @@ algorithm
       DAE.ElementSource source;
       A a;
       Option<SimCode.JacobianMatrix> symJac;
+      Boolean linearTearing;
     case (SimCode.SES_RESIDUAL(index, exp, source), _, a)
       equation
         ((exp, a)) = func((exp, a));
@@ -12566,10 +12537,10 @@ algorithm
       equation
         /* TODO: Me */
       then (SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac), a);
-    case (SimCode.SES_NONLINEAR(index, eqs, crefs, indexNonLinear, symJac), _, a)
+    case (SimCode.SES_NONLINEAR(index, eqs, crefs, indexNonLinear, symJac, linearTearing), _, a)
       equation
         /* TODO: Me */
-      then (SimCode.SES_NONLINEAR(index, eqs, crefs, indexNonLinear, symJac), a);
+      then (SimCode.SES_NONLINEAR(index, eqs, crefs, indexNonLinear, symJac, linearTearing), a);
     case (SimCode.SES_MIXED(index, cont, discVars, discEqs), _, a)
       equation
         /* TODO: Me */

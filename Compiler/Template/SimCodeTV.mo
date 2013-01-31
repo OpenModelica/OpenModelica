@@ -298,6 +298,7 @@ package SimCode
       list<DAE.ComponentRef> crefs;
       Integer indexNonLinear;
       Option<JacobianMatrix> jacobianMatrix;
+      Boolean linearTearing;
     end SES_NONLINEAR;
     
     record SES_MIXED
