@@ -405,55 +405,52 @@ void SimulationWidget::simulate()
     // setup Model Setup file flag
     if (!mpModelSetupFileTextBox->text().isEmpty())
     {
-      simulationFlags.append("-f=");
-      simulationFlags.append(mpModelSetupFileTextBox->text());
+      simulationFlags.append(QString("-f=").append(mpModelSetupFileTextBox->text()));
     }
     // setup initiaization method flag
     if (!mpInitializationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append("-iim=");
-      simulationFlags.append(mpInitializationMethodComboBox->currentText());
+      simulationFlags.append(QString("-iim=").append(mpInitializationMethodComboBox->currentText()));
     }
     // setup Optimization Method flag
     if (!mpOptimizationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append("-iom=");
-      simulationFlags.append(mpOptimizationMethodComboBox->currentText());
+      simulationFlags.append(QString("-iom=").append(mpOptimizationMethodComboBox->currentText()));
     }
     // setup Equation System Initialization file flag
     if (!mpEquationSystemInitializationFileTextBox->text().isEmpty())
     {
-      simulationFlags.append("-iif=");
-      simulationFlags.append(mpEquationSystemInitializationFileTextBox->text());
+      simulationFlags.append(QString("-iif=").append(mpEquationSystemInitializationFileTextBox->text()));
     }
     // setup Equation System Initialization time flag
     if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
     {
-      simulationFlags.append("-iit=");
-      simulationFlags.append(mpEquationSystemInitializationTimeTextBox->text());
+      simulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
     }
     // setup Logging flags
     if (mpLogStatsCheckBox->isChecked() || mpLogInitializationCheckBox->isChecked() || mpLogResultInitializationCheckBox->isChecked()
         || mpLogSolverCheckBox->isChecked() || mpLogEventsCheckBox->isChecked() || mpLogNonLinearSystemsCheckBox->isChecked()
         || mpLogZeroCrossingsCheckBox->isChecked() || mpLogDebugCheckBox->isChecked())
     {
-      simulationFlags.append("-lv=");
+      QString loggingFlagName, loggingFlagValues;
+      loggingFlagName.append("-lv=");
       if (mpLogStatsCheckBox->isChecked())
-        simulationFlags.append("LOG_STATS");
+        loggingFlagValues.append("LOG_STATS");
       if (mpLogInitializationCheckBox->isChecked())
-        simulationFlags.append("LOG_INIT");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_INIT") : loggingFlagValues.append(",LOG_INIT");
       if (mpLogResultInitializationCheckBox->isChecked())
-        simulationFlags.append("LOG_RES_INIT");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_RES_INIT") : loggingFlagValues.append(",LOG_RES_INIT");
       if (mpLogSolverCheckBox->isChecked())
-        simulationFlags.append("LOG_SOLVER");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOLVER") : loggingFlagValues.append(",LOG_SOLVER");
       if (mpLogEventsCheckBox->isChecked())
-        simulationFlags.append("LOG_EVENTS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS") : loggingFlagValues.append(",LOG_EVENTS");
       if (mpLogNonLinearSystemsCheckBox->isChecked())
-        simulationFlags.append("LOG_NONLIN_SYS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NONLIN_SYS") : loggingFlagValues.append(",LOG_NONLIN_SYS");
       if (mpLogZeroCrossingsCheckBox->isChecked())
-        simulationFlags.append("LOG_ZEROCROSSINGS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
       if (mpLogDebugCheckBox->isChecked())
-        simulationFlags.append("LOG_DEBUG");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DEBUG") : loggingFlagValues.append(",LOG_DEBUG");
+      simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
     // before simulating save the simulation options and set the matching algorithm & index reduction.
     saveSimulationOptions();
@@ -559,9 +556,9 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
     QTcpServer server;
     const int SOCKMAXLEN = 4096;
     char buf[SOCKMAXLEN];
-    server.listen(QHostAddress("127.0.0.1"));
-    QStringList args("-port");
-    args << QString::number(server.serverPort()) << simulationFlags;
+    server.listen(QHostAddress(QHostAddress::LocalHost));
+    QStringList args(QString("-port=").append(QString::number(server.serverPort())));
+    args << simulationFlags;
     // start the executable
     mpSimulationProcess->start(file,args);
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
@@ -569,9 +566,12 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
       if (!sock && server.hasPendingConnections()) {
         sock = server.nextPendingConnection();
       } else if (!sock) {
-        QEventLoop loop;
-        connect(&server, SIGNAL(newConnection()), &loop, SLOT(quit()));
-        loop.exec();
+        QEventLoop eventLoop;
+        QTimer timer;   /* in case we don't get any newConnection() from simulation executable we must quit the event loop.*/
+        connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+        connect(&server, SIGNAL(newConnection()), &eventLoop, SLOT(quit()));
+        timer.start(1000);
+        eventLoop.exec();
         //server.waitForNewConnection(100,0);
       } else {
         sock->waitForReadyRead(100);
