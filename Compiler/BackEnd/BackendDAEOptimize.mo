@@ -206,7 +206,7 @@ algorithm
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
+        ((_,eqns)) = List.threadFold3(ea1,ea2,generateScalarArrayEqns2,source,diffed,DAE.EQUALITY_EXPS(e1,e2),(1,iAcc));
       then
         (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source,differentiated=diffed),_)
@@ -215,7 +215,7 @@ algorithm
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
+        ((_,eqns)) = List.threadFold3(ea1,ea2,generateScalarArrayEqns2,source,diffed,DAE.EQUALITY_EXPS(e1,e2),(1,iAcc));
       then
         (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source,differentiated=diffed),_)
@@ -224,7 +224,7 @@ algorithm
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
+        ((_,eqns)) = List.threadFold3(ea1,ea2,generateScalarArrayEqns2,source,diffed,DAE.EQUALITY_EXPS(e1,e2),(1,iAcc));
       then
         (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source,differentiated=diffed),_)
@@ -233,14 +233,14 @@ algorithm
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
+        ((_,eqns)) = List.threadFold3(ea1,ea2,generateScalarArrayEqns2,source,diffed,DAE.EQUALITY_EXPS(e1,e2),(1,iAcc));
       then
         (eqns,true);
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source,differentiated=diffed),_)
       equation
         ea1 = Expression.splitRecord(e1,Expression.typeof(e1));
         ea2 = Expression.splitRecord(e2,Expression.typeof(e2));
-        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
+        ((_,eqns)) = List.threadFold3(ea1,ea2,generateScalarArrayEqns2,source,diffed,DAE.EQUALITY_EXPS(e1,e2),(1,iAcc));
       then
         (eqns,true);        
     case (_,_) then (iEqn::iAcc,false);
@@ -251,46 +251,52 @@ protected function generateScalarArrayEqns2 "function generateScalarArrayEqns2
   author: Frenkel TUD 2012-06"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input Boolean diffed;
-  input list<BackendDAE.Equation> iEqns;
-  output list<BackendDAE.Equation> oEqns;
+  input DAE.EquationExp eqExp "Original expressions; for the symbolic trace";
+  input tuple<Integer /* Current index; for the symbolic trace */,list<BackendDAE.Equation>> iEqns;
+  output tuple<Integer,list<BackendDAE.Equation>> oEqns;
 algorithm
-  oEqns := matchcontinue(inExp1,inExp2,source,diffed,iEqns)
+  oEqns := matchcontinue(inExp1,inExp2,inSource,diffed,eqExp,iEqns)
     local
       Expression.Type tp;
-      Integer size;
+      Integer size,i;
       DAE.Dimensions dims;
       list<Integer> ds;
       Boolean b1,b2;
+      list<BackendDAE.Equation> eqns;
+      DAE.ElementSource source;
     // complex types to complex equations  
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,(i,eqns))
       equation 
         tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
+        source = DAEUtil.addSymbolicTransformation(inSource,DAE.OP_SCALARIZE(eqExp,i,DAE.EQUALITY_EXPS(inExp1,inExp2)));
       then
-        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source,diffed)::iEqns;
+        ((i+1,BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source,diffed)::eqns));
       
     // array types to array equations  
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,(i,eqns))
       equation 
         tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeArray(tp);
         dims = Expression.arrayDimension(tp);
         ds = Expression.dimensionsSizes(dims);
+        source = DAEUtil.addSymbolicTransformation(inSource,DAE.OP_SCALARIZE(eqExp,i,DAE.EQUALITY_EXPS(inExp1,inExp2)));
       then
-        BackendDAE.ARRAY_EQUATION(ds,inExp1,inExp2,source,diffed)::iEqns;
+        ((i+1,BackendDAE.ARRAY_EQUATION(ds,inExp1,inExp2,source,diffed)::eqns));
     // other types  
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,(i,eqns))
       equation
         tp = Expression.typeof(inExp1);
         b1 = DAEUtil.expTypeComplex(tp);
         b2 = DAEUtil.expTypeArray(tp);
         false = b1 or b2;
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
+        source = DAEUtil.addSymbolicTransformation(inSource,DAE.OP_SCALARIZE(eqExp,i,DAE.EQUALITY_EXPS(inExp1,inExp2)));
       then
-        BackendDAE.EQUATION(inExp1,inExp2,source,diffed)::iEqns;
+        ((i+1,BackendDAE.EQUATION(inExp1,inExp2,source,diffed)::eqns));
     else
       equation
         // show only on failtrace!

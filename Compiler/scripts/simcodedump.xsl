@@ -144,6 +144,12 @@
   </p>
 </xsl:template>
 
+<xsl:template match="operations/scalarize">
+  <p><span title="inline">Operation <xsl:number count="*" /> Scalarize [<xsl:value-of select="@index"/>]: </span>
+    <script type="text/javascript">show_diff('<xsl:value-of select="before"/>','<xsl:value-of select="after"/>');</script>
+  </p>
+</xsl:template>
+
 <xsl:template match="operations/op-residual">
   <p><span title="make an equality equation into residual form">Operation <xsl:number count="*" /> Residual: </span>
     <script type="text/javascript">show_diff('<xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/>','0.0 = <xsl:value-of select="result"/>');</script>

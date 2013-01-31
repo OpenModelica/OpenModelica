@@ -1625,6 +1625,11 @@ package DAE
       EquationExp before;
       EquationExp after;
     end OP_INLINE;
+    record OP_SCALARIZE "x = {1,2}, [1] => x[1] = {1}"
+      EquationExp before;
+      Integer index;
+      EquationExp after;
+    end OP_SCALARIZE;
     record OP_DIFFERENTIATE
       ComponentRef cr;
       Exp before;

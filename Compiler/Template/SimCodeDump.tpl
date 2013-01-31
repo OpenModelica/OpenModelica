@@ -215,6 +215,13 @@ template dumpOperation(SymbolicOperation op, Info info)
         <after><%printEquationExpStrEscaped(op.after)%></after>
       </inline>
       >>
+    case op as OP_SCALARIZE(__) then
+      <<
+      <scalarize index="<%op.index%>">
+        <before><%printEquationExpStrEscaped(op.before)%></before>
+        <after><%printEquationExpStrEscaped(op.after)%></after>
+      </scalarize>
+      >>
     case op as SOLVED(__) then
       <<
       <solved>
