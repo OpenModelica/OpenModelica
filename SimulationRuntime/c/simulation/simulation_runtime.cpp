@@ -651,7 +651,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     setPortOfControlServer(userPort);
   } else if(!interactiveSimulation && flagSet("port", argc, argv)) {
   */
-  if(!interactiveSimulation && flagSet("port", argc, argv))
+  if(!interactiveSimulation && optionSet("port", argc, argv))
   {
     string *portvalue = (string*) getOption("port", argc, argv);
     std::istringstream stream(*portvalue);
