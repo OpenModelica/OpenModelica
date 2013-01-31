@@ -2,12 +2,12 @@
 set(ModelicaExternalC_sources ModelicaInternal.c
                               ModelicaStrings.c 
 							  ModelicaTablesImpl.c
-							  ModelicaUtilities.c
+							  ../util/ModelicaUtilities.c
 							  tables.c)
 							  #win32_dirent.c)
 
 SET(ModelicaExternalC_headers ModelicaTables.h
-                              ModelicaUtilities.h
+                              ../util/ModelicaUtilities.h
 							  tables.h) 
 
 # Library ModelicaExternalC
