@@ -73,8 +73,8 @@ static const char *initMethodStr[IIM_MAX] = {
 static const char *initMethodDescStr[IIM_MAX] = {
   "unknown",
   "no initialization method",
-  "default initialization method",
-  "solves the initialization problem symbolically"
+  "solves the initialization problem numerically",
+  "solves the initialization problem symbolically - default"
 };
 
 enum INIT_OPTI_METHOD
@@ -104,7 +104,7 @@ static const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
   "Nelder-Mead method",
   "Brent's method",
-  "Nelder-Mead method with global homotopy",
+  "Nelder-Mead method with global homotopy - default",
   "Nelder-Mead method without global homotopy",
   "sundials/kinsol",
   "sundials/kinsol with scaling",
@@ -875,7 +875,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
 {
   int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
-  int optiMethod = IOM_NELDER_MEAD_EX;                                    /* default method */
+  int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
   int retVal = -1;
   int i;
 
@@ -939,7 +939,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   }
 
   INFO2(LOG_INIT, "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
-  if(optiMethod == IIM_NUMERIC)
+  if(initMethod == IIM_NUMERIC)
     INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
 
   /* start with the real initialization */
