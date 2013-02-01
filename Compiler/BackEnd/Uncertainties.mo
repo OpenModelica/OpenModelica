@@ -659,7 +659,7 @@ protected function getEquationsForUnknownsSystem
   output list<Integer> eqnsOut;
   output list<Integer> varsOut;
 algorithm
-(eqnsOut,varsOut,eqnsAllOut):=matchcontinue(m,knowns,unknowns)
+(eqnsOut,varsOut):=matchcontinue(m,knowns,unknowns)
   local
     ExtIncidenceMatrix unknownsSystem;
     list<Integer> yEqMap,yVarMap,setS;
@@ -692,8 +692,6 @@ algorithm
     then (setS,vars);
 end matchcontinue;
 end getEquationsForUnknownsSystem;
-
-
 
 protected function getEquationsForKnownsSystem
   input ExtIncidenceMatrix m;
