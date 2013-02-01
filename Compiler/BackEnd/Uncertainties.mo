@@ -4,6 +4,7 @@ package Uncertainties
   import Absyn;
   import Algorithm;
   import BackendDAE;
+  import BackendDump;
   import BackendVariable;
   import Debug;
   import List;
@@ -36,6 +37,7 @@ package Uncertainties
   import Matching;
   import BackendDAEEXT;
   import Util;
+  import Print;
 
 type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>; 
 type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
@@ -95,19 +97,17 @@ algorithm
       String outStringA,outStringB,outString;
       list<Option<DAE.Distribution>> distributions;
 
-      list<String> stepsDumpStrings,stepsDumpStrings2;
-      String stepsDump,text;
-
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
         //print("Initiating\n");   
-        stepsDumpStrings={};     
+        Print.clearBuf();
+
         (dae,cache,env) = flattenModel(className,p,cache);
 
         //print("- Flatten ok\n");   
         dlow = BackendDAECreate.lower(dae,cache,env);
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({}));
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeAllSimpleEquations","removeUnusedVariables","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({"removeSimpleEquations"}));
         //print("* Lowered Ok \n");
 
         //BackendDump.dump(dlow_1);
@@ -132,15 +132,13 @@ algorithm
         unknowns = listAppend(directlyLinked,indirectlyLinked);
         outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
 
-
-        text = getMathematicaText("== Initial system ==");
-        stepsDumpStrings={text};
-        stepsDump=equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Equations (Function calls represent more than one equation");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars);                 
-        text = getMathematicaText("Variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        
+        printSep(getMathematicaText("== Initial system =="));
+        //printSep(getMathematicaText("Equations (Function calls represent more than one equation"));
+        //printSep(equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,sharedVars,mapIncRowEqn));
+        
+        //printSep(getMathematicaText("All variables"));
+        //printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));                 
         //print("Checkpoint 1\n");
         // First try to eliminate all the unknown variables
         dlow_1 = eliminateVariablesDAE(unknowns,dlow_1);
@@ -151,14 +149,11 @@ algorithm
 
         (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
 
-        text = getMathematicaText("After Symbolic Elimination");
-        stepsDumpStrings=text::stepsDumpStrings;
-        stepsDump=equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Equations (Function calls represent more than one equation)");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars);                 
-        text = getMathematicaText("Variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("After Symbolic Elimination"));
+        printSep(getMathematicaText("Equations (Function calls represent more than one equation)"));
+        printSep(equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,sharedVars,mapIncRowEqn));
+        printSep(getMathematicaText("Variables"));
+        printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));                 
 
         mExt=getExtIncidenceMatrix(m);
 
@@ -167,13 +162,11 @@ algorithm
         
         mExt=removeEquations(mExt,approximatedEquations_one);
         
-        stepsDump=equationsToMathematicaGrid(approximatedEquations_one,allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Approximated equations to be removed");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("Approximated equations to be removed"));
+        printSep(equationsToMathematicaGrid(approximatedEquations_one,allEqs,allVars,sharedVars,mapIncRowEqn));
 
-        stepsDump=equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("After eliminating approximated equations");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("After eliminating approximated equations"));
+        printSep(equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn));
 
         // get the variable indices after the elimination
         variables = List.intRange(BackendVariable.varsSize(allVars));       
@@ -184,46 +177,38 @@ algorithm
         outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
 
 
-        stepsDump=variablesToMathematicaGrid(knowns,allVars);                 
-        text = getMathematicaText("Known variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(directlyLinked,allVars);                 
-        text = getMathematicaText("Directly linked variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(indirectlyLinked,allVars);                 
-        text = getMathematicaText("Indirectly linked variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(outputvars,allVars);                 
-        text = getMathematicaText("Output variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("Known variables"));
+        printSep(variablesToMathematicaGrid(knowns,allVars));                 
+
+        printSep(getMathematicaText("Directly linked variables"));
+        printSep(variablesToMathematicaGrid(directlyLinked,allVars));                 
+
+        printSep(getMathematicaText("Indirectly linked variables"));
+        printSep(variablesToMathematicaGrid(indirectlyLinked,allVars));                 
+
+        printSep(getMathematicaText("Output variables"));
+        printSep(variablesToMathematicaGrid(outputvars,allVars));                 
         
         mExt=eliminateOutputVariables(mExt,outputvars);
 
-        stepsDump=equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("After eliminating output variables");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("After eliminating output variables"));
+        printSep(equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn));
 
-        (setS,unknownsVarsMatch,unknownsEqsMatch)=getEquationsForUnknownsSystem(mExt,knowns,unknowns);
+        (setS,unknownsVarsMatch)=getEquationsForUnknownsSystem(mExt,knowns,unknowns);
 
-        stepsDump=unknowsMatchingToMathematicaGrid(unknownsVarsMatch,unknownsEqsMatch,allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Matching performed after step 5 (Set S)");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("Matching performed after step 5 (Set S)"));
+        printSep(unknowsMatchingToMathematicaGrid(unknownsVarsMatch,setS,allEqs,allVars,sharedVars,mapIncRowEqn));
 
         remainingEquations=List.setDifference(getEquationsNumber(mExt),setS);
 
-        stepsDump=equationsToMathematicaGrid(remainingEquations,allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Remaining equations");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("Remaining equations"));
+        printSep(equationsToMathematicaGrid(remainingEquations,allEqs,allVars,sharedVars,mapIncRowEqn));
 
-
-        (setC,stepsDumpStrings2)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
+        (setC)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
         
-        stepsDumpStrings=listAppend(stepsDumpStrings2,stepsDumpStrings);
 
-
-        stepsDump=equationsToMathematicaGrid(setC,allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Final Equations");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+        printSep(getMathematicaText("Final Equations"));
+        printSep(equationsToMathematicaGrid(setC,allEqs,allVars,sharedVars,mapIncRowEqn));
 
 
         setC=List.map1r(setC,listGet,arrayList(mapIncRowEqn));
@@ -248,14 +233,19 @@ algorithm
         outStringB = "{{"+&getMathematicaVarStr(knownVariables)+&","+&getMathematicaEqStr(setC_eq,allVars,sharedVars)+&"},{"
                         +&getMathematicaVarStr(unknownVariables)+&","+&getMathematicaEqStr(setS_eq,allVars,sharedVars)+&"},"
                         +&dumpVarsDistributionInfo(distributions)+&"}";
-        outStringA = verticalGrid(listReverse(stepsDumpStrings));
+        Print.printBuf("{"+&getMathematicaText("Extraction finished")+&"}");
+        outStringA = "Grid[{"+&Print.getString()+&"}]";
+
         outString=Util.if_(dumpSteps,outStringA,outStringB);
         resstr=writeFileIfNonEmpty(outputFile,outString);
         //resstr="Done...";
       then
         (cache,Values.STRING(resstr),st);
-    case (_,_,_,_,_,_)
-      equation        
+    case (_,_,_,_,outputFile,_)
+      equation
+        Print.printBuf("{"+&getMathematicaText("Extraction failed")+&"}");
+        outStringA = "Grid[{"+&Print.getString()+&"}]"; 
+        _=writeFileIfNonEmpty(outputFile,outStringA);       
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"modelEquationsUC: The model equations in model",resstr," could not be extracted"});
@@ -264,6 +254,14 @@ algorithm
         fail();
   end matchcontinue;
 end modelEquationsUC;
+
+protected function printSep
+  input String s;
+algorithm
+  Print.printBuf("{ ");
+  Print.printBuf(s);
+  Print.printBuf("} , ");
+end printSep;
 
 protected function wrapInList
   input String text;
@@ -307,6 +305,28 @@ algorithm
   end matchcontinue;
 end numerateList;
 
+protected function numerateListIndex
+  input list<String> elems;
+  input list<Integer> indices;
+  output String out;
+algorithm
+  out:=matchcontinue(elems,indices)
+    local String h,s,ss; list<String> t;Integer n; list<Integer> tn;
+    case({},_)
+      then "";
+    case({h},{n})
+      equation
+        s="{"+&(intString(n))+&","+&h+&"}";
+      then s;  
+    case(h::t,n::tn)
+        equation
+          s="{"+&(intString(n))+&","+&h+&"}";
+          ss=s+&","+&(numerateListIndex(t,tn));
+        then ss;  
+  end matchcontinue;
+
+end numerateListIndex;
+
 protected function equationsToMathematicaGrid
   input list<Integer> equIndices;
   input BackendDAE.EquationArray allEqs;
@@ -321,7 +341,7 @@ algorithm
   eqns:=List.unique(List.map1r(equIndices,listGet,arrayList(mapIncRowEqn)));
   eqList:=List.map1r(List.map1(eqns,intAdd,-1),BackendDAEUtil.equationNth,allEqs);
   eqsString:=List.map1(eqList,MathematicaDump.printMmaEqnStr,(variables,knownVariables));
-  out:="Grid[{"+&numerateList(eqsString,1)+&"},Frame -> All]";
+  out:="Grid[{"+&numerateListIndex(eqsString,eqns)+&"},Frame -> All]";
 end equationsToMathematicaGrid;   
 
 
@@ -337,6 +357,12 @@ out:=matchcontinue(vars,eqns)
   case({},{})
     equation
     then {};
+  case({},_)
+    equation print("Warning: the matching in Step 5 was not perfomed successfully");
+    then {};
+  case(_,{})
+    equation print("Warning: the matching in Step 5 was not perfomed successfully");
+    then {};    
   case(var::var_t,eqn::eqn_t)
       equation
         s = var+&","+&eqn;
@@ -409,7 +435,7 @@ protected function variablesToMathematicaGrid
 algorithm
   varList:=List.map1r(varIndices,BackendVariable.getVarAt,variables);
   eqsString:=List.map2(varList,MathematicaDump.printMmaVarStr,false,variables);
-  out:="Grid[{"+&numerateList(eqsString,1)+&"},Frame -> All]";
+  out:="Grid[{"+&numerateListIndex(eqsString,varIndices)+&"},Frame -> All]";
 end variablesToMathematicaGrid;   
 
 
@@ -632,19 +658,18 @@ protected function getEquationsForUnknownsSystem
   input list<Integer> unknowns;
   output list<Integer> eqnsOut;
   output list<Integer> varsOut;
-  output list<Integer> eqnsAllOut;
 algorithm
 (eqnsOut,varsOut,eqnsAllOut):=matchcontinue(m,knowns,unknowns)
   local
     ExtIncidenceMatrix unknownsSystem;
     list<Integer> yEqMap,yVarMap,setS;
+    Integer nv,ne;
     BackendDAE.IncidenceMatrix my;
     array<Integer> ass1,ass2;
     list<Integer> vars;
-    list<Integer> eqnsAll;
   case(_,_,{})
     equation
-    then ({},{},{});
+    then ({},{});
   case(_,_,_)
     equation
         unknownsSystem=getSystemForUnknowns(m,knowns,unknowns);
@@ -652,20 +677,23 @@ algorithm
         (yEqMap,yVarMap,my)=prepareForMatching(unknownsSystem);
         //Debug.fcall(Flags.UNCERTAINTIES,BackendDump.dumpIncidenceMatrix,my);
 
-        Matching.matchingExternalsetIncidenceMatrix(listLength(yVarMap),listLength(yEqMap),my);
-
-        ass1=listArray(List.fill(0,listLength(yEqMap))); 
-        ass2=listArray(List.fill(0,listLength(yVarMap)));
-        true = BackendDAEEXT.setAssignment(listLength(yVarMap),listLength(yEqMap),ass2,ass1);
-        BackendDAEEXT.matching(listLength(yVarMap),listLength(yEqMap),1,-1,1.0,0);
-
+        ne=listLength(yEqMap);
+        nv=listLength(yVarMap);
+        ass1=listArray(List.fill(-1,ne)); 
+        ass2=listArray(List.fill(-1,nv));
+        true = BackendDAEEXT.setAssignment(nv,ne,ass1,ass2);
+        Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
+        BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
         BackendDAEEXT.getAssignment(ass1,ass2);
+        printIntList(arrayList(ass1));
+        printIntList(arrayList(ass2));
         vars = yVarMap;
-        eqnsAll = restoreIndicesEquivalence(arrayList(ass2),yEqMap);
-        setS = restoreIndicesEquivalence(List.filter1OnTrue(arrayList(ass2),intGt,0),yEqMap);
-    then (setS,vars,eqnsAll);
+        setS = restoreIndicesEquivalence(List.filter1OnTrue(arrayList(ass2),intGt,-1),yEqMap);
+    then (setS,vars);
 end matchcontinue;
 end getEquationsForUnknownsSystem;
+
+
 
 protected function getEquationsForKnownsSystem
   input ExtIncidenceMatrix m;
@@ -677,9 +705,8 @@ protected function getEquationsForKnownsSystem
   input BackendDAE.Variables knownVariables;
   input array<Integer> mapIncRowEqn;
   output list<Integer> setCOut;
-  output list<String> dumpOut;
 algorithm
-(setCOut,dumpOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
+(setCOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
   local 
     ExtIncidenceMatrix knownsSystem,knownsSystemComp;
     list<Integer> xEqMap,xVarMap;
@@ -688,23 +715,20 @@ algorithm
     list<list<Integer>> comps,comps_fixed;
     list<Integer> setC;
     String dump,text;
-    list<String> dumpList;
     Integer nxVarMap,nxEqMap;
   case(_,{},_,_,_,_,_,_)
     equation
-    then ({},{});
+    then ({});
   case(_,_,_,_,_,_,_,_)
       equation
-        dumpList = {};
         //print("Knowns = ");printIntList(knowns);print(";\n");
         //print("Cleaning up system of knowns..");
         knownsSystem = removeEquations(m,setS);
         knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
         
-        dump=equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn);
-        text = getMathematicaText("System of knowns after step 7");
-        dumpList=dump::text::dumpList;
-        
+        printSep(getMathematicaText("System of knowns after step 7"));
+        printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
+       
 
         knownsSystemComp=sortEquations(knownsSystem,knowns);
         knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns,{});
@@ -732,21 +756,20 @@ algorithm
 
         comps = getComponentsWrapper(mx,mt,ass1,ass2);
         
-        text = getMathematicaText("Blocks (each row is a block)");
-        dump = "Grid["+&listString(List.map(comps,intListString))+&",Frame->All]";
-        dumpList=dump::text::dumpList;
-
         comps_fixed =List.map1(comps,restoreIndicesEquivalence,xEqMap);
+        knownsSystem=removeEquationInSquaredBlock(knownsSystem,knowns,unknowns,comps_fixed);
         //BackendDump.dumpComponentsOLD(comps_fixed);
 
-        knownsSystem=removeEquationInSquaredBlock(knownsSystem,knowns,unknowns,comps_fixed);
+        comps_fixed = List.map1(comps_fixed,restoreIndicesEquivalence,arrayList(mapIncRowEqn)); // this is done to print the correct numbers
+        printSep(getMathematicaText("Blocks (each row is a block)"));
+        printSep("Grid["+&listString(List.map(comps_fixed,intListString))+&",Frame->All]");
         
-        dump=equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn);
-        text = getMathematicaText("System of knowns after step 8 and 9");
-        dumpList=dump::text::dumpList;
+        
+        printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
+        printSep(getMathematicaText("System of knowns after step 8 and 9"));
         
         setC=getEquationsNumber(knownsSystem);
-      then (setC,dumpList);  
+      then (setC);  
 end matchcontinue;
 end getEquationsForKnownsSystem;
 
@@ -1104,7 +1127,9 @@ end removeEquationInSquaredBlock;
 protected function printIntList
   input list<Integer> l;
 algorithm
+  print("List of size = "+&intString(listLength(l))+&"\n");
   print(stringDelimitList(List.map(l,intString),","));
+  print("\n");
 end printIntList;
 
 protected function intListString
@@ -1408,6 +1433,7 @@ protected function prepareForMatching
   protected list<list<Integer>> m;
 algorithm
 (eqMap,varMap,m):=prepareForMatching2(mExt,{},{},{});
+print("Matrix to match: equations = "+&intString(listLength(eqMap))+&" variables = "+&intString(listLength(varMap))+&"\n");
 mOut:=listArray(m);
 end prepareForMatching;
 
