@@ -38,6 +38,7 @@
 #include "events.h"
 #include "varinfo.h"
 #include "stateset.h"
+#include "radau.h"
 
 /*
  * #include "dopri45.h"
@@ -61,9 +62,14 @@ typedef struct RK4
   int work_states_ndims;
 }RK4;
 
+RADAUIIA rData;
+KINSOLRADAU kData;
+
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
+
+static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
 
 static void checkTermination(DATA* data);
 
@@ -84,9 +90,13 @@ int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = data->localData[0]->timeValue;
     return 0;
 
+  case 6:
+    return radauIIA_step(data, solverInfo);
+
   default:
   case 1:
     return euler_ex_step(data, solverInfo);
+
   }
   return 1;
 }
@@ -170,6 +180,22 @@ int solver_main(DATA* data, const char* init_initMethod,
     work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
     for(i = 0; i < inline_work_states_ndims; i++)
       work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
+  }
+#ifdef PATHCONSTRAINTS
+  else if(flag == 5)
+  {
+    int neqns = -1;
+    /* Allocate work array for optimization*/
+    pathConstraints(data, NULL, &neqns);
+    /*allocateDaeIpopt(data,neqns);*/
+
+  }
+#endif
+  else if (flag == 6)
+  {
+    /* Allocate Radau IIA work arrays */
+    allocateRadauIIA(&rData, data, &solverInfo);
+    allocateKinsol(&kData,(void*)&rData);
   }
 
   /* Calculate initial values from updateBoundStartValues()
@@ -484,6 +510,13 @@ int solver_main(DATA* data, const char* init_initMethod,
       free(work_states[i]);
     free(work_states);
   }
+  else if(flag == 6)
+  {
+    /* free  work arrays */
+    freeRadauIIA(&rData);
+    freeKinsol(&kData);
+
+  }
   else
   {
     /* free other solver memory */
@@ -560,6 +593,14 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
     sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
   }
   sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Radau IIA     ***********************************/
+int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolRadauIIA(&rData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }

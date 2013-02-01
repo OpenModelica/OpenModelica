@@ -508,6 +508,9 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   } else if(simData->simulationInfo.solverMethod == std::string("rungekutta")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
+  } else if(simData->simulationInfo.solverMethod == std::string("radau")) {
+    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 6, outVars);
   } else if(simData->simulationInfo.solverMethod == std::string("dassl") ||
               simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
               simData->simulationInfo.solverMethod == std::string("dassltest")  ||
