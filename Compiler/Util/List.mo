@@ -5281,7 +5281,6 @@ algorithm
   end match;
 end foldcallN;
 
-
 public function reduce
   "Takes a list and a function operating on two elements of the list.
    The function performs a reduction of the list to a single value using the
@@ -6979,6 +6978,53 @@ algorithm
 
   end matchcontinue;
 end filter_tail;
+
+public function filterMap
+  "Applies a function to each element in the given list, but also filters out
+   all elements for which the function fails."
+  input list<ElementInType> inList;
+  input FilterMapFunc inFilterMapFunc;
+  output list<ElementOutType> outList;
+
+  partial function FilterMapFunc
+    input ElementInType inElement;
+    output ElementOutType outElement;
+  end FilterMapFunc;
+algorithm
+  outList := listReverse(filterMap_tail(inList, inFilterMapFunc, {}));
+end filterMap;
+
+protected function filterMap_tail
+  "Tail recursive implementation of filterMap."
+  input list<ElementInType> inList;
+  input FilterMapFunc inFilterMapFunc;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+
+  partial function FilterMapFunc
+    input ElementInType inElement;
+    output ElementOutType outElement;
+  end FilterMapFunc;
+algorithm
+  outList := matchcontinue(inList, inFilterMapFunc, inAccumList)
+    local
+      ElementInType ie;
+      list<ElementInType> rest;
+      ElementOutType oe;
+
+    case (ie :: rest, _, _)
+      equation
+        oe = inFilterMapFunc(ie);
+      then
+        filterMap_tail(rest, inFilterMapFunc, oe :: inAccumList);
+
+    case (_ :: rest, _, _)
+      then filterMap_tail(rest, inFilterMapFunc, inAccumList);
+
+    case ({}, _, _) then inAccumList;
+
+  end matchcontinue;
+end filterMap_tail;
 
 public function filterOnTrue
   "Takes a list of values and a filter function over the values and returns a

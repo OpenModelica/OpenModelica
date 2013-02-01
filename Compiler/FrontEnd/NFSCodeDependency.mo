@@ -514,9 +514,33 @@ algorithm
   // actually found and removed any 'extends ExternalObject'.
   false := (listLength(el) == listLength(inElements));
   // Ok, we have an external object, check that it's valid.
-  el_names := List.map(el, SCode.elementName);
+  el_names := List.filterMap(el, elementName);
   checkExternalObject(el_names, inEnv, inInfo);
 end isExternalObject;
+
+protected function elementName
+  input SCode.Element inElement;
+  output String outString;
+algorithm
+  outString := match(inElement)
+    local
+      String name;
+      Absyn.Path bc;
+      Absyn.Import imp;
+
+    case SCode.COMPONENT(name = name) then name;
+    case SCode.CLASS(name = name) then name;
+    case SCode.DEFINEUNIT(name = name) then name;
+
+    case SCode.EXTENDS(baseClassPath = bc)
+      equation
+        name = Absyn.pathString(bc);
+        name = "extends " +& name;
+      then
+        name;
+    
+  end match;
+end elementName;
 
 protected function isNotExternalObject
   "Fails on 'extends ExternalObject', otherwise succeeds."
