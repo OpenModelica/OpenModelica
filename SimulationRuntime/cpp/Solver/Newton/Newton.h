@@ -3,8 +3,9 @@
  
 #include <System/IAlgLoop.h>                // Interface to AlgLoo
 #include <Solver/IAlgLoopSolver.h>        // Export function from dll
+#include <Solver/INonLinSolverSettings.h>
 #include "NewtonSettings.h"
-#include <Newton/INewtonSettings.h>
+
 
 
 

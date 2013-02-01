@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.h" 
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "GlobalSettings.h"
  
@@ -9,7 +9,8 @@ GlobalSettings::GlobalSettings()
 , _hOutput            (0.001)
 , _resultsOutput        (true)    
 , _infoOutput        (true)
-, selected_solver("Euler")
+, _selected_solver("Euler")
+,_selected_nonlin_solver("Newton")
 ,_resultsfile_name("results.csv")
 ,_endless_sim(false)
 {
@@ -93,13 +94,20 @@ void GlobalSettings::setOutputPath(string path)
 
 string   GlobalSettings::getSelectedSolver()
 {
-    return selected_solver;
+    return _selected_solver;
 }
 void GlobalSettings::setSelectedSolver(string solver)
 {
-    selected_solver = solver;
+    _selected_solver = solver;
 }
-
+string   GlobalSettings::getSelectedNonLinSolver()
+{
+ return _selected_nonlin_solver;
+}
+void GlobalSettings::setSelectedNonLinSSolver(string solver)
+{
+    _selected_nonlin_solver= solver;
+}
 /**
 initializes settings object by an xml file
 */

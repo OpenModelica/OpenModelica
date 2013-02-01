@@ -9,3 +9,4 @@
 #define SYSTEM_LIB "@SYSTEM_LIB@"
 #define SOLVER_LIB "@SOLVER_LIB@"
 #define MATH_LIB "@MATH_LIB@"
+#define KINSOL_LIB "@KINSOL_LIB@"

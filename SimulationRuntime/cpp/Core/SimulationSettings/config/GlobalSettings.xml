@@ -3,6 +3,7 @@
 <boost_serialization signature="serialization::archive" version="5">
 <GlobalSettings class_id="0" tracking_level="0" version="0">
   <SelectedSolver>Euler</SelectedSolver>
+   <SelectedNonLinSolver>Newton</SelectedNonLinSolver>
   <StartTime>0</StartTime>
   <EndTime>1</EndTime>
   <HOutput>0.001</HOutput>

@@ -78,11 +78,12 @@ find_library(SUNDIALS_CVODES_LIB "sundials_cvodes"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 find_library(SUNDIALS_IDA_LIB "sundials_ida"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
-
+find_library(SUNDIALS_KINSOL_LIB "sundials_kinsol"
+    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 find_library(SUNDIALS_IDAS_LIB "sundials_idas"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
-set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB} ${SUNDIALS_IDA_LIB})
+set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB} ${SUNDIALS_IDA_LIB}  ${SUNDIALS_KINSOL_LIB})
 
 message(STATUS "Sundials Libraries:")
 message(STATUS ${SUNDIALS_LIBS})
@@ -139,11 +140,15 @@ endif()
 if(USE_SUNDIALS)
 #add  Cvode solver project
 add_subdirectory (Solver/CVode)
+add_subdirectory (Solver/KinSol)
 #add  Idas solver project
 #add_subdirectory (Solver/Idas/Implementation)
 #add_subdirectory (Solver/Ida/Implementation)
 GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
 GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
+
+GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
+GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
 #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
 #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
 #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
@@ -151,6 +156,7 @@ GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
 
 #set (IDAS_LIB ${libIdasName})
 set (CVODE_LIB ${libCVodeName})
+set (KINSOL_LIB ${libKinsolName})
 #set (IDA_LIB ${libIdaName})
 endIf()
 

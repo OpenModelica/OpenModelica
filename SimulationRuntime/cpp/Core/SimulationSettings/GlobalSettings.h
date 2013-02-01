@@ -31,6 +31,8 @@ public:
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
+    virtual string    getSelectedNonLinSolver();    
+    virtual void setSelectedNonLinSSolver(string);     
     virtual void setResultsFileName(string);
     virtual string getResultsFileName();
     //initializes the settings object by an xml file
@@ -49,7 +51,8 @@ private:
         _endless_sim;
     string 
         _output_path,
-        selected_solver,
+        _selected_solver,
+        _selected_nonlin_solver,
         _resultsfile_name,
         _runtimeLibraryPath;
 
@@ -63,7 +66,8 @@ private:
         try
         {
             using boost::serialization::make_nvp;
-            ar & make_nvp("SelectedSolver", selected_solver);
+            ar & make_nvp("SelectedSolver", _selected_solver);
+            ar & make_nvp("SelectedNonLinSolver", _selected_nonlin_solver);
             ar & make_nvp("StartTime", _startTime);
             ar & make_nvp("EndTime", _endTime);
             ar & make_nvp("HOutput", _hOutput);
