@@ -497,7 +497,6 @@ void ModelicaTextHighlighter::initializeSettings()
                   << "\\bpartial\\b"
                   << "\\bprotected\\b"
                   << "\\bpublic\\b"
-                  << "\\bReal\\b"
                   << "\\brecord\\b"
                   << "\\bredeclare\\b"
                   << "\\breplaceable\\b"
