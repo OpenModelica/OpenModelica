@@ -159,7 +159,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS= /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=  /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
 
   # /ZI enable Edit and Continue debug info 
   CDFLAGS = /ZI
@@ -214,6 +214,7 @@ FUNCTIONFILE=Functions.cpp
 >>
 end simulationMakefile;
 
+
 template simulationCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
 ::=
@@ -260,8 +261,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     std::string algsolver_name(SYSTEM_LIB);
     if(!load_single_library(types, algsolver_name))
         throw std::invalid_argument("Algsolver library could not be loaded");
-    std::map<std::string, factory<IAlgLoopSolverFactory> >::iterator iter;
-    std::map<std::string, factory<IAlgLoopSolverFactory> >& factories(types.get());
+    std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >::iterator iter;
+    std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >& factories(types.get());
     iter = factories.find("AlgLoopSolverFactory");
     if (iter ==factories.end()) 
     {
@@ -3865,9 +3866,10 @@ template generateAlgloopsolvers(list<SimEqSystem> allEquations,SimCode simCode)
     ;separator="\n")
   
   <<
-   _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create());
+   _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create(globalSettings));
   <%algloopsolver%>
-  >>
+  >> 
+  
 end generateAlgloopsolvers;
 
 
