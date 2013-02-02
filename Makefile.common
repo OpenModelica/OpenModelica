@@ -217,7 +217,7 @@ omlibrary-32:
 omlibrary-services:
 	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
 	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
-	patch -d build/lib/omlibrary -p3 < "libraries/ModelicaServices 3.2.1.patch"
+	# patch -d build/lib/omlibrary -p3 < "libraries/ModelicaServices 3.2.1.patch"
 	find "build/lib/omlibrary/ModelicaServices 3.2.1" -name "*.orig" -exec rm -f "{}" ";"
 omlibrary-reference:
 	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
@@ -234,7 +234,7 @@ omlibrary-services3d: omlibrary-services
 	install -p -m644 "3rdParty/modelica3d/lib/mod3d/src/modelica/Modelica3D 3.2.1/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/Modelica3D/package.mo"
 	install -p -m644 "3rdParty/modelica3d/lib/modcount/src/modelica/modcount/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/modcount/package.mo"
 	install -p -m644 "build/lib/omlibrary/ModelicaServices 3.2.1/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo"
-	patch "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo" -p3 < "libraries/ModelicaServices 3.2.1 modelica3d.patch"
+	# patch "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo" -p3 < "libraries/ModelicaServices 3.2.1 modelica3d.patch"
 	find "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d" -name "*.orig" -exec rm -f "{}" ";"
 
 # Run this command to update the omlibrary patch. Add more libraries as needed
