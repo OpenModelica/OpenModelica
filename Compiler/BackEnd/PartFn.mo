@@ -56,6 +56,64 @@ protected import Types;
 
 type Ident = String;
 
+protected function cref2str
+  input DAE.ComponentRef cref;
+  output String s;
+algorithm
+  s := match cref
+    local
+      String ident;
+      DAE.ComponentRef cref2;
+    case DAE.CREF_QUAL(ident,_,_,cref2) then (ident +& "&" +& cref2str(cref2));
+    case DAE.CREF_IDENT(ident,_,_) then ident;
+    else then "unknown";
+  end match;
+end cref2str;
+
+protected function replaceUnderscore
+  input String s;
+  output String s2;
+algorithm
+  s2 := stringCharListString(replaceUnderscore2(stringListStringChar(s)));
+end replaceUnderscore;
+
+protected function replaceUnderscore2
+  input List<String> ls;
+  output List<String> outLs;
+algorithm
+  outLs := matchcontinue ls
+    local
+      String car, s2;
+      List<String> cdr,ls2;
+    case {} then {};
+    case (car::cdr) equation "." = car; s2 = "_A_"; ls2 = replaceUnderscore2(cdr); then s2::ls2;
+    case (car::cdr) equation ls2 = replaceUnderscore2(cdr); then car::ls2;
+  end matchcontinue;
+end replaceUnderscore2;
+
+protected function replaceCrefDot
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match inCref
+    local
+      String ident;
+      DAE.ComponentRef cref2;
+      DAE.Type typ;
+      List<DAE.Subscript> subscripts;
+      String s;
+
+    case DAE.CREF_QUAL(ident,typ,subscripts,cref2)
+      equation
+        s = replaceUnderscore(ident);
+      then DAE.CREF_QUAL(s, typ, subscripts, cref2);
+    case DAE.CREF_IDENT(ident,typ,subscripts)
+      equation
+        s = replaceUnderscore(ident);
+      then DAE.CREF_IDENT(s, typ, subscripts);
+  end match;
+end replaceCrefDot;
+
 public function partEvalBackendDAE
 "function: partEvalBackendDAE
   handles partially evaluated function in BackendDAE format"
@@ -810,7 +868,7 @@ end buildNewFunction2;
 
 protected function buildNewFunctionType
 "function: buildNewFunctionType
-  removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at the end"
+  removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at that location"
   input DAE.Type inType;
   input list<DAE.Var> inVarList;
   output DAE.Type outType;
@@ -818,7 +876,7 @@ algorithm
   outType := matchcontinue(inType,inVarList)
     local
       list<DAE.Var> vars;
-      list<DAE.FuncArg> args,args_1,args_2,new_args;
+      list<DAE.FuncArg> args,args_1,new_args;
       DAE.Type retType;
       DAE.TypeSource ts;
       DAE.FunctionAttributes functionAttributes;
@@ -826,10 +884,9 @@ algorithm
     case(DAE.T_FUNCTION(args,retType,functionAttributes,ts),vars)
       equation
         new_args = Types.makeFargsList(vars);
-        args_1 = List.select(args,isNotFunctionType);
-        args_2 = listAppend(args_1,new_args);
+        args_1 = buildNewFunctionType_params(args,new_args);
       then
-        DAE.T_FUNCTION(args_2,retType,functionAttributes,ts);
+        DAE.T_FUNCTION(args_1,retType,functionAttributes,ts);
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"- PartFn.buildNewFunctionType failed");
@@ -837,6 +894,25 @@ algorithm
         fail();
   end matchcontinue;
 end buildNewFunctionType;
+
+// adam
+protected function buildNewFunctionType_params
+  input list<DAE.FuncArg> args;
+  input list<DAE.FuncArg> new_args;
+  output list<DAE.FuncArg> result;
+algorithm
+  result := matchcontinue (args, new_args)
+    local DAE.FuncArg x; list<DAE.FuncArg> xs, new_args1, result1,result2;
+    case (x::xs,new_args1)
+      equation
+        true = isNotFunctionType(x);
+        result1 = buildNewFunctionType_params(xs, new_args1);
+        result2 = x :: result1;
+      then result2;
+    case (x::xs,new_args1) then listAppend(new_args1, xs);
+    case ({}, {}) then {};
+  end matchcontinue;
+end buildNewFunctionType_params;
 
 protected function isNotFunctionType
 "function: isNotFunctionType
@@ -1389,7 +1465,7 @@ algorithm
       Boolean tup;
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs,crefs2;
       DAE.CallAttributes attr;
       DAE.TailCall tc;
     // remove unbox calls from simple types
@@ -1404,7 +1480,8 @@ algorithm
         true = Absyn.pathEqual(orig_p,current);
         new_p = makeNewFnPath(orig_p,p);
         crefs = List.map(inputs,DAEUtil.varCref);
-        args2 = List.map(crefs,Expression.crefExp);
+        crefs2 = List.map(crefs, replaceCrefDot);
+        args2 = List.map(crefs2,Expression.crefExp);
         args_1 = replaceFnRef(args,args2);
       then
         ((DAE.CALL(new_p,args_1,attr),(p,inputs,dae,current)));
@@ -1413,7 +1490,8 @@ algorithm
       equation
         failure(_ = DAEUtil.getNamedFunctionFromList(orig_p,dae)); // if function exists, do not replace call
         crefs = List.map(inputs,DAEUtil.varCref);
-        args2 = List.map(crefs,Expression.crefExp);
+        crefs2 = List.map(crefs, replaceCrefDot);
+        args2 = List.map(crefs2,Expression.crefExp);
         args = List.map(args,Expression.unboxExp); // Unbox args here
         args_1 = listAppend(args,args2);
         ty_1 = Expression.unboxExpType(ty);
