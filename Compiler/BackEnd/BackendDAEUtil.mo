@@ -8128,6 +8128,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
+        Debug.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);

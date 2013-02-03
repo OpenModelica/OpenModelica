@@ -2422,30 +2422,30 @@ public function collectVarEqns
   input list<Integer> inIntegerLst2;
   input BackendDAE.IncidenceMatrixT inMT;
   input Integer inArrayLength;
+  input Integer inNEquations "size of equations array, maximal entry in inMT";
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inIntegerLst1,inIntegerLst2,inMT,inArrayLength)
+  outIntegerLst := matchcontinue (inIntegerLst1,inIntegerLst2,inMT,inArrayLength,inNEquations)
     local
-      BackendDAE.IncidenceMatrixT mt;
-      Integer i,l;
+      Integer i;
       list<Integer> rest,eqns,ilst,ilst1; 
-    case ({},_,_,_)
+    case ({},_,_,_,_)
       then 
-        inIntegerLst2;
-    case (i::rest,_,mt,l)
+        List.uniqueIntN(inIntegerLst2,inNEquations);
+    case (i::rest,_,_,_,_)
       equation
-        true = intLt(i,l);
-        eqns = List.map(mt[i],intAbs);
-        ilst = List.union(eqns,inIntegerLst2);
-        ilst1 = collectVarEqns(rest,ilst,mt,l);  
+        true = intLt(i,inArrayLength);
+        eqns = List.map(inMT[i],intAbs);
+        ilst = listAppend(eqns,inIntegerLst2);
+        ilst1 = collectVarEqns(rest,ilst,inMT,inArrayLength,inNEquations);  
       then 
         ilst1;
-    case (i::rest,_,mt,l)
+    case (i::rest,_,_,_,_)
       equation
-        ilst1 = collectVarEqns(rest,inIntegerLst2,mt,l);  
+        ilst1 = collectVarEqns(rest,inIntegerLst2,inMT,inArrayLength,inNEquations);  
       then 
         ilst1;        
-    case (i::rest,_,mt,l)
+    case (i::rest,_,_,_,_)
       equation
         print("collectVarEqns failed for eqn " +& intString(i) +& "\n");
       then fail();

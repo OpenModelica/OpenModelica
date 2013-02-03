@@ -732,7 +732,7 @@ algorithm
         ass2 = List.fold1r(ilst1,arrayUpdate,-1,inAss2);
         // set changed variables assignments to zero
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
-        eqnslst1 = BackendDAETransform.collectVarEqns(ilst,{},mt,arrayLength(mt));
+        eqnslst1 = BackendDAETransform.collectVarEqns(ilst,{},mt,arrayLength(mt),arrayLength(m));
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,stateSets);
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         eqnslst1 =  List.uniqueIntN(listAppend(inEqns,eqnslst1),eqnss1);
@@ -1219,7 +1219,7 @@ algorithm
         varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
         v1 = BackendVariable.addVars(varlst,v);
         // update IncidenceMatrix
-        eqnslst1 = BackendDAETransform.collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt));
+        eqnslst1 = BackendDAETransform.collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt),arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
@@ -1258,7 +1258,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "Other Candidates are\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         // update IncidenceMatrix
-        eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
+        eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt),arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
