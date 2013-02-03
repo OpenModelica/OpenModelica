@@ -33,6 +33,7 @@
  */
 
 #include "radau.h"
+#ifdef WITH_SUNDIALS
 
 int radauIIAResidual(N_Vector z, N_Vector f, void* user_data);
 
@@ -340,3 +341,5 @@ int kinsolRadauIIA(RADAUIIA* rData)
   refreshModell(rData->data, NV_DATA_S(kData->x) + 2*rData->nState, *rData->t0 + rData->a[2]*(*rData->dt));
   return 0;
 }
+
+#endif

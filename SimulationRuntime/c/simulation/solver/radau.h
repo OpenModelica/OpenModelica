@@ -32,7 +32,8 @@
  * author: team Bielefeld
  */
 
-
+#include "../../../Compiler/runtime/config.h"
+#ifdef WITH_SUNDIALS
 
 #ifndef _RADAU_H_
 #define _RADAU_H_
@@ -41,9 +42,6 @@
   #include "../simulation/solver/solver_main.h"
   #include <math.h>
   #include "omc_error.h"
-
-  #include "../../../Compiler/runtime/config.h"
-
 
   #include <kinsol/kinsol.h>
   #include <kinsol/kinsol_dense.h>
@@ -104,3 +102,5 @@
 
 
 #endif /* _RADAU_H_ */
+
+#endif /* SUNDIALS */

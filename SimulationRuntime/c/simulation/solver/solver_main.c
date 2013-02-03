@@ -62,8 +62,10 @@ typedef struct RK4
   int work_states_ndims;
 }RK4;
 
+#ifdef WITH_SUNDIALS
 RADAUIIA rData;
 KINSOLRADAU kData;
+#endif
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 
@@ -193,9 +195,13 @@ int solver_main(DATA* data, const char* init_initMethod,
 #endif
   else if (flag == 6)
   {
+#ifdef WITH_SUNDIALS
     /* Allocate Radau IIA work arrays */
     allocateRadauIIA(&rData, data, &solverInfo);
     allocateKinsol(&kData,(void*)&rData);
+#else
+    return -1;
+#endif
   }
 
   /* Calculate initial values from updateBoundStartValues()
@@ -512,10 +518,11 @@ int solver_main(DATA* data, const char* init_initMethod,
   }
   else if(flag == 6)
   {
+#ifdef WITH_SUNDIALS
     /* free  work arrays */
     freeRadauIIA(&rData);
     freeKinsol(&kData);
-
+#endif
   }
   else
   {
@@ -597,6 +604,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
   return 0;
 }
 
+#ifdef WITH_SUNDIALS
 /***************************************    Radau IIA     ***********************************/
 int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
 {
@@ -604,6 +612,7 @@ int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
+#endif
 
 /** function checkTermination
  *  author: wbraun
