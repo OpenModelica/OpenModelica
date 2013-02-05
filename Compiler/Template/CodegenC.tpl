@@ -72,7 +72,7 @@ template translateModel(SimCode simCode)
     
     // workaround for <%fileNamePrefix%>.h with an underscore, because we have  
     // for example a ModelicaUtilities.h in the runtime
-    let()= textFile(simulationHeaderFile(simCode,guid), '_<%fileNamePrefix%>.h')
+    let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that 
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
@@ -128,7 +128,7 @@ template simulationFile(SimCode simCode, String guid)
     <<
     <%simulationFileHeader(simCode)%>
     <%externalFunctionIncludes(externalFunctionIncludes)%>
-    #include "_<%fileNamePrefix%>.h"
+    #include "<%fileNamePrefix%>_model.h"
     #include "<%fileNamePrefix%>_functions.c"
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
