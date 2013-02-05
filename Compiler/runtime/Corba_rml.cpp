@@ -28,11 +28,12 @@
  *
  */
 
-#include "corbaimpl.cpp"
-
 // includes for both linux and windows
 extern "C" {
+
+#include "../Values.h"
 #include "rml.h"
+#include "corbaimpl.cpp"
 
 void Corba_5finit(void)
 {

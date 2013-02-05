@@ -43,7 +43,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sqlite3.h>
-#include <rml.h>
 
 /* the SQLite error codes are 0 (success) until 101, so to be safe we start at 500 */
 #define DATABASE_ERROR_DATABASE_INDEX_OVERFLOW  500

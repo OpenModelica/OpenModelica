@@ -56,9 +56,9 @@ $(PROG): omc_release
 
 install_scripts:
 	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
+	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
 
 install: install_scripts $(PROG)
-	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
 
 nodepend:
 	(cd omc_release && $(MAKE))

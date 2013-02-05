@@ -31,7 +31,6 @@
 #include "omc_communication_impl.h"
 extern "C" {
   #include <string.h>
-  #include "rml.h"
 }
 
 // windows and mingw32

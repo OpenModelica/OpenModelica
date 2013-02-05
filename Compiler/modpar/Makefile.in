@@ -27,7 +27,9 @@ else
 OBJECTS = TaskGraphExt_stub.o
 endif
 .PHONY: install
-install: libmodpar.a libmodparomc.a
+all: libmodpar.a install
+
+install: libmodparomc.a
 	cp libmodparomc.a $(builddir_lib)/omc	
 
 libmodpar.a: $(OBJECTS)

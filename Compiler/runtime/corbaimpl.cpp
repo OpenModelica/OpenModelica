@@ -41,8 +41,6 @@
 #endif //NOMICO
 
 extern "C" {
-#include "rml.h"
-#include "../Values.h"
 #include <stdio.h>
 #include "settingsimpl.h"
 
