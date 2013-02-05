@@ -134,7 +134,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
          double epsilon;
          // These must be accessed via a pointer to localVal
-         double timeValue, $P$old$timeValue;
+         double timeValue, _PRE_timeValue;
          // Are we at an event?
          bool atEvent;
          // Are we initializing the model?
@@ -162,7 +162,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
          AdevsSampleData** samples;
          int numTimeEvents() const { return <%vi.numTimeEvents%>; }
-         bool sample(int bogus, double tStart, double tInterval, int index);
+         bool sample(int index, double tStart, double tInterval);
 
          AdevsDelayData** delays;
          int numDelays() const { return <%match simCode.delayedExps case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>; }
@@ -208,27 +208,27 @@ case MODELINFO(vars = vars as SIMVARS(__)) then
    <<
    double get_time() const { return timeValue; }
    <%(vars.stateVars |> SIMVAR(__) =>
-     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.derivativeVars |> SIMVAR(__) =>
-     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.algVars |> SIMVAR(__) =>
-     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.intAlgVars |> SIMVAR(__) =>
-     'int get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.boolAlgVars |> SIMVAR(__) =>
-     'bool get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.paramVars |> SIMVAR(__) =>
-     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.intParamVars |> SIMVAR(__) =>
-     'int get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) =>
-     'bool get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.aliasVars |> SIMVAR(__) =>
-     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.intAliasVars |> SIMVAR(__) =>
-     'int get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    <%(vars.boolAliasVars |> SIMVAR(__) =>
-     'bool get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+     '<%declareGetMethod(name)%>'); separator="\n"%>
    >>
 end makeGetAccessors;
 
@@ -238,13 +238,13 @@ match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__)) then
    <<
    <%(vars.stateVars |> SIMVAR(__) =>
-     'void set_<%cref(name)%>(double* q, double val) { q[<%index%>] = <%cref(name)%>=val; }') ;separator="\n"%>
+     '<%declareSetMethod(name,index)%>'); separator="\n"%>
    <%(vars.paramVars |> SIMVAR(__) =>
-     'void set_<%cref(name)%>(double val) { <%cref(name)%>=val; }') ;separator="\n"%>
+     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
    <%(vars.intParamVars |> SIMVAR(__) =>
-     'void set_<%cref(name)%>(int val) { <%cref(name)%>=val; }') ;separator="\n"%>
+     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) =>
-     'void set_<%cref(name)%>(bool val) { <%cref(name)%>=val; }') ;separator="\n"%>
+     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
    >>
 end makeSetAccessors;
 
@@ -252,19 +252,65 @@ template makeMemberVariables(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-   <<
-   <%(vars.stateVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.derivativeVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.algVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.intAlgVars |> SIMVAR(__) => 'int <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.boolAlgVars |> SIMVAR(__) => 'bool <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.paramVars |> SIMVAR(__) => 'double <%cref(name)%>;') ;separator="\n"%>
-   <%(vars.intParamVars |> SIMVAR(__) => 'int <%cref(name)%>;') ;separator="\n"%>
-   <%(vars.boolParamVars |> SIMVAR(__) => 'bool <%cref(name)%>;') ;separator="\n"%>
-   <%(vars.aliasVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.intAliasVars |> SIMVAR(__) => 'int <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.boolAliasVars |> SIMVAR(__) => 'bool <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   >>
+ <<
+ // State variables
+ <%(vars.stateVars |> SIMVAR(__) =>
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Derivative variables
+ <%(vars.derivativeVars |> SIMVAR(__) =>
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Inline variables
+ <%(vars.inlineVars |> SIMVAR(__) =>
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Algebraic variables
+ <%(vars.algVars |> SIMVAR(__) =>  
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Integer algebraic variables
+ <%(vars.intAlgVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Boolean algebraic variables
+ <%(vars.boolAlgVars |> SIMVAR(__) => 
+ '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Alias variables
+ <%(vars.aliasVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Integer alias variables
+ <%(vars.intAliasVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Boolean alias variables
+ <%(vars.boolAliasVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Parameter variables
+ <%(vars.paramVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Integer parameter variables
+ <%(vars.intParamVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Boolean parameter variables
+ <%(vars.boolParamVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // String variables
+ <%(vars.stringAlgVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // String parameters
+ <%(vars.stringParamVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // External object variables
+ <%(vars.extObjVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Constants
+ <%(vars.constVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Integer constants
+ <%(vars.intConstVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // Boolean constants
+ <%(vars.boolConstVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ // String constants
+ <%(vars.stringConstVars |> SIMVAR(__) => 
+   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ >>
 end makeMemberVariables;
 
 template simulationCppFile(SimCode simCode)
@@ -291,19 +337,12 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
           <%vi.numRelations%>+2*<%vi.numMathEventFunctions%>+extra_state_events // Number of state event functions
       ),
       epsilon(eventHys),
-      helpVars(NULL),
-      helpVars_saved(NULL),
       zc(NULL),
       samples(NULL),
       delays(NULL),
       eventFuncs(NULL)
    {
        timeValue = 0.0;
-       if (numHelpVars() > 0)
-       {
-           helpVars = new bool[numHelpVars()];
-           helpVars_saved = new bool[numHelpVars()];
-       }
        if (numRelations() > 0)
            zc = new int[numRelations()];
        if (numTimeEvents() > 0)
@@ -328,8 +367,6 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
    {
-        if (helpVars != NULL) delete [] helpVars;
-        if (helpVars_saved != NULL) delete [] helpVars_saved;
         if (zc != NULL) delete [] zc;
         if (samples != NULL)
         {
@@ -381,6 +418,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
             delays[index] = new AdevsDelayData(max_delay);
         delays[index]->insert(t,expr);
     }
+
    >>
 end simulationCppFile;
 
@@ -513,8 +551,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       restore_vars();
   }
 
-  bool <%lastIdentOfPath(modelInfo.name)%>::sample(int bogus, double tStart, double tInterval, int index)
+  bool <%lastIdentOfPath(modelInfo.name)%>::sample(int index, double tStart, double tInterval)
   {
+	  index--;
+	  assert(index >= 0);
       if (samples[index] == NULL)
           samples[index] = new AdevsSampleData(tStart,tInterval);
       return samples[index]->atEvent(timeValue,epsilon);
@@ -608,18 +648,24 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>::save_vars()
    {
-       for (int i = 0; i < numHelpVars(); i++)
-           helpVars_saved[i] = helpVars[i];
-       $P$old$timeValue = timeValue;
-       <%(vars.stateVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.derivativeVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.algVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.intAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.boolAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.aliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.intAliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.boolAliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
-       <%makeSaveDelays(delayedExps)%>
+     _PRE_timeValue = timeValue;
+     <%(vars.stateVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.derivativeVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.algVars |> SIMVAR(__) => 
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.intAlgVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.boolAlgVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.aliasVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.intAliasVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.boolAliasVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%makeSaveDelays(delayedExps)%>
    }
    >>
 end makeSaveMemberVariables;
@@ -649,22 +695,28 @@ template makeRestoreMemberVariables(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars = SIMVARS(__)) then
-   <<
-   void <%lastIdentOfPath(name)%>::restore_vars()
-   {
-       for (int i = 0; i < numHelpVars(); i++)
-           helpVars[i] = helpVars_saved[i];
-       timeValue = $P$old$timeValue;
-       <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.derivativeVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.algVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.intAlgVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.boolAlgVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.aliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.intAliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-       <%(vars.boolAliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
-   }
-   >>
+ <<
+ void <%lastIdentOfPath(name)%>::restore_vars()
+ {
+   timeValue = _PRE_timeValue;
+   <%(vars.stateVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.derivativeVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.algVars |> SIMVAR(__) => 
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.intAlgVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.boolAlgVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.aliasVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.intAliasVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.boolAliasVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+ }
+ >>
 end makeRestoreMemberVariables;
 
 template makeInit(SimCode simCode)
@@ -694,8 +746,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%initVals(vars.paramVars)%>
        <%initVals(vars.intParamVars)%>
        <%initVals(vars.boolParamVars)%>
-       for (int i = 0; i < numHelpVars(); i++)
-           helpVars[i] = false;
        // Save these to the old values so that pre() and edge() work
        save_vars();
        // Calculate any equations that provide initial values
@@ -971,7 +1021,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+      let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
 
       if reinits then  
@@ -1343,7 +1393,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1352,12 +1402,12 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
           <%preExp2%>
           <%cref(left)%> = <%exp%>;
       } else {
-          <%cref(left)%> = $P$old<%cref(left)%>;
+          <%cref(left)%> = _PRE<%cref(left)%>;
       }
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -1369,7 +1419,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
       }
       <%elseWhen%>
       else {
-         <%cref(left)%> = $P$old<%cref(left)%>;
+         <%cref(left)%> = _PRE<%cref(left)%>;
       }
   }
   >> 
@@ -1380,7 +1430,7 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   <<
@@ -1390,7 +1440,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -1430,28 +1480,160 @@ template contextIteratorName(Ident name, Context context)
   else "$P" + name
 end contextIteratorName;
 
-template cref(ComponentRef cr)
- "Generates C equivalent name for component reference."
+template declareSetMethod(ComponentRef cr, Integer index)
+ "Declares a C++ method for setting a component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "timeValue"
-  case WILD(__) then ''
-  else "$P" + crefToCStr(cr)
+    case WILD(__) then ''
+    case CREF_QUAL(__) then
+        match identType
+          case T_INTEGER(__) then
+            'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
+          case T_REAL(__) then 
+		    match index
+            case -1 then
+			  'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+			else
+			  'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+          case T_STRING(__) then
+            'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
+          case T_BOOL(__) then 
+            'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then
+		        match index
+                case -1 then
+			      'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+			    else
+			      'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+			  else 'Unsupported COMPLEX type'           
+          else "Unsupported type"
+    case CREF_IDENT(__) then
+        match identType
+          case T_INTEGER(__) then
+            'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
+          case T_REAL(__) then 
+		    match index
+            case -1 then
+			  'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+			else
+			  'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+          case T_STRING(__) then
+            'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
+          case T_BOOL(__) then 
+            'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then
+		        match index
+                case -1 then
+			      'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+			    else
+			      'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+			  else 'Unsupported COMPLEX type'           
+          else "Unsupported type"
+end declareSetMethod;
+
+template declareGetMethod(ComponentRef cr)
+ "Declares a C++ method for accessing component reference."
+::=
+  match cr
+    case WILD(__) then ''
+    case CREF_QUAL(__) then
+        match identType
+          case T_INTEGER(__) then
+            'int get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_REAL(__) then 
+            'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_STRING(__) then
+            'std::string get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_BOOL(__) then 
+            'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then
+                'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+			  else 'Unsupported COMPLEX type'           
+          else "Unsupported type"
+    case CREF_IDENT(__) then
+        match identType
+          case T_INTEGER(__) then 
+            'int get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_REAL(__) then 
+            'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_STRING(__) then 
+            'std::string get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_BOOL(__) then 
+            'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then
+                'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
+		      else 'Unsupported COMPLEX type'
+          else "Unsupported type"
+end declareGetMethod;
+
+template declareCref(ComponentRef cr, String prepend)
+ "Declares a C++ name to be used as a component reference."
+::=
+  match cr
+    case WILD(__) then ''
+    case CREF_QUAL(__) then
+        match identType
+          case T_INTEGER(__) then 'int <%prepend%><%cref(cr)%>;'
+          case T_REAL(__) then 'double <%prepend%><%cref(cr)%>;'
+          case T_STRING(__) then 'std::string <%prepend%><%cref(cr)%>;'
+          case T_BOOL(__) then 'bool <%prepend%><%cref(cr)%>;'
+          case T_ENUMERATION(__) then 'ENUMERATION unsupported'
+          case T_ARRAY(__) then 'ARRAY unsupported'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
+			  else 'Unsupported COMPLEX type'
+          case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
+          else "Unsupported type"
+    case CREF_IDENT(__) then
+        match identType
+          case T_INTEGER(__) then 'int <%prepend%><%cref(cr)%>;'
+          case T_REAL(__) then 'double <%prepend%><%cref(cr)%>;'
+          case T_STRING(__) then 'std::string <%prepend%><%cref(cr)%>;'
+          case T_BOOL(__) then 'bool <%prepend%><%cref(cr)%>;'
+          case T_ENUMERATION(__) then 'ENUMERATION unsupported'
+          case T_ARRAY(__) then 'ARRAY unsupported'
+          case T_COMPLEX(__) then
+		    match complexClassType
+              case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
+			  else 'Unsupported COMPLEX type'
+          case T_COMPLEX(__) then 'COMPLEX unsupported'
+          case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
+          else "Unsupported type"
+    else "CREF_ITER unsupported"
+end declareCref;
+
+template cref(ComponentRef cr)
+ "Generates C++ name for component reference."
+::=
+  match cr
+    case CREF_IDENT(ident = "time") then "timeValue"
+    case WILD(__) then ''
+    else "_"+ crefToCStr(cr)
 end cref;
 
 template crefToCStr(ComponentRef cr)
  "Helper function to cref."
 ::=
   match cr
-  case CREF_IDENT(__) then
-    '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(ident="$PRE") then
-    '$old<%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
-  case CREF_QUAL(__) then
-    '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
+    case CREF_IDENT(__) then
+      '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
+    case CREF_QUAL(ident="$PRE") then
+      'PRE<%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+    case CREF_QUAL(ident="$DER") then
+      'DER<%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+    case CREF_QUAL(__) then
+      '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+    case WILD(__) then ''
+    else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
 template subscriptsToCStr(list<Subscript> subscripts)
@@ -1479,46 +1661,6 @@ template crefStr(ComponentRef cr)
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
-
-template crefM(ComponentRef cr)
- "Generates Modelica equivalent name for component reference."
-::=
-  match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "timeValue"
-  else "P" + crefToMStr(cr)
-end crefM;
-
-template crefToMStr(ComponentRef cr)
- "Helper function to crefM."
-::=
-  match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToMStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToMStr(subscriptLst)%>P<%crefToMStr(componentRef)%>'
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToMStr;
-
-
-
-
-
-template subscriptsToMStr(list<Subscript> subscripts)
-::=
-  if subscripts then
-    'lB<%subscripts |> s => subscriptToMStr(s) ;separator="c"%>rB'
-end subscriptsToMStr;
-
-template subscriptToMStr(Subscript subscript)
-::=
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
-  match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
-  case SLICE(exp=ICONST(integer=i)) then i
-  case WHOLEDIM(__) then "WHOLEDIM"
-  else "UNKNOWN_SUBSCRIPT"
-end subscriptToMStr;
-
 
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
@@ -3242,7 +3384,7 @@ match context
 case SIMULATION(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
-    let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+    let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
     let statements = (statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/)
       ;separator="\n")
@@ -3267,7 +3409,7 @@ case SOME(when as STMT_WHEN(__)) then
       algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
-  let elseCondStr = (when.conditions |> e => '(<%cref(e)%> && !$P$old<%cref(e)%> /* edge */)';separator=" || ")
+  let elseCondStr = (when.conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
   <<
   else if(<%elseCondStr%>)
   {
@@ -3287,7 +3429,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    $P$old<%expPart1%> = <%expPart1%>;
+    _PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
@@ -3909,11 +4051,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
-    '(<%cref(arg.componentRef)%> && !$P$old<%cref(arg.componentRef)%>)'
+    '(<%cref(arg.componentRef)%> && !_PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
-    '(<%cref(arg.componentRef)%> != $P$old<%cref(arg.componentRef)%>)'
+    '(<%cref(arg.componentRef)%> != _PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="change"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
   
@@ -4402,11 +4544,11 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
   match exp
   case cr as CREF(__) then
-    '$P$old<%cref(cr.componentRef)%>'
+    '_PRE<%cref(cr.componentRef)%>'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let cref = cref(cr.componentRef)
-    '*(&$P$old<%cref%> + <%offset%>)'
+    '*(&_PRE<%cref%> + <%offset%>)'
   else
     error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
 end daeExpCallPre; 
