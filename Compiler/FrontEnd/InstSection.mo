@@ -1266,6 +1266,7 @@ algorithm
       String e1_str,t1_str,e2_str,t2_str,s1,s2;
       DAE.Const c;
       DAE.TupleConst tp;
+      Absyn.Info info;
 
       /* TODO: Weird hack to make backend happy */
     case (e1 as DAE.CREF(componentRef=_), (p1 as DAE.PROP(type_ = t1 as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
@@ -1366,7 +1367,9 @@ algorithm
         t2_str = Types.unparseType(t2);
         s1 = stringAppendList({e1_str,"=",e2_str});
         s2 = stringAppendList({t1_str,"=",t2_str});
-        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Types.typeErrorSanityCheck(t1_str, t2_str, info);
+        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, info);
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
         fail();
@@ -4976,6 +4979,7 @@ algorithm
         rhs_str = ExpressionDump.printExpStr(e_2);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
+        Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
       then
         fail();

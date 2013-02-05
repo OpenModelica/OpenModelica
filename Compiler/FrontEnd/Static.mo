@@ -2564,6 +2564,7 @@ algorithm
         elt_str = stringAppendList({"[",str,"]"});
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
+        Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
       then
         fail();
@@ -2950,6 +2951,7 @@ algorithm
         el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
+        Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.TYPE_MISMATCH_MATRIX_EXP, {pre_str,el_str,t1_str,t2_str}, info);
       then
         fail();
@@ -11829,6 +11831,7 @@ algorithm
         e2_str = ExpressionDump.printExpStr(e3);
         t2_str = Types.unparseType(t3);
         pre_str = PrefixUtil.printPrefixStr3(pre);
+        Types.typeErrorSanityCheck(t1_str, t2_str, inInfo);
         Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str}, inInfo);
       then
         fail();
@@ -14162,6 +14165,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(inExp);
         t_str = Types.unparseType(ty);
+        Types.typeErrorSanityCheck(t_str, "Integer", inInfo);
         Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER, 
           {e_str, t_str}, inInfo);
       then

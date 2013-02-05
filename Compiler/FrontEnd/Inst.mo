@@ -9175,6 +9175,7 @@ algorithm
       Prefix.Prefix pr;
       DAE.Type bt;
       String v_str, b_str, et_str, bt_str;
+      Absyn.Info info;
 
     case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),
         DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_,_)
@@ -9207,8 +9208,10 @@ algorithm
         b_str = ExpressionDump.printExpStr(e);
         et_str = Types.unparseType(tp);
         bt_str = Types.unparseType(bt);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Types.typeErrorSanityCheck(et_str, bt_str, info);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
-        {v_str, b_str, et_str, bt_str}, DAEUtil.getElementSourceFileInfo(source));
+        {v_str, b_str, et_str, bt_str}, info);
       then
         fail();
 
@@ -14962,6 +14965,7 @@ algorithm
         e_str = ExpressionDump.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
+        Types.typeErrorSanityCheck(e_tp_str, tp_str, info);
         Error.addSourceMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str}, info);
       then
         fail();
@@ -15122,7 +15126,7 @@ algorithm
       Values.Value val;
       DAE.Type ty,ty2;
       DAE.Ident ident;
-      String binding_str, exptected_type_str, given_type_str;
+      String binding_str, expected_type_str, given_type_str;
       
 
     // Array type and each prefix => return the expression and value.
@@ -15152,10 +15156,11 @@ algorithm
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))), ty2,_)
       equation
         binding_str = ExpressionDump.printExpStr(exp);
-        exptected_type_str = Types.unparseType(ty2);
+        expected_type_str = Types.unparseType(ty2);
         given_type_str = Types.unparseType(ty);
+        Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
-        {ident, binding_str, exptected_type_str, given_type_str}, inInfo);
+        {ident, binding_str, expected_type_str, given_type_str}, inInfo);
       then
         fail();
       

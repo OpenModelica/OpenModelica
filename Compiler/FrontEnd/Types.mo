@@ -7293,6 +7293,7 @@ algorithm
       equation
         str1 = unparseType(ty1);
         str2 = unparseType(ty2);
+        typeErrorSanityCheck(str1, str2, info);
         Error.addSourceMessage(Error.ARRAY_TYPE_MISMATCH,{str1,str2},info);
       then fail();
   end matchcontinue;
@@ -7715,4 +7716,25 @@ algorithm
   end matchcontinue;
 end hasBinding;
 
+public function typeErrorSanityCheck
+  input String inType1;
+  input String inType2;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inType1, inType2, inInfo)
+    case (_, _, _)
+      equation
+        false = stringEq(inType1, inType2);
+      then
+        ();
+
+    else
+      equation
+        Error.addSourceMessage(Error.ERRONEOUS_TYPE_ERROR, {inType1}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end typeErrorSanityCheck;
+        
 end Types;

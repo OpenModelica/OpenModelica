@@ -154,6 +154,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type lt, rt;
       Absyn.Direction direction;
+      Absyn.Info info;
 
     // assign to parameter in algorithm okay if record
     case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL(), _)
@@ -204,8 +205,10 @@ algorithm
         rhs_str = ExpressionDump.printExpStr(rhs);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, 
-          {lhs_str, rhs_str, lt_str, rt_str}, DAEUtil.getElementSourceFileInfo(source));
+          {lhs_str, rhs_str, lt_str, rt_str}, info);
       then
         fail();
 
