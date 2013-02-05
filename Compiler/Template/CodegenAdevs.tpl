@@ -207,28 +207,28 @@ match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__)) then
    <<
    double get_time() const { return timeValue; }
-   <%(vars.stateVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.derivativeVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.algVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.intAlgVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.boolAlgVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.paramVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.intParamVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.boolParamVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.aliasVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.intAliasVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
-   <%(vars.boolAliasVars |> SIMVAR(__) =>
-     '<%declareGetMethod(name)%>'); separator="\n"%>
+   <%(vars.stateVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.derivativeVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.algVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.intAlgVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.boolAlgVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.paramVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.intParamVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.boolParamVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.aliasVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.intAliasVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.boolAliasVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
    >>
 end makeGetAccessors;
 
@@ -237,14 +237,14 @@ template makeSetAccessors(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__)) then
    <<
-   <%(vars.stateVars |> SIMVAR(__) =>
-     '<%declareSetMethod(name,index)%>'); separator="\n"%>
-   <%(vars.paramVars |> SIMVAR(__) =>
-     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
-   <%(vars.intParamVars |> SIMVAR(__) =>
-     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
-   <%(vars.boolParamVars |> SIMVAR(__) =>
-     '<%declareSetMethod(name,-1)%>'); separator="\n"%>
+   <%(vars.stateVars |> v hasindex i0 =>
+     '<%declareSetMethod(v,i0)%>'); separator="\n"%>
+   <%(vars.paramVars |> v =>
+     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
+   <%(vars.intParamVars |> v =>
+     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
+   <%(vars.boolParamVars |> v =>
+     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
    >>
 end makeSetAccessors;
 
@@ -254,62 +254,62 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
  <<
  // State variables
- <%(vars.stateVars |> SIMVAR(__) =>
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.stateVars |> v =>
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Derivative variables
- <%(vars.derivativeVars |> SIMVAR(__) =>
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.derivativeVars |> v =>
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Inline variables
- <%(vars.inlineVars |> SIMVAR(__) =>
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.inlineVars |> v =>
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Algebraic variables
- <%(vars.algVars |> SIMVAR(__) =>  
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.algVars |> v =>  
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Integer algebraic variables
- <%(vars.intAlgVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.intAlgVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Boolean algebraic variables
- <%(vars.boolAlgVars |> SIMVAR(__) => 
- '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.boolAlgVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Alias variables
- <%(vars.aliasVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.aliasVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Integer alias variables
- <%(vars.intAliasVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.intAliasVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Boolean alias variables
- <%(vars.boolAliasVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.boolAliasVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Parameter variables
- <%(vars.paramVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.paramVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Integer parameter variables
- <%(vars.intParamVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.intParamVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Boolean parameter variables
- <%(vars.boolParamVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.boolParamVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // String variables
- <%(vars.stringAlgVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.stringAlgVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // String parameters
- <%(vars.stringParamVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.stringParamVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // External object variables
- <%(vars.extObjVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.extObjVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Constants
- <%(vars.constVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.constVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Integer constants
- <%(vars.intConstVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.intConstVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Boolean constants
- <%(vars.boolConstVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.boolConstVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // String constants
- <%(vars.stringConstVars |> SIMVAR(__) => 
-   '<%declareCref(name,"")%> <%declareCref(name,"_PRE")%>') ;separator="\n"%>
+ <%(vars.stringConstVars |> v => 
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  >>
 end makeMemberVariables;
 
@@ -1480,136 +1480,59 @@ template contextIteratorName(Ident name, Context context)
   else "$P" + name
 end contextIteratorName;
 
-template declareSetMethod(ComponentRef cr, Integer index)
+template declareSetMethod(SimVar var, Integer i0)
  "Declares a C++ method for setting a component reference."
 ::=
-  match cr
-    case WILD(__) then ''
-    case CREF_QUAL(__) then
-        match identType
-          case T_INTEGER(__) then
-            'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
-          case T_REAL(__) then 
-        match index
-            case -1 then
-        'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-      else
-        'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-          case T_STRING(__) then
-            'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
-          case T_BOOL(__) then 
-            'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then
-            match index
-                case -1 then
-            'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-          else
-            'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-        else 'Unsupported COMPLEX type'           
-          else "Unsupported type"
-    case CREF_IDENT(__) then
-        match identType
-          case T_INTEGER(__) then
-            'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
-          case T_REAL(__) then 
-        match index
-            case -1 then
-        'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-      else
-        'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-          case T_STRING(__) then
-            'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
-          case T_BOOL(__) then 
-            'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then
-            match index
-                case -1 then
-            'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-          else
-            'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-        else 'Unsupported COMPLEX type'           
-          else "Unsupported type"
+  match var
+    case SIMVAR(arrayCref=SOME(_)) then
+      let argIndices = (numArrayElement |> i => 'int i<%i%>';separator=",")
+      let accIndices = (numArrayElement |> i => '[<%i%>]';separator=",")
+      'void set<%crefarray(name)%>(double val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }'
+    case SIMVAR(numArrayElement={}) then
+      'void set<%cref(name)%>(double* q, double val) { = <%cref(name)%> = val; }'
 end declareSetMethod;
 
-template declareGetMethod(ComponentRef cr)
+template declareGetMethod(SimVar var)
  "Declares a C++ method for accessing component reference."
 ::=
-  match cr
-    case WILD(__) then ''
-    case CREF_QUAL(__) then
-        match identType
-          case T_INTEGER(__) then
-            'int get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_REAL(__) then 
-            'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_STRING(__) then
-            'std::string get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_BOOL(__) then 
-            'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then
-                'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-        else 'Unsupported COMPLEX type'           
-          else "Unsupported type"
-    case CREF_IDENT(__) then
-        match identType
-          case T_INTEGER(__) then 
-            'int get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_REAL(__) then 
-            'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_STRING(__) then 
-            'std::string get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_BOOL(__) then 
-            'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then
-                'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-          else 'Unsupported COMPLEX type'
-          else "Unsupported type"
+  match var
+    case SIMVAR(__)
+      then '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
 end declareGetMethod;
 
-template declareCref(ComponentRef cr, String prepend)
+template variableType(DAE.Type type)
+::=
+  match type
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then "string"
+  case T_INTEGER(__)     then "int"
+  case T_BOOL(__)        then "bool"
+end variableType;
+
+template declareCref(SimVar var, String prepend)
  "Declares a C++ name to be used as a component reference."
 ::=
-  match cr
-    case WILD(__) then ''
-    case CREF_QUAL(__) then
-        match identType
-          case T_INTEGER(__) then 'int <%prepend%><%cref(cr)%>;'
-          case T_REAL(__) then 'double <%prepend%><%cref(cr)%>;'
-          case T_STRING(__) then 'std::string <%prepend%><%cref(cr)%>;'
-          case T_BOOL(__) then 'bool <%prepend%><%cref(cr)%>;'
-          case T_ENUMERATION(__) then 'ENUMERATION unsupported'
-          case T_ARRAY(__) then 'ARRAY unsupported'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
-        else 'Unsupported COMPLEX type'
-          case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
-          else "Unsupported type"
-    case CREF_IDENT(__) then
-        match identType
-          case T_INTEGER(__) then 'int <%prepend%><%cref(cr)%>;'
-          case T_REAL(__) then 'double <%prepend%><%cref(cr)%>;'
-          case T_STRING(__) then 'std::string <%prepend%><%cref(cr)%>;'
-          case T_BOOL(__) then 'bool <%prepend%><%cref(cr)%>;'
-          case T_ENUMERATION(__) then 'ENUMERATION unsupported'
-          case T_ARRAY(__) then 'ARRAY unsupported'
-          case T_COMPLEX(__) then
-        match complexClassType
-              case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
-        else 'Unsupported COMPLEX type'
-          case T_COMPLEX(__) then 'COMPLEX unsupported'
-          case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
-          else "Unsupported type"
-    else "CREF_ITER unsupported"
+  match var 
+    case SIMVAR(arrayCref=SOME(_)) then
+      let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
+      '<%variableType(type_)%> <%prepend%>_<%crefarray(name)%><%subscriptArray%>;'
+    case SIMVAR(numArrayElement={}) then '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
 end declareCref;
+
+template crefarray(ComponentRef cr)
+::=
+  match cr
+    case CREF_IDENT(__) then
+      '<%unquoteIdentifier(ident)%>'
+    case CREF_QUAL(ident="$PRE") then
+      'PRE_<%crefarray(componentRef)%>'
+    case CREF_QUAL(ident="$DER") then
+      'DER_<%crefarray(componentRef)%>'
+    case CREF_QUAL(__) then
+      '<%unquoteIdentifier(ident)%>_<%crefarray(componentRef)%>'
+    case WILD(__) then ''
+    else "CREF_NOT_IDENT_OR_QUAL"
+end crefarray;
 
 template cref(ComponentRef cr)
  "Generates C++ name for component reference."
@@ -1639,7 +1562,7 @@ end crefToCStr;
 template subscriptsToCStr(list<Subscript> subscripts)
 ::=
   if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
+    (subscripts |> i => '[<%subscriptToCStr(i)%>]';separator="")
 end subscriptsToCStr;
 
 template subscriptToCStr(Subscript subscript)
