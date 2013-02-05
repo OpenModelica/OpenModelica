@@ -30,10 +30,11 @@
 
 // includes for both linux and windows
 extern "C" {
-
 #include "../Values.h"
 #include "rml.h"
+}
 #include "corbaimpl.cpp"
+extern "C" {
 
 void Corba_5finit(void)
 {
