@@ -64,28 +64,24 @@ parmodelicagen = ParModelica_Lexer_BaseModelica_Lexer.c ParModelica_Lexer_BaseMo
 ModelicaParser.stamp: Modelica.g
 	@rm -f $@.tmp
 	@touch $@.tmp
-	@touch $<
 	$(ANTLRCMD) $<
 	@touch -c $(parsergen)
 	@mv -f $@.tmp $@
 Modelica_3_Lexer.stamp: Modelica_3_Lexer.g BaseModelica_Lexer.g
 	@rm -f $@.tmp
 	@touch $@.tmp
-	@touch $<
 	$(ANTLRCMD) $<
 	@touch -c $(modelica3gen)
 	@mv -f $@.tmp $@
 MetaModelica_Lexer.stamp: MetaModelica_Lexer.g BaseModelica_Lexer.g
 	@rm -f $@.tmp
 	@touch $@.tmp
-	@touch $<
 	$(ANTLRCMD) $<
 	@touch -c $(metamodelicagen)
 	@mv -f $@.tmp $@
 ParModelica_Lexer.stamp: ParModelica_Lexer.g BaseModelica_Lexer.g
 	@rm -f $@.tmp
 	@touch $@.tmp
-	@touch $<
 	$(ANTLRCMD) $<
 	@touch -c $(parmodelicagen)
 	@mv -f $@.tmp $@
