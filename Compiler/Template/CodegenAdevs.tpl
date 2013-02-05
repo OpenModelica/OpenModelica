@@ -553,8 +553,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 
   bool <%lastIdentOfPath(modelInfo.name)%>::sample(int index, double tStart, double tInterval)
   {
-	  index--;
-	  assert(index >= 0);
+    index--;
+    assert(index >= 0);
       if (samples[index] == NULL)
           samples[index] = new AdevsSampleData(tStart,tInterval);
       return samples[index]->atEvent(timeValue,epsilon);
@@ -1490,48 +1490,48 @@ template declareSetMethod(ComponentRef cr, Integer index)
           case T_INTEGER(__) then
             'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
           case T_REAL(__) then 
-		    match index
+        match index
             case -1 then
-			  'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-			else
-			  'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+        'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+      else
+        'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
           case T_STRING(__) then
             'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
           case T_BOOL(__) then 
             'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then
-		        match index
+            match index
                 case -1 then
-			      'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-			    else
-			      'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-			  else 'Unsupported COMPLEX type'           
+            'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+          else
+            'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+        else 'Unsupported COMPLEX type'           
           else "Unsupported type"
     case CREF_IDENT(__) then
         match identType
           case T_INTEGER(__) then
             'void set<%cref(cr)%>(int val) { <%cref(cr)%> = val; }'
           case T_REAL(__) then 
-		    match index
+        match index
             case -1 then
-			  'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-			else
-			  'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+        'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+      else
+        'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
           case T_STRING(__) then
             'void set<%cref(cr)%>(std::string val) { <%cref(cr)%> = val; }'
           case T_BOOL(__) then 
             'void set<%cref(cr)%>(bool val) { <%cref(cr)%> = val; }'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then
-		        match index
+            match index
                 case -1 then
-			      'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
-			    else
-			      'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
-			  else 'Unsupported COMPLEX type'           
+            'void set<%cref(cr)%>(double val) { <%cref(cr)%> = val; }'
+          else
+            'void set<%cref(cr)%>(double* q, double val) { q[<%index%>] = <%cref(cr)%> = val; }'
+        else 'Unsupported COMPLEX type'           
           else "Unsupported type"
 end declareSetMethod;
 
@@ -1551,10 +1551,10 @@ template declareGetMethod(ComponentRef cr)
           case T_BOOL(__) then 
             'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then
                 'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-			  else 'Unsupported COMPLEX type'           
+        else 'Unsupported COMPLEX type'           
           else "Unsupported type"
     case CREF_IDENT(__) then
         match identType
@@ -1567,10 +1567,10 @@ template declareGetMethod(ComponentRef cr)
           case T_BOOL(__) then 
             'bool get<%cref(cr)%>() const { return <%cref(cr)%>; }'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then
                 'double get<%cref(cr)%>() const { return <%cref(cr)%>; }'
-		      else 'Unsupported COMPLEX type'
+          else 'Unsupported COMPLEX type'
           else "Unsupported type"
 end declareGetMethod;
 
@@ -1588,9 +1588,9 @@ template declareCref(ComponentRef cr, String prepend)
           case T_ENUMERATION(__) then 'ENUMERATION unsupported'
           case T_ARRAY(__) then 'ARRAY unsupported'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
-			  else 'Unsupported COMPLEX type'
+        else 'Unsupported COMPLEX type'
           case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
           else "Unsupported type"
     case CREF_IDENT(__) then
@@ -1602,9 +1602,9 @@ template declareCref(ComponentRef cr, String prepend)
           case T_ENUMERATION(__) then 'ENUMERATION unsupported'
           case T_ARRAY(__) then 'ARRAY unsupported'
           case T_COMPLEX(__) then
-		    match complexClassType
+        match complexClassType
               case TYPE_REAL then 'double <%prepend%><%cref(cr)%>;'
-			  else 'Unsupported COMPLEX type'
+        else 'Unsupported COMPLEX type'
           case T_COMPLEX(__) then 'COMPLEX unsupported'
           case T_SUBTYPE_BASIC(__) then 'SUBTYPE_BASIC unsupported'
           else "Unsupported type"
