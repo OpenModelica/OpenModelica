@@ -99,8 +99,8 @@ bootstrap-from-tarball:
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install
 	$(MAKE) -C Compiler/modpar install
-	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-tarball
-	$(MAKE) bootstrap-from-compiled
+	time $(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-tarball
+	OPENMODELICAHOME=`pwd`/build time $(MAKE) bootstrap-from-compiled
 
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
