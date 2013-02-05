@@ -685,8 +685,8 @@ algorithm
         Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
         BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
         BackendDAEEXT.getAssignment(ass1,ass2);
-        printIntList(arrayList(ass1));
-        printIntList(arrayList(ass2));
+        //printIntList(arrayList(ass1));
+        //printIntList(arrayList(ass2));
         vars = yVarMap;
         setS = restoreIndicesEquivalence(List.filter1OnTrue(arrayList(ass2),intGt,-1),yEqMap);
     then (setS,vars);
@@ -1431,7 +1431,7 @@ protected function prepareForMatching
   protected list<list<Integer>> m;
 algorithm
 (eqMap,varMap,m):=prepareForMatching2(mExt,{},{},{});
-print("Matrix to match: equations = "+&intString(listLength(eqMap))+&" variables = "+&intString(listLength(varMap))+&"\n");
+//print("Matrix to match: equations = "+&intString(listLength(eqMap))+&" variables = "+&intString(listLength(varMap))+&"\n");
 mOut:=listArray(m);
 end prepareForMatching;
 
