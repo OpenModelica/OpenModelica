@@ -2656,7 +2656,7 @@ algorithm
       DAE.Exp el_1,el_2;
       DAE.Properties prop,prop1,prop1_1,prop2;
       DAE.Type t1,t1_1;
-      Integer t1_dim1,nmax_2,nmax,t1_ndims;
+      Integer t1_dim1,nmax;
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean array,impl,havereal,a,scalar,doVect;
       DAE.Type at;
@@ -2669,9 +2669,7 @@ algorithm
       
     case (cache,env,{el_1},{prop as DAE.PROP(t1,_)},impl,st,havereal,nmax,doVect,pre,_) /* implicit inst. have real nmax dim1 dim2 */
       equation
-        t1_dim1 = Types.numberOfDimensions(t1);
-        nmax_2 = nmax - t1_dim1;
-        (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax_2);
+        (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax);
         (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
         at = Types.simplifyType(t1_1);
         at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(1));
@@ -2679,9 +2677,7 @@ algorithm
         (cache,DAE.ARRAY(at,false,{el_2}),prop,t1_dim1_1,t1_dim2_1);
     case (cache,env,(el_1 :: els),(prop1 as DAE.PROP(t1,_))::props,impl,st,havereal,nmax,doVect,pre,_)
       equation
-        t1_ndims = Types.numberOfDimensions(t1);
-        nmax_2 = nmax - t1_ndims;
-        (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax_2);
+        (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax);
          (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
         (cache,el_1 as DAE.ARRAY(at,a,els_1),prop2,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, nmax,doVect,pre,info);
         dim2_1 = Expression.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
@@ -2853,120 +2849,37 @@ algorithm
   DAE.ARRAY(ty = DAE.T_ARRAY(dims = dim2 :: _), array = expl2) := inArray2;
   expl := listAppend(expl1, expl2);
   dim := Expression.dimensionsAdd(dim1, dim2);
-  outExp := DAE.ARRAY(DAE.T_ARRAY(ety, dim1 :: dim_rest, ts), at, expl);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(ety, dim :: dim_rest, ts), at, expl);
 end elabMatrixCatOne2;
 
-protected function promoteExp "function: promoteExp
-  author: PA
-  Adds onesized array dimensions to an expressions n times to the right
-  of array dimensions.
-  For instance
-  promote_exp( {1,2},1) => {{1},{2}}
-  promote_exp( {1,2},2) => { {{1}},{{2}} }
-  See also promote_real_array in real_array.c"
+protected function promoteExp
+  "Wrapper function for Expression.promoteExp which also handles Properties."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
-  input Integer inInteger;
+  input Integer inDims;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outExp,outProperties) := matchcontinue (inExp,inProperties,inInteger)
+  (outExp, outProperties) := matchcontinue(inExp, inProperties, inDims)
     local
-      DAE.Exp e,e_1,e_2;
-      DAE.Properties prop,prop_1;
-      Integer n_1,n;
-      DAE.Type tp_1,tp;
+      DAE.Type ty;
       DAE.Const c;
-    case (e,prop,-1) then (e,prop);  /* n */
-    case (e,prop,0) then (e,prop);
-    case (e,DAE.PROP(type_ = tp,constFlag = c),n)
+      DAE.Exp exp;
+
+    case (_, DAE.PROP(ty, c), _)
       equation
-        n_1 = n - 1;
-        //e_tp = Types.simplifyType(tp);
-        tp_1 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(1));
-        //e_tp_1 = Types.simplifyType(tp_1);
-        //array = Expression.typeBuiltin(e_tp);
-        e_1 = promoteExp2(e, (n,tp));
-        (e_2,prop_1) = promoteExp(e_1, DAE.PROP(tp_1,c), n_1);
+        (exp, ty) = Expression.promoteExp(inExp, ty, inDims);
       then
-        (e_2,prop_1);
-    case(_,_,_) equation
-      Debug.fprint(Flags.FAILTRACE,"-promoteExp failed\n");
-      then fail();
+        (exp, DAE.PROP(ty, c));
+
+    else
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- Static.promoteExp failed");
+      then
+        fail();
+
   end matchcontinue;
 end promoteExp;
-
-protected function promoteExp2
-"function: promoteExp2
-  Helper function to promoteExp, adds
-  dimension to the right of the expression."
-  input DAE.Exp inExp;
-  input tuple<Integer, DAE.Type> inTplIntegerTypesType;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp,inTplIntegerTypesType)
-    local
-      Integer n_1,n;
-      DAE.Type tp_1,tp,tp2;
-      list<DAE.Exp> expl_1,expl;
-      DAE.Type a,at,etp,tp1;
-      Boolean sc;
-      DAE.Exp e;
-      Ident es;
-    
-    case (DAE.ARRAY(ty = a,scalar = sc,array = expl),(n,tp))
-      equation
-        n_1 = n - 1;
-        tp_1 = Types.unliftArray(tp);
-        a = Expression.liftArrayLeft(a, DAE.DIM_INTEGER(1));
-        expl_1 = List.map1(expl, promoteExp2, (n_1,tp_1));
-      then
-        DAE.ARRAY(a,false,expl_1);
-    
-    // scalars can be promoted from s to {s} 
-    case (e,(_,tp)) 
-      equation
-        false = Types.isArray(tp, {});
-        at = Expression.typeof(e);
-      then
-        DAE.ARRAY(DAE.T_ARRAY(at, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource),true,{e});
-    
-    // arrays of one dimension can be promoted from a to {a}
-    case (e,(_,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = 1)}, ty = tp2))) 
-      equation
-        at = Expression.typeof(e);
-        false = Types.isArray(tp2, {});
-      then
-        DAE.ARRAY(DAE.T_ARRAY(at,{DAE.DIM_INTEGER(1)},DAE.emptyTypeSource),true,{e});
-    
-    // fallback, use builtin operator promote
-    case (e,(n,tp)) 
-      equation
-        es = ExpressionDump.printExpStr(e);
-        etp = Types.simplifyType(tp);
-        tp1 = promoteExpType(etp,n);
-        e = Expression.makeBuiltinCall("promote", {e, DAE.ICONST(n)}, tp1);
-      then
-        e;
-  end matchcontinue;
-end promoteExp2;
-
-function promoteExpType "lifts the type using liftArrayRight n times"
-  input DAE.Type inType;
-  input Integer n;
-  output DAE.Type outType;
-algorithm
-  outType :=  matchcontinue(inType,n)
-    local
-      DAE.Type tp1,tp2;
-    case (_,0) then inType;
-    case(_,_)
-      equation
-      tp1=Expression.liftArrayRight(inType, DAE.DIM_INTEGER(1));
-      tp2 = promoteExpType(tp1,n-1);
-    then tp2;
-  end matchcontinue;
-end promoteExpType;
 
 protected function elabMatrixSemi
 "function: elabMatrixSemi
@@ -6091,7 +6004,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         1 = Types.numberOfDimensions(inType);
-        (exp, props) = promoteExp(inArg, inProperties, 1);
+        (exp, props) = promoteExp(inArg, inProperties, 2);
       then
         (exp, props);
 

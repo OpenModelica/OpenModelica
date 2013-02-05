@@ -906,10 +906,23 @@ algorithm
       Integer i,i1,i2,dim;
       Real r1;
       array<array<DAE.Exp>> marr;
+      String name;
     
+    // If the argument to min/max is an array, try to flatten it.
+    case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY(array=_)},
+        attr=DAE.CALL_ATTR(ty=tp)))
+      equation
+        true = stringEq(name, "max") or stringEq(name, "min");
+        expl = Expression.flattenArrayExpToList(e);
+        e1 = Expression.makeScalarArray(expl, tp);
+        false = Expression.expEqual(e, e1);
+      then
+        Expression.makeBuiltinCall(name, {e1}, tp);
+
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then e;
+
     // Try to unify the expressions :)
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation

@@ -9151,5 +9151,159 @@ algorithm
   end match;
 end equationExpEqual;
 
+public function promoteExp
+  "This function corresponds to the promote function described in the Modelica
+   spec. It takes an expression, the type of the expression and a number of
+   dimensions, and adds dimensions of size 1 to the right of the expression
+   until the expression has as many dimensions as given. It also returns the
+   type of the promoted expression. E.g.:
+     
+     promoteExp({1, 2, 3}, Integer[3], 3) =>
+        ({{{1}}, {{2}}, {{3}}}, Integer[3,1,1])
+
+   The reason why this function takes a type instead of using the type of the
+   expression is because it's used by Static.promoteExp, which already knows the
+   type."
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input Integer inDims;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+algorithm
+  (outExp, outType) := matchcontinue(inExp, inType, inDims)
+    local
+      Integer dim_count, dims_to_add;
+      DAE.Type ty, res_ty;
+      DAE.Exp exp;
+      list<DAE.Type> tys;
+      list<DAE.Dimension> dims, added_dims;
+      Boolean is_array_ty;
+
+    case (_, _, _)
+      equation
+        // Figure out how many dimensions we need to add.
+        dims_to_add = inDims - Types.numberOfDimensions(inType);
+        // If the expression already has at least as many dimensions as we want,
+        // fail and return the unchanged expression.
+        true = dims_to_add > 0;
+
+        // Construct all the types we will need here, to avoid having to
+        // construct new types for all the subexpressions created.
+        dims = Types.getDimensions(inType);
+        // Add as many dimensions of size 1 as needed.
+        added_dims = List.fill(DAE.DIM_INTEGER(1), dims_to_add);
+        dims = listAppend(dims, added_dims);
+        // Construct the result type.
+        ty = Types.arrayElementType(inType);
+        res_ty = Types.liftArrayListDims(ty, dims);
+        // Construct the expression types.
+        ty = Types.simplifyType(ty);
+        tys = makePromotedTypes(dims, ty, {});
+
+        // Use the constructed types to promote the expression.
+        is_array_ty = Types.isArray(inType, {});
+        exp = promoteExp2(inExp, is_array_ty, dims_to_add, tys);
+      then
+        (exp, res_ty);
+
+    else (inExp, inType);
+
+  end matchcontinue;
+end promoteExp;
+
+protected function makePromotedTypes
+  "Creates a lift of types given a list of dimensions and an element type. The
+   types are created by removing the head of the dimension list one by one and
+   creating types from the remaining dimensions. E.g.:
+    
+     makePromotedTypes({[2], [3], [1]}, Real) =>
+        {Real[2,3,1], Real[3,1], Real[1]}
+   "
+  input list<DAE.Dimension> inDimensions;
+  input DAE.Type inElementType;
+  input list<DAE.Type> inAccumTypes;
+  output list<DAE.Type> outAccumTypes;
+algorithm
+  outAccumTypes := match(inDimensions, inElementType, inAccumTypes)
+    local
+      list<DAE.Dimension> rest_dims;
+      DAE.Type ty;
+
+    case (_ :: rest_dims, _, _)
+      equation
+        ty = DAE.T_ARRAY(inElementType, inDimensions, DAE.emptyTypeSource);
+      then 
+        makePromotedTypes(rest_dims, inElementType, ty :: inAccumTypes);
+
+    case ({}, _, _) then listReverse(inAccumTypes);
+
+  end match;
+end makePromotedTypes;
+        
+protected function promoteExp2
+  "Helper function to promoteExp."
+  input DAE.Exp inExp;
+  input Boolean inIsArray;
+  input Integer inDims;
+  input list<DAE.Type> inTypes;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inIsArray, inDims, inTypes)
+    local
+      DAE.Type ty;
+      list<DAE.Exp> expl;
+      list<DAE.Type> rest_ty;
+
+    // No types left, we're done!
+    case (_, _, _, {}) then inExp;
+
+    // An array, promote each element in the array.
+    case (DAE.ARRAY(_, _, expl), _, _, ty :: rest_ty)
+      equation
+        expl = List.map3(expl, promoteExp2, false, inDims, rest_ty);
+      then
+        DAE.ARRAY(ty, false, expl);
+
+    // An expression with array type, but which is not an array expression. Such
+    // an expression can't be promoted here, so we create a promote call instead.
+    case (_, true, _, ty :: _)
+      then makeBuiltinCall("promote", {inExp, DAE.ICONST(inDims)}, ty);
+
+    // Any other expression, call promoteExp3.
+    else promoteExp3(inExp, inTypes);
+
+  end match;
+end promoteExp2;
+
+protected function promoteExp3
+  "Helper function to promoteExp2. Promotes a scalar expression as many times as
+   the number of types given."
+  input DAE.Exp inExp;
+  input list<DAE.Type> inTypes;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inTypes)
+    local
+      DAE.Type ty;
+      list<DAE.Type> rest_ty;
+      DAE.Exp exp;
+
+    // No types left, were' done!
+    case (_, {}) then inExp;
+
+    // Only one type left, create a scalar array with it.
+    case (_, {ty}) then makeArray({inExp}, ty, true);
+
+    // Several types left. Promote the expression using the rest of the types,
+    // and then create an non-scalar array of the expression with the first type.
+    case (_, ty :: rest_ty)
+      equation
+        exp = promoteExp3(inExp, rest_ty);
+      then
+        makeArray({exp}, ty, false);
+
+  end match;
+end promoteExp3;
+
 end Expression;
 
