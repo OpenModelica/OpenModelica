@@ -605,7 +605,7 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
       pSimulationOutputDialog->show();
     }
     // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
-    if (mpProgressDialog->isHidden())
+    if (mpProgressDialog->isHidden() || mpSimulationProcess->exitStatus() != QProcess::NormalExit)
       return;
     // read the output file
     QString output_file = projectTab->mModelNameStructure;
