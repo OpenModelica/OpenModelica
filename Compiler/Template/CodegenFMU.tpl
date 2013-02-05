@@ -61,7 +61,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
-  let()= textFile(simulationHeaderFile(simCode,guid), '_<%fileNamePrefix%>.h')
+  let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
   let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
@@ -971,7 +971,7 @@ match platform
   <%\t%> cp <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
-  <%\t%> cp _<%fileNamePrefix%>.h <%fileNamePrefix%>/sources/_<%fileNamePrefix%>.h
+  <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
   <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
@@ -1004,7 +1004,7 @@ match platform
   <%\t%> cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
-  <%\t%> cp _<%fileNamePrefix%>.h <%fileNamePrefix%>/sources/_<%fileNamePrefix%>.h
+  <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
   <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
@@ -1080,7 +1080,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       copy <%fileNamePrefix%>.lib <%fileNamePrefix%>\binaries\$(PLATWIN32)
       copy <%fileNamePrefix%>.pdb <%fileNamePrefix%>\binaries\$(PLATWIN32)
       copy <%fileNamePrefix%>.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>.c
-      copy _<%fileNamePrefix%>.h <%fileNamePrefix%>\sources\_<%fileNamePrefix%>.h
+      copy <%fileNamePrefix%>_model.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_model.h
       copy <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_FMU.c
       copy <%fileNamePrefix%>_functions.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.c
       copy <%fileNamePrefix%>_functions.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.h
