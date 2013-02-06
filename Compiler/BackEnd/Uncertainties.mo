@@ -107,7 +107,7 @@ algorithm
         //print("- Flatten ok\n");   
         dlow = BackendDAECreate.lower(dae,cache,env);
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeAllSimpleEquations","removeUnusedVariables","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({"removeSimpleEquations"}));
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeAllSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({""}));
         //print("* Lowered Ok \n");
 
         //BackendDump.dump(dlow_1);
