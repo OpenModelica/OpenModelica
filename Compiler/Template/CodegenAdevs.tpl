@@ -237,14 +237,14 @@ template makeSetAccessors(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__)) then
    <<
-   <%(vars.stateVars |> v hasindex i0 =>
-     '<%declareSetMethod(v,i0)%>'); separator="\n"%>
+   <%(vars.stateVars |> v =>
+     '<%declareSetMethod(v)%>'); separator="\n"%>
    <%(vars.paramVars |> v =>
-     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
+     '<%declareSetMethod(v)%>'); separator="\n"%>
    <%(vars.intParamVars |> v =>
-     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
+     '<%declareSetMethod(v)%>'); separator="\n"%>
    <%(vars.boolParamVars |> v =>
-     '<%declareSetMethod(v,-1)%>'); separator="\n"%>
+     '<%declareSetMethod(v)%>'); separator="\n"%>
    >>
 end makeSetAccessors;
 
@@ -1480,24 +1480,28 @@ template contextIteratorName(Ident name, Context context)
   else "$P" + name
 end contextIteratorName;
 
-template declareSetMethod(SimVar var, Integer i0)
+template declareSetMethod(SimVar var)
  "Declares a C++ method for setting a component reference."
 ::=
   match var
     case SIMVAR(arrayCref=SOME(_)) then
-      let argIndices = (numArrayElement |> i => 'int i<%i%>';separator=",")
-      let accIndices = (numArrayElement |> i => '[<%i%>]';separator=",")
-      'void set<%crefarray(name)%>(double val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }'
+      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
+      'void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }'
     case SIMVAR(numArrayElement={}) then
-      'void set<%cref(name)%>(double* q, double val) { = <%cref(name)%> = val; }'
+      'void set<%cref(name)%>(<%variableType(type_)%> val) { <%cref(name)%> = val; }'
 end declareSetMethod;
 
 template declareGetMethod(SimVar var)
- "Declares a C++ method for accessing component reference."
+ "Declares a C++ method for getting a component reference."
 ::=
   match var
-    case SIMVAR(__)
-      then '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
+    case SIMVAR(arrayCref=SOME(_)) then
+      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
+      '<%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }'
+    case SIMVAR(numArrayElement={}) then
+      '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
 end declareGetMethod;
 
 template variableType(DAE.Type type)
@@ -1515,24 +1519,32 @@ template declareCref(SimVar var, String prepend)
   match var 
     case SIMVAR(arrayCref=SOME(_)) then
       let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
-      '<%variableType(type_)%> <%prepend%>_<%crefarray(name)%><%subscriptArray%>;'
+      '<%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;'
     case SIMVAR(numArrayElement={}) then '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
 end declareCref;
 
 template crefarray(ComponentRef cr)
+ "Generates C++ name for component reference."
+::=
+  match cr
+    case WILD(__) then ''
+    else "_"+ crefarray2(cr)
+end crefarray;
+
+template crefarray2(ComponentRef cr)
 ::=
   match cr
     case CREF_IDENT(__) then
       '<%unquoteIdentifier(ident)%>'
     case CREF_QUAL(ident="$PRE") then
-      'PRE_<%crefarray(componentRef)%>'
+      'PRE_<%crefarray2(componentRef)%>'
     case CREF_QUAL(ident="$DER") then
-      'DER_<%crefarray(componentRef)%>'
+      'DER_<%crefarray2(componentRef)%>'
     case CREF_QUAL(__) then
-      '<%unquoteIdentifier(ident)%>_<%crefarray(componentRef)%>'
+      '<%unquoteIdentifier(ident)%>_<%crefarray2(componentRef)%>'
     case WILD(__) then ''
     else "CREF_NOT_IDENT_OR_QUAL"
-end crefarray;
+end crefarray2;
 
 template cref(ComponentRef cr)
  "Generates C++ name for component reference."
@@ -1568,8 +1580,8 @@ end subscriptsToCStr;
 template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
-  case SLICE(exp=ICONST(integer=i)) then i
+  case INDEX(exp=ICONST(integer=i)) then intSub(i,1)
+  case SLICE(exp=ICONST(integer=i)) then intSub(i,1)
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
