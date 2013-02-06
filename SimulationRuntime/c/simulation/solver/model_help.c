@@ -1,8 +1,8 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2010, Linköpings University, 
+ * Department of Computer and Information Science, 
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linköpings University, either from the above address, 
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -588,14 +588,14 @@ void initializeDataStruc(DATA *data)
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    ASSERT(tmpSimData.realVars,"out of memory");
+    ASSERT(tmpSimData.realVars, "out of memory");
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    ASSERT(tmpSimData.integerVars,"out of memory");
+    ASSERT(tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    ASSERT(tmpSimData.booleanVars,"out of memory");
+    ASSERT(tmpSimData.booleanVars, "out of memory");
     tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-    ASSERT(tmpSimData.stringVars,"out of memory");
-    appendRingData(data->simulationData,&tmpSimData);
+    ASSERT(tmpSimData.stringVars, "out of memory");
+    appendRingData(data->simulationData, &tmpSimData);
   }
   data->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
   rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
@@ -670,7 +670,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
 
-  ASSERT(data->simulationInfo.extObjs,"error allocating external objects");
+  ASSERT(data->simulationInfo.extObjs, "error allocating external objects");
 
   /* initial build calls terminal, initial */
   data->simulationInfo.terminal = 0;
@@ -829,7 +829,7 @@ modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
   double eps = (direction)? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
-  /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');*/
+  /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)", a, b, (a < b)?'t':'f' , direction?'t':'f');*/
   retVal = (direction)? (a < b + eps):(a + eps < b);
   /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
@@ -844,7 +844,7 @@ modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
   double eps = (direction)? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
-  /*INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f');*/
+  /*INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)", a, b, (a > b)?'t':'f' , direction?'t':'f');*/
   retVal = (direction)? (a + eps > b ):(a  > b + eps);
   /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
@@ -911,9 +911,10 @@ modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *d
 modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
     value = data->simulationInfo.mathEventsValuePre[index];
-  } else{
+  else
+  {
     data->simulationInfo.mathEventsValuePre[index] = x;
     value = data->simulationInfo.mathEventsValuePre[index];
   }
@@ -932,9 +933,10 @@ modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
     value = data->simulationInfo.mathEventsValuePre[index];
-  } else{
+  else
+  {
     data->simulationInfo.mathEventsValuePre[index] = x;
     value = data->simulationInfo.mathEventsValuePre[index];
   }
@@ -952,18 +954,21 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
  */
 modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data)
 {
-  modelica_integer value1,value2;
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  modelica_integer value1, value2;
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
+  {
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
-  } else{
+  }
+  else
+  {
     data->simulationInfo.mathEventsValuePre[index] = (modelica_real)x1;
     data->simulationInfo.mathEventsValuePre[index+1] = (modelica_real)x2;
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
   }
-  ASSERT1(value2 != 0,"event_div_integer failt at time %f because x2 is zero!",data->localData[0]->timeValue);
-  return ldiv(value1,value2).quot;
+  ASSERT1(value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
+  return ldiv(value1, value2).quot;
 }
 
 /*! \fn _event_div_real
@@ -977,11 +982,14 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
  */
 modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data)
 {
-  modelica_real value1,value2;
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  modelica_real value1, value2;
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
+  {
     value1 = data->simulationInfo.mathEventsValuePre[index];
     value2 = data->simulationInfo.mathEventsValuePre[index+1];
-  } else{
+  }
+  else
+  {
     data->simulationInfo.mathEventsValuePre[index] = x1;
     data->simulationInfo.mathEventsValuePre[index+1] = x2;
     value1 = data->simulationInfo.mathEventsValuePre[index];
@@ -992,7 +1000,7 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
     modelica_real rtmp = value1/value2;
     modelica_integer tmp = (modelica_integer)(rtmp);
     return (modelica_real)tmp;
-  };
+  }
 #else
   return trunc(value1/value2);
 #endif

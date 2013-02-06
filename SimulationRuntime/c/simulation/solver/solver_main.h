@@ -60,11 +60,13 @@ typedef struct SOLVER_INFO
   modelica_boolean didEventStep;
 
   /* stats */
-  unsigned int stateEvents;
-  unsigned int sampleEvents;
-  unsigned int stepNo;
-  unsigned int callsODE;
-  unsigned int callsDAE;
+  unsigned long stateEvents;
+  unsigned long sampleEvents;
+  /* not used
+  unsigned long stepNo;
+  unsigned long callsODE;
+  unsigned long callsDAE;
+  */
 
   void* solverData;
 }SOLVER_INFO;

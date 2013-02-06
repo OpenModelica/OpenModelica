@@ -138,10 +138,12 @@ int solver_main(DATA* data, const char* init_initMethod,
   solverInfo.didEventStep = 0;
   solverInfo.stateEvents = 0;
   solverInfo.sampleEvents = 0;
+  /* not used
   solverInfo.stepNo = 0;
   solverInfo.callsODE = 0;
   solverInfo.callsDAE = 0;
-
+  */
+  
   copyStartValuestoInitValues(data);
   /* read input vars */
   input_function(data);
@@ -278,7 +280,6 @@ int solver_main(DATA* data, const char* init_initMethod,
    */
   while(solverInfo.currentTime < simInfo->stopTime)
   {
-    INDENT(LOG_SOLVER);
     if(measure_time_flag)
     {
       for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
@@ -447,7 +448,6 @@ int solver_main(DATA* data, const char* init_initMethod,
       }
       break;
     }
-    RELEASE(LOG_SOLVER);
   } /* end while solver */
 
 
@@ -467,33 +467,52 @@ int solver_main(DATA* data, const char* init_initMethod,
     writeOutputVars(strdup(outputVariablesAtEnd), data);
   }
 
-  /* save dassl stats before print */
-
   if(DEBUG_STREAM(LOG_STATS))
   {
-    if(flag == 3)
+    rt_accumulate(SIM_TIMER_TOTAL);
+    
+    INFO(LOG_STATS, "### STATISTICS ###");
+
+    INFO(LOG_STATS, "timer");
+    INDENT(LOG_STATS);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    INFO2(LOG_STATS, "%12gs [%5.1f%%] simulation", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    RELEASE(LOG_STATS);
+    
+    INFO(LOG_STATS, "events");
+    INDENT(LOG_STATS);
+    INFO1(LOG_STATS, "%5ld state events", solverInfo.stateEvents);
+    INFO1(LOG_STATS, "%5ld sample events", solverInfo.sampleEvents);
+    RELEASE(LOG_STATS);
+    
+    INFO(LOG_STATS, "solver");
+    INDENT(LOG_STATS);
+    if(flag == 3) /* dassl */
     {
+      /* save dassl stats before print */
       for(ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
+      
+      INFO1(LOG_STATS, "%5d steps taken", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
+      INFO1(LOG_STATS, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
+      INFO1(LOG_STATS, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
+      INFO1(LOG_STATS, "%5d error test failures", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
+      INFO1(LOG_STATS, "%5d convergence test failures", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
-    rt_accumulate(SIM_TIMER_TOTAL);
-
-    INFO(LOG_STATS, "##### Statistics #####");
-    INFO1(LOG_STATS, "simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
-    INFO1(LOG_STATS, "Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
-    INFO1(LOG_STATS, "State Events: %d", solverInfo.stateEvents);
-    INFO1(LOG_STATS, "Sample Events: %d", solverInfo.sampleEvents);
-    if(flag == 3)
+    else
     {
-      INFO(LOG_STATS, "##### Solver Statistics #####");
-      INFO1(LOG_STATS, "The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
-      INFO1(LOG_STATS, "The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
-      INFO1(LOG_STATS, "The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
-      INFO1(LOG_STATS, "The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
-      INFO1(LOG_STATS, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
+      INFO(LOG_STATS, "sorry - no solver statistics available. [not yet implemented]");
     }
+    RELEASE(LOG_STATS);
+    
+    INFO(LOG_STATS, "### END STATISTICS ###");
+    
     rt_tick(SIM_TIMER_TOTAL);
-
   }
 
   /* deintialize solver related workspace */
@@ -614,8 +633,8 @@ int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 #endif
 
-/** function checkTermination
- *  author: wbraun
+/*! \fn checkTermination
+ *  \author wbraun
  *
  *  function checks if the model should really terminated.
  */
