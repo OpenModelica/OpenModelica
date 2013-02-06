@@ -745,7 +745,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   EXIT(EXIT_CODE_JAVA_ERROR);
 }
 
-char* jobjectToString(JNIEnv* env, jobject obj)
+const char* jobjectToString(JNIEnv* env, jobject obj)
 {
   jmethodID mid;
   jobject jstr;
@@ -759,10 +759,10 @@ char* jobjectToString(JNIEnv* env, jobject obj)
   return copyJstring(env, jstr);
 }
 
-char* copyJstring(JNIEnv* env, jobject jstr)
+const char* copyJstring(JNIEnv* env, jobject jstr)
 {
   const char* str_tmp;
-  char* str;
+  const char* str;
   if(jstr == NULL) {
     fprintf(stderr, "%s: Java String was NULL\n", __FUNCTION__);
     EXIT(EXIT_CODE_JAVA_ERROR);
@@ -841,7 +841,7 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
   }
 
   if(ctor_index == -2 && 0 == jobject_to_mmc_record_warning_shown) {
-    char* recStr = jobjectToString(env, record);
+    const char* recStr = jobjectToString(env, record);
     jobject_to_mmc_record_warning_shown = 1;
     printf("Warning: %s:%s:%d\n*** %s\n", __FILE__, __FUNCTION__, __LINE__, recStr);
     printf("*** The record sent from Java does not carry a valid ctor_index value\n");
@@ -1011,7 +1011,7 @@ jboolean GetJavaBoolean(JNIEnv* env, jobject obj) {
   return res;
 }
 
-char* GetJavaString(JNIEnv* env, jobject obj) {
+const char* GetJavaString(JNIEnv* env, jobject obj) {
   jobject jstr;
   jmethodID mid;
 

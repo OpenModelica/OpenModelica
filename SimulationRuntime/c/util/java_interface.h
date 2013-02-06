@@ -85,9 +85,9 @@ void* jobject_to_mmc(JNIEnv* env, jobject o);
 jint GetJavaInteger(JNIEnv* env, jobject o);
 jdouble GetJavaDouble(JNIEnv* env, jobject o);
 jboolean GetJavaBoolean(JNIEnv* env, jobject o);
-char* GetJavaString(JNIEnv* env, jobject o);
-char* copyJstring(JNIEnv* env, jobject o);
-char* jobjectToString(JNIEnv* env, jobject o);
+const char* GetJavaString(JNIEnv* env, jobject o);
+const char* copyJstring(JNIEnv* env, jobject o);
+const char* jobjectToString(JNIEnv* env, jobject o);
 void AddObjectToJavaMap(JNIEnv* env, jobject map, const char* key, jobject value);
 jobject GetObjectFromJavaMap(JNIEnv* env, jobject map, const char* key);
 

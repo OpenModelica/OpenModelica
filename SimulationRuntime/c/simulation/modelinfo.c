@@ -351,7 +351,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fclose(fout);
   if(plotCommands) {
-    char *omhome = data->simulationInfo.OPENMODELICAHOME;
+    const char *omhome = data->simulationInfo.OPENMODELICAHOME;
     char *buf = NULL;
     int genHtmlRes;
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
