@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -81,7 +81,12 @@ static void XMLCALL endElement(void *userData, const char *name) {
     return;
   }
   if (0==strcmp("nonlinear",name)) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    xml->equationInfo[curIndex].name = malloc(snprintf(NULL, 0, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar) + 1);
+    sprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+#else
     asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+#endif
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;
