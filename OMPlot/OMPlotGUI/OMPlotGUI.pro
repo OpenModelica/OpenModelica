@@ -8,6 +8,7 @@ QT += core gui svg
 
 TARGET = OMPlot
 TEMPLATE = app
+CONFIG += console
 
 SOURCES += main.cpp \
     ../../SimulationRuntime/c/util/read_matlab4.c \
