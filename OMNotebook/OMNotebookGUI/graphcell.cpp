@@ -1326,7 +1326,10 @@ namespace IAEX {
         pPlotCurve->detach();
       }
       mpPlotWindow->initializePlot(lst);
-      mpPlotWindow->fitInView();
+      /*! @note Calling the fitInView function removes the xRange/yRange set on the plotter by user.
+          Fix for bug #2047.
+      */
+//      mpPlotWindow->fitInView();
       mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
     }
     catch (PlotException &e)
