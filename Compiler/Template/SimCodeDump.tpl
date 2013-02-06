@@ -33,16 +33,32 @@ template dumpSimCode(SimCode code)
     <%dumpVars(vars.constVars)%>
   </variables>
   <equations>
-    <%/* dumpEqs(listAppend(listAppend(sc.initialEquations,sc.parameterEquations),sc.allEquations)) */
-    dumpEqs(sc.allEquations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(
+        listAppend(residualEquations,
+        listAppend(inlineEquations,
+        listAppend(startValueEquations,
+        listAppend(parameterEquations,
+        listAppend(initialEquations,
+        listAppend(algorithmAndEquationAsserts,
+        allEquations))))))))%>
   </equations>
   <literals>
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
   </literals>
+  <functions>
+    <% mi.functions |> func => match func
+      case FUNCTION(__)
+      case EXTERNAL_FUNCTION(__)
+      case KERNEL_FUNCTION(__)
+      case PARALLEL_FUNCTION(__)
+      case RECORD_CONSTRUCTOR(__) then
+      '<function name="<%dotPath(name)%>"><%dumpInfo(info)%></function>' ; separator="\n"
+    %>
+  </functions>
   </simcodedump><%\n%>
   >>
-  let() = textFile(res,'<%fileNamePrefix%>_dump.xml')
-  '<%fileNamePrefix%>_dump'
+  let() = textFile(res,'<%fileNamePrefix%>_info.xml')
+  '<%fileNamePrefix%>_info'
 end dumpSimCode;
 
 template dumpVarsShort(list<SimVar> vars)
@@ -77,10 +93,9 @@ template dumpAlias(AliasVariable alias)
   case NEGATEDALIAS(__) then ' <alias negated="true"><%crefStr(varName)%></alias>'
 end dumpAlias;
 
-template dumpEqs(list<SimEqSystem> eqs)
-::= eqs |> eq hasindex i0 =>
-  <<
-  <%match eq
+template eqIndex(SimEqSystem eq)
+::=
+match eq
     case SES_RESIDUAL(__)
     case SES_SIMPLE_ASSIGN(__)
     case SES_ARRAY_CALL_ASSIGN(__)
@@ -88,85 +103,123 @@ template dumpEqs(list<SimEqSystem> eqs)
     case SES_LINEAR(__)
     case SES_NONLINEAR(__)
     case SES_MIXED(__)
-    case SES_WHEN(__) then '<equation index="<%index%>">'
+    case SES_WHEN(__)
+    case SES_IFEQUATION(__) then index
     else error(sourceInfo(), "dumpEqs: Unknown equation")
-  %>
-  <%match eq
+end eqIndex;
+
+template dumpEqs(list<SimEqSystem> eqs)
+::= eqs |> eq hasindex i0 =>
+  match eq
     case e as SES_RESIDUAL(__) then
       <<
+      <equation index="<%eqIndex(eq)%>">
         <residual><%printExpStrEscaped(e.exp)%></residual>
-        <%dumpElementSource(e.source)%><%\n%>
+        <%dumpElementSource(e.source)%>
+      </equation><%\n%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
+      <equation index="<%eqIndex(eq)%>">
         <assign>
           <lhs><%crefStr(e.cref)%></lhs>
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
         </assign>
-        <%dumpElementSource(e.source)%><%\n%>
+        <%dumpElementSource(e.source)%>
+      </equation><%\n%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
       <<
+      <equation index="<%eqIndex(eq)%>">
         <assign type="array">
           <lhs><%crefStr(e.componentRef)%></lhs>
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
         </assign>
-        <%dumpElementSource(e.source)%><%\n%>
+        <%dumpElementSource(e.source)%>
+      </equation><%\n%>
       >>
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
     case e as SES_ALGORITHM(__)
       then (e.statements |> stmt =>
       <<
+      <equation index="<%eqIndex(eq)%>">
         <statement>
           <%escapeModelicaStringToXmlString(ppStmtStr(stmt,2))%>
         </statement>
-        <%dumpElementSource(getStatementSource(stmt))%><%\n%>
+        <%dumpElementSource(getStatementSource(stmt))%>
+      </equation><%\n%>
       >>
       )
     case e as SES_LINEAR(__) then
       <<
-      <linear>
-        <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
-        <row>
-          <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
-        </row>
-        <matrix>
-          <%simJac |> (i1,i2,eq) => '<cell row="<%i1%>" col="<%i2%>"><%dumpEqs(fill(eq,1))%></cell>' ; separator = "\n" %><%\n%>
-        </matrix>
-      </linear>
+      <equation index="<%eqIndex(eq)%>">
+        <linear>
+          <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <row>
+            <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
+          </row>
+          <matrix>
+            <%simJac |> (i1,i2,eq) => 
+            <<
+            <cell row="<%i1%>" col="<%i2%>">
+              <%match eq case e as SES_RESIDUAL(__) then
+                <<
+                <residual><%printExpStrEscaped(e.exp)%></residual>
+                <%dumpElementSource(e.source)%>
+                >>
+               %>
+            </cell>
+            >>
+            %>
+          </matrix>
+        </linear>
+      </equation><%\n%>
       >>
     case e as SES_NONLINEAR(__) then
       <<
-      <nonlinear indexNonlinear="<%indexNonLinear%>">
-        <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
-        <%dumpEqs(e.eqs)%><%\n%>
-      </nonlinear>
+      <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs))%>
+      <equation index="<%eqIndex(eq)%>">
+        <nonlinear indexNonlinear="<%indexNonLinear%>">
+          <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+        </nonlinear>
+      </equation><%\n%>
       >>
     case e as SES_MIXED(__) then
       <<
-      <mixed>
-        <continuous>
-          <%dumpEqs(fill(e.cont,1))%>
-        </continuous>
-        <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
-        <discrete>
-          <%dumpEqs(e.discEqs)%>
-        </discrete>
-      </mixed>
+      <%dumpEqs(fill(e.cont,1))%>
+      <%dumpEqs(e.discEqs)%><%\n%>
+      <equation index="<%eqIndex(eq)%>">
+        <mixed>
+          <continuous index="<%eqIndex(e.cont)%>" />
+          <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+          <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
+        </mixed>
+      </equation>
       >>
     case e as SES_WHEN(__) then
       <<
+      <equation index="<%eqIndex(eq)%>">
       <when>
         <%conditions |> cond => '<cond><%crefStr(cond)%></cond>' ; separator="\n" %>
         <lhs><%crefStr(e.left)%></lhs>
         <rhs><%printExpStrEscaped(e.right)%></rhs>
       </when>
       <%dumpElementSource(e.source)%>
+      </equation><%\n%>
+      >>
+    case e as SES_IFEQUATION(__) then
+      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs)
+      let elsebr = dumpEqs(elsebranch)
+      <<
+      <%branches%>
+      <%elsebr%>
+      <equation index="<%eqIndex(eq)%>">
+      <ifequation /> <!-- TODO: Fix me -->
+      <%dumpElementSource(e.source)%>
+      </equation><%\n%>
       >>
     else error(sourceInfo(),"dumpEqs: Unknown equation")
-  %>
-  </equation><%\n%>
-  >>
 end dumpEqs;
 
 template dumpWithin(Within w)
@@ -182,7 +235,7 @@ template dumpElementSource(ElementSource source)
     case s as SOURCE(info=info as INFO(__)) then
       <<
       <source>
-        <info file="<%info.fileName%>" lineStart="<%info.lineNumberStart%>" lineEnd="<%info.lineNumberEnd%>" colStart="<%info.columnNumberStart%>" colEnd="<%info.columnNumberEnd%>"/>
+        <%dumpInfo(info)%>
         <%s.partOfLst |> w => '<part-of><%dumpWithin(w)%></part-of>' %>
         <%s.instanceOptLst |> SOME(cr) => '<instance><%crefStr(cr)%></instance>' %>
         <%s.connectEquationOptLst |> p => "<connect-equation />"%>
@@ -287,6 +340,13 @@ template dumpOperation(SymbolicOperation op, Info info)
       >>
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;
+
+template dumpInfo(Info info)
+::=
+  match info
+  case info as INFO(__) then
+  '<info file="<%info.fileName%>" lineStart="<%info.lineNumberStart%>" lineEnd="<%info.lineNumberEnd%>" colStart="<%info.columnNumberStart%>" colEnd="<%info.columnNumberEnd%>"/>'
+end dumpInfo;
 
 template printExpStrEscaped(Exp exp)
 ::=

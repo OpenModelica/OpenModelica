@@ -144,7 +144,7 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, SimCodeUtil.sortEqSystems(
+    <% /* functionInitializeDataStruc2(modelInfo, SimCodeUtil.sortEqSystems(
         listAppend(residualEquations,
         listAppend(inlineEquations,
         listAppend(startValueEquations,
@@ -152,7 +152,7 @@ template simulationFile(SimCode simCode, String guid)
         listAppend(initialEquations,
         listAppend(algorithmAndEquationAsserts,
         allEquations))))))),
-        stateSets)%>
+        stateSets) */ %>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
@@ -233,7 +233,8 @@ template simulationFileHeader(SimCode simCode)
     
     #include "openmodelica.h"
     #include "openmodelica_func.h"
-    #include "simulation_data.h"  
+    #include "simulation_data.h"
+    #include "simulation_info_xml.h"
     #include "simulation_runtime.h"
     #include "omc_error.h"
     #include "model_help.h"
@@ -284,8 +285,10 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
-    data->modelData.nFunctions = <%listLength(functions)%>;
-    data->modelData.nEquations = <%varInfo.numEquations%>;
+    data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.xml";
+    data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
+    data->modelData.modelDataXml.nProfileBlocks = 0;
+    data->modelData.modelDataXml.nEquations = <%varInfo.numEquations%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
     data->modelData.nInlineVars = <%varInfo.numInlineVars%>;
@@ -799,7 +802,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
      let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
      <<
-     nonLinearSystemData[<%indexNonLinear%>].simProfEqNr = SIM_PROF_EQ_<%index%>;
+     nonLinearSystemData[<%indexNonLinear%>].equationIndex = <%index%>;
      nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
      nonLinearSystemData[<%indexNonLinear%>].method = <%newtonStep%>;
      nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
@@ -876,7 +879,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        state mem_state;
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
-       SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,1);
+       SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);
        #endif
        mem_state = get_memory_state();
        <%xlocs%>
@@ -2310,7 +2313,7 @@ case SES_LINEAR(__) then
   <% if not partOfMixed then
     <<
     #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);<%\n%>
+    SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);<%\n%>
     #endif<%\n%>
     >> %>
   /* Linear equation system */
@@ -2331,7 +2334,7 @@ case SES_LINEAR(__) then
   <% if not partOfMixed then
   <<
   #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
+  SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
   #endif<%\n%>
   >> %>
   >>
@@ -2355,7 +2358,7 @@ case SES_MIXED(__) then
     ;separator="\n")
   <<
   #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
+  SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
   #endif
   modelica_boolean boolVar_<%index%>[<%numDiscVarsStr%>] = { 0 };
   mixed_equation_system(<%numDiscVarsStr%>);
@@ -2372,7 +2375,7 @@ case SES_MIXED(__) then
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);
   #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
+  SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
   #endif<%\n%>
   >>
 end equationMixed;
@@ -2389,8 +2392,8 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       let nonlinindx = indexNonLinear
       <<
       #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
-      SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
+      SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+      SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
       #endif<%\n%>
       /* extrapolate data */
       <%crefs |> name hasindex i0 =>
@@ -2408,7 +2411,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       <%eqncalls%>
       <%otherinlines%>
       #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
+      SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
       #endif<%\n%>
       >>
 end equationNonlinear;
@@ -2424,11 +2427,6 @@ template equationNamesExtraResidualsPreBodyInline(SimEqSystem eq, Context contex
     else ""
   end match
 end equationNamesExtraResidualsPreBodyInline;
-
-template reverseLookupEquationNumber(Integer index)
-::=
-  'data->modelData.equationInfo[data->modelData.omc_equationInfo_reverse_prof_index[SIM_PROF_EQ_<%index%>]]'
-end reverseLookupEquationNumber;
 
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
@@ -2834,7 +2832,7 @@ template simulationInitFile(SimCode simCode, String guid)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)), 
-             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__))) 
+             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)), makefileParams = makefileParams as MAKEFILE_PARAMS(__)) 
   then
   <<
   <?xml version = "1.0" encoding="UTF-8"?>
@@ -2845,6 +2843,8 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     
     modelName                           = "<%dotPath(modelInfo.name)%>"
     modelIdentifier                     = "<%underscorePath(modelInfo.name)%>"
+    
+    OPENMODELICAHOME                    = "<%makefileParams.omhome%>"
     
     guid                                = "{<%guid%>}"
     

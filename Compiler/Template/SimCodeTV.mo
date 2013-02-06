@@ -352,13 +352,6 @@ package SimCode
     end MODELINFO;
   end ModelInfo;
   
-  uniontype FunctionInfo
-    record FUNCTIONINFO
-      Absyn.Path name;
-      Absyn.Info info;
-    end FUNCTIONINFO;
-  end FunctionInfo;
-
   uniontype VarInfo
     record VARINFO
       Integer numZeroCrossings;

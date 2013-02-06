@@ -130,7 +130,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   /* intialize modelData */
   setupDataStruc(comp->fmuData);
   initializeDataStruc(comp->fmuData);
-  setupDataStruc2(comp->fmuData);
 
   /* setup model data with default start data */
   setDefaultStartValues(comp);

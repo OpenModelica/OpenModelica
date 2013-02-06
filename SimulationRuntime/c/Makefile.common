@@ -29,6 +29,8 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
 ./simulation_data.h \
+./simulation/modelinfo.h \
+./simulation/simulation_info_xml.h \
 ./simulation/simulation_runtime.h \
 ./simulation/solver/delay.h \
 ./simulation/solver/model_help.h \
@@ -46,7 +48,6 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./util/memory_pool.h \
 ./util/modelica.h \
 ./util/modelica_string.h \
-./util/modelinfo.h \
 ./util/omc_error.h \
 ./util/read_write.h \
 ./util/real_array.h \
@@ -106,6 +107,10 @@ $(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH) $(COMMON_HEADERS)
 
 $(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
+
+$(SIMOBJSPATHC):%.o: %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
+	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)

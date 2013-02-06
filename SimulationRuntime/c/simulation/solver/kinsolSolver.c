@@ -35,7 +35,7 @@
 #include "../../../../Compiler/runtime/config.h"
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
-#include "simulation_data.h"
+#include "simulation_info_xml.h"
 #include "omc_error.h"
 
 #ifdef WITH_SUNDIALS
@@ -77,13 +77,13 @@
   {
     int i;
     int size = nlsData->size;
-    int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[nlsData->simProfEqNr];
+    int eqSystemNumber = nlsData->equationIndex;
     NLS_KINSOL_DATA *kinsolData;
 
-    INFO1(LOG_NLS, "allocate memory for %s", data->modelData.equationInfo[eqSystemNumber].name);
+    INFO1(LOG_NLS, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
     INDENT(LOG_NLS);
     for(i=0; i<size; ++i)
-      INFO2(LOG_NLS, "[%d] %s", i+1, data->modelData.equationInfo[eqSystemNumber].vars[i]->name);
+      INFO2(LOG_NLS, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
     RELEASE(LOG_NLS);
 
     /* allocate system data */
@@ -148,11 +148,11 @@
   void nls_kinsol_errorHandler(int error_code, const char *module, const char *function, char *msg, void *user_data)
   {
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) user_data;
-    int eqSystemNumber = kinsolData->data->modelData.equationInfo_reverse_prof_index[kinsolData->nlsData->simProfEqNr];
+    int eqSystemNumber = kinsolData->nlsData->equationIndex;
 
     if(DEBUG_STREAM(LOG_NLS))
     {
-      WARNING1(LOG_NLS, "kinsol failed for %s", kinsolData->data->modelData.equationInfo[eqSystemNumber].name);
+      WARNING1(LOG_NLS, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
       INDENT(LOG_NLS);
 
       WARNING3(LOG_NLS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
@@ -166,7 +166,7 @@
   {
     NONLINEAR_SYSTEM_DATA *nlsData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*)nlsData->solverData;
-    int eqSystemNumber = kinsolData->data->modelData.equationInfo_reverse_prof_index[kinsolData->nlsData->simProfEqNr];
+    int eqSystemNumber = kinsolData->nlsData->equationIndex;
 
     long i;
     double fnormtol  = 1.e-12;     /* function tolerance */
@@ -251,12 +251,12 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    INFO2(LOG_NLS, "solution for %s at t=%g", kinsolData->data->modelData.equationInfo[eqSystemNumber].name, kinsolData->data->localData[0]->timeValue);
+    INFO2(LOG_NLS, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
     INDENT(LOG_NLS);
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      INFO3(LOG_NLS, "[%ld] %s = %g", i+1, kinsolData->data->modelData.equationInfo[eqSystemNumber].vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      INFO3(LOG_NLS, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
     INFO1(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);

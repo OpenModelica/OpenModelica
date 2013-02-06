@@ -281,7 +281,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     INDENT(LOG_SOLVER);
     if(measure_time_flag)
     {
-      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+      for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
         rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
       rt_clear(SIM_TIMER_STEP);
       rt_tick(SIM_TIMER_STEP);
@@ -373,12 +373,12 @@ int solver_main(DATA* data, const char* init_initMethod,
       flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmt);
       tmpdbl = rt_accumulated(SIM_TIMER_STEP);
       flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+      for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
       {
         tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
         flag = flag && 1 == fwrite(&tmpint, sizeof(unsigned int), 1, fmt);
       }
-      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+      for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
       {
         tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
         flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);

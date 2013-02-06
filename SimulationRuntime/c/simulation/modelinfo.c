@@ -32,6 +32,7 @@
 #include "simulation_data.h"
 #include "rtclock.h"
 #include "modelinfo.h"
+#include "simulation_info_xml.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -157,18 +158,19 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 }
 
 
-static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct FUNCTION_INFO *funcs) {
+static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data) {
   int i;
-  for(i=0; i<data->modelData.nFunctions; i++) {
-    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id, "fun");
+  for(i=0; i<data->modelData.modelDataXml.nFunctions; i++) {
+    const struct FUNCTION_INFO func = modelInfoXmlGetFunction(&data->modelData.modelDataXml, i);
+    printPlotCommand(plt, plotFormat, func.name, modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, func.id, "fun");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
-    fprintf(fout, "<function id=\"fun%d\">\n", funcs[i].id);
-    indent(fout,4);fprintf(fout, "<name>");printStrXML(fout, funcs[i].name);fprintf(fout,"</name>\n");
+    fprintf(fout, "<function id=\"fun%d\">\n", func.id);
+    indent(fout,4);fprintf(fout, "<name>");printStrXML(fout, func.name);fprintf(fout,"</name>\n");
     indent(fout,4);fprintf(fout, "<ncall>%d</ncall>\n", (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<time>%.9f</time>\n",rt_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<maxTime>%.9f</maxTime>\n",rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
-    printInfoTag(fout, 6, funcs[i].info);
+    printInfoTag(fout, 6, func.info);
     indent(fout,2);
     fprintf(fout, "</function>\n");
   }
@@ -176,12 +178,12 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
 
 static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
   int i;
-  for(i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
-    const struct EQUATION_INFO *eq = &(data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i-data->modelData.nFunctions]]);
-    printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id, "eq");
+  for(i = data->modelData.modelDataXml.nFunctions; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+    const struct EQUATION_INFO eq = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml, i-data->modelData.modelDataXml.nFunctions);
+    printPlotCommand(plt, plotFormat, eq.name, data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, eq.id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
-    indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq->id);
+    indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq.id);
     indent(fout,4);fprintf(fout, "<ncall>%d</ncall>\n", (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<time>%.9f</time>\n", rt_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<maxTime>%.9f</maxTime>\n",rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
@@ -189,13 +191,13 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
   }
 }
 
-static void printEquations(FILE *fout, int n, EQUATION_INFO *eqns) {
+static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
   int i,j;
   for(i=0; i<n; i++) {
-    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
+    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", modelInfoXmlGetEquation(xml,i).id);printStrXML(fout,modelInfoXmlGetEquation(xml,i).name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
-    for(j=0; j<eqns[i].numVar; j++) {
-      indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", eqns[i].vars[j]->id);
+    for(j=0; j<modelInfoXmlGetEquation(xml,i).numVar; j++) {
+      indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoXmlGetEquation(xml,i).vars[j]->id */);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
     indent(fout,2);fprintf(fout, "</equation>\n");
@@ -216,20 +218,20 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
-  for(i = 0; i < data->modelData.nFunctions; i++) {
-    const char *name = data->modelData.functionNames[i].name;
+  for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
+    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i).name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for(i = 0; i < data->modelData.nProfileBlocks; i++) {
-    const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
+  for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
+    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for(i = 0; i < data->modelData.nFunctions; i++) {
-    const char *name = data->modelData.functionNames[i].name;
+  for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
+    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i).name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
-  for(i = 0; i < data->modelData.nProfileBlocks; i++) {
-    const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
+  for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
+    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
@@ -256,7 +258,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, -1, 999, "");
+    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, -1, 999, "");
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -334,11 +336,11 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
-  printFunctions(fout, plotCommands, plotFormat, data->modelData.modelFilePrefix, data, data->modelData.functionNames);
+  printFunctions(fout, plotCommands, plotFormat, data->modelData.modelFilePrefix, data);
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
-  printEquations(fout, data->modelData.nEquations, data->modelData.equationInfo);
+  printEquations(fout, data->modelData.modelDataXml.nEquations, &data->modelData.modelDataXml);
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");
@@ -349,10 +351,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fclose(fout);
   if(plotCommands) {
-    char *omhome = NULL;
+    char *omhome = data->simulationInfo.OPENMODELICAHOME;
     char *buf = NULL;
     int genHtmlRes;
-    omhome = getenv("OPENMODELICAHOME");
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
@@ -372,7 +373,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       WARNING(LOG_UTIL, "Warning: Plot command failed\n");
     }
 #endif
-    if(omhome) {
+    if (omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       char *xsltproc;
       sprintf(buf, "%s/lib/omc/libexec/xsltproc/xsltproc.exe", omhome);
@@ -389,8 +390,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       strcpy(buf, "OPENMODELICAHOME missing");
       genHtmlRes = 1;
     }
-    if(genHtmlRes)
-      WARNING1(LOG_UTIL, "Failed to generate html version of profiling results: %s\n", buf);
+    if (genHtmlRes) {
+      WARNING1(LOG_STDOUT, "Failed to generate html version of profiling results: %s\n", buf);
+    }
     INFO2(LOG_STDOUT, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
     free(buf);
   }

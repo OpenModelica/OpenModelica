@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
-#include "simulation_data.h"
+#include "simulation_info_xml.h"
 #include "omc_error.h"
 #include "varinfo.h"
 #include "model_help.h"
@@ -396,7 +396,7 @@ int solveHybrd(DATA *data, int sysNumber)
    * We are given the number of the non-linear system.
    * We want to look it up among all equations.
    */
-  int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
+  int eqSystemNumber = systemData->equationIndex;
 
   int i, j, iflag=1;
   double xerror, xerror_scaled;
@@ -415,7 +415,7 @@ int solveHybrd(DATA *data, int sysNumber)
   if(DEBUG_STREAM(LOG_NLS))
   {
     INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e",
-      data->modelData.equationInfo[eqSystemNumber].name,
+      modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
       data->localData[0]->timeValue);
     INDENT(LOG_NLS);
 
@@ -505,7 +505,7 @@ int solveHybrd(DATA *data, int sysNumber)
     }
     /* check for proper inputs */
     if(solverData->info == 0) {
-      printErrorEqSyst(IMPROPER_INPUT, data->modelData.equationInfo[eqSystemNumber],
+      printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber),
           data->localData[0]->timeValue);
       data->simulationInfo.found_solution = -1;
     }
@@ -805,7 +805,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
       /* while the initialization it's ok to every time a solution */
       if(!data->simulationInfo.initial){
-        printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[eqSystemNumber], data->localData[0]->timeValue);
+        printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
       }
       if(DEBUG_STREAM(LOG_NLS)) {
         RELEASE(LOG_NLS);

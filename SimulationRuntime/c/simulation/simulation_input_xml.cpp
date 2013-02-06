@@ -313,6 +313,9 @@ void read_input_xml(int argc, char **argv,
   read_value(mi.de["variableFilter"], &(simulationInfo->variableFilter));
   INFO1(LOG_SOLVER, "| variable filter: %s", simulationInfo->variableFilter);
 
+  read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
+  INFO1(LOG_SOLVER, "| OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
+
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;
   modelica_integer nyboolchk, npboolchk;

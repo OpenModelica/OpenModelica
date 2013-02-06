@@ -57,10 +57,7 @@
     <xsl:if test="not(position() = 1)">, </xsl:if>
     <a href="#var_{.}"><xsl:value-of select="."/></a>
   </xsl:for-each></p>
-  <p>Equations <xsl:for-each select="equation"><a href="#eq_{@index}">#<xsl:value-of select="@index"/></a><xsl:text> </xsl:text></xsl:for-each></p>
-  <xsl:for-each select="equation">
-    <p><a name="eq_{@index}"></a>Equation <xsl:value-of select="@index"/> (#<xsl:value-of select="position()"/> for <a href="#eq_{../../@index}">NLS <xsl:value-of select="../../@index"/>)</a><xsl:apply-templates select="."/></p>
-  </xsl:for-each>
+  <p>Equations <xsl:for-each select="eq"><a href="#eq_{@index}">#<xsl:value-of select="@index"/></a><xsl:text> </xsl:text></xsl:for-each></p>
 </xsl:template>
 
 <xsl:template name="linear-row">
@@ -115,9 +112,9 @@
     </tr>
   </table>
   <xsl:for-each select="matrix/cell">
-    <p>Cell <xsl:value-of select="@row"/>,<xsl:value-of select="@col"/>: <xsl:apply-templates select="equation/*[1]"/></p>
-    <p><xsl:apply-templates select="equation/source"/></p>
-    <xsl:apply-templates select="equation/operations/*"/>
+    <p>Cell <xsl:value-of select="@row"/>,<xsl:value-of select="@col"/>: <xsl:apply-templates select="residual"/></p>
+    <p><xsl:apply-templates select="source"/></p>
+    <xsl:apply-templates select="operations/*"/>
   </xsl:for-each>
 </xsl:template>
 

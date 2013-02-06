@@ -3436,7 +3436,7 @@ algorithm
       disc_var = List.map1r(ivars, BackendVariable.getVarAt, vars);
       (_, {equation_}, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, false, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
       simVarsDisc = List.map2(disc_var, dlowvarToSimvar, NONE(), knvars);
-      discEqs = extractDiscEqs(disc_eqn, disc_var);
+      (discEqs,uniqueEqIndex) = extractDiscEqs(disc_eqn, disc_var, uniqueEqIndex);
       //was madness        
     then ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs)}, {equation_}, uniqueEqIndex+1, tempvars);
         
@@ -5841,10 +5841,12 @@ end generateTearingOtherEqns;
 protected function extractDiscEqs
   input list<BackendDAE.Equation> disc_eqn;
   input list<BackendDAE.Var> disc_var;
+  input Integer inUniqueEqIndex;
   output list<SimCode.SimEqSystem> discEqsOut;
+  output Integer uniqueEqIndex;
 algorithm
-  discEqsOut :=
-  match (disc_eqn, disc_var)
+  (discEqsOut,uniqueEqIndex) :=
+  match (disc_eqn, disc_var, inUniqueEqIndex)
     local
       list<SimCode.SimEqSystem> restEqs;
       DAE.ComponentRef cr;
@@ -5853,15 +5855,15 @@ algorithm
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
       DAE.ElementSource source;
-    case ({}, _) then {};
-    case ((BackendDAE.EQUATION(exp = e1, scalar = e2, source = source) :: eqns), (v :: vs))
+    case ({}, _, _) then ({},inUniqueEqIndex);
+    case ((BackendDAE.EQUATION(exp = e1, scalar = e2, source = source) :: eqns), (v :: vs), _)
       equation
         cr = BackendVariable.varCref(v);
         varexp = Expression.crefExp(cr);
         (expr, _) = solve(e1, e2, varexp);
-        restEqs = extractDiscEqs(eqns, vs);
+        (restEqs,uniqueEqIndex) = extractDiscEqs(eqns, vs, inUniqueEqIndex);
       then
-        SimCode.SES_SIMPLE_ASSIGN(0, cr, expr, source) :: restEqs;
+        (SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, expr, source) :: restEqs,uniqueEqIndex+1);
     // failure
     else
       equation

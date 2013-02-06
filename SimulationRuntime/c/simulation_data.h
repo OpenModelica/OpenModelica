@@ -43,7 +43,7 @@
 
 #define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
-#define omc_dummyEquationInfo {-1,"",-1,NULL}
+#define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
 
 #if defined(_MSC_VER)
@@ -67,16 +67,17 @@ typedef struct VAR_INFO
 typedef struct EQUATION_INFO
 {
   int id;
+  int profileBlockIndex;
   const char *name;
   int numVar;
-  const VAR_INFO** vars; /* The variables involved in the equation */
+  const VAR_INFO** vars; /* The variables involved in the equation. Not sure we need this anymore as the info.xml has this information. */
 }EQUATION_INFO;
 
 typedef struct FUNCTION_INFO
 {
   int id;
   const char* name;
-  const FILE_INFO info;
+  FILE_INFO info;
 }FUNCTION_INFO;
 
 typedef struct SAMPLE_INFO
@@ -239,7 +240,7 @@ typedef struct STATIC_STRING_DATA
 typedef struct NONLINEAR_SYSTEM_DATA
 {
   modelica_integer size;
-  modelica_integer simProfEqNr;     /* index for EQUATION_INFO */
+  modelica_integer equationIndex;     /* index for EQUATION_INFO */
 
   /* attributes for x */
   modelica_real *min;
@@ -294,6 +295,16 @@ typedef struct STATE_SET_DATA
   modelica_integer jacobianIndex;
 }STATE_SET_DATA;
 
+typedef struct MODEL_DATA_XML
+{
+  const char *fileName;
+  long nFunctions;
+  long nEquations;
+  long nProfileBlocks;
+  FUNCTION_INFO *functionNames; /* Lazy loading; read from file if it is NULL when accessed */
+  EQUATION_INFO *equationInfo; /* Lazy loading; read from file if it is NULL when accessed */
+} MODEL_DATA_XML;
+
 typedef struct MODEL_DATA
 {
   STATIC_REAL_DATA* realVarsData;
@@ -311,9 +322,7 @@ typedef struct MODEL_DATA
   DATA_BOOLEAN_ALIAS* booleanAlias;
   DATA_STRING_ALIAS* stringAlias;
 
-  FUNCTION_INFO* functionNames;
-  EQUATION_INFO* equationInfo;
-  int* equationInfo_reverse_prof_index;
+  MODEL_DATA_XML modelDataXml; /* TODO: Rename me? */
 
   modelica_string_t modelName;
   modelica_string_t modelFilePrefix;
@@ -343,9 +352,6 @@ typedef struct MODEL_DATA
   long nInitAlgorithms;         /* number of initial algorithms */
   long nInitResiduals;          /* number of initial residuals */
   long nExtObjs;
-  long nFunctions;
-  long nEquations;
-  long nProfileBlocks;
   long nNonLinearSystems;
   long nStateSets;
   long nInlineVars;             /* number of additional variables for the inline solverr */
@@ -422,7 +428,7 @@ typedef struct SIMULATION_INFO
   /* delay vars */
   double tStart;
   RINGBUFFER **delayStructure;
-
+  const char *OPENMODELICAHOME;
 }SIMULATION_INFO;
 
 /* collects all dynamic model data like the variabel-values */

@@ -416,6 +416,7 @@ algorithm
       then ();
     case (_,_,"C")
       equation
+        Tpl.tplNoret(SimCodeDump.dumpSimCode, simCode);
         Tpl.tplNoret(CodegenC.translateModel, simCode);
       then ();        
     case (_,_,"Dump")

@@ -66,6 +66,7 @@
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
 #include "solver_main.h"
+#include "simulation_info_xml.h"
 #include "modelinfo.h"
 #include "model_help.h"
 #include "nonlinearSystem.h"
@@ -372,14 +373,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   function_initMemoryState();
   read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
-  setupDataStruc2(data);
 
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize);
 
-  if(measure_time_flag)
+  if (measure_time_flag)
   {
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /*sentinel */);
+    modelInfoXmlInit(&data->modelData.modelDataXml);
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks + 4 /*sentinel */);
     rt_tick( SIM_TIMER_TOTAL );
     rt_tick( SIM_TIMER_PREINIT );
     rt_clear( SIM_TIMER_OUTPUT );

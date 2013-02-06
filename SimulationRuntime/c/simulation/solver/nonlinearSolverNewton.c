@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
-#include "simulation_data.h"
+#include "simulation_info_xml.h"
 #include "omc_error.h"
 #include "varinfo.h"
 #include "model_help.h"
@@ -222,7 +222,7 @@ int solveNewton(DATA *data, int sysNumber) {
    * We are given the number of the non-linear system.
    * We want to look it up among all equations.
    */
-  int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
+  int eqSystemNumber = systemData->equationIndex;
 
   int i, iflag=0;
   double xerror, xerror_scaled;
@@ -242,7 +242,7 @@ int solveNewton(DATA *data, int sysNumber) {
   if(DEBUG_STREAM(LOG_NLS))
   {
     INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e with Newton Solver",
-        data->modelData.equationInfo[eqSystemNumber].name,
+        modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
       data->localData[0]->timeValue);
 
     INDENT(LOG_NLS);
@@ -286,8 +286,7 @@ int solveNewton(DATA *data, int sysNumber) {
 
     /* check for proper inputs */
     if (solverData->info == 0) {
-      printErrorEqSyst(IMPROPER_INPUT, data->modelData.equationInfo[systemData->simProfEqNr],
-          data->localData[0]->timeValue);
+      printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
       data->simulationInfo.found_solution = -1;
     }
 
@@ -345,7 +344,7 @@ int solveNewton(DATA *data, int sysNumber) {
     } else {
       data->simulationInfo.found_solution = -1;
 
-      printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[eqSystemNumber], data->localData[0]->timeValue);
+      printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 
       if (DEBUG_STREAM(LOG_NLS)) {
         INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries);

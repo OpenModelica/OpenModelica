@@ -663,9 +663,8 @@ void initializeDataStruc(DATA *data)
   /* buffer for analytical jacobains */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
-  /* buffer for equations and fucntions */
-  data->modelData.functionNames = (FUNCTION_INFO*) malloc(data->modelData.nFunctions*sizeof(FUNCTION_INFO));
-  data->modelData.equationInfo = (EQUATION_INFO*) malloc(data->modelData.nEquations*sizeof(EQUATION_INFO));
+  data->modelData.modelDataXml.functionNames = NULL;
+  data->modelData.modelDataXml.equationInfo = NULL;
 
   /* buffer for external objects */
   data->simulationInfo.extObjs = NULL;
@@ -808,14 +807,8 @@ void deInitializeDataStruc(DATA *data)
   /* free external objects buffer */
   free(data->simulationInfo.extObjs);
 
-  /* free functionNames */
-  free(data->modelData.functionNames);
-  /* free equationInfo */
-  for(i=0;i<data->modelData.nEquations;++i)
-    free(data->modelData.equationInfo[i].vars);
-  free(data->modelData.equationInfo);
-
-  free(data->modelData.equationInfo_reverse_prof_index);
+  /* TODO: Make a free xml function */
+  freeModelInfoXml(&data->modelData.modelDataXml);
 
   /* free delay structure */
   for(i=0; i<data->modelData.nDelayExpressions; i++)
