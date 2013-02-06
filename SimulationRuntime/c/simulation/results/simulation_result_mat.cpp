@@ -42,12 +42,17 @@
 #include <assert.h>
 
 static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+static const struct VAR_INFO cpuTimeValName = {0,"cpu_time","cpu time [s]",{"",-1,-1,-1,-1}};
 
 int simulation_result_mat::calcDataSize()
 {
   const MODEL_DATA *modelData = &(data->modelData);
 
   int sz = 1; /* start with one for the timeValue */
+  
+  if(cpuTime)
+    sz++;
+    
   for(int i = 0; i < modelData->nVariablesReal; i++)
     if(!modelData->realVarsData[i].filterOutput)
     {
@@ -89,6 +94,8 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
+  if(cpuTime)
+    names[curVar++] = &cpuTimeValName;
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     names[curVar++] = &(modelData->realVarsData[i].info);
   for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
@@ -102,18 +109,20 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
   for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput)
     names[curVar++] = &(modelData->booleanAlias[i].info);
 
-
-  for(int i = 0; i < modelData->nParametersReal; i++) {
+  for(int i = 0; i < modelData->nParametersReal; i++)
+  {
     names[curVar++] = &(modelData->realParameterData[i].info);
     r_indx_parammap[i]=sz;
     sz++;
   }
-  for(int i = 0; i < modelData->nParametersInteger; i++) {
+  for(int i = 0; i < modelData->nParametersInteger; i++)
+  {
     names[curVar++] = &(modelData->integerParameterData[i].info);
     i_indx_parammap[i]=sz;
     sz++;
   }
-  for(int i = 0; i < modelData->nParametersBoolean; i++) {
+  for(int i = 0; i < modelData->nParametersBoolean; i++)
+  {
     names[curVar++] = &(modelData->booleanParameterData[i].info);
     b_indx_parammap[i]=sz;
     sz++;
@@ -126,7 +135,8 @@ void simulation_result_mat::writeParameterData()
 {
   int rows, cols;
   double *doubleMatrix = NULL;
-  try{
+  try
+  {
     std::ofstream::pos_type remember = fp.tellp();
     fp.seekp(data1HdrPos);
     /* generate `data_1' matrix (with parameter data) */
@@ -135,7 +145,9 @@ void simulation_result_mat::writeParameterData()
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
     free(doubleMatrix); doubleMatrix = NULL;
     fp.seekp(remember);
-  } catch(...) {
+  }
+  catch(...)
+  {
     fp.close();
     free(doubleMatrix);
     throw;
@@ -144,8 +156,8 @@ void simulation_result_mat::writeParameterData()
 
 
 
-simulation_result_mat::simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data)
-  : simulation_result(filename, numpoints, data), fp(), data1HdrPos(-1), data2HdrPos(-1), ntimepoints(0), startTime(tstart), stopTime(tstop)
+simulation_result_mat::simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data, int cpuTime)
+  : simulation_result(filename, numpoints, data, cpuTime), fp(), data1HdrPos(-1), data2HdrPos(-1), ntimepoints(0), startTime(tstart), stopTime(tstop)
 {
   const MODEL_DATA *mData = &(data->modelData);
 
@@ -163,7 +175,8 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
   numVars = calcDataSize();
   names = calcDataNames(numVars+nParams);
 
-  try {
+  try
+  {
     /* open file */
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
     if(!fp)
@@ -200,7 +213,7 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
     /* remember data2HdrPos */
     data2HdrPos = fp.tellp();
     /* write `data_2' header */
-    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/, 0, sizeof(double));
+    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/ + cpuTime, 0, sizeof(double));
 
     free(doubleMatrix);
     free(intMatrix);
@@ -208,7 +221,9 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
     intMatrix = NULL;
     fp.flush();
 
-  } catch(...) {
+  }
+  catch(...)
+  {
     fp.close();
     free(names); names=NULL;
     free(stringMatrix);
@@ -220,17 +235,22 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
+
 simulation_result_mat::~simulation_result_mat()
 {
   rt_tick(SIM_TIMER_OUTPUT);
   /* this is a bad programming practice - closing file in destructor,
      where a proper error reporting can't be done */
-  if(fp) {
-    try {
+  if(fp)
+  {
+    try
+    {
       fp.seekp(data2HdrPos);
-      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/, ntimepoints, sizeof(double));
+      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/ + cpuTime, ntimepoints, sizeof(double));
       fp.close();
-    } catch (...) {
+    }
+    catch (...)
+    {
       /* just ignore, we are in destructor */
     }
   }
@@ -240,13 +260,19 @@ simulation_result_mat::~simulation_result_mat()
 void simulation_result_mat::emit()
 {
   double datPoint=0;
-
   rt_tick(SIM_TIMER_OUTPUT);
+  
+  rt_accumulate(SIM_TIMER_TOTAL);
+  static double cpu_offset = rt_accumulated(SIM_TIMER_TOTAL); /* ??? */
+  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL) - cpu_offset;
+  rt_tick(SIM_TIMER_TOTAL);
 
   /* this is done wrong -- a buffering should be used
      although ofstream does have some buffering, but it is not enough and
      not for this purpose */
-  fp.write((char*)&(data->localData[0]->timeValue),sizeof(double));
+  fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
+  if(cpuTime)
+    fp.write((char*)&cpuTimeValue, sizeof(double));
   for(int i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
     fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
   for(int i = 0; i < data->modelData.nVariablesInteger; i++) if(!data->modelData.integerVarsData[i].filterOutput)
@@ -393,7 +419,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
   ASSERT(dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
-  for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1/* add one more for timeValue*/ ); ++i) {
+  for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/ + cpuTime); ++i) {
       /* row 1 - which table */
       dataInfo[ccol++] = 2;
       /* row 2 - index of var in table (variable 'Time' have index 1) */

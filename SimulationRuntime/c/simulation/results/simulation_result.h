@@ -60,9 +60,10 @@ protected:
   const char *filename;
   const long numpoints;
   const DATA *data;
+  const int cpuTime;
 
 public:
-  simulation_result(const char* filename, long numpoints, const DATA* data) : filename(filename), numpoints(numpoints), data(data) {};
+  simulation_result(const char* filename, long numpoints, const DATA* data, int cpuTime) : filename(filename), numpoints(numpoints), data(data), cpuTime(cpuTime) {};
   virtual ~simulation_result() {};
   virtual void emit() = 0;
 

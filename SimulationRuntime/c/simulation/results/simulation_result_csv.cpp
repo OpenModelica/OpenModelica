@@ -98,7 +98,7 @@ void simulation_result_csv::emit()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-simulation_result_csv::simulation_result_csv(const char* filename, long numpoints, const DATA* data) : simulation_result(filename, numpoints, data)
+simulation_result_csv::simulation_result_csv(const char* filename, long numpoints, const DATA* data, int cpuTime) : simulation_result(filename, numpoints, data, cpuTime)
 {
   const MODEL_DATA *mData = &(data->modelData);
 

@@ -49,7 +49,7 @@ private:
   void printPltLine(FILE* f, double time, double val);
 
 public:
-  simulation_result_plt(const char* filename, long numpoints, const DATA *data);
+  simulation_result_plt(const char* filename, long numpoints, const DATA *data, int cpuTime);
   virtual ~simulation_result_plt();
   virtual void emit();
   void writeParameterData() { /* do nothing */ };

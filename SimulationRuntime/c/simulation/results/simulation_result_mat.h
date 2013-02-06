@@ -56,7 +56,7 @@
 class simulation_result_mat : public simulation_result
 {
 public:
-  simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data);
+  simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data, int cpuTime);
   virtual ~simulation_result_mat();
   virtual void emit();
   void writeParameterData();

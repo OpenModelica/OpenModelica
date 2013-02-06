@@ -41,7 +41,7 @@ private:
   FILE* fout;
 
 public:
-  simulation_result_csv(const char* filename, long numpoints, const DATA* data);
+  simulation_result_csv(const char* filename, long numpoints, const DATA* data, int cpuTime);
   virtual ~simulation_result_csv();
 
   virtual void emit();

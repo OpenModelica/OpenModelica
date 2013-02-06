@@ -275,8 +275,8 @@ void simulation_result_plt::add_result(double *data_, long *actualPoints)
   (*actualPoints)++;
 }
 
-simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, const DATA *data)
-  : simulation_result(filename, numpoints, data)
+simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, const DATA *data, int cpuTime)
+  : simulation_result(filename, numpoints, data, cpuTime)
 {
   rt_tick(SIM_TIMER_OUTPUT);
   /*

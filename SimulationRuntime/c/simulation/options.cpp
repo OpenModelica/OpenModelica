@@ -38,6 +38,7 @@ using namespace std;
 const char *FLAG_NAME[FLAG_MAX] = {
   "LOG_UNKNOWN",
   
+  /* FLAG_CPU */                   "cpu",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
   /* FLAG_IIF */                   "iif",
@@ -49,7 +50,6 @@ const char *FLAG_NAME[FLAG_MAX] = {
   /* FLAG_L */                     "l",
   /* FLAG_LV */                    "lv",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
-  /* FLAG_MT */                    "mt",
   /* FLAG_NLS */                   "nls",
   /* FLAG_NOEMIT */                "noemit",
   /* FLAG_NUMJAC */                "numjac",
@@ -65,6 +65,7 @@ const char *FLAG_NAME[FLAG_MAX] = {
 const char *FLAG_DESC[FLAG_MAX] = {
   "unknown",
 
+  /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
@@ -76,7 +77,6 @@ const char *FLAG_DESC[FLAG_MAX] = {
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_LV */                    "value specifies the logging level",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
-  /* FLAG_MT */                    "this command line parameter is DEPRECATED",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NUMJAC */                "specify numerical jacobian",                                                                                                      
@@ -92,6 +92,7 @@ const char *FLAG_DESC[FLAG_MAX] = {
 const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   "unknown",
 
+  /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag\n  e.g. -help=f prints detaild information for command-line flag f",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
@@ -103,7 +104,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_LV */                    "value specifies the logging level",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality\n  svg\n  jpg\n  ps\n  gif\n  ...",
-  /* FLAG_MT */                    "this command line parameter is DEPRECATED",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NUMJAC */                "specify numerical jacobian",                                                                                                      
@@ -119,6 +119,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
 const int FLAG_TYPE[FLAG_MAX] = {
   FLAG_TYPE_UNKNOWN,
   
+  /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
@@ -130,7 +131,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_L */                     FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
-  /* FLAG_MT */                    FLAG_TYPE_FLAG,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
   /* FLAG_NOEMIT */                FLAG_TYPE_FLAG,
   /* FLAG_NUMJAC */                FLAG_TYPE_FLAG,

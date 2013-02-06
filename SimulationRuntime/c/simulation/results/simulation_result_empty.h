@@ -37,7 +37,7 @@
 class simulation_result_empty : public simulation_result
 { 
 public:
-  simulation_result_empty(const char* filename, long numpoints, const DATA* data) : simulation_result(filename, numpoints, data) {}
+  simulation_result_empty(const char* filename, long numpoints, const DATA* data, int cpuTime) : simulation_result(filename, numpoints, data, cpuTime) {}
   void emit() { /* do nothing */ }
   void writeParameterData() { /* do nothing */ }
   virtual const char* result_type() {return "no result file";}

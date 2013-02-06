@@ -113,7 +113,7 @@ simulation_result *sim_result = NULL;
 
 
 /* function for start simulation */
-int callSolver(DATA*, string, string, string, string, double, string);
+int callSolver(DATA*, string, string, string, string, double, string, int cpuTime);
 
 int isInteractiveSimulation();
 
@@ -422,6 +422,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string init_time_string = "";
   double init_time = 0;
   string outputVariablesAtEnd = "";
+  int cpuTime = flagSet("cpu", argc, argv);
 
   if(optionSet("iim", argc, argv))
     init_initMethod = *getOption("iim", argc, argv);
@@ -438,7 +439,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if(flagSet("output", argc, argv))
     outputVariablesAtEnd = *getFlagValue("output", argc, argv);
 
-  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, outputVariablesAtEnd);
+  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, outputVariablesAtEnd, cpuTime);
 
   if(retVal == 0 && create_linearmodel)
   {
@@ -481,20 +482,20 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
 int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
-    string init_optiMethod, string init_file, double init_time, string outputVariablesAtEnd)
+    string init_optiMethod, string init_file, double init_time, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
   long maxSteps = 4 * simData->simulationInfo.numSteps;
   if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData);
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
   } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData);
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
   } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData);
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData, cpuTime);
   } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData);
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
   } else {
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;

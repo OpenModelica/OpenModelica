@@ -95,8 +95,7 @@ const char* getNameString(const char** ptr);
 
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
-int
-functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
+int functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
 /* function for calculating zeroCrossings */
 /*used in DDASRT fortran function*/
