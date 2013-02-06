@@ -11,9 +11,10 @@ INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/
 
 # Quellen und Header
 SET(simulation_sources  options.cpp simulation_input_xml.cpp simulation_runtime.cpp
-					    ../linearization/linearize.cpp)
+					    ../linearization/linearize.cpp
+						modelinfo.c simulation_info_xml.c)
 
-SET(simulation_headers options.h simulation_input_xml.h simulation_runtime.h
+SET(simulation_headers options.h simulation_input_xml.h simulation_runtime.h modelinfo.h simulation_info_xml.h
 					../linearization/linearize.h ../simulation_data.h ../omc_inline.h ../omc_msvc.h ../openmodelica.h ../openmodelica_func.h)				 
 						 
 # Library util
