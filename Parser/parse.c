@@ -273,9 +273,6 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   char* oldfilename;
 
   // Only use the basename of the file when running the testsuite
-  ModelicaParser_filename_C = /* runningTestsuite ?
-    SystemImpl__basename(ModelicaParser_filename_C) : */
-    ModelicaParser_filename_C;
   oldfilename = (char*) ModelicaParser_filename_C;
   ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8",1);
   if (!*ModelicaParser_filename_C) return NULL;
@@ -364,6 +361,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 
   ModelicaParser_encoding = "UTF-8";
   ModelicaParser_filename_C = interactiveFilename;
+  ModelicaParser_filename_C_testsuiteFriendly = interactiveFilename;
   ModelicaParser_flags = flags;
   isReadOnly = 0;
   omc_first_comment = 0;
@@ -390,7 +388,8 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   int len = 0;
 
   ModelicaParser_encoding = encoding;
-  ModelicaParser_filename_C = infoName;
+  ModelicaParser_filename_C = fileName;
+  ModelicaParser_filename_C_testsuiteFriendly = infoName;
   ModelicaParser_flags = flags;  
   isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
   omc_first_comment = 0;
