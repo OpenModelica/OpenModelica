@@ -986,7 +986,7 @@ end numBits;
 public function realpath
   input String path;
   output String fullpath;
-  external "C" fullpath = System__realpath(path) annotation(Library = {"omcruntime"});
+  external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
 end realpath;
 
 end System;
