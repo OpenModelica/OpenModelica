@@ -259,63 +259,86 @@ void dumpInitialization(INIT_DATA *initData)
 void dumpInitialSolution(DATA *simData)
 {
   long i, j;
-
-  /* i: all states; j: all unfixed vars */
-  INFO(LOG_SOTI, "unfixed states");
+  
+  const MODEL_DATA      *mData = &(simData->modelData);
+  const SIMULATION_INFO *sInfo = &(simData->simulationInfo);
+  
+  INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
-  for(i=0, j=0; i<simData->modelData.nStates; ++i)
+
+  INFO(LOG_SOTI, "states variables");
+  INDENT(LOG_SOTI);
+  for(i=0; i<mData->nStates; ++i)
   {
-    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
-    {
-      if(simData->modelData.realVarsData[i].attribute.useNominal)
-      {
-        INFO5(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g",
-          j+1,
-          simData->modelData.realVarsData[i].info.name,
-          simData->modelData.realVarsData[i].attribute.start,
-          simData->modelData.realVarsData[i].attribute.nominal,
-          simData->localData[0]->realVars[i]);
-      }
-      else
-      {
-        INFO4(LOG_SOTI, "[%ld] Real %s(start=%g) = %g",
-          j+1,
-          simData->modelData.realVarsData[i].info.name,
-          simData->modelData.realVarsData[i].attribute.start,
-          simData->localData[0]->realVars[i]);
-      }
-      j++;
-    }
+    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+                                                                          mData->realVarsData[i].info.name,
+                                                                          simData->modelData.realVarsData[i].attribute.start,
+                                                                          simData->modelData.realVarsData[i].attribute.nominal,
+                                                                          simData->localData[0]->realVars[i],
+                                                                          sInfo->realVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
 
-  /* i: all parameters; j: all unfixed vars */
-  INFO(LOG_SOTI, "unfixed parameters");
+  INFO(LOG_SOTI, "derivatives variables");
   INDENT(LOG_SOTI);
-  for(i=0; i<simData->modelData.nParametersReal; ++i)
+  for(i=mData->nStates; i<2*mData->nStates; ++i)
   {
-    if(simData->modelData.realParameterData[i].attribute.fixed == 0)
-    {
-      if(simData->modelData.realParameterData[i].attribute.useNominal)
-      {
-        INFO5(LOG_SOTI, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g",
-          j+1,
-          simData->modelData.realParameterData[i].info.name,
-          simData->modelData.realParameterData[i].attribute.start,
-          simData->modelData.realParameterData[i].attribute.nominal,
-          simData->simulationInfo.realParameter[i]);
-      }
-      else
-      {
-        INFO4(LOG_SOTI, "[%ld] parameter Real %s(start=%g) = %g",
-          j+1,
-          simData->modelData.realParameterData[i].info.name,
-          simData->modelData.realParameterData[i].attribute.start,
-          simData->simulationInfo.realParameter[i]);
-      }
-      j++;
-    }
+    INFO4(LOG_SOTI, "[%ld] Real %s = %g (pre: %g)", i+1, 
+                                                    mData->realVarsData[i].info.name,
+                                                    simData->localData[0]->realVars[i], 
+                                                    sInfo->realVarsPre[i]);
   }
+  RELEASE(LOG_SOTI);
+
+  INFO(LOG_SOTI, "other real variables");
+  INDENT(LOG_SOTI);
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
+  {
+    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1, 
+                                                                          mData->realVarsData[i].info.name, 
+                                                                          simData->modelData.realVarsData[i].attribute.start,
+                                                                          simData->modelData.realVarsData[i].attribute.nominal,
+                                                                          simData->localData[0]->realVars[i], 
+                                                                          sInfo->realVarsPre[i]);
+  }
+  RELEASE(LOG_SOTI);
+
+  INFO(LOG_SOTI, "integer variables");
+  INDENT(LOG_SOTI);
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
+    INFO5(LOG_SOTI, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1, 
+                                                                               mData->integerVarsData[i].info.name, 
+                                                                               mData->integerVarsData[i].attribute.start,
+                                                                               simData->localData[0]->integerVars[i], 
+                                                                               sInfo->integerVarsPre[i]);
+  }
+  RELEASE(LOG_SOTI);
+
+  INFO(LOG_SOTI, "boolean variables");
+  INDENT(LOG_SOTI);
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
+    INFO5(LOG_SOTI, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1, 
+                                                                 mData->booleanVarsData[i].info.name, 
+                                                                 mData->booleanVarsData[i].attribute.start ? "true" : "false", 
+                                                                 simData->localData[0]->booleanVars[i] ? "true" : "false", 
+                                                                 sInfo->booleanVarsPre[i] ? "true" : "false");
+  }
+  RELEASE(LOG_SOTI);
+
+  INFO(LOG_SOTI, "string variables");
+  INDENT(LOG_SOTI);
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    INFO5(LOG_SOTI, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1, 
+                                                                mData->stringVarsData[i].info.name, 
+                                                                mData->stringVarsData[i].attribute.start, 
+                                                                simData->localData[0]->stringVars[i], 
+                                                                sInfo->stringVarsPre[i]);
+  }
+  RELEASE(LOG_SOTI);
+  
   RELEASE(LOG_SOTI);
 }
 
@@ -665,11 +688,9 @@ static int symbolic_initialization(DATA *data)
     functionInitialEquations(data);
     updateHysteresis(data);
 
+    /* report a warning about strange start values */
     if(stateSelection(data,1) == 1)
-    {
-      /* report a warning about strange start values */
       WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
-    }
   }
 
   return 0;
@@ -955,11 +976,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   else
     THROW("unsupported option -iim");
 
-  INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
-  INDENT(LOG_SOTI);
-  printAllVars(data, 0, LOG_SOTI);
   dumpInitialSolution(data);
-  RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
@@ -968,7 +985,6 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
 
   /* TODO: remove following lines */
-  
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
