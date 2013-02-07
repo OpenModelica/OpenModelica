@@ -224,7 +224,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
-  if(DEBUG_STREAM(LOG_DEBUG))
+  if(ACTIVE_STREAM(LOG_DEBUG))
     printParameters(data, LOG_DEBUG);
 
   /* initial delay again, due to maybe change
@@ -272,7 +272,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     free(filename);
   }
 
-  if(DEBUG_STREAM(LOG_DEBUG))
+  if(ACTIVE_STREAM(LOG_DEBUG))
     printAllVars(data, 0, LOG_DEBUG);
 
   /*
@@ -394,7 +394,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     sim_result_emit(data);
 
-    if(DEBUG_STREAM(LOG_DEBUG))
+    if(ACTIVE_STREAM(LOG_DEBUG))
       printAllVars(data, 0, LOG_DEBUG);
 
     /********* end of Emit this time step *********/
@@ -467,7 +467,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     writeOutputVars(strdup(outputVariablesAtEnd), data);
   }
 
-  if(DEBUG_STREAM(LOG_STATS))
+  if(ACTIVE_STREAM(LOG_STATS))
   {
     rt_accumulate(SIM_TIMER_TOTAL);
     

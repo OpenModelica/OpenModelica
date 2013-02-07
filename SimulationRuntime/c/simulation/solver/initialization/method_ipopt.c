@@ -214,7 +214,7 @@
          *
          */
         INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
-        if(DEBUG_STREAM(LOG_INIT))
+        if(ACTIVE_STREAM(LOG_INIT))
         {
           INFO(LOG_INIT, "sparsity pattern");
           for(i=0; i<n; ++i)
@@ -281,7 +281,7 @@
       {
         functionJacG_sparse(ipopt_data->initData->simData, values);
 
-        if(DEBUG_STREAM(LOG_DEBUG))
+        if(ACTIVE_STREAM(LOG_DEBUG))
         {
           int i, j;
           int idx = 0;
@@ -334,7 +334,7 @@
         free(gp);
         free(gn);
 
-        if(DEBUG_STREAM(LOG_DEBUG))
+        if(ACTIVE_STREAM(LOG_DEBUG))
         {
           int i, j;
           for(i=0; i<n; ++i)
@@ -475,7 +475,7 @@
        they might not be suitable for your problem. */
     AddIpoptNumOption(nlp, "tol", 1e-7);
 
-    AddIpoptIntOption(nlp, "print_level", DEBUG_STREAM(LOG_INIT) ? 5 : 0);
+    AddIpoptIntOption(nlp, "print_level", ACTIVE_STREAM(LOG_INIT) ? 5 : 0);
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");

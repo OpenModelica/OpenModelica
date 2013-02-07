@@ -343,7 +343,7 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda)
 
   INFO(LOG_INIT, "NelderMeadOptimization");
   INDENT(LOG_INIT);
-  NelderMeadOptimization(initData, lambda_step, STOPCR, NLOOP, DEBUG_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
+  NelderMeadOptimization(initData, lambda_step, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
   INFO1(LOG_INIT, "iterations: %ld", iteration);
   RELEASE(LOG_INIT);
 

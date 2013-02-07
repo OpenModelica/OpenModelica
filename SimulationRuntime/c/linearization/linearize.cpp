@@ -70,7 +70,7 @@ int functionJacA(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -91,7 +91,7 @@ int functionJacA(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_JAC,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -113,7 +113,7 @@ int functionJacB(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -134,7 +134,7 @@ int functionJacB(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -155,7 +155,7 @@ int functionJacC(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -173,7 +173,7 @@ int functionJacC(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -194,7 +194,7 @@ int functionJacD(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -211,7 +211,7 @@ int functionJacD(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -275,17 +275,15 @@ int linearize(DATA* data)
     // The empty array {} is not valid modelica, so we need to put something
     //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
     //   empty array if needed.
-    if(size_A) {
-        strX = array2string(data->localData[0]->realVars,1,size_A);
-    } else {
-        strX = "i for i in 1:0";
-    }
+    if(size_A)
+      strX = array2string(data->localData[0]->realVars,1,size_A);
+    else
+      strX = "i for i in 1:0";
 
-    if(size_Inputs) {
-        strU = array2string(data->simulationInfo.inputVars,1,size_Inputs);
-    } else {
-        strU = "i for i in 1:0";
-    }
+    if(size_Inputs)
+      strU = array2string(data->simulationInfo.inputVars,1,size_Inputs);
+    else
+      strU = "i for i in 1:0";
 
     free(matrixA);
     free(matrixB);
@@ -297,8 +295,8 @@ int linearize(DATA* data)
     FILE *fout = fopen(filename.c_str(),"wb");
     ASSERT1(fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
-    if(DEBUG_STREAM(LOG_STATS))
-    INFO6(LOG_STATS, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+    if(ACTIVE_STREAM(LOG_STATS))
+      INFO6(LOG_STATS, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     fflush(fout);
     fclose(fout);
 

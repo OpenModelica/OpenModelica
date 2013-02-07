@@ -124,7 +124,7 @@ void Message(int type, int stream, char *msg, int subline);
 #define INDENT(stream)           do{level[stream]++;}while(0)
 #define RELEASE(stream)          do{level[stream]--; if(level[stream] < 0) level[stream] = 0;}while(0)
 #define RESET_INDENTION(stream)  do{level[stream] = 0;}while(0)
-#define DEBUG_STREAM(stream)     (useStream[stream])
+#define ACTIVE_STREAM(stream)    (useStream[stream])
 
 #define   INFO(stream, msg)                                  do{if(useStream[stream]){sprintf(logBuffer, msg);                               Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)
 #define  INFO1(stream, msg, a)                               do{if(useStream[stream]){sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)

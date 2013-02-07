@@ -158,8 +158,8 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   ASSERT(dasslData->ipar,"out of memory");
   dasslData->atol = (double*) malloc(simData->modelData.nStates*sizeof(double));
   dasslData->rtol = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->ipar[0] = DEBUG_STREAM(LOG_JAC);
-  dasslData->ipar[1] = DEBUG_STREAM(LOG_ENDJAC);
+  dasslData->ipar[0] = ACTIVE_STREAM(LOG_JAC);
+  dasslData->ipar[1] = ACTIVE_STREAM(LOG_ENDJAC);
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
   ASSERT(dasslData->info,"out of memory");
   dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
@@ -386,7 +386,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* at the of one step evaluate the system again */
   sData->timeValue = solverInfo->currentTime;
 
-  if(DEBUG_STREAM(LOG_DDASRT))
+  if(ACTIVE_STREAM(LOG_DDASRT))
   {
     INFO(LOG_DDASRT, "dassl call staistics: ");
     INDENT(LOG_DDASRT);
@@ -534,7 +534,7 @@ int functionJacAColored(DATA* data, double* jac)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
     /*
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC))){
+    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
       printf("Caluculate one col:\n");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
         INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
@@ -566,7 +566,7 @@ int functionJacAColored(DATA* data, double* jac)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
 
     /*
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC))){
+    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
       INFO("Print jac:");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
       {
@@ -591,7 +591,7 @@ int functionJacASym(DATA* data, double* jac)
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
 
     /*
-    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -610,7 +610,7 @@ int functionJacASym(DATA* data, double* jac)
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   /*
-  if(DEBUG_STREAM(LOG_DEBUG))
+  if(ACTIVE_STREAM(LOG_DEBUG))
   {
     INFO("Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -729,7 +729,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
     {
       matrixA[i*data->modelData.nStates+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
       /*
-      if(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC))
+      if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
       {
         printf("%d: %e\n",i*data->modelData.nStates+j,matrixA[i*data->modelData.nStates+j]);
       }
@@ -740,7 +740,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
 
   /*
    * Debug output
-  if(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_SOLVER, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -826,13 +826,13 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
           j = 0;
         else
           j = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii-1];
-        /*INFO2(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC)," take for %d -> %d\n",j,ii); */
+        /*INFO2(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC)," take for %d -> %d\n",j,ii); */
         while(j < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii])
         {
           l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
           k  = l + ii*data->simulationInfo.analyticJacobians[index].sizeRows;
           matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
-          /*INFO5(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);*/
+          /*INFO5(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);*/
           j++;
         };
         y[ii] = ysave[ii];
@@ -842,7 +842,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
 
   /*
    * Debug output
-  if(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
   {
     INFO(LOG_SOLVER, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)

@@ -99,7 +99,7 @@ _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
    INFO4(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].\n",id,data->localData[0]->timeValue,info,info); \
    data->simulationInfo.found_solution = -1; \
    if(!data->simulationInfo.initial){ \
-      if(DEBUG_STREAM(LOG_NLS)) { \
+      if(ACTIVE_STREAM(LOG_NLS)) { \
         long int l=0; \
         long int k=0; \
         for (l=0;l<size;l++) { \
@@ -189,7 +189,7 @@ do { \
     } \
   } \
   /* we found a solution*/ \
-  if(data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NLS)){ \
+  if(data->simulationInfo.found_solution == 1 && ACTIVE_STREAM(LOG_NLS)){ \
     int i = 0; \
     INFO1(LOG_NLS," #### SOLUTION FOUND! (system %d)", index); \
     for(i = 0; i < size; i++) { \

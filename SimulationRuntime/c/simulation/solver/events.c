@@ -314,7 +314,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
 
   listClear(eventList);
 
-  if(DEBUG_STREAM(LOG_EVENTS))
+  if(ACTIVE_STREAM(LOG_EVENTS))
   {
     if(listLen(tmpEventList) > 0)
     {

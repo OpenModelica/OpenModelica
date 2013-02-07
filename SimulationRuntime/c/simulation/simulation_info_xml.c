@@ -100,7 +100,8 @@ FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix) {
   return xml->functionNames[ix];
 }
 
-void modelInfoXmlInit(MODEL_DATA_XML* xml) {
+void modelInfoXmlInit(MODEL_DATA_XML* xml)
+{
   int done=0;
   char buf[BUFSIZ] = {0};
   FILE* file = fopen(strdup(xml->fileName),"r");
@@ -131,7 +132,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml) {
       unsigned long line = XML_GetCurrentLineNumber(parser);
       fclose(file);
       XML_ParserFree(parser);
-      THROW4("%s: Error: failed to read the XML file %s: %s at line %lu\n", __FILE__, xml->fileName, err, line);
+      THROW4("%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
     }
   } while(!done);
   assert(xml->nEquations == (long) userData[1]);

@@ -150,7 +150,7 @@
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) user_data;
     int eqSystemNumber = kinsolData->nlsData->equationIndex;
 
-    if(DEBUG_STREAM(LOG_NLS))
+    if(ACTIVE_STREAM(LOG_NLS))
     {
       WARNING1(LOG_NLS, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
       INDENT(LOG_NLS);
@@ -272,7 +272,7 @@
     N_VDestroy_Serial(c);
     KINFree(&kmem);
 
-    if(DEBUG_STREAM(LOG_NLS))
+    if(ACTIVE_STREAM(LOG_NLS))
     {
       if(error_code == KIN_LINESEARCH_NONCONV)
       {

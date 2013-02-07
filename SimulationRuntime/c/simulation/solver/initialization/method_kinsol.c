@@ -88,7 +88,7 @@
 
   void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
   {
-    if(DEBUG_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT))
     {
       WARNING3(LOG_INIT, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
       WARNING1(LOG_INIT, "%s", msg);

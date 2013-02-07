@@ -126,7 +126,7 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       if(data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[jacIndex].seedVars[ii] = 1;
 
-    if(DEBUG_STREAM(LOG_DSSJAC)){
+    if(ACTIVE_STREAM(LOG_DSSJAC)){
       INFO(LOG_DSSJAC,"Caluculate one col:\n");
       for(l=0;  l < data->simulationInfo.analyticJacobians[jacIndex].sizeCols;l++)
         INFO2(LOG_DSSJAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[jacIndex].seedVars[l]);
@@ -157,7 +157,7 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       if(data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[jacIndex].seedVars[ii] = 0;
 
   }
-  if(DEBUG_STREAM(LOG_DSS))
+  if(ACTIVE_STREAM(LOG_DSS))
   {
     INFO(LOG_DSS,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[jacIndex].sizeRows;i++)

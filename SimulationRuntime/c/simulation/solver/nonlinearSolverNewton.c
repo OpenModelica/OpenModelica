@@ -239,7 +239,7 @@ int solveNewton(DATA *data, int sysNumber) {
   memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
   /* debug output */
-  if(DEBUG_STREAM(LOG_NLS))
+  if(ACTIVE_STREAM(LOG_NLS))
   {
     INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e with Newton Solver",
         modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
@@ -298,10 +298,10 @@ int solveNewton(DATA *data, int sysNumber) {
     if ((xerror <= solverData->ftol || xerror_scaled <= solverData->ftol) && solverData->info > 0) {
       success = 1;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_STREAM(LOG_NLS)) {
+      if (ACTIVE_STREAM(LOG_NLS)) {
         INFO1(LOG_NLS, "*** System solved ***\n%d restarts", retries);
         INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
-        if (DEBUG_STREAM(LOG_NLS)) {
+        if (ACTIVE_STREAM(LOG_NLS)) {
           for (i = 0; i < solverData->n; i++) {
             INFO3(LOG_NLS, "x[%d] = %.15e\n\ttresidual = %e", i, solverData->x[i], solverData->fvec[i]);
           }
@@ -314,7 +314,7 @@ int solveNewton(DATA *data, int sysNumber) {
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_STREAM(LOG_NLS)) {
+      if (ACTIVE_STREAM(LOG_NLS)) {
         INFO(LOG_NLS, " - iteration making no progress:\t try old values.");
       }
     /* try to vary the initial values */
@@ -325,7 +325,7 @@ int solveNewton(DATA *data, int sysNumber) {
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NLS)) {
+        if(ACTIVE_STREAM(LOG_NLS)) {
           INFO(LOG_NLS,
               " - iteration making no progress:\t vary solution point by 1%%.");
         }
@@ -337,7 +337,7 @@ int solveNewton(DATA *data, int sysNumber) {
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NLS)) {
+        if(ACTIVE_STREAM(LOG_NLS)) {
           INFO(LOG_NLS,
               " - iteration making no progress:\t try nominal values as initial solution.");
         }
@@ -346,10 +346,10 @@ int solveNewton(DATA *data, int sysNumber) {
 
       printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 
-      if (DEBUG_STREAM(LOG_NLS)) {
+      if (ACTIVE_STREAM(LOG_NLS)) {
         INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries);
         INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
-        if (DEBUG_STREAM(LOG_NLS)) {
+        if (ACTIVE_STREAM(LOG_NLS)) {
           for (i = 0; i < solverData->n; i++) {
             INFO3(LOG_NLS, "x[%d] = %.15e\n\ttresidual = %e", i, solverData->x[i], solverData->fvec[i]);
           }
@@ -442,7 +442,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
   error_f = 1.0 + tol_f;
   scaledError_f = 1.0 + tol_f;
 
-  if (DEBUG_STREAM(LOG_NLS_V)) {
+  if (ACTIVE_STREAM(LOG_NLS_V)) {
     INFO1(LOG_NLS_V,"######### Start Newton maxfev :%d #########", *maxfev);
     for(i=0;i<*n;i++)
       INFO2(LOG_NLS_V,"x[%d] : %e ", i, x[i]);
@@ -458,7 +458,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     (*nfev)++;
 
     /*  Debug output */
-    if (DEBUG_STREAM(LOG_NLS_V)) {
+    if (ACTIVE_STREAM(LOG_NLS_V)) {
       for(i=0;i<*n;i++)
         DEBUG2(LOG_NLS_V,"fvec[%d] : %e: ", i, fvec[i]);
     }
@@ -472,7 +472,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     }
 
     /*  Debug output */
-    if(DEBUG_STREAM(LOG_NLS_JAC))
+    if(ACTIVE_STREAM(LOG_NLS_JAC))
     {
       printf("Print jacobian matrix:");
       for(i=0;  i < *n;i++)
@@ -509,7 +509,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /* solve J*(x_{n+1} - x_n)=f */
     _omc_dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
 
-    if (DEBUG_STREAM(LOG_NLS_V)) {
+    if (ACTIVE_STREAM(LOG_NLS_V)) {
       DEBUG(LOG_NLS_V,"Solved J*x=b");
       for(i=0;i<*n;i++)
         DEBUG2(LOG_NLS_V,"b[%d] = %e ", i, fvec[i]);;
@@ -533,7 +533,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
     }
 
-    if (DEBUG_STREAM(LOG_NLS_V)) {
+    if (ACTIVE_STREAM(LOG_NLS_V)) {
       for(i=0;i<*n;i++)
         DEBUG2(LOG_NLS_V,"x[%d] = %e ", i, x[i]);
     }

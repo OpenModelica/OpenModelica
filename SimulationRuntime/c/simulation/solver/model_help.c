@@ -62,13 +62,13 @@ void updateDiscreteSystem(DATA *data)
   storeRelations(data);
   updateHysteresis(data);
 
-  if(DEBUG_STREAM(LOG_EVENTS_V))
+  if(ACTIVE_STREAM(LOG_EVENTS_V))
     printRelations(data);
 
   functionDAE(data);
   DEBUG(LOG_EVENTS_V, "updated discrete System");
 
-  if(DEBUG_STREAM(LOG_EVENTS_V))
+  if(ACTIVE_STREAM(LOG_EVENTS_V))
     printRelations(data);
 
   relationChanged = checkRelations(data);
@@ -84,7 +84,7 @@ void updateDiscreteSystem(DATA *data)
 
     storePreValues(data);
     storeRelations(data);
-    if(DEBUG_STREAM(LOG_EVENTS_V))
+    if(ACTIVE_STREAM(LOG_EVENTS_V))
       printRelations(data);
 
     functionDAE(data);

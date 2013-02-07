@@ -364,7 +364,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string* lintime = (string*) getOption("l", argc, argv);
 
   /* activated measure time option with LOG_STATS */
-  if(DEBUG_STREAM(LOG_STATS) && !measure_time_flag)
+  if(ACTIVE_STREAM(LOG_STATS) && !measure_time_flag)
   {
     measure_time_flag = 1;
     measureSimTime = 1;
