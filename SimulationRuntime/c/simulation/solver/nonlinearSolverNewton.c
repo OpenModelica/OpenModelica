@@ -471,20 +471,24 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
       (*nfev)=(*nfev)+*n;
     }
 
-    /*  Debug output */
+    /* debug output */
     if(ACTIVE_STREAM(LOG_NLS_JAC))
     {
-      printf("Print jacobian matrix:");
-      for(i=0;  i < *n;i++)
+      char buffer[4096];
+      
+      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", *n, *n);
+      INDENT(LOG_NLS_JAC);
+      for(i=0; i<solverData->n;i++)
       {
-        printf("%d : ", i);
-        for(j=0;  j < *n;j++)
-          printf("%f ", fjac[i*(*n)+j]);
-        printf("\n");
+        buffer[0] = 0;
+        for(j=0; j<solverData->n; j++)
+          sprintf(buffer, "%s%10g ", buffer, fjac[i*(*n)+j]);
+        INFO(LOG_NLS_JAC, buffer);
       }
+      RELEASE(LOG_NLS_JAC);
     }
 
-    /* Scaling Residual vector */
+    /* scaling residual vector */
     {
       int i,j,l=0;
       for(i=0;i<solverData->n;++i){

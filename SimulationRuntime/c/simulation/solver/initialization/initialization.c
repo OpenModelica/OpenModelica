@@ -272,8 +272,8 @@ void dumpInitialSolution(DATA *simData)
   {
     INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
                                                                           mData->realVarsData[i].info.name,
-                                                                          simData->modelData.realVarsData[i].attribute.start,
-                                                                          simData->modelData.realVarsData[i].attribute.nominal,
+                                                                          mData->realVarsData[i].attribute.start,
+                                                                          mData->realVarsData[i].attribute.nominal,
                                                                           simData->localData[0]->realVars[i],
                                                                           sInfo->realVarsPre[i]);
   }
@@ -283,9 +283,9 @@ void dumpInitialSolution(DATA *simData)
   INDENT(LOG_SOTI);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
   {
-    INFO4(LOG_SOTI, "[%ld] Real %s = %g (pre: %g)", i+1, 
+    INFO4(LOG_SOTI, "[%ld] Real %s = %g (pre: %g)", i+1,
                                                     mData->realVarsData[i].info.name,
-                                                    simData->localData[0]->realVars[i], 
+                                                    simData->localData[0]->realVars[i],
                                                     sInfo->realVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
@@ -294,11 +294,11 @@ void dumpInitialSolution(DATA *simData)
   INDENT(LOG_SOTI);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
   {
-    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1, 
-                                                                          mData->realVarsData[i].info.name, 
-                                                                          simData->modelData.realVarsData[i].attribute.start,
-                                                                          simData->modelData.realVarsData[i].attribute.nominal,
-                                                                          simData->localData[0]->realVars[i], 
+    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+                                                                          mData->realVarsData[i].info.name,
+                                                                          mData->realVarsData[i].attribute.start,
+                                                                          mData->realVarsData[i].attribute.nominal,
+                                                                          simData->localData[0]->realVars[i],
                                                                           sInfo->realVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
@@ -307,11 +307,11 @@ void dumpInitialSolution(DATA *simData)
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1, 
-                                                                               mData->integerVarsData[i].info.name, 
-                                                                               mData->integerVarsData[i].attribute.start,
-                                                                               simData->localData[0]->integerVars[i], 
-                                                                               sInfo->integerVarsPre[i]);
+    INFO5(LOG_SOTI, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
+                                                                    mData->integerVarsData[i].info.name,
+                                                                    mData->integerVarsData[i].attribute.start,
+                                                                    simData->localData[0]->integerVars[i],
+                                                                    sInfo->integerVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
 
@@ -319,10 +319,10 @@ void dumpInitialSolution(DATA *simData)
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1, 
-                                                                 mData->booleanVarsData[i].info.name, 
-                                                                 mData->booleanVarsData[i].attribute.start ? "true" : "false", 
-                                                                 simData->localData[0]->booleanVars[i] ? "true" : "false", 
+    INFO5(LOG_SOTI, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
+                                                                 mData->booleanVarsData[i].info.name,
+                                                                 mData->booleanVarsData[i].attribute.start ? "true" : "false",
+                                                                 simData->localData[0]->booleanVars[i] ? "true" : "false",
                                                                  sInfo->booleanVarsPre[i] ? "true" : "false");
   }
   RELEASE(LOG_SOTI);
@@ -331,10 +331,10 @@ void dumpInitialSolution(DATA *simData)
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1, 
-                                                                mData->stringVarsData[i].info.name, 
-                                                                mData->stringVarsData[i].attribute.start, 
-                                                                simData->localData[0]->stringVars[i], 
+    INFO5(LOG_SOTI, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1,
+                                                                mData->stringVarsData[i].info.name,
+                                                                mData->stringVarsData[i].attribute.start,
+                                                                simData->localData[0]->stringVars[i],
                                                                 sInfo->stringVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
@@ -418,7 +418,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
     }
     else if(retVal >= 0 && funcValue == bestFuncValue)
     {
-      /*WARNING("local minimum");*/
+      /* WARNING("local minimum"); */
       INFO(LOG_INIT, "not updating bestZ");
       break;
     }

@@ -187,23 +187,28 @@ void printVector(const double *vector, const int *size, const int logLevel, cons
  *
  *  \author wbraun
  */
-void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals, const double *xerror, const double *xerror_scaled, const int logLevel){
-
+void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals, const double *xerror, const double *xerror_scaled, const int logLevel)
+{
   int i;
 
-  INFO3(logLevel, "nfunc = %d +++ error = %.20e +++ error_scaled = %.20e", *nfunc_evals, *xerror, *xerror_scaled);
+  INFO(logLevel, "nls status");
   INDENT(logLevel);
 
-  INFO(logLevel, "x");
+  INFO(logLevel, "variables");
   INDENT(logLevel);
-  for(i = 0; i < solverData->n; i++)
-    INFO3(logLevel, "x[%d] = %.20e\n\tscaling factor = %f", i, solverData->x[i], solverData->diag[i]);
+  for(i=0; i<solverData->n; i++)
+    INFO3(logLevel, "x[%d] = %.20e [scaling factor = %f]", i, solverData->x[i], solverData->diag[i]);
   RELEASE(logLevel);
 
-  INFO(logLevel, "fvec");
+  INFO(logLevel, "functions");
   INDENT(logLevel);
-  for(i = 0; i < solverData->n; i++)
-    INFO3(logLevel, "res[%d] = %.20e\n\tscaling factor = %f", i, solverData->fvec[i], solverData->resScaling[i]);
+  for(i=0; i<solverData->n; i++)
+    INFO3(logLevel, "res[%d] = %.20e [scaling factor = %f]", i, solverData->fvec[i], solverData->resScaling[i]);
+  RELEASE(logLevel);
+  
+  INFO(logLevel, "statistics");
+  INDENT(logLevel);
+  INFO3(logLevel, "nfunc = %d\nerror = %.20e\nerror_scaled = %.20e", *nfunc_evals, *xerror, *xerror_scaled);
   RELEASE(logLevel);
 
   RELEASE(logLevel);
@@ -414,19 +419,16 @@ int solveHybrd(DATA *data, int sysNumber)
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS))
   {
-    INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e",
+    INFO2(LOG_NLS, "start solving non-linear system >>%s<< at time %g",
       modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
       data->localData[0]->timeValue);
     INDENT(LOG_NLS);
-
-    for(i = 0; i < solverData->n; i++)
+    for(i=0; i<solverData->n; i++)
     {
+      INFO2(LOG_NLS, "x[%d] = %g", i, systemData->nlsx[i]);
       INDENT(LOG_NLS);
-      INFO2(LOG_NLS, "x[%d] = %.20e", i, systemData->nlsx[i]);
-      INDENT(LOG_NLS);
-      INFO3(LOG_NLS, "scaling = %f +++ old = %.20e +++ extrapolated = %.20e",
+      INFO3(LOG_NLS, "scaling = %g\nold = %g\nextrapolated = %g",
             systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
-      RELEASE(LOG_NLS);
       RELEASE(LOG_NLS);
     }
     RELEASE(LOG_NLS);
@@ -526,7 +528,7 @@ int solveHybrd(DATA *data, int sysNumber)
       storeRelations(data);
     }
 
-    /* Scaling residual vector */
+    /* scaling residual vector */
     {
       int l=0;
       for(i=0;i<solverData->n;i++){
@@ -540,12 +542,13 @@ int solveHybrd(DATA *data, int sysNumber)
       }
     }
 
-
-    /*  Debug output */
-    if(ACTIVE_STREAM(LOG_NLS_V)) {
+    /* debug output */
+    if(ACTIVE_STREAM(LOG_NLS_V))
+    {
       INFO(LOG_NLS_V, "scaling factors for residual vector");
       INDENT(LOG_NLS_V);
-      for(i=0;i<solverData->n;i++){
+      for(i=0;i<solverData->n;i++)
+      {
         INFO2(LOG_NLS_V, "scaled residual [%d] : %.20e", i, solverData->fvecScaled[i]);
         INDENT(LOG_NLS_V);
         INFO2(LOG_NLS_V, "scaling factor [%d] : %.20e", i, solverData->resScaling[i]);
@@ -554,17 +557,21 @@ int solveHybrd(DATA *data, int sysNumber)
       RELEASE(LOG_NLS_V);
     }
 
-    /*  Debug output */
+    /* debug output */
     if(ACTIVE_STREAM(LOG_NLS_JAC))
     {
-      INFO(LOG_NLS_JAC,"Print jacobian matrix:");
-      for(i=0;  i < solverData->n;i++)
+      char buffer[4096];
+      
+      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", solverData->n, solverData->n);
+      INDENT(LOG_NLS_JAC);
+      for(i=0; i<solverData->n;i++)
       {
-        printf("%d : ", i);
-        for(j=0;  j < solverData->n;j++)
-          printf("%f ",solverData->fjacobian[i*solverData->n+j]);
-        printf("\n");
+        buffer[0] = 0;
+        for(j=0; j<solverData->n; j++)
+          sprintf(buffer, "%s%10g ", buffer, solverData->fjacobian[i*solverData->n+j]);
+        INFO(LOG_NLS_JAC, buffer);
       }
+      RELEASE(LOG_NLS_JAC);
     }
 
     /* check for error  */
@@ -574,87 +581,104 @@ int solveHybrd(DATA *data, int sysNumber)
     if(solverData->info == 1 && (xerror > local_tol && xerror_scaled > local_tol))
       solverData->info = 4;
 
-
     /* solution found */
-    if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol) {
+    if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol)
+    {
       success = 1;
       nfunc_evals += solverData->nfev;
-      if(ACTIVE_STREAM(LOG_NLS)) {
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
+        INFO(LOG_NLS, "system solved");
+        INDENT(LOG_NLS);
+        INFO2(LOG_NLS, "%d retries\n%d restarts", retries, retries2+retries3);
         RELEASE(LOG_NLS);
-        INFO2(LOG_NLS, "*** System solved ***\n%d retries +++ %d restarts", retries,
-            retries2+retries3);
 
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
 
       }
-    /* first try to decrease factor*/
-    } else if((solverData->info == 4 || solverData->info == 5) && retries < 3) {
-        /* set x vector */
-        if(data->simulationInfo.discreteCall)
-          memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
-        else
-          memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+    }
+    else if((solverData->info == 4 || solverData->info == 5) && retries < 3)
+    {
+      /* first try to decrease factor */
+      
+      /* set x vector */
+      if(data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
-        solverData->factor = solverData->factor / 10.0;
+      solverData->factor = solverData->factor / 10.0;
 
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO1(LOG_NLS, " - iteration making no progress:\t decreasing initial step bound to %f.",
-              solverData->factor);
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
-        }
-    /* try to vary the initial values */
-    } else if((solverData->info == 4 || solverData->info == 5) && retries < 4) {
-      for(i = 0; i < solverData->n; i++) {
-          solverData->x[i] += systemData->nominal[i] * 0.1;
-        };
-        solverData->factor = initial_factor;
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t vary solution point by 1%%.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
-        }
-    /* try old values as x-Scaling factors */
-    } else if((solverData->info == 4 || solverData->info == 5) && retries < 5) {
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
+        INFO1(LOG_NLS, " - iteration making no progress:\t decreasing initial step bound to %f.", solverData->factor);
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
+      }
+    }
+    else if((solverData->info == 4 || solverData->info == 5) && retries < 4)
+    {
+      /* try to vary the initial values */
+      
+      for(i = 0; i < solverData->n; i++)
+        solverData->x[i] += systemData->nominal[i] * 0.1;
+      
+      solverData->factor = initial_factor;
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
+        INFO(LOG_NLS, "iteration making no progress:\t vary solution point by 1%%.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
+      }
+    }
+    else if((solverData->info == 4 || solverData->info == 5) && retries < 5)
+    {
+      /* try old values as x-Scaling factors */
+    
+      for(i=0;i<solverData->n;i++)
+        solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nominal[i]);
 
-        for(i=0;i<solverData->n;i++){
-          solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nominal[i]);
-        }
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t try without scaling at all.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
-        }
-    /* try to disable x-Scaling */
-    } else if((solverData->info == 4 || solverData->info == 5) && retries < 6) {
-        int scaling = solverData->useXScaling;
-        if(scaling)
-          solverData->useXScaling = 0;
-        memcpy(solverData->xScalefactors, systemData->nominal, solverData->n*(sizeof(double)));
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t try without scaling at all.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
-        }
-    /* try to solve non-continuous
-     * work-a-round: since other wise some model does
-     * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
-     */
-    } else if((solverData->info == 4 || solverData->info == 5) && retries < 7  && data->simulationInfo.discreteCall) {
-
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
+        INFO(LOG_NLS, "iteration making no progress:\t try without scaling at all.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
+      }
+    }
+    else if((solverData->info == 4 || solverData->info == 5) && retries < 6)
+    {
+      /* try to disable x-Scaling */
+      
+      int scaling = solverData->useXScaling;
+      if(scaling)
+        solverData->useXScaling = 0;
+        
+      memcpy(solverData->xScalefactors, systemData->nominal, solverData->n*(sizeof(double)));
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
+        INFO(LOG_NLS, "iteration making no progress:\t try without scaling at all.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
+      }
+    }
+    else if((solverData->info == 4 || solverData->info == 5) && retries < 7  && data->simulationInfo.discreteCall)
+    {
+      /* try to solve non-continuous
+       * work-a-round: since other wise some model does
+       * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
+       */
+       
       memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
-
       retries++;
 
       /* try to solve a discontinuous system */
