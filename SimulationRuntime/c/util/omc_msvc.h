@@ -65,6 +65,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define snprintf sprintf_s
 #endif
 
+
 int asprintf(char **strp, const char *fmt, ...);
 
 #endif

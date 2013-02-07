@@ -29,9 +29,10 @@
  */
 
 #include "omc_msvc.h"
+#include <stdarg.h>
 #include <stdio.h>
 
-#if defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 int asprintf(char **strp, const char *fmt, ...) {
   int len;
   va_list ap;
@@ -41,7 +42,7 @@ int asprintf(char **strp, const char *fmt, ...) {
   *strp = malloc(len+1);
   len = snprintf(strp, len+1, fmt, ap);
 
-  va_end(args);
+  va_end(ap);
   return len;
 }
 #endif
