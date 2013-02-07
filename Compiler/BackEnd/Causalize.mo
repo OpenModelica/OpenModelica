@@ -175,6 +175,8 @@ algorithm
   end matchcontinue;
 end singularSystemCheck;
 
+//protected import BackendDAETransform;
+
 protected function singularSystemCheck1
 "function: singularSystemCheck1
   author: Frenkel TUD 2012-12
@@ -208,22 +210,16 @@ algorithm
   outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets);
   // do matching
   (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
-  // free states matching information because there it is unkown if the state or the state derivative was matched
-  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
   outSyst := BackendDAEUtil.setEqSystemMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));
   /*
-    matchingExternalsetIncidenceMatrix(nVars1, nEqns1, m);
-    BackendDAEEXT.matching(nVars1, nEqns1, 5, -1, 0.0, 1);
-    BackendDAEEXT.getAssignment(vec2, vec1);
-
     print("singularSystemCheck:\n");
-    BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
-    BackendDump.dumpMatching(vec2);
-    BackendDump.dumpMatching(vec1);
-    comps := BackendDAETransform.tarjanAlgorithm(mT,vec2);
+    BackendDump.printEqSystem(outSyst);
+    comps := BackendDAETransform.tarjanAlgorithm(mT,ass2);
     BackendDump.dumpComponentsOLD(comps);
-    IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),"SingularSystemCheck" +& intString(nVars) +& ".graphml");
+    IndexReduction.dumpSystemGraphML(outSyst,iShared,NONE(),"SingularSystemCheck" +& intString(nVars) +& ".graphml");
   */
+  // free states matching information because there it is unkown if the state or the state derivative was matched
+  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
  
 protected function freeStateAssignments

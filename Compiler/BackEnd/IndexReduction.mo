@@ -3497,7 +3497,7 @@ algorithm
         range = List.intRange2(nassigned,nunassigned);
         nv = BackendVariable.varsSize(vars);
         ne = BackendDAEUtil.equationSize(eqns); 
-        (varlst,stateSets) = selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,level,iStateSets);
+        (varlst,stateSets) = selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,mapIncRowEqn1,level,iStateSets);
         dummyStates = List.map(varlst,BackendVariable.varCref);
         dummyStates = listAppend(inDummyStates,dummyStates);
         varlst = listAppend(varlst,inHov);
@@ -4785,19 +4785,21 @@ protected function selectDummyDerivatives2new
   input Integer varSize;
   input BackendDAE.EquationArray eqns;
   input Integer eqnsSize;
+  input array<Integer> mapIncRowEqn;
   input Integer level;
   input StateSets iStateSets;
   output list<BackendDAE.Var> outDummyVars;
   output StateSets oStateSets;
 algorithm
   (outDummyVars,oStateSets) := 
-  matchcontinue(dstates,states,unassignedEqns,assignedEqns,vars,varSize,eqns,eqnsSize,level,iStateSets)
+  matchcontinue(dstates,states,unassignedEqns,assignedEqns,vars,varSize,eqns,eqnsSize,mapIncRowEqn,level,iStateSets)
       local
         list<BackendDAE.Var> varlst,statecandidates,ovarlst;
         list<DAE.ComponentRef> dummystates;
         Integer unassignedEqnsSize,size,rang;
         list<BackendDAE.Equation> eqnlst,oeqnlst;
-    case(_,_,_,_,_,_,_,_,_,_)
+        list<Integer> unassignedEqns1,assignedEqns1;
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(listLength(dstates),eqnsSize);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as States(1):\n"));
@@ -4806,7 +4808,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
       then
         ({},iStateSets); 
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         unassignedEqnsSize = listLength(unassignedEqns);
         size = listLength(states);
@@ -4818,15 +4820,17 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
         // collect information for stateset
         statecandidates = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
-        eqnlst = BackendEquation.getEqns(unassignedEqns, eqns);
+        unassignedEqns1 = List.uniqueIntN(List.map1r(unassignedEqns,arrayGet,mapIncRowEqn), eqnsSize); 
+        eqnlst = BackendEquation.getEqns(unassignedEqns1, eqns);
         ovarlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
-        oeqnlst = BackendEquation.getEqns(assignedEqns, eqns);
+        assignedEqns1 = List.uniqueIntN(List.map1r(assignedEqns,arrayGet,mapIncRowEqn), eqnsSize); 
+        oeqnlst = BackendEquation.getEqns(assignedEqns1, eqns);
         // add dummy states
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
       then
         (varlst,(level,rang,size,unassignedEqnsSize,statecandidates,eqnlst,ovarlst,oeqnlst)::iStateSets);        
    // dummy derivative case - no dynamic state selection
-   case(_,_,_,_,_,_,_,_,_,_)
+   case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         unassignedEqnsSize = listLength(unassignedEqns);
         size = listLength(states);

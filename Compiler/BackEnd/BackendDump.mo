@@ -2163,6 +2163,17 @@ algorithm
   end match;
 end dumpConstraints;
 
+public function dumpSparsePatternArray
+"function:  dumpSparsePattern
+ author: wbraun
+ description: function dumps sparse pattern of a Jacobain System."
+  input array<list<Integer>> inSparsePatter; 
+algorithm
+  print("Print sparse pattern: " +& intString(arrayLength(inSparsePatter)) +& "\n");
+  dumpSparsePattern2(arrayList(inSparsePatter), 1);
+  print("\n");
+end dumpSparsePatternArray;
+
 public function dumpSparsePattern
 "function:  dumpSparsePattern
  author: wbraun

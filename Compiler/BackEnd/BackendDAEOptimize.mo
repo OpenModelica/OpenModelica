@@ -4647,20 +4647,18 @@ protected
   BackendDAE.Var dummyVar;
   BackendDAE.Variables v;
 algorithm
-  
   BackendDAE.DAE(eqs = eqs) := inBackendDAE;
   // prepare a DAE
   DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   DAE := BackendDAEUtil.addDummyStateIfNeeded(DAE);
   DAE := collapseIndependentBlocks(DAE);
   DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));
-  
+
   //get states for DAE
   BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
   states := BackendVariable.getAllStateVarFromVariables(v);
   // generate sparse pattern
   (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
-
   shared := BackendDAEUtil.addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
 
   outBackendDAE := BackendDAE.DAE(eqs,shared);
@@ -4733,8 +4731,8 @@ algorithm
         // generate adjacency matrix including diff vars        
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
         (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE(),NONE());
-        adjSize = arrayLength(adjMatrix);
-        adjSizeT = arrayLength(adjMatrixT);
+        adjSize = arrayLength(adjMatrix) "number of equations";
+        adjSizeT = arrayLength(adjMatrixT) "number of variables";
         
         // Debug dumping
         /*
@@ -4756,17 +4754,15 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, nodesEqnsIndex);
         Debug.fcall(Flags.JAC_DUMP2, print, "\n");
         
-        
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n");
         // prepare dependency matrix by fill 
-        eqnSparse = arrayCreate(adjSize,{});
+        eqnSparse = arrayCreate(adjSize,{}) "array with empty list for each eqn";
         eqnSparse = prepareSparsePatternT(eqnSparse, adjSizeT-(sizeN-1), adjSizeT, adjMatrixT);
-        sparsepattern = arrayList(eqnSparse);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
-        
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePatternArray,eqnSparse);
         Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
         eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
         eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
+
         sparsepattern = arrayList(eqnSparse);
         nonZeroElements = List.lengthListElements(sparsepattern);
         (alldegrees, maxdegree) = List.mapFold(sparsepattern, findDegrees, 1);        
@@ -4792,8 +4788,7 @@ algorithm
         translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> translated to DAE.ComRefs\n");
         sparsetuple = List.threadTuple(diffCompRefs, translated);
-        
-        
+       
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.\n");
         // build up a graph of pattern
         nodesList = List.intRange2(1,adjSize);
@@ -4961,9 +4956,8 @@ algorithm
         true = (inStartNode <= inEndNode);
         rowElements = arrayGet(inMatrixT,inStartNode);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, {inStartNode}, inSparseT);
-        outSparseT = prepareSparsePatternT(inSparseT, inStartNode+1, inEndNode, inMatrixT);
-      then outSparseT;     
-    case (_,_,_,_) then inSparseT;
+      then prepareSparsePatternT(inSparseT, inStartNode+1, inEndNode, inMatrixT);
+    else then inSparseT;
   end matchcontinue;
 end prepareSparsePatternT;
 
