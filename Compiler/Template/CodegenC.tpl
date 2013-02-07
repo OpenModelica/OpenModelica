@@ -6066,8 +6066,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    if(DEBUG_STREAM(LOG_EVENTS))
-      INFO1(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
+    INFO1(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
     data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;
