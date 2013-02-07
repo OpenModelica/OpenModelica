@@ -50,7 +50,7 @@ public function parse "Parse a mo-file"
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, acceptedGram, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -60,7 +60,7 @@ public function parseexp "Parse a mos-file"
   input Boolean runningTestsuite;
   output Interactive.Statements outStatements;
 
-  external "C" outStatements=ParserExt_parseexp(filename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
