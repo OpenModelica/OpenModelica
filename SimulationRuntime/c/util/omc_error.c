@@ -48,7 +48,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_DDASRT",
   "LOG_DEBUG",
   "LOG_DSS",
-  "LOG_DSSJAC",
+  "LOG_DSS_JAC",
   "LOG_ENDJAC",
   "LOG_EVENTS",
   "LOG_EVENTS_V",
@@ -74,7 +74,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information about dassl solver",          /* LOG_DDASRT */
   "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
-  "outputs jacobain of the dynamic state selection",    /* LOG_DSSJAC */
+  "outputs jacobain of the dynamic state selection",    /* LOG_DSS_JAC */
   "outputs the jacobian and exits the simulation",      /* LOG_ENDJAC */
   "additional information during event iteration",      /* LOG_EVENTS */
   "verbose logging of event system",                    /* LOG_EVENTS_V */
@@ -87,7 +87,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information about simulation process",    /* LOG_SIMULATION */
   "additional information about solver process",        /* LOG_SOLVER */
   "final solution of the initialization",               /* LOG_SOTI */
-  "additional statistics about the initialization",     /* LOG_STATS */
+  "additional statistics about timer/events/solver",    /* LOG_STATS */
   "???",                                                /* LOG_UTIL*/
   "additional information about the zerocrossings"      /* LOG_ZEROCROSSINGS */
 };

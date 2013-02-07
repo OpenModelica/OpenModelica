@@ -237,8 +237,13 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(useStream[LOG_EVENTS_V])
     useStream[LOG_EVENTS] = 1;
 
+  /* print LOG_NLS if LOG_NLS_JAC if active */
   if(useStream[LOG_NLS_JAC])
     useStream[LOG_NLS] = 1;
+    
+  /* print LOG_DSS if LOG_DSS_JAC if active */
+  if(useStream[LOG_DSS_JAC])
+    useStream[LOG_DSS] = 1;
 
   delete flags;
 }

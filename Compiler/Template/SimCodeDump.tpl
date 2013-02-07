@@ -345,7 +345,7 @@ template dumpInfo(Info info)
 ::=
   match info
   case info as INFO(__) then
-  '<info file="<%info.fileName%>" lineStart="<%info.lineNumberStart%>" lineEnd="<%info.lineNumberEnd%>" colStart="<%info.columnNumberStart%>" colEnd="<%info.columnNumberEnd%>"/>'
+  '<info file="<%escapeModelicaStringToXmlString(info.fileName)%>" lineStart="<%info.lineNumberStart%>" lineEnd="<%info.lineNumberEnd%>" colStart="<%info.columnNumberStart%>" colEnd="<%info.columnNumberEnd%>"/>'
 end dumpInfo;
 
 template printExpStrEscaped(Exp exp)

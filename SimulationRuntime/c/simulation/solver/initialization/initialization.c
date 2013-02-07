@@ -668,7 +668,7 @@ static int symbolic_initialization(DATA *data)
     if(stateSelection(data,1) == 1)
     {
       /* report a warning about strange start values */
-      WARNING(LOG_STDOUT,"Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+      WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
     }
   }
 
