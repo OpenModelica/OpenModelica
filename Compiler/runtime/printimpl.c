@@ -40,6 +40,7 @@ extern int showErrorMessages;
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
+#define MAXSAVEDBUFFERS 10 /* Seems reasonable */
 
 #define buf Print_var_buf
 #define errorBuf Print_var_errorBuf
