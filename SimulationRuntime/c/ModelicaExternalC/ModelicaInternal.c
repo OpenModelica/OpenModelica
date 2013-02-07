@@ -124,6 +124,10 @@ void ModelicaNotExistError(const char* name) {
 #     include <dirent.h>
 #  endif
 
+#if !defined(PATH_MAX)
+#define PATH_MAX MAX_PATH
+#endif
+
 #define BUFFER_LENGTH PATH_MAX
 char buffer[BUFFER_LENGTH];  /* Buffer for temporary storage */
 
