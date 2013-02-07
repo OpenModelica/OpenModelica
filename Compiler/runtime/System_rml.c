@@ -46,6 +46,9 @@
 #include "Config.h"
 #include "systemimpl.c"
 #include <float.h>
+#include <limits.h>
+#include <stdlib.h>
+#include "omc_msvc.h"
 
 /* use this one to output messages depending on flags! */
 int check_debug_flag(char const* strdata);
@@ -2136,3 +2139,15 @@ RML_BEGIN_LABEL(System__integerMax)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__realpath)
+{
+  char buf[PATH_MAX];
+  if (realpath(RML_STRINGDATA(rmlA0), buf) == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_scon(buf);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+

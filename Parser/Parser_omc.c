@@ -32,28 +32,28 @@
 #include "rml_compatibility.h"
 #include "parse.c"
 
-void* ParserExt_parse(const char* filename, int acceptedGrammer, const char* encoding, int runningTestsuite)
+void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammer, const char* encoding, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA; 
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
 
-  void *res = parseFile(filename, flags, encoding, runningTestsuite);
+  void *res = parseFile(filename, infoname, flags, encoding, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
   return res;
 }
 
-void* ParserExt_parseexp(const char* filename, int acceptedGrammer, int runningTestsuite)
+void* ParserExt_parseexp(const char* filename, const char* infoname, int acceptedGrammer, int runningTestsuite)
 {
   int flags = PARSE_EXPRESSION;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
   
-  void *res = parseFile(filename, flags, "UTF-8", runningTestsuite);
+  void *res = parseFile(filename, infoname, flags, "UTF-8", runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   return res;

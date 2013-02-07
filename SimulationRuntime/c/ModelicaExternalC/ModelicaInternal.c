@@ -124,7 +124,7 @@ void ModelicaNotExistError(const char* name) {
 #     include <dirent.h>
 #  endif
 
-#define BUFFER_LENGTH 1000
+#define BUFFER_LENGTH PATH_MAX
 char buffer[BUFFER_LENGTH];  /* Buffer for temporary storage */
 
 typedef enum {
@@ -434,12 +434,9 @@ const char* ModelicaInternal_fullPathName(const char* name)
 
     char* fullName;
 
-#if defined(_WIN32)
-    char* tempName = _fullpath(buffer, name, sizeof(buffer));
-#else
-    /* realpath availability: 4.4BSD, POSIX.1-2001. Using the behaviour of NULL: POSIX.1-2008 */
-    char* tempName = realpath(name, NULL);
-#endif
+    /* realpath availability: 4.4BSD, POSIX.1-2001. Using the behaviour of NULL: POSIX.1-2008; we use OpenModelica version for MSVC */
+    char* tempName = realpath(name, buffer);
+
     if(tempName == NULL) {
         ModelicaFormatError("Not possible to construct full path name of \"%s\"\n%s",
             name, strerror(errno));
@@ -449,8 +446,6 @@ const char* ModelicaInternal_fullPathName(const char* name)
     strcpy(fullName, tempName);
 #if defined(_WIN32)
     ModelicaConvertToUnixDirectorySeparator(fullName);
-#else
-    free(tempName);
 #endif
 
     return fullName;

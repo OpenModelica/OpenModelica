@@ -379,7 +379,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   return parseStream(input, runningTestsuite);
 }
 
-static void* parseFile(const char* fileName, int flags, const char *encoding, int runningTestsuite)
+static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
@@ -390,15 +390,15 @@ static void* parseFile(const char* fileName, int flags, const char *encoding, in
   int len = 0;
 
   ModelicaParser_encoding = encoding;
-  ModelicaParser_filename_C = fileName;
+  ModelicaParser_filename_C = infoName;
   ModelicaParser_flags = flags;  
   isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
   omc_first_comment = 0;
 
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); fflush(stderr); }
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", fileName); fflush(stderr); }
 
-  len = strlen(ModelicaParser_filename_C);
-  if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
+  len = strlen(fileName);
+  if (len > 3 && 0==strcmp(fileName+len-4,".mof"))
     ModelicaParser_flags |= PARSE_FLAT;
 
   /*
@@ -409,7 +409,7 @@ static void* parseFile(const char* fileName, int flags, const char *encoding, in
   stat(ModelicaParser_filename_C, &st);
   if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags, runningTestsuite);
 
-  fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
+  fName  = (pANTLR3_UINT8)fileName;
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
     return NULL;

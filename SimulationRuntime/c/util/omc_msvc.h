@@ -65,7 +65,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define snprintf sprintf_s
 #endif
 
-
+#define PATH_MAX _MAX_PATH
+char *realpath(const char *path, char *resolved_path);
 int asprintf(char **strp, const char *fmt, ...);
 
 #endif

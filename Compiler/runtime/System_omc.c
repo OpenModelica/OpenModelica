@@ -38,6 +38,9 @@ extern "C"
 #endif
 
 #include <ctype.h> /* for toupper */
+#include <limits.h>
+#include <stdlib.h>
+#include "omc_msvc.h"
 #include "openmodelica.h"
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
@@ -673,6 +676,14 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   snprintf(buf,len,fmt,d);
   buf[1023] = 0;
   return buf;
+}
+
+extern const char* System_realpath(const char *path)
+{
+  char buf[PATH_MAX];
+  if (realpath(path, buf) == NULL)
+    MMC_THROW();
+  return init_modelica_string(buf);
 }
 
 #ifdef __cplusplus

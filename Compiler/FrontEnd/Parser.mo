@@ -44,13 +44,15 @@ public import Interactive;
 protected import Config;
 protected import ParserExt;
 protected import SCodeUtil;
+protected import System;
+protected import Util;
 
 public function parse "Parse a mo-file"
   input String filename;
   input String encoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parse(filename, Config.acceptedGrammar(), encoding, Config.getRunningTestsuite());
+  outProgram := ParserExt.parse(filename, Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Config.getRunningTestsuite());
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
@@ -59,8 +61,7 @@ public function parseexp "Parse a mos-file"
   input String filename;
   output Interactive.Statements outStatements;
 algorithm
-  outStatements := ParserExt.parseexp(filename,
-    Config.acceptedGrammar(), Config.getRunningTestsuite());
+  outStatements := ParserExt.parseexp(filename, Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Config.getRunningTestsuite());
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"

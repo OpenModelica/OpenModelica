@@ -44,6 +44,7 @@ public import Interactive;
 
 public function parse "Parse a mo-file"
   input String filename;
+  input String infoFilename;
   input Integer acceptedGram;
   input String encoding;
   input Boolean runningTestsuite;
@@ -54,6 +55,7 @@ end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
+  input String infoFilename;
   input Integer acceptedGram;
   input Boolean runningTestsuite;
   output Interactive.Statements outStatements;

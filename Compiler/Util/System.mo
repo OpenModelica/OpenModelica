@@ -983,4 +983,10 @@ public function numBits
   external "C" n=architecture_numbits() annotation(Include="#define architecture_numbits() (8*sizeof(void*))");
 end numBits;
 
+public function realpath
+  input String path;
+  output String fullpath;
+  external "C" fullpath = System__realpath(path) annotation(Library = {"omcruntime"});
+end realpath;
+
 end System;
