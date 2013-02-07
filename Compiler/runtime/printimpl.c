@@ -57,6 +57,10 @@ int cursize=0;
 int errorNfilled=0;
 int errorCursize=0;
 
+ char** savedBuffers=0;
+ long* savedCurSize;
+ long* savedNfilled;
+
 static int increase_buffer(void)
 {
 

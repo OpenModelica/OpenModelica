@@ -46,6 +46,80 @@ void Print_5finit(void)
   int errorCursize=0;
 }
 
+RML_BEGIN_LABEL(Print__saveAndClearBuf)
+{
+  long freeHandle,foundHandle=0;
+
+  if (! savedBuffers) { 
+    savedBuffers = (char**)malloc(MAXSAVEDBUFFERS*sizeof(char*));
+    if (!savedBuffers) { 
+     fprintf(stderr, "Internal error allocating savedBuffers in Print.saveAndClearBuf\n");
+     RML_TAILCALLK(rmlFC);
+    }
+    memset(savedBuffers,0,MAXSAVEDBUFFERS);
+  }
+  if (! savedCurSize) { 
+    savedCurSize = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    if (!savedCurSize) { 
+     fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
+     RML_TAILCALLK(rmlFC);
+    }
+    memset(savedCurSize,0,MAXSAVEDBUFFERS);
+  }
+  if (! savedNfilled) { 
+    savedNfilled = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    if (!savedNfilled) { 
+     fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
+     RML_TAILCALLK(rmlFC);
+     }
+    memset(savedNfilled,0,MAXSAVEDBUFFERS);
+  }
+  for (freeHandle=0; freeHandle< MAXSAVEDBUFFERS; freeHandle++) {
+    if (savedBuffers[freeHandle]==0)
+    {
+      foundHandle = 1;
+      break;
+    }
+  }
+  if (!foundHandle) {
+      fprintf(stderr,"Internal error, can not save more than %d buffers, increase MAXSAVEDBUFFERS in printimpl.c\n",MAXSAVEDBUFFERS);
+      RML_TAILCALLK(rmlFC);
+  }
+  savedBuffers[freeHandle] = buf;
+  savedCurSize[freeHandle] = cursize;
+  savedNfilled[freeHandle] = nfilled;
+  buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));  
+  nfilled=0;
+  cursize=0;
+  rmlA0 = mk_icon(freeHandle);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Print__restoreBuf)
+{
+  long handle = (long)RML_UNTAGFIXNUM(rmlA0);
+
+  if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
+    fprintf(stderr,"Internal error, hanlde %d out of range. Should be in [%d,&d]\n",handle,0,MAXSAVEDBUFFERS-1);
+    RML_TAILCALLK(rmlFC);
+  } else {
+    if (buf) { free(buf);}
+    buf = savedBuffers[handle];
+    cursize = savedCurSize[handle];
+    nfilled = savedNfilled[handle];
+    savedBuffers[handle] = 0;
+    savedCurSize[handle] = 0;
+    savedNfilled[handle] = 0;
+    if (buf == 0) { 
+      fprintf(stderr,"Internal error, handle %d does not contain a valid buffer pointer\n",handle);
+      RML_TAILCALLK(rmlFC);
+    }
+    RML_TAILCALLK(rmlSC);
+   }
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Print__setBufSize)
 {
   long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!

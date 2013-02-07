@@ -41,6 +41,16 @@ encapsulated package Print
   some other place. It also contains print functions for error messages, to be
   used in interactive mode."
 
+ public function saveAndClearBuf "saves and clears content of buffer and return a handle to the saved buffer so it can be restored by restorBuf later on"
+  output Integer handle;
+  external "C";
+end saveAndClearBuf;
+
+public function restoreBuf 
+  input Integer handle;
+  external "C";
+end restoreBuf;
+
 public function setBufSize
   input Integer newSize;
 

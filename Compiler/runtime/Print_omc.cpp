@@ -35,6 +35,19 @@ extern "C" {
 
 #include "printimpl.c"
 
+extern int Print_saveAndClearBuf()
+{
+  // TODO: copy impl. from Print_rml.c 
+  MMC_THROW();
+  return 0;
+}
+
+extern int Print_restoreBuf(int handle)
+{
+// TODO: copy impl. from Print_rml.c
+  MMC_THROW();
+}
+
 extern void Print_printErrorBuf(const char* str)
 {
   if (PrintImpl__printErrorBuf(str))
