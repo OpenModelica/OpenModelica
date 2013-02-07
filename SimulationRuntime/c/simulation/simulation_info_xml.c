@@ -29,6 +29,7 @@
  */
 
 #include "simulation_info_xml.h"
+#include "omc_msvc.h" /* for asprintf */
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
@@ -81,12 +82,7 @@ static void XMLCALL endElement(void *userData, const char *name) {
     return;
   }
   if (0==strcmp("nonlinear",name)) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    xml->equationInfo[curIndex].name = malloc(snprintf(NULL, 0, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar) + 1);
-    sprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
-#else
     asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
-#endif
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;
