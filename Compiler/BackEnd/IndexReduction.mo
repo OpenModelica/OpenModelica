@@ -5754,7 +5754,7 @@ algorithm
     local Integer diffcount;
     case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       equation
-        false = intEq(diffcount,level);
+        false = intEq(diffcount,level) or intEq(diffcount,1);
       then
         ();
     else then ();
@@ -7512,6 +7512,7 @@ algorithm
       array<Boolean> eqnsflag;
       BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
+      BackendDAE.StrongComponents comps;
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
@@ -7544,7 +7545,7 @@ algorithm
         GraphML.dumpGraph(graph,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,NONE(),_)      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps={})),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
@@ -7565,7 +7566,7 @@ algorithm
         GraphML.dumpGraph(graph,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,SOME(vec3),_)      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps={})),_,SOME(vec3),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
@@ -7577,6 +7578,22 @@ algorithm
         eqnsids = List.intRange(neqns);
         graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
         ((_,_,_,_,graph)) = List.fold(eqnsids,addDirectedNumEdgesGraph,(1,m,vec2,vec3,graph));
+        GraphML.dumpGraph(graph,filename);
+     then
+       ();
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps=comps)),_,NONE(),_)      
+      equation
+        vars = BackendVariable.daeVars(isyst);
+        eqns = BackendEquation.daeEqns(isyst);
+        funcs = BackendDAEUtil.getFunctions(ishared);
+        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
+        graph = GraphML.getGraph("G",false);
+        // generate a node for each component and get the edges
+        vec3 = arrayCreate(arrayLength(mt),-1); 
+        graph = addCompsGraph(comps,vars,vec3,1,graph);
+        // generate edges
+        mapIncRowEqn = arrayCreate(arrayLength(mt),-1);
+        graph = addCompsEdgesGraph(comps,m,vec3,1,1,mapIncRowEqn,1,graph);
         GraphML.dumpGraph(graph,filename);
      then
        ();
@@ -8009,6 +8026,138 @@ algorithm
     else then inTpl;            
   end matchcontinue;
 end addDirectedNumEdgeGraphEnhanced;
+
+protected function addCompsGraph "function: addCompsGraph
+  author: Frenkel TUD 2013-02,
+  add for each component a node to the graph and strore 
+  varcomp[var] = comp."
+  input BackendDAE.StrongComponents iComps;
+  input BackendDAE.Variables vars;
+  input array<Integer> varcomp;
+  input Integer iN;
+  input GraphML.Graph iGraph;
+  output GraphML.Graph oGraph;
+algorithm
+  oGraph := match(iComps,vars,varcomp,iN,iGraph)
+    local
+      BackendDAE.StrongComponents rest;
+      BackendDAE.StrongComponent comp;
+      list<Integer> vlst;
+      GraphML.Graph graph;
+      array<Integer> varcomp1;
+      String text;
+      list<BackendDAE.Var> varlst;
+    case ({},_,_,_,_) then iGraph;
+    case (comp::rest,_,_,_,_)
+      equation
+        (_,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        varcomp1 = List.fold1r(vlst,arrayUpdate,iN,varcomp);
+        varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
+        text = intString(iN) +& ":" +& stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
+        graph = GraphML.addNode("n" +& intString(iN),text,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),iGraph); 
+      then
+        addCompsGraph(rest,vars,varcomp1,iN+1,graph);
+  end match;
+end addCompsGraph;
+
+protected function addCompsEdgesGraph "function: addCompsEdgesGraph
+  author: Frenkel TUD 2013-02,
+  add for each component the edges to the graph."
+  input BackendDAE.StrongComponents iComps;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> varcomp;
+  input Integer iN;
+  input Integer id;
+  input array<Integer> markarray;
+  input Integer mark;
+  input GraphML.Graph iGraph;
+  output GraphML.Graph oGraph;
+algorithm
+  oGraph := match(iComps,m,varcomp,iN,id,markarray,mark,iGraph)
+    local
+      BackendDAE.StrongComponents rest;
+      BackendDAE.StrongComponent comp;
+      list<Integer> elst,vlst,usedvlst;
+      Integer n;
+      GraphML.Graph graph;
+    case ({},_,_,_,_,_,_,_) then iGraph;
+    case (comp::rest,_,_,_,_,_,_,_)
+      equation
+        // get eqns and vars of comps
+        (elst,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        // get used vars of comp
+        _ = List.fold1r(vlst,arrayUpdate,mark,markarray) "set assigned visited";
+        vlst = getUsedVarsComp(elst,m,markarray,mark,{});
+        (n,graph) = addCompEdgesGraph(vlst,varcomp,markarray,mark+1,iN,id,iGraph);
+      then
+        addCompsEdgesGraph(rest,m,varcomp,iN+1,n,markarray,mark+2,graph);
+  end match;
+end addCompsEdgesGraph;
+
+protected function getUsedVarsComp "function: getUsedVarsComp
+  author: Frenkel TUD 2013-02,
+  get all used var of the comp."
+  input list<Integer> iEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> markarray;
+  input Integer mark;
+  input list<Integer> iVars;
+  output list<Integer> oVars;
+algorithm
+  oVars := match(iEqns,m,markarray,mark,iVars)
+    local
+      list<Integer> rest,vlst;
+      Integer e;
+    case ({},_,_,_,_) then iVars;
+    case (e::rest,_,_,_,_)
+      equation
+        vlst = List.select1(m[e], intGt, 0);
+        vlst = List.select1r(vlst, isUnMarked, (markarray,mark));
+        _ = List.fold1r(vlst,arrayUpdate,mark,markarray) "set visited";
+        vlst = listAppend(vlst,iVars);
+      then
+        getUsedVarsComp(rest,m,markarray,mark,vlst);
+  end match;
+end getUsedVarsComp;
+
+protected function addCompEdgesGraph "function: addCompEdgesGraph
+  author: Frenkel TUD 2013-02,
+  add for eqach used var of the comp an edge."
+  input list<Integer> iVars;
+  input array<Integer> varcomp;
+  input array<Integer> markarray;
+  input Integer mark;
+  input Integer iN;
+  input Integer id;
+  input GraphML.Graph iGraph;
+  output Integer oN;
+  output GraphML.Graph oGraph;
+algorithm
+  (oN,oGraph) := matchcontinue(iVars,varcomp,markarray,mark,iN,id,iGraph)
+    local
+      list<Integer> rest;
+      Integer v,n,c;
+      GraphML.Graph graph;
+      String text;
+      Option<GraphML.EdgeLabel> label;
+    case ({},_,_,_,_,_,_) then (iN,iGraph);
+    case (v::rest,_,_,_,_,_,_)
+      equation
+        c = varcomp[v];
+        false = intEq(markarray[c],mark);
+        _ = arrayUpdate(markarray,c,mark);
+        graph = GraphML.addEgde("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(SOME(GraphML.ARROWSTANDART()),NONE()),iGraph);
+        (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id+1,graph);
+      then
+        (n,graph);
+    case (v::rest,_,_,_,_,_,_)
+      equation
+        (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id,iGraph);
+      then
+        (n,graph);
+  end matchcontinue;
+end addCompEdgesGraph;
+
 
 protected function solvabilityWights "function: solvabilityWights
   author: Frenkel TUD 2012-05,
