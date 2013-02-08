@@ -1367,6 +1367,7 @@ algorithm
       Env.Cache cache;
       list<list<DAE.Exp>> mat;
       Absyn.Info info;
+      DAE.Dimension ddim;
     
     case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(1),_,st,_)
       equation
@@ -1411,7 +1412,8 @@ algorithm
          that is not done yet. Solution: Examine Element to find modifier
          which will determine dimension size.";
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache, env, dimExp, impl, st, msg);
-        v2 = cevalBuiltinSize3(dims, dimv);
+        ddim = listGet(dims, dimv);
+        (cache, v2, st_1) = cevalDimension(cache, env, ddim, impl, st, msg);
       then
         (cache,v2,st_1);
     
@@ -6722,5 +6724,44 @@ algorithm
   end match;
 end cevalAstExpexpList;
 
+protected function cevalDimension
+  "Constant evaluates a dimension, returning the size of the dimension as a value."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Dimension inDimension;
+  input Boolean inImpl;
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache, outValue, outST) :=
+  match(inCache, inEnv, inDimension, inImpl, inST, inMsg)
+    local
+      Integer dim_int;
+      DAE.Exp exp;
+      Env.Cache cache;
+      Values.Value res;
+      Option<Interactive.SymbolTable> st;
+
+    // Integer dimension, already constant.
+    case (_, _, DAE.DIM_INTEGER(integer = dim_int), _, _, _)
+      then (inCache, Values.INTEGER(dim_int), inST);
+
+    // Enumeration dimension, already constant.
+    case (_, _, DAE.DIM_ENUM(size = dim_int), _, _, _)
+      then (inCache, Values.INTEGER(dim_int), inST);
+
+    // Dimension given by expression, evaluate the expression.
+    case (_, _, DAE.DIM_EXP(exp = exp), _, _, _)
+      equation
+        (cache, res, st) = ceval(inCache, inEnv, exp, inImpl, inST, inMsg);
+      then
+        (cache, res, st);
+
+  end match;
+end cevalDimension;
+        
 end Ceval;
 
