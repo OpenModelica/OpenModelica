@@ -207,7 +207,6 @@ void SimulationWidget::setUpForm()
   mpLogJacobianNonLinearSystemsCheckBox = new QCheckBox(tr("Jacobians Non Linear Systems"));
   mpLogResidualsInitializationCheckBox = new QCheckBox(tr("Initialization Residuals"));
   mpLogSimulationCheckBox = new QCheckBox(tr("Simulation Process"));
-  mpLogSimulationCheckBox = new QCheckBox(tr("Simulation Process"));
   mpLogSolverCheckBox = new QCheckBox(tr("Solver Process"));
   mpLogFinalSolutionOfInitializationCheckBox = new QCheckBox(tr("Final Initialization Solution"));
   mpLogStatsCheckBox = new QCheckBox(tr("Timer/Events/Solver Statistics"));
