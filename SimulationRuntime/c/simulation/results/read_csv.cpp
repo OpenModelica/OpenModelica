@@ -65,17 +65,10 @@ int read_csv_dataset_size(const char* filename)
   return size;
 }
 
-char** read_csv_variables(const char* filename)
+char** read_csv_variables(FILE *fin)
 {
-  FILE *fin;
   int length = 0, numVar = 0, p;
   char *buf,**res,**tmp;
-
-  fin = fopen(filename,"r");
-  if (!fin) {
-    /* c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("read_csv_variables: Could not open file: %s"), &filename, 1); */
-    return NULL;
-  }
 
   do {
     p = (char)fgetc(fin);
