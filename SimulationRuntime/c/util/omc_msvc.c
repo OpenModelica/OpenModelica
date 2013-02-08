@@ -31,6 +31,7 @@
 #include "omc_msvc.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 int asprintf(char **strp, const char *fmt, ...) {
