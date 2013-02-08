@@ -5346,6 +5346,7 @@ algorithm
         p_class = Absyn.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         Absyn.CLASS(name = id,info = Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
+        filename = Util.testsuiteFriendly(filename);
         str_sline = intString(sline);
         str_scol = intString(scol);
         str_eline = intString(eline);
@@ -5475,6 +5476,7 @@ algorithm
         element_str = stringAppendList(
           {"elementtype=classdef, classname=",id,
           ", classrestriction=",str_restriction});
+        file = Util.testsuiteFriendly(file);
         sline_str = intString(sline);
         scol_str = intString(scol);
         eline_str = intString(eline);
@@ -5499,6 +5501,7 @@ algorithm
         eline_str = intString(eline);
         ecol_str = intString(ecol);
         readonly_str = selectString(isReadOnly, "readonly", "writable");
+        file = Util.testsuiteFriendly(file);
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
@@ -8486,6 +8489,7 @@ algorithm
   str_scol := intString(sc);
   str_eline := intString(el);
   str_ecol := intString(ec);
+  file := Util.testsuiteFriendly(file);
   res_1 := stringAppendList(
           {"{ rec(name=\"",name,"\", partial=",strPartial,", final=",
           strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=\"",
