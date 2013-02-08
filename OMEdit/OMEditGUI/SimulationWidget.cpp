@@ -194,27 +194,56 @@ void SimulationWidget::setUpForm()
   }
   mpIndexReductionComboBox->setCurrentIndex(mpIndexReductionComboBox->findText(mpParentMainWindow->mpOMCProxy->getIndexReductionMethod()));
   // Logging
-  mpMeasureTimeCheckBox = new QCheckBox(tr("Measure simulation time (~5-25% overhead)"));
-  mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
-  mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
-  mpLogResultInitializationCheckBox = new QCheckBox(tr("Initialization Result"));
-  mpLogSolverCheckBox = new QCheckBox(tr("Solver"));
-  mpLogEventsCheckBox = new QCheckBox(tr("Events"));
-  mpLogNonLinearSystemsCheckBox = new QCheckBox(tr("Non Linear Systems"));
-  mpLogZeroCrossingsCheckBox = new QCheckBox(tr("Zero Crossings"));
+  mpLogDasslSolverCheckBox = new QCheckBox(tr("DASSL Solver Information"));
   mpLogDebugCheckBox = new QCheckBox(tr("Debug"));
+  mpLogDynamicStateSelectionCheckBox = new QCheckBox(tr("Dynamic State Selection Information"));
+  mpLogJacobianDynamicStateSelectionCheckBox = new QCheckBox(tr("Jacobians Dynamic State Selection Information"));
+  mpLogEventsCheckBox = new QCheckBox(tr("Event Iteration"));
+  mpLogVerboseEventsCheckBox = new QCheckBox(tr("Verbose Event System"));
+  mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
+  mpLogJacobianCheckBox = new QCheckBox(tr("Jacobians Matrix"));
+  mpLogNonLinearSystemsCheckBox = new QCheckBox(tr("Non Linear Systems"));
+  mpLogVerboseNonLinearSystemsCheckBox = new QCheckBox(tr("Verbose Non Linear Systems"));
+  mpLogJacobianNonLinearSystemsCheckBox = new QCheckBox(tr("Jacobians Non Linear Systems"));
+  mpLogResidualsInitializationCheckBox = new QCheckBox(tr("Initialization Residuals"));
+  mpLogSimulationCheckBox = new QCheckBox(tr("Simulation Process"));
+  mpLogSimulationCheckBox = new QCheckBox(tr("Simulation Process"));
+  mpLogSolverCheckBox = new QCheckBox(tr("Solver Process"));
+  mpLogFinalSolutionOfInitializationCheckBox = new QCheckBox(tr("Final Initialization Solution"));
+  mpLogStatsCheckBox = new QCheckBox(tr("Timer/Events/Solver Statistics"));
+  mpLogUtilCheckBox = new QCheckBox(tr("Util"));
+  mpLogZeroCrossingsCheckBox = new QCheckBox(tr("Zero Crossings"));
   // layout for logging group
   QGridLayout *pLoggingGroupLayout = new QGridLayout;
-  pLoggingGroupLayout->addWidget(mpLogStatsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogInitializationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogResultInitializationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogSolverCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogEventsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogDasslSolverCheckBox);
   pLoggingGroupLayout->addWidget(mpLogDebugCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogDynamicStateSelectionCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogJacobianDynamicStateSelectionCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogEventsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogVerboseEventsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogInitializationCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogJacobianCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogVerboseNonLinearSystemsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogJacobianNonLinearSystemsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogResidualsInitializationCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogSimulationCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogSolverCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogFinalSolutionOfInitializationCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogStatsCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogUtilCheckBox);
+  pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox);
   mpLoggingGroup = new QGroupBox(tr("Logging (Optional)"));
   mpLoggingGroup->setLayout(pLoggingGroupLayout);
+  mpLoggingScrollArea = new QScrollArea;
+  mpLoggingScrollArea->setFrameShape(QFrame::NoFrame);
+  mpLoggingScrollArea->setBackgroundRole(QPalette::Base);
+  mpLoggingScrollArea->setWidgetResizable(true);
+  mpLoggingScrollArea->setWidget(mpLoggingGroup);
+  // measure simulation time checkbox
+  mpMeasureTimeCheckBox = new QCheckBox(tr("Measure simulation time (~5-25% overhead)"));
+  // cpu-time checkbox
+  mpCPUTimeCheckBox = new QCheckBox(tr("CPU time"));
   // set Output Tab Layout
   QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
   pSimulationFlagsTabLayout->setAlignment(Qt::AlignTop);
@@ -234,8 +263,9 @@ void SimulationWidget::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpMatchingAlgorithmComboBox, 5, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionLabel, 6, 0);
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionComboBox, 6, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 7, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingScrollArea, 7, 0, 1, 3);
   pSimulationFlagsTabLayout->addWidget(mpMeasureTimeCheckBox, 8, 0);
+  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 9, 0);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTab, tr("Simulation Flags"));
@@ -428,29 +458,70 @@ void SimulationWidget::simulate()
       simulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
     }
     // setup Logging flags
-    if (mpLogStatsCheckBox->isChecked() || mpLogInitializationCheckBox->isChecked() || mpLogResultInitializationCheckBox->isChecked()
-        || mpLogSolverCheckBox->isChecked() || mpLogEventsCheckBox->isChecked() || mpLogNonLinearSystemsCheckBox->isChecked()
-        || mpLogZeroCrossingsCheckBox->isChecked() || mpLogDebugCheckBox->isChecked())
+    if (mpLogDasslSolverCheckBox->isChecked() ||
+        mpLogDebugCheckBox->isChecked() ||
+        mpLogDynamicStateSelectionCheckBox->isChecked() ||
+        mpLogJacobianDynamicStateSelectionCheckBox->isChecked() ||
+        mpLogEventsCheckBox->isChecked() ||
+        mpLogVerboseEventsCheckBox->isChecked() ||
+        mpLogInitializationCheckBox->isChecked() ||
+        mpLogJacobianCheckBox->isChecked() ||
+        mpLogNonLinearSystemsCheckBox->isChecked() ||
+        mpLogVerboseNonLinearSystemsCheckBox->isChecked() ||
+        mpLogJacobianNonLinearSystemsCheckBox->isChecked() ||
+        mpLogResidualsInitializationCheckBox->isChecked() ||
+        mpLogSimulationCheckBox->isChecked() ||
+        mpLogSolverCheckBox->isChecked() ||
+        mpLogFinalSolutionOfInitializationCheckBox->isChecked() ||
+        mpLogStatsCheckBox->isChecked() ||
+        mpLogStatsCheckBox->isChecked() ||
+        mpLogZeroCrossingsCheckBox->isChecked())
     {
       QString loggingFlagName, loggingFlagValues;
       loggingFlagName.append("-lv=");
-      if (mpLogStatsCheckBox->isChecked())
-        loggingFlagValues.append("LOG_STATS");
-      if (mpLogInitializationCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_INIT") : loggingFlagValues.append(",LOG_INIT");
-      if (mpLogResultInitializationCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_RES_INIT") : loggingFlagValues.append(",LOG_RES_INIT");
-      if (mpLogSolverCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOLVER") : loggingFlagValues.append(",LOG_SOLVER");
-      if (mpLogEventsCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS") : loggingFlagValues.append(",LOG_EVENTS");
-      if (mpLogNonLinearSystemsCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NONLIN_SYS") : loggingFlagValues.append(",LOG_NONLIN_SYS");
-      if (mpLogZeroCrossingsCheckBox->isChecked())
-        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
+      if (mpLogDasslSolverCheckBox->isChecked())
+        loggingFlagValues.append("LOG_DDASRT");
       if (mpLogDebugCheckBox->isChecked())
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DEBUG") : loggingFlagValues.append(",LOG_DEBUG");
+      if (mpLogDynamicStateSelectionCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS") : loggingFlagValues.append(",LOG_DSS");
+      if (mpLogJacobianDynamicStateSelectionCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS_JAC") : loggingFlagValues.append(",LOG_DSS_JAC");
+      if (mpLogEventsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS") : loggingFlagValues.append(",LOG_EVENTS");
+      if (mpLogVerboseEventsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS_V") : loggingFlagValues.append(",LOG_EVENTS_V");
+      if (mpLogInitializationCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_INIT") : loggingFlagValues.append(",LOG_INIT");
+      if (mpLogJacobianCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_JAC") : loggingFlagValues.append(",LOG_JAC");
+      if (mpLogNonLinearSystemsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS") : loggingFlagValues.append(",LOG_NLS");
+      if (mpLogVerboseNonLinearSystemsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_V") : loggingFlagValues.append(",LOG_NLS_V");
+      if (mpLogJacobianNonLinearSystemsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_JAC") : loggingFlagValues.append(",LOG_NLS_JAC");
+      if (mpLogResidualsInitializationCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_RES_INIT") : loggingFlagValues.append(",LOG_RES_INIT");
+      if (mpLogSimulationCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SIMULATION") : loggingFlagValues.append(",LOG_SIMULATION");
+      if (mpLogSolverCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOLVER") : loggingFlagValues.append(",LOG_SOLVER");
+      if (mpLogFinalSolutionOfInitializationCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOTI") : loggingFlagValues.append(",LOG_SOTI");
+      if (mpLogStatsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_STATS") : loggingFlagValues.append(",LOG_STATS");
+      if (mpLogStatsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_UTIL") : loggingFlagValues.append(",LOG_UTIL");
+      if (mpLogZeroCrossingsCheckBox->isChecked())
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
+
       simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
+    }
+    // setup cpu time flag
+    if (mpCPUTimeCheckBox->isChecked())
+    {
+      simulationFlags.append("-cpu=");
     }
     // before simulating save the simulation options and set the matching algorithm & index reduction.
     saveSimulationOptions();
