@@ -158,12 +158,12 @@ algorithm
         mExt=getExtIncidenceMatrix(m);
 
         approximatedEquations_one = getEquationsWithApproximatedAnnotation(dlow_1);
-        approximatedEquations = List.map1(approximatedEquations_one,intAdd,-1);
+        approximatedEquations = List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
         
-        mExt=removeEquations(mExt,approximatedEquations_one);
+        mExt=removeEquations(mExt,approximatedEquations);
         
         printSep(getMathematicaText("Approximated equations to be removed"));
-        printSep(equationsToMathematicaGrid(approximatedEquations_one,allEqs,allVars,sharedVars,mapIncRowEqn));
+        printSep(equationsToMathematicaGrid(approximatedEquations,allEqs,allVars,sharedVars,mapIncRowEqn));
 
         printSep(getMathematicaText("After eliminating approximated equations"));
         printSep(equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn));
