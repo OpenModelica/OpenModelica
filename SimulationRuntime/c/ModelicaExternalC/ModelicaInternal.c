@@ -124,6 +124,12 @@ void ModelicaNotExistError(const char* name) {
 #     include <dirent.h>
 #  endif
 
+#if defined(_MSC_VER)
+#if !defined(MAX_PATH)
+#define MAX_PATH 260
+#endif
+#endif
+
 #if !defined(PATH_MAX)
 #define PATH_MAX MAX_PATH
 #endif
