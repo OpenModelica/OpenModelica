@@ -520,7 +520,7 @@ void SimulationWidget::simulate()
     // setup cpu time flag
     if (mpCPUTimeCheckBox->isChecked())
     {
-      simulationFlags.append("-cpu=");
+      simulationFlags.append("-cpu");
     }
     // before simulating save the simulation options and set the matching algorithm & index reduction.
     saveSimulationOptions();
