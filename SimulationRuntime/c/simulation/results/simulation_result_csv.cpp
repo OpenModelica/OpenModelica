@@ -58,8 +58,15 @@ void simulation_result_csv::emit()
   const char* formatstring = "\"%s\",";
   modelica_real value=0;
   rt_tick(SIM_TIMER_OUTPUT);
+  
+  rt_accumulate(SIM_TIMER_TOTAL);
+  static double cpu_offset = rt_accumulated(SIM_TIMER_TOTAL); /* ??? */
+  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL) - cpu_offset;
+  rt_tick(SIM_TIMER_TOTAL);
+  
   fprintf(fout, format, data->localData[0]->timeValue);
-
+  if(cpuTime)
+    fprintf(fout, format, cpuTimeValue);
   for(int i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
     fprintf(fout, format, (data->localData[0])->realVars[i]);
   for(int i = 0; i < data->modelData.nVariablesInteger; i++) if(!data->modelData.integerVarsData[i].filterOutput)
@@ -104,12 +111,12 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
 
   const char* format = "\"%s\",";
   fout = fopen(filename, "w");
-  if(!fout)
-  {
-    ASSERT2(0, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
-  }
+
+  ASSERT2(fout, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
 
   fprintf(fout, format, "time");
+  if(cpuTime)
+    fprintf(fout, format, "$cpu_time");
   for(int i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput)
     fprintf(fout, format, mData->realVarsData[i].info.name);
   for(int i = 0; i < mData->nVariablesInteger; i++) if(!mData->integerVarsData[i].filterOutput)

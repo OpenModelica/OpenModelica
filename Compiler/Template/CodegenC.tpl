@@ -6054,7 +6054,6 @@ case SOME(when as STMT_WHEN(__)) then
   >>
 end algStatementWhenElse;
 
-
 template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an assigment algorithm statement."
 ::=

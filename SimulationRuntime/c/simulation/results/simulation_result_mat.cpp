@@ -154,8 +154,6 @@ void simulation_result_mat::writeParameterData()
   }
 }
 
-
-
 simulation_result_mat::simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data, int cpuTime)
   : simulation_result(filename, numpoints, data, cpuTime), fp(), data1HdrPos(-1), data2HdrPos(-1), ntimepoints(0), startTime(tstart), stopTime(tstop)
 {

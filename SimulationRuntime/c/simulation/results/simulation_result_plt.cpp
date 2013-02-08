@@ -58,9 +58,10 @@
 
 /* static const char * timeName = "time"; */
 
-static int calcDataSize(const MODEL_DATA *modelData)
+int simulation_result_plt::calcDataSize(const MODEL_DATA *modelData)
 {
   int sz = 1; // time
+  if(cpuTime) sz++; // $cpu_time
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) sz++;
   for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) sz++;
   for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) sz++;
@@ -116,13 +117,19 @@ void simulation_result_plt::emit()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
- /*
+/*
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
  */
 void simulation_result_plt::add_result(double *data_, long *actualPoints)
 {
   const DATA *simData = data;
+  
+  rt_accumulate(SIM_TIMER_TOTAL);
+  static double cpu_offset = rt_accumulated(SIM_TIMER_TOTAL); /* ??? */
+  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL) - cpu_offset;
+  rt_tick(SIM_TIMER_TOTAL);
+  
   /* save time first */
   /* cerr << "adding result for time: " << time; */
   /* cerr.flush(); */
@@ -131,12 +138,18 @@ void simulation_result_plt::add_result(double *data_, long *actualPoints)
   {
   std::ostringstream ss;
   ss << "time" << "\n";
-  ss << (data_[currentPos++] = simData->localData[0]->timeValue) << "\n";
+  ss << (data_[currentPos++] = cpuTimeValue) << "\n";
+  
+  if(cpuTime)
+  {
+    ss << "$cpu_time" << "\n";
+    ss << (data_[currentPos++] = -42) << "\n";
+  }
   /* .. reals .. */
   for(int i = 0; i < simData->modelData.nVariablesReal; i++) {
     if(!simData->modelData.realVarsData[i].filterOutput) {
       ss << simData->modelData.realVarsData[i].info.name << "\n";
-      ss << (data[currentPos++] = simData->localData[0]->realVars[i]) << "\n";
+      ss << (data_[currentPos++] = simData->localData[0]->realVars[i]) << "\n";
     }
   }
   /* .. integers .. */
@@ -206,6 +219,9 @@ void simulation_result_plt::add_result(double *data_, long *actualPoints)
 #endif /* CONFIG_WITH_SENDDATA */
   {
     data_[currentPos++] = simData->localData[0]->timeValue;
+    
+    if(cpuTime)
+      data_[currentPos++] = cpuTimeValue;
 
     /* .. reals .. */
     for(int i = 0; i < simData->modelData.nVariablesReal; i++) {
@@ -376,6 +392,16 @@ simulation_result_plt::~simulation_result_plt()
       printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars]);
   fprintf(f, "\n");
   varn++;
+  
+  /* $cpu_time variable. */
+  if(cpuTime)
+  {
+    fprintf(f, "DataSet: $cpu_time\n");
+    for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1]);
+    fprintf(f, "\n");
+    varn++;
+  }
 
   for(int var = 0; var < modelData->nVariablesReal; ++var)
   {

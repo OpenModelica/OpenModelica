@@ -47,6 +47,7 @@ private:
   void add_result(double *data, long *actualPoints);
   void deallocResult();
   void printPltLine(FILE* f, double time, double val);
+  int calcDataSize(const MODEL_DATA *modelData);
 
 public:
   simulation_result_plt(const char* filename, long numpoints, const DATA *data, int cpuTime);
