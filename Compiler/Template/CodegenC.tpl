@@ -8522,7 +8522,7 @@ end patternMatch;
 template infoArgs(Info info)
 ::=
   match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
+  case INFO(__) then '"<%testsuiteFriendly(fileName)%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
 template assertCommon(Exp condition, Exp message, Exp level, Context context, Text &varDecls, Info info)
