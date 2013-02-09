@@ -109,7 +109,7 @@ void ModelicaNotExistError(const char* name) {
 #     include <direct.h>
 #     include <sys/types.h>
 #     include <sys/stat.h>
-      char *realpath(const char *path, char *resolved_path); /* define realpath */
+#     include "omc_msvc.h" /* for realpath */
 #  if defined(__MINGW32__) /* mingw has dirent */
 #     include <sys/types.h>
 #     include <dirent.h>

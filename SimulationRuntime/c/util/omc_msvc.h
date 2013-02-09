@@ -71,4 +71,8 @@ int asprintf(char **strp, const char *fmt, ...);
 
 #endif
 
+#if defined(__MINGW32__)
+char *realpath(const char *path, char *resolved_path);
+#endif
+
 #endif

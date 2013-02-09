@@ -48,8 +48,9 @@ int asprintf(char **strp, const char *fmt, ...) {
 }
 #endif
 
-#if defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <stdlib.h>
+#include <string.h>
 char *realpath(const char *path, char *resolved_path) {
   char buffer[_MAX_PATH];
   if ( _fullpath(resolved_path ? resolved_path : buffer, path, _MAX_PATH ) != NULL ) {
