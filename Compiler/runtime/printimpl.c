@@ -38,9 +38,9 @@
 /* adrpo: this is defined in errorext. (enabled with omc +showErrorMessages) */
 extern int showErrorMessages;
 
-#define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
+#define GROWTH_FACTOR 1.4  /* According to some rumors of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
-#define MAXSAVEDBUFFERS 10 /* Seems reasonable */
+#define MAXSAVEDBUFFERS 10   /* adrpo: added this so it compiles again! MathCore can change it later */
 
 #define buf Print_var_buf
 #define errorBuf Print_var_errorBuf

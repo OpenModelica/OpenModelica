@@ -3707,17 +3707,31 @@ protected function testsuiteFriendly2 "Testsuite friendly name (start after test
   input String name;
   output String friendly;
 algorithm
-  friendly := match (cond,name)
+  friendly := matchcontinue (cond,name)
     local
       Integer i;
       list<String> strs;
+      String newName;
+    
     case (true,_)
       equation
+        true = "Windows_NT" ==& System.os();
+        // replace \\ with / for Windows.
+        newName = System.stringReplace(name, "\\", "/"); 
+        (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
+        friendly = listGet(strs,i);
+      then
+        friendly;
+    
+    case (true,_)
+      equation
+        false = "Windows_NT" ==& System.os();
         (i,strs) = System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then friendly;
+    
     else name;
-  end match;
+  end matchcontinue;
 end testsuiteFriendly2;
 
 end Util;
