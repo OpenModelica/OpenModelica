@@ -93,6 +93,26 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   double lambda = *pLambda;
   long iteration = 0;
+  
+  FILE *pFile = NULL;
+  
+  if(ACTIVE_STREAM(LOG_INIT) && (lambda < 1.0))
+  {
+    char buffer[4096];
+    sprintf(buffer, "%s_initPath.csv", initData->simData->modelData.modelFilePrefix);
+    pFile = fopen(buffer, "wt");
+    fprintf(pFile, "%s,", "iteration");
+    fprintf(pFile, "%s,", "lambda");
+    for(i=0; i<initData->nVars; ++i)
+      fprintf(pFile, "%s,", initData->name[i]);
+    fprintf(pFile, "\n");
+    
+    fprintf(pFile, "%ld,", iteration);
+    fprintf(pFile, "%.16g,", lambda);
+    for(i=0; i<initData->nVars; ++i)
+      fprintf(pFile, "%.16g,", initData->vars[i]);
+    fprintf(pFile, "\n");
+  }
 
   /* check Memory */
   ASSERT(simplex, "out of memory");
@@ -205,6 +225,14 @@ static void NelderMeadOptimization(INIT_DATA* initData,
           lambda = 1.0;
 
         INFO3(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        if(pFile)
+        {
+          fprintf(pFile, "%ld,", iteration);
+          fprintf(pFile, "%.16g,", lambda);
+          for(i=0; i<initData->nVars; ++i)
+            fprintf(pFile, "%.16g,", initData->vars[i]);
+          fprintf(pFile, "\n");
+        }
         continue;
       }
     }
@@ -314,6 +342,16 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   if(pIteration)
     *pIteration = iteration;
+    
+  if(pFile)
+  {
+    fprintf(pFile, "%ld,", iteration);
+    fprintf(pFile, "%.16g,", lambda);
+    for(i=0; i<initData->nVars; ++i)
+      fprintf(pFile, "%.16g,", initData->vars[i]);
+    fprintf(pFile, "\n");
+    fclose(pFile);
+  }
 
   free(xe);
   free(xr);
