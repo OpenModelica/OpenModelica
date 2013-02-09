@@ -126,6 +126,12 @@ void Message(int type, int stream, char *msg, int subline);
 #define RESET_INDENTION(stream)  do{level[stream] = 0;}while(0)
 #define ACTIVE_STREAM(stream)    (useStream[stream])
 
+#ifdef USE_DEBUG_OUTPUT
+  #define DEBUG_STREAM(stream)    (useStream[stream])
+#else
+  #define DEBUG_STREAM(stream)    (0)
+#endif
+
 #define   INFO(stream, msg)                                  do{if(useStream[stream]){sprintf(logBuffer, msg);                               Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)
 #define  INFO1(stream, msg, a)                               do{if(useStream[stream]){sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)
 #define  INFO2(stream, msg, a, b)                            do{if(useStream[stream]){sprintf(logBuffer, msg, a, b);                         Message(LOG_TYPE_INFO, stream, logBuffer, 0);}}while(0)

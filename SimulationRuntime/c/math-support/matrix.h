@@ -51,18 +51,25 @@ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
 }
 #endif
 
-#define print_matrix(A,d1,d2) do {\
+#define print_matrix(A, d1, d2) \
+do \
+{ \
   int r = 0, c = 0;\
   printf("{{"); \
-  for(r = 0; r < d1; r++) {\
-    for(c = 0; c < d2; c++) {\
-      printf("%2.3f",A[r + d1 * c]);\
-      if(c != d2-1) printf(",");\
-    }\
-    if(r != d1-1) printf("},{");\
-  }\
+  for(r = 0; r < d1; r++) \
+  { \
+    for(c = 0; c < d2; c++) \
+    { \
+      printf("%2.3f", A[r + d1 * c]); \
+      if(c != d2-1) \
+        printf(","); \
+    } \
+    if(r != d1-1) \
+      printf("},{"); \
+  } \
   printf("}}\n"); \
 } while(0)
+
 #define print_vector(b,d1) do {\
   int i = 0; \
   printf("{");\
@@ -81,60 +88,72 @@ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
 #define set_vector_elt(v,i,value) v[i] = value
 #define get_vector_elt(v,i) v[i]
 
-#define solve_linear_equation_system(A,b,size,id) do { integer n = size; \
-integer nrhs = 1; /* number of righthand sides*/\
-integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
-integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
-integer info = 0; /* output */ \
-assert(ipiv != 0); \
-_omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
- if(info < 0) { \
-   INFO3(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
-   data->simulationInfo.found_solution = -1; \
-   if(!data->simulationInfo.initial){ \
-      WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
-   } \
- } \
- else if(info > 0) { \
-   INFO4(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].\n",id,data->localData[0]->timeValue,info,info); \
-   data->simulationInfo.found_solution = -1; \
-   if(!data->simulationInfo.initial){ \
-      if(ACTIVE_STREAM(LOG_NLS)) { \
+#define solve_linear_equation_system(A,b,size,id) do \
+{ \
+  integer n = size; \
+  integer nrhs = 1; /* number of righthand sides*/ \
+  integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/ \
+  integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
+  integer info = 0; /* output */ \
+  assert(ipiv != 0); \
+  _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
+  if(info < 0) \
+  { \
+     INFO3(LOG_NLS, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", id, data->localData[0]->timeValue, info); \
+     data->simulationInfo.found_solution = -3; /* Error solving linear system of equations */ \
+     if(!data->simulationInfo.initial) \
+     { \
+       WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", id, data->localData[0]->timeValue, info); \
+     } \
+  } \
+  else if(info > 0) \
+  { \
+    INFO4(LOG_NLS, "Error solving linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].", id, data->localData[0]->timeValue, info, info); \
+    data->simulationInfo.found_solution = -3; /* Error solving linear system of equations */ \
+    if(!data->simulationInfo.initial) \
+    { \
+      if(ACTIVE_STREAM(LOG_NLS)) \
+      { \
         long int l=0; \
         long int k=0; \
-        for (l=0;l<size;l++) { \
-            for (k=0;k<size;k++) { \
-              printf("%.5f ",get_matrix_elt(A,l,k,size)); \
-            } \
-            printf("\n"); \
+        char buffer[4096]; \
+        INDENT(LOG_NLS); \
+        for (l=0;l<size;l++) \
+        { \
+          buffer[0] = 0; \
+          for(k=0; k<size; k++) \
+            sprintf(buffer, "%s%10g ", buffer, get_matrix_elt(A, l, k, size)); \
+          INFO(LOG_NLS, buffer); \
         } \
+        RELEASE(LOG_NLS); \
       } \
-      WARNING4(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].\n",id,data->localData[0]->timeValue,info,info); \
-   } \
- } \
-free(ipiv); \
-} while(0) /* (no trailing ; ) */
+      WARNING4(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].", id, data->localData[0]->timeValue, info, info); \
+    } \
+  } \
+  free(ipiv); \
+} while(0) /* no trailing ; */
 
 #define extraPolate(v,old1,old2) (data->localData[1]->timeValue == data->localData[2]->timeValue ) ? old1: \
 (((old1)-(old2))/(data->localData[1]->timeValue-data->localData[2]->timeValue)*data->localData[0]->timeValue \
 +(data->localData[1]->timeValue*(old2)-data->localData[2]->timeValue*(old1))/ \
 (data->localData[1]->timeValue-data->localData[2]->timeValue))
 
-#define mixed_equation_system(size) do { \
-    int stepCount = 0; \
-    int hybridIterations = 0; \
-    data->simulationInfo.found_solution = 0; \
-    do { \
-        modelica_boolean discrete_loc[size] = {0}; \
-        modelica_boolean discrete_loc2[size] = {0};
+#define mixed_equation_system(size) do \
+{ \
+  int stepCount = 0; \
+  int hybridIterations = 0; \
+  do \
+  { \
+    modelica_boolean discrete_loc[size] = {0}; \
+    modelica_boolean discrete_loc2[size] = {0};
 
 #define mixed_equation_system_end(size) \
     stepCount++; \
     hybridIterations++; \
-    INFO1(LOG_NLS," ####  hybrid equation system solver step %d.", stepCount); \
-    INFO1(LOG_NLS," #### SOLUTION = %d",data->simulationInfo.found_solution); \
- } while(!data->simulationInfo.found_solution); \
- } while(0)
+    INFO1(LOG_NLS, "####  hybrid equation system solver step %d.", stepCount); \
+    INFO1(LOG_NLS, "#### SOLUTION = %d", data->simulationInfo.found_solution); \
+  } while(!data->simulationInfo.found_solution); \
+} while(0) /* no trailing ; */
 
 #define check_discrete_values(boolVar, size, index) \
 do { \
@@ -143,14 +162,14 @@ do { \
   if(checkRelations(data)){ \
     storeRelations(data);\
     if(hybridIterations++ > 200){ \
-      data->simulationInfo.found_solution = -1; \
+      data->simulationInfo.found_solution = -4; /* hybridIterations++ > 200 */ \
     } \
   }\
-  INFO1(LOG_NLS," ####  Check VAR (system %d)", index); \
+  INFO1(LOG_NLS, "####  Check VAR (system %d)", index); \
   if(data->simulationInfo.found_solution == -1) { \
-    /*system of equations failed */ \
-    data->simulationInfo.found_solution = 0; \
-    INFO(LOG_NLS," ####  NO SOLUTION "); \
+    /* system of equations failed */ \
+    data->simulationInfo.found_solution = -2; \
+    INFO(LOG_NLS, "####  NO SOLUTION "); \
   } else { \
     data->simulationInfo.found_solution = 1; \
     for(i = 0; i < size; i++) { \
@@ -159,11 +178,11 @@ do { \
         break;\
       }\
     }\
-    INFO1(LOG_NLS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
+    INFO1(LOG_NLS, "#### SOLUTION = %c", data->simulationInfo.found_solution ? 'T' : 'F'); \
   }\
-  if(!data->simulationInfo.found_solution ) { \
+  if(!data->simulationInfo.found_solution) { \
     /* try next set of values*/ \
-    INFO(LOG_NLS," #### old STATE "); \
+    INFO(LOG_NLS, "#### old STATE "); \
     for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
@@ -171,7 +190,7 @@ do { \
     } \
     if(nextVar(boolVar,size)) { \
       /* try next set of values*/ \
-      INFO(LOG_NLS," #### next STATE "); \
+      INFO(LOG_NLS, "#### next STATE "); \
       for(i = 0; i < size; i++) { \
         *loc_ptrs[i] = *loc_prePtrs[i] != boolVar[i];  \
         int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
@@ -191,13 +210,13 @@ do { \
   /* we found a solution*/ \
   if(data->simulationInfo.found_solution == 1 && ACTIVE_STREAM(LOG_NLS)){ \
     int i = 0; \
-    INFO1(LOG_NLS," #### SOLUTION FOUND! (system %d)", index); \
+    INFO1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", index); \
     for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
       INFO4(LOG_NLS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
     } \
   } \
-} while(0)
+} while(0) /* no trailing ; */
 
 #endif
