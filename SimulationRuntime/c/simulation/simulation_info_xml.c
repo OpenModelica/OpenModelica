@@ -128,7 +128,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     size_t len = fread(buf, 1, sizeof(buf), file);
     done = len < sizeof(buf);
     if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR) {
-      char *err = XML_ErrorString(XML_GetErrorCode(parser));
+      const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       unsigned long line = XML_GetCurrentLineNumber(parser);
       fclose(file);
       XML_ParserFree(parser);

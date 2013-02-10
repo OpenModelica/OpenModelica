@@ -372,16 +372,16 @@ static void NelderMeadOptimization(INIT_DATA* initData,
  *
  *  \author lochel
  */
-int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda)
+int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, int lambda_steps)
 {
-  double lambda_step = 0.2;
+  double lambda_stepsize = 1.0 / (double)lambda_steps;
   double STOPCR = 1.e-12;
-  long NLOOP = 1000 * initData->nVars;
+  long NLOOP = 1000 * initData->nVars * lambda_steps;
   long iteration = 0;
 
   INFO(LOG_INIT, "NelderMeadOptimization");
   INDENT(LOG_INIT);
-  NelderMeadOptimization(initData, lambda_step, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
+  NelderMeadOptimization(initData, lambda_stepsize, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
   INFO1(LOG_INIT, "iterations: %ld", iteration);
   RELEASE(LOG_INIT);
 

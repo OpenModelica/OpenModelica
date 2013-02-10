@@ -112,7 +112,7 @@ int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
  * 5=free
  */
 int solver_main(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time,
+    const char* init_optiMethod, const char* init_file, double init_time, int lambda_steps,
     int flag, const char* outputVariablesAtEnd)
 {
   int i;
@@ -214,7 +214,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     rt_tick(SIM_TIMER_INIT);
   }
 
-  if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time))
+  if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
   {
     WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv LOG_INIT for more information.");
     simInfo->stopTime = simInfo->startTime;

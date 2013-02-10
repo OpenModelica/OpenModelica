@@ -535,16 +535,19 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   initializeStateSetJacobians(comp->fmuData);
   /*TODO: Simulation stop time is need to calculate in before hand all sample events
           We shouldn't generate them all in beforehand */
-  initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
+  initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
-  if (initialization(comp->fmuData, "", "","",0)){
+  if(initialization(comp->fmuData, "", "", "", 0.0, 5))
+  {
     comp->state = modelError;
-    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+    if(comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiInitialization: failed");
-  } else {
+  }
+  else
+  {
     comp->state = modelInitialized;
-    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+    if(comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiInitialization: succeed");
   }
   /* due to an event overwrite old values */

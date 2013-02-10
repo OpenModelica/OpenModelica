@@ -549,7 +549,7 @@ int solveHybrd(DATA *data, int sysNumber)
         buffer[0] = 0;
         for(j=0; j<solverData->n; j++)
           sprintf(buffer, "%s%10g ", buffer, solverData->fjacobian[i*solverData->n+j]);
-        INFO(LOG_NLS_JAC, buffer);
+        INFO1(LOG_NLS_JAC, "%s", buffer);
       }
       RELEASE(LOG_NLS_JAC);
     }

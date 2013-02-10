@@ -263,14 +263,14 @@ int stateSelection(DATA *data, char reportError)
       /* error, report the matrix and the time */
       char buffer[4096];
       
-      WARNING3(LOG_DSS, "jacobian %dx%d [id: %d]", data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      WARNING3(LOG_DSS, "jacobian %dx%d [id: %ld]", data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
       INDENT(LOG_DSS);
       for(i=0; i < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows; i++)
       {
         buffer[0] = 0;
         for(j=0; j < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols; j++)
           sprintf(buffer, "%s%.5e ", buffer, set->J[i*data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols+j]);
-        WARNING(LOG_DSS, buffer);
+        WARNING1(LOG_DSS, "%s", buffer);
       }
       
       for (i=0; i<set->nCandidates; i++)

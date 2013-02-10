@@ -483,7 +483,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
         buffer[0] = 0;
         for(j=0; j<solverData->n; j++)
           sprintf(buffer, "%s%10g ", buffer, fjac[i*(*n)+j]);
-        INFO(LOG_NLS_JAC, buffer);
+        INFO1(LOG_NLS_JAC, "%s", buffer);
       }
       RELEASE(LOG_NLS_JAC);
     }

@@ -77,7 +77,7 @@ extern "C" {
 #endif
 
 extern int solver_main(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time,
+    const char* init_optiMethod, const char* init_file, double init_time, int lambda_steps,
     int flag, const char* outputVariablesAtEnd);
 
 #ifdef __cplusplus

@@ -342,17 +342,18 @@ void dumpInitialSolution(DATA *simData)
   RELEASE(LOG_SOTI);
 }
 
-/*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
+/*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int lambda_steps)
  *
  *  This is a helper function for initialize.
  *
  *  \param [ref] [initData]
  *  \param [in]  [optiMethod] specified optimization method
  *  \param [in]  [useScaling] specifies whether scaling should be used or not
+ *  \param [in]  [lambda_steps] number of steps
  *
  *  \author lochel
  */
-static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
+static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int lambda_steps)
 {
   DATA *data = initData->simData;
 
@@ -385,9 +386,9 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
     else if(optiMethod == IOM_NEWUOA)
       retVal = newuoa_initialization(initData);
     else if(optiMethod == IOM_NELDER_MEAD_EX)
-      retVal = nelderMeadEx_initialization(initData, &lambda);
+      retVal = nelderMeadEx_initialization(initData, &lambda, lambda_steps);
     else if(optiMethod == IOM_NELDER_MEAD_EX2)
-      retVal = nelderMeadEx_initialization(initData, &lambda);
+      retVal = nelderMeadEx_initialization(initData, &lambda, 1);
     else if(optiMethod == IOM_KINSOL)
       retVal = kinsol_initialization(initData);
     else if(optiMethod == IOM_KINSOL_SCALED)
@@ -441,7 +442,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
  *
  *  \author lochel
  */
-static int initialize(DATA *data, int optiMethod)
+static int initialize(DATA *data, int optiMethod, int lambda_steps)
 {
   const double h = 1e-6;
 
@@ -569,7 +570,7 @@ static int initialize(DATA *data, int optiMethod)
   {
     INFO(LOG_INIT, "start with scaling");
 
-    initialize2(initData, optiMethod, 1);
+    initialize2(initData, optiMethod, 1, lambda_steps);
 
     dumpInitialization(initData);
 
@@ -599,7 +600,7 @@ static int initialize(DATA *data, int optiMethod)
       initData->startValueResidualScalingCoefficients = NULL;
     }
 
-    initialize2(initData, optiMethod, 0);
+    initialize2(initData, optiMethod, 0, lambda_steps);
 
     /* dump final solution */
     dumpInitialization(initData);
@@ -619,14 +620,15 @@ static int initialize(DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn static int numeric_initialization(DATA *data, int optiMethod)
+/*! \fn static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
  *
  *  \param [ref] [data]
  *  \param [in]  [optiMethod] specified optimization method
+ *  \param [in]  [lambda_steps] number of steps
  *
  *  \author lochel
  */
-static int numeric_initialization(DATA *data, int optiMethod)
+static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
 {
   int retVal = 0;
 
@@ -645,7 +647,7 @@ static int numeric_initialization(DATA *data, int optiMethod)
   storeRelations(data);
   storePreValues(data);
 
-  retVal = initialize(data, optiMethod);
+  retVal = initialize(data, optiMethod, lambda_steps);
 
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
@@ -893,7 +895,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
  *
  *  \author lochel
  */
-int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
+int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime, int lambda_steps)
 {
   int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
@@ -970,7 +972,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   if(initMethod == IIM_NONE)
     retVal = 0;
   else if(initMethod == IIM_NUMERIC)
-    retVal = numeric_initialization(data, optiMethod);
+    retVal = numeric_initialization(data, optiMethod, lambda_steps);
   else if(initMethod == IIM_SYMBOLIC)
     retVal = symbolic_initialization(data);
   else
