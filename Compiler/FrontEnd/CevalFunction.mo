@@ -179,6 +179,8 @@ algorithm
       equation
         // Split the definition into function variables and statements.
         (vars, body) = List.splitOnFirstMatch(body, DAEUtil.isNotVar);
+        vars = List.map(vars, removeSelfReferentialDims);
+
         // Save the output variables, so that we can return their values when
         // we're done.
         output_vars = List.filter(vars, DAEUtil.isOutputVar);
@@ -208,6 +210,8 @@ algorithm
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.
         (vars, _) = List.splitOnFirstMatch(body, DAEUtil.isNotVar);
+        vars = List.map(vars, removeSelfReferentialDims);
+
         // Save the output variables, so that we can return their values when
         // we're done.
         output_vars = List.filter(vars, DAEUtil.isOutputVar);
@@ -280,6 +284,75 @@ algorithm
 
   end match;
 end pairFuncParamsWithArgs;
+
+protected function removeSelfReferentialDims
+  "We can't handle self-referential dimensions in function parameters, i.e.
+   x[:, size(x, 1)], so just replace them with : instead."
+  input DAE.Element inElement;
+  output DAE.Element outElement;
+algorithm
+  outElement := match(inElement)
+    local
+      DAE.ComponentRef cref;
+      DAE.VarKind vk;
+      DAE.VarDirection vd;
+      DAE.VarParallelism vp;
+      DAE.VarVisibility vv;
+      DAE.Type ty;
+      Option<DAE.Exp> bind;
+      DAE.InstDims dims;
+      DAE.ConnectorType ct;
+      DAE.ElementSource es;
+      Option<DAE.VariableAttributes> va;
+      Option<SCode.Comment> cmt;
+      Absyn.InnerOuter io;
+      String name;
+
+    case DAE.VAR(cref as DAE.CREF_IDENT(ident = name), vk, vd, vp, vv, ty,
+        bind, dims, ct, es, va, cmt, io)
+      equation
+        dims = List.map1(dims, removeSelfReferentialDim, name);
+      then
+        DAE.VAR(cref, vk, vd, vp, vv, ty, bind, dims, ct, es, va, cmt, io);
+
+  end match;
+end removeSelfReferentialDims;
+
+protected function removeSelfReferentialDim
+  input DAE.Subscript inDim;
+  input String inName;
+  output DAE.Subscript outDim;
+algorithm
+  outDim := matchcontinue(inDim, inName)
+    local
+      DAE.Exp exp;
+      list<DAE.ComponentRef> crefs;
+
+    case (DAE.INDEX(exp = exp), _)
+      equation
+        crefs = Expression.extractCrefsFromExp(exp);
+        true = List.isMemberOnTrue(inName, crefs, isCrefNamed);
+      then
+        DAE.WHOLEDIM();
+        
+    else inDim;
+
+  end matchcontinue;
+end removeSelfReferentialDim;
+
+protected function isCrefNamed
+  input String inName;
+  input DAE.ComponentRef inCref;
+  output Boolean outIsNamed;
+algorithm
+  outIsNamed := matchcontinue(inName, inCref)
+    local
+      String name;
+
+    case (_, DAE.CREF_IDENT(ident = name)) then stringEq(inName, name);
+    else false;
+  end matchcontinue;
+end isCrefNamed;
 
 protected function evaluateExtInputArg
   "Evaluates an external function argument to a value."
@@ -1832,7 +1905,7 @@ algorithm
     case (ty, {}, _, _, _, _) then (inCache, ty, inST);
     
     // Use the given dimension if the dimension has been declared. The list of
-    // dimensions might be empty in this case, so listRestOrEmpty is used
+    // dimensions might be empty in this case, so List.stripFirst is used
     // instead of matching.
     case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
       equation

@@ -3818,7 +3818,7 @@ algorithm
   outList := mapFlat_tail(inList, inMapFunc, {});
 end mapFlatReverse;
 
-protected function mapFlat_tail
+public function mapFlat_tail
   "Tail recursive implementation of mapFlat."
   input list<ElementInType> inList;
   input MapFunc inMapFunc;

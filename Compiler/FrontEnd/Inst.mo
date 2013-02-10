@@ -11660,7 +11660,6 @@ algorithm
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);
 
         ty1 = setFullyQualifiedTypename(ty,fpath);
-        ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
         env_1 = Env.extendFrameT(env_1, n, ty1);
         
         // set the source of this element

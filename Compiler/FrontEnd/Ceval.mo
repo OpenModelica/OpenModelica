@@ -6724,7 +6724,7 @@ algorithm
   end match;
 end cevalAstExpexpList;
 
-protected function cevalDimension
+public function cevalDimension
   "Constant evaluates a dimension, returning the size of the dimension as a value."
   input Env.Cache inCache;
   input Env.Env inEnv;

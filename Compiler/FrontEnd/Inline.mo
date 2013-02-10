@@ -1395,6 +1395,7 @@ algorithm
         false = Config.acceptMetaModelicaGrammar();
         ty1 = Expression.typeof(inExp1);
         ty2 = Expression.typeof(inExp2);
+        ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
         b = Types.equivtypes(ty1,ty2);
       then 
         b;

@@ -759,21 +759,20 @@ public uniontype BindingSource "where this binding came from: either default bin
 end BindingSource;
 
 public
-uniontype Binding "- Binding"
+uniontype Binding
   record UNBOUND end UNBOUND;
 
   record EQBOUND
-    Exp exp "exp";
-    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp";
-    Const constant_ "constant";
-    BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead.";
+    Exp exp;
+    Option<Values.Value> evaluatedExp;
+    Const constant_;
+    BindingSource source;
   end EQBOUND;
 
   record VALBOUND
-    Values.Value valBound "valBound";
-    BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead";
+    Values.Value valBound;
+    BindingSource source;
   end VALBOUND;
-
 end Binding;
 
 public

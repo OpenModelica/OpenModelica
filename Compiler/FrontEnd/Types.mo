@@ -1453,7 +1453,6 @@ algorithm
     case (DAE.T_ARRAY(ty = t1), 
           DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t2), _)
       equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
@@ -1461,7 +1460,6 @@ algorithm
     case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t1), 
           DAE.T_ARRAY(ty = t2), _)
       equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;

@@ -7508,61 +7508,10 @@ algorithm
   ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
-  (cache,restype) := fixUnknownDimensions(didInline, cache, inEnv, Types.getPropType(prop_1), call_exp);
   prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, restype, prop_1, prop_1);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;
-
-protected function fixUnknownDimensions
-  input Boolean didInline;
-  input Env.Cache inCache;
-  input Env.Env env;
-  input DAE.Type ty1;
-  input DAE.Exp call_exp;
-  output Env.Cache cache;
-  output DAE.Type oty;
-algorithm
-  (cache,oty) := match (didInline,inCache,env,ty1,call_exp)
-    local
-      DAE.Type ty2;
-    case (false,_,_,_,_) then (inCache,ty1);
-    else
-      equation
-        ty2 = Expression.typeof(call_exp);
-        (cache,oty) = fixUnknownDimensions2(inCache,env,ty1,ty2);
-      then (cache,oty);
-  end match;
-end fixUnknownDimensions;
-
-protected function fixUnknownDimensions2 "Fixes unknown dimensions by getting hints from the final expression"
-  input Env.Cache inCache;
-  input Env.Env env;
-  input DAE.Type ty1;
-  input DAE.Type ty2 "Simplified type, but might have more dimensions known";
-  output Env.Cache cache;
-  output DAE.Type ty;
-algorithm
-  (cache,ty) := matchcontinue (inCache,env,ty1,ty2)
-    local
-      DAE.Type inner1,inner2;
-      DAE.TypeSource ts1,ts2;
-      DAE.Dimensions dims2;
-      DAE.Dimension d;
-      DAE.Exp exp;
-      Integer i;
-    case (cache,_,DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims=(d as DAE.DIM_INTEGER(_))::dims2,source=ts2))
-      equation
-        (cache,inner1) = fixUnknownDimensions2(cache,env,inner1,DAE.T_ARRAY(inner2,dims2,ts2));
-      then (cache,DAE.T_ARRAY(inner1,d::{},ts1));
-    case (cache,_,DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims=(d as DAE.DIM_EXP(exp))::dims2,source=ts2))
-      equation
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG());
-        (cache,inner1) = fixUnknownDimensions2(cache,env,inner1,DAE.T_ARRAY(inner2,dims2,ts2));
-      then (cache,DAE.T_ARRAY(inner1,DAE.DIM_INTEGER(i)::{},ts1));
-    else (inCache,ty1);
-  end matchcontinue;
-end fixUnknownDimensions2;
 
 protected function isValidWRTParallelScope
   input Absyn.Path inFn;
@@ -8467,7 +8416,7 @@ algorithm
       list<DAE.Exp> args_1;
       list<DAE.Const> clist;
       DAE.Dimensions dims;
-      list<Env.Frame> env;
+      list<Env.Frame> env, func_env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       DAE.Type t,restype;
@@ -8485,6 +8434,7 @@ algorithm
       equation
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},st,pre,info);
+        (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env);
         dims = slotsVectorizable(newslots);
         polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,ts);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
@@ -8493,7 +8443,7 @@ algorithm
       then
         (cache,args_1,clist,restype,t,dims,newslots);
 
-    // We did not found a match, try next function type
+    // We didn't find a match, try next function type
     case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg = params,funcResultType = restype) :: trest,_,impl,_,pre,_)
       equation
         (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, checkTypes, impl, st, pre, info);
@@ -8508,6 +8458,282 @@ algorithm
         fail();
   end matchcontinue;
 end elabTypes;
+
+protected function applyArgTypesToFuncType
+  "This function is yet another hack trying to handle function parameters with
+   unknown dimensions. It uses the input arguments to try and figure out the
+   actual dimensions of the dimensions."
+  input list<Slot> inSlots;
+  input list<DAE.FuncArg> inParameters;
+  input DAE.Type inResultType;
+  input Env.Env inEnv;
+  output list<DAE.FuncArg> outParameters;
+  output DAE.Type outResultType;
+algorithm
+  (outParameters, outResultType) :=
+  match(inSlots, inParameters, inResultType, inEnv)
+    local
+      Env.Env env;
+      Env.Cache cache;
+      list<DAE.Var> vars;
+      SCode.Element dummy_var;
+      DAE.Type res_ty;
+      list<DAE.FuncArg> params;
+      list<String> used_args;
+      list<DAE.Type> tys;
+      list<DAE.Dimension> dims;
+      list<Slot> used_slots;
+
+    case (_, _, _, _)
+      equation
+        // Extract all dimensions from the parameters.
+        tys = List.map(inParameters, funcArgType);
+        dims = getAllOutputDimensions(inResultType);
+        dims = List.mapFlat_tail(tys, Types.getDimensions, dims);
+        // Use the dimensions to figure out which parameters are referenced by
+        // other parameters' dimensions. This is done to minimize the things we
+        // need to constant evaluate, a.k.a. 'things that go wrong'.
+        used_args = extractNamesFromDims(dims, {});
+        used_slots = List.filter1OnTrue(inSlots, isSlotUsed, used_args);
+
+        // Create DAE.Vars from the slots.
+        cache = Env.emptyCache();
+        vars = List.map2(used_slots, makeVarFromSlot, inEnv, cache);
+
+        // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
+        dummy_var = SCode.COMPONENT("dummy", SCode.defaultPrefixes,
+          SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()),
+          SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+        // Create an environment with the needed parameters.
+        env = Env.newEnvironment(NONE());
+        env = makeDummyFuncEnv(env, vars, dummy_var);
+
+        // Evaluate the dimensions in the types.
+        params = List.map2(inParameters, evaluateFuncParamDim, env, cache);
+        res_ty = evaluateFuncArgTypeDims(inResultType, env, cache);
+      then
+        (params, res_ty);
+        
+  end match;
+end applyArgTypesToFuncType;
+
+protected function funcArgType
+  "Returns the type of a FuncArg."
+  input DAE.FuncArg inFuncArg;
+  output DAE.Type outType;
+algorithm
+  (_, outType, _, _) := inFuncArg;
+end funcArgType;
+
+protected function getAllOutputDimensions
+  "Return the dimensions of an output type."
+  input DAE.Type inOutputType;
+  output list<DAE.Dimension> outDimensions;
+algorithm
+  outDimensions := match(inOutputType)
+    local
+      list<DAE.Type> tys;
+
+    // A tuple, get the dimensions of all the types.
+    case DAE.T_TUPLE(tupleType = tys)
+      then List.mapFlat(tys, Types.getDimensions);
+
+    else Types.getDimensions(inOutputType);
+  end match;
+end getAllOutputDimensions;
+
+protected function extractNamesFromDims
+  "Extracts a list of unique names referenced by the given list of dimensions."
+  input list<DAE.Dimension> inDimensions;
+  input list<String> inAccumNames;
+  output list<String> outNames;
+algorithm
+  outNames := match(inDimensions, inAccumNames)
+    local
+      DAE.Exp exp;
+      list<DAE.Dimension> rest_dims;
+      list<DAE.ComponentRef> crefs;
+      list<String> names;
+
+    case (DAE.DIM_EXP(exp = exp) :: rest_dims, _)
+      equation
+        crefs = Expression.extractCrefsFromExp(exp);
+        names = List.fold(crefs, extractNamesFromDims2, inAccumNames);
+      then
+        extractNamesFromDims(rest_dims, names);
+
+    case (_ :: rest_dims, _) then extractNamesFromDims(rest_dims, inAccumNames);
+    case ({}, _) then inAccumNames;
+
+  end match;
+end extractNamesFromDims;
+
+protected function extractNamesFromDims2
+  input DAE.ComponentRef inCref;
+  input list<String> inAccumNames;
+  output list<String> outNames;
+algorithm
+  outNames := matchcontinue(inCref, inAccumNames)
+    local
+      String name;
+
+    // Only interested in simple identifier, since that's all we can handle
+    // anyway.
+    case (DAE.CREF_IDENT(ident = name), _)
+      equation
+        // Make sure we haven't added this name yet.
+        false = List.isMemberOnTrue(name, inAccumNames, stringEq);
+      then
+        name :: inAccumNames;
+
+    else inAccumNames;
+
+  end matchcontinue;
+end extractNamesFromDims2;
+        
+protected function isSlotUsed
+  "Checks if a slot is used, in the sense that it's referenced by a function
+   parameter dimension."
+  input Slot inSlot;
+  input list<String> inUsedNames;
+  output Boolean outIsUsed;
+protected
+  String slot_name;
+algorithm
+  SLOT(an = (slot_name, _, _, _)) := inSlot;
+  outIsUsed := List.isMemberOnTrue(slot_name, inUsedNames, stringEq);
+end isSlotUsed;
+   
+protected function makeVarFromSlot
+  "Converts a Slot to a DAE.Var."
+  input Slot inSlot;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  output DAE.Var outVar;
+algorithm
+  outVar := matchcontinue(inSlot, inEnv, inCache)
+    local
+      DAE.Ident name;
+      DAE.Type ty;
+      DAE.Exp exp;
+      DAE.Binding binding;
+      Values.Value val;
+
+    // If the argument expression already has known dimensions, no need to
+    // constant evaluate it.
+    case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
+      equation
+        ty = Expression.typeof(exp);
+        true = Types.dimensionsKnown(ty);
+        binding = DAE.EQBOUND(exp, NONE(), DAE.C_CONST(),
+          DAE.BINDING_FROM_DEFAULT_VALUE());
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, binding, NONE());
+                
+    // Otherwise, try to constant evaluate the expression.
+    case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
+      equation
+        // Constant evaluate the bound expression.
+        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Ceval.NO_MSG());
+        exp = ValuesUtil.valueExp(val);
+        ty = Expression.typeof(exp);
+        // Create a binding from the evaluated expression.
+        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(),
+          DAE.BINDING_FROM_DEFAULT_VALUE());
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, binding, NONE());
+
+    case (SLOT(an = (name, ty, _, _)), _, _)
+      then DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, DAE.UNBOUND(), NONE());
+
+  end matchcontinue;
+end makeVarFromSlot;
+
+protected function makeDummyFuncEnv
+  "Helper function to applyArgTypesToFuncType, creates a dummy function
+   environment."
+  input Env.Env inEnv;
+  input list<DAE.Var> inVars;
+  input SCode.Element inDummyVar;
+  output Env.Env outEnv;
+algorithm
+  outEnv := match(inEnv, inVars, inDummyVar)
+    local
+      DAE.Var var;
+      list<DAE.Var> rest_vars;
+      Env.Env env;
+
+    case (_, var :: rest_vars, _)
+      equation
+        env = Env.extendFrameV(inEnv, var, inDummyVar, DAE.NOMOD(),
+          Env.VAR_TYPED(), Env.emptyEnv);
+      then
+        makeDummyFuncEnv(env, rest_vars, inDummyVar);
+
+    case (_, {}, _) then inEnv;
+
+  end match;
+end makeDummyFuncEnv;
+
+protected function evaluateFuncParamDim
+  "Constant evaluates the dimensions of a FuncArg."
+  input DAE.FuncArg inParam;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  output DAE.FuncArg outParam;
+protected
+  DAE.Ident ident;
+  DAE.Type ty;
+  DAE.Const c;
+  Option<DAE.Exp> oexp;
+algorithm
+  (ident, ty, c, oexp) := inParam;
+  ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
+  outParam := (ident, ty, c, oexp);
+end evaluateFuncParamDim;
+  
+protected function evaluateFuncArgTypeDims
+  "Constant evaluates the dimensions of a type."
+  input DAE.Type inType;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  output DAE.Type outType;
+algorithm
+  outType := matchcontinue(inType, inEnv, inCache)
+    local
+      DAE.Exp exp;
+      DAE.Type ty;
+      DAE.TypeSource ts;
+      Integer n;
+      DAE.Dimension dim;
+      list<DAE.Type> tys;
+
+    // Array type, evaluate the dimension.
+    case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
+      equation
+        (_, Values.INTEGER(n), _) =
+          Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Ceval.NO_MSG());
+        ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
+      then
+        DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)}, ts);
+                
+    // Previous case failed, keep the dimension but evaluate the rest of the type.
+    case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
+      equation
+        ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
+      then
+        DAE.T_ARRAY(ty, {dim}, ts);
+
+    case (DAE.T_TUPLE(tys, ts), _, _)
+      equation
+        tys = List.map2(tys, evaluateFuncArgTypeDims, inEnv, inCache);
+      then
+        DAE.T_TUPLE(tys, ts);
+
+    else inType;
+        
+  end matchcontinue;
+end evaluateFuncArgTypeDims;
 
 protected function createActualFunctype
 "Creates the actual function type of a CALL expression, used for error messages.
@@ -8529,9 +8755,10 @@ algorithm
     // When not checking types, create function type by looking at the filled slots
     case(DAE.T_FUNCTION(params,restype,functionAttributes,ts),_,false) 
       equation
-        slotParams = funcargLstFromSlots(slots);
-    then 
-      DAE.T_FUNCTION(slotParams,restype,functionAttributes,ts);
+        slotParams = funcArgsFromSlots(slots);
+      then 
+        DAE.T_FUNCTION(slotParams,restype,functionAttributes,ts);
+
   end match;
 end createActualFunctype;
 
@@ -8948,7 +9175,7 @@ algorithm
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,_,impl,polymorphicBindings,_,pre,_)
       equation
-        farg = funcargLstFromSlots(slots);
+        farg = funcArgsFromSlots(slots);
         (cache,slots_1,clist1,polymorphicBindings) =
           elabPositionalInputArgs(cache, env, exp, farg, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         (cache,_,newslots,clist2,polymorphicBindings) =
@@ -8962,7 +9189,7 @@ algorithm
     // Fill slots with named arguments
     case (cache,env,{},narg as _::_,slots,_,impl,polymorphicBindings,_,pre,_)
       equation
-        farg = funcargLstFromSlots(slots);
+        farg = funcArgsFromSlots(slots);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, narg, farg, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         newexp = expListFromSlots(newslots);
@@ -9003,26 +9230,20 @@ algorithm
   end match;
 end makeEmptySlots;
 
-protected function funcargLstFromSlots
-"function: funcargLstFromSlots
-  Converts slots to Types.Funcarg"
-  input list<Slot> inSlotLst;
-  output list<DAE.FuncArg> outTypesFuncArgLst;
+protected function funcArgsFromSlots
+  "Converts a list of Slot to a list of FuncArg."
+  input list<Slot> inSlots;
+  output list<DAE.FuncArg> outFuncArgs;
 algorithm
-  outTypesFuncArgLst:=
-  match (inSlotLst)
-    local
-      list<DAE.FuncArg> fs;
-      DAE.FuncArg fa;
-      list<Slot> xs;
-    case {} then {};
-    case ((SLOT(an = fa) :: xs))
-      equation
-        fs = funcargLstFromSlots(xs);
-      then
-        (fa :: fs);
-  end match;
-end funcargLstFromSlots;
+  outFuncArgs := List.map(inSlots, funcArgFromSlot);
+end funcArgsFromSlots;
+
+protected function funcArgFromSlot
+  input Slot inSlot;
+  output DAE.FuncArg outFuncArg;
+algorithm
+  SLOT(an = outFuncArg) := inSlot;
+end funcArgFromSlot;
 
 protected function complexTypeFromSlots
 "Creates an DAE.T_COMPLEX type from a list of slots.
@@ -9327,6 +9548,7 @@ algorithm
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
+        ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         // TODO: Check const
@@ -9341,6 +9563,7 @@ algorithm
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
+        ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         // TODO: Check const...
@@ -14017,8 +14240,8 @@ algorithm
       list<String> enum_literals;
       Integer enum_size;
       list<SCode.Element> el;
-      Absyn.Exp sub;
-      DAE.Exp e;
+      Absyn.Exp sub, cr_exp;
+      DAE.Exp e, dim_exp;
       DAE.Properties prop;
       list<SCode.Enum> enum_lst;
       Absyn.Exp size_arg;
@@ -14031,10 +14254,15 @@ algorithm
     // Real x(:, size(x, 1)).
     case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CALL(function_ =
         Absyn.CREF_IDENT(name = "size"), functionArgs = Absyn.FUNCTIONARGS(args =
-        {Absyn.CREF(componentRef = cr), size_arg}))), _, _, _, _, _)
+        {cr_exp as Absyn.CREF(componentRef = cr), size_arg}))), _, _, _, _, _)
       equation
         true = Absyn.crefEqual(inCref, cr);
-        dim = DAE.DIM_UNKNOWN();
+        (cache, e, _, _) = elabExp(inCache, inEnv, cr_exp, inImpl, inST,
+          inDoVect, inPrefix, inInfo);
+        (cache, dim_exp, _, _) = elabExp(cache, inEnv, size_arg, inImpl, inST,
+          inDoVect, inPrefix, inInfo);
+        dim = DAE.DIM_EXP(DAE.SIZE(e, SOME(dim_exp)));
+        //dim = DAE.DIM_UNKNOWN();
       then
         (inCache, dim);
 
