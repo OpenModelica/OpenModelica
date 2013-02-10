@@ -18585,7 +18585,8 @@ algorithm
       
       case(_, _, _)
         equation
-          print("Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
+          true = Flags.isSet(Flags.FAILTRACE);
+          Debug.fprint(Flags.FAILTRACE, "Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
         then
           fail();
           

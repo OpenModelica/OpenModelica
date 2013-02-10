@@ -3369,12 +3369,12 @@ algorithm
       Ident ident;
       Path newPath,newSubPath;
     // A suffix, e.g. C.D in A.B.C.D
-    case (subPath,path)
+    case (_,_)
       equation
         true=pathSuffixOf(subPath,path);
       then path;
      // strip last ident of path and recursively check if suffix.
-    case (subPath,path)
+    case (_,_)
       equation
         ident = pathLastIdent(path);
         newPath = stripLast(path);
@@ -3382,7 +3382,7 @@ algorithm
       then joinPaths(newPath,IDENT(ident));
 
         // strip last ident of subpath and recursively check if suffix.
-    case (subPath,path)
+    case (_,_)
       equation
         ident = pathLastIdent(subPath);
         newSubPath = stripLast(subPath);

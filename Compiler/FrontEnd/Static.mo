@@ -7291,6 +7291,7 @@ algorithm
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(recordCl);
         (cache,typelist as _::_) = Lookup.lookupFunctionsListInEnv(cache, recordEnv, operNames, info, {});
+        typelist = List.map1(typelist, joinSourcePath, fn);
         
         Util.setStatefulBoolean(stopElab,true);
         (cache,expProps) = elabCallArgs3(cache,env,typelist,fn_1,args,nargs,impl,st,pre,info); 
@@ -12667,8 +12668,8 @@ algorithm
   outPath := match(inType1)
   local     
     Absyn.Path path;
-    case (DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_)) then path;
-    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_,_)) then path;
+    case (DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path})) then path;
+    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path}),_,_)) then path;
     else fail();
   end match;
         
@@ -12863,7 +12864,7 @@ algorithm
     local
       Boolean bool1,bool2;
       String str1;
-      Absyn.Path path,path2;
+      Absyn.Path path,path2,recpath;
       list<Absyn.Path> operNames;
       Env.Env recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
@@ -12881,12 +12882,11 @@ algorithm
         
         // prepare the call path for the operator. 
         // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
-        path = getRecordPath(type1);  
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);     
+        recpath = getRecordPath(type1);  
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,recpath, false);     
                   
         str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        path = Absyn.joinPaths(recpath, Absyn.IDENT(str1));
        
         
         // check if the operator is defined. i.e overloaded
@@ -12897,6 +12897,7 @@ algorithm
         // get the list of functions in the operator. !! there can be multiple options
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {}); 
+        types = List.map1(types, joinSourcePath, recpath);
         
         // Apply operation according to the Specifications.See the function. 
         bool1 = Types.arrayType(type1);  
@@ -12911,18 +12912,18 @@ algorithm
     case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _,_)
       equation
          
-        path = getRecordPath(type1);  
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);     
+        recpath = getRecordPath(type1);  
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,recpath, false);     
                 
         str1 = "'constructor'";
-        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        path2 = Absyn.joinPaths(recpath, Absyn.IDENT(str1));
         
         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path2, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+        types = List.map1(types, joinSourcePath, recpath);
         
         (cache,SOME((daeExp, DAE.PROP(type2,_)))) = elabCallArgs3(cache,env,types,path2,{exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
         
@@ -12939,6 +12940,25 @@ algorithm
   end matchcontinue;        
   
 end userDefOperatorDeoverloadBinary;
+
+protected function joinSourcePath
+  input DAE.Type inType;
+  input Absyn.Path inPath;
+  output DAE.Type outType;
+protected
+  list<DAE.FuncArg> args "funcArg" ;
+  DAE.Type rest "funcResultType ; Only single-result" ;
+  DAE.FunctionAttributes attrs;
+  DAE.TypeSource source;
+  Absyn.Path path1,path2;
+algorithm
+  DAE.T_FUNCTION(args, rest, attrs, {path1}) := inType;
+  // print("inPath " +& Absyn.pathString(inPath) +& " src path " +& Absyn.pathString(path1) +& "\n");
+  path1 := Absyn.pathContainedIn(path1,inPath);
+  // print("new path " +& Absyn.pathString(path1) +& " \n");
+  outType := DAE.T_FUNCTION(args, rest, attrs, {path1});
+  
+end joinSourcePath;
 
 protected function userDefOperatorDeoverloadString
 "This functions checks if the builtin function string is overloaded for opertor records"
@@ -12961,7 +12981,7 @@ algorithm
   match (inCache, inEnv,inExp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo)
     local
       String str1;
-      Absyn.Path path;
+      Absyn.Path path,recpath;
       Option<Interactive.SymbolTable> st_1;
       list<Absyn.Path> operNames;
       Env.Env recordEnv,operatorEnv,env;
@@ -12979,18 +12999,18 @@ algorithm
       equation       
         (cache,_,DAE.PROP(type1,_),st_1) = elabExp(cache,env,exp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo);
         
-        path = getRecordPath(type1);  
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+        recpath = getRecordPath(type1);  
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,recpath, false);
         
         str1 = "'String'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        path = Absyn.joinPaths(recpath, Absyn.IDENT(str1));
         
         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+        types = List.map1(types, joinSourcePath, recpath);
         
         (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,st_1,inPre,inInfo);  
       then
@@ -13127,7 +13147,7 @@ algorithm
        String str1;
        Env.Cache cache;
        list<Absyn.Path> operNames;
-       Absyn.Path path;
+       Absyn.Path path, recpath;
        Env.Env operatorEnv,recordEnv;
        SCode.Element operatorCl;
        list<DAE.Type> types;
@@ -13166,18 +13186,18 @@ algorithm
      case(cache, env, aboper, DAE.PROP(type1,const) , _, _, absexp1, _, _, _, _)
        equation       
  
-         path = getRecordPath(type1);  
-         path = Absyn.makeFullyQualified(path);
-         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+         recpath = getRecordPath(type1);  
+         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,recpath, false);
          
          str1 = "'" +& Dump.opSymbolCompact(aboper) +& "'";
-         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+         path = Absyn.joinPaths(recpath, Absyn.IDENT(str1));
          
          (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
          true = SCode.isOperator(operatorCl);
          
          operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
          (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+         types = List.map1(types, joinSourcePath, recpath);
          
          (cache,SOME((exp,prop))) = elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inSymTab,inPre,inInfo);       
          
