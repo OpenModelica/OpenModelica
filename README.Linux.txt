@@ -6,6 +6,8 @@ $ sudo su -c "echo deb http://build.openmodelica.org/apt precise nightly >> /etc
 $ sudo su -c "echo deb-src http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get build-dep openmodelica
+$ svn co https://openmodelica.org/svn/OpenModelica/trunk OpenModelica
+$ cd OpenModelica
 $ autoconf
 $ ./configure --with-omniORB
 $ make # or make omc if you only want the omc core and not the qtclients
@@ -40,9 +42,9 @@ OpenModelica uses Qt for plotting functionality and graphical. You will need:
     Qt 4.x.x (http://trolltech.com - >= 4.4.3? 4.6?)
     libqwt
 OMOptim uses some packages for its optimization algorithms
-    paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3; see the Debian installer for the directory structure or send openmodelica <at> ida.liu.se a listing of the files paradiseo installs to /usr/local/ to have the Makefiles updated)
+    paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3 beta; see the OpenModelica .deb installer for the directory structure or send openmodelica <at> ida.liu.se a listing of the files paradiseo installs to /usr/local/ to have the Makefiles updated). Newer versions of ParadisEO do not work.
 Note:
-    FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS.
+    FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS. For 64-bit versions, it might be possible to compile OpenModelica using the bootstrapped compiler (then rml-mmc is not needed).
     The rml-mmc package needs some manual changes, too.
 
 How to compile on Ubuntu Linux (using available binary packages for dependencies)
@@ -143,8 +145,8 @@ Here is a short example session.
 
 $ cd trunk/build/bin
 $ ./OMShell-terminal
-OpenModelica 1.8.0
-Copyright (c) OSMC 2002-2011
+OpenModelica 1.9.0
+Copyright (c) OSMC 2002-2013
 To get help on using OMShell and OpenModelica, type "help()" and press enter.
 >> loadModel(Modelica)
 true
@@ -187,6 +189,19 @@ Cannot resolve type of expression a*b (expressions :{a[1],a[2],a[3],a[4],a[5]},\
 {a, b}
 >>
 
+Bootstrapped compiler
+=====================
+
+To compile OpenModelica without the use of rml-mmc:
+$ autoconf
+$ ./configure --with-CORBA --without-rml
+$ make bootstrap-from-tarball
+
+To recompile (once you have a working build/bin/omc)
+$ make bootstrap-from-compiled
+
+WARNING: The bootstrapped compiler has not been tested on all combinations of compilers and operating systems. It did work on 64-bit Ubuntu with GCC 4.4, but not on 64-bit Fedora Core with GCC 4.7.
+
 GENERAL NOTES:
 ==============
 - Fedora Core 4 has a missing symlink. To fix it, in /usr/lib do:
@@ -196,4 +211,4 @@ GENERAL NOTES:
 - On some Linux systems when running simulate(Model, ...) the
   executable for the Model enters an infinite loop. To fix this, add -ffloat-store to CFLAGS
 
-Last updated 2012-07-04
+Last updated 2013-02-11. Much is still outdated.

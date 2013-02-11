@@ -20,8 +20,14 @@ INTERACTIVELIBS = "-lpthread"
 LIBSENDDATA = @LIBSENDDATA@
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
-# Use f2c from the OS itself...
+# Use f2c from the OS itself... If so, don't include the f2c headers from OpenModelica
 LIBF2C=@LIBF2C@
+ifeq ($(LIBF2C),)
+else
+LIBF2CINC=-I./simulation/libf2c/
+LIBF2CHEADER=./simulation/libf2c/f2c.h
+endif
+
 EXTERNALCMAKEFILE=Makefile
 
 include Makefile.common

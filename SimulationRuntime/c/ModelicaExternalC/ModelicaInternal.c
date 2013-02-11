@@ -124,18 +124,7 @@ void ModelicaNotExistError(const char* name) {
 #     include <dirent.h>
 #  endif
 
-#if defined(_MSC_VER)
-#if !defined(MAX_PATH)
-#define MAX_PATH 260
-#endif
-#endif
-
-#if !defined(PATH_MAX)
-#define PATH_MAX MAX_PATH
-#endif
-
-#define BUFFER_LENGTH PATH_MAX
-char buffer[BUFFER_LENGTH];  /* Buffer for temporary storage */
+char buffer[8192];  /* Buffer for temporary storage; sufficient for PATH_MAX on all standard platforms. And enough for temporary storage. */
 
 typedef enum {
    FileType_NoFile = 1,
