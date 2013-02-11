@@ -5488,28 +5488,29 @@ protected function elaborateRecordDeclarationsForMetarecords
   output list<SimCode.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) := matchcontinue(inExpl, inAccRecordDecls, inReturnTypes)
+  (outRecordDecls, outReturnTypes) := match (inExpl, inAccRecordDecls, inReturnTypes)
     local
       list<String> rt, rt_1, rt_2, fieldNames;
       list<DAE.Exp> rest;
       String name;
       Absyn.Path path;
       list<SimCode.RecordDeclaration> accRecDecls;
+      Boolean b;
       
     case ({}, accRecDecls, rt) then (accRecDecls, rt);
     case (DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
         name = Absyn.pathStringReplaceDot(path, "_");
-        false = listMember(name, rt);
-        accRecDecls = SimCode.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
-        rt_1 = name::rt;
+        b = listMember(name, rt);
+        accRecDecls = List.consOnTrue(not b, SimCode.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
+        rt_1 = List.consOnTrue(not b, name, rt);
         (accRecDecls, rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1);
       then (accRecDecls, rt_2);
-    case (_::rest, accRecDecls, rt)
-      equation
-        (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt);
-      then (accRecDecls, rt_1);
-  end matchcontinue;
+   case (_::rest, accRecDecls, rt)
+     equation
+       (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt);
+     then (accRecDecls, rt_1);
+  end match;
 end elaborateRecordDeclarationsForMetarecords;
 
 protected function createExtObjInfo
