@@ -541,7 +541,7 @@ if test -n "$QMAKE"; then
   if test x"$with_qwt" = "xyes"; then
     with_qwt_checked=""
     with_qwt_suffix=""
-    for f in {/usr,/opt,$PREFIX}/include/{qwt5,qwt,qwt-qt4}/; do
+    for f in {/usr,/opt,$PREFIX}/include/{qwt5,qwt,qwt-qt4,qwt5-qt4}/; do
       test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
     done
     if grep -q 'QWT_VERSION *0x05@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h"; then
