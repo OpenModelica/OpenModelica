@@ -377,7 +377,7 @@ T_END : 'end' EAT_WS_COMMENT?;
 IDENT : QIDENT | IDENT2;
 
 fragment
-IDENT2 : NONDIGIT (NONDIGIT | DIGIT)*;
+IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime';
 
 fragment
 QIDENT :
