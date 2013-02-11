@@ -27,21 +27,24 @@ $inStmtLine = 0;
 while( $line = <INP> ){
   $trimmedLine = trim($line);
   # regex is fun
-  if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z0-9.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
-    eval { 
+  # handles file paths like /c/Test/foo.mo, c:/Test/foo.mo, c:\Test\foo.mo
+  if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z0-9.\/\\:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
+    eval {
 		if ($^O eq "msys") {
-			# split the file location
-			my @values = split('/', $1);
-			# read the filename
-			$fileName = pop(@values);
-			# join the file location back
-			if (scalar(@values) > 0) {
-				$fileLocation = join('/', @values);
-				$inStmtFile = abs_path($fileLocation); # Absolute paths makes GDB a _lot_ happier;
-				$inStmtFile = $inStmtFile.'/'.$fileName;
-			} else {
-				$inStmtFile = abs_path($1);
-			}
+      $myString = $1;
+      $myString =~ s/\\/\//g; # convert back slashes to forward slashes
+      # split the file location
+      my @values = split('/', $myString);
+      # read the filename
+      $fileName = pop(@values);
+      # join the file location back
+      if (scalar(@values) > 0) {
+        $fileLocation = join('/', @values);
+        $inStmtFile = abs_path($fileLocation); # Absolute paths makes GDB a _lot_ happier;
+        $inStmtFile = $inStmtFile.'/'.$fileName;
+      } else {
+        $inStmtFile = abs_path($myString);
+      }
 		} else {
 			$inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
 		}
