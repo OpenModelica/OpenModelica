@@ -30,7 +30,7 @@ while( $line = <INP> ){
   # handles file paths like /c/Test/foo.mo, c:/Test/foo.mo, c:\Test\foo.mo
   if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z0-9.\/\\:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
     eval {
-		if ($^O eq "msys") {
+    if ($^O eq "msys") {
       $myString = $1;
       $myString =~ s/\\/\//g; # convert back slashes to forward slashes
       # split the file location
@@ -45,14 +45,14 @@ while( $line = <INP> ){
       } else {
         $inStmtFile = abs_path($myString);
       }
-		} else {
-			$inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
-		}
-	};
-	if ($@) {
-	  $dir = getcwd(); 
-	  $inStmtFile = $dir + "/" + $1;
-	}
+    } else {
+      $inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
+    }
+  };
+  if ($@) {
+    $dir = getcwd(); 
+    $inStmtFile = $dir + "/" + $1;
+  }
     $inStmtLine = $2;
     $inStmt = 1;
   } elsif ($line =~ /^ *..#endModelicaLine/) {
