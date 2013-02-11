@@ -42,7 +42,7 @@
 #include <assert.h>
 
 static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
-static const struct VAR_INFO cpuTimeValName = {0,"'$cpu_time'","cpu time [s]",{"",-1,-1,-1,-1}};
+static const struct VAR_INFO cpuTimeValName = {0,"$cpu_time","cpu time [s]",{"",-1,-1,-1,-1}};
 
 int simulation_result_mat::calcDataSize()
 {

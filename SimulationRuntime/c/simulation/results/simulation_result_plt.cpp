@@ -61,7 +61,7 @@
 int simulation_result_plt::calcDataSize(const MODEL_DATA *modelData)
 {
   int sz = 1; // time
-  if(cpuTime) sz++; // '$cpu_time'
+  if(cpuTime) sz++; // $cpu_time
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) sz++;
   for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) sz++;
   for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) sz++;
@@ -142,7 +142,7 @@ void simulation_result_plt::add_result(double *data_, long *actualPoints)
   
   if(cpuTime)
   {
-    ss << "'$cpu_time'" << "\n";
+    ss << "$cpu_time" << "\n";
     ss << (data_[currentPos++] = -42) << "\n";
   }
   /* .. reals .. */
@@ -393,10 +393,10 @@ simulation_result_plt::~simulation_result_plt()
   fprintf(f, "\n");
   varn++;
   
-  /* '$cpu_time' variable. */
+  /* $cpu_time variable. */
   if(cpuTime)
   {
-    fprintf(f, "DataSet: '$cpu_time'\n");
+    fprintf(f, "DataSet: $cpu_time\n");
     for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1]);
     fprintf(f, "\n");
