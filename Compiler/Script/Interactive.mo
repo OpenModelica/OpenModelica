@@ -8332,6 +8332,7 @@ protected
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
   Absyn.Restriction restr;
   Absyn.ClassDef cdef;
+  Absyn.Class c;
   Integer sl,sc,el,ec;
 algorithm
   path := Absyn.crefToPath(cr);
@@ -8347,6 +8348,7 @@ algorithm
   str_eline := intString(el);
   str_ecol := intString(ec);
   dim_str := getClassDimensions(cdef);
+  file := System.stringReplace(file, "\\", "/");
   file := Util.testsuiteFriendly(file);
   res_1 := stringAppendList(
           {"{\"",res,"\",\"",cmt,"\",\"",file,"\",{",strPartial,",",
