@@ -8348,8 +8348,9 @@ algorithm
   str_eline := intString(el);
   str_ecol := intString(ec);
   dim_str := getClassDimensions(cdef);
-  file := System.stringReplace(file, "\\", "/");
+  //file := System.stringReplace(file, "\\", "/");
   file := Util.testsuiteFriendly(file);
+  file := System.escapedString(file,false);
   res_1 := stringAppendList(
           {"{\"",res,"\",\"",cmt,"\",\"",file,"\",{",strPartial,",",
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
