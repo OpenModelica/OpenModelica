@@ -47,7 +47,6 @@ void freeStateSetData(DATA *data);
 int stateSelection(DATA *data, char reportError);
 
 /* do pivoting */
-extern int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd );
-
+extern int pivot(double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd);
 
 #endif /* OMC_STATESET_H */
