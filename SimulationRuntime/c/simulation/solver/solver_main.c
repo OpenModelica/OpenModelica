@@ -28,6 +28,9 @@
  *
  */
 
+ /*! \file solver_main.c
+ */
+ 
 #include "solver_main.h"
 #include "simulation_runtime.h"
 #include "openmodelica_func.h"
@@ -63,18 +66,14 @@ typedef struct RK4
 }RK4;
 
 #ifdef WITH_SUNDIALS
-RADAUIIA rData;
-KINSOLRADAU kData;
+  RADAUIIA rData;
+  KINSOLRADAU kData;
 #endif
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
-
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
-
 static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
-
 static void checkTermination(DATA* data);
-
 static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
@@ -98,22 +97,22 @@ int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
   default:
   case 1:
     return euler_ex_step(data, solverInfo);
-
   }
   return 1;
 }
 
-/**
- * The main function for a solver with synchronous event handling
- * flag 1=explicit euler
- * 2=rungekutta
- * 3=dassl
- * 4=inline
- * 5=free
+/*! \fn solver_main
+ *
+ *  The main function for a solver with synchronous event handling
+ *  flag 1=explicit euler
+ *  2=rungekutta
+ *  3=dassl
+ *  4=inline
+ *  5=free
  */
-int solver_main(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time, int lambda_steps,
-    int flag, const char* outputVariablesAtEnd)
+int solver_main(DATA* data, const char* init_initMethod, 
+    const char* init_optiMethod, const char* init_file, double init_time, 
+    int lambda_steps, int flag, const char* outputVariablesAtEnd)
 {
   int i;
   unsigned int ui;
@@ -138,13 +137,9 @@ int solver_main(DATA* data, const char* init_initMethod,
   solverInfo.didEventStep = 0;
   solverInfo.stateEvents = 0;
   solverInfo.sampleEvents = 0;
-  /* not used
-  solverInfo.stepNo = 0;
-  solverInfo.callsODE = 0;
-  solverInfo.callsDAE = 0;
-  */
   
   copyStartValuestoInitValues(data);
+  
   /* read input vars */
   input_function(data);
 
@@ -158,7 +153,6 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
-
 
   if(flag == 2)
   {
@@ -191,8 +185,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     int neqns = -1;
     /* Allocate work array for optimization*/
     pathConstraints(data, NULL, &neqns);
-    /*allocateDaeIpopt(data,neqns);*/
-
+    /* allocateDaeIpopt(data,neqns); */
   }
 #endif
   else if (flag == 6)
@@ -216,7 +209,7 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
   {
-    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv LOG_INIT for more information.");
+    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT for more information.");
     simInfo->stopTime = simInfo->startTime;
     retVal = -1;
   }
@@ -231,11 +224,10 @@ int solver_main(DATA* data, const char* init_initMethod,
    * parameters during Initialization */
   initDelay(data, simInfo->startTime);
 
-
   storePreValues(data);
   storeOldValues(data);
   function_storeDelayed(data);
-  function_updateRelations(data,1);
+  function_updateRelations(data, 1);
   storeRelations(data);
   updateHysteresis(data);
   saveZeroCrossings(data);
@@ -275,9 +267,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if(ACTIVE_STREAM(LOG_DEBUG))
     printAllVars(data, 0, LOG_DEBUG);
 
-  /*
-   * Start main simulation loop
-   */
+  /***** Start main simulation loop *****/
   while(solverInfo.currentTime < simInfo->stopTime)
   {
     if(measure_time_flag)
@@ -291,7 +281,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
     data->simulationInfo.found_solution = 0;  /* reset nls-messages */
 
-    /******** Calculation next step size ********/
+    /***** Calculation next step size *****/
     /* Calculate new step size after an event */
     if(solverInfo.didEventStep == 1)
     {
@@ -307,7 +297,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     /* adjust final step? */
     if(solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime)
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
-    /******** End calculation next step size ********/
+    /***** End calculation next step size *****/
 
     /* check for next sample event */
     checkForSampleEvent(data, &solverInfo);
@@ -325,7 +315,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     saveZeroCrossings(data);
     RELEASE(LOG_SOLVER);
 
-    /******** Event handling ********/
+    /***** Event handling *****/
     if(measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
 
@@ -346,11 +336,11 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     if(measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
-    /******** End event handling ********/
+    /***** End event handling *****/
     
     /* ASSERT1(data->simulationInfo.found_solution >= 0, "linear/non-linear solver failed [error-code: %d]", data->simulationInfo.found_solution); */
 
-    /******** check state selection ********/
+    /***** check state selection *****/
     if(stateSelection(data, 1))
     {
       /* if new set is calculated reinit the solver */
@@ -358,7 +348,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       overwriteOldSimulationData(data);
     }
 
-    /******** Emit this time step ********/
+    /***** Emit this time step *****/
     storePreValues(data);
     storeOldValues(data);
     saveZeroCrossings(data);
@@ -399,7 +389,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     if(ACTIVE_STREAM(LOG_DEBUG))
       printAllVars(data, 0, LOG_DEBUG);
 
-    /********* end of Emit this time step *********/
+    /***** end of Emit this time step *****/
 
     /* save dassl stats before reset */
     if(solverInfo.didEventStep == 1 && flag == 3)

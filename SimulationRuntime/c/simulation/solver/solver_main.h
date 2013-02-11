@@ -29,21 +29,18 @@
  *
  */
 
-/*
- * File: solver_main.h
+/*! \file solver_main.h
  *
- * Description: This file is a C header file for the main solver function.
- * It contains integration method for simulation.
- *
+ *  Description: This file is a C header file for the main solver function.
+ *  It contains integration method for simulation.
  */
 
-#ifndef _SOLVER_MAIN_H
-#define _SOLVER_MAIN_H
+#ifndef OMC_SOLVER_MAIN_H
+#define OMC_SOLVER_MAIN_H
 
 #include "openmodelica.h"
 #include "simulation_data.h"
 #include "list.h"
-
 
 typedef struct SOLVER_INFO
 {
@@ -55,33 +52,27 @@ typedef struct SOLVER_INFO
   /* set by solver if an internal root finding method is activated  */
   modelica_boolean solverRootFinding;
 
+  /* events */
   LIST* eventLst;
-
-  modelica_boolean didEventStep;
+  int didEventStep;
 
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
-  /* not used
-  unsigned long stepNo;
-  unsigned long callsODE;
-  unsigned long callsDAE;
-  */
 
   void* solverData;
 }SOLVER_INFO;
 
-
 #ifdef __cplusplus
-extern "C" {
+  extern "C" {
 #endif
 
-extern int solver_main(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time, int lambda_steps,
-    int flag, const char* outputVariablesAtEnd);
+extern int solver_main(DATA* data, const char* init_initMethod, 
+    const char* init_optiMethod, const char* init_file, double init_time, 
+    int lambda_steps, int flag, const char* outputVariablesAtEnd);
 
 #ifdef __cplusplus
-}
+  }
 #endif
 
 #endif
