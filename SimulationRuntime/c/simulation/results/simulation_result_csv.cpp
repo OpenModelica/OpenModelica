@@ -116,7 +116,7 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
 
   fprintf(fout, format, "time");
   if(cpuTime)
-    fprintf(fout, format, "$cpu_time");
+    fprintf(fout, format, "$cpuTime");
   for(int i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput)
     fprintf(fout, format, mData->realVarsData[i].info.name);
   for(int i = 0; i < mData->nVariablesInteger; i++) if(!mData->integerVarsData[i].filterOutput)

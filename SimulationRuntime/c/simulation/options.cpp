@@ -94,7 +94,7 @@ const char *FLAG_DESC[FLAG_MAX] = {
 const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   "unknown",
 
-  /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpu_time is the variable name inside the result-file",
+  /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag\n  e.g. -help=f prints detaild information for command-line flag f",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
