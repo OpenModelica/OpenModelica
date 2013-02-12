@@ -31,7 +31,8 @@ using namespace std;
 //#ifndef _MY_SERVICEINTERFACE_H
 #define _MY_SERVICEINTERFACE_H
 
-int initServiceInterfaceData(int, char**);
+int initServiceInterfaceData(int, char**, void*);
+void* getGlobalData(void);
 
 //************ Global Data Value Request and Manipulation ************
 

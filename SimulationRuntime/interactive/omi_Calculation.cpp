@@ -8,10 +8,10 @@
  * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Calculation.cpp
- * The Calculation thread is synonymous to a producer which uses the OM Solving Service
- * to get results for a specific time step and to inform the ResultManager
+ * The "Calculation" thread is synonymous to a producer which uses the "OM Solving Service"
+ * to get results for a specific time step and to inform the "ResultManager"
  * about the new simulation results. It uses parameters to calculate the interval between single calculation steps
- * in a loop, until the simulation is interrupted by the Control or because of an occurred error.
+ * in a loop, until the simulation is interrupted by the "Control" or because of an occurred error.
  * If a single solving step is very complex and takes a long time to be solved,
  * it is possible to create more than one producer to start the next simulation step during the data storing time.
  *
@@ -26,7 +26,7 @@
 
 using namespace std;
 
-bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
+bool debugCalculation = true; //Set true to print out comments which describes the program flow to the console
 bool forZero = true; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 bool* p_forZero = 0; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 
@@ -43,6 +43,9 @@ void printSSDCalculation(long, long, long);
  * Calculates all simulation steps in a loop until the calculation is interrupted
  */
 int calculate() {
+
+  DATA* globaldata = (DATA*) getGlobalData();
+
   int retVal = -1;
   double start = 0.0;
   double stop = 1.0;
@@ -72,7 +75,7 @@ int calculate() {
     set_forceEmit(0);
   }
 
-  initDelay(start);
+  initDelay(globaldata, start);
 
   while (!calculationInterrupted) { //TODO 20100210 pv Interrupt is not implemented yet
 
@@ -100,27 +103,17 @@ int calculate() {
     mutexSimulationStatus->Unlock();
     waitForResume->Wait(); //wait and reduce semaphore
 
-    if (forZero) {
-      start = 0.0;
-      stop = 2.220446049250313e-13; //This value equals 0 in modelica
-      stepSize = 2.220446049250313e-13;
-      set_stepSize(stepSize);
-      set_lastEmittedTime(start);
-      set_forceEmit(0);
-      forZero = false;
-    } else {
-      //TODO 20100210 pv testing rungekutter...
-      if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
-        stop = get_timeValue() + stepSize;
-        start = get_timeValue();
-        if (debugCalculation) {
-          cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep  << " ------" << endl;  fflush( stdout);
-          cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
-        }
-      } else {
-        stop = get_lastEmittedTime() + stepSize;
-        start = get_lastEmittedTime();
+    //TODO 20100210 pv testing rungekutter...
+    if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
+      stop = get_timeValue() + stepSize;
+      start = get_timeValue();
+      if (debugCalculation) {
+        cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep  << " ------" << endl;  fflush( stdout);
+        cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
       }
+    } else {
+      stop = get_lastEmittedTime() + stepSize;
+      start = get_lastEmittedTime();
     }
 
     retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize, outputSteps, tolerance);

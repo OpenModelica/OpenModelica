@@ -47,7 +47,6 @@
 #include <cassert>
 #include <signal.h>
 #include <fstream>
-#include <string>
 
 #ifndef _MSC_VER
   #include <regex.h>
@@ -79,11 +78,12 @@
 #endif
 
 /* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
- * 
- * #ifndef NO_INTERACTIVE_DEPENDENCY
- *   #include "../../interactive/omi_ServiceInterface.h"
- * #endif
+ *
  */
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  #include "../../interactive/omi_ServiceInterface.h"
+ #endif
+
 
 using namespace std;
 
@@ -304,15 +304,14 @@ int isInteractiveSimulation()
  * Starts an Interactive simulation session
  * the runtime waits until a user shuts down the simulation
  */
-/*
 int
-startInteractiveSimulation(int argc, char**argv)
+startInteractiveSimulation(int argc, char**argv, void* data)
 {
   int retVal = -1;
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  initServiceInterfaceData(argc, argv);
+  initServiceInterfaceData(argc, argv, data);
 
   //Create the Control Server Thread
   Thread *threadSimulationControl = createControlThread();
@@ -325,7 +324,7 @@ startInteractiveSimulation(int argc, char**argv)
 #endif
   return retVal; //TODO 20100211 pv return value implementation / error handling
 }
-*/
+
 /**
  * Read the variable filter and mark variables that should not be part of the result file.
  * This phase is skipped for interactive simulations
@@ -689,7 +688,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   interactiveSimulation = flagSet("interactive", argc, argv);
-  /*
   if(interactiveSimulation && flagSet("port", argc, argv)) {
     cout << "userPort" << endl;
     string *portvalue = (string*) getOption("port", argc, argv);
@@ -697,9 +695,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     int userPort;
     stream >> userPort;
     setPortOfControlServer(userPort);
-  } else if(!interactiveSimulation && flagSet("port", argc, argv)) {
-  */
-  if(!interactiveSimulation && optionSet("port", argc, argv))
+  } else if(!interactiveSimulation && flagSet("port", argc, argv))
   {
     string *portvalue = (string*) getOption("port", argc, argv);
     std::istringstream stream(*portvalue);
@@ -772,19 +768,16 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-    /*
-     * if(interactiveSimulation)
-     * {
-     *   cout << "startInteractiveSimulation: " << version << endl;
-     *   retVal = startInteractiveSimulation(argc, argv);
-     * }
-     * else
-     * {
-     *   cout << "startNonInteractiveSimulation: " << version << endl;
-     *   retVal = startNonInteractiveSimulation(argc, argv, data);
-     * }
-     */
-    retVal = startNonInteractiveSimulation(argc, argv, data);
+
+    if(interactiveSimulation)
+    {
+      cout << "startInteractiveSimulation: " << endl;
+      retVal = startInteractiveSimulation(argc, argv, data);
+    }
+    else
+    {
+      retVal = startNonInteractiveSimulation(argc, argv, data);
+    }
 
     /* free linear system data */
     freelinearSystem(data);

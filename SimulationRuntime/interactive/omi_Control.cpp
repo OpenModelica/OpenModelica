@@ -47,7 +47,7 @@ string control_client_ip = "";
 int control_client_port = 0;
 int control_server_port = 0;
 
-int debugLevelControl = 0; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
+int debugLevelControl = 2; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
 bool shutDownSignal = false;
 bool error = false;
 string messageForClient;
