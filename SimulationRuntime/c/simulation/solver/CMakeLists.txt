@@ -8,10 +8,12 @@ SET(solver_sources  dassl.c
                     delay.c
                     events.c
                     model_help.c
+                    kinsolSolver.c                    
+                    linearSystem.c
+                    linearSolverLapack.c
                     nonlinearSystem.c
                     nonlinearSolverHybrd.c
                     nonlinearSolverNewton.c
-                    kinsolSolver.c
                     radau.c
                     solver_main.c
                     stateset.c)
@@ -19,10 +21,12 @@ SET(solver_sources  dassl.c
 SET(solver_headers  dassl.h
                     delay.h 
                     events.h
+                    kinsolSolver.h
+                    linearSystem.h
+                    linearSolverLapack.h
                     model_help.h 
                     nonlinearSolverHybrd.h
                     nonlinearSolverNewton.h
-                    kinsolSolver.h
                     nonlinearSystem.h
                     radau.h
                     solver_main.h

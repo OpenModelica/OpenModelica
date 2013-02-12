@@ -179,7 +179,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs))%>
       <equation index="<%eqIndex(eq)%>">
-        <nonlinear indexNonlinear="<%indexNonLinear%>">
+        <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
           <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
           <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>

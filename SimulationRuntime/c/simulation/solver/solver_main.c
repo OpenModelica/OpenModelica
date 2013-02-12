@@ -148,9 +148,6 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* instance all external Objects */
   callExternalObjectConstructors(data);
 
-  /* allocate memory for non-linear system solvers */
-  allocateNonlinearSystem(data);
-
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
 
@@ -417,7 +414,7 @@ int solver_main(DATA* data, const char* init_initMethod,
      * - non-linear system failed to solve
      * - assert was called
      */
-    if(data->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(data))
+    if(data->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(data) || check_linear_solutions(data))
     {
       data->simulationInfo.terminal = 1;
       updateDiscreteSystem(data);
@@ -437,6 +434,11 @@ int solver_main(DATA* data, const char* init_initMethod,
       {
         retVal = -2;
         INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
+      }
+      else if(check_linear_solutions(data))
+      {
+        retVal = -3;
+        INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
       }
       break;
     }
@@ -540,8 +542,6 @@ int solver_main(DATA* data, const char* init_initMethod,
     /* free other solver memory */
   }
 
-  /* free nonlinear system data */
-  freeNonlinearSystem(data);
   /* free stateset data */
   freeStateSetData(data);
 

@@ -64,7 +64,7 @@ enum NONLINEAR_SOLVER
   NS_MAX
 };
 
-typedef void* SOLVER_DATA;
+typedef void* NLS_SOLVER_DATA;
 
 int allocateNonlinearSystem(DATA *data);
 int freeNonlinearSystem(DATA *data);

@@ -527,10 +527,17 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
-  /* do not forget to set nlsMethod! */
+
+  /* set nonlinear solver method */
   comp->fmuData->simulationInfo.nlsMethod = NS_HYBRID;
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(comp->fmuData);
+
+  /* set linear solver method */
+  comp->fmuData->simulationInfo.lsMethod = LS_LAPACK;
+  /* allocate memory for non-linear system solvers */
+  allocatelinearSystem(comp->fmuData);
+
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData);
   /*TODO: Simulation stop time is need to calculate in before hand all sample events

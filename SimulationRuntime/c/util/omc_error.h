@@ -81,6 +81,8 @@ enum LOG_STREAM
   LOG_EVENTS_V,
   LOG_INIT,
   LOG_JAC,
+  LOG_LS,
+  LOG_LS_V,
   LOG_NLS,
   LOG_NLS_V,
   LOG_NLS_JAC,

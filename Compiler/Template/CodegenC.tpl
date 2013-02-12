@@ -158,13 +158,17 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionCallExternalObjectDestructors(extObjInfo)%>
     
-    <%functionExtraResiduals(initialEquations)%>
-    <%functionExtraResiduals(inlineEquations)%>
-    <%functionExtraResiduals(parameterEquations)%>
-    <%functionExtraResiduals(allEquations)%>
+    <%functionNonLinearResiduals(initialEquations)%>
+    <%functionNonLinearResiduals(inlineEquations)%>
+    <%functionNonLinearResiduals(parameterEquations)%>
+    <%functionNonLinearResiduals(allEquations)%>
     
-    <%functionInitialNonLinearSystems(initialEquations,inlineEquations,parameterEquations,allEquations)%>
-
+    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations)%>
+    
+    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    
+    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    
     <%functionInitialStateSets(stateSets)%>
     
     <%functionInput(modelInfo)%>
@@ -289,7 +293,9 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData.modelDataXml.nProfileBlocks = 0;
     data->modelData.modelDataXml.nEquations = <%varInfo.numEquations%>;
-    data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
+    data->modelData.nHybridSystems = <%varInfo.numHybridSystems%>;
+    data->modelData.nLinearSystems = <%varInfo.numLinearSystems%>;
+    data->modelData.nNonLinearSystems = <%varInfo.numNonLinearSystems%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
     data->modelData.nInlineVars = <%varInfo.numInlineVars%>;
     
@@ -771,6 +777,110 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup)
   >>
 end functionInitSample;
 
+template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+  "Generates functions in simulation file."
+::=
+  let initbody = functionInitialLinearSystemsTemp(initialEquations)
+  let inlinebody = functionInitialLinearSystemsTemp(inlineEquations)
+  let parambody = functionInitialLinearSystemsTemp(parameterEquations)
+  let body = functionInitialLinearSystemsTemp(allEquations)
+  let jacobianbody = functionInitialLinearSystemsTemp(jacobianEquations)
+  <<
+  /* funtion initialize linear systems */
+  void initialLinearSystem(LINEAR_SYSTEM_DATA* linearSystemData)
+  {
+    /* initial linear systems */
+    <%initbody%>
+    /* inline linear systems */
+    <%inlinebody%>
+    /* parameter linear systems */
+    <%parambody%>
+    /* model linear systems */
+    <%body%>
+    /* jacobians linear systems */
+    <%jacobianbody%>
+  }
+  >> 
+end functionInitialLinearSystems;
+
+template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1))
+     case eq as SES_LINEAR(__) then
+     let size = listLength(vars)
+     <<
+     linearSystemData[<%indexLinearSystem%>].equationIndex = <%index%>;
+     linearSystemData[<%indexLinearSystem%>].size = <%size%>;
+     linearSystemData[<%indexLinearSystem%>].setA = setLinearMatrixA<%index%>;
+     linearSystemData[<%indexLinearSystem%>].setb = setLinearVectorb<%index%>;
+     >> 
+   )
+   ;separator="\n\n")
+end functionInitialLinearSystemsTemp;
+
+template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+  "Generates functions in simulation file."
+::=
+  let initbody = functionSetupLinearSystemsTemp(initialEquations)
+  let inlinebody = functionSetupLinearSystemsTemp(inlineEquations)
+  let parambody = functionSetupLinearSystemsTemp(parameterEquations)
+  let body = functionSetupLinearSystemsTemp(allEquations)
+  let jacobianbody = functionSetupLinearSystemsTemp(jacobianEquations)
+  <<
+  /* initial linear systems */
+  <%initbody%>
+  /* inline linear systems */
+  <%inlinebody%>
+  /* parameter linear systems */
+  <%parambody%>
+  /* model linear systems */
+  <%body%>
+  /* jacobians linear systems */
+  <%jacobianbody%>
+  >> 
+end functionSetupLinearSystems;
+
+template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then functionSetupLinearSystemsTemp(fill(eq.cont,1))
+     case eq as SES_LINEAR(__) then
+       let &varDecls = buffer "" /*BUFD*/
+       let MatrixA = (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+            let &preExp = buffer "" /*BUFD*/
+            let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
+           '<%preExp%>linearSystemData->A[<%row%> + <%col%> * linearSystemData->size] = <%expPart%>;'
+        ;separator="\n")
+       let &varDecls2 = buffer "" /*BUFD*/
+       let vectorb = (beqs |> exp hasindex i0 =>
+           let &preExp = buffer "" /*BUFD*/
+           let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls2 /*BUFD*/)
+           '<%preExp%>linearSystemData->b[<%i0%>] =  <%expPart%>;'
+        ;separator="\n")
+       <<
+       void setLinearMatrixA<%index%>(void *inData, void *systemData)
+       {
+         DATA* data = (DATA*) inData;
+         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
+         <%varDecls%>
+         <%MatrixA%>
+       }
+       void setLinearVectorb<%index%>(void *inData, void *systemData)
+       {
+         DATA* data = (DATA*) inData;
+         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
+         <%varDecls2%>
+         <%vectorb%>
+  
+       }
+       >>
+   )
+   ;separator="\n\n")
+end functionSetupLinearSystemsTemp;
+
 template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
@@ -802,14 +912,14 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
      let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
      <<
-     nonLinearSystemData[<%indexNonLinear%>].equationIndex = <%index%>;
-     nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
-     nonLinearSystemData[<%indexNonLinear%>].method = <%newtonStep%>;
-     nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
-     nonLinearSystemData[<%indexNonLinear%>].analyticalJacobianColumn = <%generatedJac%>;
-     nonLinearSystemData[<%indexNonLinear%>].initialAnalyticalJacobian = <%initialJac%>;
-     nonLinearSystemData[<%indexNonLinear%>].jacobianIndex = <%jacIndex%>;
-     nonLinearSystemData[<%indexNonLinear%>].initializeStaticNLSData = initializeStaticNLSData<%index%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].equationIndex = <%index%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].size = <%size%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].method = <%newtonStep%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].residualFunc = residualFunc<%index%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
+     nonLinearSystemData[<%indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%index%>;
      
      >> 
    )
@@ -838,11 +948,11 @@ template equationNamesExtraResidualsPreBody(SimEqSystem eq)
   end match
 end equationNamesExtraResidualsPreBody;
 
-template functionExtraResiduals(list<SimEqSystem> allEquations)
+template functionNonLinearResiduals(list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1))
+     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
@@ -890,7 +1000,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    >>
    )
    ;separator="\n\n")
-end functionExtraResiduals;
+end functionNonLinearResiduals;
 
 // =============================================================================
 // section for State Sets
@@ -2304,39 +2414,25 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/
 ::=
 match eq
 case SES_LINEAR(__) then
-  let uid = System.tmpTick()
-  let size = listLength(vars)
-  let aname = 'A<%uid%>'
-  let bname = 'b<%uid%>'
-  let mixedPostfix = if partOfMixed then "_mixed" //else ""
   <<
-  <% if not partOfMixed then
+  <%
     <<
     #ifdef _OMC_MEASURE_TIME
     SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);<%\n%>
     #endif<%\n%>
-    >> %>
+    >>
+  %>
   /* Linear equation system */
-  double <%aname%>[<%intMul(listLength(vars),listLength(vars))%>] = {0};
-  double <%bname%>[<%size%>] = {0};
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
-     '<%preExp%>set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
-  ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-     '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
-  ;separator="\n"%>
-  solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
-  <% if not partOfMixed then
-  <<
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
-  #endif<%\n%>
-  >> %>
+  solve_linear_system(data, <%indexLinearSystem%>);
+  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
+  <%inlineVars(context,vars)%>
+  <% 
+    <<
+    #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+    #endif<%\n%>
+    >> 
+  %>
   >>
 end equationLinear;
 
@@ -2389,7 +2485,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       let size = listLength(crefs)
       let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
       let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")
-      let nonlinindx = indexNonLinear
+      let nonlinindx = indexNonLinearSystem
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
@@ -2399,14 +2495,14 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       <%crefs |> name hasindex i0 =>
         let namestr = cref(name)
         <<
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
         >>
       ;separator="\n"%>
-      solve_nonlinear_system(data, <%indexNonLinear%>);
+      solve_nonlinear_system(data, <%indexNonLinearSystem%>);
       /* write solution */ 
-      <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>];' ;separator="\n"%>
+      <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <%inlineCrefs(context,crefs)%>
       <%eqncalls%>
       <%otherinlines%>

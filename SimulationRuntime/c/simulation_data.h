@@ -270,6 +270,27 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_boolean solved;             /* 1: solved in current step - else not */
 }NONLINEAR_SYSTEM_DATA;
 
+typedef struct LINEAR_SYSTEM_DATA
+{
+  /* set matrix A */
+  void (*setA)(void* data, void* systemData);
+  /* set vector b (rhs) */
+  void (*setb)(void* data, void* systemData);
+
+  modelica_integer size;
+  modelica_integer equationIndex;     /* index for EQUATION_INFO */
+
+  void *solverData;
+  modelica_real *x;                /* solution vector x */
+  modelica_real *A;                /* matrix A */
+  modelica_real *b;                /* vector b */
+
+  modelica_integer method;          /* not used yet*/
+  modelica_real residualError;      /* not used yet*/
+  modelica_boolean solved;          /* 1: solved in current step - else not */
+}LINEAR_SYSTEM_DATA;
+
+
 typedef struct STATE_SET_DATA
 {
   modelica_integer nCandidates;
@@ -352,6 +373,8 @@ typedef struct MODEL_DATA
   long nInitAlgorithms;                /* number of initial algorithms */
   long nInitResiduals;                 /* number of initial residuals */
   long nExtObjs;
+  long nHybridSystems;
+  long nLinearSystems;
   long nNonLinearSystems;
   long nStateSets;
   long nInlineVars;                    /* number of additional variables for the inline solverr */
@@ -374,7 +397,9 @@ typedef struct SIMULATION_INFO
   modelica_string solverMethod;
   modelica_string outputFormat;
   modelica_string variableFilter;
+  int lsMethod;                        /* linear solver */
   int nlsMethod;                       /* nonlinear solver */
+
 
   /* indicators for simulations state */
   modelica_boolean initial;            /* =1 during initialization, 0 otherwise. */
@@ -427,6 +452,9 @@ typedef struct SIMULATION_INFO
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
   int currentNonlinearSystemIndex;
+
+  LINEAR_SYSTEM_DATA* linearSystemData;
+  int currentLinearSystemIndex;
 
   STATE_SET_DATA* stateSetData;
 

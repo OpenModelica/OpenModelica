@@ -57,6 +57,7 @@ extern "C" {
 
 #include "model_help.h"
 #include "delay.h"
+#include "linearSystem.h"
 #include "nonlinearSystem.h"
 
 /* DATA* initializeDataStruc(); */ /*create in model code */

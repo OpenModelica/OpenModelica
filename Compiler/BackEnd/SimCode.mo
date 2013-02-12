@@ -189,7 +189,9 @@ uniontype VarInfo
     Integer numStringParamVars;
     Integer numStringAliasVars;
     Integer numEquations;
-    Integer numNonLinearResFunctions;
+    Integer numLinearSystems;
+    Integer numNonLinearSystems;
+    Integer numHybridSystems;
     Integer numStateSets;
     Option <Integer> dimODE1stOrder;
     Option <Integer> dimODE2ndOrder;
@@ -426,13 +428,14 @@ uniontype SimEqSystem
     list<SimVar> vars;
     list<DAE.Exp> beqs;
     list<tuple<Integer, Integer, SimEqSystem>> simJac;
+    Integer indexLinearSystem;
   end SES_LINEAR;
   
   record SES_NONLINEAR
     Integer index;
     list<SimEqSystem> eqs;
     list<DAE.ComponentRef> crefs;
-    Integer indexNonLinear;
+    Integer indexNonLinearSystem;
     Option<JacobianMatrix> jacobianMatrix;
     Boolean linearTearing;
   end SES_NONLINEAR;
@@ -442,6 +445,7 @@ uniontype SimEqSystem
     SimEqSystem cont;
     list<SimVar> discVars;
     list<SimEqSystem> discEqs;
+    Integer indexHybridSystem;
   end SES_MIXED;
   
   record SES_WHEN

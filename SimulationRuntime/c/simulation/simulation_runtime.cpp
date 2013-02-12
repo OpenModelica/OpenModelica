@@ -69,6 +69,7 @@
 #include "simulation_info_xml.h"
 #include "modelinfo.h"
 #include "model_help.h"
+#include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "rtclock.h"
 #include "../../../Compiler/runtime/config.h"
@@ -272,6 +273,24 @@ int getNonlinearSolverMethod(int argc, char**argv)
   return NS_NONE;
 }
 
+int getlinearSolverMethod(int argc, char**argv)
+{
+  const string *method = getOption("ls", argc, argv);
+
+  if(!method)
+    return LS_LAPACK; /* default method */
+
+  if(*method == string("lapack"))
+    return LS_LAPACK;
+
+  WARNING1(LOG_STDOUT, "unrecognized option -ls %s", method->c_str());
+  WARNING(LOG_STDOUT, "current options are:");
+  INDENT(LOG_STDOUT);
+  WARNING2(LOG_STDOUT, "%-18s [%s]", "lapack", "default method");
+  THROW("see last warning");
+  return NS_NONE;
+}
+
 /**
  * Signals the type of the simulation
  * retuns true for interactive and false for non-interactive
@@ -375,10 +394,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     measureSimTime = 1;
   }
 
-  function_initMemoryState();
-  read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
-  initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
-
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize);
 
@@ -399,8 +414,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
     else
       data->simulationInfo.stopTime = atof(lintime->c_str());
-    cout << "Linearization will performed at point of time: " << data->simulationInfo.stopTime << endl;
-    data->simulationInfo.solverMethod = "dassl";
+    INFO1(LOG_STDOUT, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
   }
 
   if(optionSet("s", argc, argv))
@@ -458,8 +472,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
-    cout << "Linear model is created!" << endl;
+    INFO(LOG_STDOUT,"Linear model is created!");
   }
+
   /* disable measure_time_flag to prevent producing
    * all profiling files, since measure_time_flag
    * was not activated while compiling, it was
@@ -644,6 +659,19 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
 
+  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
+  data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
+
+  function_initMemoryState();
+  read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
+  initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
+
+  /* allocate memory for linear system solvers */
+  allocatelinearSystem(data);
+
+  /* allocate memory for non-linear system solvers */
+  allocateNonlinearSystem(data);
+
   // this sets the static variable that is in the file with the generated-model functions
   if(data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean)
   {
@@ -683,8 +711,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     communicateStatus("Starting", 0.0);
   }
 #endif
-
-  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
 
   return 0;
 }
@@ -759,6 +785,11 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
      * }
      */
     retVal = startNonInteractiveSimulation(argc, argv, data);
+
+    /* free linear system data */
+    freelinearSystem(data);
+    /* free nonlinear system data */
+    freeNonlinearSystem(data);
 
     callExternalObjectDestructors(data);
     deInitializeDataStruc(data);

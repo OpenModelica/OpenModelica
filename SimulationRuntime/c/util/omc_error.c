@@ -54,6 +54,8 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_EVENTS_V",
   "LOG_INIT",
   "LOG_JAC",
+  "LOG_LS",
+  "LOG_LS_V",
   "LOG_NLS",
   "LOG_NLS_V",
   "LOG_NLS_JAC",
@@ -80,6 +82,8 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
   "outputs the jacobian matrix used by the integrator", /* LOG_JAC */
+  "logging for linear systems",                         /* LOG_LS */
+  "verbose logging of linear systems",                  /* LOG_LS_V */
   "logging for nonlinear systems",                      /* LOG_NLS */
   "verbose logging of nonlinear systems",               /* LOG_NLS_V */
   "outputs the jacobian of nonlinear systems",          /* LOG_NLS_JAC */

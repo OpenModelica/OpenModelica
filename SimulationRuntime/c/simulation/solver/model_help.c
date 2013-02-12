@@ -622,6 +622,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
   data->simulationInfo.nlsMethod = NS_NONE;
+  data->simulationInfo.lsMethod = LS_NONE;
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
@@ -651,6 +652,10 @@ void initializeDataStruc(DATA *data)
   /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
+
+  /* buffer for linear systems */
+  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  initialLinearSystem(data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
   data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
