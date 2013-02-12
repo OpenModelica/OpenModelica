@@ -284,31 +284,31 @@ package SimCode
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
     
-	  record SES_LINEAR
-	    Integer index;
-	    Boolean partOfMixed;
-	    list<SimVar> vars;
-	    list<DAE.Exp> beqs;
-	    list<tuple<Integer, Integer, SimEqSystem>> simJac;
-	    Integer indexLinearSystem;
-	  end SES_LINEAR;
-	  
-	  record SES_NONLINEAR
-	    Integer index;
-	    list<SimEqSystem> eqs;
-	    list<DAE.ComponentRef> crefs;
-	    Integer indexNonLinearSystem;
-	    Option<JacobianMatrix> jacobianMatrix;
-	    Boolean linearTearing;
-	  end SES_NONLINEAR;
-	  
-	  record SES_MIXED
-	    Integer index;
-	    SimEqSystem cont;
-	    list<SimVar> discVars;
-	    list<SimEqSystem> discEqs;
-	    Integer indexHybridSystem;
-	  end SES_MIXED;
+    record SES_LINEAR
+      Integer index;
+      Boolean partOfMixed;
+      list<SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      Integer indexLinearSystem;
+    end SES_LINEAR;
+    
+    record SES_NONLINEAR
+      Integer index;
+      list<SimEqSystem> eqs;
+      list<DAE.ComponentRef> crefs;
+      Integer indexNonLinearSystem;
+      Option<JacobianMatrix> jacobianMatrix;
+      Boolean linearTearing;
+    end SES_NONLINEAR;
+    
+    record SES_MIXED
+      Integer index;
+      SimEqSystem cont;
+      list<SimVar> discVars;
+      list<SimEqSystem> discEqs;
+      Integer indexHybridSystem;
+    end SES_MIXED;
     
     record SES_WHEN
       Integer index;
@@ -381,9 +381,9 @@ package SimCode
       Integer numStringParamVars;
       Integer numStringAliasVars;
       Integer numEquations;
-	    Integer numLinearSystems;
-	    Integer numNonLinearSystems;
-	    Integer numHybridSystems;
+      Integer numLinearSystems;
+      Integer numNonLinearSystems;
+      Integer numHybridSystems;
       Integer numStateSets;
       Option <Integer> dimODE1stOrder;
       Option <Integer> dimODE2ndOrder;
