@@ -44,6 +44,7 @@
 
 #include "rtclock.h"
 #include <stdlib.h>
+#include <string.h>
 #include "simulation_inline_solver.h"
 
 #ifdef __cplusplus
