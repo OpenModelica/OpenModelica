@@ -1205,7 +1205,7 @@ function getModelicaPath "Get the Modelica Library Path."
 external "builtin";
 annotation(Documentation(info="<html>
 <p>The MODELICAPATH is list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
-<p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getInstallationDirectoryPath()</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
+<p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 </html>"),
   preferredView="text");
 end getModelicaPath;
@@ -2726,6 +2726,16 @@ annotation(
 </html>"),
   preferredView="text");
 end searchClassNames;
+
+function getAvailableLibraries
+  output String[:] libraries;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Looks for all libraries that are visible from the <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a>.
+</html>"),
+  preferredView="text");
+end getAvailableLibraries;
 
 annotation(preferredView="text");
 end Scripting;

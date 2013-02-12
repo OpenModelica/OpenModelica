@@ -871,7 +871,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion;
+             systemPath, gccVersion, gd, strlinearizeTime;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
@@ -899,9 +899,7 @@ algorithm
       list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
-      list<String> vars_1,args,strings,strs,strs1,strs2,visvars;
-      list<String> postOptModStrings,postOptModStringsOrg;
-      String strlinearizeTime;
+      list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime;
       Interactive.Statements istmts; 
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected, inputConnectors, outputConnectors;
@@ -2087,6 +2085,20 @@ algorithm
         vals = searchClassNames(vals, str, b, p);
       then
         (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,env,"getAvailableLibraries",{},st,_)
+      equation
+        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
+        gd = System.groupDelimiter();
+        mps = System.strtok(mp, gd);
+        files = List.flatten(List.map(mps, System.moFiles));
+        dirs = List.flatten(List.map(mps, System.subDirectories));
+        files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), List.first);
+        files = List.sort(files,Util.strcmpBool);
+        files = List.sortedUnique(files, stringEqual);
+        v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      then
+        (cache,v,st);
 
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation

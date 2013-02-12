@@ -956,6 +956,49 @@ algorithm
   end match;
 end sortedFilterDuplicatesWork;
 
+public function sortedUnique
+  "Takes a list of elements and returns a list with duplicates removed, so that each element in the new list is unique. Assumes that the input is sorted."
+  input list<ElementType> inList;
+  input CompareFunc inCompFunc "Equality comparator";
+  output list<ElementType> duplicates;
+
+  partial function CompareFunc
+    input ElementType inElement1;
+    input ElementType inElement2;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  duplicates := sortedUniqueWork(inList,inCompFunc,{});
+end sortedUnique;
+
+protected function sortedUniqueWork
+  "Checks if the list has any duplicates in it"
+  input list<ElementType> inList;
+  input CompareFunc inCompFunc "Equality comparator";
+  input list<ElementType> inAcc;
+  output list<ElementType> duplicates;
+
+  partial function CompareFunc
+    input ElementType inElement1;
+    input ElementType inElement2;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  duplicates := match(inList, inCompFunc, inAcc)
+    local
+      ElementType e1,e2;
+      list<ElementType> rest;
+      Boolean b;
+
+    case ({}, _, _) then listReverse(inAcc);
+    case (e1::{}, _, _) then listReverse(e1::inAcc);
+    case (e1::(rest as e2::_), _, _)
+      equation
+        b = inCompFunc(e1,e2);
+      then sortedUniqueWork(rest, inCompFunc, consOnTrue(not b, e1, inAcc));
+  end match;
+end sortedUniqueWork;
+
 protected function merge
   "Helper function to sort, merges two sorted lists."
   input list<ElementType> inLeft;
