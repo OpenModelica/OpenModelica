@@ -426,11 +426,11 @@ end dumpStateSelectStrs;
 template dumpStateSelectStr(DAE.StateSelect stateS)
 ::=
 match stateS
-  case NEVER(__)   then  'StateSelect = StateSelect.never'
-  case AVOID(__)   then  'StateSelect = StateSelect.avoid'
-  case DEFAULT(__) then  'StateSelect = StateSelect.default'
-  case PREFER(__)  then  'StateSelect = StateSelect.prefer'
-  case ALWAYS(__)  then  'StateSelect = StateSelect.always'
+  case NEVER(__)   then  'stateSelect = StateSelect.never'
+  case AVOID(__)   then  'stateSelect = StateSelect.avoid'
+  case DEFAULT(__) then  'stateSelect = StateSelect.default'
+  case PREFER(__)  then  'stateSelect = StateSelect.prefer'
+  case ALWAYS(__)  then  'stateSelect = StateSelect.always'
 end dumpStateSelectStr;
 
 template dumpUncertaintyStrs(Option<Uncertainty> uncertain)
@@ -442,9 +442,9 @@ end dumpUncertaintyStrs;
 template dumpUncertaintyStr(DAE.Uncertainty uncertain)
 ::=
 match uncertain
-  case GIVEN(__)   then   'StateSelect = Uncertainty.given'
-  case SOUGHT(__)  then   'StateSelect = Uncertainty.sought'
-  case REFINE(__)  then   'StateSelect = Uncertainty.refine'
+  case GIVEN(__)   then   'uncertainty = Uncertainty.given'
+  case SOUGHT(__)  then   'uncertainty = Uncertainty.sought'
+  case REFINE(__)  then   'uncertainty = Uncertainty.refine'
 end dumpUncertaintyStr;
 
 template dumpCref(ComponentRef c)
