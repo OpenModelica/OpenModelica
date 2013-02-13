@@ -922,7 +922,7 @@ algorithm
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
         displayUnit_str = Dump.getOptionWithConcatStr(displayUnit, ExpressionDump.printExpStr, "displayUnit = ");
-        stateSel_str = Dump.getOptionWithConcatStr(stateSel, dumpStateSelectStr , "StateSelect = ");
+        stateSel_str = Dump.getOptionWithConcatStr(stateSel, dumpStateSelectStr , "stateSelect = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
         nominal_str = Dump.getOptionWithConcatStr(nominal, ExpressionDump.printExpStr, "nominal = ");

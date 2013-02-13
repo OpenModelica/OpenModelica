@@ -608,8 +608,9 @@ protected function elaborateFunctions2
   output list<String> outLibs;
 algorithm
   (outFunctions, outRecordTypes, outDecls, outIncludes, outIncludeDirs, outLibs) :=
-  matchcontinue (program, daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inIncludeDirs, inLibs)
+  match (program, daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inIncludeDirs, inLibs)
     local
+      Boolean b;
       list<SimCode.Function> accfns, fns;
       SimCode.Function fn;
       list<String> rt, rt_1, rt_2, includes, libs;
@@ -641,11 +642,12 @@ algorithm
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
         
-    case (_, DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="C"))::_)::rest, accfns, rt, decls, includes, includeDirs, libs)
+    case (_, (fel as DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="C"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over builtin functions
-        true = listMember(name, SCode.knownExternalCFunctions);
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs);
+        b = listMember(name, SCode.knownExternalCFunctions);
+        (fn, rt_1, decls, includes, includeDirs, libs) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
 
@@ -655,7 +657,7 @@ algorithm
         (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
-  end matchcontinue;
+  end match;
 end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a SimCode.Function. */
