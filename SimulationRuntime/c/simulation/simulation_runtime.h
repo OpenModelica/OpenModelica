@@ -48,6 +48,7 @@
 #include "simulation_inline_solver.h"
 
 #ifdef __cplusplus
+#include <string>
 
 #include "linearize.h"
 #include "simulation_result.h"
