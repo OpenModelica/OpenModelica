@@ -102,7 +102,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
           */
          void init(double* q);
          void der_func(const double* q, double* dq);
-         void postStep(const double* q);
+         void postStep(double* q);
          void state_event_func(const double* q, double* z);
          /**
           * These methods may be overridden by any derived class.
@@ -131,6 +131,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
       private: 
          <%makeMemberVariables(simCode)%>
+
+         <%makeStateSelectHeader(stateSets)%>
 
          double epsilon;
          // These must be accessed via a pointer to localVal
@@ -405,6 +407,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
    <%makeDerFuncCalculator(simCode)%>
    
    <%makeEventFunc(simCode)%>
+
+   <%makeJacobianStateSetFuncs(simCode.stateSets,lastIdentOfPath(modelInfo.name))%>
 
    double <%lastIdentOfPath(modelInfo.name)%>::calcDelay(int index, double expr, double t, double delay)
    {
@@ -746,6 +750,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%initVals(vars.paramVars)%>
        <%initVals(vars.intParamVars)%>
        <%initVals(vars.boolParamVars)%>
+       <%initStateSets(stateSets)%>
        // Save these to the old values so that pre() and edge() work
        save_vars();
        // Calculate any equations that provide initial values
@@ -762,6 +767,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        atInit = false;
        for (int i = 0; i < numMathEvents(); i++)
            if (eventFuncs[i] != NULL) eventFuncs[i]->setInit(false);
+       postStep(q);
    }
    >>
 end makeInit;
@@ -817,14 +823,98 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   >>
 end makeDerFunc;
 
+template initStateSets(list<StateSet> stateSets)
+::=
+  (stateSets |> SES_STATESET(__) =>
+    <<
+    for (int jj = 0; jj < <%nCandidates%>; jj++)
+        colSelect<%crefarray(crA)%>[jj] = jj;
+    >>
+    ;separator="\n")
+end initStateSets;
+
+template makeStateSelectHeader(list<StateSet> stateSets)
+::=
+  (stateSets |> SES_STATESET(__) =>
+     let jacDecl =
+       (jacobianMatrix |> (_,_,name,(_,(diffVars,diffedVars)),_,_) => 
+           '<%declareJacobians2(name,diffVars,diffedVars)%>'
+           ;separator="\n")
+     <<
+     <%jacDecl%>
+     long int colSelect<%crefarray(crA)%>[<%nCandidates%>];
+     >>
+     ; separator="\n")
+end makeStateSelectHeader;
+
+template makeReinitDynamicState(DAE.ComponentRef stateVar, list<DAE.ComponentRef> statescandidates, ComponentRef crA, Integer nStates, Integer rowIndex)
+::=
+  let eq = (statescandidates |> var hasindex i0 => '<%cref(var)%>*<%accessCrA(crA,nStates,rowIndex,i0)%>';separator="+")
+  <<
+  <%cref(stateVar)%> = <%eq%>;
+  >>
+end makeReinitDynamicState;
+
+template accessCrA(DAE.ComponentRef crA, Integer numRows, String rowIndex, String colIndex)
+::=
+  match numRows
+    case 1 then '<%crefarray(crA)%>[<%colIndex%>]'
+    else '<%crefarray(crA)%>[<%rowIndex%>][<%colIndex%>]'
+end accessCrA;
+
+template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> statescandidates, DAE.ComponentRef crA, Integer nCandidates, Integer nStates, JacobianMatrix jacobianMatrix)
+::=
+    let newStateAssign = (states |> stateVar hasindex i0 => '<%makeReinitDynamicState(stateVar,statescandidates,crA,nStates,i0)%>';separator="\n")
+    <<
+    calc_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_) => '<%name%>')%>();
+    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,colSelect<%crefarray(crA)%>))
+    {
+        for (int row = 0; row < <%nStates%>; row++)
+            for (int col = 0; col < <%nCandidates%>; col++)
+                <%accessCrA(crA,nStates,"row","col")%> = 0;
+        for (int row = 0; row < <%nStates%>; row++)
+        {
+            for (int col = 0; col < <%nStates%>; col++)
+            {
+                int index = colSelect<%crefarray(crA)%>[<%nStates%>-col];
+                <%accessCrA(crA,nStates,"row","index")%> = 1;
+            }
+        }
+        <%newStateAssign%>
+        doReinit = true;
+    }
+    >>
+end selectState;
+
+template makeStateSelection(list<StateSet> stateSets, list<SimVar> stateVars)
+::=
+  if stateSets then
+    let reassignCode = (stateVars |> SIMVAR(__) =>
+        'q[<%index%>] = <%cref(name)%>;';separator="\n")
+    let selectCode = 
+      (stateSets |> stateSet as SES_STATESET(__) =>
+        selectState(states,statescandidates,crA,nCandidates,nStates,jacobianMatrix) ; separator="\n")
+      <<
+      bool doReinit = false;
+      <%selectCode%>
+      if (doReinit)
+      {
+          <%reassignCode%>
+          calc_vars(q,true);
+      }
+      >>
+end makeStateSelection;
+
 template makePostStep(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  let stateSelect = makeStateSelection(stateSets,vars.stateVars)
   <<
-  void <%lastIdentOfPath(modelInfo.name)%>::postStep(const double* q)
+  void <%lastIdentOfPath(modelInfo.name)%>::postStep(double* q)
   {
       calc_vars(q);
+      <%stateSelect%>
       save_vars();
   }
   >>
@@ -834,6 +924,21 @@ template makeDerFuncCalculator(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  let aliasAssign = (vars.aliasVars |> v as SIMVAR(__) =>  
+   match aliasvar
+     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+   ;separator="\n")
+  let intAliasAssign = (vars.intAliasVars |> v as SIMVAR(__) =>  
+   match aliasvar
+     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+   ;separator="\n")
+  let boolAliasAssign = (vars.boolAliasVars |> v as SIMVAR(__) =>  
+   match aliasvar
+     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
+   ;separator="\n")
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q, bool doReinit)
   {
@@ -846,8 +951,11 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           timeValue = q[numVars()-1];
           <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
       }
-      // Calculate the odes
       <%allEqns(allEquations,whenClauses,removedEquations)%>
+      // Alias assignments
+      <%aliasAssign%>
+      <%intAliasAssign%>
+      <%boolAliasAssign%>
       if (atEvent && !reInit) reInit = check_for_new_events();
       if (reInit) 
       {
@@ -872,8 +980,11 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
     ;separator="\n")
   <<
   <%varDecls%>
+  // Primary equations
   <%eqs%>
+  // Alias equations
   <%aliasEqs%>
+  // Reinits
   <%reinit%>
   >>
 end allEqns;
@@ -1464,6 +1575,102 @@ template initVal(Exp initialValue)
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
+template jacobianColumnEqn(list<SimEqSystem> eqnSys, list<SimVar> eqnVars, String matrixName, Integer numRows, Integer numCols) "Note: Jacobian in the parser is transposed"
+::=
+  let &varDecls = buffer ""
+  let colVars = (eqnVars |> var => '<%declareCref(var,"")%>';separator="\n")
+  let eqs = (eqnSys |> eqn =>
+    '<%equation_(eqn,contextSimulationDiscrete,&varDecls)%>'
+    ;separator="\n")
+  let colAssigns = (eqnVars |> var as SIMVAR(__) hasindex i0 =>
+    '_Jacobian_<%matrixName%>[<%i0%>+<%numRows%>*col] = <%cref(name)%>;';separator="\n")
+  <<
+  <%colVars%>
+  <%varDecls%>
+  for (int col = 0; col < <%numCols%>; col++)
+  {
+      _S_[col] = 1.0;
+      <%eqs%>
+      _S_[col] = 0.0;
+      <%colAssigns%>
+  }
+  >>
+end jacobianColumnEqn;
+
+template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, list<SimVar> diffVars, list<SimVar> diffedVars, String modelName)
+::=
+  if diffVars then
+    let varDecls = (seedVars |> var as SIMVAR(__) hasindex i0 =>
+      'double &_<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> = _S_[<%i0%>];';separator="\n")
+    let eqs = (cols |> (eqnSys,colVars,_) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(diffedVars),listLength(diffVars))%>';separator="\n")
+    <<
+    void <%modelName%>::calc_Jacobian_<%matrixName%>()
+    {
+        double _S_[<%listLength(seedVars)%>];
+        <%varDecls%>
+        for (int ii = 0; ii < <%listLength(seedVars)%>; ii++)
+            _S_[ii] = 0.0;
+        <%eqs%>   
+    }
+
+    >>
+end makeJacobianFunc;
+
+template jacobianVarsSeedDefine(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
+  case WILD(__) then ' '
+  else "CREF_NOT_IDENT_OR_QUAL"
+end jacobianVarsSeedDefine;
+
+template makeJacobianFuncs(list<JacobianMatrix> jacobians, String modelName)
+::=
+  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,(diffVars,diffedVars)),_,_) => 
+    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>'
+   ;separator="\n")
+  <<
+  <%jacDecls%>
+  >>
+end makeJacobianFuncs;
+
+template makeJacobianStateSetFuncs(list<StateSet> stateSets, String modelName)
+::=
+  (stateSets |> SES_STATESET(__) =>
+    let jacDecls = (jacobianMatrix |> (jacColumn,seedVars,name,(_,(diffVars,diffedVars)),_,_) => 
+    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>')
+    <<
+    <%jacDecls%>
+    >>
+    ; separator="\n")
+end makeJacobianStateSetFuncs;
+
+template declareJacobians2(String name, list<SimVar> diffVars, list<SimVar> diffedVars)
+::=
+  if diffVars then
+    let diffNames = (diffVars |> v as SIMVAR(__) =>
+      '<%cref(name)%>';separator=",")
+    let diffedNames = (diffedVars |> v as SIMVAR(__) =>
+      '<%cref(name)%>';separator=",")
+    <<
+    // Diff vars: <%diffNames%>
+    // Diffed vars: <%diffedNames%>
+    double _Jacobian_<%name%>[<%listLength(diffedVars)%>*<%listLength(diffVars)%>];
+    void calc_Jacobian_<%name%>();
+    >>
+end declareJacobians2;
+
+template declareJacobians(list<JacobianMatrix> jacobians)
+::=
+  let jacDecls = (jacobians |> (_,_,name,(_,(diffVars,diffedVars)),_,_) => 
+    '<%declareJacobians2(name,diffVars,diffedVars)%>'
+   ;separator="\n")
+  <<
+  <%jacDecls%>
+  >>
+end declareJacobians;
+
 template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
 ::=
@@ -1487,7 +1694,12 @@ template declareSetMethod(SimVar var)
     case SIMVAR(arrayCref=SOME(_)) then
       let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
       let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-      'void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }'
+      <<
+      #ifndef _DEFINED_SET_VAR_<%crefarray(name)%>
+      #define _DEFINED_SET_VAR_<%crefarray(name)%>
+      void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }
+      #endif
+      >>
     case SIMVAR(numArrayElement={}) then
       'void set<%cref(name)%>(<%variableType(type_)%> val) { <%cref(name)%> = val; }'
 end declareSetMethod;
@@ -1499,7 +1711,12 @@ template declareGetMethod(SimVar var)
     case SIMVAR(arrayCref=SOME(_)) then
       let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
       let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-      '<%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }'
+      <<
+      #ifndef _DEFINED_GET_VAR_<%crefarray(name)%>
+      #define _DEFINED_GET_VAR_<%crefarray(name)%>
+      <%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }
+      #endif
+      >>
     case SIMVAR(numArrayElement={}) then
       '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
 end declareGetMethod;
@@ -1519,7 +1736,13 @@ template declareCref(SimVar var, String prepend)
   match var 
     case SIMVAR(arrayCref=SOME(_)) then
       let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
-      '<%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;'
+      <<
+      #ifndef _DEFINED_VAR_<%prepend%><%crefarray(name)%>
+      #define _DEFINED_VAR_<%prepend%><%crefarray(name)%>
+      <%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;
+      #endif
+
+      >>
     case SIMVAR(numArrayElement={}) then '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
 end declareCref;
 
@@ -1552,30 +1775,58 @@ template cref(ComponentRef cr)
   match cr
     case CREF_IDENT(ident = "time") then "timeValue"
     case WILD(__) then ''
-    else "_"+ crefToCStr(cr)
+    else
+        let &arrayIndices = buffer ""
+        let varName = crefToCStr(cr,&arrayIndices)
+        '_<%varName%><%arrayIndices%>'
 end cref;
 
-template crefToCStr(ComponentRef cr)
+template crefToCStr(ComponentRef cr, Text &arrayIndices)
  "Helper function to cref."
 ::=
   match cr
     case CREF_IDENT(__) then
-      '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
+      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      '<%unquoteIdentifier(ident)%>'
     case CREF_QUAL(ident="$PRE") then
-      'PRE<%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      'PRE_<%crefToCStr(componentRef,&arrayIndices)%>'
     case CREF_QUAL(ident="$DER") then
-      'DER<%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      'DER_<%crefToCStr(componentRef,&arrayIndices)%>'
     case CREF_QUAL(__) then
-      '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>_<%crefToCStr(componentRef)%>'
+      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      '<%unquoteIdentifier(ident)%>_<%crefToCStr(componentRef,&arrayIndices)%>'
     case WILD(__) then ''
     else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
+
+template subscriptsToCStrForArray(list<Subscript> subscripts)
+::=
+  if subscripts then
+    '<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>'
+end subscriptsToCStrForArray;
 
 template subscriptsToCStr(list<Subscript> subscripts)
 ::=
   if subscripts then
     (subscripts |> i => '[<%subscriptToCStr(i)%>]';separator="")
 end subscriptsToCStr;
+
+template subscriptsToCStr2(list<Subscript> subscripts)
+::=
+  if subscripts then
+    (subscripts |> i => '_<%subscriptToCStr(i)%>_';separator="")
+end subscriptsToCStr2;
+
+template crefToCStr1(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef)%>'
+  case WILD(__) then ' '
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStr1;
 
 template subscriptToCStr(Subscript subscript)
 ::=
@@ -1613,7 +1864,7 @@ template arrayCrefCStr2(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%arrayCrefCStr2(componentRef)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr2(subscriptLst)%>$P<%arrayCrefCStr2(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
 
