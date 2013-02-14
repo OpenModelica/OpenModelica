@@ -285,8 +285,8 @@ int solveMixedSearch(DATA *data, int sysNumber)
       success = 1;
       if (ACTIVE_STREAM(LOG_NLS))
       {
-        DEBUG1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
         const char * __name;
+        DEBUG1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
         for (i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
