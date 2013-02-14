@@ -1131,7 +1131,7 @@ algorithm
       equation
         values = List.map(inValues, System.tolower);
         System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
-        printHelp(values);
+        print(printHelp(values));
         setConfigBool(HELP, true);
       then
         ();
@@ -1572,48 +1572,46 @@ end getConfigEnum;
 // Used by the print functions below to indent descriptions.
 protected constant String descriptionIndent = "                            ";
 
-protected function printHelp
+public function printHelp
   "Prints out help for the given list of topics."
   input list<String> inTopics;
+  output String help;
 algorithm
-  _ := matchcontinue (inTopics)
+  help := match (inTopics)
     local
       Util.TranslatableContent desc;
-      list<String> debug_flags, rest_topics;
-      String str,name;
+      list<String> debug_flags, rest_topics, strs;
+      String str,name,str1,str2,str3,str4,str5,str6,str7,str8;
       ConfigFlag config_flag;
 
-    case {}
+    case {} then printUsage();
+
+    case {"simulation"}
       equation
-        print(printUsage());
-      then
-        ();
+        help = System.gettext("The simulation executable takes the following flags:\n") +& System.getSimulationHelpText(true);
+      then help;
 
     case {"debug"}
       equation
-        print(System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with - will be disabled.\n"));
-        print(System.gettext("The available flags are:\n\n"));
-        debug_flags = List.map(allDebugFlags, printDebugFlag);
-        str = stringAppendList(debug_flags);
-        print(str);
-      then
-        ();
+        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with - will be disabled.\n");
+        str2 = System.gettext("The available flags are:\n\n");
+        strs = List.map(allDebugFlags, printDebugFlag);
+        help = stringAppendList(str1 :: str2 :: strs);
+      then help;
 
     case {"optmodules"}
       equation
         /* 80-char wrapped lines */
-        print(System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a\ncomma-separated list, where the valid modules are:\n\n"));
-        print(printFlagValidOptionsDesc(PRE_OPT_MODULES));
-        /* 80-char wrapped lines */
-        print(System.gettext("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\nafter the pre optimization modules. Valid options are:\n\n"));
-        print(printFlagValidOptionsDesc(MATCHING_ALGORITHM));
-        print(System.gettext("\nThe +indexReductionMethod sets the method that is used for the index reduction,\nafter the pre optimization modules. Valid options are:\n\n"));
-        print(printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD));
-        print(System.gettext("\nThe +postOptModules then sets the optimization modules which are used after the\nindex reduction, specified as a comma-separated list. The valid modules are:\n\n"));
-        print(printFlagValidOptionsDesc(POST_OPT_MODULES));
-        print("\n");
-      then
-        ();
+        str1 = System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a\ncomma-separated list, where the valid modules are:\n\n");
+        str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
+        str3 = System.gettext("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\nafter the pre optimization modules. Valid options are:\n\n");
+        str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
+        str5 = System.gettext("\nThe +indexReductionMethod sets the method that is used for the index reduction,\nafter the pre optimization modules. Valid options are:\n\n");
+        str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
+        str7 = System.gettext("\nThe +postOptModules then sets the optimization modules which are used after the\nindex reduction, specified as a comma-separated list. The valid modules are:\n\n");
+        str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+        help = stringAppendList({str1,str2,str3,str4,str5,str6,str7,str8,"\n"});
+      then help;
 
     case {str}
       equation
@@ -1621,26 +1619,20 @@ algorithm
         str = Util.translateContent(desc);
         str = "    +" +& name +& " " +& str +& "\n";
         str = stringAppendList(Util.stringWrap(str, 80, descriptionIndent));
-        print(str);
-        print("\n");
-        print(printFlagValidOptionsDesc(config_flag));
-      then ();
+        str2 = printFlagValidOptionsDesc(config_flag);
+        help = stringAppendList({str,"\n",str2});
+      then help;
 
     case {str}
-      equation
-        print("I'm sorry, I don't know what " +& str +& " is.\n");
-      then
-        fail();
+      then "I'm sorry, I don't know what " +& str +& " is.\n";
 
     case (str :: (rest_topics as _::_))
       equation
-        printHelp({str});
-        print("\n");
-        printHelp(rest_topics);
-      then
-        ();
+        str = printHelp({str}) +& "\n";
+        help = printHelp(rest_topics);
+      then str +& help;
 
-  end matchcontinue;
+  end match;
 end printHelp;
 
 public function printUsage
@@ -1649,12 +1641,13 @@ public function printUsage
 algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
-  Print.printBuf(System.gettext("Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"));
+  Print.printBuf(System.gettext("Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
   Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
   Print.printBuf(System.gettext("\n* +omcOptions:\n"));
-  Print.printBuf(printAllConfigFlags()); Print.printBuf("\n");
+  Print.printBuf(printAllConfigFlags());
+  Print.printBuf(System.gettext("For more details on a specific topic, use +help=topic or help(\"topic\")\n\n"));
   Print.printBuf(System.gettext("* Examples:\n"));
   Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output\n"));
   Print.printBuf(System.gettext("  omc +s Model.mo          will produce simulation code for the model:\n"));
@@ -1669,6 +1662,7 @@ algorithm
   Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
   //Print.printBuf("\t*.mof (Flat Modelica files) \n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
+  Print.printBuf(System.gettext("For available simulation flags, use +help=simulation\n\n"));
   Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>\n"));
   usage := Print.getString();
   Print.clearBuf();

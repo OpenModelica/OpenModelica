@@ -986,4 +986,10 @@ public function realpath
   external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
 end realpath;
 
+public function getSimulationHelpText
+  input Boolean detailed;
+  output String text;
+  external "C" text = System_getSimulationHelpText(detailed) annotation(Library = {"omcruntime"});
+end getSimulationHelpText;
+
 end System;

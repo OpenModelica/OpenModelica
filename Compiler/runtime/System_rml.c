@@ -2150,4 +2150,9 @@ RML_BEGIN_LABEL(System__realpath)
 }
 RML_END_LABEL
 
-
+RML_BEGIN_LABEL(System__getSimulationHelpText)
+{
+  rmlA0 = mk_scon(System_getSimulationHelpText(RML_UNTAGFIXNUM(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

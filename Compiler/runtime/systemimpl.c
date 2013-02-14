@@ -2069,7 +2069,30 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 }
 #endif
 
+#include "simulation_options.h"
 
+char* System_getSimulationHelpText(int detailed)
+{
+  static char buf[8192];
+  int i;
+  char **desc = detailed ? FLAG_DETAILED_DESC : FLAG_DESC;
+  char *cur = buf;
+  *cur = 0;
+  for(i=1; i<FLAG_MAX; ++i)
+  {
+    if (FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
+      cur += snprintf(cur, 8191-(buf-cur), "<-%s>\n  %s\n", FLAG_NAME[i], desc[i]);
+    } else if (FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
+      cur += snprintf(cur, 8191-(buf-cur), "<-%s=value>\n  %s\n", FLAG_NAME[i], desc[i]);
+    } else if (FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE) {
+      cur += snprintf(cur, 8191-(buf-cur), "<-%s value>\n  %s\n", FLAG_NAME[i], desc[i]);
+    } else {
+      cur += snprintf(cur, 8191-(buf-cur), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
+    }
+  }
+  *cur = 0;
+  return buf;
+}
 
 #ifdef __cplusplus
 }

@@ -1947,9 +1947,15 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"help",{},st as Interactive.SYMBOLTABLE(ast=p),_)
+    case (cache,env,"help",{Values.STRING("")},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         str = Flags.printUsage();
+      then
+        (cache,Values.STRING(str),st);
+        
+    case (cache,env,"help",{Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        str = Flags.printHelp({str});
       then
         (cache,Values.STRING(str),st);
         

@@ -949,7 +949,7 @@ external "builtin";
 annotation(preferredView="text");
 end loadFile;
  
-function loadString "Parses the data and merges the resulting AST with the
+function loadString "Parses the data and merges the resulting AST with ithe
   loaded AST.
   If a filename is given, it is used to provide error-messages as if the string
 was read in binary format from a file with the same name.
@@ -1019,6 +1019,7 @@ annotation(preferredView="text");
 end saveAll;
 
 function help "display the OpenModelica help text."
+  input String topic := "";
   output String helpText;
 external "builtin";
 end help;

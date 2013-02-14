@@ -33,53 +33,7 @@
 #define OPTIONS_H
 
 #include <string>
-
-enum _FLAG
-{
-  FLAG_UNKNOWN = 0,
-  
-  FLAG_CPU,
-  FLAG_F,
-  FLAG_HELP,
-  FLAG_IIF,
-  FLAG_IIM,
-  FLAG_IIT,
-  FLAG_ILS,
-  FLAG_INTERACTIVE,
-  FLAG_IOM,
-  FLAG_JAC,
-  FLAG_L,
-  FLAG_LV,
-  FLAG_MEASURETIMEPLOTFORMAT,
-  FLAG_NLS,
-  FLAG_NOEMIT,
-  FLAG_NUMJAC,
-  FLAG_OUTPUT,
-  FLAG_OVERRIDE,
-  FLAG_OVERRIDE_FILE,
-  FLAG_PORT,
-  FLAG_R,
-  FLAG_S,
-  FLAG_W,
-  
-  FLAG_MAX
-};
-
-enum _FLAG_TYPE
-{
-  FLAG_TYPE_UNKNOWN = 0,
-  
-  FLAG_TYPE_FLAG,         /* e.g. -f */
-  FLAG_TYPE_OPTION,       /* e.g. -f=value */
-  FLAG_TYPE_FLAG_VALUE,   /* e.g. -f value */
-  
-  FLAG_TYPE_MAX
-};
-
-extern const char *FLAG_NAME[FLAG_MAX];
-extern const char *FLAG_DESC[FLAG_MAX];
-extern const char *FLAG_DETAILED_DESC[FLAG_MAX];
-extern const int FLAG_TYPE[FLAG_MAX];
+#include "simulation_options.h"
 
 int checkCommandLineArguments(int argc, char **argv);
 
