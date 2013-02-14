@@ -233,3 +233,27 @@ int check_nonlinear_solutions(DATA *data)
 
   return returnValue;
 }
+
+/*! \fn extraPolate
+ *   This function extrapolates linear next value from
+ *   the both old values,
+ *
+ *  \param  [in]  [data]
+ *
+ *  \author wbraun
+ */
+double extraPolate(DATA *data, double old1, double old2)
+{
+  double retValue;
+
+  if (data->localData[1]->timeValue == data->localData[2]->timeValue)
+  {
+    retValue = old1;
+  }
+  else
+  {
+    retValue = old2 + ((data->localData[0]->timeValue - data->localData[2]->timeValue)/(data->localData[1]->timeValue - data->localData[2]->timeValue)) * (old1-old2);
+  }
+
+  return retValue;
+}

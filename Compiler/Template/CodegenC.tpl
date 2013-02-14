@@ -2586,7 +2586,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
         <<
         data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
         data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
         >>
       ;separator="\n"%>
       solve_nonlinear_system(data, <%indexNonLinearSystem%>);

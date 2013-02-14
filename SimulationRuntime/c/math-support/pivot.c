@@ -6,7 +6,6 @@
 
 #include <math.h>
 #include <assert.h>
-//#include "matrix.h"
 
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt

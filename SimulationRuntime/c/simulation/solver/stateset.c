@@ -30,7 +30,6 @@
  */
 
 #include "stateset.h"
-#include "matrix.h"
 #include "omc_error.h"
 
 #include <memory.h>
@@ -93,7 +92,7 @@ void initializeStateSetPivoting(DATA *data)
       set->colPivot[n] = set->nCandidates-n-1;
     
     for(n=0; n<set->nStates; n++)
-      set_matrix_elt(A, n, n, set->nStates, 1); /* set A[row, col] */
+      A[n + n *set->nStates] = 1;  /* set A[row, col] */
   }
 }
 
@@ -231,7 +230,7 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       unsigned int sid = states[row]->id-firstrealid;
       INFO1(LOG_DSS, "select %s", statecandidates[col]->name);
       /* set A[row, col] */
-      set_matrix_elt(A, row, col, nStates, 1);
+      A[row + col * nStates] = 1;
       /* reinit state */
       data->localData[0]->realVars[sid] = data->localData[0]->realVars[id];
       row++;

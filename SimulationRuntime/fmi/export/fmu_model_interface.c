@@ -528,15 +528,14 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
 
-  /* set nonlinear solver method */
-  comp->fmuData->simulationInfo.nlsMethod = NS_HYBRID;
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(comp->fmuData);
 
-  /* set linear solver method */
-  comp->fmuData->simulationInfo.lsMethod = LS_LAPACK;
   /* allocate memory for non-linear system solvers */
   allocatelinearSystem(comp->fmuData);
+
+  /* allocate memory for mixed system solvers */
+  allocatemixedSystem(comp->fmuData);
 
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData);
@@ -676,6 +675,10 @@ fmiStatus fmiTerminate(fmiComponent c){
   callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
   freeNonlinearSystem(comp->fmuData);
+  /* free mixed system data */
+  freemixedSystem(comp->fmuData);
+  /* free linear system data */
+  freelinearSystem(comp->fmuData);
   /* free stateset data */
   freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);

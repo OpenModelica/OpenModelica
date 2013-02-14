@@ -70,5 +70,6 @@ int allocateNonlinearSystem(DATA *data);
 int freeNonlinearSystem(DATA *data);
 int solve_nonlinear_system(DATA *data, int sysNumber);
 int check_nonlinear_solutions(DATA *data);
+double extraPolate(DATA *data, double old1, double old2);
 
 #endif

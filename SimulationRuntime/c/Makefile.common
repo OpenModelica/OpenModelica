@@ -15,7 +15,6 @@ FFLAGS  = -O -fexceptions
 RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./omc_inline.h \
 ./math-support/blaswrap.h \
-./math-support/matrix.h \
 ./meta/gc/common.h \
 ./meta/gc/mmc_gc.h \
 ./meta/gc/generational.h \

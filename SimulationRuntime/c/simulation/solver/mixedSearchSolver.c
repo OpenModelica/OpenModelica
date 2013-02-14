@@ -256,10 +256,11 @@ int solveMixedSearch(DATA *data, int sysNumber)
         /* debug output */
         if (ACTIVE_STREAM(LOG_NLS))
         {
+          const char * __name;
           for (i = 0; i < systemData->size; i++)
           {
             ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
-            const char *__name = data->modelData.booleanVarsData[ix].info.name;
+            __name = data->modelData.booleanVarsData[ix].info.name;
             DEBUG3(LOG_NLS, "%s changed : %d -> %d", __name, solverData->iterationVars[i], *(systemData->iterationVarsPtr[i]));
           }
         }
@@ -285,10 +286,11 @@ int solveMixedSearch(DATA *data, int sysNumber)
       if (ACTIVE_STREAM(LOG_NLS))
       {
         DEBUG1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
+        const char * __name;
         for (i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
-          const char *__name = data->modelData.booleanVarsData[ix].info.name;
+          __name = data->modelData.booleanVarsData[ix].info.name;
           DEBUG4(LOG_NLS, "%s = %d  pre(%s)= %d", __name, *systemData->iterationVarsPtr[i], __name,
               *systemData->iterationPreVarsPtr[i]);
         }

@@ -38,7 +38,6 @@
 #include "simulation_data.h"
 
 
-
 int allocateMixedSearchData(int size, void **data);
 int freeMixedSearchData(void **data);
 int solveMixedSearch(DATA *data, int sysNumber);
