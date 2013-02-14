@@ -900,10 +900,20 @@ match simVar
     let crefName = '<%cref(name)%>_'   
       match aliasvar
         case ALIAS(__) then 
+        if stringEq(crefStr(varName),"time") then
+        <<
+        case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
+        >>
+        else
         <<
         case <%crefName%> : return get<%arrayName%>(comp, <%cref(varName)%>_); break;
         >>
         case NEGATEDALIAS(__) then
+        if stringEq(crefStr(varName),"time") then
+        <<
+        case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
+        >>
+        else
         <<
         case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%cref(varName)%>_)); break;
         >>
@@ -947,11 +957,19 @@ match simVar
     let description = if comment then '// "<%comment%>"'
     let crefName = '<%cref(name)%>_'
       match aliasvar
-        case ALIAS(__) then 
+        case ALIAS(__) then
+        if stringEq(crefStr(varName),"time") then
+        <<
+        >>
+        else 
         <<
         case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, value); break;
         >>
         case NEGATEDALIAS(__) then
+        if stringEq(crefStr(varName),"time") then
+        <<
+        >>
+        else
         <<
         case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, (<%negate%> value)); break;
         >>
