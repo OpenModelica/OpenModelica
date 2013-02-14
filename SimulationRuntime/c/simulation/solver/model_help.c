@@ -621,8 +621,10 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
-  data->simulationInfo.nlsMethod = NS_NONE;
-  data->simulationInfo.lsMethod = LS_NONE;
+  /* set default solvers for algebraic loops */
+  data->simulationInfo.nlsMethod = NS_HYBRID;
+  data->simulationInfo.lsMethod = LS_LAPACK;
+  data->simulationInfo.mixedMethod = MIXED_SEARCH;
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
@@ -652,6 +654,10 @@ void initializeDataStruc(DATA *data)
   /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
+
+  /* buffer for mixed systems */
+  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
+  initialMixedSystem(data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
   data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
@@ -799,7 +805,13 @@ void deInitializeDataStruc(DATA *data)
   /* free buffer for state sets */
   free(data->simulationInfo.stateSetData);
 
-  /* free buffer jacobians */
+  /* free buffer of mixed systems */
+  free(data->simulationInfo.mixedSystemData);
+
+  /* free buffer of linear systems */
+  free(data->simulationInfo.linearSystemData);
+
+  /* free buffer of non-linear systems */
   free(data->simulationInfo.nonlinearSystemData);
 
   /* free buffer jacobians */
@@ -1011,72 +1023,6 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
 #endif
 }
 
-/*! \fn deInitializeDataStruc
- *
- *  function is used in generated code for mixed equation systems
- *  to generate next combination of boolean variables.
- *  Example: for n = 3
- *           generates sequence: 000, 100, 010, 001, 110, 101, 011, 111
- *
- *  \param [ref] [data]
- *
- * \author Jan Silar
- *
- * \brief
- */
-modelica_boolean nextVar(modelica_boolean *b, int n) {
-  /*number of "1" */
-  int n1 = 0;
-  int i;
-  int last;
-  for(i = 0; i < n; i++){
-    if(b[i] == 1)
-      n1++;
-  }
-  /*index of last element with "1"*/
-  last = n - 1;
-  while(last >= 0 && !b[last])
-    last--;
-  if(n1 == n) /*exit - all combination were already generated*/
-    return 0;
-  else if(last == -1) { /* 0000 -> 1000 */
-    b[0] = 1;
-    return 1;
-  } else if(last < n - 1) { /* e.g. 1010 -> 1001 */
-    b[last] = 0;
-    b[last + 1] = 1;
-    return 1;
-  } else { /*at the end of the array is "1"*/
-    /*detect position of last ocurenc of sequence 10 */
-    int ip = n - 2; /*actual position in array*/
-    int nr1 = 1; /*count of "1"*/
-    while(ip >= 0) {
-      if(b[ip] && !b[ip + 1]) { /*we found*/
-        nr1++;
-        break;
-      } else if(b[ip]) { /*we didn't find, but 1 - increase nr1*/
-        nr1++;
-        ip--;
-      } else { /*we didnt't find, 0*/
-        ip--;
-      }
-    }
-    if(ip >= 0) { /*e.g. 1001 -> 0110*/
-      int pn = ip + nr1;
-      b[ip] = 0;
-      for(i = ip + 1; i <= pn; i++)
-        b[i] = 1;
-      for(i = pn + 1; i <= n - 1; i++)
-        b[i] = 0;
-      return 1;
-    } else {
-      for(i = 0; i <= n1; i++)
-        b[i] = 1;
-      for(i = n1 + 1; i <= n - 1; i++)
-        b[i] = 0;
-      return 1;
-    }
-  }
-}
+
 
 

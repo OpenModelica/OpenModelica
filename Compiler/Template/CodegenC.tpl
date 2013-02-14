@@ -201,8 +201,13 @@ template simulationFile(SimCode simCode, String guid)
     <%functionCheckForDiscreteChanges(discreteModelVars)%>
     
     <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
+
+    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    
+    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
     
     <%functionAnalyticJacobians(jacobianMatrixes)%>
+    
     <%objectiveFunction(classAttributes, simCode)%>
     
     <%functionlinearmodel(modelInfo)%>
@@ -293,7 +298,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData.modelDataXml.nProfileBlocks = 0;
     data->modelData.modelDataXml.nEquations = <%varInfo.numEquations%>;
-    data->modelData.nHybridSystems = <%varInfo.numHybridSystems%>;
+    data->modelData.nMixedSystems = <%varInfo.numMixedSystems%>;
     data->modelData.nLinearSystems = <%varInfo.numLinearSystems%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearSystems%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
@@ -776,6 +781,108 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup)
   }
   >>
 end functionInitSample;
+
+
+template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+  "Generates functions in simulation file."
+::=
+  let initbody = functionInitialMixedSystemsTemp(initialEquations)
+  let inlinebody = functionInitialMixedSystemsTemp(inlineEquations)
+  let parambody = functionInitialMixedSystemsTemp(parameterEquations)
+  let body = functionInitialMixedSystemsTemp(allEquations)
+  let jacobianbody = functionInitialMixedSystemsTemp(jacobianEquations)
+  <<
+  /* funtion initialize mixed systems */
+  void initialMixedSystem(MIXED_SYSTEM_DATA* mixedSystemData)
+  {
+    /* initial mixed systems */
+    <%initbody%>
+    /* inline mixed systems */
+    <%inlinebody%>
+    /* parameter mixed systems */
+    <%parambody%>
+    /* model mixed systems */
+    <%body%>
+    /* jacobians mixed systems */
+    <%jacobianbody%>
+  }
+  >> 
+end functionInitialMixedSystems;
+
+template functionInitialMixedSystemsTemp(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then
+     
+     let size = listLength(discVars)
+     <<
+     mixedSystemData[<%indexMixedSystem%>].equationIndex = <%index%>;
+     mixedSystemData[<%indexMixedSystem%>].size = <%size%>;
+     mixedSystemData[<%indexMixedSystem%>].solveContinuousPart = updateContinuousPart<%index%>;
+     mixedSystemData[<%indexMixedSystem%>].updateIterationExps = updateIterationExpMixedSystem<%index%>;
+     >> 
+   )
+   ;separator="\n\n")
+end functionInitialMixedSystemsTemp;
+
+
+template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+  "Generates functions in simulation file."
+::=
+  let initbody = functionSetupMixedSystemsTemp(initialEquations)
+  let inlinebody = functionSetupMixedSystemsTemp(inlineEquations)
+  let parambody = functionSetupMixedSystemsTemp(parameterEquations)
+  let body = functionSetupMixedSystemsTemp(allEquations)
+  let jacobianbody = functionSetupMixedSystemsTemp(jacobianEquations)
+  <<
+  /* initial mixed systems */
+  <%initbody%>
+  /* inline mixed systems */
+  <%inlinebody%>
+  /* parameter mixed systems */
+  <%parambody%>
+  /* model mixed systems */
+  <%body%>
+  /* jacobians mixed systems */
+  <%jacobianbody%>
+  >> 
+end functionSetupMixedSystems;
+
+template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then
+       let contEqsIndex = equationIndex(cont)
+       let &preDisc = buffer "" /*BUFD*/
+       let &varDecls = buffer "" /*BUFD*/
+       let discExp = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
+          let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
+          <<
+          <%cref(cref)%> = <%expPart%>;
+          >>
+        ;separator="\n")
+       <<
+       void updateContinuousPart<%index%>(void *inData)
+       {
+         DATA* data = (DATA*) inData;
+         eqFunction_<%contEqsIndex%>(data);
+       }
+             
+       void updateIterationExpMixedSystem<%index%>(void *inData)
+       {
+         DATA* data = (DATA*) inData;
+         <%varDecls%>
+         
+         <%preDisc%>
+         <%discExp%>
+       }
+       >>
+   )
+   ;separator="\n\n")
+end functionSetupMixedSystemsTemp;
+
 
 template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
   "Generates functions in simulation file."
@@ -2441,35 +2548,17 @@ template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,
  "Generates a mixed equation system."
 ::=
 match eq
-case SES_MIXED(__) then
+case eqn as SES_MIXED(__) then
   let contEqs = equation_(cont, context, &varDecls /*BUFD*/, &tmp)
-  let numDiscVarsStr = listLength(discVars) 
-  let &preDisc = buffer "" /*BUFD*/
-  let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
-      let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%cref(cref)%> = <%expPart%>;
-      discrete_loc2[<%i0%>] = <%cref(cref)%>;
-      >>
-    ;separator="\n")
+  let numDiscVarsStr = listLength(discVars)
   <<
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
   #endif
-  modelica_boolean boolVar_<%index%>[<%numDiscVarsStr%>] = { 0 };
-  mixed_equation_system(<%numDiscVarsStr%>);
-  <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
-  {
-    <%contEqs%>
-  }
-  <%preDisc%>
-  <%discLoc2%>
-  {
-    modelica_boolean *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&<%cref(name)%>' ;separator=", "%>};
-    modelica_boolean *loc_prePtrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&$P$PRE<%cref(name)%>' ;separator=", "%>};
-    check_discrete_values(boolVar_<%index%>,<%numDiscVarsStr%>,<%index%>);
-  }
-  mixed_equation_system_end(<%numDiscVarsStr%>);
+  /* Continuous equation part in <%contEqs%> */
+  <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
+  <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&$P$PRE<%cref(name)%>;' ;separator="\n"%>;
+  solve_mixed_system(data, <%indexMixedSystem%>);
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
   #endif<%\n%>

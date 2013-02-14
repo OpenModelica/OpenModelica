@@ -290,6 +290,23 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_boolean solved;          /* 1: solved in current step - else not */
 }LINEAR_SYSTEM_DATA;
 
+typedef struct MIXED_SYSTEM_DATA
+{
+  modelica_integer size;
+  modelica_integer equationIndex;     /* index for EQUATION_INFO */
+
+  /* solveContinuousPart */
+  void (*solveContinuousPart)(void* data);
+
+  void (*updateIterationExps)(void* data);
+
+  modelica_boolean** iterationVarsPtr;
+  modelica_boolean** iterationPreVarsPtr;
+  void *solverData;
+
+  modelica_integer method;          /* not used yet*/
+  modelica_boolean solved;          /* 1: solved in current step - else not */
+}MIXED_SYSTEM_DATA;
 
 typedef struct STATE_SET_DATA
 {
@@ -373,7 +390,7 @@ typedef struct MODEL_DATA
   long nInitAlgorithms;                /* number of initial algorithms */
   long nInitResiduals;                 /* number of initial residuals */
   long nExtObjs;
-  long nHybridSystems;
+  long nMixedSystems;
   long nLinearSystems;
   long nNonLinearSystems;
   long nStateSets;
@@ -398,6 +415,7 @@ typedef struct SIMULATION_INFO
   modelica_string outputFormat;
   modelica_string variableFilter;
   int lsMethod;                        /* linear solver */
+  int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */
 
 
@@ -410,12 +428,11 @@ typedef struct SIMULATION_INFO
   modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
   modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
-  modelica_boolean found_solution;     /* helper for mixed systems { 1: ???; 
-                                                                     0: ???; 
-                                                                    -1: ???; 
-                                                                    -2: non-linear system of equations failed; 
-                                                                    -3: Error solving linear system of equations; 
-                                                                    -4: hybridIterations++ > 200}*/
+  modelica_boolean found_solution;     /* helper for mixed systems {  1: ???;
+                                                                      0: ???;
+                                                                     -1: ???;
+                                                                     -2: continuous system of equations failed;
+                                                                     -4: mixedIterations++ > 200}*/
 
   void** extObjs;                      /* External objects */
   
@@ -455,6 +472,8 @@ typedef struct SIMULATION_INFO
 
   LINEAR_SYSTEM_DATA* linearSystemData;
   int currentLinearSystemIndex;
+
+  MIXED_SYSTEM_DATA* mixedSystemData;
 
   STATE_SET_DATA* stateSetData;
 

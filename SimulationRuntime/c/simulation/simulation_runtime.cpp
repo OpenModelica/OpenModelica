@@ -68,6 +68,7 @@
 #include "simulation_info_xml.h"
 #include "modelinfo.h"
 #include "model_help.h"
+#include "mixedSystem.h"
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "rtclock.h"
@@ -665,6 +666,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
 
+  /* allocate memory for mixed system solvers */
+  allocatemixedSystem(data);
+
   /* allocate memory for linear system solvers */
   allocatelinearSystem(data);
 
@@ -779,6 +783,8 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
       retVal = startNonInteractiveSimulation(argc, argv, data);
     }
 
+    /* free mixed system data */
+    freemixedSystem(data);
     /* free linear system data */
     freelinearSystem(data);
     /* free nonlinear system data */

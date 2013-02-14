@@ -307,7 +307,7 @@ package SimCode
       SimEqSystem cont;
       list<SimVar> discVars;
       list<SimEqSystem> discEqs;
-      Integer indexHybridSystem;
+      Integer indexMixedSystem;
     end SES_MIXED;
     
     record SES_WHEN
@@ -383,7 +383,7 @@ package SimCode
       Integer numEquations;
       Integer numLinearSystems;
       Integer numNonLinearSystems;
-      Integer numHybridSystems;
+      Integer numMixedSystems;
       Integer numStateSets;
       Option <Integer> dimODE1stOrder;
       Option <Integer> dimODE2ndOrder;

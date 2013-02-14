@@ -8,6 +8,8 @@ SET(solver_sources  dassl.c
                     delay.c
                     events.c
                     model_help.c
+                    mixedSystem.c
+                    mixedSearchSolver.c
                     kinsolSolver.c                    
                     linearSystem.c
                     linearSolverLapack.c
@@ -21,6 +23,8 @@ SET(solver_sources  dassl.c
 SET(solver_headers  dassl.h
                     delay.h 
                     events.h
+                    mixedSystem.h
+                    mixedSearchSolver.h
                     kinsolSolver.h
                     linearSystem.h
                     linearSolverLapack.h

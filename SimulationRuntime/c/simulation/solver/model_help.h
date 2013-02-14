@@ -140,8 +140,6 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
 
-modelica_boolean nextVar(modelica_boolean *b, int n);
-
 #ifdef __cplusplus
 }
 #endif
