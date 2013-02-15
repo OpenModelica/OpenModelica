@@ -17,6 +17,7 @@ FPMATHFORTRAN = @FPMATHFORTRAN@
 
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
+INTERACTIVECLIENT = "../interactive/SampleClient/interactiveclient"
 LIBSENDDATA = @LIBSENDDATA@
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h

@@ -23,7 +23,7 @@ endif
 
 OBJ = $(CPPSRC:.cpp=.o)
 
-all: libinteractive.a SampleClient/client
+all: libinteractive.a SampleClient/interactiveclient
 
 omc_ServiceInterface.o: omi_ServiceInterface.cpp \
   omi_ServiceInterface.h omi_Control.h omi_Transfer.h \
@@ -34,7 +34,7 @@ omc_ServiceInterface.o: omi_ServiceInterface.cpp \
 libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
 
-SampleClient/client : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
+SampleClient/interactiveclient : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
 	@echo "Building client for interactive simulation ... "
 	$(CXX) $(CPPFLAGS) -o $@ client.cpp socket.cpp thread.cpp -lpthread
 

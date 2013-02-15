@@ -129,6 +129,8 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a libOpe
 	   ./ModelicaExternalC/libModelicaExternalC.a \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+	# copy interactive sample client
+	cp $(INTERACTIVECLIENT) $(builddir_bin)
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)
 	# copy fmi stuff
