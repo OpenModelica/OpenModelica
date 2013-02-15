@@ -60,7 +60,6 @@
 #include "options.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
-#include "simulation_result_empty.h"
 #include "simulation_result_plt.h"
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
@@ -108,11 +107,6 @@ char* TermMsg; /* message for termination. */
 int sim_noemit = 0; // Flag for not emitting data
 
 const std::string *init_method = NULL; // method for  initialization.
-
-
-// The simulation result
-simulation_result *sim_result = NULL;
-
 
 /* function for start simulation */
 int callSolver(DATA*, string, string, string, string, double, int, string, int cpuTime);
@@ -509,20 +503,33 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
 {
   int retVal = 0;
   long maxSteps = 4 * simData->simulationInfo.numSteps;
+  sim_result.filename = strdup(result_file_cstr.c_str());
+  sim_result.numpoints = maxSteps;
+  sim_result.cpuTime = cpuTime;
   if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+    /* Default is set to noemit */
   } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+    sim_result.init = csv_init;
+    sim_result.emit = csv_emit;
+    /* sim_result.writeParameterData = csv_writeParameterData; */
+    sim_result.free = csv_free;
   } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData, cpuTime);
+    sim_result.init = mat4_init;
+    sim_result.emit = mat4_emit;
+    sim_result.writeParameterData = mat4_writeParameterData;
+    sim_result.free = mat4_free;
   } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+    sim_result.init = plt_init;
+    sim_result.emit = plt_emit;
+    /* sim_result.writeParameterData = plt_writeParameterData; */
+    sim_result.free = plt_free;
   } else {
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
-    retVal = 1;
+    return 1;
   }
-  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
-  return retVal;
+  sim_result.init(&sim_result,simData);
+  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
+  return 0;
 }
 
 /**
@@ -597,7 +604,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     retVal = 1;
   }
 
-  delete sim_result;
+  sim_result.free(&sim_result,simData);
 
   return retVal;
 }
@@ -820,20 +827,6 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   }
 #endif
   EXIT(retVal);
-}
-
-/* C-Interface for sim_result->emit(); */
-void sim_result_emit()
-{
-   if(sim_result)
-     sim_result->emit();
-}
-
-/* C-Interface for sim_result->writeParameterData(); */
-void sim_result_writeParameterData()
-{
-   if(sim_result)
-     sim_result->writeParameterData();
 }
 
 static void omc_assert_simulation(const char *msg, FILE_INFO info)

@@ -31,6 +31,7 @@
 #include "events.h"
 #include "omc_error.h"
 #include "simulation_data.h"
+#include "simulation_result.h"
 #include "openmodelica.h"         /* for modelica types */
 #include "openmodelica_func.h"    /* for modelica fucntion */
 #include "simulation_runtime.h"
@@ -187,7 +188,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   long i;
   LIST_NODE* it;
   
-  sim_result_emit(data);
+  sim_result.emit(&sim_result,data);
   
   /* sample event */
   if(data->simulationInfo.sampleActivated)

@@ -33,6 +33,7 @@
  
 #include "solver_main.h"
 #include "simulation_runtime.h"
+#include "simulation_result.h"
 #include "openmodelica_func.h"
 #include "initialization.h"
 #include "nonlinearSystem.h"
@@ -277,7 +278,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
-  sim_result_writeParameterData(&(data->modelData));
+  sim_result.writeParameterData(&sim_result,data);
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
   if(ACTIVE_STREAM(LOG_DEBUG))
     printParameters(data, LOG_DEBUG);
@@ -294,7 +295,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   updateHysteresis(data);
   saveZeroCrossings(data);
 
-  sim_result_emit(data);
+  sim_result.emit(&sim_result,data);
   overwriteOldSimulationData(data);
 
   /* Initialization complete */
@@ -462,7 +463,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         fmt = NULL;
       }
     }
-    sim_result_emit(data);
+    sim_result.emit(&sim_result,data);
 
     if(ACTIVE_STREAM(LOG_DEBUG))
       printAllVars(data, 0, LOG_DEBUG);
@@ -561,7 +562,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   {
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
-    sim_result_emit(data);
+    sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;
   }
   communicateStatus("Finished", 1);

@@ -1,39 +1,30 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ * 
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs: http://www.openmodelica.org or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
+ * distribution. GNU version 3 is obtained from:
+ * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
+ * http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
- *
- */
-
-/*
- * File: simulation_runtime.h
- *
- * Description: This file is a C++ header file for the simulation runtime.
- * It contains a prototype for the simulation result interface.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
+ * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
+ * CONDITIONS OF OSMC-PL.
  *
  */
 
@@ -42,34 +33,26 @@
 
 #include "simulation_data.h"
 
-class SimulationResultBaseException {};
-class SimulationResultFileOpenException : SimulationResultBaseException {};
-class SimulationResultFileCloseException : SimulationResultBaseException {};
-class SimulationResultMallocException : SimulationResultBaseException {};
-class SimulationResultReallocException : SimulationResultBaseException {};
+#ifdef __cplusplus
+extern "C" {
+#endif /* cplusplus */
 
-/*
- * numpoints, maximum number of points that can be stored.
- * nx number of states
- * ny number of variables
- * np number of parameters  (not used in this impl.)
- */
-class simulation_result
-{
-protected:
+/* A prototype for the simulation result interface. */
+typedef struct simulation_result {
   const char *filename;
-  const long numpoints;
-  const DATA *data;
-  const int cpuTime;
+  long numpoints;
+  int cpuTime;
+  void *storage; /* Internal data used for each storage scheme */
+  void (*init)(struct simulation_result*,DATA*);
+  void (*emit)(struct simulation_result*,DATA*);
+  void (*writeParameterData)(struct simulation_result*,DATA*);
+  void (*free)(struct simulation_result*,DATA*);
+} simulation_result;
 
-public:
-  simulation_result(const char* filename, long numpoints, const DATA* data, int cpuTime) : filename(filename), numpoints(numpoints), data(data), cpuTime(cpuTime) {};
-  virtual ~simulation_result() {};
-  virtual void emit() = 0;
+extern simulation_result sim_result;
 
-  /* write the parameter data after updateBoundParameters is called */
-  virtual void writeParameterData() = 0;
-  virtual const char* result_type() = 0;
-};
+#ifdef __cplusplus
+}
+#endif /* cplusplus */
 
 #endif

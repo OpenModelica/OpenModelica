@@ -369,7 +369,7 @@ interpolation_control(const int dideventstep, double interpolationStep,
 
   if (dideventstep == 1) {
     /* Emit data after an event */
-    sim_result_emit();
+    sim_result.emit(&sim_result,data);
   }
 
   if (((interpolationStep > globalData->oldTime) && (interpolationStep < globalData->timeValue)) ||
@@ -424,7 +424,7 @@ interpolation_control(const int dideventstep, double interpolationStep,
         saveZeroCrossings();
 
         /* Emit interpolated data at the current time step */
-        sim_result_emit();
+        sim_result.emit(&sim_result,data);
       }
 
       interpolationStep = interpolationStep + fixStep;

@@ -1,31 +1,30 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ * 
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs: http://www.openmodelica.org or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
+ * distribution. GNU version 3 is obtained from:
+ * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
+ * http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
+ * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
+ * CONDITIONS OF OSMC-PL.
  *
  */
 
@@ -34,27 +33,16 @@
 
 #include "simulation_result.h"
 
-class simulation_result_plt : public simulation_result
-{ 
-private:
-  double* simulationResultData;
-  long currentPos;
-  long actualPoints; /* the number of actual points saved */
-  long maxPoints;
-  long dataSize;
-  int num_vars;
+#ifdef __cplusplus
+extern "C" {
+#endif /* cplusplus */
 
-  void add_result(double *data, long *actualPoints);
-  void deallocResult();
-  void printPltLine(FILE* f, double time, double val);
-  int calcDataSize(const MODEL_DATA *modelData);
+void plt_init(simulation_result *self,DATA *data);
+void plt_emit(simulation_result *self,DATA *data);
+void plt_free(simulation_result *self,DATA *data);
 
-public:
-  simulation_result_plt(const char* filename, long numpoints, const DATA *data, int cpuTime);
-  virtual ~simulation_result_plt();
-  virtual void emit();
-  void writeParameterData() { /* do nothing */ };
-  virtual const char* result_type() {return "plt";};
-};
+#ifdef __cplusplus
+}
+#endif /* cplusplus */
 
 #endif

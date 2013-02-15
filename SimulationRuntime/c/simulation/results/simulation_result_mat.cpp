@@ -1,100 +1,137 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ * 
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs: http://www.openmodelica.org or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
+ * distribution. GNU version 3 is obtained from:
+ * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
+ * http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
+ * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
+ * CONDITIONS OF OSMC-PL.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
- *
- */
-
-/*
-
  */
 
 #include "omc_error.h"
 #include "simulation_result_mat.h"
 #include "rtclock.h"
 
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+#include <utility>
 #include <cstring>
 #include <cstdlib>
 #include <stdint.h>
 #include <assert.h>
 
+typedef std::pair<void*,int> indx_type;
+typedef std::map<int,int> INTMAP;
+
+typedef struct mat_data {
+  std::ofstream fp;
+  std::ofstream::pos_type data1HdrPos; /* position of data_1 matrix's header in a file */
+  std::ofstream::pos_type data2HdrPos; /* position of data_2 matrix's header in a file */
+  unsigned long ntimepoints; /* count of how many time emits() was called */
+  double startTime; /* the start time */
+  double stopTime;  /* the stop time */
+
+  INTMAP r_indx_map;
+  INTMAP r_indx_parammap;
+  INTMAP i_indx_map;
+  INTMAP i_indx_parammap;
+  INTMAP b_indx_map;
+  INTMAP b_indx_parammap;
+
+  unsigned int negatedboolaliases;
+  int numVars;
+} mat_data;
+
+extern "C" {
+
+long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
+void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *name, int rows, int cols, unsigned int size);
+void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *, unsigned int size);
+void generateDataInfo(simulation_result *self,DATA *data,int* &dataInfo, int& rows, int& cols, int nVars, int nParams);
+void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double tstart, double tstop);
+
+static int calcDataSize(simulation_result *self,DATA *data);
+static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize);
+
 static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
 static const struct VAR_INFO cpuTimeValName = {0,"$cpuTime","cpu time [s]",{"",-1,-1,-1,-1}};
 
-int simulation_result_mat::calcDataSize()
+static int calcDataSize(simulation_result *self,DATA *data)
 {
+  mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *modelData = &(data->modelData);
 
   int sz = 1; /* start with one for the timeValue */
   
-  if(cpuTime)
+  if(self->cpuTime)
     sz++;
     
   for(int i = 0; i < modelData->nVariablesReal; i++)
     if(!modelData->realVarsData[i].filterOutput)
     {
-       r_indx_map[i] = sz;
+       matData->r_indx_map[i] = sz;
        sz++;
     }
+
   for(int i = 0; i < modelData->nVariablesInteger; i++)
     if(!modelData->integerVarsData[i].filterOutput)
     {
-       i_indx_map[i] = sz;
+       matData->i_indx_map[i] = sz;
        sz++;
     }
   for(int i = 0; i < modelData->nVariablesBoolean; i++)
     if(!modelData->booleanVarsData[i].filterOutput)
     {
-       b_indx_map[i] = sz;
+       matData->b_indx_map[i] = sz;
        sz++;
     }
   for(int i = 0; i < modelData->nAliasReal; i++)
     if(!modelData->realAlias[i].filterOutput) sz++;
   for(int i = 0; i < modelData->nAliasInteger; i++)
     if(!modelData->integerAlias[i].filterOutput) sz++;
-  negatedboolaliases = 0;
+  matData->negatedboolaliases = 0;
   for(int i = 0; i < modelData->nAliasBoolean; i++)
     if(!modelData->booleanAlias[i].filterOutput)
     {
        if(modelData->booleanAlias[i].negate)
-          negatedboolaliases++;
+          matData->negatedboolaliases++;
        sz++;
     }
   return sz;
 }
 
-const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
+static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize)
 {
+  mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *modelData = &(data->modelData);
 
   const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize)*sizeof(struct VAR_INFO*));
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
-  if(cpuTime)
+  if(self->cpuTime)
     names[curVar++] = &cpuTimeValName;
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     names[curVar++] = &(modelData->realVarsData[i].info);
@@ -112,51 +149,53 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
   for(int i = 0; i < modelData->nParametersReal; i++)
   {
     names[curVar++] = &(modelData->realParameterData[i].info);
-    r_indx_parammap[i]=sz;
+    matData->r_indx_parammap[i]=sz;
     sz++;
   }
   for(int i = 0; i < modelData->nParametersInteger; i++)
   {
     names[curVar++] = &(modelData->integerParameterData[i].info);
-    i_indx_parammap[i]=sz;
+    matData->i_indx_parammap[i]=sz;
     sz++;
   }
   for(int i = 0; i < modelData->nParametersBoolean; i++)
   {
     names[curVar++] = &(modelData->booleanParameterData[i].info);
-    b_indx_parammap[i]=sz;
+    matData->b_indx_parammap[i]=sz;
     sz++;
   }
   return names;
 }
 
 /* write the parameter data after updateBoundParameters is called */
-void simulation_result_mat::writeParameterData()
+void mat4_writeParameterData(simulation_result *self,DATA *data)
 {
+  mat_data *matData = (mat_data*) self->storage;
   int rows, cols;
   double *doubleMatrix = NULL;
   try
   {
-    std::ofstream::pos_type remember = fp.tellp();
-    fp.seekp(data1HdrPos);
+    std::ofstream::pos_type remember = matData->fp.tellp();
+    matData->fp.seekp(matData->data1HdrPos);
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(doubleMatrix, rows, cols, startTime, stopTime);
+    generateData_1(data, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
+    writeMatVer4Matrix(self,data,"data_1", cols, rows, doubleMatrix, sizeof(double));
     free(doubleMatrix); doubleMatrix = NULL;
-    fp.seekp(remember);
+    matData->fp.seekp(remember);
   }
   catch(...)
   {
-    fp.close();
+    matData->fp.close();
     free(doubleMatrix);
     throw;
   }
 }
 
-simulation_result_mat::simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data, int cpuTime)
-  : simulation_result(filename, numpoints, data, cpuTime), fp(), data1HdrPos(-1), data2HdrPos(-1), ntimepoints(0), startTime(tstart), stopTime(tstop)
+void mat4_init(simulation_result *self,DATA *data)
 {
+  mat_data *matData = new mat_data();
+  self->storage = matData;
   const MODEL_DATA *mData = &(data->modelData);
 
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
@@ -170,93 +209,104 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
   double *doubleMatrix = NULL;
   assert(sizeof(char) == 1);
   rt_tick(SIM_TIMER_OUTPUT);
-  numVars = calcDataSize();
-  names = calcDataNames(numVars+nParams);
+  matData->numVars = calcDataSize(self,data);
+  names = calcDataNames(self,data,matData->numVars+nParams);
+  matData->data1HdrPos = -1;
+  matData->data2HdrPos = -1;
+  matData->ntimepoints = 0;
+  matData->startTime = data->simulationInfo.startTime;
+  matData->stopTime = data->simulationInfo.stopTime;
 
   try
   {
     /* open file */
-    fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
-    if(!fp)
-      ASSERT1(0, "Cannot open File %s for writing",filename);
+    matData->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
+    if(!matData->fp)
+      ASSERT1(0, "Cannot open File %s for writing",self->filename);
 
     /* write `AClass' matrix */
-    writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(int8_t));
+    writeMatVer4Matrix(self,data,"Aclass", 4, 11, Aclass, sizeof(int8_t));
     /* flatten variables' names */
-    flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
+    flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     /* write `name' matrix */
-    writeMatVer4Matrix("name", rows, cols, stringMatrix, sizeof(int8_t));
+    writeMatVer4Matrix(self,data,"name", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* flatten variables' comments */
-    flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false, true);
+    flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false, true);
     /* write `description' matrix */
-    writeMatVer4Matrix("description", rows, cols, stringMatrix, sizeof(int8_t));
+    writeMatVer4Matrix(self,data,"description", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* generate dataInfo table */
-    generateDataInfo(intMatrix, rows, cols, numVars, nParams);
+    generateDataInfo(self, data, intMatrix, rows, cols, matData->numVars, nParams);
     /* write `dataInfo' matrix */
-    writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int32_t));
+    writeMatVer4Matrix(self, data, "dataInfo", cols, rows, intMatrix, sizeof(int32_t));
 
     /* remember data1HdrPos */
-    data1HdrPos = fp.tellp();
+    matData->data1HdrPos = matData->fp.tellp();
 
     /* adrpo: i cannot use writeParameterData here as it would return back to dataHdr1Pos */
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(doubleMatrix, rows, cols, tstart, tstop);
+    generateData_1(data, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
+    writeMatVer4Matrix(self,data,"data_1", cols, rows, doubleMatrix, sizeof(double));
 
     /* remember data2HdrPos */
-    data2HdrPos = fp.tellp();
+    matData->data2HdrPos = matData->fp.tellp();
     /* write `data_2' header */
-    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/ + cpuTime, 0, sizeof(double));
+    writeMatVer4MatrixHeader(self,data,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, 0, sizeof(double));
 
     free(doubleMatrix);
     free(intMatrix);
     doubleMatrix = NULL;
     intMatrix = NULL;
-    fp.flush();
+    matData->fp.flush();
 
   }
   catch(...)
   {
-    fp.close();
+    matData->fp.close();
     free(names); names=NULL;
     free(stringMatrix);
     free(doubleMatrix);
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
-    ASSERT1(0, "Error while writing mat file %s",filename);
+    ASSERT1(0, "Error while writing mat file %s",self->filename);
   }
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-simulation_result_mat::~simulation_result_mat()
+void mat4_free(simulation_result *self,DATA *data)
 {
+  mat_data *matData = (mat_data*) self->storage;
   rt_tick(SIM_TIMER_OUTPUT);
   /* this is a bad programming practice - closing file in destructor,
-     where a proper error reporting can't be done */
-  if(fp)
+   * where a proper error reporting can't be done
+   * It's ok now; it's not even C++ code :D
+   */
+  if(matData->fp)
   {
     try
     {
-      fp.seekp(data2HdrPos);
-      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/ + cpuTime, ntimepoints, sizeof(double));
-      fp.close();
+      matData->fp.seekp(matData->data2HdrPos);
+      writeMatVer4MatrixHeader(self,data,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, matData->ntimepoints, sizeof(double));
+      matData->fp.close();
     }
     catch (...)
     {
       /* just ignore, we are in destructor */
     }
   }
+  delete matData;
+  self->storage = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void simulation_result_mat::emit()
+void mat4_emit(simulation_result *self,DATA *data)
 {
+  mat_data *matData = (mat_data*) self->storage;
   double datPoint=0;
   rt_tick(SIM_TIMER_OUTPUT);
   
@@ -268,32 +318,32 @@ void simulation_result_mat::emit()
   /* this is done wrong -- a buffering should be used
      although ofstream does have some buffering, but it is not enough and
      not for this purpose */
-  fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
-  if(cpuTime)
-    fp.write((char*)&cpuTimeValue, sizeof(double));
+  matData->fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
+  if(self->cpuTime)
+    matData->fp.write((char*)&cpuTimeValue, sizeof(double));
   for(int i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
-    fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
+    matData->fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
   for(int i = 0; i < data->modelData.nVariablesInteger; i++) if(!data->modelData.integerVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->integerVars[i];
-      fp.write((char*)&datPoint,sizeof(double));
+      matData->fp.write((char*)&datPoint,sizeof(double));
     }
   for(int i = 0; i < data->modelData.nVariablesBoolean; i++) if(!data->modelData.booleanVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->booleanVars[i];
-      fp.write((char*)&datPoint,sizeof(double));
+      matData->fp.write((char*)&datPoint,sizeof(double));
     }
   for(int i = 0; i < data->modelData.nAliasBoolean; i++) if(!data->modelData.booleanAlias[i].filterOutput)
     {
       if(data->modelData.booleanAlias[i].negate)
       {
         datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
-        fp.write((char*)&datPoint,sizeof(double));
+        matData->fp.write((char*)&datPoint,sizeof(double));
       }
     }
-  if(!fp)
-    ASSERT1(0, "Error while writing file %s",filename);
-  ++ntimepoints;
+  if(!matData->fp)
+    ASSERT1(0, "Error while writing file %s",self->filename);
+  ++matData->ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
@@ -316,10 +366,7 @@ static inline void fixDerInName(char *str, size_t len)
   }
 }
 
-long simulation_result_mat::flattenStrBuf(int dims,
-    const struct VAR_INFO** src,
-    char* &dest, int& longest, int& nstrings,
-    bool fixNames, bool useComment)
+long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment)
 {
   int i,len;
   nstrings = dims;
@@ -352,11 +399,10 @@ long simulation_result_mat::flattenStrBuf(int dims,
 }
 
 // writes MAT-file matrix header to file
-void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
-    int rows, int cols,
-    unsigned int size)
+void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *name, int rows, int cols, unsigned int size)
 {
-  typedef struct {
+  mat_data *matData = (mat_data*) self->storage;
+  typedef struct MHeader {
     uint32_t type;
     uint32_t mrows;
     uint32_t ncols;
@@ -379,29 +425,29 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   hdr.imagf = 0;
   hdr.namelen = strlen(name)+1;
   /* write header to file */
-  fp.write((char*)&hdr, sizeof(MHeader_t));
-  if(!fp)
-    ASSERT1(0, "Cannot write to file %s",filename);
-  fp.write(name, sizeof(char)*hdr.namelen);
-  if(!fp)
-    ASSERT1(0, "Cannot write to file %s",filename);
+  matData->fp.write((char*)&hdr, sizeof(MHeader_t));
+  if(!matData->fp)
+    ASSERT1(0, "Cannot write to file %s",self->filename);
+  matData->fp.write(name, sizeof(char)*hdr.namelen);
+  if(!matData->fp)
+    ASSERT1(0, "Cannot write to file %s",self->filename);
 }
 
-void simulation_result_mat::writeMatVer4Matrix(const char *name,
-    int rows, int cols,
-    const void *data, unsigned int size)
+void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *matrixData, unsigned int size)
 {
-  writeMatVer4MatrixHeader(name,rows,cols,size);
+  mat_data *matData = (mat_data*) self->storage;
+  writeMatVer4MatrixHeader(self,data,name,rows,cols,size);
 
   /* write data */
-  fp.write((const char*)data, (size)*rows*cols);
-  if(!fp)
-    ASSERT1(0, "Cannot write to file %s",filename);
+  matData->fp.write((const char*)matrixData, (size)*rows*cols);
+  if(!matData->fp)
+    ASSERT1(0, "Cannot write to file %s",self->filename);
 }
 
 
-void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
+void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
 {
+  mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *mdl_data = &(data->modelData);
 
   /* size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
@@ -417,7 +463,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
   ASSERT(dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
-  for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/ + cpuTime); ++i) {
+  for(size_t i = 0; i < (size_t)(matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + 1 /* add one more for timeValue*/ + self->cpuTime); ++i) {
       /* row 1 - which table */
       dataInfo[ccol++] = 2;
       /* row 2 - index of var in table (variable 'Time' have index 1) */
@@ -435,8 +481,8 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       int table = 0;
       if(mdl_data->realAlias[i].aliasType == 0) /* variable */
       {
-        it = r_indx_map.find(mdl_data->realAlias[i].nameID);
-        if(it != r_indx_map.end())
+        it = matData->r_indx_map.find(mdl_data->realAlias[i].nameID);
+        if(it != matData->r_indx_map.end())
         {
           table = 2;
           aliascol = it->second+1;
@@ -444,8 +490,8 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       }
       else if(mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
-        it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
-        if(it != r_indx_parammap.end())
+        it = matData->r_indx_parammap.find(mdl_data->realAlias[i].nameID);
+        if(it != matData->r_indx_parammap.end())
         {
           table = 1;
           aliascol = it->second+1;
@@ -478,14 +524,14 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       int table = 0;
       if(mdl_data->integerAlias[i].aliasType == 0) /* variable */
       {
-        it = i_indx_map.find(mdl_data->integerAlias[i].nameID);
-        if(it != i_indx_map.end())
+        it = matData->i_indx_map.find(mdl_data->integerAlias[i].nameID);
+        if(it != matData->i_indx_map.end())
           table = 2;
       }
       else if(mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
-        it = i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if(it != i_indx_parammap.end())
+        it = matData->i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
+        if(it != matData->i_indx_parammap.end())
           table = 1;
       }
       if(table)
@@ -516,14 +562,14 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       {
         if(mdl_data->booleanAlias[i].aliasType == 0) /* variable */
         {
-          it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-          if(it != b_indx_map.end())
+          it = matData->b_indx_map.find(mdl_data->booleanAlias[i].nameID);
+          if(it != matData->b_indx_map.end())
             table = 2;
         }
         else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
         {
-          it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-          if(it != b_indx_parammap.end())
+          it = matData->b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
+          if(it != matData->b_indx_parammap.end())
             table = 1;
         }
       }
@@ -562,7 +608,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
   /* ccol += mdl_data->nParameters*4; */
 }
 
-void simulation_result_mat::generateData_1(double* &data_1, int& rows, int& cols, double tstart, double tstop)
+void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double tstart, double tstop)
 {
   const SIMULATION_INFO *sInfo = &(data->simulationInfo);
   const MODEL_DATA      *mData = &(data->modelData);
@@ -605,3 +651,5 @@ void simulation_result_mat::generateData_1(double* &data_1, int& rows, int& cols
     data_1[offset+i+cols] = (double)sInfo->booleanParameter[i];
   }
 }
+
+} /* extern C */
