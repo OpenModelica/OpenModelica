@@ -3748,7 +3748,7 @@ L100:
 
 
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if(ipar[1] || ipar[2] ){
+    if(ipar[1]){
        nrow = npdm1;
         i__1 = *neq;
         i__2 = *neq;
@@ -3771,8 +3771,6 @@ L100:
                  nrow += *neq;
         }
     }
-    if(ipar[2])
-        EXIT(0);
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 
@@ -3815,7 +3813,7 @@ L200:
 /* L210: */
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if(ipar[1]  || ipar[2] ){
+    if(ipar[1] ){
             nrow = npdm1;
             i__1 = *neq;
             i__2 = *neq;
@@ -3838,8 +3836,6 @@ L200:
                     nrow += *neq;
             }
     }
-    if(ipar[2])
-        EXIT(0);
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 

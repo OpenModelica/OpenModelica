@@ -49,7 +49,6 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_DEBUG",
   "LOG_DSS",
   "LOG_DSS_JAC",
-  "LOG_ENDJAC",
   "LOG_EVENTS",
   "LOG_EVENTS_V",
   "LOG_INIT",
@@ -77,11 +76,10 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
   "outputs jacobain of the dynamic state selection",    /* LOG_DSS_JAC */
-  "outputs the jacobian and exits the simulation",      /* LOG_ENDJAC */
   "additional information during event iteration",      /* LOG_EVENTS */
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
-  "outputs the jacobian matrix used by the integrator", /* LOG_JAC */
+  "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
   "logging for linear systems",                         /* LOG_LS */
   "verbose logging of linear systems",                  /* LOG_LS_V */
   "logging for nonlinear systems",                      /* LOG_NLS */

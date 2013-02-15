@@ -70,13 +70,12 @@ int functionJacA(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+    if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
         INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
-        INFO2(LOG_ENDJAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -86,12 +85,11 @@ int functionJacA(DATA* data, double* jac){
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
       INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
-      INFO6(LOG_ENDJAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC))
   {
     INFO(LOG_JAC,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -113,13 +111,12 @@ int functionJacB(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+    if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
         INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
-        INFO2(LOG_ENDJAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -129,12 +126,11 @@ int functionJacB(DATA* data, double* jac){
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
       INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
-      INFO6(LOG_ENDJAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -155,11 +151,11 @@ int functionJacC(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+    if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
     functionJacC_column(data);
@@ -168,12 +164,11 @@ int functionJacC(DATA* data, double* jac){
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
       INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
-      INFO6(LOG_ENDJAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -194,11 +189,11 @@ int functionJacD(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+    if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
     functionJacD_column(data);
@@ -206,12 +201,12 @@ int functionJacD(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      INFO6((LOG_JAC | LOG_ENDJAC),"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC) || ACTIVE_STREAM(LOG_ENDJAC))
+  if(ACTIVE_STREAM(LOG_JAC))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
