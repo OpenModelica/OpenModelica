@@ -76,9 +76,9 @@ static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
 static void checkTermination(DATA* data);
 static void writeOutputVars(char* names, DATA* data);
 
-int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
+int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  switch(flag)
+  switch(solverInfo->solverMethod)
   {
   case 2:
     return rungekutta_step(data, solverInfo);
@@ -101,49 +101,166 @@ int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
   return 1;
 }
 
-/*! \fn solver_main
+/*! \fn initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  *
- *  The main function for a solver with synchronous event handling
- *  flag 1=explicit euler
- *  2=rungekutta
- *  3=dassl
- *  4=inline
- *  5=free
+ *  \param [ref] [data]
+ *  \param [ref] [solverInfo]
+ *
+ *  This function initializes solverInfo.
  */
-int solver_main(DATA* data, const char* init_initMethod, 
-    const char* init_optiMethod, const char* init_file, double init_time, 
-    int lambda_steps, int flag, const char* outputVariablesAtEnd)
+int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 {
+  int retValue = 0;
   int i;
-  unsigned int ui;
 
-  SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
   SIMULATION_DATA *sData = data->localData[0];
 
-  int retValIntegrator = 0;
-  int retVal = 0;
-
-  FILE *fmt = NULL;
-  unsigned int stepNo = 0;
-
   /* initial solverInfo */
-  solverInfo.currentTime = simInfo->startTime;
-  solverInfo.currentStepSize = simInfo->stepSize;
-  solverInfo.laststep = 0;
-  solverInfo.offset = 0;
-  solverInfo.solverRootFinding = 0;
-  solverInfo.eventLst = allocList(sizeof(long));
-  solverInfo.didEventStep = 0;
-  solverInfo.stateEvents = 0;
-  solverInfo.sampleEvents = 0;
-  
+  solverInfo->currentTime = simInfo->startTime;
+  solverInfo->currentStepSize = simInfo->stepSize;
+  solverInfo->laststep = 0;
+  solverInfo->offset = 0;
+  solverInfo->solverRootFinding = 0;
+  solverInfo->eventLst = allocList(sizeof(long));
+  solverInfo->didEventStep = 0;
+  solverInfo->stateEvents = 0;
+  solverInfo->sampleEvents = 0;
+
+  if(solverInfo->solverMethod == 2)
+  {
+    /* Allocate RK work arrays */
+    RK4* rungeData = (RK4*) malloc(sizeof(RK4));
+    rungeData->work_states_ndims = rungekutta_s;
+    rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
+    for(i = 0; i < rungeData->work_states_ndims + 1; i++)
+      rungeData->work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
+    solverInfo->solverData = rungeData;
+  }
+  else if(solverInfo->solverMethod == 3)
+  {
+    /* Initial DASSL solver */
+    DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
+    INFO(LOG_SOLVER, "Initializing DASSL");
+    retValue = dasrt_initial(data, solverInfo, dasslData);
+    solverInfo->solverData = dasslData;
+  }
+  else if(solverInfo->solverMethod == 4)
+  {
+    /* Enable inlining solvers */
+    work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
+    for(i = 0; i < inline_work_states_ndims; i++)
+      work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
+  }
+  #ifdef PATHCONSTRAINTS
+  else if(solverInfo->solverMethod == 5)
+  {
+    int neqns = -1;
+    /* Allocate work array for optimization*/
+    pathConstraints(data, NULL, &neqns);
+    /* allocateDaeIpopt(data,neqns); */
+  }
+  #endif
+  else if (solverInfo->solverMethod == 6)
+  {
+  #ifdef WITH_SUNDIALS
+    /* Allocate Radau IIA work arrays */
+    allocateRadauIIA(&rData, data, solverInfo);
+    allocateKinsol(&kData,(void*)&rData);
+  #else
+    retValue = -1;
+  #endif
+  }
+
+  if(measure_time_flag)
+  {
+    rt_accumulate(SIM_TIMER_PREINIT);
+    rt_tick(SIM_TIMER_INIT);
+  }
+
+  return retValue;
+}
+
+/*! \fn freeSolver(DATA* data, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [solverInfo]
+ *
+ *  This function frees solverInfo.
+ */
+int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
+{
+  int retValue = 0;
+  int i;
+
+  /* deintialize solver related workspace */
+  if(solverInfo->solverMethod == 2)
+  {
+    /* free RK work arrays */
+    for(i = 0; i < ((RK4*)(solverInfo->solverData))->work_states_ndims + 1; i++)
+      free(((RK4*)(solverInfo->solverData))->work_states[i]);
+    free(((RK4*)(solverInfo->solverData))->work_states);
+    free((RK4*)solverInfo->solverData);
+  }
+  else if(solverInfo->solverMethod == 3)
+  {
+    /* De-Initial DASSL solver */
+    dasrt_deinitial(solverInfo->solverData);
+  }
+  else if(solverInfo->solverMethod == 4)
+  {
+    /* De-Initial inline solver */
+    for(i = 0; i < inline_work_states_ndims; i++)
+      free(work_states[i]);
+    free(work_states);
+  }
+  else if(solverInfo->solverMethod == 6)
+  {
+  #ifdef WITH_SUNDIALS
+    /* free  work arrays */
+    freeRadauIIA(&rData);
+    freeKinsol(&kData);
+  #endif
+  }
+  else
+  {
+    /* free other solver memory */
+  }
+
+  /* free stateset data */
+  freeStateSetData(data);
+
+  return retValue;
+}
+
+
+/*! \fn initializeModel(DATA* data, const char* init_initMethod,
+ *   const char* init_optiMethod, const char* init_file, double init_time,
+ *   int lambda_steps)
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [pInitMethod] user defined initialization method
+ *  \param [in]  [pOptiMethod] user defined optimization method
+ *  \param [in]  [pInitFile] extra argument for initialization-method "file"
+ *  \param [in]  [initTime] extra argument for initialization-method "file"
+ *  \param [in]  [lambda_steps] ???
+ *
+ *  This function starts the initialization process of the model .
+ */
+int initializeModel(DATA* data, const char* init_initMethod,
+    const char* init_optiMethod, const char* init_file, double init_time,
+    int lambda_steps)
+{
+  int retValue = 0;
+
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+
   copyStartValuestoInitValues(data);
-  
+
   /* read input vars */
   input_function(data);
 
-  sData->timeValue = simInfo->startTime;
+  data->localData[0]->timeValue = simInfo->startTime;
 
   /* instance all external Objects */
   callExternalObjectConstructors(data);
@@ -151,64 +268,12 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
 
-  if(flag == 2)
-  {
-    /* Allocate RK work arrays */
-    RK4 rungeData;
-    rungeData.work_states_ndims = rungekutta_s;
-    rungeData.work_states = (double**) malloc((rungeData.work_states_ndims + 1) * sizeof(double*));
-    for(i = 0; i < rungeData.work_states_ndims + 1; i++)
-      rungeData.work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
-    solverInfo.solverData = &rungeData;
-  }
-  else if(flag == 3)
-  {
-    /* Initial DASSL solver */
-    DASSL_DATA dasslData = {0};
-    INFO(LOG_SOLVER, "Initializing DASSL");
-    dasrt_initial(data, &solverInfo, &dasslData);
-    solverInfo.solverData = &dasslData;
-  }
-  else if(flag == 4)
-  {
-    /* Enable inlining solvers */
-    work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
-    for(i = 0; i < inline_work_states_ndims; i++)
-      work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
-  }
-#ifdef PATHCONSTRAINTS
-  else if(flag == 5)
-  {
-    int neqns = -1;
-    /* Allocate work array for optimization*/
-    pathConstraints(data, NULL, &neqns);
-    /* allocateDaeIpopt(data,neqns); */
-  }
-#endif
-  else if (flag == 6)
-  {
-#ifdef WITH_SUNDIALS
-    /* Allocate Radau IIA work arrays */
-    allocateRadauIIA(&rData, data, &solverInfo);
-    allocateKinsol(&kData,(void*)&rData);
-#else
-    return -1;
-#endif
-  }
-
-  /* Calculate initial values from updateBoundStartValues()
-   * saveall() value as pre values */
-  if(measure_time_flag)
-  {
-    rt_accumulate(SIM_TIMER_PREINIT);
-    rt_tick(SIM_TIMER_INIT);
-  }
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
   {
     WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT for more information.");
     simInfo->stopTime = simInfo->startTime;
-    retVal = -1;
+    retValue = -1;
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
@@ -236,14 +301,30 @@ int solver_main(DATA* data, const char* init_initMethod,
   if(measure_time_flag)
     rt_accumulate( SIM_TIMER_INIT);
 
-  if(data->localData[0]->timeValue >= simInfo->stopTime)
-  {
-    INFO(LOG_SOLVER,"Simulation done!");
-    solverInfo.currentTime = simInfo->stopTime;
-  }
+  return retValue;
+}
 
-  INFO(LOG_SOLVER, "Performed initial value calculation.");
-  INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+
+/*! \fn performSimulation(DATA* data, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [solverInfo]
+ *
+ *  This function performs the simulation controlled by solverInfo.
+ */
+int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
+{
+
+  int retValIntegrator = 0;
+  int retValue = 0;
+  int i, ui;
+
+  FILE *fmt = NULL;
+  unsigned int stepNo = 0;
+
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+
+  solverInfo->currentTime = simInfo->startTime;
 
   if(measure_time_flag)
   {
@@ -265,7 +346,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     printAllVars(data, 0, LOG_DEBUG);
 
   /***** Start main simulation loop *****/
-  while(solverInfo.currentTime < simInfo->stopTime)
+  while(solverInfo->currentTime < simInfo->stopTime)
   {
     if(measure_time_flag)
     {
@@ -280,25 +361,25 @@ int solver_main(DATA* data, const char* init_initMethod,
 
     /***** Calculation next step size *****/
     /* Calculate new step size after an event */
-    if(solverInfo.didEventStep == 1)
+    if(solverInfo->didEventStep == 1)
     {
-      solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
-      if(solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
-        solverInfo.offset = 0;
-      INFO1(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo.offset);
+      solverInfo->offset = solverInfo->currentTime - solverInfo->laststep;
+      if(solverInfo->offset + DBL_EPSILON > simInfo->stepSize)
+        solverInfo->offset = 0;
+      INFO1(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo->offset);
     }
     else
-      solverInfo.offset = 0;
-    solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
+      solverInfo->offset = 0;
+    solverInfo->currentStepSize = simInfo->stepSize - solverInfo->offset;
 
     /* adjust final step? */
-    if(solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime)
-      solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
+    if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime)
+      solverInfo->currentStepSize = simInfo->stopTime - solverInfo->currentTime;
     /***** End calculation next step size *****/
 
     /* check for next sample event */
-    checkForSampleEvent(data, &solverInfo);
-    INFO3(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo.currentTime, solverInfo.currentTime + solverInfo.currentStepSize, solverInfo.currentStepSize);
+    checkForSampleEvent(data, solverInfo);
+    INFO3(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
 
     /*
      * integration step
@@ -306,8 +387,8 @@ int solver_main(DATA* data, const char* init_initMethod,
      * update continuous system
      */
     INDENT(LOG_SOLVER);
-    communicateStatus("Running", (solverInfo.currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
-    retValIntegrator = solver_main_step(flag, data, &solverInfo);
+    communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
+    retValIntegrator = solver_main_step(data, solverInfo);
     updateContinuousSystem(data);
     saveZeroCrossings(data);
     RELEASE(LOG_SOLVER);
@@ -316,20 +397,20 @@ int solver_main(DATA* data, const char* init_initMethod,
     if(measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
 
-    if(checkEvents(data, solverInfo.eventLst, &(solverInfo.currentTime), &solverInfo))
+    if(checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo))
     {
-      INFO1(LOG_EVENTS, "event handling at time %g", solverInfo.currentTime);
+      INFO1(LOG_EVENTS, "event handling at time %g", solverInfo->currentTime);
       INDENT(LOG_EVENTS);
-      handleEvents(data, solverInfo.eventLst, &(solverInfo.currentTime), &solverInfo);
+      handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       RELEASE(LOG_EVENTS);
 
-      solverInfo.didEventStep = 1;
+      solverInfo->didEventStep = 1;
       overwriteOldSimulationData(data);
     }
     else
     {
-      solverInfo.laststep = solverInfo.currentTime;
-      solverInfo.didEventStep = 0;
+      solverInfo->laststep = solverInfo->currentTime;
+      solverInfo->didEventStep = 0;
     }
     if(measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
@@ -341,7 +422,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     if(stateSelection(data, 1))
     {
       /* if new set is calculated reinit the solver */
-      solverInfo.didEventStep = 1;
+      solverInfo->didEventStep = 1;
       overwriteOldSimulationData(data);
     }
 
@@ -389,10 +470,10 @@ int solver_main(DATA* data, const char* init_initMethod,
     /***** end of Emit this time step *****/
 
     /* save dassl stats before reset */
-    if(solverInfo.didEventStep == 1 && flag == 3)
+    if(solverInfo->didEventStep == 1 && solverInfo->solverMethod == 3)
     {
       for(ui = 0; ui < numStatistics; ui++)
-        ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
+        ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
     }
 
     /* Check for termination of terminate() or assert() */
@@ -405,7 +486,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       if(!terminationAssert && terminationTerminate)
       {
         INFO2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-        simInfo->stopTime = solverInfo.currentTime;
+        simInfo->stopTime = solverInfo->currentTime;
       }
     }
 
@@ -427,36 +508,56 @@ int solver_main(DATA* data, const char* init_initMethod,
 
       if(data->simulationInfo.simulationSuccess)
       {
-        retVal = -1;
-        INFO1(LOG_STDOUT, "model terminate | Simulation terminated at time %g", solverInfo.currentTime);
+        retValue = -1;
+        INFO1(LOG_STDOUT, "model terminate | Simulation terminated at time %g", solverInfo->currentTime);
       }
       else if(retValIntegrator)
       {
-        retVal = -1 + retValIntegrator;
-        INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo.currentTime);
+        retValue = -1 + retValIntegrator;
+        INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
       else if(check_nonlinear_solutions(data))
       {
-        retVal = -2;
-        INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
+        retValue = -2;
+        INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
       else if(check_linear_solutions(data))
       {
-        retVal = -3;
-        INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
+        retValue = -3;
+        INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
       else if(check_mixed_solutions(data))
       {
-        retVal = -3;
-        INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
+        retValue = -3;
+        INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
       break;
     }
   } /* end while solver */
 
+  if(fmt)
+    fclose(fmt);
+
+  return retValue;
+}
+
+/*! \fn finishSimulation(DATA* data, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [solverInfo]
+ *
+ *  This function performs the last step
+ *  and outputs some statistics, this this simulation terminal step.
+ */
+int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd)
+{
+  int retValue = 0;
+  int ui;
+
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   /* Last step with terminal()=true */
-  if(solverInfo.currentTime >= simInfo->stopTime)
+  if(solverInfo->currentTime >= simInfo->stopTime)
   {
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
@@ -474,7 +575,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if(ACTIVE_STREAM(LOG_STATS))
   {
     rt_accumulate(SIM_TIMER_TOTAL);
-    
+
     INFO(LOG_STATS, "### STATISTICS ###");
 
     INFO(LOG_STATS, "timer");
@@ -487,76 +588,95 @@ int solver_main(DATA* data, const char* init_initMethod,
     INFO2(LOG_STATS, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     INFO2(LOG_STATS, "%12gs [%5.1f%%] simulation", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     RELEASE(LOG_STATS);
-    
+
     INFO(LOG_STATS, "events");
     INDENT(LOG_STATS);
-    INFO1(LOG_STATS, "%5ld state events", solverInfo.stateEvents);
-    INFO1(LOG_STATS, "%5ld sample events", solverInfo.sampleEvents);
+    INFO1(LOG_STATS, "%5ld state events", solverInfo->stateEvents);
+    INFO1(LOG_STATS, "%5ld sample events", solverInfo->sampleEvents);
     RELEASE(LOG_STATS);
-    
+
     INFO(LOG_STATS, "solver");
     INDENT(LOG_STATS);
-    if(flag == 3) /* dassl */
+    if(solverInfo->solverMethod == 3) /* dassl */
     {
       /* save dassl stats before print */
       for(ui = 0; ui < numStatistics; ui++)
-        ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
-      
-      INFO1(LOG_STATS, "%5d steps taken", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
-      INFO1(LOG_STATS, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
-      INFO1(LOG_STATS, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
-      INFO1(LOG_STATS, "%5d error test failures", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
-      INFO1(LOG_STATS, "%5d convergence test failures", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
+        ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+
+      INFO1(LOG_STATS, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
+      INFO1(LOG_STATS, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
+      INFO1(LOG_STATS, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[2]);
+      INFO1(LOG_STATS, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
+      INFO1(LOG_STATS, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
     }
     else
     {
       INFO(LOG_STATS, "sorry - no solver statistics available. [not yet implemented]");
     }
     RELEASE(LOG_STATS);
-    
+
     INFO(LOG_STATS, "### END STATISTICS ###");
-    
+
     rt_tick(SIM_TIMER_TOTAL);
   }
+}
 
-  /* deintialize solver related workspace */
-  if(flag == 2)
+/*! \fn solver_main
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [pInitMethod] user defined initialization method
+ *  \param [in]  [pOptiMethod] user defined optimization method
+ *  \param [in]  [pInitFile] extra argument for initialization-method "file"
+ *  \param [in]  [initTime] extra argument for initialization-method "file"
+ *  \param [in]  [lambda_steps] ???
+ *  \param [in]  [flag] selects the ode solver
+ *  \param [in]  [outputVariablesAtEnd] ???
+ *
+ *  This is the main function of the solver it perform
+ *  the simulation.
+ *
+ */
+int solver_main(DATA* data, const char* init_initMethod,
+    const char* init_optiMethod, const char* init_file, double init_time,
+    int lambda_steps, int flag, const char* outputVariablesAtEnd)
+{
+  int i;
+  unsigned int ui;
+
+  int retVal = 0;
+
+  SOLVER_INFO solverInfo;
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+
+
+  solverInfo.solverMethod = flag;
+
+  /* allocate SolverInfo memory */
+  retVal = initializeSolverData(data, &solverInfo);
+
+  /* initialize all parts of the model */
+  if (!retVal)
+    retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
+
+
+  if(data->localData[0]->timeValue >= simInfo->stopTime)
   {
-    /* free RK work arrays */
-    for(i = 0; i < ((RK4*)(solverInfo.solverData))->work_states_ndims + 1; i++)
-      free(((RK4*)(solverInfo.solverData))->work_states[i]);
-    free(((RK4*)(solverInfo.solverData))->work_states);
-  }
-  else if(flag == 3)
-  {
-    /* De-Initial DASSL solver */
-    dasrt_deinitial(solverInfo.solverData);
-  }
-  else if(flag == 4)
-  {
-    /* De-Initial inline solver */
-    for(i = 0; i < inline_work_states_ndims; i++)
-      free(work_states[i]);
-    free(work_states);
-  }
-  else if(flag == 6)
-  {
-#ifdef WITH_SUNDIALS
-    /* free  work arrays */
-    freeRadauIIA(&rData);
-    freeKinsol(&kData);
-#endif
-  }
-  else
-  {
-    /* free other solver memory */
+    INFO(LOG_SOLVER,"Simulation done!");
+    solverInfo.currentTime = simInfo->stopTime;
   }
 
-  /* free stateset data */
-  freeStateSetData(data);
+  INFO(LOG_SOLVER, "Performed initial value calculation.");
+  INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
-  if(fmt)
-    fclose(fmt);
+  /* starts the simulation main loop */
+  if (!retVal)
+    retVal = performSimulation(data, &solverInfo);
+
+  /* terminate the simulation */
+  finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+
+  /* free SolverInfo memory */
+  freeSolverData(data, &solverInfo);
 
   return retVal;
 }

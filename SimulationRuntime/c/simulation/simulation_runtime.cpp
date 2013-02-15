@@ -498,6 +498,33 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   return retVal;
 }
 
+/*! \fn initializeResultData(DATA* simData, int cpuTime)
+ *
+ *  \param [ref] [simData]
+ *  \param [int] [cpuTime]
+ *
+ *  This function initializes result object to emit data.
+ */
+int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
+{
+  int retVal = 0;
+  long maxSteps = 4 * simData->simulationInfo.numSteps;
+  if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+  } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+  } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData, cpuTime);
+  } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
+  } else {
+    cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
+    retVal = 1;
+  }
+  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
+  return retVal;
+}
+
 /**
  * Calls the solver which is selected in the parameter string "method"
  * This function is used for interactive and non-interactive simulation
@@ -514,20 +541,8 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   int retVal = -1;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
-  long maxSteps = 4 * simData->simulationInfo.numSteps;
-  if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
-  } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
-  } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData, cpuTime);
-  } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData, cpuTime);
-  } else {
-    cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
-    return 1;
-  }
-  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
+  if (initializeResultData(simData, result_file_cstr, cpuTime))
+    return -1;
 
   if(simData->simulationInfo.solverMethod == std::string("")) {
     INFO(LOG_SOLVER, " | No solver is set, using dassl.");

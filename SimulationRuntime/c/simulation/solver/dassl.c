@@ -123,6 +123,8 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   int i;
   SIMULATION_INFO *simInfo = &(simData->simulationInfo);
 
+  dasslData->dasslMethod = 0;
+
   for(i=0; i< DASSL_MAX;i++){
     if(!strcmp((const char*)simInfo->solverMethod, dasslMethodStr[i])){
       dasslData->dasslMethod = i;
@@ -166,6 +168,8 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   ASSERT(dasslData->dasslStatistics,"out of memory");
   dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
   ASSERT(dasslData->dasslStatisticsTmp,"out of memory");
+
+  dasslData->idid = 0;
 
   dasslData->sqrteps = sqrt(DBL_EPSILON);
   dasslData->ysave = (double*) malloc(simData->modelData.nStates*sizeof(double));
@@ -222,6 +226,7 @@ dasrt_deinitial(DASSL_DATA *dasslData){
   free(dasslData->info);
   free(dasslData->dasslStatistics);
   free(dasslData->dasslStatisticsTmp);
+  free(dasslData);
   return 0;
 }
 
@@ -255,6 +260,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     dasslData->info[0] = 0;
     dasslData->idid = 0;
   }
+
 
   /* Calculate time steps until TOUT is reached
    * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
@@ -383,7 +389,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   } while(dasslData->idid == 1 ||
           (dasslData->idid == -1 && solverInfo->currentTime <= simData->simulationInfo.stopTime));
 
-  /* at the of one step evaluate the system again */
   sData->timeValue = solverInfo->currentTime;
 
   if(ACTIVE_STREAM(LOG_DDASRT))

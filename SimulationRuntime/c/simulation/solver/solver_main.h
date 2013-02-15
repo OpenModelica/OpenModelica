@@ -48,6 +48,7 @@ typedef struct SOLVER_INFO
   double currentStepSize;
   double laststep;
   double offset;
+  int solverMethod;
 
   /* set by solver if an internal root finding method is activated  */
   modelica_boolean solverRootFinding;
@@ -70,6 +71,20 @@ typedef struct SOLVER_INFO
 extern int solver_main(DATA* data, const char* init_initMethod, 
     const char* init_optiMethod, const char* init_file, double init_time, 
     int lambda_steps, int flag, const char* outputVariablesAtEnd);
+
+/* Provide solver interface to interactive stuff */
+extern int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo);
+extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
+
+extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
+
+extern int initializeModel(DATA* data, const char* init_initMethod,
+    const char* init_optiMethod, const char* init_file, double init_time,
+    int lambda_steps);
+
+extern int performSimulation(DATA* data, SOLVER_INFO* solverInfo);
+
+extern int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
 
 #ifdef __cplusplus
   }

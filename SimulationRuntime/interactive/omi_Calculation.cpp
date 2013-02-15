@@ -22,13 +22,10 @@
 #include "omi_ServiceInterface.h"
 #include "omi_Control.h"
 #include "omi_Calculation.h"
-#include "delay.h"
 
 using namespace std;
 
-bool debugCalculation = true; //Set true to print out comments which describes the program flow to the console
-bool forZero = true; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
-bool* p_forZero = 0; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
+bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
 
 bool calculationInterrupted = false;
 
@@ -44,38 +41,29 @@ void printSSDCalculation(long, long, long);
  */
 int calculate() {
 
-  DATA* globaldata = (DATA*) getGlobalData();
-
   int retVal = -1;
   double start = 0.0;
   double stop = 1.0;
-  double stepSizeORG = 1;
   double stepSize = 1;
   long outputSteps = 1; //unnecessary for interactive simulation
   double tolerance = 1e-4;
   string method;
   string outputFormat;
 
-  getSimulationStartData(&stepSizeORG, &outputSteps, &tolerance, &method,
-      &outputFormat);
+
+  intializeSolverStartData(&stepSize, &outputSteps, &tolerance, &method, &outputFormat);
   //TODO  20100217 pv catch correct stepSize value for calculation loop
   if (debugCalculation) {
     cout << "Calculation:\tFunct.: calculate\tData 1: start: " << start
-        << " stop: " << stop << " stepSize: " << stepSizeORG
+        << " stop: " << stop << " stepSize: " << stepSize
         << " outputSteps: " << outputSteps << " method: " << method
         << " outputFormat: " << outputFormat;
     fflush( stdout);
   }
 
-  if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
-    set_timeValue(start);
-    set_forceEmit(0);
-  } else {
-    set_lastEmittedTime(start);
-    set_forceEmit(0);
-  }
+  set_timeValue(start);
+  set_forceEmit(0);
 
-  initDelay(globaldata, start);
 
   while (!calculationInterrupted) { //TODO 20100210 pv Interrupt is not implemented yet
 
@@ -83,10 +71,6 @@ int calculate() {
     if (simulationStatus == SimulationStatus::STOPPED) {
       // If the simulation should stop, unlock and break out of the loop.
       mutexSimulationStatus->Unlock();
-      if (debugCalculation) {
-        cout << "Calculation:\tFunct.: calculate\tMessage: Simulation Stopped set forZero = true" << endl; fflush( stdout);
-      }
-      forZero = true;
     }
 
     if (simulationStatus == SimulationStatus::SHUTDOWN) {
@@ -104,31 +88,28 @@ int calculate() {
     waitForResume->Wait(); //wait and reduce semaphore
 
     //TODO 20100210 pv testing rungekutter...
-    if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
-      stop = get_timeValue() + stepSize;
-      start = get_timeValue();
-      if (debugCalculation) {
-        cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep  << " ------" << endl;  fflush( stdout);
-        cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
-      }
-    } else {
-      stop = get_lastEmittedTime() + stepSize;
-      start = get_lastEmittedTime();
+    start = get_timeValue();
+    stop = get_timeValue() + stepSize;
+    if (debugCalculation) {
+      cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep  << " ------" << endl;  fflush( stdout);
+      cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
     }
 
-    retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
+    retVal =  performSolverStepFromOM(start, stop, stepSize);
 
     if (retVal != 0) {
       cout << "Calculation:\tFunct.: calculate\tMessage: omi_Calculation: error occurred while calculating" << endl; fflush( stdout);
       return 1;
     }
 
-    stepSize = stepSizeORG;
     set_stepSize(stepSize);
     createSSDEntry(method);
     calculationInterrupted = false;
+
     setResultData(p_SimStepData_from_Calculation); //ssd(tn) as parameter
   }
+
+  deintializeSolverStartData();
   //if (debugCalculation)
   cout
       << "Calculation:\tFunct.: calculate\tMessage: Calculation end: calculationInterrupted -> "
@@ -145,9 +126,7 @@ void createSSDEntry(string method) {
   fillSimulationStepDataWithValuesFromGlobalData(method, p_SimStepData_from_Calculation);
 
   p_sdnMutex->Lock();
-  long nStates = p_simdatanumbers->nStates;
-  long nAlgebraic = p_simdatanumbers->nAlgebraic;
-  long nParameters = p_simdatanumbers->nParameters;
+
   p_sdnMutex->Unlock();
   if (debugCalculation)
     //printSSDCalculation(nStates, nAlgebraic, nParameters);
@@ -234,8 +213,6 @@ THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam) {
   long nParameters = p_simdatanumbers->nParameters;
   p_sdnMutex->Unlock();
 
-  p_forZero = &forZero;
-
   p_SimStepData_from_Calculation = &simStepData_from_Calculation;
 
   double *statesTMP2 = new double[nStates];
@@ -246,6 +223,8 @@ THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam) {
   p_SimStepData_from_Calculation->statesDerivatives = statesDerivativesTMP2;
   p_SimStepData_from_Calculation->algebraics = algebraicsTMP2;
   p_SimStepData_from_Calculation->parameters = parametersTMP2;
+
+
 
   retValue = calculate();
 

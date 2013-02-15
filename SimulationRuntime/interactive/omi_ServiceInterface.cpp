@@ -36,6 +36,7 @@ double global_stepSize = 0.0;
 
 // Global Data structure
 DATA* globalData;
+SOLVER_INFO* solverInfo;
 
 /**
  * Initializes the service interface data
@@ -70,14 +71,13 @@ long get_NStates(void) {
   long temp_val = globalData->modelData.nStates;
 
   gdMutex.Unlock();
-
   return temp_val;
 }
 
 long get_NAlgebraic(void) {
   gdMutex.Lock();
 
-  long temp_val = globalData->modelData.nVariablesReal;
+  long temp_val = globalData->modelData.nVariablesReal-2*globalData->modelData.nStates;
 
   gdMutex.Unlock();
 
@@ -335,7 +335,9 @@ void set_timeValue(double new_timeValue) {
 void set_lastEmittedTime(double new_lastEmittedTime) {
   gdMutex.Lock();
 
-  globalData->localData[1]->timeValue = new_lastEmittedTime;
+  // What's the propose of that???
+  // One can't change things that were happen already!!!
+  cout << "set_lastEmittedTime not implemented!" << endl;
 
   gdMutex.Unlock();
 }
@@ -344,7 +346,7 @@ void set_lastEmittedTime(double new_lastEmittedTime) {
 double get_lastEmittedTime(void) {
   gdMutex.Lock();
 
-  double temp_let = globalData->localData[1]->timeValue;
+  double temp_let = globalData->localData[0]->timeValue - solverInfo->currentStepSize;
 
   gdMutex.Unlock();
 
@@ -394,23 +396,21 @@ int get_forceEmit(void){
 void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData){
   gdMutex.Lock();
 
-  //TODO [20110319] pv workaround to fix dassl2 problem using globalData->lastEmittedTime
-//  if (method == std::string("euler") || method == std::string("rungekutta")
-//                     || method == std::string("dassl")) {
-   globalData->localData[0]->timeValue = p_SimStepData->forTimeStep; //is the timeValue of this step
-//       } else {
-//              globalData->lastEmittedTime = p_SimStepData->forTimeStep; //is the lastEmittedTime of this step
-//       }
-  long nStates = get_NStates();
-  long nAlgebraic = get_NAlgebraic();
-  long nParameters = get_NParameters();
+  /*
+   * With the currect implementation it's not possible
+   * to change the time.
+   */
+  //globalData->localData[0]->timeValue = p_SimStepData->forTimeStep;
 
+  long nStates = globalData->modelData.nStates;
+  long nParameters = globalData->modelData.nParametersReal;
+
+  /* For now permit only parameter and states changes, since
+   * changes of stateDerivates and algebraic variables are
+   * anyway not possible, they are calculated!
+   */
   for (int i = 0; i < nStates; i++) {
     globalData->localData[0]->realVars[i] = p_SimStepData->states[i];
-    globalData->localData[0]->realVars[nStates + i] = p_SimStepData->statesDerivatives[i];
-  }
-  for (int i = 0; i < nAlgebraic; i++) {
-    globalData->localData[0]->realVars[2*nStates + i] = p_SimStepData->algebraics[i];
   }
   for (int i = 0; i < nParameters; i++) {
     globalData->simulationInfo.realParameter[i] = p_SimStepData->parameters[i];
@@ -422,18 +422,11 @@ void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* 
 
   gdMutex.Lock();
 
-  long nStates = get_NStates();
-  long nAlgebraic = get_NAlgebraic();
-  long nParameters = get_NParameters();
+  long nStates = globalData->modelData.nStates;
+  long nAlgebraic = globalData->modelData.nVariablesReal-2*globalData->modelData.nStates;
+  long nParameters = globalData->modelData.nParametersReal;
 
-  if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
-    p_SimStepData->forTimeStep = globalData->localData[0]->timeValue; //is the lastEmittedTime of this step
-  }
-  /*
-  else {
-    p_SimStepData->forTimeStep = globalData->lastEmittedTime; //is the lastEmittedTime of this step
-  }
-  */
+  p_SimStepData->forTimeStep = globalData->localData[0]->timeValue; //is the lastEmittedTime of this step
 
   for (int i = 0; i < nStates; i++) {
     p_SimStepData->states[i] = globalData->localData[0]->realVars[i];
@@ -460,9 +453,9 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
     SimDataNames* p_simDataNames, SimDataNamesFilter* p_simDataNamesFilter) {
   gdMutex.Lock();
 
-  long nStates = get_NStates();
-  long nAlgebraic = get_NAlgebraic();
-  long nParameters = get_NParameters();
+  long nStates = globalData->modelData.nStates;
+  long nAlgebraic = globalData->modelData.nVariablesReal-2*globalData->modelData.nStates;
+  long nParameters = globalData->modelData.nParametersReal;
 
   int variablesNamesPos = 0;
   for (int i = 0; i < nStates; i++) {
@@ -490,36 +483,91 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
  * Calls the "read_input_xml(...)" function from "simulation_input.cpp" and stores the simulation start data into
  * a set of variables from "omi_Calculation.cpp"
  */
-void getSimulationStartData(double *stepSize, long *outputSteps,
+int intializeSolverStartData(double *stepSize, long *outputSteps,
     double *tolerance, string* method, string* outputFormat){
-
-  double start = 0.0; //unnecessary for interactive simulation
-  double stop = 1.0; //unnecessary for interactive simulation
-  string variableFilter; //unnecessary for interactive simulation
 
   gdMutex.Lock();
 
+  int retVal = -1;
 
-  MODEL_DATA* modelData = &globalData->modelData;
   SIMULATION_INFO* simInfo = &globalData->simulationInfo;
 
-  read_input_xml(argcTEMP, argvTEMP, modelData, simInfo);
-  callExternalObjectConstructors(globalData);
+  string result_file_cstr = string(globalData->modelData.modelFilePrefix) + string("_res.") + simInfo->outputFormat;
+
+  retVal = initializeResultData(globalData, result_file_cstr, 0);
+
+  solverInfo = (SOLVER_INFO*) malloc(sizeof(SOLVER_INFO));
+
+
+  if(simInfo->solverMethod == std::string("rungekutta"))
+  {
+    solverInfo->solverMethod = 2;
+  }
+  else if(simInfo->solverMethod == std::string("dassl"))
+  {
+    solverInfo->solverMethod = 3;
+  }
+  /* as fallback and default euler solver is used */
+  else
+  {
+    solverInfo->solverMethod = 1;
+  }
+
+  *stepSize = simInfo->stepSize;
+  *outputSteps = simInfo->stepSize;
+  *tolerance = simInfo->tolerance;
+  *method = simInfo->solverMethod;
+
+
+  /* allocate SolverInfo memory */
+  if (!retVal)
+    retVal = initializeSolverData(globalData, solverInfo);
+
+  /* initialize all parts of the model */
+  if (!retVal)
+    retVal = initializeModel(globalData, "", "", "", 0.0, 0);
+
+
+  gdMutex.Unlock();
+
+  return retVal;
+}
+
+
+/*
+ * Calls the "read_input_xml(...)" function from "simulation_input.cpp" and stores the simulation start data into
+ * a set of variables from "omi_Calculation.cpp"
+ */
+void deintializeSolverStartData(void){
+
+  gdMutex.Lock();
+
+  /* terminate the simulation */
+  finishSimulation(globalData, solverInfo, "");
+
+  /* free SolverInfo memory */
+  freeSolverData(globalData, solverInfo);
+
 
   gdMutex.Unlock();
 }
-
 //************ END Global Data Value Request and Manipulation ************
 
 /*
  * Calls the solver which is selected in the parameter string "method"
  */
-int callSolverFromOM(string method, string outputFormat, double start, double stop, double stepSize,
-    long outputSteps, double tolerance) {
+int performSolverStepFromOM(double start, double stop, double stepSize) {
   int retVal = -1;
   gdMutex.Lock();
 
-  retVal = callSolver(globalData, "", "", "", "", 0, 0, "", 0);
+
+  SIMULATION_INFO* simInfo = &globalData->simulationInfo;
+  simInfo->stepSize = stepSize;
+  simInfo->startTime = start;
+  simInfo->stopTime = stop;
+
+  /* starts the simulation main loop */
+  retVal = performSimulation(globalData, solverInfo);
 
   gdMutex.Unlock();
   return retVal;
@@ -602,28 +650,32 @@ void printGlobalData(void) {
   cout << "lastEmittedTime: " << globalData->localData[1]->timeValue << " --------------------" << endl; fflush(stdout);
   cout << "timeValue: " << globalData->localData[0]->timeValue  << " --------------------" << endl; fflush(stdout);
 
-  if (get_NStates() > 0)
+  long nStates = globalData->modelData.nStates;
+  long nAlgebraic = globalData->modelData.nVariablesReal-2*globalData->modelData.nStates;
+  long nParameters = globalData->modelData.nParametersReal;
+
+  if (nStates > 0)
   {
     cout << "---States---" << endl; fflush(stdout);
-    for (int t = 0; t < get_NStates(); t++)
+    for (int t = 0; t < nStates; t++)
     {
       cout << t << ": " << get_StateName(t) << ": " << get_StateValue(t) << endl; fflush(stdout);
     }
   }
 
-  if (get_NAlgebraic()> 0)
+  if (nAlgebraic > 0)
   {
     cout << "---Algebraics---" << endl; fflush(stdout);
-    for (int t = 0; t < get_NAlgebraic(); t++)
+    for (int t = 0; t < nAlgebraic; t++)
     {
       cout << t << ": " << get_AlgebraicName(t) << ": " << get_AlgebraicValue(t) << endl; fflush(stdout);
     }
   }
 
-  if (get_NParameters() > 0)
+  if (nParameters > 0)
   {
     cout << "---Parmeters--- " << endl; fflush(stdout);
-    for (int t = 0; t < get_NParameters(); t++)
+    for (int t = 0; t < nParameters; t++)
     {
       cout << t << ": " << get_ParameterName(t) << ": "  << get_ParameterValue(t) << endl; fflush(stdout);
     }

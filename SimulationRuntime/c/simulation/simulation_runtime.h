@@ -65,6 +65,7 @@ extern simulation_result *sim_result;
 int callSolver(DATA* simData, std::string result_file_cstr, std::string init_initMethod,
     std::string init_optiMethod, std::string init_file, double init_time, int lambda_steps, std::string outputVariablesAtEnd, int cpuTime);
 
+int initializeResultData(DATA* simData, std::string result_file_cstr, int cpuTime);
 
 #endif /* cplusplus */
 

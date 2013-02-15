@@ -47,7 +47,7 @@ string control_client_ip = "";
 int control_client_port = 0;
 int control_server_port = 0;
 
-int debugLevelControl = 2; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
+int debugLevelControl = 0; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
 bool shutDownSignal = false;
 bool error = false;
 string messageForClient;
@@ -298,7 +298,6 @@ void reInitAll() {
       cout << "Control:\tFunct.: reInitAll\tData: globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
    }
 
-   *p_forZero = true;
 }
 
 /**
@@ -317,8 +316,7 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
    if (status.compare("start") == 0)
       pauseSimulation();
 
-   SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(get_stepSize(),
-         changedSimulationTime);
+   SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(get_stepSize(), changedSimulationTime);
    if (debugLevelControl > 0)
    {
       cout << "Control:\tFunct.: changeParameterValues\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
@@ -327,9 +325,14 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
    if (p_ssdAtChangedSimulationTime->forTimeStep != -1)
    {
     parseParameter(p_ssdAtChangedSimulationTime, parameter);
+    if (debugLevelControl > 0)
+    {
+       cout << "Control:\tFunct.: parseParameter " << endl; fflush(stdout);
+    }
     setGlobalSimulationValuesFromSimulationStepData(p_ssdAtChangedSimulationTime);
-    resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
-    setSimulationTimeReversed(get_stepSize() + changedSimulationTime);
+
+    //resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
+    //setSimulationTimeReversed(get_stepSize() + changedSimulationTime);
     if (debugLevelControl > 0)
     {
        cout << "Control:\tFunct.: changeParameterValues\tData:globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
@@ -463,10 +466,11 @@ void startSimulation()
     mutexSimulationStatus->Unlock();
 
     status = "start";
-
-    cout << "Control:\tFunct.: startSimulation\tMessage: start done" << endl; fflush( stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: startSimulation\tMessage: start done" << endl; fflush( stdout);
   } else {
-    cout << "Control:\tFunct.: startSimulation\tMessage: already started" << endl; fflush( stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: startSimulation\tMessage: already started" << endl; fflush( stdout);
   }
 }
 
@@ -495,42 +499,46 @@ void pauseSimulation()
     releaseMutexSSD();
 
     status = "pause";
-    cout << "Control:\tFunct.: pauseSimulation\tMessage: pause done" << endl; fflush( stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: pauseSimulation\tMessage: pause done" << endl; fflush( stdout);
   } else {
-    cout << "Control:\tFunct.: pauseSimulation\tMessage: already paused or stopped" << endl; fflush( stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: pauseSimulation\tMessage: already paused or stopped" << endl; fflush( stdout);
   }
-
-  cout << "Control:\tFunct.: pauseSimulation\t[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]" << endl; fflush( stdout);
+  if (debugLevelControl > 0)
+    cout << "Control:\tFunct.: pauseSimulation\t[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]" << endl; fflush( stdout);
 }
 
 /**
  * Interrupts the simulation and reset all simulation data to initial state
  */
 void stopSimulation(void) {
-   if (status.compare("stop") != 0)
-   {
-  pauseSimulation();
+  if (status.compare("stop") != 0)
+  {
+    pauseSimulation();
 
-  // Is this necessary anymore: pv yes, because the ssdArray must be synchronized
-  lockMutexSSD();
-  denied_work_on_GD();
+    // Is this necessary anymore: pv yes, because the ssdArray must be synchronized
+    lockMutexSSD();
+    denied_work_on_GD();
 
-  reInitAll();
+    reInitAll();
 
-  mutexSimulationStatus->Lock();
-  simulationStatus = SimulationStatus::STOPPED;
-  mutexSimulationStatus->Unlock();
+    mutexSimulationStatus->Lock();
+    simulationStatus = SimulationStatus::STOPPED;
+    mutexSimulationStatus->Unlock();
 
-  allow_work_on_GD();
-  releaseMutexSSD();
+    allow_work_on_GD();
+    releaseMutexSSD();
 
-  status = "stop";
+    status = "stop";
 
-  cout << "Control:\tFunct.: stopSimulation\tMessage: stop done" << endl; fflush(stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: stopSimulation\tMessage: stop done" << endl; fflush(stdout);
   }
   else
   {
-    cout << "Control:\tFunct.: stopSimulation\tMessage: already stopped" << endl; fflush(stdout);
+    if (debugLevelControl > 0)
+      cout << "Control:\tFunct.: stopSimulation\tMessage: already stopped" << endl; fflush(stdout);
   }
 }
 

@@ -59,7 +59,7 @@ SimStepData simulationStartSSD;
 SimStepData* p_simulationStartSSD;
 
 //***** SimStepData buffer *****
-SimStepData ssdArray[MAX_SSD] = { 0 };
+SimStepData ssdArray[MAX_SSD] = {{0}};
 
 SimStepData* p_ssdArray_NextFreeSlot = 0; //Points on the next free slot
 
@@ -232,7 +232,7 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
 
   ssdMutex.Lock();
   /********************************************************************
-   * Entity has pas the synchronization sektion and can work on the SSD buffer
+   * Entity has pas the synchronization section and can work on the SSD buffer
    * Restrictions: if the simulation has been reseted the first time value must be VALID_TIME_AFTER_RESET
    * otherwise the result won't be added to the system
    */
@@ -240,7 +240,9 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
   //block used by normal running simulation
   if(!simulationReset && !simulationChangetime){
     addDataToSSD(p_SimStepData_from_Calculation);
-    //cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+    if (debugResultManager > 0) {
+      cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+    }
   }else{//block used once after simulation has been reseted or more if the next time to add into the ssd is not VALID_TIME_AFTER_RESET
     if(simulationReset){
       if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET || p_SimStepData_from_Calculation->forTimeStep == 0){
@@ -654,7 +656,6 @@ void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
 
 bool compareDouble(double a, double b)
 {
-  cout << "fabs(a - b): " << fabs(a - b) << endl;
     return fabs(a - b) < EPSILON;
 }
 
