@@ -34,13 +34,14 @@ template dumpSimCode(SimCode code)
   </variables>
   <equations>
     <%dumpEqs(SimCodeUtil.sortEqSystems(
+        listAppend(collectAllJacobianEquations(jacobianMatrixes),
         listAppend(residualEquations,
         listAppend(inlineEquations,
         listAppend(startValueEquations,
         listAppend(parameterEquations,
         listAppend(initialEquations,
         listAppend(algorithmAndEquationAsserts,
-        allEquations))))))))%>
+        allEquations)))))))))%>
   </equations>
   <literals>
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>

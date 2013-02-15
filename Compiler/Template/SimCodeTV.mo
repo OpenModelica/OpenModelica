@@ -637,41 +637,41 @@ package SimCodeUtil
     output DAE.Exp outExp;
   end createAssertforSqrt;
 
-    function appendAllequations
-      input list<SimCode.JacobianMatrix> inJacobianMatrix;
-      output list<SimCode.SimEqSystem> eqn;
-    end appendAllequations;
+  function collectAllJacobianEquations
+    input list<SimCode.JacobianMatrix> inJacobianMatrix;
+    output list<SimCode.SimEqSystem> eqn;
+  end collectAllJacobianEquations;
  
-    function appendLists
-      input list<SimCode.SimEqSystem> inEqn1;
-      input list<SimCode.SimEqSystem> inEqn2;
-      output list<SimCode.SimEqSystem> outEqn;
-    end appendLists;
+	function appendLists
+	  input list<SimCode.SimEqSystem> inEqn1;
+	  input list<SimCode.SimEqSystem> inEqn2;
+	  output list<SimCode.SimEqSystem> outEqn;
+	end appendLists;
  
-    function createDAEString
-      input String inString;
-      output DAE.Exp outExp;
-    end createDAEString;
+  function createDAEString
+    input String inString;
+    output DAE.Exp outExp;
+  end createDAEString;
   
-    function isBoxedFunction
-      input SimCode.Function fn;
-      output Boolean b;
-    end isBoxedFunction;
-    
-    function functionInfo
-      input SimCode.Function fn;
-      output Absyn.Info info;
-    end functionInfo;
+  function isBoxedFunction
+    input SimCode.Function fn;
+    output Boolean b;
+  end isBoxedFunction;
   
-    function twodigit
-      input Integer i;
-      output String s;
-    end twodigit;
+  function functionInfo
+    input SimCode.Function fn;
+    output Absyn.Info info;
+  end functionInfo;
 
-   function countDynamicExternalFunctions
-      input list<SimCode.Function> inFncLst;
-      output Integer outDynLoadFuncs;     
-   end countDynamicExternalFunctions;
+  function twodigit
+    input Integer i;
+    output String s;
+  end twodigit;
+
+  function countDynamicExternalFunctions
+    input list<SimCode.Function> inFncLst;
+    output Integer outDynLoadFuncs;     
+  end countDynamicExternalFunctions;
 
   function eqInfo
     input SimCode.SimEqSystem eq;

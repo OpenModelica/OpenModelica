@@ -70,8 +70,6 @@ template translateModel(SimCode simCode)
             else 
               "" //the else is automatically empty, too
     
-    // workaround for <%fileNamePrefix%>.h with an underscore, because we have  
-    // for example a ModelicaUtilities.h in the runtime
     let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that 
     //        the .c file is newer than the .o file if we have succesive simulate commands
@@ -165,9 +163,9 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations)%>
     
-    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
     
-    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
     
     <%functionInitialStateSets(stateSets)%>
     
@@ -202,9 +200,9 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
 
-    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
     
-    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, appendAllequations(jacobianMatrixes))%>
+    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
     
     <%functionAnalyticJacobians(jacobianMatrixes)%>
     

@@ -428,7 +428,7 @@ algorithm
   outExp := DAE.SCONST(inString);
 end createDAEString;
 
-public function appendAllequations
+public function collectAllJacobianEquations
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
   output list<SimCode.SimEqSystem> outEqn;
 algorithm 
@@ -441,12 +441,12 @@ algorithm
     case ((column, _, _, _, _, _)::rest)
       equation
         tmp = appendAllequation(column);
-        tmp1 = appendAllequations(rest);
+        tmp1 = collectAllJacobianEquations(rest);
         tmp1 = listAppend(tmp, tmp1);
       then tmp1;
    case({}) then {};
 end match;
-end appendAllequations;
+end collectAllJacobianEquations;
 
 protected function appendAllequation
   input list<SimCode.JacobianColumn> inJacobianColumn;
@@ -4676,7 +4676,7 @@ algorithm
 
         // createSymbolicJacobianssSimCode
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex+1, itempvars);
+        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex, itempvars);
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
 
         // create SimCode.SimVars from jacobian vars
