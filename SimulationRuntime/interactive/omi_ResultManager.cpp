@@ -100,29 +100,30 @@ Semaphore ghSemaphore_NumberFreeSlots(MAX_SRDF, MAX_SRDF);
 Mutex sdnMutex;
 Mutex* p_sdnMutex;
 
-//void reInitSSD_A();
-//bool deinitializeAll();
+//static void reInitSSD_A(void);
+//static bool deinitializeAll(void);
 //SSD Organisation
-void addDataToSSD(SimStepData*);
-void pointNextFreeSSDSlot();
+static void addDataToSSD(SimStepData*);
+static void pointNextFreeSSDSlot(void);
 //SRDF Organisation
-void pointNextFreeSRDFSlot();
-void pointNextUsedSRDFSlot();
-void pushSRDF();
-void popSRDF(SimStepData*);
+static void pointNextFreeSRDFSlot(void);
+static void pointNextUsedSRDFSlot(void);
+static void pushSRDF(void);
+static void popSRDF(SimStepData*);
 
 //Math help methods
-bool compareDouble(double, double);
+static bool compareDouble(double, double);
 //print methods for testing
-void printSSD();
-void printSRDF();
+static void printSSD(void);
+static void printSRDF(void);
 
 /*****************************************************************
  * Organisation and Management of SSD, SRDF, SimDataNames...
  * e.g. Parameters, Variables, Simulation Setup...
  * Initialization for simulation data
  *****************************************************************/
-bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
+bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters)
+{
   bool retValue = true;
   //simDataNames_SimulationResult will be initialize from the SimulationControl
 
@@ -198,7 +199,8 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
  * Call this function after shutdown to free all allocated memory
  * TODO [20110523] pv: TBD
  */
-bool deInitializeSSD_AND_SRDF() {
+bool deInitializeSSD_AND_SRDF(void)
+{
   for (int i = 0; i < MAX_SSD; i++) {
     delete [] ssdArray[i].states;
     delete [] ssdArray[i].statesDerivatives;
@@ -212,7 +214,8 @@ bool deInitializeSSD_AND_SRDF() {
  * Getter and Setter from the Interface ResultManager.h
  *****************************************************************/
 
-P_SimDataNumbers getSimDataNumbers(void) {
+P_SimDataNumbers getSimDataNumbers(void)
+{
   return p_simdatanumbers;
 }
 
@@ -220,7 +223,8 @@ P_SimDataNumbers getSimDataNumbers(void) {
  * Reads the SimStepData from a Calculation thread and adds it to the intern SSD buffer and the SRDF buffer.
  * parameter: pointer from type SimStepData, it points on a data struct in a Calculation thread
  */
-bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
+bool setResultData(SimStepData* p_SimStepData_from_Calculation)
+{
   bool retValue = true;
 
   /*
@@ -414,7 +418,8 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 /*
  * Retuns the simulation state data at the initial state
  */
-SimStepData* getResultDataFirstStart() {
+SimStepData* getResultDataFirstStart(void)
+{
   return p_simulationStartSSD;
 }
 
@@ -439,7 +444,8 @@ void setSimulationTimeReversed(double validTime){
  * the organization of the SRDF array must start again from the beginning.
  * because old simulation data mustn't send to the GUI.
  */
-void resetSRDFAfterChangetime() {
+void resetSRDFAfterChangetime(void)
+{
   if (debugResultManager > 1) {
     cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START"  << endl; fflush( stdout);
   }
@@ -460,7 +466,8 @@ void resetSRDFAfterChangetime() {
  * If the simulation has to start again from the beginning
  * The SSD array has to reset with nullSSD elements
  */
-void resetSSDArrayWithNullSSD(long nStates, long nAlgebraic, long nParameters) {
+void resetSSDArrayWithNullSSD(long nStates, long nAlgebraic, long nParameters)
+{
   p_ssdArray_NextFreeSlot = ssdArray;
   simulationReset = true;
   for (int i = 0; i < MAX_SSD; i++) {
@@ -491,25 +498,29 @@ void resetSSDArrayWithNullSSD(long nStates, long nAlgebraic, long nParameters) {
   }
 }
 
-void lockMutexSSD() {
+void lockMutexSSD(void)
+{
   ssdMutex.Lock();
 }
 
-void releaseMutexSSD() {
+void releaseMutexSSD(void)
+{
   ssdMutex.Unlock();
 }
 
 /*
  * Returns the minimum time stored in the SSDArray
  */
-double getMinTime_inSSD() {
+double getMinTime_inSSD(void)
+{
   return p_ssdArray_NextFreeSlot->forTimeStep;
 }
 
 /*
  * Returns the maximum time stored in the SSDArray
  */
-double getMaxTime_inSSD() {
+double getMaxTime_inSSD(void)
+{
   return (p_ssdArray_NextFreeSlot - 1)->forTimeStep;
 }
 /*****************************************************************
@@ -519,7 +530,8 @@ double getMaxTime_inSSD() {
 /**
  * Adds result data to the SSD Array and tries to add a pointer on it into the SRDF Array
  */
-void addDataToSSD(SimStepData* p_SimStepData_from_Calculation) {
+static void addDataToSSD(SimStepData* p_SimStepData_from_Calculation)
+{
 
   p_ssdArray_NextFreeSlot->forTimeStep = p_SimStepData_from_Calculation->forTimeStep; //is the lastEmittedTime or timeValue of this step
   if (firstRun)
@@ -563,7 +575,8 @@ void addDataToSSD(SimStepData* p_SimStepData_from_Calculation) {
  * If the last slot is reached it will point p_ssdArrayFreeSlot to the first element from the SSD array
  * otherwise to the next higher index
  */
-void pointNextFreeSSDSlot() {
+static void pointNextFreeSSDSlot(void)
+{
   //cout << "pointNextFreeSSDSlot: p_ssdArray_NextFreeSlot " << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
   if (p_ssdArray_NextFreeSlot != p_ssdArray_LastSlot) {
 
@@ -583,7 +596,8 @@ void pointNextFreeSSDSlot() {
  * If the last slot is reached it will point pp_srdfArray_NextFreeSlot to the first element from the SRDF array
  * otherwise to the next higher index
  */
-void pointNextFreeSRDFSlot() {
+static void pointNextFreeSRDFSlot(void)
+{
   if (pp_srdfArray_NextFreeSlot != pp_srdfArray_LastSlot) {
     pp_srdfArray_NextFreeSlot++;
   } else {
@@ -591,7 +605,8 @@ void pointNextFreeSRDFSlot() {
   }
 }
 
-void pointNextUsedSRDFSlot() {
+static void pointNextUsedSRDFSlot(void)
+{
   if (pp_srdfArray_FirstQueueElement != pp_srdfArray_LastSlot) {
     pp_srdfArray_FirstQueueElement++;
   } else {
@@ -603,7 +618,8 @@ void pointNextUsedSRDFSlot() {
  * The SRDF buffer adds the new simulation data to its next free slot
  * and calls the pointNextFreeSRDFSlot method
  */
-void pushSRDF() {
+static void pushSRDF(void)
+{
   *pp_srdfArray_NextFreeSlot = &(*p_ssdArray_NextFreeSlot);
 
   if (debugResultManager > 1) {
@@ -617,8 +633,8 @@ void pushSRDF() {
 /*
  * Pops a simulation step data for a transfer thread
  */
-void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
-
+static void popSRDF(SimStepData* p_SimResDataForw_from_Transfer)
+{
   p_SimResDataForw_from_Transfer->forTimeStep
       = (*pp_srdfArray_FirstQueueElement)->forTimeStep; //is the lastEmittedTime of this step
 
@@ -654,7 +670,7 @@ void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
  * Math help methods
  *****************************************************************/
 
-bool compareDouble(double a, double b)
+static bool compareDouble(double a, double b)
 {
     return fabs(a - b) < EPSILON;
 }
@@ -663,7 +679,8 @@ bool compareDouble(double a, double b)
  * Print methods
  *****************************************************************/
 
-void printSSD() {
+static void printSSD(void)
+{
 
   cout << "ResultManager:\tFunct.: printSSD****************" << endl;
   fflush( stdout);
@@ -679,7 +696,8 @@ void printSSD() {
   }
 }
 
-void printSRDF() {
+static void printSRDF(void)
+{
   cout << "ResultManager:\tFunct.: printSRDF****************" << endl;
   fflush( stdout);
   for (int i = 0; i < MAX_SRDF; i++) {

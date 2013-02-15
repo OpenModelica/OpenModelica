@@ -25,22 +25,22 @@
 
 using namespace std;
 
-bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
+static bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
 
-bool calculationInterrupted = false;
+static bool calculationInterrupted = false;
 
-SimStepData simStepData_from_Calculation; //Simulation Step Data structure used by a calculation thread to store simulation result data for a specific time step data
-SimStepData* p_SimStepData_from_Calculation = 0;
+static SimStepData simStepData_from_Calculation; //Simulation Step Data structure used by a calculation thread to store simulation result data for a specific time step data
+static SimStepData* p_SimStepData_from_Calculation = 0;
 
-int calculate();
-void createSSDEntry(string);
-void printSSDCalculation(long, long, long);
+static int calculate(void);
+static void createSSDEntry(string);
+static void printSSDCalculation(long, long, long);
 
 /**
  * Calculates all simulation steps in a loop until the calculation is interrupted
  */
-int calculate() {
-
+static int calculate(void)
+{
   int retVal = -1;
   double start = 0.0;
   double stop = 1.0;
@@ -122,27 +122,30 @@ int calculate() {
 /**
  * Asks the ServiceInterface for the last simulation results to put into the simulation step data structure
  */
-void createSSDEntry(string method) {
+static void createSSDEntry(string method)
+{
   fillSimulationStepDataWithValuesFromGlobalData(method, p_SimStepData_from_Calculation);
 
   p_sdnMutex->Lock();
 
   p_sdnMutex->Unlock();
   if (debugCalculation)
+  {
     //printSSDCalculation(nStates, nAlgebraic, nParameters);
-    if (debugCalculation)
-      cout
-          << "Calculation:\tFunct.: createSSDEntry\tData: p_SimStepData_from_Calculation->forTimeStep: "
-          << p_SimStepData_from_Calculation->forTimeStep
-          << " --------------------" << endl;
-  fflush( stdout);
+    cout
+        << "Calculation:\tFunct.: createSSDEntry\tData: p_SimStepData_from_Calculation->forTimeStep: "
+        << p_SimStepData_from_Calculation->forTimeStep
+        << " --------------------" << endl;
+    fflush( stdout);
+  }
 }
 
 /**
  * Only for debugging
  * Prints out the actual calculated Simulation Step Data structure
  */
-void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
+static void printSSDCalculation(long nStates, long nAlgebraic, long nParameters)
+{
   cout
       << "Calculation:\tFunct.: printSSDCalculation\tMessage: OutPutSSD-CALCULATION***********"
       << endl;
@@ -156,7 +159,8 @@ void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
   cout << "Calculation:\tFunct.: printSSDCalculation\tMessage: Parmeters--- "
       << endl;
   fflush(stdout);
-  for (int t = 0; t < nParameters; t++) {
+  for (int t = 0; t < nParameters; t++)
+  {
     cout << t << ": "
         << p_simDataNames_SimulationResult->parametersNames[t] << ": "
         << p_SimStepData_from_Calculation->parameters[t] << endl;
@@ -199,7 +203,8 @@ void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
 /**
  * Main thread method initializes all data
  */
-THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam) {
+THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam)
+{
   int retValue = -1; //Not used yet
 
   if (debugCalculation) {

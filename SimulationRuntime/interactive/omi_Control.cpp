@@ -71,38 +71,38 @@ Thread threadClient;
 Semaphore semaphoreMessagesToClient(0, 1);
 
 //General initialization for control thread
-void initialize();
-void createProducerAndConsumer();
-void createControlClient();
-void connectToControlServer(Socket*);
+static void initialize(void);
+static void createProducerAndConsumer(void);
+static void createControlClient(void);
+static void connectToControlServer(Socket*);
 //Organisation and Management of simulation data
-void reInitAll(void);
-void changeSimulationTime(double);
-void changeParameterValues(double, string);
-void setFilterForTransfer(string);
+static void reInitAll(void);
+static void changeSimulationTime(double);
+static void changeParameterValues(double, string);
+static void setFilterForTransfer(string);
 //Controlling for simulation
-void startSimulation(void);
-void stopSimulation(void);
-void pauseSimulation(void);
-void endSimulation(void);
-void shutDown(void);
+static void startSimulation(void);
+static void stopSimulation(void);
+static void pauseSimulation(void);
+static void endSimulation(void);
+static void shutDown(void);
 //Network
 //int sendMessageToClient(SOCKET*, string);
-void parseMessageFromClient(string);
+static void parseMessageFromClient(string);
 
-void createMessage(string);
+static void createMessage(string);
 THREAD_RET_TYPE threadClientControl(THREAD_PARAM_TYPE);
 
 //Common help methods
-string parseIP(string);
-int parsePort(string);
-void setValuesFrom_A_SSD(SimStepData*, char, string);
-void parseState(SimStepData*, string);
-void parseAlgebraic(SimStepData*, string);
-void parseParameter(SimStepData*, string);
-void parseNameTypes(string);
-void parseNames(SimDataNamesFilter*, char, string);
-void addNameTo_A_SimDataNames(SimDataNamesFilter*, char, string);
+static string parseIP(string);
+static int parsePort(string);
+static void setValuesFrom_A_SSD(SimStepData*, char, string);
+static void parseState(SimStepData*, string);
+static void parseAlgebraic(SimStepData*, string);
+static void parseParameter(SimStepData*, string);
+static void parseNameTypes(string);
+static void parseNames(SimDataNamesFilter*, char, string);
+static void addNameTo_A_SimDataNames(SimDataNamesFilter*, char, string);
 
 /*****************************************************************
  * Setups for the whole simulation environment
@@ -112,7 +112,8 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter*, char, string);
  * Initializes all needed variables for the control thread
  * initializes the DataNames structure
  */
-void initialize() {
+static void initialize(void)
+{
        nStates = get_NStates();
        nAlgebraic = get_NAlgebraic();
        nParameters = get_NParameters();
@@ -143,26 +144,27 @@ void initialize() {
  * Creates all producers and consumers
  * The settransferclienturl#ip#port#end operation have to be called first
  */
-void createProducerAndConsumer() {
+static void createProducerAndConsumer(void)
+{
        std::cout << "Creating producers and consumers!" << std::endl; fflush(stdout);
-       if (transferDone) 
+       if (transferDone)
        {
               for(int i = 0; i < NUMBER_PRODUCER; ++i)
               {
                      producerThreads[i].Create(threadSimulationCalculation);
-              }       
+              }
 
               for(int i = 0; i < NUMBER_CONSUMER; ++i)
               {
                      consumerThreads[i].Create(threadClientTransfer);
               }
-       
+
               if (debugLevelControl  > 0)
               {
                      cout << "Control:\tMessage: Create producer and consumer done..." << endl; fflush(stdout);
               }
-       } 
-       else 
+       }
+       else
        {
               //Set Transfer IP & PORT
        }
@@ -172,7 +174,8 @@ void createProducerAndConsumer() {
  * Creates the control client thread
  * the setcontrolclienturl#ip#port#end operation have to be called first
  */
-void createControlClient() {
+static void createControlClient(void)
+{
        if (clientDone) {
 
               /*
@@ -228,7 +231,7 @@ void resetControlServerPortToDefault(){
  * This function establishes the connection to a client's control server
  * respective user specific network configurations
  */
-void connectToControlServer(Socket* p_sock)
+static void connectToControlServer(Socket* p_sock)
 {
        if (control_client_ip != string(""))
        {
@@ -283,7 +286,8 @@ void connectToControlServer(Socket* p_sock)
 /**
  * Re-initializes the whole simulation runtime so the simulation can start from beginning
  */
-void reInitAll() {
+static void reInitAll(void)
+{
    SimStepData* p_ssdAtSimulationTime = getResultDataFirstStart();
    if (debugLevelControl > 0)
    {
@@ -304,8 +308,8 @@ void reInitAll() {
  * Changes values for parameters for a specified simulationTime
  * The parameter variable contains all names and new values as one string, separated with symbols
  */
-void changeParameterValues(double changedSimulationTime, string parameter) {
-
+static void changeParameterValues(double changedSimulationTime, string parameter)
+{
    if (debugLevelControl > 0)
    {
       cout << "Control:\tFunct.: changeParameterValues\tData: time: " << changedSimulationTime << " parameter: " << parameter << endl; fflush(stdout);
@@ -352,7 +356,8 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
  * Changes the simulation time to a previously timestep
  * All values which are stored for this time step will be reused
  */
-void changeSimulationTime(double changedSimulationTime) {
+static void changeSimulationTime(double changedSimulationTime)
+{
 
    double stepSize = get_stepSize();
 
@@ -441,7 +446,8 @@ void changeSimulationTime(double changedSimulationTime) {
  * variable#parameter
  * If one type doesn't care the space between ## has to be empty
  */
-void setFilterForTransfer(string filterstring) {
+static void setFilterForTransfer(string filterstring)
+{
    if (debugLevelControl > 0)
    {
      cout << "Control:\tFunct.: setFilterForTransfer\tData: filterstring: " << filterstring << endl; fflush(stdout);
@@ -457,7 +463,7 @@ void setFilterForTransfer(string filterstring) {
 /**
  * Starts all producers and consumers, afterwards the simulation is running
  */
-void startSimulation()
+static void startSimulation(void)
 {
   if (status.compare("start") != 0) {
     mutexSimulationStatus->Lock();
@@ -477,7 +483,7 @@ void startSimulation()
 /**
  * interrupts the simulation but the actual state will be save
  */
-void pauseSimulation()
+static void pauseSimulation(void)
 {
   if (status.compare("start") == 0) {
     /*Try lock the mutex is necessary, because the producer and consumer threads are working on the
@@ -512,7 +518,8 @@ void pauseSimulation()
 /**
  * Interrupts the simulation and reset all simulation data to initial state
  */
-void stopSimulation(void) {
+static void stopSimulation(void)
+{
   if (status.compare("stop") != 0)
   {
     pauseSimulation();
@@ -542,7 +549,7 @@ void stopSimulation(void) {
   }
 }
 
-void endSimulation()
+static void endSimulation(void)
 {
   mutexSimulationStatus->Lock();
   simulationStatus = SimulationStatus::SHUTDOWN;
@@ -559,9 +566,9 @@ void endSimulation()
  * to all running control threads
  *
  */
-void shutDown(void)
+static void shutDown(void)
 {
-       shutDownSignal = true;
+  shutDownSignal = true;
 }
 
 /*****************************************************************
@@ -569,18 +576,20 @@ void shutDown(void)
  * gobalError management, future network configuration
  *****************************************************************/
 /*
-int sendMessageToClient(SOCKET* p_ConnectSocket, string message) {
-       int iResult;
-       iResult = send(*p_ConnectSocket, message.data(), message.size(), 0);
+int sendMessageToClient(SOCKET* p_ConnectSocket, string message)
+{
+  int iResult;
+  iResult = send(*p_ConnectSocket, message.data(), message.size(), 0);
 
-       if (iResult == SOCKET_ERROR) {
-              printf("send failed: %d\n", WSAGetLastError());
-              closesocket(*p_ConnectSocket);
-              WSACleanup();
-              return 1;
-       }
+  if (iResult == SOCKET_ERROR)
+  {
+    printf("send failed: %d\n", WSAGetLastError());
+    closesocket(*p_ConnectSocket);
+    WSACleanup();
+    return 1;
+  }
 
-       return iResult;
+  return iResult;
 }*/
 
 /**
@@ -589,8 +598,8 @@ int sendMessageToClient(SOCKET* p_ConnectSocket, string message) {
  * otherwise it will be replied with an error message.
  * See OM Documentation for a list of all available operations (Chapter 5.4.2 Operation Messages)
  */
-void parseMessageFromClient(string message) {
-
+static void parseMessageFromClient(string message)
+{
        // IMPORTANT: The Control Server should be able to reply with an error message while the Control Client is not initialized e.g. if an user sends an malformed operation
 
        /*SYSTEMTIME systime;
@@ -787,20 +796,22 @@ void parseMessageFromClient(string message) {
  * Global Error handling
  *****************************************************************/
 
-void createMessage(string newmessageForClient) {
-       messageForClient = newmessageForClient;
-       semaphoreMessagesToClient.Post();
+static void createMessage(string newmessageForClient)
+{
+  messageForClient = newmessageForClient;
+  semaphoreMessagesToClient.Post();
 }
 
 /*****************************************************************
  * Common help methods
  *****************************************************************/
- 
+
 /**
  * This functions parses a string like "ip#port"
  * and returns the ip value of it as an string
  */
-string parseIP(string ip_port) {
+static string parseIP(string ip_port)
+{
        string::size_type checkForSharpSymbol = ip_port.find_first_of("#");
        if (checkForSharpSymbol != string::npos) {
               string ip = ip_port.substr(0, checkForSharpSymbol);
@@ -815,7 +826,8 @@ string parseIP(string ip_port) {
  * This functions parses a string like "ip#port"
  * and returns the port value of it as an int
  */
-int parsePort(string ip_port) {
+static int parsePort(string ip_port)
+{
        string::size_type checkForSharpSymbol = ip_port.find_first_of("#");
        if (checkForSharpSymbol != string::npos) {
               string port = ip_port.substr(checkForSharpSymbol + 1);
@@ -834,7 +846,8 @@ int parsePort(string ip_port) {
 /**
  * Recursive method to parse all names and values from the string state and set the values to the to the p_SSD parameter
  */
-void parseState(SimStepData* p_SSD, string state) {
+static void parseState(SimStepData* p_SSD, string state)
+{
        string::size_type checkForDoublePoint = state.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
               string statenameANDstatevalue = state.substr(0, checkForDoublePoint);
@@ -849,7 +862,8 @@ void parseState(SimStepData* p_SSD, string state) {
 /**
  * Recursive method to parse all  names and values from the string algebraic and set the values to the to the p_SSD parameter
  */
-void parseAlgebraic(SimStepData* p_SSD, string algebraic) {
+static void parseAlgebraic(SimStepData* p_SSD, string algebraic)
+{
        string::size_type checkForDoublePoint = algebraic.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
               string algnameANDalgvalue = algebraic.substr(0, checkForDoublePoint);
@@ -864,7 +878,8 @@ void parseAlgebraic(SimStepData* p_SSD, string algebraic) {
 /**
  * Recursive method to parse all names and values from the string parameter and set the values to the to the p_SSD parameter
  */
-void parseParameter(SimStepData* p_SSD, string parameter) {
+static void parseParameter(SimStepData* p_SSD, string parameter)
+{
        string::size_type checkForDoublePoint = parameter.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
               string parnameANDparvalue = parameter.substr(0, checkForDoublePoint);
@@ -883,7 +898,8 @@ void parseParameter(SimStepData* p_SSD, string parameter) {
 /**
  * This method is used to set the filter mask depends on a filter string from the user/gui
  */
-void parseNameTypes(string filterstring) {
+static void parseNameTypes(string filterstring)
+{
        if (debugLevelControl > 0)
        {
               cout << "Control:\tFunct.: parseNameTypes\tData: filter string: " << filterstring << endl; fflush(stdout);
@@ -911,7 +927,8 @@ void parseNameTypes(string filterstring) {
 /**
  * parses all names from a type (state, algebraic,...)
  */
-void parseNames(SimDataNamesFilter* p_SDN, char type, string names) {
+static void parseNames(SimDataNamesFilter* p_SDN, char type, string names)
+{
        //if(debugLevelControl) { cout << "Type: "<< type << " Name: " << names << endl; fflush(stdout); }
        string::size_type checkForDoublePoint = names.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
@@ -928,7 +945,8 @@ void parseNames(SimDataNamesFilter* p_SDN, char type, string names) {
  * Adds a name to a simdatanames structure
  * this is used to set the filter for transfer
  */
-void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name) {
+static void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name)
+{
        if (debugLevelControl > 1)
        {
               cout << "Type: " << type << " Name: " << name << endl; fflush(stdout);
@@ -1017,7 +1035,8 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name)
  * parameter: p
  * ...
  */
-void setValuesFrom_A_SSD(SimStepData* p_SSD, char type, string nameANDvalue) {
+static void setValuesFrom_A_SSD(SimStepData* p_SSD, char type, string nameANDvalue)
+{
        bool findElement = false;
 
        string::size_type checkForEquals = nameANDvalue.find_first_of("=");
@@ -1098,7 +1117,7 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
        } else {
               sock1.bind(control_default_server_port);
        }
-       
+
        sock1.listen();
        Socket sock2;
        sock1.accept(sock2);
@@ -1120,7 +1139,7 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
        }
        sock2.close();
        sock1.close();
-       
+
        return (THREAD_RET_TYPE_NO_API)error;
 }
 

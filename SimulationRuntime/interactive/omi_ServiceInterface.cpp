@@ -28,7 +28,7 @@
 #include "omi_Transfer.h"
 
 //Global Data Mutex
-Mutex gdMutex;
+static Mutex gdMutex;
 
 int argcTEMP = 0; //From main parameter argc
 char** argvTEMP = 0; //From main parameter argv
@@ -43,7 +43,8 @@ SOLVER_INFO* solverInfo;
  * e.g. the used globalDataMutex
  * and the arguments of the simulation_runtime main function
  */
-int initServiceInterfaceData(int argc, char**argv, void* inData){
+int initServiceInterfaceData(int argc, char**argv, void* inData)
+{
   //The arguments should be available globally, also in other classes
   argcTEMP = argc;
   argvTEMP = argv;
@@ -52,7 +53,8 @@ int initServiceInterfaceData(int argc, char**argv, void* inData){
   return true;
 }
 
-void* getGlobalData(void){
+void* getGlobalData(void)
+{
   return globalData;
 }
 
@@ -65,7 +67,8 @@ void* getGlobalData(void){
 //****** Number of properties******
 
 //NOTE: nStates is similar to nStateDerivatives
-long get_NStates(void) {
+long get_NStates(void)
+{
   gdMutex.Lock();
 
   long temp_val = globalData->modelData.nStates;
@@ -74,7 +77,8 @@ long get_NStates(void) {
   return temp_val;
 }
 
-long get_NAlgebraic(void) {
+long get_NAlgebraic(void)
+{
   gdMutex.Lock();
 
   long temp_val = globalData->modelData.nVariablesReal-2*globalData->modelData.nStates;
@@ -84,7 +88,8 @@ long get_NAlgebraic(void) {
   return temp_val;
 }
 
-long get_NParameters(void) {
+long get_NParameters(void)
+{
   gdMutex.Lock();
 
   long temp_val = globalData->modelData.nParametersReal;
@@ -94,7 +99,8 @@ long get_NParameters(void) {
   return temp_val;
 }
 
-long get_NInputVars(void) {
+long get_NInputVars(void)
+{
   gdMutex.Lock();
 
   long temp_val = globalData->modelData.nInputVars;
@@ -104,7 +110,8 @@ long get_NInputVars(void) {
   return temp_val;
 }
 
-long get_NOutputVars(void) {
+long get_NOutputVars(void)
+{
   gdMutex.Lock();
 
   long temp_val = globalData->modelData.nOutputVars;
@@ -118,7 +125,8 @@ long get_NOutputVars(void) {
 
 //****** State Value, Name Request and Manipulation ******
 
-void set_StateValue(int index, double value){
+void set_StateValue(int index, double value)
+{
   gdMutex.Lock();
 
   globalData->localData[0]->realVars[index] = value;
@@ -126,7 +134,8 @@ void set_StateValue(int index, double value){
   gdMutex.Unlock();
 }
 
-double get_StateValue(int index){
+double get_StateValue(int index)
+{
   gdMutex.Lock();
 
   double temp_val =  globalData->localData[0]->realVars[index];
@@ -136,7 +145,8 @@ double get_StateValue(int index){
   return temp_val;
 }
 
-string get_StateName(int index){
+string get_StateName(int index)
+{
   gdMutex.Lock();
 
   string temp_val =  globalData->modelData.realVarsData[index].info.name;
@@ -147,7 +157,8 @@ string get_StateName(int index){
 }
 
 //****** StateDerivative Value, Name Request and Manipulation ******
-void set_StateDerivativesValue(int index, double value){
+void set_StateDerivativesValue(int index, double value)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -157,7 +168,8 @@ void set_StateDerivativesValue(int index, double value){
   gdMutex.Unlock();
 }
 
-double get_StateDerivativesValue(int index){
+double get_StateDerivativesValue(int index)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -169,7 +181,8 @@ double get_StateDerivativesValue(int index){
   return temp_val;
 }
 
-string get_StateDerivativesName(int index){
+string get_StateDerivativesName(int index)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -184,7 +197,8 @@ string get_StateDerivativesName(int index){
 //****** Algebraic Value, Name Request and Manipulation ******
 // Currently only Real Variables are supported!
 // TODO: extend for other types (e.g. integer, boolean,...)
-void set_AlgebraicValue(int index, double value){
+void set_AlgebraicValue(int index, double value)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -194,7 +208,8 @@ void set_AlgebraicValue(int index, double value){
   gdMutex.Unlock();
 }
 
-double get_AlgebraicValue(int index){
+double get_AlgebraicValue(int index)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -206,7 +221,8 @@ double get_AlgebraicValue(int index){
   return temp_val;
 }
 
-string get_AlgebraicName(int index){
+string get_AlgebraicName(int index)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -221,7 +237,8 @@ string get_AlgebraicName(int index){
 //****** Parameter Value, Name Request and Manipulation ******
 // Currently only Real Variables are supported!
 // TODO: extend for other types (e.g. integer, boolean,...)
-void set_ParameterValue(int index, double value){
+void set_ParameterValue(int index, double value)
+{
   gdMutex.Lock();
 
   globalData->simulationInfo.realParameter[index] = value;
@@ -229,7 +246,8 @@ void set_ParameterValue(int index, double value){
   gdMutex.Unlock();
 }
 
-double get_ParameterValue(int index){
+double get_ParameterValue(int index)
+{
   gdMutex.Lock();
 
   double temp_val =  globalData->simulationInfo.realParameter[index];
@@ -239,7 +257,8 @@ double get_ParameterValue(int index){
   return temp_val;
 }
 
-string get_ParameterName(int index){
+string get_ParameterName(int index)
+{
   gdMutex.Lock();
 
   string temp_val =  globalData->modelData.realParameterData[index].info.name;
@@ -250,7 +269,8 @@ string get_ParameterName(int index){
 }
 
 //****** InputVariable Value, Name Request and Manipulation ******
-void set_InputVarValue(int index, double value){
+void set_InputVarValue(int index, double value)
+{
   gdMutex.Lock();
 
   globalData->simulationInfo.inputVars[index] = value;
@@ -258,7 +278,8 @@ void set_InputVarValue(int index, double value){
   gdMutex.Unlock();
 }
 
-double get_InputVarValue(int index){
+double get_InputVarValue(int index)
+{
   gdMutex.Lock();
 
   double temp_val =  globalData->simulationInfo.inputVars[index];
@@ -268,7 +289,8 @@ double get_InputVarValue(int index){
   return temp_val;
 }
 
-string get_InputVarName(int index){
+string get_InputVarName(int index)
+{
   gdMutex.Lock();
 
   // TODO: find name for input values */
@@ -280,7 +302,8 @@ string get_InputVarName(int index){
 }
 
 //****** OutputVariable Value, Name Request and Manipulation ******
-void set_OutputVarValue(int index, double value){
+void set_OutputVarValue(int index, double value)
+{
   gdMutex.Lock();
 
   globalData->simulationInfo.outputVars[index] = value;
@@ -289,7 +312,8 @@ void set_OutputVarValue(int index, double value){
 
 }
 
-double get_OutputVarValue(int index){
+double get_OutputVarValue(int index)
+{
   gdMutex.Lock();
 
   double temp_val =  globalData->simulationInfo.outputVars[index];
@@ -299,7 +323,8 @@ double get_OutputVarValue(int index){
   return temp_val;
 }
 
-string get_OutputVarName(int index){
+string get_OutputVarName(int index)
+{
   gdMutex.Lock();
 
   // TODO: find name for input values */
@@ -314,7 +339,8 @@ string get_OutputVarName(int index){
 
 //****** Simulation Status Request and Manipulation ******
 
-double get_timeValue(void){
+double get_timeValue(void)
+{
   gdMutex.Lock();
 
   double temp_let = globalData->localData[0]->timeValue;
@@ -324,7 +350,8 @@ double get_timeValue(void){
   return temp_let;
 }
 
-void set_timeValue(double new_timeValue) {
+void set_timeValue(double new_timeValue)
+{
    gdMutex.Lock();
 
    globalData->localData[0]->timeValue = new_timeValue;
@@ -332,7 +359,8 @@ void set_timeValue(double new_timeValue) {
    gdMutex.Unlock();
 }
 
-void set_lastEmittedTime(double new_lastEmittedTime) {
+void set_lastEmittedTime(double new_lastEmittedTime)
+{
   gdMutex.Lock();
 
   // What's the propose of that???
@@ -343,7 +371,8 @@ void set_lastEmittedTime(double new_lastEmittedTime) {
 }
 
 
-double get_lastEmittedTime(void) {
+double get_lastEmittedTime(void)
+{
   gdMutex.Lock();
 
   double temp_let = globalData->localData[0]->timeValue - solverInfo->currentStepSize;
@@ -353,7 +382,8 @@ double get_lastEmittedTime(void) {
   return temp_let;
 }
 
-void set_stepSize(double new_globalStepSize) {
+void set_stepSize(double new_globalStepSize)
+{
   gdMutex.Lock();
 
   globalData->simulationInfo.stepSize = new_globalStepSize;
@@ -361,7 +391,8 @@ void set_stepSize(double new_globalStepSize) {
   gdMutex.Unlock();
 }
 
-double get_stepSize(void) {
+double get_stepSize(void)
+{
   gdMutex.Lock();
 
   double temp_let =  globalData->simulationInfo.stepSize ;
@@ -373,7 +404,8 @@ double get_stepSize(void) {
 
 // TODO: update forceEmit functions
 //       when the purpose is clear.
-void set_forceEmit(int new_forceEmit){
+void set_forceEmit(int new_forceEmit)
+{
   gdMutex.Lock();
 
   //globalData->forceEmit = new_forceEmit;
@@ -393,7 +425,8 @@ int get_forceEmit(void){
 
 //****** Request and Manipulate Data from GlobalData via SimulationStepData
 
-void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData){
+void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData)
+{
   gdMutex.Lock();
 
   /*
@@ -418,8 +451,8 @@ void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData)
   gdMutex.Unlock();
 }
 
-void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* p_SimStepData) {
-
+void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* p_SimStepData)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -428,14 +461,17 @@ void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* 
 
   p_SimStepData->forTimeStep = globalData->localData[0]->timeValue; //is the lastEmittedTime of this step
 
-  for (int i = 0; i < nStates; i++) {
+  for (int i = 0; i < nStates; i++)
+  {
     p_SimStepData->states[i] = globalData->localData[0]->realVars[i];
     p_SimStepData->statesDerivatives[i] = globalData->localData[0]->realVars[nStates + i];
   }
-  for (int i = 0; i < nAlgebraic; i++) {
+  for (int i = 0; i < nAlgebraic; i++)
+  {
     p_SimStepData->algebraics[i] = globalData->localData[0]->realVars[2*nStates + i];
   }
-  for (int i = 0; i < nParameters; i++) {
+  for (int i = 0; i < nParameters; i++)
+  {
     p_SimStepData->parameters[i] = globalData->simulationInfo.realParameter[i];
   }
 
@@ -450,7 +486,8 @@ void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* 
  */
 
 void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
-    SimDataNames* p_simDataNames, SimDataNamesFilter* p_simDataNamesFilter) {
+    SimDataNames* p_simDataNames, SimDataNamesFilter* p_simDataNamesFilter)
+{
   gdMutex.Lock();
 
   long nStates = globalData->modelData.nStates;
@@ -458,19 +495,22 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
   long nParameters = globalData->modelData.nParametersReal;
 
   int variablesNamesPos = 0;
-  for (int i = 0; i < nStates; i++) {
+  for (int i = 0; i < nStates; i++)
+  {
     p_simDataNames->statesNames[i] = globalData->modelData.realVarsData[i].info.name;
     p_simDataNamesFilter->variablesNames[variablesNamesPos] = "";
     p_simDataNames->stateDerivativesNames[i]
         = globalData->modelData.realVarsData[nStates + i].info.name;
     variablesNamesPos++;
   }
-  for (int i = 0; i < nAlgebraic; i++) {
+  for (int i = 0; i < nAlgebraic; i++)
+  {
     p_simDataNames->algebraicsNames[i] = globalData->modelData.realVarsData[2*nStates + i].info.name;
     p_simDataNamesFilter->variablesNames[variablesNamesPos] = "";
     variablesNamesPos++;
   }
-  for (int i = 0; i < nParameters; i++) {
+  for (int i = 0; i < nParameters; i++)
+  {
     p_simDataNames->parametersNames[i] = globalData->modelData.realParameterData[i].info.name;
     p_simDataNamesFilter->parametersNames[i] = "";
   }
@@ -484,7 +524,8 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
  * a set of variables from "omi_Calculation.cpp"
  */
 int intializeSolverStartData(double *stepSize, long *outputSteps,
-    double *tolerance, string* method, string* outputFormat){
+    double *tolerance, string* method, string* outputFormat)
+{
 
   gdMutex.Lock();
 
@@ -538,7 +579,8 @@ int intializeSolverStartData(double *stepSize, long *outputSteps,
  * Calls the "read_input_xml(...)" function from "simulation_input.cpp" and stores the simulation start data into
  * a set of variables from "omi_Calculation.cpp"
  */
-void deintializeSolverStartData(void){
+void deintializeSolverStartData(void)
+{
 
   gdMutex.Lock();
 
@@ -556,7 +598,8 @@ void deintializeSolverStartData(void){
 /*
  * Calls the solver which is selected in the parameter string "method"
  */
-int performSolverStepFromOM(double start, double stop, double stepSize) {
+int performSolverStepFromOM(double start, double stop, double stepSize)
+{
   int retVal = -1;
   gdMutex.Lock();
 
@@ -578,12 +621,14 @@ int performSolverStepFromOM(double start, double stop, double stepSize) {
  * Otherwise one of the consumer or producer threads are still working on the GD and no changes could realized
  * while the simulation is paused or an error occurred...
  */
-bool denied_work_on_GD(){
+bool denied_work_on_GD(void)
+{
   gdMutex.Lock();
   return true;
 }
 
-bool allow_work_on_GD(){
+bool allow_work_on_GD(void)
+{
   gdMutex.Unlock();
 
   return true;
@@ -596,7 +641,8 @@ bool allow_work_on_GD(){
 /**
  * Creates the Simulation Control Thread
  */
-Thread* createControlThread(){
+Thread* createControlThread(void)
+{
   //Create the Control Server Thread
   Thread *new_thread = new Thread();
   new_thread->Create(threadServerControl);
@@ -610,7 +656,8 @@ Thread* createControlThread(){
  * To use Default IP (localhost - 127.0.0.1) send an empty string as ip parameter ("")
  * Note: Call this function before starting simulation
  */
-void setIPAndPortOfControlClient(string ip, int port) {
+void setIPAndPortOfControlClient(string ip, int port)
+{
   setControlClientIPandPort(ip, port);
 }
 
@@ -619,14 +666,16 @@ void setIPAndPortOfControlClient(string ip, int port) {
  * The IP (localhost - 127.0.0.1) mustn't change
  * Note: Call this function before starting simulation
  */
-void setPortOfControlServer(int port) {
+void setPortOfControlServer(int port)
+{
   setControlServerPort(port);
 }
 
 /*
  * Note: Call this function before starting simulation
  */
-void setIPandPortOfTransferClient(string ip, int port) {
+void setIPandPortOfTransferClient(string ip, int port)
+{
   setTransferIPandPort(ip, port);
 }
 
@@ -643,7 +692,8 @@ void setIPandPortOfTransferClient(string ip, int port) {
  * Prints out the actual global data stored in the simulation_runtime.cpp
  * Only for debugging
  */
-void printGlobalData(void) {
+void printGlobalData(void)
+{
   gdMutex.Lock();
 
   cout << "OutPutGlobalData***********" << endl; fflush(stdout);

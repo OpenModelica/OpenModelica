@@ -56,11 +56,11 @@ extern P_SimDataNumbers p_simdatanumbers;
 extern Mutex* p_sdnMutex;
 
 bool initializeSSD_AND_SRDF(long, long, long);
-bool deInitializeSSD_AND_SRDF(long, long, long);
+bool deInitializeSSD_AND_SRDF(void);
 bool getResultData(SimStepData*);
 bool setResultData(SimStepData*);
 SimStepData* getResultDataForTime(double, double);
-SimStepData* getResultDataFirstStart();
+SimStepData* getResultDataFirstStart(void);
 
 //Resets the SRDF Array and the producer and consumer semaphores, so the Transfer wont send old results after changing the time
 void resetSRDFAfterChangetime(void);

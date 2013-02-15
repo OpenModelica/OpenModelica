@@ -34,39 +34,39 @@ using namespace std;
 
 //#pragma comment(lib, "ws2_32.lib")
 
-const int transfer_default_client_port = 10502;
-const string transfer_default_client_ip = "127.0.0.1"; //localhost ip for transfer client
-string transfer_client_ip = "";
-int transfer_client_port = 0;
+static const int transfer_default_client_port = 10502;
+static const string transfer_default_client_ip = "127.0.0.1"; //localhost ip for transfer client
+static string transfer_client_ip = "";
+static int transfer_client_port = 0;
 
-bool debugTransfer = false; //Set true to print out comments which describes the program flow to the console
-bool transferInterrupted = false;
+static bool debugTransfer = false; //Set true to print out comments which describes the program flow to the console
+static bool transferInterrupted = false;
 
-SimStepData simStepData_from_Transfer; //Simulation Step Data structure used by a Transfer thread to store simulation result data for a specific time step data
-SimStepData* p_SimResDataForw_from_Transfer = 0;
+static SimStepData simStepData_from_Transfer; //Simulation Step Data structure used by a Transfer thread to store simulation result data for a specific time step data
+static SimStepData* p_SimResDataForw_from_Transfer = 0;
 
-Socket transfer_client_socket;
-struct sockaddr_in client;
+static Socket transfer_client_socket;
+static struct sockaddr_in client;
 
-int sendMessageToClientGUI(long, long, long);
-string createResultMessageWithNames(long, long, long);
-string createResultMessageWithIndex(long, long, long);
-void connectToTransferServer(void);
-int printSSDTransfer(long, long, long);
+static int sendMessageToClientGUI(long, long, long);
+static string createResultMessageWithNames(long, long, long);
+static string createResultMessageWithIndex(long, long, long);
+static void connectToTransferServer(void);
+static int printSSDTransfer(long, long, long);
 
 /**
  * Generates a simulation result message containing all variables and parameters from the filter mask
  * and sends the string to a server via message parsing and tcp/ip
  */
-int sendMessageToClientGUI(long nStates, long nAlgebraic, long nParameters) {
-
+static int sendMessageToClientGUI(long nStates, long nAlgebraic, long nParameters)
+{
   bool retValue = true;
 
   string resultMessage = createResultMessageWithNames(nStates, nAlgebraic, nParameters);
 
   if (debugTransfer)
   {
-         cout << resultMessage << endl; fflush(stdout);
+    cout << resultMessage << endl; fflush(stdout);
   }
 
   /*
@@ -81,65 +81,83 @@ int sendMessageToClientGUI(long nStates, long nAlgebraic, long nParameters) {
  * creates a result message containing variables and parameters, identifiable by full qualified names
  * e.g. result#var1=0.001:...#par1=9.9:...#end
  */
-string createResultMessageWithNames(long nStates, long nAlgebraic, long nParameters){
+static string createResultMessageWithNames(long nStates, long nAlgebraic, long nParameters)
+{
   ostringstream formatter;
   formatter << "result#" << p_SimResDataForw_from_Transfer->forTimeStep
-                << "#";
+            << "#";
 
   //string values;
 
   int var = 0;
   bool notFirstElement = false; //signal if the element is the first element in the formatter, if its so there is no need for a ":" at the beginning
-  for (int i = 0; var < nStates; var++, i++) {
-         if (debugTransfer)
-         {
-                cout << p_simDataNamesFilterForTransfer->variablesNames[var] << endl; fflush(stdout);
-                cout << p_simDataNames_SimulationResult->statesNames[i] << endl; fflush(stdout);
-         }
+  for (int i = 0; var < nStates; var++, i++)
+  {
+    if (debugTransfer)
+    {
+      cout << p_simDataNamesFilterForTransfer->variablesNames[var] << endl; fflush(stdout);
+      cout << p_simDataNames_SimulationResult->statesNames[i] << endl; fflush(stdout);
+    }
 
-         if (p_simDataNamesFilterForTransfer->variablesNames[var] != string("")) {
-                if (notFirstElement)
-                       formatter << ":";
-                else
-                       notFirstElement = true;
-                formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
-                              << "=" << p_SimResDataForw_from_Transfer->states[i];
-         }
+    if (p_simDataNamesFilterForTransfer->variablesNames[var] != string(""))
+    {
+      if (notFirstElement)
+      {
+        formatter << ":";
+      }
+      else
+      {
+        notFirstElement = true;
+      }
+      formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
+                << "=" << p_SimResDataForw_from_Transfer->states[i];
+    }
   }
 
-  for (int i = 0; var < (nStates + nAlgebraic); var++, i++) {
-         if (debugTransfer)
-         {
-                cout << p_simDataNamesFilterForTransfer->variablesNames[var] << endl; fflush(stdout);
-                cout << p_simDataNames_SimulationResult->algebraicsNames[i] << endl; fflush(stdout);
-         }
+  for (int i = 0; var < (nStates + nAlgebraic); var++, i++)
+  {
+    if (debugTransfer)
+    {
+      cout << p_simDataNamesFilterForTransfer->variablesNames[var] << endl; fflush(stdout);
+      cout << p_simDataNames_SimulationResult->algebraicsNames[i] << endl; fflush(stdout);
+    }
 
-         if (p_simDataNamesFilterForTransfer->variablesNames[var] != string(""))
-         {
-                if (notFirstElement)
-                       formatter << ":";
-                else
-                       notFirstElement = true;
-                formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
-                              << "=" << p_SimResDataForw_from_Transfer->algebraics[i];
-         }
+    if (p_simDataNamesFilterForTransfer->variablesNames[var] != string(""))
+    {
+      if (notFirstElement)
+      {
+        formatter << ":";
+      }
+      else
+      {
+        notFirstElement = true;
+      }
+      formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
+                << "=" << p_SimResDataForw_from_Transfer->algebraics[i];
+    }
   }
   formatter << "#";
   notFirstElement = false;
-  for (int i = 0; i < nParameters; i++) {
-         /*if (p_simDataNamesFilterForTransfer->parametersNames[i] != string("")) {
-          if(notFirstElement)formatter << ":";
-          else notFirstElement = true;
-          formatter << p_simDataNamesFilterForTransfer->variablesNames[var] << "=" << p_SimResDataForw_from_Transfer->parameters[i];
-          }*/
-         if (p_simDataNamesFilterForTransfer->parametersNames[i] != string("")) {
-                if (notFirstElement)
-                       formatter << ":";
-                else
-                       notFirstElement = true;
-                formatter << p_simDataNamesFilterForTransfer->parametersNames[i]
-                              << "=" << p_SimResDataForw_from_Transfer->parameters[i];
-         }
+  for (int i = 0; i < nParameters; i++)
+  {
+    /*if (p_simDataNamesFilterForTransfer->parametersNames[i] != string("")) {
+      if(notFirstElement)formatter << ":";
+      else notFirstElement = true;
+      formatter << p_simDataNamesFilterForTransfer->variablesNames[var] << "=" << p_SimResDataForw_from_Transfer->parameters[i];
+    }*/
+    if (p_simDataNamesFilterForTransfer->parametersNames[i] != string(""))
+    {
+      if (notFirstElement)
+      {
+        formatter << ":";
+      }
+      else
+      {
+        notFirstElement = true;
+      }
+      formatter << p_simDataNamesFilterForTransfer->parametersNames[i]
+                << "=" << p_SimResDataForw_from_Transfer->parameters[i];
+    }
   }
   formatter << "#end";
 
@@ -154,7 +172,8 @@ string createResultMessageWithNames(long nStates, long nAlgebraic, long nParamet
  * this will improve the network communication between runtime and a client gui
  * TODO 20100211 pv createResultMessageWithIndex not implemented yet
  */
-string createResultMessageWithIndex(long nStates, long nAlgebraic, long nParameters){
+static string createResultMessageWithIndex(long nStates, long nAlgebraic, long nParameters)
+{
   return "";
 }
 
@@ -163,10 +182,11 @@ string createResultMessageWithIndex(long nStates, long nAlgebraic, long nParamet
  * To use Default IP (localhost - 127.0.0.1) send an empty string as newIP parameter ("")
  * Note: Call this function before starting simulation
  */
-void setTransferIPandPort(string ip, int port){
+void setTransferIPandPort(string ip, int port)
+{
   if (debugTransfer)
   {
-         cout << "Transfer IP and Port: " << ip << ":" << port << endl; fflush(stdout);
+    cout << "Transfer IP and Port: " << ip << ":" << port << endl; fflush(stdout);
   }
 
   transfer_client_ip = ip;
@@ -177,74 +197,85 @@ void setTransferIPandPort(string ip, int port){
 /**
  *  Note: Call this function before starting simulation
  */
-void resetTransferIPandPortToDefault()
+void resetTransferIPandPortToDefault(void)
 {
   transfer_client_ip = "";
   transfer_client_port = 0;
   //connectToTransferServer(); //dynamic change during a running simulation possible with mutex... but necessary?
 }
 
-string getTransferActIP()
+string getTransferActIP(void)
 {
   if(transfer_client_ip != string(""))
-         return transfer_client_ip;
+  {
+    return transfer_client_ip;
+  }
   else
-         return transfer_default_client_ip;
+  {
+    return transfer_default_client_ip;
+  }
 }
 
-int getTransferActPort(){
+int getTransferActPort(void)
+{
   if(transfer_client_port != 0)
-         return transfer_client_port;
+  {
+    return transfer_client_port;
+  }
   else
-         return transfer_default_client_port;
+  {
+    return transfer_default_client_port;
+  }
 }
 
 /**
  * Establishes a connection to a server to transfer the result data to
  */
-void connectToTransferServer() {
+static void connectToTransferServer(void)
+{
   transfer_client_socket.create();
 
-  if (transfer_client_ip != string("")) {
-         if (transfer_client_port != 0) {
-                if (debugTransfer)
-                {
-                       cout << "Connect to server with user specific ip and port" << endl; fflush(stdout);
-                }
-                // Connect to server with user specific ip and port
-                transfer_client_socket.connect(transfer_client_ip, transfer_client_port);
-         }
-         else
-         {
-                if (debugTransfer)
-                {
-                       cout << "Connect to server with user specific ip and default port (10502)" << endl; fflush(stdout);
-                }
-                // Connect to server with user specific ip and default port
-                transfer_client_socket.connect(transfer_client_ip,
-                              transfer_default_client_port);
-         }
+  if (transfer_client_ip != string(""))
+  {
+    if (transfer_client_port != 0)
+    {
+      if (debugTransfer)
+      {
+        cout << "Connect to server with user specific ip and port" << endl; fflush(stdout);
+      }
+      // Connect to server with user specific ip and port
+      transfer_client_socket.connect(transfer_client_ip, transfer_client_port);
+    }
+    else
+    {
+      if (debugTransfer)
+      {
+        cout << "Connect to server with user specific ip and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
+      }
+      // Connect to server with user specific ip and default port
+      transfer_client_socket.connect(transfer_client_ip, transfer_default_client_port);
+    }
   }
   else
   {
-         if (transfer_client_port != 0)
-         {
-                if (debugTransfer)
-                {
-                       cout << "Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
-                }
-                // Connect to server on default IP(localhost) but user specific port
-                transfer_client_socket.connect(transfer_default_client_ip, transfer_client_port);
-         }
-         else
-         {
-                if (debugTransfer)
-                {
-                       cout << "Connect to server on default IP(localhost) and default port (10502)" << endl; fflush(stdout);
-                }
-                // Connect to server on default IP(localhost) and default port (10502)
-                transfer_client_socket.connect(transfer_default_client_ip, transfer_default_client_port);
-         }
+    if (transfer_client_port != 0)
+    {
+      if (debugTransfer)
+      {
+        cout << "Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
+      }
+      // Connect to server on default IP(localhost) but user specific port
+      transfer_client_socket.connect(transfer_default_client_ip, transfer_client_port);
+    }
+    else
+    {
+      if (debugTransfer)
+      {
+        cout << "Connect to server on default IP(localhost) and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
+      }
+      // Connect to server on default IP(localhost) and default port (10502)
+      transfer_client_socket.connect(transfer_default_client_ip, transfer_default_client_port);
+    }
   }
 }
 
@@ -252,33 +283,34 @@ void connectToTransferServer() {
  * Only for debugging
  * Prints out the actual Simulation Step Data structure
  */
-int printSSDTransfer(long nStates, long nAlgebraic, long nParameters) {
+static int printSSDTransfer(long nStates, long nAlgebraic, long nParameters)
+{
   cout << "printSSDTransfer***********" << endl; fflush(stdout);
   cout << "p_simDataNames_SimulationResult->lastEmittedTime: " << p_SimResDataForw_from_Transfer->forTimeStep << " --------------------" << endl; fflush(stdout);
 
   cout << "---Parmeters--- " << endl; fflush(stdout);
   for (int t = 0; t < nParameters; t++)
   {
-         cout << t << ": " /*<< p_simDataNames_SimulationResult->parametersNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->parameters[t] << endl; fflush(stdout);
+    cout << t << ": " /*<< p_simDataNames_SimulationResult->parametersNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->parameters[t] << endl; fflush(stdout);
   }
 
   if (nAlgebraic > 0)
   {
-         cout << "---Algebraics---" << endl; fflush(stdout);
-         for (int t = 0; t < nAlgebraic; t++)
-         {
-                cout << t << ": " /*<< p_simDataNames_SimulationResult->algebraicsNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->algebraics[t] << endl; fflush(stdout);
-         }
+    cout << "---Algebraics---" << endl; fflush(stdout);
+    for (int t = 0; t < nAlgebraic; t++)
+    {
+      cout << t << ": " /*<< p_simDataNames_SimulationResult->algebraicsNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->algebraics[t] << endl; fflush(stdout);
+    }
   }
 
   if (nStates > 0)
   {
-         cout << "---States---" << endl; fflush(stdout);
-         for (int t = 0; t < nStates; t++)
-         {
-                cout << t << ": " /*<< p_simDataNames_SimulationResult->statesNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->states[t] << endl; fflush(stdout);
-                cout << t << ": " /*<< p_simDataNames_SimulationResult->stateDerivativesNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->statesDerivatives[t] << endl; fflush(stdout);
-         }
+    cout << "---States---" << endl; fflush(stdout);
+    for (int t = 0; t < nStates; t++)
+    {
+      cout << t << ": " /*<< p_simDataNames_SimulationResult->statesNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->states[t] << endl; fflush(stdout);
+      cout << t << ": " /*<< p_simDataNames_SimulationResult->stateDerivativesNames[t]*/<< ": " << p_SimResDataForw_from_Transfer->statesDerivatives[t] << endl; fflush(stdout);
+    }
   }
 
   return 0;
@@ -287,50 +319,52 @@ int printSSDTransfer(long nStates, long nAlgebraic, long nParameters) {
 /**
  * This method tries to get the last calculated simulation result data in a loop
  */
-void doTransfer(long nStates, long nAlgebraic, long nParameters) {
+static void doTransfer(long nStates, long nAlgebraic, long nParameters) {
 
   /* TODO: Fix pause and resume of thread! */
-  while (!transferInterrupted) {
-   mutexSimulationStatus->Lock(); // Lock to see the simulation status.
-   if(simulationStatus == SimulationStatus::STOPPED)
-   {
-     // If the simulation should stop, do nothing for transfer...
-     mutexSimulationStatus->Unlock();
+  while (!transferInterrupted)
+  {
+    mutexSimulationStatus->Lock(); // Lock to see the simulation status.
+    if(simulationStatus == SimulationStatus::STOPPED)
+    {
+      // If the simulation should stop, do nothing for transfer...
+      mutexSimulationStatus->Unlock();
+    }
+
+    if(simulationStatus == SimulationStatus::SHUTDOWN)
+    {
+      // If the simulation should shutdown, unlock and break out of the loop.
+      mutexSimulationStatus->Unlock();
+      break;
+    }
+
+    if(simulationStatus == SimulationStatus::RUNNING)
+    {
+      // If the simulation should continue, increase the semaphore.
+      waitForResume->Post();
+    }
+    // Unlock and see if we need to wait for resume or not.
+    mutexSimulationStatus->Unlock();
+    waitForResume->Wait(); //wait and reduce semaphore
+
+    getResultData(p_SimResDataForw_from_Transfer);
+
+    if (debugTransfer)//TODO doTransfer
+    {
+      cout << "Transfer:\tFunct.: doTransfer\tData: time = " << p_SimResDataForw_from_Transfer->forTimeStep << " tank1.h = " << p_SimResDataForw_from_Transfer->states[0]  << endl; fflush(stdout);
+    }
+
+    //printSSDTransfer(nStates, nAlgebraic, nParameters);
+    sendMessageToClientGUI(nStates, nAlgebraic, nParameters);
+    delay((unsigned int)(get_stepSize() * 1000)); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
    }
-
-   if(simulationStatus == SimulationStatus::SHUTDOWN)
-   {
-     // If the simulation should shutdown, unlock and break out of the loop.
-     mutexSimulationStatus->Unlock();
-     break;
-   }
-
-   if(simulationStatus == SimulationStatus::RUNNING)
-   {
-    // If the simulation should continue, increase the semaphore.
-    waitForResume->Post();
-   }
-   // Unlock and see if we need to wait for resume or not.
-   mutexSimulationStatus->Unlock();
-   waitForResume->Wait(); //wait and reduce semaphore
-
-   getResultData(p_SimResDataForw_from_Transfer);
-
-   if (debugTransfer)//TODO doTransfer
-   {
-     cout << "Transfer:\tFunct.: doTransfer\tData: time = " << p_SimResDataForw_from_Transfer->forTimeStep << " tank1.h = " << p_SimResDataForw_from_Transfer->states[0]  << endl; fflush(stdout);
-   }
-
-   //printSSDTransfer(nStates, nAlgebraic, nParameters);
-   sendMessageToClientGUI(nStates, nAlgebraic, nParameters);
-   delay((unsigned int)(get_stepSize() * 1000)); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
-  }
 }
 
 /**
  * Transfer Client Thread
  */
-THREAD_RET_TYPE threadClientTransfer(THREAD_PARAM_TYPE lpParam) {
+THREAD_RET_TYPE threadClientTransfer(THREAD_PARAM_TYPE lpParam)
+{
   bool retValue = true; //Not used yet
 
   p_sdnMutex->Lock();
@@ -361,7 +395,7 @@ THREAD_RET_TYPE threadClientTransfer(THREAD_PARAM_TYPE lpParam) {
 
   if (debugTransfer)
   {
-         cout << "*****Transfer Thread End*****" << endl; fflush(stdout);
+    cout << "*****Transfer Thread End*****" << endl; fflush(stdout);
   }
 
   return (THREAD_RET_TYPE_NO_API)retValue;

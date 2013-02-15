@@ -1,5 +1,5 @@
-/* 
- * Simple client to test OMI. 
+/*
+ * Simple client to test OMI.
  *
  * Author: Per Östlund
  * Last revision: 2010-02-23
@@ -15,13 +15,13 @@
 #include "thread.h"
 #include "socket.h"
 
-bool run = true;
+static bool run = true;
 
 using namespace std;
 
-string*   fileName = 0;
-fstream*  fileStream = 0;
-int shutDownInProgress = 0;
+static string*   fileName = 0;
+static fstream*  fileStream = 0;
+static int shutDownInProgress = 0;
 
 
 THREAD_RET_TYPE threadServerControl(void*)
@@ -121,7 +121,6 @@ THREAD_RET_TYPE threadControlClient(void*)
 
          break;
   }
-  
 
   while(true)
   {
