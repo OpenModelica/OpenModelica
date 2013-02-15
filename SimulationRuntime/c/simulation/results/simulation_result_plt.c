@@ -103,9 +103,10 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
   plt_data *pltData = (plt_data*) self->storage;
   const DATA *simData = data;
   int i;
+  double cpuTimeValue = 0;
   
   rt_accumulate(SIM_TIMER_TOTAL);
-  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
+  cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
   
   {
@@ -236,11 +237,11 @@ void plt_free(simulation_result *self,DATA *data)
   plt_data *pltData = (plt_data*) self->storage;
   const MODEL_DATA *modelData = &(data->modelData);
   int varn = 0, i, var;
-
+  FILE* f = NULL;
 
   rt_tick(SIM_TIMER_OUTPUT);
 
-  FILE* f = fopen(self->filename, "w");
+  f = fopen(self->filename, "w");
   if(!f)
   {
     deallocResult(pltData);

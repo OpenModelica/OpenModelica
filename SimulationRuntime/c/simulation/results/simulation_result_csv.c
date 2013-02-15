@@ -56,11 +56,12 @@ void csv_emit(simulation_result *self, DATA *data)
   const char* formatbool = "%i,";
   const char* formatstring = "\"%s\",";
   int i;
-  modelica_real value=0;
+  modelica_real value = 0;
+  double cpuTimeValue = 0;
   rt_tick(SIM_TIMER_OUTPUT);
   
   rt_accumulate(SIM_TIMER_TOTAL);
-  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
+  cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
   
   fprintf(fout, format, data->localData[0]->timeValue);
