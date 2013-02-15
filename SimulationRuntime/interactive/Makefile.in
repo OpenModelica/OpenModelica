@@ -34,12 +34,12 @@ omc_ServiceInterface.o: omi_ServiceInterface.cpp \
 libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
 
-SampleClient/interactiveclient : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
+SampleClient/interactiveclient: client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
 	@echo "Building client for interactive simulation ... "
 	$(CXX) $(CPPFLAGS) -o $@ client.cpp socket.cpp thread.cpp -lpthread
 
 clean:
-	$(RM) -rf *.o *.a SampleClient/client
+	$(RM) -rf *.o *.a SampleClient/interactiveclient
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
