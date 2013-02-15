@@ -642,11 +642,11 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> eqn;
   end collectAllJacobianEquations;
  
-	function appendLists
-	  input list<SimCode.SimEqSystem> inEqn1;
-	  input list<SimCode.SimEqSystem> inEqn2;
-	  output list<SimCode.SimEqSystem> outEqn;
-	end appendLists;
+  function appendLists
+    input list<SimCode.SimEqSystem> inEqn1;
+    input list<SimCode.SimEqSystem> inEqn2;
+    output list<SimCode.SimEqSystem> outEqn;
+  end appendLists;
  
   function createDAEString
     input String inString;
