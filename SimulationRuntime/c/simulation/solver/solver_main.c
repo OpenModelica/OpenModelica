@@ -42,7 +42,6 @@
 #include "events.h"
 #include "varinfo.h"
 #include "stateset.h"
-#include "radau.h"
 
 /*
  * #include "dopri45.h"
@@ -67,13 +66,17 @@ typedef struct RK4
 }RK4;
 
 #ifdef WITH_SUNDIALS
-  RADAUIIA rData;
-  KINSOLRADAU kData;
+
+#include "radau.h"
+
+RADAUIIA rData;
+KINSOLRADAU kData;
+static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
+
 #endif
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
-static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
 static void checkTermination(DATA* data);
 static void writeOutputVars(char* names, DATA* data);
 
@@ -92,8 +95,10 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = data->localData[0]->timeValue;
     return 0;
 
+#ifdef WITH_SUNDIALS
   case 6:
     return radauIIA_step(data, solverInfo);
+#endif
 
   default:
   case 1:
@@ -748,7 +753,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 
 #ifdef WITH_SUNDIALS
 /***************************************    Radau IIA     ***********************************/
-int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
+static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   kinsolRadauIIA(&rData);
   solverInfo->currentTime += solverInfo->currentStepSize;
