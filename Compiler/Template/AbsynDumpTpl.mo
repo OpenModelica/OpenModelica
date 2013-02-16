@@ -17,7 +17,7 @@ public function dumpPath
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_path)
+  match(in_txt, in_a_path)
     local
       Tpl.Text txt;
       Absyn.Ident i_name;
@@ -49,7 +49,7 @@ algorithm
       equation
         txt = errorMsg(txt, "SCodeDump.dumpPath: Unknown path.");
       then txt;
-  end matchcontinue;
+  end match;
 end dumpPath;
 
 public function dumpPathNoQual
@@ -59,7 +59,7 @@ public function dumpPathNoQual
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_path)
+  match(in_txt, in_a_path)
     local
       Tpl.Text txt;
       Absyn.Path i_path;
@@ -75,7 +75,7 @@ algorithm
       equation
         txt = dumpPath(txt, i_path);
       then txt;
-  end matchcontinue;
+  end match;
 end dumpPathNoQual;
 
 protected function lm_6
@@ -85,7 +85,7 @@ protected function lm_6
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.TypeSpec> rest;
@@ -108,7 +108,7 @@ algorithm
       equation
         txt = lm_6(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_6;
 
 public function dumpTypeSpec
@@ -118,7 +118,7 @@ public function dumpTypeSpec
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_typeSpec)
+  match(in_txt, in_a_typeSpec)
     local
       Tpl.Text txt;
       list<Absyn.TypeSpec> i_typeSpecs;
@@ -155,7 +155,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpTypeSpec;
 
 public function dumpArrayDimOpt
@@ -165,7 +165,7 @@ public function dumpArrayDimOpt
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_arraydim)
+  match(in_txt, in_a_arraydim)
     local
       Tpl.Text txt;
       Absyn.ArrayDim i_ad;
@@ -179,7 +179,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpArrayDimOpt;
 
 protected function lm_9
@@ -189,7 +189,7 @@ protected function lm_9
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Subscript> rest;
@@ -212,7 +212,7 @@ algorithm
       equation
         txt = lm_9(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_9;
 
 public function dumpSubscripts
@@ -222,7 +222,7 @@ public function dumpSubscripts
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_subscripts)
+  match(in_txt, in_a_subscripts)
     local
       Tpl.Text txt;
       list<Absyn.Subscript> i_subscripts;
@@ -242,7 +242,7 @@ algorithm
         txt = Tpl.writeText(txt, l_sub__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("]"));
       then txt;
-  end matchcontinue;
+  end match;
 end dumpSubscripts;
 
 public function dumpSubscript
@@ -252,7 +252,7 @@ public function dumpSubscript
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_subscript)
+  match(in_txt, in_a_subscript)
     local
       Tpl.Text txt;
       Absyn.Exp i_subscript;
@@ -272,7 +272,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpSubscript;
 
 protected function lm_12
@@ -282,7 +282,7 @@ protected function lm_12
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Exp> rest;
@@ -305,7 +305,7 @@ algorithm
       equation
         txt = lm_12(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_12;
 
 protected function lm_13
@@ -315,7 +315,7 @@ protected function lm_13
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Exp> rest;
@@ -338,7 +338,7 @@ algorithm
       equation
         txt = lm_13(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_13;
 
 protected function lm_14
@@ -348,7 +348,7 @@ protected function lm_14
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<list<Absyn.Exp>> rest;
@@ -373,7 +373,7 @@ algorithm
       equation
         txt = lm_14(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_14;
 
 protected function lm_15
@@ -383,7 +383,7 @@ protected function lm_15
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Exp> rest;
@@ -406,7 +406,7 @@ algorithm
       equation
         txt = lm_15(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_15;
 
 protected function lm_16
@@ -416,7 +416,7 @@ protected function lm_16
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Exp> rest;
@@ -439,7 +439,7 @@ algorithm
       equation
         txt = lm_16(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_16;
 
 public function dumpExp
@@ -449,7 +449,7 @@ public function dumpExp
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_exp)
+  match(in_txt, in_a_exp)
     local
       Tpl.Text txt;
       list<Absyn.Exp> i_exps;
@@ -694,7 +694,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpExp;
 
 protected function fun_18
@@ -705,7 +705,7 @@ protected function fun_18
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_mArg, in_a_op__str)
+  match(in_txt, in_mArg, in_a_op__str)
     local
       Tpl.Text txt;
       Tpl.Text a_op__str;
@@ -725,7 +725,7 @@ algorithm
         txt = Tpl.writeText(txt, a_op__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_18;
 
 public function dumpOperand
@@ -754,7 +754,7 @@ public function dumpIfExp
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_if__exp)
+  match(in_txt, in_a_if__exp)
     local
       Tpl.Text txt;
       list<tuple<Absyn.Exp, Absyn.Exp>> i_elseIfBranch;
@@ -785,7 +785,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpIfExp;
 
 protected function lm_21
@@ -795,7 +795,7 @@ protected function lm_21
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<Absyn.Exp, Absyn.Exp>> rest;
@@ -828,7 +828,7 @@ algorithm
       equation
         txt = lm_21(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_21;
 
 public function dumpElseIfExp
@@ -858,7 +858,7 @@ public function dumpOperator
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_op)
+  match(in_txt, in_a_op)
     local
       Tpl.Text txt;
 
@@ -1003,7 +1003,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpOperator;
 
 public function dumpCref
@@ -1013,7 +1013,7 @@ public function dumpCref
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_cref)
+  match(in_txt, in_a_cref)
     local
       Tpl.Text txt;
       Absyn.ComponentRef i_cref;
@@ -1066,7 +1066,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpCref;
 
 protected function lm_26
@@ -1076,7 +1076,7 @@ protected function lm_26
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.Exp> rest;
@@ -1099,7 +1099,7 @@ algorithm
       equation
         txt = lm_26(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_26;
 
 protected function lm_27
@@ -1109,7 +1109,7 @@ protected function lm_27
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<Absyn.NamedArg> rest;
@@ -1132,7 +1132,7 @@ algorithm
       equation
         txt = lm_27(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_27;
 
 protected function fun_28
@@ -1142,7 +1142,7 @@ protected function fun_28
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_argNames)
+  match(in_txt, in_a_argNames)
     local
       Tpl.Text txt;
 
@@ -1155,7 +1155,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_28;
 
 protected function fun_29
@@ -1166,7 +1166,7 @@ protected function fun_29
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_args__str, in_a_argNames)
+  match(in_txt, in_a_args__str, in_a_argNames)
     local
       Tpl.Text txt;
       list<Absyn.NamedArg> a_argNames;
@@ -1182,7 +1182,7 @@ algorithm
       equation
         txt = fun_28(txt, a_argNames);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_29;
 
 protected function lm_30
@@ -1192,7 +1192,7 @@ protected function lm_30
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       Absyn.ForIterators rest;
@@ -1215,7 +1215,7 @@ algorithm
       equation
         txt = lm_30(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_30;
 
 public function dumpFunctionArgs
@@ -1225,7 +1225,7 @@ public function dumpFunctionArgs
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_args)
+  match(in_txt, in_a_args)
     local
       Tpl.Text txt;
       Absyn.ForIterators i_iterators;
@@ -1268,7 +1268,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpFunctionArgs;
 
 public function dumpNamedArg
@@ -1278,7 +1278,7 @@ public function dumpNamedArg
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_narg)
+  match(in_txt, in_a_narg)
     local
       Tpl.Text txt;
       Absyn.Exp i_argValue;
@@ -1295,7 +1295,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpNamedArg;
 
 protected function fun_33
@@ -1305,7 +1305,7 @@ protected function fun_33
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_range)
+  match(in_txt, in_a_range)
     local
       Tpl.Text txt;
       Absyn.Exp i_r;
@@ -1322,7 +1322,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_33;
 
 protected function fun_34
@@ -1332,7 +1332,7 @@ protected function fun_34
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_guardExp)
+  match(in_txt, in_a_guardExp)
     local
       Tpl.Text txt;
       Absyn.Exp i_g;
@@ -1349,7 +1349,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_34;
 
 public function dumpForIterator
@@ -1359,7 +1359,7 @@ public function dumpForIterator
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_iterator)
+  match(in_txt, in_a_iterator)
     local
       Tpl.Text txt;
       String i_name;
@@ -1381,7 +1381,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpForIterator;
 
 public function errorMsg

@@ -619,7 +619,7 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup, SimCode simCod
   >>
 end functionInitSample;
 
-
+    
 
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
                      list<SimWhenClause> whenClauses, SimCode simCode) ::=
@@ -881,7 +881,7 @@ public override void InitialResidual()
       'initialResiduals[_i++] = 0;'
     else
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp, simCode) // ??contextOther
+      let expPart = daeExp(exp, contextOther, &preExp, simCode) // ??contextOther
       <<
       <%preExp%>
       initialResiduals[_i++] = <%expPart%>;

@@ -39,7 +39,7 @@ public function dumpComponent
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_component)
+  match(in_txt, in_a_component)
     local
       Tpl.Text txt;
       Absyn.Path i_in;
@@ -137,7 +137,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpComponent;
 
 protected function fun_11
@@ -147,7 +147,7 @@ protected function fun_11
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_cls__str)
+  match(in_txt, in_a_cls__str)
     local
       Tpl.Text txt;
 
@@ -160,7 +160,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
-  end matchcontinue;
+  end match;
 end fun_11;
 
 public function dumpElement
@@ -170,7 +170,7 @@ public function dumpElement
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_element)
+  match(in_txt, in_a_element)
     local
       Tpl.Text txt;
       NFInstTypes.Class i_cls;
@@ -207,7 +207,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpElement;
 
 protected function lm_13
@@ -217,7 +217,7 @@ protected function lm_13
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<NFInstTypes.Element> rest;
@@ -240,7 +240,7 @@ algorithm
       equation
         txt = lm_13(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_13;
 
 protected function lm_14
@@ -250,7 +250,7 @@ protected function lm_14
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<NFInstTypes.Equation> rest;
@@ -273,7 +273,7 @@ algorithm
       equation
         txt = lm_14(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_14;
 
 protected function lm_15
@@ -283,7 +283,7 @@ protected function lm_15
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<NFInstTypes.Equation> rest;
@@ -306,7 +306,7 @@ algorithm
       equation
         txt = lm_15(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_15;
 
 protected function fun_16
@@ -316,7 +316,7 @@ protected function fun_16
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_comp__str)
+  match(in_txt, in_a_comp__str)
     local
       Tpl.Text txt;
       Tpl.Text i_comp__str;
@@ -332,7 +332,7 @@ algorithm
         txt = Tpl.writeText(txt, i_comp__str);
         txt = Tpl.popBlock(txt);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_16;
 
 protected function fun_17
@@ -342,7 +342,7 @@ protected function fun_17
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_eq__str)
+  match(in_txt, in_a_eq__str)
     local
       Tpl.Text txt;
 
@@ -355,7 +355,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_17;
 
 protected function fun_18
@@ -366,7 +366,7 @@ protected function fun_18
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_ieq__str, in_a_eq__str)
+  match(in_txt, in_a_ieq__str, in_a_eq__str)
     local
       Tpl.Text txt;
       Tpl.Text a_eq__str;
@@ -391,7 +391,7 @@ algorithm
         txt = Tpl.popBlock(txt);
         txt = fun_17(txt, a_eq__str);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_18;
 
 protected function fun_19
@@ -401,7 +401,7 @@ protected function fun_19
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_eq__str)
+  match(in_txt, in_a_eq__str)
     local
       Tpl.Text txt;
       Tpl.Text i_eq__str;
@@ -423,7 +423,7 @@ algorithm
         txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("end equation;"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_19;
 
 public function dumpClass
@@ -433,7 +433,7 @@ public function dumpClass
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_cls)
+  match(in_txt, in_a_cls)
     local
       Tpl.Text txt;
       list<NFInstTypes.Equation> i_equations;
@@ -469,7 +469,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpClass;
 
 public function dumpExp
@@ -488,7 +488,7 @@ protected function fun_22
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_range)
+  match(in_txt, in_a_range)
     local
       Tpl.Text txt;
       DAE.Exp i_range__exp;
@@ -505,7 +505,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_22;
 
 protected function lm_23
@@ -515,7 +515,7 @@ protected function lm_23
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<NFInstTypes.Equation> rest;
@@ -538,7 +538,7 @@ algorithm
       equation
         txt = lm_23(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_23;
 
 public function dumpEquation
@@ -548,7 +548,7 @@ public function dumpEquation
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_equation)
+  match(in_txt, in_a_equation)
     local
       Tpl.Text txt;
       DAE.Exp i_exp;
@@ -694,7 +694,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("dumpEquation: IMPLEMENT ME"));
       then txt;
-  end matchcontinue;
+  end match;
 end dumpEquation;
 
 public function dumpBinding
@@ -704,7 +704,7 @@ public function dumpBinding
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_binding)
+  match(in_txt, in_a_binding)
     local
       Tpl.Text txt;
       DAE.Type i_bindingType;
@@ -749,7 +749,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpBinding;
 
 protected function fun_26
@@ -759,7 +759,7 @@ protected function fun_26
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_dims)
+  match(in_txt, in_a_dims)
     local
       Tpl.Text txt;
       DAE.Dimensions i_dims;
@@ -775,7 +775,7 @@ algorithm
         txt = ExpressionDumpTpl.dumpDimensions(txt, i_dims);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("]"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_26;
 
 protected function fun_27
@@ -785,7 +785,7 @@ protected function fun_27
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_rest__str)
+  match(in_txt, in_a_rest__str)
     local
       Tpl.Text txt;
       Tpl.Text i_rest__str;
@@ -800,7 +800,7 @@ algorithm
         txt = Tpl.writeText(txt, i_rest__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_27;
 
 public function dumpPrefix
@@ -810,7 +810,7 @@ public function dumpPrefix
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_prefix)
+  match(in_txt, in_a_prefix)
     local
       Tpl.Text txt;
       String i_name;
@@ -834,7 +834,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpPrefix;
 
 protected function lm_29
@@ -844,7 +844,7 @@ protected function lm_29
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<NFConnect2.Connection> rest;
@@ -867,7 +867,7 @@ algorithm
       equation
         txt = lm_29(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_29;
 
 public function dumpConnections
@@ -877,7 +877,7 @@ public function dumpConnections
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_conn)
+  match(in_txt, in_a_conn)
     local
       Tpl.Text txt;
       list<NFConnect2.Connection> i_connections;
@@ -895,7 +895,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpConnections;
 
 public function dumpConnection
@@ -905,7 +905,7 @@ public function dumpConnection
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_connection)
+  match(in_txt, in_a_connection)
     local
       Tpl.Text txt;
       NFConnect2.Connector i_rhs;
@@ -928,7 +928,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpConnection;
 
 public function dumpConnector
@@ -938,7 +938,7 @@ public function dumpConnector
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_connector)
+  match(in_txt, in_a_connector)
     local
       Tpl.Text txt;
       NFConnect2.Face i_face;
@@ -960,7 +960,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpConnector;
 
 public function dumpFace
@@ -970,7 +970,7 @@ public function dumpFace
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_face)
+  match(in_txt, in_a_face)
     local
       Tpl.Text txt;
 
@@ -995,7 +995,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpFace;
 
 public function dumpDimension
@@ -1005,7 +1005,7 @@ public function dumpDimension
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_dim)
+  match(in_txt, in_a_dim)
     local
       Tpl.Text txt;
       DAE.Dimension i_dimension;
@@ -1025,7 +1025,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end dumpDimension;
 
 public function errorMsg

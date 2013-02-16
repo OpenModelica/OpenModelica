@@ -16,7 +16,7 @@ protected function lm_3
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMDeclaration> rest;
@@ -39,7 +39,7 @@ algorithm
       equation
         txt = lm_3(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_3;
 
 public function mmPackage
@@ -49,7 +49,7 @@ public function mmPackage
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMDeclaration> i_mmDeclarations;
@@ -94,7 +94,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end mmPackage;
 
 protected function fun_5
@@ -104,7 +104,7 @@ protected function fun_5
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_mf_locals)
+  match(in_txt, in_a_mf_locals)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents i_mf_locals;
@@ -121,7 +121,7 @@ algorithm
         txt = typedIdents(txt, i_mf_locals);
         txt = Tpl.popBlock(txt);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_5;
 
 protected function lm_6
@@ -131,7 +131,7 @@ protected function lm_6
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMExp> rest;
@@ -155,7 +155,7 @@ algorithm
       equation
         txt = lm_6(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_6;
 
 protected function fun_7
@@ -168,7 +168,7 @@ protected function fun_7
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_statements, in_a_mf_locals, in_a_mf_outArgs, in_a_mf_inArgs)
+  match(in_txt, in_a_statements, in_a_mf_locals, in_a_mf_outArgs, in_a_mf_inArgs)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents a_mf_locals;
@@ -208,7 +208,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_7;
 
 public function mmDeclaration
@@ -218,7 +218,7 @@ public function mmDeclaration
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents i_mf_locals;
@@ -293,7 +293,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end mmDeclaration;
 
 protected function lm_9
@@ -303,7 +303,7 @@ protected function lm_9
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -327,7 +327,7 @@ algorithm
       equation
         txt = lm_9(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_9;
 
 protected function fun_10
@@ -337,7 +337,7 @@ protected function fun_10
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_outArgs)
+  match(in_txt, in_a_outArgs)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents i_outArgs;
@@ -359,7 +359,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_10;
 
 protected function lm_11
@@ -369,7 +369,7 @@ protected function lm_11
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -393,7 +393,7 @@ algorithm
       equation
         txt = lm_11(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_11;
 
 protected function lm_12
@@ -403,7 +403,7 @@ protected function lm_12
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MatchingExp> rest;
@@ -426,7 +426,7 @@ algorithm
       equation
         txt = lm_12(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_12;
 
 protected function lm_13
@@ -436,7 +436,7 @@ protected function lm_13
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMExp> rest;
@@ -460,7 +460,7 @@ algorithm
       equation
         txt = lm_13(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_13;
 
 protected function fun_14
@@ -470,7 +470,7 @@ protected function fun_14
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_statements)
+  match(in_txt, in_a_statements)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMExp> i_statements;
@@ -489,7 +489,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_14;
 
 protected function lm_15
@@ -499,7 +499,7 @@ protected function lm_15
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -522,7 +522,7 @@ algorithm
       equation
         txt = lm_15(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_15;
 
 protected function fun_16
@@ -532,7 +532,7 @@ protected function fun_16
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_outArgs)
+  match(in_txt, in_a_outArgs)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents i_oas;
@@ -553,7 +553,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_16;
 
 protected function lm_17
@@ -564,7 +564,7 @@ protected function lm_17
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items, in_a_outArgs)
+  match(in_txt, in_items, in_a_outArgs)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMMatchCase> rest;
@@ -608,7 +608,7 @@ algorithm
       equation
         txt = lm_17(txt, rest, a_outArgs);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_17;
 
 public function mmMatchFunBody
@@ -632,7 +632,7 @@ algorithm
   out_txt := fun_10(out_txt, a_outArgs);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        " :=\n",
-                                       "matchcontinue("
+                                       "match("
                                    }, false));
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_11(out_txt, a_inArgs);
@@ -649,7 +649,7 @@ algorithm
   out_txt := lm_17(out_txt, a_matchCases, a_outArgs);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("end matchcontinue;"));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("end match;"));
   out_txt := Tpl.popBlock(out_txt);
 end mmMatchFunBody;
 
@@ -660,7 +660,7 @@ public function pathIdent
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_path)
+  match(in_txt, in_a_path)
     local
       Tpl.Text txt;
       TplAbsyn.PathIdent i_path;
@@ -683,7 +683,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end pathIdent;
 
 public function mmPublic
@@ -693,7 +693,7 @@ public function mmPublic
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
 
@@ -708,7 +708,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("protected"));
       then txt;
-  end matchcontinue;
+  end match;
 end mmPublic;
 
 protected function lm_21
@@ -718,7 +718,7 @@ protected function lm_21
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -745,7 +745,7 @@ algorithm
       equation
         txt = lm_21(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_21;
 
 public function typedIdents
@@ -768,7 +768,7 @@ protected function lm_23
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items, in_a_idPrfx, in_a_typePrfx)
+  match(in_txt, in_items, in_a_idPrfx, in_a_typePrfx)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -806,7 +806,7 @@ algorithm
       equation
         txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_23;
 
 public function typedIdentsEx
@@ -829,7 +829,7 @@ protected function lm_25
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.TypeSignature> rest;
@@ -852,7 +852,7 @@ algorithm
       equation
         txt = lm_25(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_25;
 
 public function typeSig
@@ -862,7 +862,7 @@ public function typeSig
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       String i_reason;
@@ -956,7 +956,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end typeSig;
 
 protected function lm_27
@@ -966,7 +966,7 @@ protected function lm_27
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<String> rest;
@@ -991,7 +991,7 @@ algorithm
       equation
         txt = lm_27(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_27;
 
 public function mmStringTokenConstant
@@ -1001,7 +1001,7 @@ public function mmStringTokenConstant
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       Boolean i_lastHasNewLine;
@@ -1051,7 +1051,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end mmStringTokenConstant;
 
 protected function fun_29
@@ -1061,7 +1061,7 @@ protected function fun_29
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_escapeNewLine)
+  match(in_txt, in_a_escapeNewLine)
     local
       Tpl.Text txt;
 
@@ -1076,7 +1076,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_29;
 
 protected function fun_30
@@ -1087,7 +1087,7 @@ protected function fun_30
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it, in_a_escapeNewLine)
+  match(in_txt, in_a_it, in_a_escapeNewLine)
     local
       Tpl.Text txt;
       Boolean a_escapeNewLine;
@@ -1134,7 +1134,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_c);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_30;
 
 protected function lm_31
@@ -1145,7 +1145,7 @@ protected function lm_31
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items, in_a_escapeNewLine)
+  match(in_txt, in_items, in_a_escapeNewLine)
     local
       Tpl.Text txt;
       list<String> rest;
@@ -1171,7 +1171,7 @@ algorithm
       equation
         txt = lm_31(txt, rest, a_escapeNewLine);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_31;
 
 public function mmEscapeStringConst
@@ -1194,7 +1194,7 @@ protected function lm_33
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.Ident> rest;
@@ -1217,7 +1217,7 @@ algorithm
       equation
         txt = lm_33(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_33;
 
 protected function fun_34
@@ -1227,7 +1227,7 @@ protected function fun_34
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_lhsArgs)
+  match(in_txt, in_a_lhsArgs)
     local
       Tpl.Text txt;
       list<TplAbsyn.Ident> i_args;
@@ -1248,7 +1248,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_34;
 
 protected function lm_35
@@ -1259,7 +1259,7 @@ protected function lm_35
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items, in_a_assignStr)
+  match(in_txt, in_items, in_a_assignStr)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMExp> rest;
@@ -1286,7 +1286,7 @@ algorithm
       equation
         txt = lm_35(txt, rest, a_assignStr);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_35;
 
 public function mmExp
@@ -1297,7 +1297,7 @@ public function mmExp
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it, in_a_assignStr)
+  match(in_txt, in_a_it, in_a_assignStr)
     local
       Tpl.Text txt;
       String a_assignStr;
@@ -1368,7 +1368,7 @@ algorithm
            _,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end mmExp;
 
 protected function lm_37
@@ -1378,7 +1378,7 @@ protected function lm_37
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.Ident, TplAbsyn.MatchingExp>> rest;
@@ -1404,7 +1404,7 @@ algorithm
       equation
         txt = lm_37(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_37;
 
 protected function lm_38
@@ -1414,7 +1414,7 @@ protected function lm_38
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MatchingExp> rest;
@@ -1437,7 +1437,7 @@ algorithm
       equation
         txt = lm_38(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_38;
 
 protected function lm_39
@@ -1447,7 +1447,7 @@ protected function lm_39
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MatchingExp> rest;
@@ -1470,7 +1470,7 @@ algorithm
       equation
         txt = lm_39(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_39;
 
 public function mmMatchingExp
@@ -1480,7 +1480,7 @@ public function mmMatchingExp
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       String i_value_1;
@@ -1586,7 +1586,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end mmMatchingExp;
 
 protected function lm_41
@@ -1596,7 +1596,7 @@ protected function lm_41
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.MMExp> rest;
@@ -1620,7 +1620,7 @@ algorithm
       equation
         txt = lm_41(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_41;
 
 public function mmStatements
@@ -1641,7 +1641,7 @@ protected function fun_43
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_isDefault)
+  match(in_txt, in_a_isDefault)
     local
       Tpl.Text txt;
 
@@ -1654,7 +1654,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("default "));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_43;
 
 protected function lm_44
@@ -1664,7 +1664,7 @@ protected function lm_44
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> rest;
@@ -1688,7 +1688,7 @@ algorithm
       equation
         txt = lm_44(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_44;
 
 protected function lm_45
@@ -1698,7 +1698,7 @@ protected function lm_45
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<TplAbsyn.ASTDef> rest;
@@ -1739,7 +1739,7 @@ algorithm
       equation
         txt = lm_45(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_45;
 
 protected function lm_46
@@ -1749,7 +1749,7 @@ protected function lm_46
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> rest;
@@ -1773,7 +1773,7 @@ algorithm
       equation
         txt = lm_46(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_46;
 
 public function sTemplPackage
@@ -1783,7 +1783,7 @@ public function sTemplPackage
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> i_templateDefs;
@@ -1820,7 +1820,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end sTemplPackage;
 
 protected function lm_48
@@ -1830,7 +1830,7 @@ protected function lm_48
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rest;
@@ -1854,7 +1854,7 @@ algorithm
       equation
         txt = lm_48(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_48;
 
 protected function lm_49
@@ -1864,7 +1864,7 @@ protected function lm_49
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -1892,7 +1892,7 @@ algorithm
       equation
         txt = lm_49(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_49;
 
 protected function lm_50
@@ -1902,7 +1902,7 @@ protected function lm_50
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -1930,7 +1930,7 @@ algorithm
       equation
         txt = lm_50(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_50;
 
 protected function fun_51
@@ -1941,7 +1941,7 @@ protected function fun_51
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_info, in_a_id)
+  match(in_txt, in_a_info, in_a_id)
     local
       Tpl.Text txt;
       TplAbsyn.Ident a_id;
@@ -2023,7 +2023,7 @@ algorithm
            _,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_51;
 
 public function sASTDefType
@@ -2043,7 +2043,7 @@ protected function lm_53
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -2070,7 +2070,7 @@ algorithm
       equation
         txt = lm_53(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_53;
 
 protected function fun_54
@@ -2080,7 +2080,7 @@ protected function fun_54
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_fields)
+  match(in_txt, in_a_fields)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents i_fields;
@@ -2097,7 +2097,7 @@ algorithm
         txt = lm_53(txt, i_fields);
         txt = Tpl.popBlock(txt);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_54;
 
 public function sRecordTypeDef
@@ -2124,7 +2124,7 @@ public function sTemplateDef
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it, in_a_templId)
+  match(in_txt, in_a_it, in_a_templId)
     local
       Tpl.Text txt;
       TplAbsyn.Ident a_templId;
@@ -2143,7 +2143,7 @@ algorithm
            _,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end sTemplateDef;
 
 protected function lm_57
@@ -2153,7 +2153,7 @@ protected function lm_57
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<String> rest;
@@ -2175,7 +2175,7 @@ algorithm
       equation
         txt = lm_57(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_57;
 
 protected function lm_58
@@ -2185,7 +2185,7 @@ protected function lm_58
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<String> rest;
@@ -2207,7 +2207,7 @@ algorithm
       equation
         txt = lm_58(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_58;
 
 protected function lm_59
@@ -2217,7 +2217,7 @@ protected function lm_59
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<String> rest;
@@ -2239,7 +2239,7 @@ algorithm
       equation
         txt = lm_59(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_59;
 
 protected function fun_60
@@ -2250,7 +2250,7 @@ protected function fun_60
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_mArg, in_a_sl)
+  match(in_txt, in_mArg, in_a_sl)
     local
       Tpl.Text txt;
       list<String> a_sl;
@@ -2270,7 +2270,7 @@ algorithm
       equation
         txt = lm_59(txt, a_sl);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_60;
 
 protected function fun_61
@@ -2281,7 +2281,7 @@ protected function fun_61
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_mArg, in_a_sl)
+  match(in_txt, in_mArg, in_a_sl)
     local
       Tpl.Text txt;
       list<String> a_sl;
@@ -2305,7 +2305,7 @@ algorithm
         ret_0 = TplAbsyn.canBeEscapedUnquoted(a_sl);
         txt = fun_60(txt, ret_0, a_sl);
       then txt;
-  end matchcontinue;
+  end match;
 end fun_61;
 
 public function sConstStringToken
@@ -2315,7 +2315,7 @@ public function sConstStringToken
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_it)
+  match(in_txt, in_a_it)
     local
       Tpl.Text txt;
       list<String> i_sl;
@@ -2355,7 +2355,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end sConstStringToken;
 
 protected function lm_63
@@ -2365,7 +2365,7 @@ protected function lm_63
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       TplAbsyn.TypedIdents rest;
@@ -2391,7 +2391,7 @@ algorithm
       equation
         txt = lm_63(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_63;
 
 public function sTypedIdents
@@ -2428,7 +2428,7 @@ protected function lm_66
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<tuple<TplAbsyn.MMExp, TplAbsyn.TypeSignature>> rest;
@@ -2454,7 +2454,7 @@ algorithm
       equation
         txt = lm_66(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_66;
 
 public function sActualMMParams

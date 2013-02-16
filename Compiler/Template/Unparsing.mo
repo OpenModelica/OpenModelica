@@ -42,7 +42,7 @@ protected function lm_29
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       SCode.Program rest;
@@ -64,7 +64,7 @@ algorithm
       equation
         txt = lm_29(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_29;
 
 public function programExternalHeader
@@ -97,7 +97,7 @@ protected function lm_31
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items, in_a_c_name)
+  match(in_txt, in_items, in_a_c_name)
     local
       Tpl.Text txt;
       list<SCode.Element> rest;
@@ -123,7 +123,7 @@ algorithm
       equation
         txt = lm_31(txt, rest, a_c_name);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_31;
 
 protected function fun_32
@@ -133,7 +133,7 @@ protected function fun_32
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_cl)
+  match(in_txt, in_a_cl)
     local
       Tpl.Text txt;
       SCode.Ident i_c_name;
@@ -148,7 +148,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end fun_32;
 
 public function classExternalHeader
@@ -168,7 +168,7 @@ public function pathString
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_path)
+  match(in_txt, in_a_path)
     local
       Tpl.Text txt;
       Absyn.Path i_path;
@@ -198,7 +198,7 @@ algorithm
     case ( txt,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end pathString;
 
 public function metaHelperBoxStart
@@ -208,7 +208,7 @@ public function metaHelperBoxStart
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_numVariables)
+  match(in_txt, in_a_numVariables)
     local
       Tpl.Text txt;
       Integer i_numVariables;
@@ -290,7 +290,7 @@ algorithm
         txt = Tpl.writeStr(txt, intString(i_numVariables));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
       then txt;
-  end matchcontinue;
+  end match;
 end metaHelperBoxStart;
 
 protected function lm_36
@@ -300,7 +300,7 @@ protected function lm_36
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<SCode.Element> rest;
@@ -323,7 +323,7 @@ algorithm
       equation
         txt = lm_36(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_36;
 
 protected function lm_37
@@ -333,7 +333,7 @@ protected function lm_37
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  match(in_txt, in_items)
     local
       Tpl.Text txt;
       list<SCode.Element> rest;
@@ -358,7 +358,7 @@ algorithm
       equation
         txt = lm_37(txt, rest);
       then txt;
-  end matchcontinue;
+  end match;
 end lm_37;
 
 protected function fun_38
@@ -371,7 +371,7 @@ protected function fun_38
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_mArg, in_a_fieldsStr, in_a_nElts, in_a_omcname)
+  match(in_txt, in_mArg, in_a_fieldsStr, in_a_nElts, in_a_omcname)
     local
       Tpl.Text txt;
       Tpl.Text a_fieldsStr;
@@ -403,7 +403,7 @@ algorithm
         txt = Tpl.writeText(txt, a_fieldsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("};"));
       then txt;
-  end matchcontinue;
+  end match;
 end fun_38;
 
 protected function fun_39
@@ -417,7 +417,7 @@ protected function fun_39
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_p_elementLst, in_a_fields, in_a_omcname, in_a_ctor, in_a_fullname)
+  match(in_txt, in_a_p_elementLst, in_a_fields, in_a_omcname, in_a_ctor, in_a_fullname)
     local
       Tpl.Text txt;
       Tpl.Text a_fields;
@@ -475,7 +475,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("))"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
-  end matchcontinue;
+  end match;
 end fun_39;
 
 public function elementExternalHeader
@@ -486,7 +486,7 @@ public function elementExternalHeader
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_elt, in_a_pack)
+  match(in_txt, in_a_elt, in_a_pack)
     local
       Tpl.Text txt;
       String a_pack;
@@ -598,7 +598,7 @@ algorithm
            _,
            _ )
       then txt;
-  end matchcontinue;
+  end match;
 end elementExternalHeader;
 
 end Unparsing;

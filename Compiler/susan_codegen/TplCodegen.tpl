@@ -74,7 +74,7 @@ algorithm
    case {(nm,_)} then 'out_<%nm%>'
    case outArgs  then <<(<%outArgs |> (nm,_)=> 'out_<%nm%>' ;separator=", "%>)>>
   %> :=  
-  matchcontinue(<%inArgs |> (nm,_) => 'in_<%nm%>' ;separator=", "%>)
+  match(<%inArgs |> (nm,_) => 'in_<%nm%>' ;separator=", "%>)
     local
       <%typedIdents(locals)%>
   <%matchCases |> (mexps, statements) =>
@@ -90,7 +90,7 @@ algorithm
             case oas then '(<%oas |> (nm,_)=> nm ;separator=", "%>)'
            %>;       
   >>;separator="\n"%>
-  end matchcontinue;
+  end match;
 >>
 end mmMatchFunBody;
 
