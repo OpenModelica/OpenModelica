@@ -102,12 +102,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_6(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_6(txt, rest);
-      then txt;
   end match;
 end lm_6;
 
@@ -206,12 +200,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_9(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_9(txt, rest);
-      then txt;
   end match;
 end lm_9;
 
@@ -299,12 +287,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_12(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_12(txt, rest);
-      then txt;
   end match;
 end lm_12;
 
@@ -330,12 +312,6 @@ algorithm
       equation
         txt = dumpExp(txt, i_e);
         txt = Tpl.nextIter(txt);
-        txt = lm_13(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_13(txt, rest);
       then txt;
   end match;
@@ -367,12 +343,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_14(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_14(txt, rest);
-      then txt;
   end match;
 end lm_14;
 
@@ -400,12 +370,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_15(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_15(txt, rest);
-      then txt;
   end match;
 end lm_15;
 
@@ -431,12 +395,6 @@ algorithm
       equation
         txt = dumpExp(txt, i_e);
         txt = Tpl.nextIter(txt);
-        txt = lm_16(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_16(txt, rest);
       then txt;
   end match;
@@ -822,12 +780,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_21(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_21(txt, rest);
-      then txt;
   end match;
 end lm_21;
 
@@ -1093,12 +1045,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_26(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_26(txt, rest);
-      then txt;
   end match;
 end lm_26;
 
@@ -1124,12 +1070,6 @@ algorithm
       equation
         txt = dumpNamedArg(txt, i_narg);
         txt = Tpl.nextIter(txt);
-        txt = lm_27(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_27(txt, rest);
       then txt;
   end match;
@@ -1207,12 +1147,6 @@ algorithm
       equation
         txt = dumpForIterator(txt, i_i);
         txt = Tpl.nextIter(txt);
-        txt = lm_30(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_30(txt, rest);
       then txt;
   end match;

@@ -33,12 +33,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_3(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_3(txt, rest);
-      then txt;
   end match;
 end lm_3;
 
@@ -147,12 +141,6 @@ algorithm
         txt = mmExp(txt, i_it, ":=");
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
-        txt = lm_6(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_6(txt, rest);
       then txt;
   end match;
@@ -321,12 +309,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_9(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_9(txt, rest);
-      then txt;
   end match;
 end lm_9;
 
@@ -387,12 +369,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_11(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_11(txt, rest);
-      then txt;
   end match;
 end lm_11;
 
@@ -418,12 +394,6 @@ algorithm
       equation
         txt = mmMatchingExp(txt, i_it);
         txt = Tpl.nextIter(txt);
-        txt = lm_12(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_12(txt, rest);
       then txt;
   end match;
@@ -452,12 +422,6 @@ algorithm
         txt = mmExp(txt, i_it, "=");
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
-        txt = lm_13(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_13(txt, rest);
       then txt;
   end match;
@@ -514,12 +478,6 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_nm);
         txt = Tpl.nextIter(txt);
-        txt = lm_15(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_15(txt, rest);
       then txt;
   end match;
@@ -599,13 +557,6 @@ algorithm
         txt = Tpl.popBlock(txt);
         txt = Tpl.popBlock(txt);
         txt = Tpl.nextIter(txt);
-        txt = lm_17(txt, rest, a_outArgs);
-      then txt;
-
-    case ( txt,
-           _ :: rest,
-           a_outArgs )
-      equation
         txt = lm_17(txt, rest, a_outArgs);
       then txt;
   end match;
@@ -739,12 +690,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_21(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_21(txt, rest);
-      then txt;
   end match;
 end lm_21;
 
@@ -798,14 +743,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
       then txt;
-
-    case ( txt,
-           _ :: rest,
-           a_idPrfx,
-           a_typePrfx )
-      equation
-        txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
-      then txt;
   end match;
 end lm_23;
 
@@ -844,12 +781,6 @@ algorithm
       equation
         txt = typeSig(txt, i_it);
         txt = Tpl.nextIter(txt);
-        txt = lm_25(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_25(txt, rest);
       then txt;
   end match;
@@ -983,12 +914,6 @@ algorithm
         txt = mmEscapeStringConst(txt, i_it, true);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.nextIter(txt);
-        txt = lm_27(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_27(txt, rest);
       then txt;
   end match;
@@ -1164,13 +1089,6 @@ algorithm
         txt = fun_30(txt, i_it, a_escapeNewLine);
         txt = lm_31(txt, rest, a_escapeNewLine);
       then txt;
-
-    case ( txt,
-           _ :: rest,
-           a_escapeNewLine )
-      equation
-        txt = lm_31(txt, rest, a_escapeNewLine);
-      then txt;
   end match;
 end lm_31;
 
@@ -1209,12 +1127,6 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_it);
         txt = Tpl.nextIter(txt);
-        txt = lm_33(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_33(txt, rest);
       then txt;
   end match;
@@ -1277,13 +1189,6 @@ algorithm
       equation
         txt = mmExp(txt, i_it, a_assignStr);
         txt = Tpl.nextIter(txt);
-        txt = lm_35(txt, rest, a_assignStr);
-      then txt;
-
-    case ( txt,
-           _ :: rest,
-           a_assignStr )
-      equation
         txt = lm_35(txt, rest, a_assignStr);
       then txt;
   end match;
@@ -1398,12 +1303,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_37(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_37(txt, rest);
-      then txt;
   end match;
 end lm_37;
 
@@ -1431,12 +1330,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_38(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_38(txt, rest);
-      then txt;
   end match;
 end lm_38;
 
@@ -1462,12 +1355,6 @@ algorithm
       equation
         txt = mmMatchingExp(txt, i_it);
         txt = Tpl.nextIter(txt);
-        txt = lm_39(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_39(txt, rest);
       then txt;
   end match;
@@ -1614,12 +1501,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_41(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_41(txt, rest);
-      then txt;
   end match;
 end lm_41;
 
@@ -1680,12 +1561,6 @@ algorithm
       equation
         txt = sASTDefType(txt, i_id, i_tinfo);
         txt = Tpl.nextIter(txt);
-        txt = lm_44(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_44(txt, rest);
       then txt;
   end match;
@@ -1767,12 +1642,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_46(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_46(txt, rest);
-      then txt;
   end match;
 end lm_46;
 
@@ -1848,12 +1717,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_48(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_48(txt, rest);
-      then txt;
   end match;
 end lm_48;
 
@@ -1886,12 +1749,6 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = lm_49(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_49(txt, rest);
-      then txt;
   end match;
 end lm_49;
 
@@ -1922,12 +1779,6 @@ algorithm
         txt = Tpl.writeStr(txt, i_aid);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = lm_50(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_50(txt, rest);
       then txt;
   end match;
@@ -2064,12 +1915,6 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = lm_53(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_53(txt, rest);
-      then txt;
   end match;
 end lm_53;
 
@@ -2169,12 +2014,6 @@ algorithm
         txt = mmEscapeStringConst(txt, i_it, false);
         txt = lm_57(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_57(txt, rest);
-      then txt;
   end match;
 end lm_57;
 
@@ -2201,12 +2040,6 @@ algorithm
         txt = mmEscapeStringConst(txt, i_it, true);
         txt = lm_58(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_58(txt, rest);
-      then txt;
   end match;
 end lm_58;
 
@@ -2231,12 +2064,6 @@ algorithm
            i_it :: rest )
       equation
         txt = mmEscapeStringConst(txt, i_it, true);
-        txt = lm_59(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_59(txt, rest);
       then txt;
   end match;
@@ -2385,12 +2212,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_63(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_63(txt, rest);
-      then txt;
   end match;
 end lm_63;
 
@@ -2446,12 +2267,6 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = mmExp(txt, i_mexp, "=");
         txt = Tpl.nextIter(txt);
-        txt = lm_66(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_66(txt, rest);
       then txt;
   end match;

@@ -58,12 +58,6 @@ algorithm
         txt = classExternalHeader(txt, i_cl, "");
         txt = lm_29(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_29(txt, rest);
-      then txt;
   end match;
 end lm_29;
 
@@ -114,13 +108,6 @@ algorithm
            a_c_name )
       equation
         txt = elementExternalHeader(txt, i_elt, a_c_name);
-        txt = lm_31(txt, rest, a_c_name);
-      then txt;
-
-    case ( txt,
-           _ :: rest,
-           a_c_name )
-      equation
         txt = lm_31(txt, rest, a_c_name);
       then txt;
   end match;

@@ -234,12 +234,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_13(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_13(txt, rest);
-      then txt;
   end match;
 end lm_13;
 
@@ -267,12 +261,6 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_14(txt, rest);
       then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_14(txt, rest);
-      then txt;
   end match;
 end lm_14;
 
@@ -298,12 +286,6 @@ algorithm
       equation
         txt = dumpEquation(txt, i_eq);
         txt = Tpl.nextIter(txt);
-        txt = lm_15(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_15(txt, rest);
       then txt;
   end match;
@@ -530,12 +512,6 @@ algorithm
       equation
         txt = dumpEquation(txt, i_eq);
         txt = Tpl.nextIter(txt);
-        txt = lm_23(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_23(txt, rest);
       then txt;
   end match;
@@ -859,12 +835,6 @@ algorithm
       equation
         txt = dumpConnection(txt, i_c);
         txt = Tpl.nextIter(txt);
-        txt = lm_29(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
         txt = lm_29(txt, rest);
       then txt;
   end match;

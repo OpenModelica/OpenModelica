@@ -2687,13 +2687,20 @@ algorithm
         mmFailCons = makeMMMatchCase( 
           (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
           encodedExtargs, oargs);
+        mmmcases = Util.if_(isAlwaysMatchedBool(mexp), { mmmcEmptyList, mmmcCons },
+                            { mmmcEmptyList, mmmcCons, mmFailCons });
+         //  listAppend({ mmmcEmptyList, mmmcCons },
+         //  { makeMMMatchCase( 
+         // (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
+         // encodedExtargs, oargs) } );
+        
         mapctx = MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
         maplocals = listAppend(encodedExtargs, maplocals);
         maplocals = imlicitTxtArg :: ("rest",argtype) :: maplocals;
         
         // make fun
         mmFun = MM_FUN(false,fname, iargs, oargs, maplocals,
-                        { MM_MATCH( { mmmcEmptyList, mmmcCons, mmFailCons }  ) },
+                        { MM_MATCH( mmmcases /*{ mmmcEmptyList, mmmcCons, mmFailCons } */ ) },
                         GI_MAP_FUN(argtype, mapctx)
                 );
         
@@ -4043,6 +4050,23 @@ algorithm
   end match;
 end isAlwaysMatched;
 
+public function isAlwaysMatchedBool "function isAlwaysMatched
+  Takes a MatchingExp and fails when it is not a rest case for sure (statically tested)."
+  //TODO: evaluation when there are two cases with  {} and (always :: _) ... or  NONE() and SOME(always)     
+  input MatchingExp inMatchingExp;
+  output Boolean isAlwaysMatched;
+algorithm
+  isAlwaysMatched := matchcontinue (inMatchingExp)
+    local
+      MatchingExp mexp;
+    case (mexp)
+      equation
+        isAlwaysMatched(mexp);
+      then true;
+  
+    else false;  
+  end matchcontinue;
+end isAlwaysMatchedBool;
 
 public function adaptTextToString
   input tuple<MMExp, TypeSignature, SourceInfo> inArgValue;
