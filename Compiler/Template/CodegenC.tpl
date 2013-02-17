@@ -1257,18 +1257,17 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   let body = (residualEquations |> eq2 =>
        functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
      ;separator="\n")
-  let desc = match residualEquations
-             case {} then
-               <<
-               const char *initialResidualDescription[1] = {"empty"};
-               >> 
-             else
+  let desc = if resDesc then 
                <<
                const char *initialResidualDescription[] = 
                {
                  <%resDesc%>
                };
-               >>      
+               >>
+             else
+               <<
+               const char *initialResidualDescription[1] = {"empty"};
+               >> 
   <<
   <%desc%>
 
@@ -8798,8 +8797,8 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     else
       <<
       #define <%name%>_data "<%escstr%>"
-      static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
-      static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
+      static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
+      static const char <%name%>[<%intAdd(1,unescapedStringLength(escstr))%>] = <%name%>_data;
       >>
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then
