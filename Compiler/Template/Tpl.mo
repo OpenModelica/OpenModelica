@@ -1530,6 +1530,80 @@ algorithm
  end match;
 end failIfTrue;
 
+protected function tplCallWithFailError
+  input Tpl_Fun inFun;
+  input ArgType1 inArg;
+  output Text outTxt;
+ 
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+  outTxt := matchcontinue(inFun, inArg)
+    case(inFun, inArg)      
+      equation
+        outTxt = inFun(emptyTxt, inArg);
+      then outTxt;
+    else
+      equation
+        addTemplateError("A template call failed (a call with 1 parameter). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+      then fail();
+  end matchcontinue;
+end tplCallWithFailError;
+
+protected function tplCallWithFailError2
+  input Tpl_Fun inFun;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
+  output Text outTxt;
+    
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+ outTxt := matchcontinue(inFun, inArgA, inArgB)
+    case(inFun, inArgA, inArgB)      
+      equation
+        outTxt = inFun(emptyTxt, inArgA, inArgB);
+      then outTxt;
+    else
+      equation
+        addTemplateError("A template call failed (a call with 2 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+      then fail();
+  end matchcontinue;
+end tplCallWithFailError2;
+
+protected function tplCallWithFailError3
+  input Tpl_Fun inFun;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
+  input ArgType3 inArgC;
+  output Text outTxt;
+  
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType3 inArgC;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+  outTxt := matchcontinue(inFun, inArgA, inArgB, inArgC)
+    case(inFun, inArgA, inArgB, inArgC)      
+      equation
+        outTxt = inFun(emptyTxt, inArgA, inArgB, inArgC);
+      then outTxt;
+    else
+      equation
+        addTemplateError("A template call failed (a call with 3 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+      then fail();
+  end matchcontinue;
+end tplCallWithFailError3;
 
 public function tplString
   input Tpl_Fun inFun;
@@ -1546,7 +1620,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArg);
+  txt := tplCallWithFailError(inFun, inArg);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString;
@@ -1568,7 +1642,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB);
+  txt := tplCallWithFailError2(inFun, inArgA, inArgB);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString2;
@@ -1592,7 +1666,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);
+  txt := tplCallWithFailError3(inFun, inArgA, inArgB, inArgC);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString3;
@@ -1611,7 +1685,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArg);
+  txt := tplCallWithFailError(inFun, inArg);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   textStringBuf(txt);
 end tplPrint;
@@ -1632,7 +1706,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB);
+  txt := tplCallWithFailError2(inFun, inArgA, inArgB);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   textStringBuf(txt);
 end tplPrint2;
@@ -1655,7 +1729,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);
+  txt := tplCallWithFailError3(inFun, inArgA, inArgB, inArgC);
   failIfTrue(Error.getNumErrorMessages() > nErr);
   textStringBuf(txt);
 end tplPrint3;
@@ -1675,7 +1749,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  _ := inFun(emptyTxt, inArg, inArg2);
+  _ := tplCallWithFailError2(inFun, inArg, inArg2);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret2;
 
@@ -1692,7 +1766,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  _ := inFun(emptyTxt, inArg);
+  _ := tplCallWithFailError(inFun, inArg);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret;
 
