@@ -132,7 +132,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   
   # OMDEV PATH
@@ -210,7 +210,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)   
 
   INCLUDE_DIRECTORIES(${dir})    
@@ -343,7 +343,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
   

@@ -97,7 +97,7 @@ typedef struct omc_ModelInput
 // a map for overrides
 typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // function to handle command line settings override
-omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile);
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile);
 
 /* reads double value from a string */
 void read_value(std::string s, modelica_real* res);
@@ -287,7 +287,7 @@ void read_input_xml(int argc, char **argv,
   // deal with override
   std::string* override = (string*)getFlagValue("override", argc, argv);
   std::string* overrideFile = (string*)getFlagValue("overrideFile", argc, argv);
-  mi = doOverride(mi, modelData, override, overrideFile);
+  doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
   INFO(LOG_SOLVER, "read all the DefaultExperiment values:");
@@ -1107,7 +1107,7 @@ inline void read_value(std::string s, int* res)
 }
 
 
-omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile)
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
@@ -1252,5 +1252,4 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
   {
     INFO(LOG_SOLVER, "NO override given on the command line.");
   }
-  return mi;
 }
