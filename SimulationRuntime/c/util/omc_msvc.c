@@ -41,7 +41,7 @@ int asprintf(char **strp, const char *fmt, ...) {
 
   len = vsnprintf(NULL, 0, fmt, ap);
   *strp = malloc(len+1);
-  len = snprintf(*strp, len+1, fmt, ap);
+  len = vsnprintf(*strp, len+1, fmt, ap);
 
   va_end(ap);
   return len;
