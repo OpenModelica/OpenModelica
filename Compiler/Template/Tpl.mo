@@ -1569,15 +1569,14 @@ protected function tplCallWithFailError2
     output Text out_txt;
   end Tpl_Fun;
 protected
-  Tpl_Fun in_fun;
   ArgType1 argA;
   ArgType2 argB;
   Text txt;
 algorithm
  outTxt := matchcontinue(inFun, inArgA, inArgB)
-    case(in_fun, argA, argB)      
+    case(_, argA, argB)      
       equation
-        txt = in_fun(emptyTxt, argA, argB);
+        txt = inFun(emptyTxt, argA, argB);
       then txt;
     else
       equation
