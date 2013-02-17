@@ -1540,12 +1540,16 @@ protected function tplCallWithFailError
     input ArgType1 inArgA;
     output Text out_txt;
   end Tpl_Fun;
+protected
+  Tpl_Fun in_fun;
+  ArgType1 arg;
+  Text txt;
 algorithm
   outTxt := matchcontinue(inFun, inArg)
-    case(inFun, inArg)      
+    case(in_fun, arg)      
       equation
-        outTxt = inFun(emptyTxt, inArg);
-      then outTxt;
+        txt = in_fun(emptyTxt, arg);
+      then txt;
     else
       equation
         addTemplateError("A template call failed (a call with 1 parameter). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
@@ -1565,12 +1569,17 @@ protected function tplCallWithFailError2
     input ArgType2 inArgB;
     output Text out_txt;
   end Tpl_Fun;
+protected
+  Tpl_Fun in_fun;
+  ArgType1 argA;
+  ArgType2 argB;
+  Text txt;
 algorithm
  outTxt := matchcontinue(inFun, inArgA, inArgB)
-    case(inFun, inArgA, inArgB)      
+    case(in_fun, argA, argB)      
       equation
-        outTxt = inFun(emptyTxt, inArgA, inArgB);
-      then outTxt;
+        txt = in_fun(emptyTxt, argA, argB);
+      then txt;
     else
       equation
         addTemplateError("A template call failed (a call with 2 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
@@ -1592,12 +1601,18 @@ protected function tplCallWithFailError3
     input ArgType3 inArgC;
     output Text out_txt;
   end Tpl_Fun;
+protected
+  Tpl_Fun in_fun;
+  ArgType1 argA;
+  ArgType2 argB;
+  ArgType3 argC;
+  Text txt;
 algorithm
   outTxt := matchcontinue(inFun, inArgA, inArgB, inArgC)
-    case(inFun, inArgA, inArgB, inArgC)      
+    case(in_fun, argA, argB, argC)      
       equation
-        outTxt = inFun(emptyTxt, inArgA, inArgB, inArgC);
-      then outTxt;
+        txt = in_fun(emptyTxt, argA, argB, argC);
+      then txt;
     else
       equation
         addTemplateError("A template call failed (a call with 3 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
