@@ -176,6 +176,21 @@ algorithm
   end matchcontinue;
 end add;
 
+public function dumpHashTableStatistics "
+author: PA.
+dump statistics on how many entries per hash value. Useful to see how hash function behaves"
+  input HashTable hashTable;
+algorithm
+ _ := matchcontinue(hashTable)
+ local HashVector hvec;
+   case((hvec,_,_,_,_)) equation
+      print("index list lengths:\n");
+      print(stringDelimitList(List.map(List.map(arrayList(hvec),listLength),intString),","));
+      print("\n");
+   then ();
+ end matchcontinue;
+end dumpHashTableStatistics;
+
 public function addNoUpdCheck
   "Add a Key-Value tuple to hashtable, without checking if it already exists.
    This function is thus more efficient than add if you already know that the

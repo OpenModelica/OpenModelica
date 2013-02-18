@@ -564,7 +564,7 @@ algorithm
         // store new pos
         _ = arrayUpdate(newindexarr,index,insertindex);
         // add to hash vec
-        indx = HashTable2.hashFunc(cr, bucketSize);
+        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
         indexes = crefIdxLstArr[indx + 1];
         i = insertindex-1;
         _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));                

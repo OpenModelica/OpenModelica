@@ -66,14 +66,11 @@ end FuncExpStr;
 
 protected function hashFunc
 "Calculates a hash value for Key"
-  input Key cr;
+  input Key tpl;
   input Integer mod;
   output Integer res;
-protected
-  String crstr;
 algorithm
-  crstr := printKey(cr);
-  res := System.stringHashDjb2Mod(crstr,mod);
+  res := intMod(intAbs(ComponentReference.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl)),mod);
 end hashFunc;
 
 protected function keyEqual

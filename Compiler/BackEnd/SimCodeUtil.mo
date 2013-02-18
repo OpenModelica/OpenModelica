@@ -10168,18 +10168,6 @@ end getNominalValue;
 
 /* HashTable instance specific code */
 
-protected function hashFunc "function hashFunc
-  author: PA
-  Calculates a hash value for DAE.ComponentRef"
-  input SimCode.Key cr;
-  output Integer res;
-protected
-  String crstr;
-algorithm
-  crstr := ComponentReference.printComponentRefStr(cr);
-  res := stringHashDjb2(crstr);
-end hashFunc;
-
 protected function keyEqual
   input SimCode.Key key1;
   input SimCode.Key key2;
@@ -10283,8 +10271,7 @@ algorithm
     case ((v as (key, value)), (SimCode.HASHTABLE(hashvec, varr, bsize, n)))
       equation
         failure((_) = get(key, hashTable));
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
+        indx = ComponentReference.hashComponentRefMod(key,bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -10363,8 +10350,7 @@ algorithm
       // adding when not existing previously 
     case ((v as (key, value)), (hashTable as SimCode.HASHTABLE(hashvec, varr, bsize, n)))
       equation
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
+        indx = ComponentReference.hashComponentRefMod(key,bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -10449,9 +10435,8 @@ algorithm
       SimCode.Key k;
     case (_, (SimCode.HASHTABLE(hashvec, varr, bsize, n)))
       equation
-        hval = hashFunc(key);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
+        indx = ComponentReference.hashComponentRefMod(key,bsize);
+        indexes = hashvec[indx + 1];
         indx = get2(key, indexes);
         (k, v) = valueArrayNth(varr, indx);
         true = keyEqual(k, key);

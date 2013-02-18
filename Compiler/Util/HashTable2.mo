@@ -63,18 +63,6 @@ partial function FuncExpStr
   output String res;
 end FuncExpStr;
 
-public function hashFunc
-"Calculates a hash value for Key"
-  input Key cr;
-  input Integer mod;
-  output Integer res;
-protected
-  String crstr;
-algorithm
-  crstr := ComponentReference.printComponentRefStr(cr);
-  res := System.stringHashDjb2Mod(crstr,mod);
-end hashFunc;
-
 public function emptyHashTable
 "
   Returns an empty HashTable.
@@ -91,7 +79,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ExpressionDump.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ExpressionDump.printExpStr));
 end emptyHashTableSized;
 
 end HashTable2;

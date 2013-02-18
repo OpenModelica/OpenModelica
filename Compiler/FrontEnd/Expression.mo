@@ -9305,5 +9305,139 @@ algorithm
   end match;
 end promoteExp3;
 
+public function hashExpMod "
+author: PA 
+hash expression to value in range [0,mod-1]"
+  input DAE.Exp e;
+  input Integer mod;
+  output Integer hash;
+algorithm
+  hash := intMod(intAbs(hashExp(e)),mod);
+end hashExpMod;
+
+public function hashExp "help function to hashExpMod"
+  input DAE.Exp e;
+  output Integer hash;
+algorithm
+ hash := matchcontinue(e)
+   local 
+    Real r; 
+    Integer i;
+    Boolean b;
+    String s;
+    Absyn.Path path;
+    DAE.Exp e1,e2,e3;
+    DAE.Operator op;
+    list<DAE.Exp> expl;
+    list<list<DAE.Exp>> mexpl;
+    ComponentReference.ComponentRef cr;
+    DAE.ReductionIterators iters;
+    DAE.ReductionInfo info;
+
+ case(DAE.ICONST(i))                                then stringHashDjb2(intString(i));
+ case(DAE.RCONST(r))                                then stringHashDjb2(realString(r));
+ case(DAE.BCONST(b))                                then stringHashDjb2(boolString(b));
+ case(DAE.SCONST(s))                                then stringHashDjb2(s);
+ case(DAE.ENUM_LITERAL(name=path))                  then stringHashDjb2(Absyn.pathString(path));
+ case(DAE.CREF(componentRef=cr))                    then ComponentReference.hashComponentRef(cr);
+
+ case(DAE.BINARY(e1,op,e2))                         then 1 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case(DAE.UNARY(op,e1))                             then 2 + hashOp(op)+hashExp(e1);
+ case(DAE.LBINARY(e1,op,e2))                        then 3 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case(DAE.LUNARY(op,e1))                            then 4 + hashOp(op)+hashExp(e1);
+ case(DAE.RELATION(e1,op,e2,_,_))                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case(DAE.IFEXP(e1,e2,e3))                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
+ case(DAE.CALL(path=path,expLst=expl))              then 7 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 8 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.ARRAY(array=expl))                        then 9 + List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.MATRIX(matrix=mexpl))                     then 10 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
+ case(DAE.RANGE(_,e1,SOME(e2),e3))                  then 11 + hashExp(e1)+hashExp(e2)+hashExp(e3);
+ case(DAE.RANGE(_,e1,NONE(),e3))                    then 12 + hashExp(e1)+hashExp(e3);
+ case(DAE.TUPLE(expl))                              then 13 + List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.CAST(_,e1))                               then 14 + hashExp(e1);
+ case(DAE.ASUB(e1,expl))                            then 15 + hashExp(e1)+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.TSUB(e1,i,_))                             then 16 + hashExp(e1)+stringHashDjb2(intString(i));
+ case(DAE.SIZE(e1,SOME(e2)))                        then 17 + hashExp(e1)+hashExp(e2);
+ case(DAE.SIZE(e1,NONE()))                          then 18 + hashExp(e1);
+ case(DAE.CODE(_,_))                                then 19; // TODO: implement hashing of CODE AST
+ case(DAE.EMPTY(scope=_))                           then 20; // TODO: implement hashing of EMTPY (needed ?)
+ case(DAE.REDUCTION(info,e1,iters))                 then 21 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
+ // TODO: hashing of all MetaModelica extensions
+ case(_) then 22;
+ end matchcontinue;
+end hashExp;
+
+
+protected function hashReductionInfo "help function to hashExp"
+  input DAE.ReductionInfo info;
+  output Integer hash;
+algorithm
+  hash := matchcontinue(info)
+  local 
+    Absyn.Path path;
+
+    // TODO: complete hasing of all subexpressions
+    case(DAE.REDUCTIONINFO(path,_,_,_))            then 22 + stringHashDjb2(Absyn.pathString(path));
+  end matchcontinue;
+end hashReductionInfo;
+
+protected protected function hashReductionIter "help function to hashExp"
+  input DAE.ReductionIterator iter;
+  output Integer hash;
+algorithm
+  hash := matchcontinue(iter)
+  local 
+    String id;
+    DAE.Exp e1,e2;
+
+
+    case(DAE.REDUCTIONITER(id,e1,SOME(e2),_))       then 23 + stringHashDjb2(id)+hashExp(e1)+hashExp(e2);
+    case(DAE.REDUCTIONITER(id,e1,NONE(),_))         then 24 + stringHashDjb2(id)+hashExp(e1);
+  end matchcontinue;
+
+end hashReductionIter;
+protected protected function hashOp "help function to hashExp"
+  input DAE.Operator op;
+  output Integer hash;
+algorithm
+  hash := matchcontinue(op)
+    local
+      Absyn.Path path;
+
+    case(DAE.ADD(_))                                    then 25;
+    case(DAE.SUB(_))                                    then 26;
+    case(DAE.MUL(_))                                    then 27;
+    case(DAE.DIV(_))                                    then 28;
+    case(DAE.POW(_))                                    then 29;
+    case(DAE.UMINUS(_))                                 then 30;
+    case(DAE.UMINUS_ARR(_))                             then 31;
+    case(DAE.ADD_ARR(_))                                then 32;
+    case(DAE.SUB_ARR(_))                                then 33;
+    case(DAE.MUL_ARR(_))                                then 34;
+    case(DAE.DIV_ARR(_))                                then 35;
+    case(DAE.MUL_ARRAY_SCALAR(_))                       then 36;
+    case(DAE.ADD_ARRAY_SCALAR(_))                       then 37;
+    case(DAE.SUB_SCALAR_ARRAY(_))                       then 38;
+    case(DAE.MUL_SCALAR_PRODUCT(_))                     then 39;
+    case(DAE.MUL_MATRIX_PRODUCT(_))                     then 40;
+    case(DAE.DIV_ARRAY_SCALAR(_))                       then 41;
+    case(DAE.DIV_SCALAR_ARRAY(_))                       then 42;
+    case(DAE.POW_ARRAY_SCALAR(_))                       then 43;
+    case(DAE.POW_SCALAR_ARRAY(_))                       then 44;
+    case(DAE.POW_ARR(_))                                then 45;
+    case(DAE.POW_ARR2(_))                               then 46;
+    case(DAE.AND(_))                                    then 47;
+    case(DAE.OR(_))                                     then 48;
+    case(DAE.NOT(_))                                    then 49;
+    case(DAE.LESS(_))                                   then 50;
+    case(DAE.LESSEQ(_))                                 then 51;
+    case(DAE.GREATER(_))                                then 52;
+    case(DAE.GREATEREQ(_))                              then 53;
+    case(DAE.EQUAL(_))                                  then 54;
+    case(DAE.NEQUAL(_))                                 then 55;
+    case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(Absyn.pathString(path)) ;
+    end matchcontinue;
+end hashOp;
+
 end Expression;
 

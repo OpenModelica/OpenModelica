@@ -76,7 +76,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(HashTable2.hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,intString));
 end emptyHashTableSized;
 
 end HashTable;

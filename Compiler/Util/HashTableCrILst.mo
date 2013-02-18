@@ -79,7 +79,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(HashTable2.hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,printIntListStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,printIntListStr));
 end emptyHashTableSized;
 
 public function printIntListStr

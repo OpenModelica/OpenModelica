@@ -86,18 +86,6 @@ partial function FuncCrefStr
   output String res;
 end FuncCrefStr;
 
-public function hashFunc
-"Calculates a hash value for Key"
-  input Key cr;
-  input Integer mod;
-  output Integer res;
-protected
-  String crstr;
-algorithm
-  crstr := ComponentReference.printComponentRefStr(cr);
-  res := System.stringHashDjb2Mod(crstr,mod);
-end hashFunc;
-
 public function emptyHashSet
 "
   Returns an empty HashSet.
@@ -114,7 +102,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr));
 end emptyHashSetSized;
 
 end HashSet;

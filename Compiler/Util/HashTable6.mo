@@ -71,9 +71,11 @@ protected function hashFunc
   output Integer res;
 protected
   String crstr;
+  ComponentReference.ComponentRef cr1,cr2;
 algorithm
-  crstr := printKey(cr);
-  res := System.stringHashDjb2Mod(crstr,mod);
+  (cr1,cr2) := key;
+  // Use same factor as Djb2 hash (33)
+  res := intMod(intAbs(ComponentReference.hashComponentRef(cr1)+ 33*ComponentReference.hashComponentRef(cr2)),mod);
 end hashFunc;
 
 protected function keyEqual

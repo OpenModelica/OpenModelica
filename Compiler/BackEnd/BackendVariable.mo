@@ -2857,7 +2857,7 @@ algorithm
       equation
         (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
         pos_1 = pos-1;
-        hashindx = HashTable2.hashFunc(cr, bsize);
+        hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
         indexes = hashvec[hashindx + 1];
         (indexes1,_) = List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
         hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
@@ -2974,7 +2974,7 @@ algorithm
         // insert on new pos
         _ = arrayUpdate(varOptArr,insertindex,SOME(var));
         // add to hash vec
-        indx = HashTable2.hashFunc(cr, bucketSize);
+        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
         indexes = crefIdxLstArr[indx + 1];
         i = insertindex-1;
         _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));                
@@ -3146,7 +3146,7 @@ algorithm
       equation
         failure((_,_) = getVar(cr, vars));
         // print("adding when not existing previously\n");
-        indx = HashTable2.hashFunc(cr, bsize);
+        indx = ComponentReference.hashComponentRefMod(cr, bsize);
         newpos = vararrayLength(varr);
         varr_1 = vararrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -3194,7 +3194,7 @@ algorithm
       BackendDAE.Variables vars;
     case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        indx = HashTable2.hashFunc(cr, bsize);
+        indx = ComponentReference.hashComponentRefMod(cr, bsize);
         newpos = vararrayLength(varr);
         varr_1 = vararrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -3542,7 +3542,7 @@ algorithm
     
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-        hashindx = HashTable2.hashFunc(cr, bsize);
+        hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes, getVar4(cr,indexes));
         ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);

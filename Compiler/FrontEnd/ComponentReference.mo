@@ -58,11 +58,103 @@ protected import Print;
 protected import System;
 protected import Types;
 protected import Util;
+protected import DAEUtil;
 
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
 
 public type ComponentRef = DAE.ComponentRef;
+
+public function hashComponentRefMod "
+  author: PA
+ 
+  Calculates a hash value for DAE.ComponentRef, by hashing each individual part separately and summing the values, and then apply
+  intMod to it, to return a value in range [0,mod-1].
+  Also hashes subscripts in a clever way avoiding [1,2] and [2,1] to hash to the same value. This is done by investigating array type
+  to find dimension of array. 
+"
+  input DAE.ComponentRef cr;
+  input Integer mod;
+  output Integer res;
+protected
+  Integer h;
+algorithm 
+   // hash might overflow => force positive
+   h := intAbs(hashComponentRef(cr));
+   res := intMod(h,mod);
+end hashComponentRefMod;
+
+public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
+  input DAE.ComponentRef cr;
+  output Integer hash;
+algorithm
+hash := matchcontinue(cr)
+  local
+    DAE.Ident id;
+    DAE.Type tp;
+    list<DAE.Subscript> subs;
+    DAE.ComponentRef cr1;
+  case(DAE.CREF_IDENT(id,tp,subs)) equation
+    //print("IDENT, "+&id+&" hashed to "+&intString(stringHashDjb2(id))+&", subs hashed to "+&intString(hashSubscripts(tp,subs))+&"\n");
+  then stringHashDjb2(id) + hashSubscripts(tp,subs);
+
+  case(DAE.CREF_QUAL(id,tp,subs,cr1)) equation
+    //print("QUAL, "+&id+&" hashed to "+&intString(stringHashDjb2(id))+&", subs hashed to "+&intString(hashSubscripts(tp,subs))+&"\n");
+  then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
+
+  case(DAE.CREF_ITER(id,_,tp,subs)) 
+  then stringHashDjb2(id)+ hashSubscripts(tp,subs);
+  case(_) then 0;
+end matchcontinue;
+end hashComponentRef;
+
+protected protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
+  input DAE.Type tp;
+  input list<DAE.Subscript> subs;
+  output Integer hash;
+algorithm
+  hash := matchcontinue(tp,subs)
+  case(_,{}) then 0;
+  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
+  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
+  case(_,_)  then hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
+  end matchcontinue;
+end hashSubscripts;
+
+protected protected function hashSubscripts2 "help function"
+  input list<Integer> dims;
+  input list<DAE.Subscript> subs;
+  input Integer factor;
+  output Integer hash;
+algorithm
+  hash := matchcontinue(dims,subs,factor)
+  local 
+    Integer i1;
+    DAE.Subscript s;
+   
+      case({},{},factor) then 0;
+    case(i1::dims,s::subs,factor)
+    // TODO: change to using dimensions once cref types has been fixed.
+    then hashSubscript(s)*factor + hashSubscripts2(dims,subs,factor*1000/* *i1 */);  
+  end matchcontinue;
+end hashSubscripts2;
+
+protected function hashSubscript "help function"
+  input DAE.Subscript sub;
+  output Integer hash;
+algorithm
+ hash := matchcontinue(sub)
+   local 
+     DAE.Exp exp;
+     Integer i;
+
+   case(DAE.WHOLEDIM()) then 0;
+   case(DAE.INDEX(DAE.ICONST(i))) then i; 
+   case(DAE.SLICE(exp)) then Expression.hashExp(exp);
+   case(DAE.INDEX(exp)) then Expression.hashExp(exp);
+   case(DAE.WHOLE_NONEXP(exp)) then Expression.hashExp(exp);
+ end matchcontinue;
+end hashSubscript;
 
 public function createEmptyCrefMemory
 "@author: adrpo
