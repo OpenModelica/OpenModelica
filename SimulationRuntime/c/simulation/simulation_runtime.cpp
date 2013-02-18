@@ -28,7 +28,6 @@
  *
  */
 
-
 #ifdef _MSC_VER
   #include <windows.h>
 #endif
@@ -102,11 +101,11 @@ int terminationAssert = 0;    /* Becomes non-zero when model call assert simulat
 int warningLevelAssert = 0;   /* Becomes non-zero when model call assert with warning level. */
 FILE_INFO TermInfo;           /* message for termination. */
 
-char* TermMsg; /* message for termination. */
+char* TermMsg;                /* message for termination. */
 
-int sim_noemit = 0; // Flag for not emitting data
+int sim_noemit = 0;           /* Flag for not emitting data */
 
-const std::string *init_method = NULL; // method for  initialization.
+const std::string *init_method = NULL; /* method for  initialization. */
 
 /* function for start simulation */
 int callSolver(DATA*, string, string, string, string, double, int, string, int cpuTime);
@@ -139,16 +138,20 @@ void setTermMsg(const char *msg)
         TermMsg = (char*)malloc((length+1)*sizeof(char));
       }
     }
-    for(i=0;i<length;i++)
+    
+    for(i=0; i<length; i++)
       TermMsg[i] = msg[i];
+      
     /* set the terminating 0 */
     TermMsg[i] = '\0';
   }
 }
 
-/* \brief determine verboselevel by investigating flag -lv flags
+/*! \fn void setGlobalVerboseLevel(int argc, char**argv)
  *
- * Valid flags: see LOG_STREAM_NAME in omc_error.c
+ *  \brief determine verboselevel by investigating flag -lv flags
+ *
+ *  Valid flags: see LOG_STREAM_NAME in omc_error.c
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
@@ -382,7 +385,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string* lintime = (string*) getOption("l", argc, argv);
 
   /* activated measure time option with LOG_STATS */
-  if(ACTIVE_STREAM(LOG_STATS) && !measure_time_flag)
+  if((ACTIVE_STREAM(LOG_STATS) || flagSet("cpu", argc, argv)) && !measure_time_flag)
   {
     measure_time_flag = 1;
     measureSimTime = 1;
@@ -391,15 +394,15 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize);
 
-  if (measure_time_flag)
+  if(measure_time_flag)
   {
     modelInfoXmlInit(&data->modelData.modelDataXml);
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks + 4 /*sentinel */);
-    rt_tick( SIM_TIMER_TOTAL );
-    rt_tick( SIM_TIMER_PREINIT );
-    rt_clear( SIM_TIMER_OUTPUT );
-    rt_clear( SIM_TIMER_EVENT );
-    rt_clear( SIM_TIMER_INIT );
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
+    rt_tick(SIM_TIMER_TOTAL);
+    rt_tick(SIM_TIMER_PREINIT);
+    rt_clear(SIM_TIMER_OUTPUT);
+    rt_clear(SIM_TIMER_EVENT);
+    rt_clear(SIM_TIMER_INIT);
   }
 
   if(create_linearmodel)

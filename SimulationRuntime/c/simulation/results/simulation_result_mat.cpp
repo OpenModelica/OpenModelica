@@ -311,8 +311,7 @@ void mat4_emit(simulation_result *self,DATA *data)
   rt_tick(SIM_TIMER_OUTPUT);
   
   rt_accumulate(SIM_TIMER_TOTAL);
-  static double cpu_offset = rt_accumulated(SIM_TIMER_TOTAL); /* ??? */
-  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL) - cpu_offset;
+  double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
 
   /* this is done wrong -- a buffering should be used
