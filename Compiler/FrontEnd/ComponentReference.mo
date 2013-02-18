@@ -131,11 +131,13 @@ algorithm
   local 
     Integer i1;
     DAE.Subscript s;
+    list<Integer> rest_dims;
+    list<DAE.Subscript> rest_subs;
    
-      case({},{},factor) then 0;
-    case(i1::dims,s::subs,factor)
+    case({},{},_) then 0;
+    case(i1::rest_dims,s::rest_subs,_)
     // TODO: change to using dimensions once cref types has been fixed.
-    then hashSubscript(s)*factor + hashSubscripts2(dims,subs,factor*1000/* *i1 */);  
+    then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);  
   end matchcontinue;
 end hashSubscripts2;
 
