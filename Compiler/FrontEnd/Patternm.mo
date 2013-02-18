@@ -1569,7 +1569,7 @@ protected
   list<DAE.Exp> resExps;
   list<DAE.Type> resTypes;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,{},{});
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,{},{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -1582,6 +1582,7 @@ protected function elabMatchCases2
   input Option<Interactive.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
+  input list<DAE.MatchCase> inAccCases "Order does matter";
   input list<DAE.Exp> inAccExps "Order does matter";
   input list<DAE.Type> inAccTypes "Order does not matter";
   output Env.Cache outCache;
@@ -1591,7 +1592,7 @@ protected function elabMatchCases2
   output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,elabCases,resExps,resTypes,outSt) := 
-  match (inCache,inEnv,cases,tys,impl,inSt,performVectorization,pre,inAccExps,inAccTypes)
+  match (inCache,inEnv,cases,tys,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -1604,12 +1605,12 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},_,_,st,_,_,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
-    case (cache,env,case_::rest,_,_,st,_,_,accExps,accTypes)
+    case (cache,env,{},_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,case_::rest,_,_,st,_,_,_,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
-      then (cache,elabCase::elabCases,accExps,accTypes,st);
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
+      then (cache,elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
 

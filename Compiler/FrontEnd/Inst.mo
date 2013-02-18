@@ -15833,7 +15833,7 @@ This function splits the Element list into four lists
   output list<SCode.Element> extElts;
   output list<SCode.Element> compElts;
 algorithm
-  (cdefImpElts,classextendsElts,extElts,compElts) := matchcontinue (elts)
+  (cdefImpElts,classextendsElts,extElts,compElts) := match (elts)
     local
       list<SCode.Element> comps,xs;
       SCode.Element cdef,imp,ext,comp;
@@ -15882,7 +15882,7 @@ algorithm
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (cdefImpElts,classextendsElts,extElts,comp::comps);
-  end matchcontinue;
+  end match;
 end splitElts;
 
 public function splitEltsNoComponents "
