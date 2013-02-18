@@ -346,12 +346,14 @@ algorithm
       Key k;
       FuncEq keyEqual;
       FuncHash hashFunc;
+      Boolean eq;
       
     case (_, (hashvec, varr, bsize, n, (hashFunc, keyEqual, _, _)))
       equation
         hashindx = hashFunc(key, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = get2(key, indexes, keyEqual);
+        (k,n)::indexes = hashvec[hashindx + 1];
+        eq = keyEqual(k,key);
+        indx = get2(eq, n, key, indexes, keyEqual);
         (k, v) = valueArrayNth(varr, indx);
       then
         (v, indx);
@@ -361,27 +363,6 @@ end get1;
 
 protected function get2
   "Helper function to get"
-  input Key key;
-  input HashNode keyIndices;
-  input FuncEq keyEqual;
-  output Integer index;
-algorithm
-  index := match (key,keyIndices,keyEqual)
-    local
-      Key key2;
-      HashNode xs;
-      Boolean eq;
-    // search for the key, found the good one? stop and use the index
-    case (_, (key2,index) :: xs, _)
-      equation
-        eq = keyEqual(key, key2);
-      then get3(eq, index, key, xs, keyEqual);
-    
-  end match;
-end get2;
-
-protected function get3
-  "Helper function to get"
   input Boolean b;
   input Integer indexIfTrue;
   input Key key;
@@ -390,10 +371,19 @@ protected function get3
   output Integer index;
 algorithm
   index := match (b,indexIfTrue,key,keyIndices,keyEqual)
+    local
+      Key key2;
+      HashNode xs;
+      Boolean eq;
     case (true,_,_,_,_) then indexIfTrue;
-    else get2(key, keyIndices, keyEqual);
+    // search for the key, found the good one? stop and use the index
+    case (_,_,_,(key2,index) :: xs,_)
+      equation
+        eq = keyEqual(key, key2);
+      then get2(eq, index, key, xs, keyEqual);
+    
   end match;
-end get3;
+end get2;
 
 public function dumpHashTable
   input HashTable t;
