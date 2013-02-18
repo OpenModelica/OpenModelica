@@ -32,7 +32,7 @@
 encapsulated package BackendDAEOptimize
 " file:        BackendDAEOptimize.mo
   package:     BackendDAEOptimize
-  description: BackendDAEOPtimize contains functions that do some kind of
+  description: BackendDAEOptimize contains functions that do some kind of
                optimazation on the BackendDAE datatype:
                - removing simpleEquations
                - Tearing/Relaxation
@@ -4688,20 +4688,20 @@ algorithm
   (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inDiffVars,inDiffedVars)
     local
       BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst,syst1;
+      BackendDAE.EqSystem syst, syst1;
       BackendDAE.StrongComponents comps;
-      BackendDAE.IncidenceMatrix adjMatrix,adjMatrixT;
+      BackendDAE.IncidenceMatrix adjMatrix, adjMatrixT;
       BackendDAE.Matching bdaeMatching;
       
       list<tuple<Integer, list<Integer>>>  sparseGraph, sparseGraphT;
       array<tuple<Integer, list<Integer>>> arraysparseGraph;
       
-      Integer sizeN, sizeM, adjSize, adjSizeT;
-      Integer nonZeroElements, sparseLength, maxdegree, maxColor;
-      list<Integer> nodesList,nodesEqnsIndex;
+      Integer sizeN, adjSize, adjSizeT;
+      Integer nonZeroElements, maxdegree, maxColor;
+      list<Integer> nodesList, nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
       list<BackendDAE.Var> jacDiffVars, indiffVars, indiffedVars;
-      BackendDAE.Variables diffedVars,varswithDiffs, v, origVars;
+      BackendDAE.Variables diffedVars, diffVars, varswithDiffs;
       BackendDAE.EquationArray orderedEqns;
       array<Option<list<Integer>>> forbiddenColor;
       array<Integer> colored, colored1, ass1, ass2;
@@ -4710,7 +4710,8 @@ algorithm
       
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
       
-      array<list<Integer>> eqnSparse,sparseArray,sparseArrayT;
+      array<list<Integer>> eqnSparse, varSparse, sparseArray, sparseArrayT;
+      array<Integer> mark, usedvar;
       
       BackendDAE.SparseColoring coloring;
       list<list<DAE.ComponentRef>> translated;
@@ -4735,71 +4736,70 @@ algorithm
         adjSizeT = arrayLength(adjMatrixT) "number of variables";
         
         // Debug dumping
-        /*
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.printEquationList,BackendEquation.equationList(orderedEqns));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpComponents, comps);
-        */
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
         
         // get indexes of diffed vars (rows)
         diffedVars = BackendVariable.listVar1(indiffedVars);  
         nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffedVars,varswithDiffs);
         nodesEqnsIndex = List.map1(nodesEqnsIndex, Util.arrayGetIndexFirst, ass1);
-        sizeM = listLength(nodesEqnsIndex);
         
+        // debug dump
         Debug.fcall(Flags.JAC_DUMP2, print, "nodesEqnsIndexs: ");
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, nodesEqnsIndex);
         Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n");
-        // prepare dependency matrix by fill 
-        eqnSparse = arrayCreate(adjSize,{}) "array with empty list for each eqn";
-        eqnSparse = prepareSparsePatternT(eqnSparse, adjSizeT-(sizeN-1), adjSizeT, adjMatrixT);
+        
+        // prepare data for getSparsePattern
+        eqnSparse = arrayCreate(adjSizeT, {});
+        varSparse = arrayCreate(adjSizeT, {});
+        mark = arrayCreate(adjSizeT, 0);
+        usedvar = arrayCreate(adjSizeT, 0);
+        usedvar = Util.arraySet(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
+        
+        eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
+        // debug dump
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePatternArray,eqnSparse);
         Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
-        eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
-        eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
 
-        sparsepattern = arrayList(eqnSparse);
-        nonZeroElements = List.lengthListElements(sparsepattern);
-        (alldegrees, maxdegree) = List.mapFold(sparsepattern, findDegrees, 1);        
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
+        // select nodesEqnsIndex and map index to incoming vars
         sparseArray = Util.arraySelect(eqnSparse, nodesEqnsIndex);
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
-        sparseArray = listArray(sparsepattern);
         
         // transpose the column-based pattern to row-based pattern
-        //sparseLength = Util.if_(sizeM > sizeN, sizeM, sizeN);
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        //sparsepatternT = List.firstN(sparsepatternT, listLength(diffCompRefs));
         
+        // dump statistics
+        nonZeroElements = List.lengthListElements(sparsepattern);
         (alldegrees, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
 
+        // translated to DAE.ComRefs
         translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> translated to DAE.ComRefs\n");
         sparsetuple = List.threadTuple(diffCompRefs, translated);
-       
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.\n");
-        // build up a graph of pattern
+        
+        // build up a bi-partied graph of pattern
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph.\n");
+        sparseArray = listArray(sparsepattern);
         nodesList = List.intRange2(1,adjSize);
         sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
         sparseGraphT = Graph.buildGraph(List.intRange2(1,sizeN),createBipartiteGraph,sparseArrayT);
+        
+        // debug dump
         Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraph);
         Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
-        
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
+        
         // color sparse bipartite graph
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
@@ -4807,8 +4807,7 @@ algorithm
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
         // get max color used
         maxColor = Util.arrayFold(colored1, intMax, 0);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> colored graph with " +& intString(maxColor) +& " colors. Time : " +& realString(clock()) +& "\n");
-
+        
         // map index of that array into colors
         coloredArray = arrayCreate(maxColor, {});
         coloredlist = arrayList(mapIndexColors(colored1, listLength(diffCompRefs), coloredArray));
@@ -4829,316 +4828,235 @@ algorithm
   end matchcontinue;
 end generateSparsePattern;
 
-protected function mapIndexColors
-  input array<Integer> inColors;
-  input Integer inMaxIndex;
-  input array<list<Integer>> inArray;
-  output array<list<Integer>> outColors;
-algorithm
-  outColors := matchcontinue(inColors, inMaxIndex, inArray)
-    local
-      Integer i, index;
-      list<Integer> lst;
-    case (_, 0, _) then inArray;
-    case (_, i, _)
-      equation
-        index = arrayGet(inColors, i);
-        lst = arrayGet(inArray, index);
-        lst = listAppend({i},lst);
-        _ = arrayUpdate(inArray, index, lst);
-      then
-        mapIndexColors(inColors, i-1, inArray);
-/*    case (_, i, _)
-      equation
-        print("i " +& intString(i) +& "\n");
-        print("inColors " +& intString(arrayLength(inColors)) +& "\n");
-        index = arrayGet(inColors, i);
-        print("index " +& intString(index) +& "\n");
-        print("inArray " +& intString(arrayLength(inArray)) +& "\n");
-      then
-        fail();
-*/    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
-      then
-         fail();
- end matchcontinue;
-end mapIndexColors;
-
-protected function createDirectedGraph
-  input Integer inNode;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.Matching> intupleArgs;
-  output list<Integer> outEdges; 
-algorithm
-  outEdges := matchcontinue(inNode,intupleArgs)
-  local
-    BackendDAE.IncidenceMatrix incidenceMat;
-    BackendDAE.IncidenceMatrixElement oneElement;
-    array<Integer> ass1,ass2;
-    Integer assignment;
-    list<Integer> outEdges;
-    list<String> oneEleStr;
-    case(inNode, (incidenceMat,BackendDAE.MATCHING(ass1 = ass1)))
-      equation
-        //Debug.fcall(Flags.JAC_DUMP2, print,"In Node : " +& intString(inNode) +& " ");
-        assignment = arrayGet(ass1,inNode);
-        oneElement = arrayGet(incidenceMat,assignment);
-        //Debug.fcall(Flags.JAC_DUMP2, print,"assignt to : " +& intString(assignment) +& "\n");
-        //Debug.fcall(Flags.JAC_DUMP2, print,"elements on node : ");
-        //Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow,oneElement);
-        ( outEdges,_) = List.deleteMemberOnTrue(inNode,oneElement,intEq);
-    then outEdges;
-    case(inNode, (_,_))
-      then {};        
-  end matchcontinue;
-end createDirectedGraph;
-
-protected function createBipartiteGraph
-  input Integer inNode;
-  input array<list<Integer>> inSparsePattern;
-  output list<Integer> outEdges; 
-algorithm
-  outEdges := matchcontinue(inNode,inSparsePattern)
-    case(_, _)
-      equation
-        outEdges = arrayGet(inSparsePattern,inNode);
-    then outEdges;
-    case(_, _)
-      then {};        
-  end matchcontinue;
-end createBipartiteGraph;
-
-protected function getSparsePatternGraph
-  input list<Integer> inNodes1; //nodesEqnsIndex
-  input Integer inMaxGraphIndex; //nodesVarsIndex
-  input Integer inMaxNodeIndex; //nodesVarsIndex
-  input array<tuple<Integer, list<Integer>>> inGraph;
-  output list<list<Integer>> outSparsePattern;
-algorithm 
-  outSparsePattern :=match(inNodes1,inMaxGraphIndex,inMaxNodeIndex,inGraph)
-  local
-    list<Integer> rest;
-    Integer node;
-    list<Integer> reachableNodes;
-    list<list<Integer>> result;
-    case(node::{},inMaxGraphIndex,inMaxNodeIndex,inGraph)
-      equation
-        reachableNodes = Graph.allReachableNodesInt(({node},{}), inGraph, inMaxGraphIndex, inMaxNodeIndex);
-        reachableNodes = List.select1(reachableNodes, intGe, inMaxGraphIndex);
-      then {reachableNodes};        
-    case(node::rest,inMaxGraphIndex,inMaxNodeIndex,inGraph)
-      equation
-        reachableNodes = Graph.allReachableNodesInt(({node},{}), inGraph, inMaxGraphIndex, inMaxNodeIndex);
-        reachableNodes = List.select1(reachableNodes, intGe, inMaxGraphIndex);
-        result = getSparsePatternGraph(rest,inMaxGraphIndex,inMaxNodeIndex,inGraph);
-        result = listAppend({reachableNodes},result);
-      then result;      
-    else
-       equation
-       print("BackendDAEOptimize.getSparsePattern failed\n");
-       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
-       then fail();
-  end match;
-end getSparsePatternGraph;
-
-protected function prepareSparsePatternT 
-  input array<list<Integer>> inSparseT;
-  input Integer inStartNode;
-  input Integer inEndNode;
-  input BackendDAE.IncidenceMatrix inMatrixT;
-  output array<list<Integer>> outSparseT;
-algorithm
-  outSparseT := matchcontinue(inSparseT,inStartNode,inEndNode,inMatrixT)
-  local
-    list<Integer> rowElements;
-    case (_,_,_,_)
-      equation
-        true = (inStartNode <= inEndNode);
-        rowElements = arrayGet(inMatrixT,inStartNode);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, {inStartNode}, inSparseT);
-      then prepareSparsePatternT(inSparseT, inStartNode+1, inEndNode, inMatrixT);
-    else then inSparseT;
-  end matchcontinue;
-end prepareSparsePatternT;
-
 protected function getSparsePattern
   input BackendDAE.StrongComponents inComponents;
-  input array<list<Integer>> inResults; //
+  input array<list<Integer>> ineqnSparse; //
+  input array<list<Integer>> invarSparse; //
+  input array<Integer> inMark; //
+  input array<Integer> inUsed; //
+  input Integer inmarkValue;
   input BackendDAE.IncidenceMatrix inMatrix;
   input BackendDAE.IncidenceMatrix inMatrixT;
   output array<list<Integer>> outSparsePattern;
 algorithm 
-  outSparsePattern :=matchcontinue(inComponents,inResults,inMatrix,inMatrixT)
+  outSparsePattern := matchcontinue(inComponents, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue, inMatrix, inMatrixT)
   local
-    list<Integer> vars, vars1,eqns, eqns1, eqnlst, rowElements;
-    Integer var, eqn;
+    list<Integer> vars, vars1, vars2, eqns, eqns1,  eqns2;
+    list<Integer> inputVars;
+    list<list<Integer>> inputVarsLst;
+    list<Integer> solvedVars;
     array<list<Integer>> result;
+    Integer var, eqn;
     BackendDAE.StrongComponents rest;
-    list<list<Integer>>  rowElementsList, eqnlstList;
-    BackendDAE.StrongComponent condSystem;
-    list<tuple<Integer, list<Integer>>> otherEqnVarTpl;
-    list<list<Integer>> varsElements, dumpList;
-    case ({},result,_,_) then result;
-    case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,_,_)
+    BackendDAE.StrongComponent comp;
+    list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+    case ({}, result,_,_,_,_,_,_) then result;
+
+    case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,_,_,_,_,_,_)
       equation
-        //print("SINGLEEQUATION update: ");
-        // get incedece row for curent equation set
-        //print("find for dependecies for  eqn:" +& intString(eqn) +& " \n");
-        rowElements = arrayGet(inMatrixT, var);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars)::rest,result,_,_)
-      equation
-        //print("EQUATIONSYSTEM update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.removeOnTrue(var, intEq, inputVars);
         
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
-        List.map2_0(eqns, Util.arrayUpdateElementListUnion, eqnlst, result);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=eqns1,vars=vars1), disc_eqns=eqns,disc_vars=vars)::rest,result,_,_)
-      equation
-        //print("MIXEDEQUATIONSYSTEM update: ");
-        vars= listAppend(vars,vars1);
-        eqns= listAppend(eqns,eqns1);
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,_,_)
-      equation
-        //print("SINGLEARRAY update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
-      equation
-        //print("SINGLEARRAY update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=vars)::rest,result,_,_)
-      equation
-        //print("SINGLEALGORITHM update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;
-    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
-      equation
-        //print("SINGLECOMPLEXEQUATION update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
-      then result;
-    case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
-      equation
-        //print("SINGLEWHENEQUATION update: ");
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n"); 
-        */        
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
-      then result;
-    case(BackendDAE.TORNSYSTEM(residualequations=eqns,tearingvars=vars,otherEqnVarTpl=otherEqnVarTpl)::rest,result,_,_)
-      equation
-        //print("TORNSYSTEM tearing update: ");
-        //processed tearing eqns and vars
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
+        getSparsePattern2(inputVars, {var}, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
         
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrixT, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVars = arrayGet(inMatrix, eqn);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=solvedVars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVars = List.flatten(inputVarsLst);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.TORNSYSTEM(residualequations=eqns,tearingvars=vars,otherEqnVarTpl=otherEqnVarTpl)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVarsLst = List.map(otherEqnVarTpl,Util.tuple22);
+        vars1 = List.flatten(inputVarsLst);
         eqns1 = List.map(otherEqnVarTpl,Util.tuple21);
-        varsElements = List.map(otherEqnVarTpl,Util.tuple22);
+        eqns = listAppend(eqns, eqns1);
+        solvedVars = listAppend(vars, vars1);
         
-        vars1 = List.unionList(varsElements);
-        rowElementsList = List.map1(vars1, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = listAppend(rowElements,List.unionList(rowElementsList));
+        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVars = List.flatten(inputVarsLst);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
         
-        eqns1 = listAppend(eqns,eqns1);
-        eqnlstList = List.map1(eqns1, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
+        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
         
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
-        /*
-        BackendDump.dumpIncidenceRow(rowElements);
-        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
-        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
-        print("\n\n");
-        */
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=eqns1,vars=vars1), disc_eqns=eqns,disc_vars=vars)::rest,result,_,_,_,_,_,_)
+      equation
+        eqns = listAppend(eqns, eqns1);
+        solvedVars = listAppend(vars, vars1);
+        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVars = List.flatten(inputVarsLst);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
+      then result;
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(residualequations=eqns1,tearingvars=vars1,otherEqnVarTpl=otherEqnVarTpl), disc_eqns=eqns,disc_vars=vars)::rest,result,_,_,_,_,_,_)
+      equation
+        inputVarsLst = List.map(otherEqnVarTpl,Util.tuple22);
+        vars2 = List.flatten(inputVarsLst);
+        eqns2 = List.map(otherEqnVarTpl,Util.tuple21);
+        eqns1 = listAppend(eqns1, eqns2);
+        vars1 = listAppend(vars1, vars2);
+        eqns = listAppend(eqns, eqns1);
+        solvedVars = listAppend(vars, vars1);
+        
+        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVars = List.flatten(inputVarsLst);
+        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        
+        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        
+        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
       then result;
     else
        equation
-       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePatternNew failed"});
+         (comp::rest) = inComponents;
+         BackendDump.dumpComponent(comp);
+         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
        then fail();
   end matchcontinue;
 end getSparsePattern;
+
+protected function getSparsePattern2
+  input list<Integer> inInputVars;
+  input list<Integer> inSolvedVars;
+  input list<Integer> inEqns;
+  input array<list<Integer>> ineqnSparse;
+  input array<list<Integer>> invarSparse;
+  input array<Integer> inMark;
+  input array<Integer> inUsed;
+  input Integer inmarkValue;
+protected
+  list<Integer> localList;
+algorithm
+  localList := getSparsePatternHelp(inInputVars, invarSparse, inMark, inUsed, inmarkValue, {});
+  List.map2_0(inSolvedVars, Util.arrayUpdateIndexFirst, localList, invarSparse);
+  List.map2_0(inEqns, Util.arrayUpdateIndexFirst, localList, ineqnSparse); 
+end getSparsePattern2;
+
+protected function getSparsePatternHelp
+  input list<Integer> inInputVars;
+  input array<list<Integer>> invarSparse;
+  input array<Integer> inMark;
+  input array<Integer> inUsed;
+  input Integer inmarkValue;
+  input list<Integer> inLocalList;
+  output list<Integer> outLocalList;
+algorithm 
+  outLocalList := matchcontinue(inInputVars, invarSparse, inMark, inUsed, inmarkValue, inLocalList)
+  local
+    list<Integer> localList, varSparse, rest;
+    Integer arrayElement, var;
+    case ({},_,_,_,_,_) then inLocalList;
+    case (var::rest,_,_,_,_,_)
+      equation
+        arrayElement = arrayGet(inUsed, var);
+        false = intEq(1, arrayElement);
+        
+        varSparse = arrayGet(invarSparse, var);
+        localList = List.fold2(varSparse, getSparsePatternHelp2, inMark, inmarkValue, inLocalList);
+        localList =  getSparsePatternHelp(rest, invarSparse, inMark, inUsed, inmarkValue, localList);
+      then localList;
+    case (var::rest,_,_,_,_,_)
+      equation
+        arrayElement = arrayGet(inUsed, var);
+        true = intEq(1, arrayElement);
+        localList = getSparsePatternHelp2(var, inMark, inmarkValue, inLocalList);
+          
+        varSparse = arrayGet(invarSparse, var);
+        localList = List.fold2(varSparse, getSparsePatternHelp2, inMark, inmarkValue, localList);
+        localList =  getSparsePatternHelp(rest, invarSparse, inMark, inUsed, inmarkValue, localList);
+      then localList;
+  end matchcontinue;
+end getSparsePatternHelp;
+
+protected function getSparsePatternHelp2
+  input Integer inInputVar; //
+  input array<Integer> inMark; //
+  input Integer inmarkValue;
+  input list<Integer> inLocalList; //
+  output list<Integer> outLocalList; //
+algorithm 
+  outLocalList := matchcontinue(inInputVar, inMark, inmarkValue, inLocalList)
+    local
+      Integer arrayElement;
+    case (_,_,_,_)
+      equation
+        arrayElement = arrayGet(inMark, inInputVar);
+        false  = intEq(inmarkValue, arrayElement);
+        outLocalList = listAppend({inInputVar},inLocalList);
+        _ = arrayUpdate(inMark, inInputVar, inmarkValue); 
+      then outLocalList;
+    case (_,_,_,_)
+      equation
+        arrayElement = arrayGet(inMark, inInputVar);
+        true  = intEq(inmarkValue, arrayElement);
+      then inLocalList;
+  end matchcontinue;
+end getSparsePatternHelp2;
 
 public function findDegrees
   input list<ElementType> inList;
@@ -5191,7 +5109,47 @@ algorithm
   end match;
 end transposeSparsePattern2;
 
+protected function mapIndexColors
+  input array<Integer> inColors;
+  input Integer inMaxIndex;
+  input array<list<Integer>> inArray;
+  output array<list<Integer>> outColors;
+algorithm
+  outColors := matchcontinue(inColors, inMaxIndex, inArray)
+    local
+      Integer i, index;
+      list<Integer> lst;
+    case (_, 0, _) then inArray;
+    case (_, i, _)
+      equation
+        index = arrayGet(inColors, i);
+        lst = arrayGet(inArray, index);
+        lst = listAppend({i},lst);
+        _ = arrayUpdate(inArray, index, lst);
+      then
+        mapIndexColors(inColors, i-1, inArray);
+   else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
+      then
+         fail();
+ end matchcontinue;
+end mapIndexColors;
 
+protected function createBipartiteGraph
+  input Integer inNode;
+  input array<list<Integer>> inSparsePattern;
+  output list<Integer> outEdges; 
+algorithm
+  outEdges := matchcontinue(inNode,inSparsePattern)
+    case(_, _)
+      equation
+        outEdges = arrayGet(inSparsePattern,inNode);
+    then outEdges;
+    case(_, _)
+      then {};        
+  end matchcontinue;
+end createBipartiteGraph;
 
 
 // ============================================================================= 

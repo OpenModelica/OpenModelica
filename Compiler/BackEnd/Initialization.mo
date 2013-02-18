@@ -877,13 +877,20 @@ protected
   list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
   tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
+  Boolean execstat;
 algorithm
   pastOptModules := BackendDAEUtil.getPastOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
   matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
   daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
       
+  // suppress execstat 
+  execstat := Flags.disableDebug(Flags.EXEC_STAT);
+  
   // solve system
   outDAE := BackendDAEUtil.transformBackendDAE(inDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+  
+  // reset execstat again
+  _ := Flags.set(Flags.EXEC_STAT, execstat);
       
   // simplify system
  (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(outDAE, pastOptModules, matchingAlgorithm, daeHandler);

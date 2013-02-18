@@ -193,7 +193,11 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       dasslData->dasslMethod == DASSL_RT ||
       dasslData->dasslMethod == DASSL_TEST){
     if(initialAnalyticJacobianA(simData)){
-      INFO(LOG_SOLVER,"| solver | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      /* TODO: check that the one states is dummy */
+      if (simData->modelData.nStates == 1)
+        INFO(LOG_SOLVER,"No SparsePattern, since there are no states! Switch back to normal.");
+      else
+        INFO(LOG_STDOUT,"Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslMethod = DASSL_INTERNALNUMJAC;
     }else{
       dasslData->info[4] = 1; /* use sub-routine JAC */
