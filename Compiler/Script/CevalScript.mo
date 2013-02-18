@@ -4594,7 +4594,7 @@ algorithm
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
-        (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
+        (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
         acc = (name,dependencies)::acc;
         dependencies = List.map1(dependencies,stringAppend,".h\"");

@@ -3904,23 +3904,24 @@ expression, use an extra helper function."
   input list<DAE.Function> ifuncLst;
   input FuncExpType func;
   input Type_a iextraArg;
+  input list<DAE.Function> acc;
   output list<DAE.Function> outFuncLst;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outFuncLst,oextraArg) := match(ifuncLst,func,iextraArg)
+  (outFuncLst,oextraArg) := match(ifuncLst,func,iextraArg,acc)
     local
       DAE.Function daeFunc;
       list<DAE.Function> funcLst;
       Type_a extraArg;
       
-    case({},_,extraArg) then ({},extraArg);
-    case(daeFunc::funcLst,_,extraArg)
+    case({},_,extraArg,_) then (listReverse(acc),extraArg);
+    case(daeFunc::funcLst,_,extraArg,_)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
-        (funcLst,extraArg) = traverseDAEFunctions(funcLst,func,extraArg);
-      then (daeFunc::funcLst,extraArg);
+        (funcLst,extraArg) = traverseDAEFunctions(funcLst,func,extraArg,daeFunc::acc);
+      then (funcLst,extraArg);
   end match;
 end traverseDAEFunctions;
 
@@ -5942,7 +5943,7 @@ algorithm
       list<DAE.Element> els,els1,els2;
     case _
       equation
-        (_,(_,els1)) = traverseDAEFunctions(elements, Expression.traverseSubexpressionsHelper, (collectLocalDecls,{}));
+        (_,(_,els1)) = traverseDAEFunctions(elements, Expression.traverseSubexpressionsHelper, (collectLocalDecls,{}), {});
         els2 = getFunctionsElements(elements);
         els = listAppend(els1, els2);
         outPaths = getUniontypePathsElements(els);

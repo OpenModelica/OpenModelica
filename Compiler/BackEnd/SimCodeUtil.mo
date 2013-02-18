@@ -1167,7 +1167,7 @@ public function findLiterals
 algorithm
   (ofns, (_, _, literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper, 
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
+    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}), {});
   literals := listReverse(literals);
 end findLiterals;
 
@@ -1180,7 +1180,7 @@ protected function simulationFindLiterals
 algorithm
   (ofns, literals) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper, 
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
+    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}), {});
   // Broke things :(
   // ((i, ht, literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i, ht, literals));
 end simulationFindLiterals;

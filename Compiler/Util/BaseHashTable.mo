@@ -366,27 +366,34 @@ protected function get2
   input FuncEq keyEqual;
   output Integer index;
 algorithm
-  index := matchcontinue (key,keyIndices,keyEqual)
+  index := match (key,keyIndices,keyEqual)
     local
       Key key2;
       HashNode xs;
-        
-    // search for the key, found the good one
-    case (_, (key2,index) :: _, _)
+      Boolean eq;
+    // search for the key, found the good one? stop and use the index
+    case (_, (key2,index) :: xs, _)
       equation
-        true = keyEqual(key, key2);
-      then
-        index;
+        eq = keyEqual(key, key2);
+      then get3(eq, index, key, xs, keyEqual);
     
-    // search more
-    case (_, _ :: xs, _)
-      equation
-        index = get2(key, xs, keyEqual);
-      then
-        index;
-
-  end matchcontinue;
+  end match;
 end get2;
+
+protected function get3
+  "Helper function to get"
+  input Boolean b;
+  input Integer indexIfTrue;
+  input Key key;
+  input HashNode keyIndices;
+  input FuncEq keyEqual;
+  output Integer index;
+algorithm
+  index := match (b,indexIfTrue,key,keyIndices,keyEqual)
+    case (true,_,_,_,_) then indexIfTrue;
+    else get2(key, keyIndices, keyEqual);
+  end match;
+end get3;
 
 public function dumpHashTable
   input HashTable t;
