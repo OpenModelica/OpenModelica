@@ -9359,11 +9359,11 @@ algorithm
  case(DAE.TSUB(e1,i,_))                             then 16 + hashExp(e1)+stringHashDjb2(intString(i));
  case(DAE.SIZE(e1,SOME(e2)))                        then 17 + hashExp(e1)+hashExp(e2);
  case(DAE.SIZE(e1,NONE()))                          then 18 + hashExp(e1);
- case(DAE.CODE(_,_))                                then 19; // TODO: implement hashing of CODE AST
- case(DAE.EMPTY(scope=_))                           then 20; // TODO: implement hashing of EMTPY (needed ?)
+ // case(DAE.CODE(_,_))                                then 19; // TODO: implement hashing of CODE AST
+ // case(DAE.EMPTY(scope=_))                           then 20; // TODO: implement hashing of EMTPY (needed ?)
  case(DAE.REDUCTION(info,e1,iters))                 then 21 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
  // TODO: hashing of all MetaModelica extensions
- case(_) then 22;
+ case(_) then stringHashDjb2(ExpressionDump.printExpStr(e));
  end matchcontinue;
 end hashExp;
 

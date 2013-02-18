@@ -6518,7 +6518,58 @@ public function addComponentsToEnv
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
+  (outCache,outEnv,outIH) := match (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
+    local
+      list<Env.Frame> env;
+      tuple<SCode.Element, DAE.Mod> el;
+      list<tuple<SCode.Element, DAE.Mod>> xs;
+      InstanceHierarchy ih;
+      Env.Cache cache;
+
+    /* no more components. */
+    case (cache,env,ih,_,_,_,{},_,_,_,_) then (cache,env,ih);
+    case (cache,env,ih,_,_,_,el::xs,_,_,_,_)
+      equation
+        (cache,env,ih) = addComponentToEnv (cache,env,ih,inMod2,inPrefix3,inState5,el,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10);
+        (cache,env,ih) = addComponentsToEnv(cache,env,ih,inMod2,inPrefix3,inState5,xs,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10);
+      then (cache,env,ih);
+  end match;
+end addComponentsToEnv;
+
+protected function addComponentToEnv
+"function: addComponentToEnv
+  author: PA
+  Since Modelica has removed the declare before use limitation, all
+  components are intially added untyped to the environment, i.e. the
+  SCode.Element is added. This is performed by this function. Later,
+  during the second pass of the instantiation of components, the components
+  are updated  in the environment. This is done by the function
+  update_components_in_env. This function is also responsible for
+  changing parameters into structural  parameters if they are affecting
+  the number of variables or equations. This is needed because Modelica has
+  no language construct for structural parameters, i.e. they must be
+  detected by the compiler.
+
+  Structural parameters are identified by investigating array dimension
+  sizes of components and by investigating if-equations. If an if-equation
+  has a boolean expression controlled by parameter(s), these are structural
+  parameters."
+  input Env.Cache inCache;
+  input Env.Env inEnv1;
+  input InstanceHierarchy inIH;
+  input DAE.Mod inMod2;
+  input Prefix.Prefix inPrefix3;
+  input ClassInf.State inState5;
+  input tuple<SCode.Element, DAE.Mod> inTplSCodeElementMod6;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst7;
+  input list<SCode.Equation> inSCodeEquationLst8;
+  input InstDims inInstDims9;
+  input Boolean inBoolean10;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+algorithm
+  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementMod6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
       list<Env.Frame> env,env_1,env_2;
       DAE.Mod mod,cmod;
@@ -6545,14 +6596,10 @@ algorithm
       DAE.Mod smod,compModLocal;
       SCode.Prefixes pf;
       
-
-    /* no more components. */
-    case (cache,env,ih,_,_,_,{},_,_,_,_) then (cache,env,ih);
-
     // adrpo: moved this check from instElement here as we should check this as early as possible!
     // Check if component's name is the same as its type's name
     case (cache,env,ih,mod,pre,cistate,
-          ((comp as SCode.COMPONENT(name = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
+          ((comp as SCode.COMPONENT(name = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod), _, _, instdims,impl)
       equation
         // name is equal with the last ident from type path.
         // this is only a problem if the environment in which the component 
@@ -6581,7 +6628,7 @@ algorithm
                                    modifications = m,
                                    comment = comment,
                                    condition = aExp,
-                                   info = aInfo)),cmod) :: xs),
+                                   info = aInfo)),cmod)),
         allcomps,eqns,instdims,impl)
       equation
         compModLocal = Mod.lookupModificationP(mod, tpp);
@@ -6595,9 +6642,8 @@ algorithm
         // Debug.traceln(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& " cmL: " +& Mod.printModStr(compModLocal) +& " smod: " +& Mod.printModStr(smod));
         // print(" \t comp: " +& n +& " " +& "selem: " +& SCodeDump.printElementStr(selem) +& " smod: " +& Mod.printModStr(smod) +& "\n");
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,smod)}, instdims, impl);
-        (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        (cache,env_2,ih);
+        (cache,env_1,ih);
 
     /* A TCOMPLEX component */
     case (cache,env,ih,mod,pre,cistate,
@@ -6610,45 +6656,35 @@ algorithm
                                    modifications = m,
                                    comment = comment,
                                    condition = aExp,
-                                   info = aInfo)),cmod as DAE.NOMOD()) :: xs),
+                                   info = aInfo)),cmod as DAE.NOMOD())),
         allcomps,eqns,instdims,impl)
       equation
         m = traverseModAddFinal(m, finalPrefix);
         comp = SCode.COMPONENT(n,pf,attr,t,m,comment,aExp,aInfo);
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(comp,cmod)}, instdims, impl);
-        (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        (cache,env_2,ih);
+        (cache,env_1,ih);
 
     /* Import statement */
-    case (cache,env,ih,mod,pre,cistate,((SCode.IMPORT(imp = _),_) :: xs),allcomps,eqns,instdims,impl)
-      equation
-        (cache,env_2,ih) = addComponentsToEnv(cache, env, ih, mod, pre, cistate, xs, allcomps, eqns, instdims, impl);
-      then
-        (cache,env_2,ih);
+    case (cache,env,ih,mod,pre,cistate,(SCode.IMPORT(imp = _),_),allcomps,eqns,instdims,impl)
+      then (cache,env,ih);
 
     /* Extends elements */
-    case (cache,env,ih,mod,pre,cistate,((SCode.EXTENDS(info=_),_) :: xs),allcomps,eqns,instdims,impl)
-      equation
-        (cache,env_2,ih) = addComponentsToEnv(cache,env, ih, mod, pre, cistate, xs, allcomps, eqns, instdims, impl);
-      then
-        (cache,env_2,ih);
+    case (cache,env,ih,mod,pre,cistate,(SCode.EXTENDS(info=_),_),allcomps,eqns,instdims,impl)
+      then (cache,env,ih);
         
     /* Class definitions */
-    case (cache,env,ih,mod,pre,cistate,((SCode.CLASS(name = _),_) :: xs),allcomps,eqns,instdims,impl)
-      equation
-        (cache,env_2,ih) = addComponentsToEnv(cache, env, ih, mod, pre, cistate, xs, allcomps, eqns, instdims, impl);
-      then
-        (cache,env_2,ih);
+    case (cache,env,ih,mod,pre,cistate,(SCode.CLASS(name = _),_),allcomps,eqns,instdims,impl)
+      then (cache,env,ih);
 
-    case (_,env,_,_,_,_,comps,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.addComponentsToEnv failed");
+        Debug.traceln("- Inst.addComponentToEnv failed");
       then
         fail();
   end matchcontinue;
-end addComponentsToEnv;
+end addComponentToEnv;
 
 protected function addComponentsToEnv2
 "function addComponentsToEnv2
