@@ -168,7 +168,7 @@ items:={Item(
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
              toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
-             for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
+             for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=false)),
         "</table>"
         ),
       toHtml(OpenModelica.Scripting.getClassComment(c)),
