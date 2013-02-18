@@ -4760,7 +4760,9 @@ algorithm
         usedvar = arrayCreate(adjSizeT, 0);
         usedvar = Util.arraySet(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
         
+        //Debug.execStat("generateSparsePattern -> start ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
+        //Debug.execStat("generateSparsePattern -> end ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // debug dump
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePatternArray,eqnSparse);
         Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
@@ -4770,10 +4772,13 @@ algorithm
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
         
+        //Debug.execStat("generateSparsePattern -> postProcess ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        
         // transpose the column-based pattern to row-based pattern
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
+        Debug.execStat("generateSparsePattern -> postProcess2 " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         
         // dump statistics
         nonZeroElements = List.lengthListElements(sparsepattern);
@@ -4781,6 +4786,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
+        //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
         translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
@@ -4804,7 +4810,9 @@ algorithm
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
+        //Debug.execStat("generateSparsePattern -> coloring start " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
+        //Debug.execStat("generateSparsePattern -> coloring end " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // get max color used
         maxColor = Util.arrayFold(colored1, intMax, 0);
         
@@ -5050,10 +5058,7 @@ algorithm
         outLocalList = listAppend({inInputVar},inLocalList);
         _ = arrayUpdate(inMark, inInputVar, inmarkValue); 
       then outLocalList;
-    case (_,_,_,_)
-      equation
-        arrayElement = arrayGet(inMark, inInputVar);
-        true  = intEq(inmarkValue, arrayElement);
+   else
       then inLocalList;
   end matchcontinue;
 end getSparsePatternHelp2;
@@ -5103,7 +5108,7 @@ algorithm
     case (oneElem::rest,_, _)
       equation
         tmplist = arrayGet(inAccumList,oneElem);
-        tmplist = listAppend(tmplist,{inValue});
+        tmplist = listAppend({inValue},tmplist);
         accumList = arrayUpdate(inAccumList, oneElem, tmplist);
        then transposeSparsePattern2(rest, accumList, inValue); 
   end match;
