@@ -2124,7 +2124,7 @@ algorithm
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
@@ -2142,7 +2142,7 @@ algorithm
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops,{});
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
@@ -2262,7 +2262,7 @@ algorithm
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
+        (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops, {});
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
         
         dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
@@ -2330,7 +2330,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
+        (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops, {});
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
         
         dae = DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
@@ -2413,10 +2413,11 @@ public function instStatements
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  input list<list<DAE.Statement>> acc;
   output Env.Cache outCache;
   output list<DAE.Statement> outAlgorithmStatementLst;
 algorithm 
-  (outCache,outAlgorithmStatementLst) := match (inCache,inEnv,inIH,inPre,ci_state,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops)
+  (outCache,outAlgorithmStatementLst) := match (inCache,inEnv,inIH,inPre,ci_state,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops,acc)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -2428,16 +2429,17 @@ algorithm
       InstanceHierarchy ih;
 
     // empty case 
-    case (cache,_,_,_,_,{},_,_,_,_) then (cache,{});
+    case (cache,_,_,_,_,{},_,_,_,_,_)
+      equation
+        stmts = List.flatten(listReverse(acc));
+      then (cache,stmts);
 
     // general case       
-    case (cache,env,ih,pre,_,(x :: xs),_,_,impl,_)
+    case (cache,env,ih,pre,_,(x :: xs),_,_,impl,_,_)
       equation 
-        (cache,stmts1) = instStatement(cache, env, ih, pre, ci_state, x, source, initial_, impl, unrollForLoops);
-        (cache,stmts2) = instStatements(cache, env, ih, pre, ci_state, xs, source, initial_, impl, unrollForLoops);
-        stmts = listAppend(stmts1, stmts2);
-      then
-        (cache,stmts);
+        (cache,stmts) = instStatement(cache, env, ih, pre, ci_state, x, source, initial_, impl, unrollForLoops);
+        (cache,stmts) = instStatements(cache, env, ih, pre, ci_state, xs, source, initial_, impl, unrollForLoops, stmts::acc);
+      then (cache,stmts);
   end match;
 end instStatements;
 
@@ -2520,9 +2522,9 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,tb_1)= instStatements(cache,env,ih,pre, ci_state, tb, source, initial_,impl,unrollForLoops);
+        (cache,tb_1)= instStatements(cache,env,ih,pre, ci_state, tb, source, initial_,impl,unrollForLoops,{});
         (cache,eib_1) = instElseIfs(cache,env,ih,pre, ci_state, eib, source, initial_,impl,unrollForLoops,info);
-        (cache,fb_1) = instStatements(cache,env,ih,pre, ci_state, fb, source, initial_,impl,unrollForLoops);
+        (cache,fb_1) = instStatements(cache,env,ih,pre, ci_state, fb, source, initial_,impl,unrollForLoops,{});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmts = Algorithm.makeIf(e_2, prop, tb_1, eib_1, fb_1, source);
       then
@@ -2548,7 +2550,7 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops,{});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhile(e_2, prop, sl_1, source);
       then
@@ -2562,7 +2564,7 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhenA(e_2, prop, sl_1, NONE(), source);
       then
@@ -2577,7 +2579,7 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhenA(e_2, prop, sl_1, SOME(stmt1), source);
       then
@@ -2689,7 +2691,7 @@ algorithm
     case (cache,env,ih,pre,_,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops,{});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_FAILURE(sl_1,source);
       then
@@ -2699,7 +2701,7 @@ algorithm
     case (cache,env,ih,pre,_,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_TRY(sl_1,source);
       then
@@ -2709,7 +2711,7 @@ algorithm
     case (cache,env,ih,pre,_,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_CATCH(sl_1,source);
       then
@@ -2895,7 +2897,7 @@ algorithm
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
-        (cache,stmts1) = instStatements(cache, env_2, ih, pre, ci_state, algs, source, initial_, impl, unrollForLoops);
+        (cache,stmts1) = instStatements(cache, env_2, ih, pre, ci_state, algs, source, initial_, impl, unrollForLoops, {});
         (cache,stmts2) = loopOverRange(cache, env, ih, pre, ci_state, i, Values.ARRAY(rest,dims), algs, source, initial_, impl, unrollForLoops);
         stmts = listAppend(stmts1, stmts2);
       then
@@ -3041,7 +3043,7 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,stmts) = instStatements(cache, env, ih, pre, ci_state, l, source, initial_, impl, unrollForLoops);
+        (cache,stmts) = instStatements(cache, env, ih, pre, ci_state, l, source, initial_, impl, unrollForLoops, {});
         (cache,tail_1) = instElseIfs(cache,env,ih,pre,ci_state,tail, source, initial_, impl, unrollForLoops,info);
       then
         (cache,(e_2,prop,stmts) :: tail_1);
@@ -5147,7 +5149,7 @@ algorithm
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
         env_1 = addParForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
         
         // this is where we check the parfor loop for data parallel specific
         // situations. Start with empty list and collect all variables cref'ed 
@@ -5180,7 +5182,7 @@ algorithm
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addParForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops,{});
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
