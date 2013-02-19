@@ -9403,21 +9403,21 @@ protected function generateExtFunctionIncludeDirectoryFlags
 algorithm
   outDirs := matchcontinue (program, path, inMod, includes)
     local
-      String str;
+      String str,istr;
     case (_, _, _, {}) then {};
     case (_, _, _, _)
       equation
         SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
           Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
-        str = "\"-I"+&str+&"\"";
-      then {str};
+        istr = "\"-I"+&str+&"\"";
+      then Util.if_(System.directoryExists(str), {istr}, {});
     case (_, _, _, _)
       equation
-        str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Include";
+        str = "modelica://" +& Absyn.pathFirstIdent(path) +& "/Resources/Include";
         str = CevalScript.getFullPathFromUri(program, str, false);
-        str = "\"-I"+&str+&"\"";
-      then {str};
+        istr = "\"-I"+&str+&"\"";
+      then Util.if_(System.directoryExists(str), {istr}, {});
         // Read Absyn.Info instead?
     else {};
   end matchcontinue;
@@ -9446,18 +9446,22 @@ algorithm
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
         str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
         str3 ="\"-L" +& str +& "\"";
-        libs = str1::str2::str3::libs;
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
+        libs = List.consOnTrue(System.directoryExists(str), str3, libs);
       then libs;
     case (_, _, _, libs)
       equation
-        str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Library";
+        str = "modelica://" +& Absyn.pathFirstIdent(path) +& "/Resources/Library";
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
         str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
         str3 ="\"-L" +& str +& "\"";
-        libs = str1::str2::str3::libs;
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
+        libs = List.consOnTrue(System.directoryExists(str), str3, libs);
       then libs;
     else inLibs;
   end matchcontinue;
