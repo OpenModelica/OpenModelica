@@ -4740,7 +4740,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
       let var_name = if outStruct then 
         '<%extVarName(var.name)%>' else 
         '<%contextCref(var.name, contextFunction)%>' 
-      let defaultValue1 = '<%var_name%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let defaultValue1 = '<%varName%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
       let &varInits += defaultValue1
       " "
     else
@@ -5240,7 +5240,7 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
           ""
         else
           let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
-          if not ea.hasBinding then 'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.c<%oi%>, &<%extVarName(c)%>);'
+          'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.c<%oi%>, &<%extVarName(c)%>);'
   case SIMEXTARG(type_ = ty, cref = c) then
     let &varDecls += '<%extTypeF77(ty,false)%> <%extVarName(c)%>;<%\n%>'
     ""
@@ -5347,7 +5347,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
   match extArg
   case SIMEXTARG(cref=c, isArray=true, type_=t) then
     // Arrays are converted to fortran format that are stored in _ext-variables.
-    'data_of_<%expTypeShort(t)%>_array(&(<%extVarName(c)%>))' 
+    'data_of_<%expTypeShort(t)%>_f77_array(&(<%extVarName(c)%>))' 
   case SIMEXTARG(cref=c, outputIndex=oi, type_=T_INTEGER(__)) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"

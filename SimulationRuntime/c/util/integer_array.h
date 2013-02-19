@@ -286,4 +286,8 @@ static inline int* data_of_integer_array(const integer_array_t *a)
   }
   return res;
 }
+
+static inline int* data_of_integer_f77_array(const integer_array_t *a)
+{ return (int *) a->data; }
+
 #endif

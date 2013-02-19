@@ -1618,6 +1618,36 @@ _index_t* integer_array_make_index_array(const integer_array_t *arr)
     return arr->data;
 }
 
+/* Converts the elements of an integer_array to int and packs them. I.e. if the
+ * array element type is 64 bits and int is 32 bits then the data will be packed
+ * in the first half of the array. */
+void pack_integer_array(integer_array_t *a)
+{
+  size_t i, n;
+  int *int_data;
+
+  int_data = (int*)a->data;
+  n = integer_array_nr_of_elements(a);
+
+  for(i = 0; i < n; ++i) {
+    int_data[i] = (int)integer_get(a, i);
+  }
+}
+
+/* Unpacks an integer_array that was packed with pack_integer_array */
+void unpack_integer_array(integer_array_t *a)
+{
+  size_t n;
+  long i;
+  int *int_data;
+
+  int_data = (int*)a->data;
+  n = integer_array_nr_of_elements(a);
+
+  for(i = n - 1; i >= 0; --i) {
+    integer_set(a, i, int_data[i]);
+  } 
+}
 
 void convert_alloc_integer_array_to_f77(const integer_array_t * a,
                                         integer_array_t* dest)
@@ -1626,6 +1656,13 @@ void convert_alloc_integer_array_to_f77(const integer_array_t * a,
     clone_reverse_integer_array_spec(a,dest);
     alloc_integer_array_data(dest);
     transpose_integer_array (a,dest);
+
+    /* Assume that external fortran functions use int, and pack the array if
+     * needed. */
+    if(sizeof(int) != sizeof(modelica_integer)) {
+      pack_integer_array(dest);
+    }
+
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
     }
@@ -1643,6 +1680,11 @@ void convert_alloc_integer_array_from_f77(const integer_array_t * a,
         a->dim_size[i] = tmp;
     }
     transpose_integer_array (a,dest);
+
+    /* Unpack the array if needed */
+    if(sizeof(int) != sizeof(modelica_integer)) {
+      unpack_integer_array(dest);
+    }
 }
 
 void sizes_of_dimensions_base_array(const base_array_t *a, integer_array_t *dest)

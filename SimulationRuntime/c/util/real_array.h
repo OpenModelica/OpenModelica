@@ -203,6 +203,8 @@ static inline int size_of_dimension_real_array(real_array_t a, int i)
 { return size_of_dimension_base_array(a, i); }
 static inline modelica_real *data_of_real_array(const real_array_t *a)
 { return (modelica_real *) a->data; }
+static inline modelica_real *data_of_real_f77_array(const real_array_t *a)
+{ return (modelica_real *) a->data; }
 
 extern void size_real_array(const real_array_t * a,integer_array_t* dest);
 extern modelica_real scalar_real_array(const real_array_t * a);
