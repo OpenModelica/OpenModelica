@@ -1802,7 +1802,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer status;
         external "C" status = fmi1TerminateSlave_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1TerminateSlave;
-    end fmi1Functions;
+    end fmiFunctions;
     
     package fmiStatus
       constant Integer fmiOK=0;
