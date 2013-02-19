@@ -6284,7 +6284,37 @@ protected function addClassdefsToEnv2
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
+  (outEnv,outIH) := match (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
+    local
+      list<Env.Frame> env;
+      SCode.Element elt;
+      list<SCode.Element> xs;
+      Boolean impl;
+      InstanceHierarchy ih;
+      Prefix.Prefix pre;
+    case (env,ih,pre,{},_,_) then (env,ih);
+    case (env,ih,pre,elt::xs,impl,_)
+      equation
+        (env,ih) = addClassdefToEnv2(env,ih,inPrefix,elt,inBoolean,redeclareMod);
+        (env,ih) = addClassdefsToEnv2(env,ih,inPrefix,xs,inBoolean,redeclareMod);
+      then (env,ih);
+  end match;
+end addClassdefsToEnv2;
+
+protected function addClassdefToEnv2
+"function: addClassdefToEnv2
+  author: PA
+  Helper relation to addClassdefsToEnv"
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input SCode.Element inSCodeElement;
+  input Boolean inBoolean;
+  input Option<DAE.Mod> redeclareMod;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+algorithm
+  (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElement,inBoolean,redeclareMod)
     local
       list<Env.Frame> env,env_1,env_2;
       SCode.Element cl2, enumclass, imp;
@@ -6299,86 +6329,77 @@ algorithm
       Option<SCode.Comment> cmt;
       SCode.Replaceable rpp;
 
-    case (env,ih,pre,{},_,_) then (env,ih);
-
     // we have a redeclaration of an enumeration.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,SOME(_))
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info))),impl,SOME(_))
       equation
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
         ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
-        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
-        (env_2,ih);
+        (env_1,ih);
     
     // we do have a redeclaration of class.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s)) :: xs),impl,SOME(_))
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s))),impl,SOME(_))
       equation
         // extend first
         env_1 = Env.extendFrameC(env, sel1);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
         ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
-        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
-        (env_2,ih);
+        (env_1,ih);
         
     // we do have a replaceable class?.
-    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, prefixes = SCode.PREFIXES(replaceablePrefix = rpp))) :: xs,impl,_)
+    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, prefixes = SCode.PREFIXES(replaceablePrefix = rpp))),impl,_)
       equation
         // we have a replaceable class
         true = SCode.replaceableBool(rpp);
         // search first in env if we already have a redeclare definition for it!!
         (_, SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _) = Lookup.lookupClass(Env.emptyCache(), env, Absyn.IDENT(s), false);
         // do nothing, just move along! 
-        (env,ih) = addClassdefsToEnv2(env, ih, pre, xs, impl, redeclareMod);
       then
         (env,ih);
     
     // adrpo: see if is an enumeration! then extend frame with in class.
-    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs,impl,_)
+    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)),impl,_)
       equation
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
         ih = InnerOuter.addClass(enumclass, pre, Env.getEnvNameStr(env_1), ih);
-        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
-        (env_2,ih);
+        (env_1,ih);
 
     // otherwise, extend frame with in class.
-    case (env,ih,pre,(sel1 as SCode.CLASS(classDef = _)) :: xs,impl,_)
+    case (env,ih,pre,(sel1 as SCode.CLASS(classDef = _)),impl,_)
       equation
         // Debug.traceln("Extend frame " +& Env.printEnvPathStr(env) +& " with " +& SCode.className(cl));
         env_1 = Env.extendFrameC(env, sel1);
         ih = InnerOuter.addClass(sel1, pre, Env.getEnvNameStr(env_1), ih);
-        (env_2, ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
-        (env_2,ih);
+        (env_1,ih);
 
     // adrpo: we should have no imports after SCodeFlatten!
     // unfortunately we do because of the way we evaluate
     // programs for interactive evaluation
-    case (env,ih,pre,(imp as SCode.IMPORT(imp = _)) :: xs,impl,_)
+    case (env,ih,pre,(imp as SCode.IMPORT(imp = _)),impl,_)
       equation
         env_1 = Env.extendFrameI(env, imp);
-        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
-        (env_2,ih);
+        (env_1,ih);
     
-    case(env,ih,pre,((elt as SCode.DEFINEUNIT(name=_))::xs), impl,_)
+    case(env,ih,pre,((elt as SCode.DEFINEUNIT(name=_))), impl,_)
       equation
         env_1 = Env.extendFrameDefunit(env,elt);
-        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
-      then (env_2,ih);
+      then (env_1,ih);
 
     case(env,ih,pre,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefsToEnv2 failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
-end addClassdefsToEnv2;
+end addClassdefToEnv2;
 
 protected function isStructuralParameter
 "function: isStructuralParameter
