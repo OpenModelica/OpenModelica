@@ -5465,7 +5465,7 @@ algorithm
   //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
-      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError);
+      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError, {}, {});
   // i2 := numStructuralParameterScopes(cache);
   // assert(i1 == i2) ;)
   // print("pop " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
@@ -5955,7 +5955,7 @@ algorithm
   outName := SCode.elementName(elem);
 end elementName;
 
-public function instElementList2
+protected function instElementList2
 "function: instElementList
   Moved to instClassdef, FIXME: Move commments later
   Instantiate elements one at a time, and concatenate the resulting
@@ -5984,6 +5984,8 @@ public function instElementList2
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Boolean inStopOnError;
+  input list<list<DAE.Element>> daeAcc;
+  input list<list<DAE.Var>> varAcc;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
@@ -5995,8 +5997,89 @@ public function instElementList2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
+  match (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
+      inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError, daeAcc, varAcc)
+    local
+      list<Env.Frame> env,env_1,env_2;
+      Connect.Sets csets;
+      ClassInf.State ci_state;
+      DAE.DAElist dae;
+      list<DAE.Var> tys;
+      DAE.Mod mod;
+      Prefix.Prefix pre;
+      tuple<SCode.Element, DAE.Mod> el;
+      list<tuple<SCode.Element, DAE.Mod>> els;
+      InstDims inst_dims;
+      Boolean impl;
+      Env.Cache cache;
+      Absyn.Info info;
+      CallingScope callscope;
+      ConnectionGraph.ConnectionGraph graph;
+      InstanceHierarchy ih;
+      String elementName;
+      SCode.Element ele;
+      String comp_name;
+      UnitAbsyn.InstStore store;
+      list<DAE.Element> elts;
+
+    case (cache,env,ih,store,_,_,ci_state,{},_,_,_,graph,_,_,_,_)
+      equation
+        elts = List.flatten(listReverse(daeAcc));
+        tys = List.flatten(listReverse(varAcc));
+      then (cache,env,ih,store,DAE.DAE(elts),inSets,ci_state,tys,graph);
+
+    // Don't instantiate conditional components with condition = false.
+    case (cache, env, ih, store, mod, pre, ci_state,  el :: els, inst_dims, impl, callscope, graph, _, _, _, _)
+      equation
+        (cache, env, ih, store, elts, csets, ci_state, tys, graph) = instElement2(cache, env, ih, store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, inSets, inStopOnError);
+        (cache, env, ih, store, dae, csets, ci_state, tys, graph) = instElementList2(cache, env, ih, store, mod, pre, ci_state, els, inst_dims, impl, callscope, graph, csets, inStopOnError, elts::daeAcc, tys::varAcc);
+      then
+        (cache, env, ih, store, dae, csets, ci_state, tys, graph);
+  end match;
+end instElementList2;
+
+public function instElement2
+"function: instElementList
+  Moved to instClassdef, FIXME: Move commments later
+  Instantiate elements one at a time, and concatenate the resulting
+  lists of equations.
+  P.A, Modelica1.4: (allows declare before use)
+  1. 'First names of declared local classes (and components) are found.
+      Redeclarations are performed.'
+      This means that we first handle all CLASS nodes and apply modifiers and
+      declarations to them and also COMPONENT nodes to add the variables to the
+      environment.
+  2.  Second, 'base-classes are looked up, flattened and inserted into the class.'
+      This means that all EXTENDS nodes are handled.
+  3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
+      This handles COMPONENT nodes."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input UnitAbsyn.InstStore inStore;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  input InstDims inInstDims;
+  input Boolean inImplicit;
+  input CallingScope inCallingScope;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Connect.Sets inSets;
+  input Boolean inStopOnError;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;
+  output list<DAE.Element> outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output list<DAE.Var> outTypesVarLst;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
   matchcontinue (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
-      inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
+      inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
     local
       list<Env.Frame> env,env_1,env_2;
       Connect.Sets csets;
@@ -6018,13 +6101,11 @@ algorithm
       SCode.Element ele;
       String comp_name;
       UnitAbsyn.InstStore store;
-
-    case (cache,env,ih,store,_,_,ci_state,{},_,_,_,graph,_,_)
-      then (cache,env,ih,store,DAEUtil.emptyDae,inSets,ci_state,{},graph);
+      list<DAE.Element> elts;
 
     // Don't instantiate conditional components with condition = false.
     case (cache, env, ih, store, mod, pre, ci_state, 
-        (el as (SCode.COMPONENT(name = comp_name, info = info, condition=SOME(_)), _)) :: els, inst_dims,
+        (el as (SCode.COMPONENT(name = comp_name, info = info, condition=SOME(_)), _)), inst_dims,
         impl, callscope, graph, _, _)
       equation
         // check for duplicate modifications
@@ -6039,15 +6120,11 @@ algorithm
         //comp_cr = ComponentReference.makeCrefIdent(comp_name, DAE.T_UNKNOWN_DEFAULT, {});
         //(cache, comp_cr) = PrefixUtil.prefixCref(cache, env, ih, pre, comp_cr);
         csets = ConnectUtil.addDeletedComponent(comp_name, inSets);
-
-        (cache, env, ih, store, dae, csets, ci_state, tys, graph) =
-          instElementList2(cache, env, ih, store, mod, pre, ci_state, els,
-            inst_dims, impl, callscope, graph, csets, inStopOnError);
       then
-        (cache, env, ih, store, dae, csets, ci_state, tys, graph);
+        (cache, env, ih, store, {}, csets, ci_state, {}, graph);
 
     /* most work done in inst_element. */
-    case (cache,env,ih,store,mod,pre,ci_state,el :: els,inst_dims,impl,callscope,graph, csets, _)
+    case (cache,env,ih,store,mod,pre,ci_state,el,inst_dims,impl,callscope,graph, csets, _)
       equation
         ErrorExt.setCheckpoint("instElementList2"); 
         // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
@@ -6068,41 +6145,28 @@ algorithm
               "\n\telement: " +& SCodeDump.shortElementStr(ele) +& 
               "\n");*/
 
-        (cache,env_1,ih,store,dae1,csets,ci_state_1,tys1,graph) =
+        (cache,env_1,ih,store,DAE.DAE(elts),csets,ci_state_1,tys1,graph) =
           instElement(cache,env,ih,store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, csets);
         /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
         Error.updateCurrentComponent("",Absyn.dummyInfo);
-        (cache,env_2,ih,store,dae2,csets,ci_state_2,tys2,graph) =
-          instElementList2(cache,env_1,ih,store, mod, pre, ci_state_1,
-            els, inst_dims, impl, callscope, graph, csets, inStopOnError);
-        tys = listAppend(tys1, tys2);
-        dae = DAEUtil.joinDaes(dae1, dae2);
         ErrorExt.delCheckpoint("instElementList2");
       then
-        (cache,env_2,ih,store,dae,csets,ci_state_2,tys,graph);
+        (cache,env_1,ih,store,elts,csets,ci_state_1,tys1,graph);
 
     // If inStopOnError is false, skip the failed element and continue.
-    case (cache, env, ih, store, mod, pre, ci_state, _ :: els, inst_dims,
+    case (cache, env, ih, store, mod, pre, ci_state, _, inst_dims,
         impl, callscope, graph, _, false)
       equation
         ErrorExt.rollBack("instElementList2"); 
-        (cache, env_2, ih, store, dae2, csets, ci_state_2, tys2, graph) =
-          instElementList2(cache, env, ih, store, mod, pre, ci_state,
-            els, inst_dims, impl, callscope, graph, inSets, inStopOnError);
-      then
-        (cache, env_2, ih, store, dae2, csets, ci_state_2, tys2, graph);
+      then (cache,env,ih,store,{},inSets,ci_state,{},graph);
 
     else
       equation
         ErrorExt.delCheckpoint("instElementList2");
-        //print("instElementList2 failed\n ");
-        // no need for this line as we already printed the crappy element that we couldn't instantiate
-        // Debug.fprintln(Flags.FAILTRACE, "- Inst.instElementList failed");
-      then
-        fail();
+      then fail();
   end matchcontinue;
-end instElementList2;
+end instElement2;
 
 protected function classdefElts2
 "function: classdeElts2
