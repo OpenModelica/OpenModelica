@@ -32,6 +32,10 @@
 
 #ifndef OPENMODELICA_SIMULATION_OPTIONS_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 enum _FLAG
 {
   FLAG_UNKNOWN = 0,
@@ -76,5 +80,9 @@ extern const char *FLAG_NAME[FLAG_MAX];
 extern const char *FLAG_DESC[FLAG_MAX];
 extern const char *FLAG_DETAILED_DESC[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
