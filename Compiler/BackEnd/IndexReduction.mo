@@ -7437,16 +7437,14 @@ protected function getSetVars
 protected
   DAE.ComponentRef set;
   DAE.Type tp;
-  list<Integer> range;
 algorithm
 //  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
   set := ComponentReference.makeCrefIdent("$STATESET" +& intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
-  range := List.intRange(setsize);
-  crset := Debug.bcallret3(intGt(setsize,1),List.map1r,range, ComponentReference.subscriptCrefWithInt, crstates,{crstates});
-  oSetVars := List.map4(crset,generateVar,BackendDAE.STATE(1,NONE()),DAE.T_REAL_DEFAULT,{},NONE());
+  oSetVars := generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
+  crset := List.map(oSetVars,BackendVariable.varCref);
   tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
                                  DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
   realtp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
