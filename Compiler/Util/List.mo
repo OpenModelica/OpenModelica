@@ -7294,6 +7294,60 @@ algorithm
   end match;
 end filter1rOnTrue_tail;
 
+public function filter2OnTrue
+  "Takes a list of values and a filter function over the values and returns a
+   sub list of values for which the matching function returns true."
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementType> outList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  outList := filter2OnTrue_tail(inList, inFilterFunc, inArg1, inArg2, {});
+end filter2OnTrue;
+
+protected function filter2OnTrue_tail
+  "Tail recursive implementation of filter1OnTrue."
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input list<ElementType> inAccumList;
+  output list<ElementType> outList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  outList := match(inList, inFilterFunc, inArg1, inArg2, inAccumList)
+    local
+      ElementType e;
+      list<ElementType> rest, accum;
+      Boolean filter;
+
+    // Reverse at the end.
+    case ({}, _, _, _, _) then listReverse(inAccumList);
+
+    case (e :: rest, _, _, _, _)
+      equation
+        filter = inFilterFunc(e, inArg1, inArg2);
+        accum = consOnTrue(filter, e, inAccumList);
+      then
+        filter2OnTrue_tail(rest, inFilterFunc, inArg1, inArg2, accum);
+
+  end match;
+end filter2OnTrue_tail;
+
 public function removeOnTrue
   "Goes through a list and removes all elements which are equal to the given
    value, using the given comparison function."

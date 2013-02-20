@@ -2148,33 +2148,6 @@ algorithm
   end matchcontinue;
 end systemCallWithErrorMsg;
 
-/* adrpo - 2007-02-19 - not used anymore
-public function charListCompare "function: charListCompare
-  Compares two char lists up to the nth
-  position and returns true if they are equal."
-  input list<String> inStringLst1;
-  input list<String> inStringLst2;
-  input Integer inInteger3;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inStringLst1,inStringLst2,inInteger3)
-    local
-      String a,b;
-      Integer n1,n;
-      list<String> l1,l2;
-    case ((a :: _),(b :: _),1) then stringEq(a, b);
-    case ((a :: l1),(b :: l2),n)
-      equation
-        n1 = n - 1;
-        true = stringEq(a, b);
-        true = charListCompare(l1, l2, n1);
-      then
-        true;
-    case (_,_,_) then false;
-  end matchcontinue;
-end charListCompare;
-*/
 public function strncmp "function: strncmp
   Compare two strings up to the nth character
   Returns true if they are equal."
@@ -2184,27 +2157,16 @@ public function strncmp "function: strncmp
   output Boolean outBoolean;
 algorithm
   outBoolean := (0==System.strncmp(inString1,inString2,inInteger3));
-  /*
-  matchcontinue (inString1,inString2,inInteger3)
-    local
-      list<String> clst1,clst2;
-      Integer s1len,s2len,n;
-      String s1,s2;
-    case (s1,s2,n)
-      equation
-        clst1 = stringListStringChar(s1);
-        clst2 = stringListStringChar(s2);
-        s1len = stringLength(s1);
-        s2len = stringLength(s2);
-        (s1len >= n) = true;
-        (s2len >= n) = true;
-        true = charListCompare(clst1, clst2, n);
-      then
-        true;
-    case (_,_,_) then false;
-  end matchcontinue;
-  */
 end strncmp;
+
+public function notStrncmp
+  input String inString1;
+  input String inString2;
+  input Integer inInteger3;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := not strncmp(inString1,inString2,inInteger3);
+end notStrncmp;
 
 public function tickStr "function: tickStr
   author: PA

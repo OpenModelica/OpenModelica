@@ -548,6 +548,17 @@ algorithm
   end match;
 end getVarType;
 
+public function varIsVariable
+  input Var v;
+  output Boolean b;
+algorithm
+  b := match v
+    case DAE.TYPES_VAR(attributes=DAE.ATTR(variability=SCode.VAR())) then true;
+    case DAE.TYPES_VAR(attributes=DAE.ATTR(variability=SCode.DISCRETE())) then true;
+    else false;
+  end match;
+end varIsVariable;
+
 public function getVarName "Return the name of a Var"
   input Var v;
   output String name;

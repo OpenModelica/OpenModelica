@@ -18308,11 +18308,12 @@ algorithm
     local
       list<DAE.Element> rest;
       list<DAE.Statement> stmts;
-      list<String> unbound,outputs;
+      list<String> unbound,outputs,names,outNames;
       String name;
       DAE.Type ty;
       DAE.InstDims dims;
       DAE.VarDirection dir;
+      list<DAE.Var> vars;
     case ({},NONE(),unbound,outputs,_)
       // This would run also for partial function inst... So let's skip it
       // equation
@@ -18326,6 +18327,19 @@ algorithm
     case (DAE.VAR(direction=DAE.INPUT())::rest,_,unbound,_,_)
       equation
         unbound = checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
+      then unbound;
+    case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=vars),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
+      equation
+        vars = List.filterOnTrue(vars, Types.varIsVariable);
+        // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
+        names = List.map1r(List.map(vars, Types.varName), stringAppend, name +& ".");
+        // print("for record: " +& stringDelimitList(names,",") +& "\n");
+        // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
+        outNames = Util.if_(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()), names, {});
+        names = Util.if_(List.fold(dims,foldIsKnownSubscriptDimensionNonZero,true), names, {});
+        unbound = listAppend(names,unbound);
+        outputs = listAppend(outNames,inOutputs);
+        unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
     case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
       equation
@@ -18539,7 +18553,19 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp;
       DAE.Pattern pattern;
+      String id1,id2;
     case (DAE.CREF(componentRef=DAE.WILD()),_) then inUnbound;
+      // Assignment to part of a record
+    case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id1,componentRef=DAE.CREF_IDENT(ident=id2))),unbound)
+      equation
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id1 +& "." +& id2);
+      then unbound;
+      // Assignment to the whole record - filter out everything it is prefix of
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),unbound)
+      equation
+        id1 = id1 +& ".";
+        unbound = List.filter2OnTrue(unbound,Util.notStrncmp,id1,stringLength(id1));
+      then unbound;
     case (DAE.CREF(componentRef=cr),unbound)
       equation
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReference.crefFirstIdent(cr));
