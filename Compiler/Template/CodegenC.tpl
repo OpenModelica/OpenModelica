@@ -6904,8 +6904,11 @@ template daeExpRelation(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case rel as RELATION(__) then
-  let simRel = daeExpRelationSim(rel, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let &varDecls2 = buffer ""
+  let simRel = daeExpRelationSim(rel, context, &preExp /*BUFC*/, &varDecls2 /*BUFD*/)
   if simRel then
+    /* Don't add the allocated temp-var unless it is used */
+    let &varDecls += varDecls2
     simRel
   else
     let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
