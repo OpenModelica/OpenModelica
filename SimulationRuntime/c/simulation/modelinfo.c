@@ -61,8 +61,8 @@ static void indent(FILE *fout, int n) {
 }
 
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
-  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw 2\n";
-  const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 2\n";
+  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw %d\n";
+  const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw %d\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
   double ygraphmin = 1e-30, ygraphmax = 0.0;
@@ -79,20 +79,24 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     ymax = nmax==0 ?  0.01 : nmax*1.05;
     ygraphmax = rt_max_accumulated(SIM_TIMER_FIRST_FUNCTION + i) * 1.01 + 1e-30;
   }
-  /* PNG */
-  fputs("set terminal png size 32,32\n", plt);
-  fprintf(plt, "set output \"%s_prof.%s%d.thumb.png\"\n", prefix, idPrefix, id);
+  /* SVG thumbnail */
+  fputs("set terminal svg\n", plt);
+  fprintf(plt, "unset xtics\n");
+  fprintf(plt, "unset ytics\n");
+  fprintf(plt, "unset border\n");
+  fprintf(plt, "set output \"%s_prof.%s%d.thumb.svg\"\n", prefix, idPrefix, id);
   fprintf(plt, "set title\n");
   fprintf(plt, "set xlabel\n");
   fprintf(plt, "set ylabel\n");
   fprintf(plt, "set log y\n");
+
   if (i>=0) {
     fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
   } else {
     fprintf(plt, "set yrange [*:*]\n");
   }
   /* time */
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i, 4);
   fprintf(plt, "set nolog xy\n");
   /* count */
   if(i >= 0) {
@@ -102,12 +106,15 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     } else {
       fprintf(plt, "set yrange [*:*]\n");
     }
-    fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.png\"\n", prefix, idPrefix, id);
-    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
+    fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.svg\"\n", prefix, idPrefix, id);
+    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1, 4);
     fprintf(plt, "set ytics\n");
   }
 
   /* SVG */
+  fprintf(plt, "set xtics\n");
+  fprintf(plt, "set ytics\n");
+  fprintf(plt, "set border\n");
   fprintf(plt, "set terminal %s\n", plotFormat);
   fprintf(plt, "set title \"%s\"\n", title);
   fprintf(plt, "set xlabel \"Global step at time\"\n");
@@ -119,7 +126,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   } else {
     fprintf(plt, "set yrange [*:*]\n");
   }
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i, 2);
   /* count */
   fprintf(plt, "set nolog xy\n");
   if(i >= 0) {
@@ -131,7 +138,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
     fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
-    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
+    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1, 2);
   }
 }
 
