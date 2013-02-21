@@ -10,7 +10,7 @@ ADD_SUBDIRECTORY(solver)
 INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/lib")
 
 # Quellen und Header
-SET(simulation_sources  options.cpp simulation_input_xml.cpp simulation_runtime.cpp
+SET(simulation_sources  options.c simulation_input_xml.cpp simulation_runtime.cpp
 					    ../linearization/linearize.cpp
 						modelinfo.c simulation_info_xml.c)
 
