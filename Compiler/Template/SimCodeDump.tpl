@@ -140,17 +140,16 @@ template dumpEqs(list<SimEqSystem> eqs)
       </equation><%\n%>
       >>
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
-    case e as SES_ALGORITHM(__)
-      then (e.statements |> stmt =>
+    case e as SES_ALGORITHM(statements=first::_)
+      then
       <<
       <equation index="<%eqIndex(eq)%>">
         <statement>
-          <%escapeModelicaStringToXmlString(ppStmtStr(stmt,2))%>
+          <%e.statements |> stmt => escapeModelicaStringToXmlString(ppStmtStr(stmt,2)) %>
         </statement>
-        <%dumpElementSource(getStatementSource(stmt))%>
+        <%dumpElementSource(getStatementSource(first))%>
       </equation><%\n%>
       >>
-      )
     case e as SES_LINEAR(__) then
       <<
       <equation index="<%eqIndex(eq)%>">
