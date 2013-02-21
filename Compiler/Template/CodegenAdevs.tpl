@@ -344,6 +344,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       delays(NULL),
       eventFuncs(NULL)
    {
+       push_memory_states(1); // Prep the OMC C Runtime memory pool
        timeValue = 0.0;
        if (numRelations() > 0)
            zc = new int[numRelations()];
@@ -388,6 +389,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
                if (eventFuncs[i] != NULL) delete eventFuncs[i];
            delete [] eventFuncs;
         }
+        pop_memory_states(NULL); // Delete the OMC memory pool
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
@@ -942,6 +944,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q, bool doReinit)
   {
+      // Clear the memory pool to make room for new modelica
+      // array allocations.
+      clear_current_state(); 
       bool reInit = false;
       active_model = this;
       if (atEvent || doReinit) clear_event_flags();
