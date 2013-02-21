@@ -32,7 +32,7 @@
 
 const char *FLAG_NAME[FLAG_MAX] = {
   "LOG_UNKNOWN",
-  
+  /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
@@ -58,7 +58,7 @@ const char *FLAG_NAME[FLAG_MAX] = {
 
 const char *FLAG_DESC[FLAG_MAX] = {
   "unknown",
-
+  /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag",
@@ -85,6 +85,7 @@ const char *FLAG_DESC[FLAG_MAX] = {
 const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   "unknown",
 
+  /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT or -clock=CPU\n  RT=monotonic real-time clock, CPU=process-based CPU-time",
   /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get deteiled information the specifies the command-line flag\n  e.g. -help=f prints detaild information for command-line flag f",
@@ -111,6 +112,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
 const int FLAG_TYPE[FLAG_MAX] = {
   FLAG_TYPE_UNKNOWN,
   
+  /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,

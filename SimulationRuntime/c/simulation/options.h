@@ -32,14 +32,19 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <string>
 #include "simulation_options.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int checkCommandLineArguments(int argc, char **argv);
 
 int flagSet(const char*, int, char**);                        /* -f */
 int optionSet(const char *option, int argc, char** argv);     /* -f=value */
-const std::string* getOption(const char*, int, char **);      /* -f=value; returns NULL if not found */
-const std::string* getFlagValue(const char *, int , char **); /* -f value; returns NULL if not found */
+const char* getOption(const char*, int, char **);      /* -f=value; returns NULL if not found */
+const char* getFlagValue(const char *, int , char **); /* -f value; returns NULL if not found */
+#ifdef __cplusplus
+}
+#endif
 
 #endif

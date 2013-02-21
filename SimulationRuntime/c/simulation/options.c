@@ -31,32 +31,25 @@
 #include "options.h"
 #include "omc_error.h"
 
-#include <string>
-
-using namespace std;
+#include <string.h>
+#include <stdio.h>
 
 int checkCommandLineArguments(int argc, char **argv)
 {
-  for(int i=1; i<argc; ++i)
+  int i,j;
+  for(i=1; i<argc; ++i)
   {
-    int error = 1;  /* first, suggest an error anyway */
-    string tmpStr = string(argv[i]);
-    
-    for(int j=1; j<FLAG_MAX; ++j)
+    int found=0;
+    for(j=1; j<FLAG_MAX; ++j)
     {
-      if(tmpStr == ("-" + string(FLAG_NAME[j])))
-      {
-        if(FLAG_TYPE[j] == FLAG_TYPE_FLAG)
-          error = 0;
-        else if((FLAG_TYPE[j] == FLAG_TYPE_FLAG_VALUE) && (++i < argc))
-          error = 0;
+      if (((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j],1,argv+i)) ||
+          ((FLAG_TYPE[j] == FLAG_TYPE_FLAG_VALUE) && flagSet(FLAG_NAME[j],1,argv+i) && (++i < argc)) ||
+          ((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j],1,argv+i))) {
+        found=1;
+        break;
       }
-      else if(tmpStr.substr(0,tmpStr.find("=")) == ("-" + string(FLAG_NAME[j])))
-        error = 0;
     }
-    
-    if(error)
-    {
+    if (!found) {
       WARNING1(LOG_STDOUT, "invalid command line option: %s", argv[i]);
       return 1;
     }
@@ -67,9 +60,10 @@ int checkCommandLineArguments(int argc, char **argv)
 
 int flagSet(const char *option, int argc, char** argv)
 {
-  for(int i=0; i<argc;i++)
+  int i;
+  for (i=0; i<argc;i++)
   {
-    if(("-"+string(option)) == string(argv[i]))
+    if (argv[i][0] == '-' && 0==strcmp(option,argv[i]+1))
       return 1;
   }
   return 0;
@@ -77,36 +71,29 @@ int flagSet(const char *option, int argc, char** argv)
 
 int optionSet(const char *option, int argc, char** argv)
 {
-  for(int i=0; i<argc;i++)
-  {
-    string tmpStr=string(argv[i]);
-    if(("-"+string(option)) == (tmpStr.substr(0,tmpStr.find("="))))
-      return 1;
-  }
-  return 0;
+  return getOption(option,argc,argv) != NULL;
 }
 
 /* returns the value of a flag on the form -flagname=value */
-const string* getOption(const char *option, int argc, char **argv)
+const char* getOption(const char *option, int argc, char **argv)
 {
-  for(int i=0; i<argc;i++)
-  {
-    string tmpStr=string(argv[i]);
-    if(("-"+string(option)) == (tmpStr.substr(0,tmpStr.find("="))))
-      return new string(tmpStr.substr(tmpStr.find("=")+1));
+  int optLen = strlen(option), i;
+  for (i=0; i<argc;i++) {
+    if (argv[i][0] == '-' && 0==strncmp(option,argv[i]+1,optLen) && argv[i][optLen+1]=='=') {
+      return argv[i]+optLen+2;
+    }
   }
   return NULL;
 }
 
 /* returns the value of a flag on the form -flagname value */
-const string* getFlagValue(const char *option, int argc, char **argv)
+const char* getFlagValue(const char *option, int argc, char **argv)
 {
-  for(int i=0; i<argc;i++)
+  int i;
+  for(i=0; i<argc-1;i++)
   {
-    string tmpStr=string(argv[i]);
-    if(("-"+string(option)) == string(argv[i]))
-      if(argc > i+1)
-        return new string(argv[i+1]);
+    if (argv[i][0] == '-' && 0==strcmp(option,argv[i]+1))
+      return argv[i+1];
   }
   return NULL;
 }

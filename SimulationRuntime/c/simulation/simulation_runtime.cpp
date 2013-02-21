@@ -155,7 +155,8 @@ void setTermMsg(const char *msg)
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
-  const string *flags = getOption("lv", argc, argv);
+  const char *cflags = getOption("lv", argc, argv);
+  const string *flags = cflags ? new string(cflags) : NULL;
   int i;
   int error;
   
@@ -249,7 +250,8 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
 int getNonlinearSolverMethod(int argc, char**argv)
 {
-  const string *method = getOption("nls", argc, argv);
+  const char *cflags = getOption("nls", argc, argv);
+  const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
     return NS_HYBRID; /* default method */
@@ -273,7 +275,8 @@ int getNonlinearSolverMethod(int argc, char**argv)
 
 int getlinearSolverMethod(int argc, char**argv)
 {
-  const string *method = getOption("ls", argc, argv);
+  const char *cflags = getOption("ls", argc, argv);
+  const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
     return LS_LAPACK; /* default method */
@@ -382,7 +385,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   /* linear model option is set : <-l lintime> */
   int create_linearmodel = optionSet("l", argc, argv);
-  string* lintime = (string*) getOption("l", argc, argv);
+  const char* lintime = getOption("l", argc, argv);
 
   /* activated measure time option with LOG_STATS */
   if((ACTIVE_STREAM(LOG_STATS) || flagSet("cpu", argc, argv)) && !measure_time_flag)
@@ -393,6 +396,23 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize);
+
+  { /* Setup the clock */
+    enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
+    const char *clockName;
+    if (clockName=getOption("clock",argc,argv)) {
+      if (0==strcmp(clockName,"CPU")) {
+        clock = OMC_CLOCK_CPUTIME;
+      } else if (0==strcmp(clockName,"RT")) {
+        clock = OMC_CLOCK_REALTIME;
+      } else {
+        WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT. Defaulting to RT.", clockName);
+      }
+    }
+    if (rt_set_clock(clock)) {
+      WARNING1(LOG_STDOUT, "Chosen clock-type not available for the current platform. Defaulting to real-time.", clockName);
+    }
+  }
 
   if(measure_time_flag)
   {
@@ -410,13 +430,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     if(lintime == NULL)
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
     else
-      data->simulationInfo.stopTime = atof(lintime->c_str());
+      data->simulationInfo.stopTime = atof(lintime);
     INFO1(LOG_STDOUT, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
   }
 
   if(optionSet("s", argc, argv))
   {
-    const string *method = getOption("s", argc, argv);
+    const string *method = new string(getOption("s", argc, argv));
     if(method)
     {
       data->simulationInfo.solverMethod = method->c_str();
@@ -442,25 +462,29 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string outputVariablesAtEnd = "";
   int cpuTime = flagSet("cpu", argc, argv);
 
-  if(optionSet("iim", argc, argv))
-    init_initMethod = *getOption("iim", argc, argv);
-  if(optionSet("iom", argc, argv))
-    init_optiMethod = *getOption("iom", argc, argv);
-  if(optionSet("iif", argc, argv))
-    init_file = *getOption("iif", argc, argv);
+  if(optionSet("iim", argc, argv)) {
+    init_initMethod = getOption("iim", argc, argv);
+  }
+  if(optionSet("iom", argc, argv)) {
+    init_optiMethod = getOption("iom", argc, argv);
+  }
+  if(optionSet("iif", argc, argv)) {
+    init_file = getOption("iif", argc, argv);
+  }
   if(optionSet("iit", argc, argv))
   {
-    init_time_string = *getOption("iit", argc, argv);
+    init_time_string = getOption("iit", argc, argv);
     init_time = atof(init_time_string.c_str());
   }
   if(optionSet("ils", argc, argv))
   {
-    init_lambda_steps_string = *getOption("ils", argc, argv);
+    init_lambda_steps_string = getOption("ils", argc, argv);
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
 
-  if(flagSet("output", argc, argv))
-    outputVariablesAtEnd = *getFlagValue("output", argc, argv);
+  if(flagSet("output", argc, argv)) {
+    outputVariablesAtEnd = getFlagValue("output", argc, argv);
+  }
 
   retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
@@ -644,7 +668,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   
   if(optionSet("help", argc, argv))
   {
-    std::string option = *getOption("help", argc, argv);
+    std::string option = getOption("help", argc, argv);
     
     for(i=1; i<FLAG_MAX; ++i)
     {

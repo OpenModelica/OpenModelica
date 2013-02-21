@@ -40,6 +40,7 @@ enum _FLAG
 {
   FLAG_UNKNOWN = 0,
   
+  FLAG_CLOCK,
   FLAG_CPU,
   FLAG_F,
   FLAG_HELP,

@@ -57,6 +57,12 @@ extern "C" {
 #define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions)
 #define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions,num)
 
+enum omc_rt_clock_t {
+  OMC_CLOCK_REALTIME, /* CLOCK_MONOTONIC_RAW if available; else CLOCK_MONOTONIC */
+  OMC_CLOCK_CPUTIME /* Per-process CPU-time */
+};
+
+int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */
 void rt_init(int numTimer);
 
 void rt_tick(int ix);

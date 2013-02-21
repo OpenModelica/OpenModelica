@@ -124,6 +124,10 @@ double rt_total(int ix) {
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
+int rt_set_clock(omc_rt_clock_t newClock) {
+  return newClock != OMC_CLOCK_REALTIME;
+}
+
 static LARGE_INTEGER performance_frequency;
 
 void rt_tick(int ix) {
@@ -181,6 +185,10 @@ double rtclock_value (LARGE_INTEGER tp) {
 
 #elif defined(__APPLE_CC__)
 
+int rt_set_clock(omc_rt_clock_t newClock) {
+  return newClock != OMC_CLOCK_REALTIME;
+}
+
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
   rt_clock_ncall[ix]++;
@@ -233,14 +241,21 @@ int rtclock_compare(uint64_t t1, uint64_t t2) {
 
 #else
 
+static clockid_t omc_clock = CLOCK_MONOTONIC_RAW;
+
+int rt_set_clock(enum omc_rt_clock_t newClock) {
+  omc_clock = newClock == OMC_CLOCK_REALTIME ? CLOCK_MONOTONIC_RAW : CLOCK_PROCESS_CPUTIME_ID;
+  return 0;
+}
+
 void rt_tick(int ix) {
-  clock_gettime(CLOCK_MONOTONIC, &tick_tp[ix]);
+  clock_gettime(omc_clock, &tick_tp[ix]);
   rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
   struct timespec tock_tp = {0,0};
-  clock_gettime(CLOCK_MONOTONIC, &tock_tp);
+  clock_gettime(omc_clock, &tock_tp);
   return (tock_tp.tv_sec - tick_tp[ix].tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].tv_nsec)*1e-9;
 }
 
@@ -270,7 +285,7 @@ void rt_clear_total(int ix)
 
 void rt_accumulate(int ix) {
   struct timespec tock_tp = {0,0};
-  clock_gettime(CLOCK_MONOTONIC, &tock_tp);
+  clock_gettime(omc_clock, &tock_tp);
   acc_tp[ix].tv_sec  += tock_tp.tv_sec -tick_tp[ix].tv_sec;
   acc_tp[ix].tv_nsec += tock_tp.tv_nsec-tick_tp[ix].tv_nsec;
   if(acc_tp[ix].tv_nsec >= 1e9) {
