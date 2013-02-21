@@ -124,7 +124,7 @@ double rt_total(int ix) {
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-int rt_set_clock(omc_rt_clock_t newClock) {
+int rt_set_clock(enum omc_rt_clock_t newClock) {
   return newClock != OMC_CLOCK_REALTIME;
 }
 
@@ -185,7 +185,7 @@ double rtclock_value (LARGE_INTEGER tp) {
 
 #elif defined(__APPLE_CC__)
 
-int rt_set_clock(omc_rt_clock_t newClock) {
+int rt_set_clock(enum omc_rt_clock_t newClock) {
   return newClock != OMC_CLOCK_REALTIME;
 }
 
