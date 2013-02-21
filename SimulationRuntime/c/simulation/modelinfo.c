@@ -91,12 +91,20 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   } else {
     fprintf(plt, "set yrange [*:*]\n");
   }
+  /* time */
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
+  /* count */
   if(i >= 0) {
-    fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
+    fprintf(plt, "unset ytics\n");
+    if (nmin == nmax) {
+      fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
+    } else {
+      fprintf(plt, "set yrange [*:*]\n");
+    }
     fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.png\"\n", prefix, idPrefix, id);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
+    fprintf(plt, "set ytics\n");
   }
 
   /* SVG */
@@ -112,9 +120,14 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set yrange [*:*]\n");
   }
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
+  /* count */
   fprintf(plt, "set nolog xy\n");
   if(i >= 0) {
-    fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
+    if (nmin == nmax) {
+      fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
+    } else {
+      fprintf(plt, "set yrange [*:*]\n");
+    }
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
     fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
