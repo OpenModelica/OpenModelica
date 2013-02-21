@@ -445,12 +445,12 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   }
 
   // Create a result file
-  string *result_file = (string*) getOption("r", argc, argv);
+  const char *result_file = getOption("r", argc, argv);
   string result_file_cstr;
   if(!result_file)
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
   else
-    result_file_cstr = *result_file;
+    result_file_cstr = result_file;
 
   string init_initMethod = "";
   string init_optiMethod = "";
@@ -511,8 +511,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
-    string* plotFormat = (string*) getOption("measureTimePlotFormat", argc, argv);
-    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg",
+    const char* plotFormat = getOption("measureTimePlotFormat", argc, argv);
+    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
 
@@ -762,15 +762,15 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   interactiveSimulation = flagSet("interactive", argc, argv);
   if(interactiveSimulation && flagSet("port", argc, argv)) {
     cout << "userPort" << endl;
-    string *portvalue = (string*) getOption("port", argc, argv);
-    std::istringstream stream(*portvalue);
+    const char *portvalue = getOption("port", argc, argv);
+    std::istringstream stream(portvalue);
     int userPort;
     stream >> userPort;
     setPortOfControlServer(userPort);
   } else if(!interactiveSimulation && flagSet("port", argc, argv))
   {
-    string *portvalue = (string*) getOption("port", argc, argv);
-    std::istringstream stream(*portvalue);
+    const char *portvalue = getOption("port", argc, argv);
+    std::istringstream stream(portvalue);
     int port;
     stream >> port;
     sim_communication_port_open = 1;
