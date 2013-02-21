@@ -32,17 +32,16 @@
  * author: team Bielefeld
  */
 
-#include "../../../Compiler/runtime/config.h"
-#ifdef WITH_SUNDIALS
-
 #ifndef _RADAU_H_
 #define _RADAU_H_
 
-  #include "simulation_data.h"
-  #include "../simulation/solver/solver_main.h"
+#include "../../../Compiler/runtime/config.h"
+#include "simulation_data.h"
+#include "solver_main.h"
+
+#ifdef WITH_SUNDIALS
   #include <math.h>
   #include "omc_error.h"
-
   #include <kinsol/kinsol.h>
   #include <kinsol/kinsol_dense.h>
   #include <nvector/nvector_serial.h>
@@ -65,42 +64,48 @@
       int mset;
       double fnormtol;
       double scsteptol;
-    }KINSOLRADAU;
+    }KDATAODE;
 
-    typedef struct
-    {
-      /* state */
-      double* x0;
+    typedef struct{
+      double *x0;
+      double *x;
+      int nStates;
+      double dt;
+      double *currentStep;
+      double t0;
+      double *min;
+      double *max;
+      double *derx;
+      double *s;
+      double **c;
+      double *a;
+    }NLPODE;
 
-      int nState;
-      double* dt;
-      double* t0;
+    typedef struct{
+      KDATAODE *kData;
+      NLPODE *nlp;
+      DATA *data;
+      SOLVER_INFO *solverInfo;
+      int N;
+      int flag;
+    }KINODE;
 
-      double* derx;
-      double* min;
-      double* max;
-      double* s;
-
-      double C[3][4];
-      DATA* data;
-      double a[3];
-      KINSOLRADAU* kData;
-
-    }RADAUIIA;
-
-    int allocateRadauIIA(RADAUIIA* rData,DATA* data, SOLVER_INFO* solverInfo);
-    int allocateKinsol(KINSOLRADAU* kData, void* userData);
-
-    int freeRadauIIA(RADAUIIA* rData);
-    int freeKinsol(KINSOLRADAU* kData);
-
-    int kinsolRadauIIA(RADAUIIA* rData);
-
-  #ifdef __cplusplus
-  };
-  #endif
-
-
-#endif /* _RADAU_H_ */
+#else
+    typedef struct{
+      void *kData;
+      void *nlp;
+      DATA *data;
+      SOLVER_INFO *solverInfo;
+      int N;
+      int flag;
+    }KINODE;
 
 #endif /* SUNDIALS */
+  int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N);
+  int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N);
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif /* _RADAU_H_ */

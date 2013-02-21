@@ -42,6 +42,7 @@
 #include "events.h"
 #include "varinfo.h"
 #include "stateset.h"
+#include "radau.h"
 
 /*
  * #include "dopri45.h"
@@ -65,18 +66,17 @@ typedef struct RK4
   int work_states_ndims;
 }RK4;
 
-#ifdef WITH_SUNDIALS
-
-#include "radau.h"
-
-RADAUIIA rData;
-KINSOLRADAU kData;
-static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo);
-
-#endif
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
+
+static int radau5_step(DATA* data, SOLVER_INFO* solverInfo);
+static int radau3_step(DATA* data, SOLVER_INFO* solverInfo);
+static int radau1_step(DATA* data, SOLVER_INFO* solverInfo);
+static int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo);
+static int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo);
+static int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo);
+
 static void checkTermination(DATA* data);
 static void writeOutputVars(char* names, DATA* data);
 
@@ -97,7 +97,17 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 
 #ifdef WITH_SUNDIALS
   case 6:
-    return radauIIA_step(data, solverInfo);
+    return radau5_step(data, solverInfo);
+  case 7:
+    return radau3_step(data, solverInfo);
+  case 8:
+    return radau1_step(data, solverInfo);
+  case 9:
+    return lobatto2_step(data, solverInfo);
+  case 10:
+    return lobatto4_step(data, solverInfo);
+  case 11:
+    return lobatto6_step(data, solverInfo);
 #endif
 
   default:
@@ -158,7 +168,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     for(i = 0; i < inline_work_states_ndims; i++)
       work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
   }
-  #ifdef PATHCONSTRAINTS
+#ifdef PATHCONSTRAINTS
   else if(solverInfo->solverMethod == 5)
   {
     int neqns = -1;
@@ -166,17 +176,46 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     pathConstraints(data, NULL, &neqns);
     /* allocateDaeIpopt(data,neqns); */
   }
-  #endif
+#endif
+#ifdef WITH_SUNDIALS
   else if (solverInfo->solverMethod == 6)
   {
-  #ifdef WITH_SUNDIALS
-    /* Allocate Radau IIA work arrays */
-    allocateRadauIIA(&rData, data, solverInfo);
-    allocateKinsol(&kData,(void*)&rData);
-  #else
-    retValue = -1;
-  #endif
+    /* Allocate Radau5 IIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 6, 3);
   }
+  else if (solverInfo->solverMethod == 7)
+  {
+    /* Allocate Radau3 IIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 7, 2);
+  }
+  else if (solverInfo->solverMethod == 8)
+  {
+    /* Allocate Radau1 IIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 8, 1);
+  }
+  else if (solverInfo->solverMethod == 9)
+  {
+    /* Allocate Lobatto2 IIIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 9, 1);
+  }
+  else if (solverInfo->solverMethod == 10)
+  {
+    /* Allocate Lobatto2 IIIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 10, 2);
+  }
+  else if (solverInfo->solverMethod == 11)
+  {
+    /* Allocate Lobatto2 IIIA work arrays */
+    solverInfo->solverData = calloc(1, sizeof(KINODE));
+    allocateKinOde(data, solverInfo, 11, 3);
+  }
+#endif
+
 
   if(measure_time_flag)
   {
@@ -220,15 +259,38 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
       free(work_states[i]);
     free(work_states);
   }
+#ifdef WITH_SUNDIALS
   else if(solverInfo->solverMethod == 6)
   {
-  #ifdef WITH_SUNDIALS
     /* free  work arrays */
-    freeRadauIIA(&rData);
-    freeKinsol(&kData);
-  #endif
+    freeKinOde(data, solverInfo, 6, 3);
   }
-  else
+  else if(solverInfo->solverMethod == 7)
+  {
+    /* free  work arrays */
+    freeKinOde(data, solverInfo, 7, 2);
+  }
+  else if(solverInfo->solverMethod == 8)
+  {
+    /* free  work arrays */
+    freeKinOde(data, solverInfo, 8, 1);
+  }
+  else if(solverInfo->solverMethod == 9)
+  {
+    /* free  work arrays */
+    freeKinOde(data, solverInfo, 9, 1);
+  }
+  else if(solverInfo->solverMethod == 10)
+  {
+    /* free  work arrays */
+    freeKinOde(data, solverInfo, 10, 2);
+  }
+  else if(solverInfo->solverMethod == 11)
+  {
+    /* free  work arrays */
+    freeKinOde(data, solverInfo, 11, 3);
+  }
+#endif
   {
     /* free other solver memory */
   }
@@ -664,13 +726,6 @@ int solver_main(DATA* data, const char* init_initMethod,
   if (!retVal)
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
 
-
-  if(data->localData[0]->timeValue >= simInfo->stopTime)
-  {
-    INFO(LOG_SOLVER,"Simulation done!");
-    solverInfo.currentTime = simInfo->stopTime;
-  }
-
   INFO(LOG_SOLVER, "Performed initial value calculation.");
   INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
@@ -752,10 +807,51 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 
 #ifdef WITH_SUNDIALS
-/***************************************    Radau IIA     ***********************************/
-static int radauIIA_step(DATA* data, SOLVER_INFO* solverInfo)
+/***************************************    Radau5 IIA     ***********************************/
+int radau5_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolRadauIIA(&rData);
+
+  kinsolOde(solverInfo->solverData, 3, data, 6);
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Radau3 IIA     ***********************************/
+int radau3_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolOde(solverInfo->solverData, 2, data, 7);
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Radau1 IIA     ***********************************/
+int radau1_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolOde(solverInfo->solverData, 1, data, 8);
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Lobatto2 IIA     ***********************************/
+int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolOde(solverInfo->solverData, 1, data, 9);
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Lobatto4 IIA     ***********************************/
+int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolOde(solverInfo->solverData, 2, data, 10);
+  solverInfo->currentTime += solverInfo->currentStepSize;
+  return 0;
+}
+
+/***************************************    Lobatto6 IIA     ***********************************/
+int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  kinsolOde(solverInfo->solverData, 3, data, 11);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
