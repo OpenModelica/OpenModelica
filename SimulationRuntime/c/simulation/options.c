@@ -34,13 +34,18 @@
 #include <string.h>
 #include <stdio.h>
 
-int flagSet(const char*, int, char**);                        /* -f */
-int optionSet(const char *option, int argc, char** argv);     /* -f=value */
-const char* getOption(const char*, int, char **);             /* -f=value; returns NULL if not found */
-const char* getFlagValue(const char *, int , char **);        /* -f value; returns NULL if not found */
+static int flagSet(const char*, int, char**);                        /* -f */
+static int optionSet(const char *option, int argc, char** argv);     /* -f=value */
+static const char* getOption(const char*, int, char **);             /* -f=value; returns NULL if not found */
+static const char* getFlagValue(const char *, int , char **);        /* -f value; returns NULL if not found */
 
 int omc_flag[FLAG_MAX];
-char *omc_flagValue[FLAG_MAX];
+const char *omc_flagValue[FLAG_MAX];
+
+int helpFlagSet(int argc, char** argv)
+{
+  return flagSet("?", argc, argv) || flagSet("help", argc, argv);
+}
 
 int checkCommandLineArguments(int argc, char **argv)
 {
@@ -144,7 +149,7 @@ int checkCommandLineArguments(int argc, char **argv)
   return 0;
 }
 
-int flagSet(const char *option, int argc, char** argv)
+static int flagSet(const char *option, int argc, char** argv)
 {
   int i;
   for(i=0; i<argc; i++)
@@ -155,18 +160,13 @@ int flagSet(const char *option, int argc, char** argv)
   return 0;
 }
 
-int helpFlagSet(int argc, char** argv)
-{
-  return flagSet("?", argc, argv) || flagSet("help", argc, argv);
-}
-
-int optionSet(const char *option, int argc, char** argv)
+static int optionSet(const char *option, int argc, char** argv)
 {
   return getOption(option, argc, argv) != NULL;
 }
 
 /* returns the value of a flag on the form -flagname=value */
-const char* getOption(const char *option, int argc, char **argv)
+static const char* getOption(const char *option, int argc, char **argv)
 {
   int optLen = strlen(option), i;
   for(i=0; i<argc; i++)
@@ -178,7 +178,7 @@ const char* getOption(const char *option, int argc, char **argv)
 }
 
 /* returns the value of a flag on the form -flagname value */
-const char* getFlagValue(const char *option, int argc, char **argv)
+static const char* getFlagValue(const char *option, int argc, char **argv)
 {
   int i;
   for(i=0; i<argc; i++)
