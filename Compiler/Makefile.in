@@ -119,7 +119,7 @@ simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
 	$(MAKE) -C Template/
 OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/Interactive.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos Template/Unparsing.mo
-	../build/bin/omc +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	OPENMODELICAHOME=../build ../build/bin/omc +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
 	@mv $@.new $@
 endif
 $(SUSANMO): simcode

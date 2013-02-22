@@ -762,6 +762,8 @@ algorithm
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
         initialFunctionStr = System.readFile(fileModelica);
         initialFunctionStrMM = System.readFile(fileMetaModelica);
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
@@ -776,6 +778,8 @@ algorithm
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
         initialFunctionStr = System.readFile(fileModelica);
         initialFunctionStrMM = System.readFile(fileParModelica);
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
@@ -789,6 +793,7 @@ algorithm
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);      
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         initialFunctionStr = System.readFile(fileModelica);
         initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
         assocLst = getGlobalRoot(Global.builtinIndex);
