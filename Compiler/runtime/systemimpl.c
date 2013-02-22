@@ -107,6 +107,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 /* includes/defines specific for LINUX/OS X */
 #include <ctype.h>
 #include <dirent.h>
+#include <sys/ioctl.h>
 #include <sys/param.h> /* MAXPATHLEN */
 #include <sys/unistd.h>
 #include <sys/wait.h> /* only available in Linux, not windows */
@@ -2069,13 +2070,24 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 }
 #endif
 
+int System_getTerminalWidth()
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return 80;
+#else
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  return w.ws_col ? w.ws_col : 80;
+#endif
+}
+
 #include "simulation_options.h"
 
 char* System_getSimulationHelpText(int detailed)
 {
   static char buf[8192];
   int i;
-  char **desc = detailed ? FLAG_DETAILED_DESC : FLAG_DESC;
+  const char **desc = detailed ? FLAG_DETAILED_DESC : FLAG_DESC;
   char *cur = buf;
   *cur = 0;
   for(i=1; i<FLAG_MAX; ++i)

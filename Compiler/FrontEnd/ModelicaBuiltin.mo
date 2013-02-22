@@ -1019,7 +1019,7 @@ annotation(preferredView="text");
 end saveAll;
 
 function help "display the OpenModelica help text."
-  input String topic := "";
+  input String topic := "topics";
   output String helpText;
 external "builtin";
 end help;

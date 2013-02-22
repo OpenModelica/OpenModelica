@@ -2156,3 +2156,10 @@ RML_BEGIN_LABEL(System__getSimulationHelpText)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getTerminalWidth)
+{
+  rmlA0 = mk_icon(System_getTerminalWidth());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
