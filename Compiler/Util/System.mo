@@ -994,7 +994,7 @@ end getSimulationHelpText;
 
 public function getTerminalWidth
   output Integer width;
-  external "C" text = System_getTerminalWidth() annotation(Library = {"omcruntime"});
+  external "C" width = System_getTerminalWidth() annotation(Library = {"omcruntime"});
 end getTerminalWidth;
 
 end System;
