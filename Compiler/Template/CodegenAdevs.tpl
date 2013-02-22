@@ -177,7 +177,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          int integer(double expr, int index);
          double ceil(double expr, int index);
 
-      protected:
+         bool selectStateVars();
+
+      protected: 
          /**
           * Calculate the values of the state and algebraic variables.
           * State variables will be initialized to q if provided,
@@ -411,6 +413,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
    <%makeEventFunc(simCode)%>
 
    <%makeJacobianStateSetFuncs(simCode.stateSets,lastIdentOfPath(modelInfo.name))%>
+
+   <%makeSelectStateMethod(simCode)%>
 
    double <%lastIdentOfPath(modelInfo.name)%>::calcDelay(int index, double expr, double t, double delay)
    {
@@ -758,18 +762,18 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        // Calculate any equations that provide initial values
        <%makeInitialEqns(startValueEquations)%>
        bound_params();
-       // Save again after calculating initial equations and algorithms
-       save_vars();
        // Calculate derived values
        calc_vars();
+       if (selectStateVars())
+           calc_vars();
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
+       calc_vars();
        save_vars();
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
        atInit = false;
        for (int i = 0; i < numMathEvents(); i++)
            if (eventFuncs[i] != NULL) eventFuncs[i]->setInit(false);
-       postStep(q);
    }
    >>
 end makeInit;
@@ -883,41 +887,52 @@ template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> state
             int colIndex = colSelect<%crefarray(crA)%>[(<%nCandidates%>-1)-row];
             <%accessCrA(crA,nStates,"rowIndex","colIndex")%> = 1;
         }
-        <%newStateAssign%>
         doReinit = true;
     }
+    <%newStateAssign%>
     >>
 end selectState;
 
 template makeStateSelection(list<StateSet> stateSets, list<SimVar> stateVars)
 ::=
-  if stateSets then
-    let reassignCode = (stateVars |> SIMVAR(__) =>
-        'q[<%index%>] = <%cref(name)%>;';separator="\n")
-    let selectCode = 
-      (stateSets |> stateSet as SES_STATESET(__) =>
-        selectState(states,statescandidates,crA,nCandidates,nStates,jacobianMatrix) ; separator="\n")
-      <<
-      bool doReinit = false;
-      <%selectCode%>
-      if (doReinit)
-      {
-          <%reassignCode%>
-          calc_vars(q,true);
-      }
-      >>
+  let selectCode = 
+    (stateSets |> stateSet as SES_STATESET(__) =>
+      selectState(states,statescandidates,crA,nCandidates,nStates,jacobianMatrix) ; separator="\n")
+    <<
+    bool doReinit = false;
+    <%selectCode%>
+    return doReinit;
+    >>
 end makeStateSelection;
 
-template makePostStep(SimCode simCode)
+template makeSelectStateMethod(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   let stateSelect = makeStateSelection(stateSets,vars.stateVars)
   <<
+  bool <%lastIdentOfPath(modelInfo.name)%>::selectStateVars()
+  {
+      <%stateSelect%>
+  }
+  >>
+end makeSelectStateMethod;
+
+template makePostStep(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  let reassignCode = (vars.stateVars |> SIMVAR(__) =>
+      'q[<%index%>] = <%cref(name)%>;';separator="\n")
+  <<
   void <%lastIdentOfPath(modelInfo.name)%>::postStep(double* q)
   {
       calc_vars(q);
-      <%stateSelect%>
+      if (selectStateVars())
+      {
+          <%reassignCode%>
+          calc_vars(q,true);
+      }
       save_vars();
   }
   >>
