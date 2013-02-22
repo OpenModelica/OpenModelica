@@ -30,7 +30,8 @@
 
  /*! \file solver_main.c
  */
- 
+
+#include "../../Compiler/runtime/config.h"
 #include "solver_main.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"
@@ -726,12 +727,15 @@ int solver_main(DATA* data, const char* init_initMethod,
   if (!retVal)
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
 
-  INFO(LOG_SOLVER, "Performed initial value calculation.");
-  INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
-
   /* starts the simulation main loop */
   if (!retVal)
+  {
+    INFO(LOG_SOLVER, "Performed initialization.");
+    INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = performSimulation(data, &solverInfo);
+  }
+  else
+    WARNING(LOG_STDOUT, "Initialization failed.");
 
   /* terminate the simulation */
   finishSimulation(data, &solverInfo, outputVariablesAtEnd);

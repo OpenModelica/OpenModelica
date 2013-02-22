@@ -327,13 +327,14 @@ int initKinsol(KINODE *kinOde)
   double* seq,*slow,*sup;
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
-  double*derx = nlp->derx;
+  double* derx;
   double tmp,tmp1,h;
   double* xeq = NV_DATA_S(kData->x);
   nlp->currentStep = &kinOde->solverInfo->currentStepSize;
   kinOde->nlp->derx = data->localData[0]->realVars + nStates;
   kinOde->nlp->x0 = data->localData[1]->realVars;
   kinOde->nlp->t0 = data->localData[1]->timeValue;
+  derx = nlp->derx;
 
   xlow = xeq + N*nStates;
   xup = xlow + N*nStates;
@@ -395,8 +396,8 @@ int initKinsol(KINODE *kinOde)
 
   kData->mset = 1;
 
-  kData->fnormtol = h;
-  kData->scsteptol = h;
+  kData->fnormtol = data->simulationInfo.tolerance;
+  kData->scsteptol = data->simulationInfo.tolerance;
 
   KINSetFuncNormTol(kData->kmem, kData->fnormtol);
   KINSetScaledStepTol(kData->kmem, kData->scsteptol);
@@ -404,15 +405,15 @@ int initKinsol(KINODE *kinOde)
   return 0;
 }
 
-int refreshModell(DATA* data, double*x, double time)
+int refreshModell(DATA* data, double* x, double time)
 {
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  for(i=0;i<data->modelData.nStates;i++)
-    sData->realVars[i] = x[i];
+  memcpy(sData->realVars, x, sizeof(double)*data->modelData.nStates);
   sData->timeValue = time;
   functionODE(data);
+
   return 0;
 }
 
@@ -748,6 +749,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 
 int kinsolOde(void* ode)
 {
+  int retValue;
   KINODE *kinOde = (KINODE*) ode;
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
@@ -757,7 +759,7 @@ int kinsolOde(void* ode)
   initKinsol(kinOde);
   do{
     /* Call KINDense to specify the linear solver */
-    KINDense(kData->kmem, 3*N*nlp->nStates);
+    KINSpbcg(kData->kmem, 3*N*nlp->nStates);
     KINSetMaxSetupCalls(kData->kmem, kData->mset);
 
     kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
@@ -765,15 +767,16 @@ int kinsolOde(void* ode)
                                 kData->glstr,          /* global stragegy choice */
                                 kData->sVars,          /* scaling vector, for the variable cc */
                                 kData->sEqns );
-  }while(kData->error_code < 0 && (++kData->glstr) <= KIN_LINESEARCH);
+    retValue = kData->error_code;
+  }while(retValue < 0 && (++kData->glstr) <= KIN_LINESEARCH);
   refreshModell(kinOde->data, NV_DATA_S(kData->x) + (N-1)*nlp->nStates, nlp->t0 + (nlp->dt));
-  return 0;
+  return retValue;
 }
 #else
 
 int kinsolOde(void* ode)
 {
   assert(0);
-  return 0;
+  return -1;
 }
 #endif

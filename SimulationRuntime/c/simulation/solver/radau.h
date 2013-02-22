@@ -35,9 +35,9 @@
 #ifndef _RADAU_H_
 #define _RADAU_H_
 
-#include "../../../Compiler/runtime/config.h"
 #include "simulation_data.h"
 #include "solver_main.h"
+#include "../../Compiler/runtime/config.h"
 
 #ifdef WITH_SUNDIALS
   #include <math.h>
