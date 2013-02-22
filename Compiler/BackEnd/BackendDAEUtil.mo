@@ -6626,6 +6626,7 @@ algorithm
   matchcontinue (vars,eqns)
     local
       Boolean res;
+      BackendVarTransform.VariableReplacements repl;
     case (_,_)
       equation
         0 = equationSize(eqns);
@@ -6633,7 +6634,8 @@ algorithm
         true;
     case (_,_)
       equation
-        ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,true));
+        repl = makeZeroReplacements(vars);
+        ((_,res,_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,true,repl));
       then
         res;
   end matchcontinue;
@@ -6642,8 +6644,8 @@ end rhsConstant;
 protected function rhsConstant2 "function: rhsConstant2
   author: PA
   Helper function to rhsConstant, traverses equation list."
-  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,Boolean>> inTpl;
-  output tuple<BackendDAE.Equation, Boolean, tuple<BackendDAE.Variables,Boolean>> outTpl;
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inTpl;
+  output tuple<BackendDAE.Equation, Boolean, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local
@@ -6651,39 +6653,39 @@ algorithm
       Boolean b,res;
       BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
-
+      BackendVarTransform.VariableReplacements repl;
     // check rhs for for EQUATION nodes.
-    case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(vars,b)))
+    case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(vars,b,repl)))
       equation
         new_exp = Expression.expSub(e1, e2);
-        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE());
+        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
         res = Expression.isConst(rhs_exp);
       then
-        ((eqn,res,(vars,b and res)));
+        ((eqn,res,(vars,b and res,repl)));
     // check rhs for for ARRAY_EQUATION nodes. check rhs for for RESIDUAL_EQUATION nodes.
-    case ((eqn as BackendDAE.ARRAY_EQUATION(left=e1,right=e2),(vars,b)))
+    case ((eqn as BackendDAE.ARRAY_EQUATION(left=e1,right=e2),(vars,b,repl)))
       equation
         new_exp = Expression.expSub(e1, e2);
-        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE());
+        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
         res = Expression.isConst(rhs_exp);
       then
-        ((eqn,res,(vars,b and res)));
+        ((eqn,res,(vars,b and res,repl)));
 
-    case ((eqn as BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,b)))
+    case ((eqn as BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,b,repl)))
       equation
         new_exp = Expression.expSub(e1, e2);
-        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE());
+        rhs_exp = getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
         res = Expression.isConst(rhs_exp);
       then
-        ((eqn,res,(vars,b and res)));
+        ((eqn,res,(vars,b and res,repl)));
 
-    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(vars,b))) /* check rhs for for RESIDUAL_EQUATION nodes. */
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(vars,b,repl))) /* check rhs for for RESIDUAL_EQUATION nodes. */
       equation
-        rhs_exp = getEqnsysRhsExp(e, vars,NONE());
+        rhs_exp = getEqnsysRhsExp(e, vars,NONE(),SOME(repl));
         res = Expression.isConst(rhs_exp);
       then
-        ((eqn,res,(vars,b and res)));
-    case ((eqn,(vars,_))) then ((eqn,false,(vars,false)));
+        ((eqn,res,(vars,b and res,repl)));
+    case ((eqn,(vars,_,repl))) then ((eqn,false,(vars,false,repl)));
   end matchcontinue;
 end rhsConstant2;
 
@@ -6846,7 +6848,92 @@ algorithm
   end matchcontinue;
 end containAnyVar;
 
-public function getEqnsysRhsExp "function: getEqnsysRhsExp
+public function getEqnSysRhs "function: getEqnSysRhs
+  author: Frenkel TUD 2013-02
+
+  Retrieve the right hand side of an equation system, given a set of variables.
+  Uses A1*x + b1= A2*x + b2 -> 0 = (A1 - A2)*x+(b1-b2) -> x=0 -> rhs= A*0+b=b.
+  Does not work for nonlinear Equations. 
+
+  inputs:  (DAE.Exp, BackendDAE.Variables /* variables of the eqn sys. */)
+  outputs:  DAE.Exp =
+"
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables inVariables;
+  input Option<DAE.FunctionTree> funcs;
+  output list<DAE.Exp> outRhsExps;
+  output list<DAE.ElementSource> outSources;
+protected
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  repl := makeZeroReplacements(inVariables);
+  ((_, outRhsExps, outSources, _, _)) := BackendEquation.traverseBackendDAEEqns(inEqns, equationToExp, (inVariables, {}, {}, funcs, repl));
+end getEqnSysRhs;
+
+protected function equationToExp
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>,BackendVarTransform.VariableReplacements>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>,BackendVarTransform.VariableReplacements>> outTpl;  
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp e;
+      DAE.Exp e1,e2,new_exp,rhs_exp,rhs_exp_1,rhs_exp_2;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      BackendDAE.Equation eqn;
+      BackendDAE.Variables v;
+      list<DAE.Exp> explst,explst1;
+      list<DAE.ElementSource> sources;
+      DAE.ElementSource source;
+      String str;
+      list<list<DAE.Subscript>> subslst;
+      Option<DAE.FunctionTree> funcs;
+      BackendVarTransform.VariableReplacements repl;
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v,explst,sources,funcs,repl)))
+      equation
+        rhs_exp = getEqnsysRhsExp(e, v,funcs,SOME(repl));
+      then ((eqn,(v,rhs_exp::explst,source::sources,funcs,repl)));
+        
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v,explst,sources,funcs,repl)))
+      equation
+        new_exp = Expression.expSub(e1,e2);
+        rhs_exp = getEqnsysRhsExp(new_exp, v,funcs,SOME(repl));
+        rhs_exp_1 = Expression.negate(rhs_exp);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
+      then ((eqn,(v,rhs_exp_2::explst,source::sources,funcs,repl)));
+       
+    case ((eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v,explst,sources,funcs,repl)))
+      equation
+        new_exp = Expression.expSub(e1,e2);
+        ad = List.map(ds,Util.makeOption);
+        subslst = arrayDimensionsToRange(ad);
+        subslst = rangesToSubscripts(subslst);
+        explst1 = List.map1r(subslst,Expression.applyExpSubscripts,new_exp);
+        explst1 = List.map3(explst1,getEqnsysRhsExp,v,funcs,SOME(repl));
+        explst1 = List.map(explst1,Expression.negate);
+        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst = listAppend(listReverse(explst1),explst);
+        sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
+      then ((eqn,(v,explst,sources,funcs,repl)));       
+       
+    case ((eqn as BackendDAE.COMPLEX_EQUATION(source=source),_))
+      equation
+        str = BackendDump.equationString(eqn);
+        str = "BackendEquation.equationToExp failed for complex equation: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
+      then fail();       
+        
+    case ((eqn,_))
+      equation
+        str = BackendDump.equationString(eqn);
+        str = "BackendEquation.equationToExp failed: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
+      then
+        fail();
+  end matchcontinue;
+end equationToExp;
+
+protected function getEqnsysRhsExp "function: getEqnsysRhsExp
   author: PA
 
   Retrieve the right hand side expression of an equation
@@ -6860,13 +6947,26 @@ public function getEqnsysRhsExp "function: getEqnsysRhsExp
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input Option<DAE.FunctionTree> funcs;
+  input Option<BackendVarTransform.VariableReplacements> oRepl;
   output DAE.Exp outExp;
-protected
-  BackendVarTransform.VariableReplacements repl;
 algorithm
-  repl := makeZeroReplacements(inVariables);
-  ((outExp,(_,_,_,true))) := Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
-  (outExp,_) := ExpressionSimplify.simplify(outExp);
+  outExp := match(inExp,inVariables,funcs,oRepl)
+    local
+      BackendVarTransform.VariableReplacements repl;
+    case (_,_,_,NONE())
+      equation
+        repl = makeZeroReplacements(inVariables);
+       ((outExp,(_,_,_,true))) = Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
+       (outExp,_) = ExpressionSimplify.simplify(outExp);
+      then
+        outExp;
+    case (_,_,_,SOME(repl))
+      equation
+       ((outExp,(_,_,_,true))) = Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
+       (outExp,_) = ExpressionSimplify.simplify(outExp);
+      then
+        outExp;
+  end match;    
 end getEqnsysRhsExp;
 
 protected function getEqnsysRhsExp1
@@ -8038,17 +8138,16 @@ protected
   BackendDAE.Shared shared;
   list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   String methodstr;
-  stateDeselectionFunc sDfunc;  
+  stateDeselectionFunc sDfunc;
+  Boolean causalized;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
-  (systs,shared,args) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{});
+  (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
   // do late inline 
-  BackendDAE.DAE(systs,shared) := Debug.bcallret1(dolateinline,BackendDAEOptimize.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
+  outDAE := Debug.bcallret1(dolateinline,BackendDAEOptimize.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
-  (_,_,sDfunc,methodstr) := stateDeselection;
-  BackendDAE.DAE(systs,shared) := sDfunc(BackendDAE.DAE(systs,shared),args);
-  Debug.execStat("transformDAE -> state selection " +& methodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
   (systs,shared) := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
@@ -8066,23 +8165,26 @@ protected function mapCausalizeDAE
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   input list<BackendDAE.EqSystem> acc;
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> acc1;
+  input Boolean iCausalized;
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
   output list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> oargs;
+  output Boolean oCausalized;
 algorithm
-  (osysts,oshared,oargs) := match (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1)
+  (osysts,oshared,oargs,oCausalized) := match (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1,iCausalized)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
       Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
       list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
-    case ({},_,_,_,_,_,_) then (listReverse(acc),ishared,listReverse(acc1));
-    case (syst::systs,_,_,_,_,_,_)
+      Boolean causalized;
+    case ({},_,_,_,_,_,_,_) then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
+    case (syst::systs,_,_,_,_,_,_,_)
       equation
-        (syst,shared,arg) = causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection);
-        (systs,shared,args) = mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1);
-      then (systs,shared,args);
+        (syst,shared,arg,causalized) = causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
+        (systs,shared,args,causalized) = mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
+      then (systs,shared,args,causalized);
   end match;
 end mapCausalizeDAE;
 
@@ -8096,11 +8198,13 @@ protected function causalizeDAEWork
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
+  input Boolean iCausalized;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output Option<BackendDAE.StructurallySingularSystemHandlerArg> oArg;
+  output Boolean oCausalized;
 algorithm
-  (osyst,oshared,oArg) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection)
+  (osyst,oshared,oArg,oCausalized) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized)
     local 
       String str,mAmethodstr,str1;
       BackendDAE.MatchingOptions match_opts;
@@ -8114,10 +8218,10 @@ algorithm
       DAE.FunctionTree funcs;
       Integer nvars,neqns;
        
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_,_)
       then
-        (isyst,ishared,NONE());      
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
+        (isyst,ishared,NONE(),iCausalized);      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_),_)
       equation
         //  print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
         funcs = getFunctions(ishared);
@@ -8132,8 +8236,8 @@ algorithm
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      then (syst,shared,SOME(arg));
-    case (_,_,_,(_,mAmethodstr),(_,str1,_,_))
+      then (syst,shared,SOME(arg),true);
+    case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
         str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -8141,6 +8245,34 @@ algorithm
         fail();
   end matchcontinue;
 end causalizeDAEWork;
+
+protected function stateDeselectionDAE
+"function causalizeDAE 
+  Run the matching Algorithm.
+  In case of an DAE an DAE-Handler is used to reduce
+  the index of the dae."
+  input Boolean causalized;
+  input BackendDAE.BackendDAE inDAE;
+  input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
+  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := match(causalized,inDAE,args,stateDeselection)
+    local
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
+      String methodstr;
+      stateDeselectionFunc sDfunc;
+    case (true,BackendDAE.DAE(systs,shared),_,(_,_,sDfunc,methodstr))
+      equation
+        // do state selection
+        outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
+        Debug.execStat("transformDAE -> state selection " +& methodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      then
+         outDAE;
+    else then inDAE;
+  end match;
+end stateDeselectionDAE;
 
 protected function mapSortEqnsDAE
 "function mapSortEqnsDAE 
@@ -8189,7 +8321,8 @@ algorithm
         // sorting algorithm
         funcs = getFunctions(ishared);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
-        (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);        
+        (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
+//        IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"Comps" +& intString(systemSize(syst)) +& ".graphml");
         Debug.execStat("transformDAE -> sort components",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
     else

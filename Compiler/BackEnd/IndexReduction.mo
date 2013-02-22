@@ -1628,7 +1628,7 @@ algorithm
   // do state selection
   ht := HashTableCrIntToExp.emptyHashTable();
   (systs,shared,ht) := mapdynamicStateSelection(systs,shared,inArgs,1,{},ht);
-  shared := replaceDummyDerivativesShared(shared,ht);
+  shared := Debug.bcallret2(intGt(BaseHashTable.hashTableCurrentSize(ht),0),replaceDummyDerivativesShared,shared,ht,shared);
   outDAE := BackendDAE.DAE(systs,shared);
 end dynamicStateSelection;
 

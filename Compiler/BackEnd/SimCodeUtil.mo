@@ -3708,7 +3708,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(const jacobian).");
         ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
         simVars = listReverse(simVars);
-        ((_, beqs, sources, _)) = BackendEquation.traverseBackendDAEEqns(eqn, BackendEquation.equationToExp, (v, {}, {}, SOME(inFuncs)));
+        (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
         jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars), jac);
@@ -3751,7 +3751,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(time varying jacobian).");
         ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
         simVars = listReverse(simVars);
-        ((_, beqs, _, _)) = BackendEquation.traverseBackendDAEEqns(eqn, BackendEquation.equationToExp, (v, {}, {}, SOME(inFuncs)));
+        (beqs, _) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));
         beqs = listReverse(beqs);
         simJac = List.map1(jac, jacToSimjac, v);
       then
@@ -6236,7 +6236,7 @@ algorithm
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, m, false, shared);
         ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
         simVars = listReverse(simVars);
-        ((_, beqs, _, _)) = BackendEquation.traverseBackendDAEEqns(eqn, BackendEquation.equationToExp, (v, {}, {}, SOME(funcs)));
+        (beqs, _) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(funcs));
         beqs = listReverse(beqs);
         simJac = List.map1(jac, jacToSimjac, v);
       then ({SimCode.SES_LINEAR(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, 0)}, iuniqueEqIndex+1, itempvars);

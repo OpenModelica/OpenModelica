@@ -64,8 +64,8 @@ using namespace std;
 extern "C" {
 #include "matchmaker.h"
 
-static unsigned int n=0;
-static unsigned int m=0;
+static unsigned int n=0; /* size of match */
+static unsigned int m=0; /* size of row_match */
 static int* match=NULL;
 static int* row_match=NULL;
 static int* col_ptrs=NULL;
@@ -285,7 +285,7 @@ void BackendDAEExtImpl__cheapmatching(int nvars, int neqns, int cheapID, int cle
     m = nvars;
   }
   if ((match != NULL) && (row_match != NULL)) {
-    cheapmatching(col_ptrs,col_ids,match,row_match,neqns,nvars,cheapID,clear_match);
+    cheapmatching(col_ptrs,col_ids,match,row_match,neqns,nvars,cheapID,0 /*clear_match already done*/);
   }
 }
 
@@ -327,13 +327,13 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
     }
   }
   else {
-  if (neqns>n) {
+    if (neqns>n) {
       if (match) free(match);
       match = (int*) malloc(neqns * sizeof(int));
       memset(match,-1,neqns * sizeof(int));
-  } else {
+    } else {
       memset(match,-1,n * sizeof(int));
-  }
+    }
     n = neqns;
     if (nvars>m) {
       if (row_match) free(row_match);
@@ -345,7 +345,7 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
     m = nvars;
   }
   if ((match != NULL) && (row_match != NULL)) {
-    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,clear_match);
+    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,0 /*clear_match already done*/);
   }
 }
 

@@ -1193,7 +1193,7 @@ algorithm
         eqns = BackendEquation.listEquation(iEqns);
         vars = BackendVariable.listVar1(iVars);
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqns,BackendEquation.equationToExp,(vars,{},{},SOME(funcs)));
+        (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
         rhsStr = stringDelimitList(List.map(beqs, ExpressionDump.printExpStr)," ;\n  ");
         jacStr = stringDelimitList(List.map1(List.mapList(jacVals,realString),stringDelimitList," , ")," ;\n  ");

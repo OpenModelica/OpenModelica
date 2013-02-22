@@ -44,7 +44,6 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import BackendVariable;
 protected import BaseHashTable;
 protected import BinaryTreeInt;
@@ -1987,70 +1986,6 @@ algorithm
         fail();
   end matchcontinue;
 end equationToResidualForm;
-
-public function equationToExp
-  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>>> outTpl;  
-algorithm
-  outTpl := matchcontinue inTpl
-    local
-      DAE.Exp e;
-      DAE.Exp e1,e2,new_exp,rhs_exp,rhs_exp_1,rhs_exp_2;
-      list<Integer> ds;
-      list<Option<Integer>> ad;
-      BackendDAE.Equation eqn;
-      BackendDAE.Variables v;
-      list<DAE.Exp> explst,explst1;
-      list<DAE.ElementSource> sources;
-      DAE.ElementSource source;
-      String str;
-      list<list<DAE.Subscript>> subslst;
-      Option<DAE.FunctionTree> funcs;
-      
-    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v,explst,sources,funcs)))
-      equation
-        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v,funcs);
-        (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
-      then ((eqn,(v,rhs_exp_1::explst,source::sources,funcs)));
-        
-    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v,explst,sources,funcs)))
-      equation
-        new_exp = Expression.expSub(e1,e2);
-        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v,funcs);
-        rhs_exp_1 = Expression.negate(rhs_exp);
-        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then ((eqn,(v,rhs_exp_2::explst,source::sources,funcs)));
-       
-    case ((eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v,explst,sources,funcs)))
-      equation
-        new_exp = Expression.expSub(e1,e2);
-        ad = List.map(ds,Util.makeOption);
-        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
-        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
-        explst1 = List.map1r(subslst,Expression.applyExpSubscripts,new_exp);
-        explst1 = List.map2(explst1,BackendDAEUtil.getEqnsysRhsExp,v,funcs);
-        explst1 = List.map(explst1,Expression.negate);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
-        explst = listAppend(listReverse(explst1),explst);
-        sources = List.consN(equationSize(eqn), source, sources);
-      then ((eqn,(v,explst,sources,funcs)));       
-       
-    case ((eqn as BackendDAE.COMPLEX_EQUATION(source=source),(v,explst,sources,funcs)))
-      equation
-        str = BackendDump.equationString(eqn);
-        str = "BackendEquation.equationToExp failed for complex equation: " +& str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
-      then fail();       
-        
-    case ((eqn,_))
-      equation
-        str = BackendDump.equationString(eqn);
-        str = "BackendEquation.equationToExp failed: " +& str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
-      then
-        fail();
-  end matchcontinue;
-end equationToExp;
 
 public function equationInfo "Retrieve the line number information from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;

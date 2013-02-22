@@ -351,7 +351,7 @@ algorithm
         //  BackendDump.dumpEqSystem(subsyst);   
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,ishared);
-        ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqns,BackendEquation.equationToExp,(vars,{},{},SOME(funcs)));
+        (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
         //  print("Jacobian:\n");
         //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
@@ -2102,7 +2102,7 @@ algorithm
         //  print("addRow\n");
         //  BackendDump.debuglst((elst,dumpMatrix1,", ","\n"));    
         //elst = removeFromCol(col,elst,{});    
-        _ = arrayUpdate(matrix,row,elst);        
+        _ = arrayUpdate(matrix,row,elst);
         (vars,eqns,tpl) = gaussElimination1(col,row+1,size,ce,matrix,vars,eqns,tpl);
       then
         (vars,eqns,tpl);

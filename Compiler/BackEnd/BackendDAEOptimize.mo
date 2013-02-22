@@ -2830,7 +2830,7 @@ algorithm
       equation
         eqns1 = BackendEquation.listEquation(eqn_lst);
         v = BackendVariable.listVar1(var_lst);
-        ((_,beqs,sources,_)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(v,{},{},SOME(funcs)));
+        (beqs,sources) = BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
@@ -8243,7 +8243,7 @@ algorithm
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
         tpl = addJacSpecificOperations(listLength(eqnlst),inTpl);
         tpl = countOperationsJac(jac,tpl);        
-        ((_,explst,_,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.listEquation(eqnlst),BackendEquation.equationToExp,(BackendVariable.listVar1(varlst),{},{},SOME(funcs)));
+        (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
         ((_,tpl)) = Expression.traverseExpList(explst,countOperationsExp,tpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);
@@ -8287,7 +8287,7 @@ algorithm
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
         tpl = addJacSpecificOperations(listLength(vlst),inTpl);
-        ((_,explst,_,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.listEquation(eqnlst),BackendEquation.equationToExp,(BackendVariable.listVar1(varlst),{},{},SOME(funcs)));
+        (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
         ((_,tpl)) = Expression.traverseExpList(explst,countOperationsExp,tpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);  
