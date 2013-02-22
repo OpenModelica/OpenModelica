@@ -97,7 +97,7 @@ typedef struct omc_ModelInput
 // a map for overrides
 typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // function to handle command line settings override
-void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile);
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
 
 /* reads double value from a string */
 void read_value(std::string s, modelica_real* res);
@@ -213,7 +213,7 @@ void read_input_xml(int argc, char **argv,
 {
   omc_ModelInput mi;
   char buf[BUFSIZ] = {0};
-  std::string *filename = NULL;
+  std::string filename;
   FILE* file = NULL;
   XML_Parser parser = NULL;
   int done = 0;
@@ -221,23 +221,23 @@ void read_input_xml(int argc, char **argv,
   std::map<std::string, modelica_integer>::iterator it, itParam;
 
   /* read the filename from the command line (if any) */
-  filename = (std::string*)getOption("f",argc,argv);
-  /* no file given on the command line? use the default */
-  if(filename == NULL)
-    filename = new string(string(modelData->modelFilePrefix)+"_init.xml");  /* model_name defined in generated code for model.*/
+  if (optionSet("f",argc,argv)) {
+    filename = getOption("f",argc,argv);
+  } else {
+    /* no file given on the command line? use the default */
+    filename = string(modelData->modelFilePrefix)+"_init.xml";  /* model_name defined in generated code for model.*/
+  }
 
   /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
-  file = fopen(filename->c_str(), "r");
+  file = fopen(filename.c_str(), "r");
   if(!file)
   {
-    THROW1("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename->c_str());
-    /* if(filename) delete filename; */
+    THROW1("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
   }
   /* create the XML parser */
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    if(filename) delete filename;
     fclose(file);
     THROW("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
   }
@@ -253,10 +253,9 @@ void read_input_xml(int argc, char **argv,
     {
       fclose(file);
       WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
-          filename->c_str(),
+          filename.c_str(),
           XML_ErrorString(XML_GetErrorCode(parser)),
           XML_GetCurrentLineNumber(parser));
-      delete filename;
       XML_ParserFree(parser);
       THROW("see last warning");
     }
@@ -271,22 +270,21 @@ void read_input_xml(int argc, char **argv,
   {
      WARNING2(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
-        filename->c_str());
+        filename.c_str());
   } else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
     fclose(file);
     WARNING3(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
         mi.md["guid"].c_str(),
-        filename->c_str(),
+        filename.c_str(),
         modelData->modelGUID);
-    delete filename;
     THROW("see last warning");
   }
 
   // deal with override
-  std::string* override = (string*)getFlagValue("override", argc, argv);
-  std::string* overrideFile = (string*)getFlagValue("overrideFile", argc, argv);
+  const char* override = getFlagValue("override", argc, argv);
+  const char* overrideFile = getFlagValue("overrideFile", argc, argv);
   doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
@@ -356,7 +354,6 @@ void read_input_xml(int argc, char **argv,
     WARNING2(LOG_SIMULATION, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
     WARNING2(LOG_SIMULATION, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
     RELEASE(LOG_SIMULATION);
-    delete filename;
     XML_ParserFree(parser);
     fclose(file);
     EXIT(-1);
@@ -1039,7 +1036,6 @@ void read_input_xml(int argc, char **argv,
                 modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
   }
 
-  delete filename;
   XML_ParserFree(parser);
 
   fclose(file);
@@ -1107,7 +1103,7 @@ inline void read_value(std::string s, int* res)
 }
 
 
-void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile)
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
@@ -1118,19 +1114,19 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, std::string* override
 
   if(override != NULL)
   {
-    overrideStr = strdup(override->c_str());
+    overrideStr = strdup(override);
   }
 
   if(overrideFile != NULL)
   {
     /* read override values from file */
-    INFO1(LOG_SOLVER, "read override values from file: %s", overrideFile->c_str());
+    INFO1(LOG_SOLVER, "read override values from file: %s", overrideFile);
     std::ifstream infile;
 
-    infile.open(overrideFile->c_str(), ifstream::in);
+    infile.open(overrideFile, ifstream::in);
     if(infile.is_open() == false)
     {
-      THROW1("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile->c_str());
+      THROW1("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
     std::string line;
