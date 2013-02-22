@@ -241,10 +241,16 @@ int rtclock_compare(uint64_t t1, uint64_t t2) {
 
 #else
 
-static clockid_t omc_clock = CLOCK_MONOTONIC_RAW;
+/* CLOCK_MONOTONIC_RAW: since Linux 2.6.28 */
+#ifdef CLOCK_MONOTONIC_RAW
+#define OMC_CLOCK_MONOTONIC CLOCK_MONOTONIC_RAW
+#else
+#define OMC_CLOCK_MONOTONIC CLOCK_MONOTONIC
+#endif
+static clockid_t omc_clock = OMC_CLOCK_MONOTONIC;
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
-  omc_clock = newClock == OMC_CLOCK_REALTIME ? CLOCK_MONOTONIC_RAW : CLOCK_PROCESS_CPUTIME_ID;
+  omc_clock = newClock == OMC_CLOCK_REALTIME ? OMC_CLOCK_MONOTONIC : CLOCK_PROCESS_CPUTIME_ID;
   return 0;
 }
 
