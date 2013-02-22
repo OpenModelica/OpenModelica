@@ -106,11 +106,12 @@ int Socket::recv(std::string &s) const
 
   int bytes_sent = ::recv(m_sock, buf, MAXRECV, 0);
 
-  if(bytes_sent <= 0)
-  {
+  if(bytes_sent < 0) {
          std::cerr << "Error in Socket::recv: " << strerror(errno) << std::endl;
          exit(1);
          return 0;
+  } else if (bytes_sent == 0) {
+    exit(0);
   }
 
   s = buf;
