@@ -1647,18 +1647,15 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-      list<list<Integer>> comps,mlst;
+      list<list<Integer>> comps;
       array<Integer> v;
       Integer size;
-      BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
     case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation     
         // sort parameters
         size = BackendVariable.varsSize(knvars);
-        ((_,_,mlst,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,{},arrayCreate(size,{})));
-        v = listArray(List.intRange(size));
-        m = listArray(listReverse(mlst));
+        ((_,_,v,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,arrayCreate(size,-1),arrayCreate(size,{})));
         comps = BackendDAETransform.tarjanAlgorithm(mt, v);        
         // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
@@ -1699,20 +1696,17 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-      list<list<Integer>> comps,mlst;
+      list<list<Integer>> comps;
       array<Integer> v;
       Integer size;
-      BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       Boolean b;
     case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation     
         // sort parameters
         size = BackendVariable.varsSize(knvars);
-        ((_,_,mlst,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,{},arrayCreate(size,{})));
-        v = listArray(List.intRange(size));
-        m = listArray(listReverse(mlst));
-        comps = BackendDAETransform.tarjanAlgorithm(mt, v);        
+        ((_,_,v,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,arrayCreate(size,-1),arrayCreate(size,{})));
+        comps = BackendDAETransform.tarjanAlgorithm(mt, v);
         // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
@@ -1915,8 +1909,8 @@ algorithm
 end evaluateParameterBindings;
 
 protected function getParameterIncidenceMatrix
-  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,list<list<Integer>>,BackendDAE.IncidenceMatrixT>> inTp;
-  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,list<list<Integer>>,BackendDAE.IncidenceMatrixT>> outTpl;
+  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> inTp;
+  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outTpl;
 algorithm
   outTpl := matchcontinue (inTp)
     local
@@ -1926,32 +1920,35 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       list<Integer> ilst;
       Integer index;
-      list<list<Integer>> m;
+      array<Integer> ass;
       BackendDAE.IncidenceMatrixT mt;
 
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(knvars,index,m,mt)))
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(knvars,index,ass,mt)))
       equation
-         ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
-         ilst = index::ilst;
-         mt = List.fold1(ilst,Util.arrayCons,index,mt);
+        ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
+        ilst = index::ilst;
+        mt = List.fold1(ilst,Util.arrayCons,index,mt);
+        ass = arrayUpdate(ass,index,index);
       then 
-        ((v,(knvars,index+1,ilst::m,mt)));
+        ((v,(knvars,index+1,ass,mt)));
 
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=dae_var_attr),(knvars,index,m,mt)))
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=dae_var_attr),(knvars,index,ass,mt)))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
         ilst = index::ilst;
         mt = List.fold1(ilst,Util.arrayCons,index,mt);
+        ass = arrayUpdate(ass,index,index);
       then 
-        ((v,(knvars,index+1,ilst::m,mt)));
+        ((v,(knvars,index+1,ass,mt)));
 
-    case ((v,(knvars,index,m,mt)))
+    case ((v,(knvars,index,ass,mt)))
       equation
         ilst = {index};
         mt = arrayUpdate(mt,index,ilst);
+        ass = arrayUpdate(ass,index,index);
       then 
-        ((v,(knvars,index+1,ilst::m,mt)));
+        ((v,(knvars,index+1,ass,mt)));
   end matchcontinue;
 end getParameterIncidenceMatrix;
 
@@ -4652,7 +4649,7 @@ algorithm
   DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   DAE := BackendDAEUtil.addDummyStateIfNeeded(DAE);
   DAE := collapseIndependentBlocks(DAE);
-  DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));
+  DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
   //get states for DAE
   BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
@@ -4697,7 +4694,7 @@ algorithm
       array<tuple<Integer, list<Integer>>> arraysparseGraph;
       
       Integer sizeN, adjSize, adjSizeT;
-      Integer nonZeroElements, maxdegree, maxColor;
+      Integer nonZeroElements, maxColor;
       list<Integer> nodesList, nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
       list<BackendDAE.Var> jacDiffVars, indiffVars, indiffedVars;
@@ -4706,7 +4703,7 @@ algorithm
       array<Option<list<Integer>>> forbiddenColor;
       array<Integer> colored, colored1, ass1, ass2;
       array<list<Integer>> coloredArray;
-      list<Integer> alldegrees, varsIndexes;
+      list<Integer> varsIndexes;
       
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
       
@@ -4782,8 +4779,7 @@ algorithm
         
         // dump statistics
         nonZeroElements = List.lengthListElements(sparsepattern);
-        (alldegrees, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
+        dumpSparsePatternStatistics(Flags.isSet(Flags.JAC_DUMP),nonZeroElements,sparsepatternT);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
         //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
@@ -4835,6 +4831,25 @@ algorithm
       then fail();
   end matchcontinue;
 end generateSparsePattern;
+
+protected function dumpSparsePatternStatistics
+  input Boolean dump;
+  input Integer nonZeroElements;
+  input list<list<Integer>> sparsepatternT;
+algorithm
+  _ := match(dump,nonZeroElements,sparsepatternT)
+    local
+      Integer maxdegree;
+      list<Integer> alldegrees;
+    // dump statistics
+    case (true,_,_)
+      equation
+        (alldegrees, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
+        print("analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
+      then ();
+    else then ();  
+  end match;
+end dumpSparsePatternStatistics;
 
 protected function getSparsePattern
   input BackendDAE.StrongComponents inComponents;
@@ -5055,9 +5070,8 @@ algorithm
       equation
         arrayElement = arrayGet(inMark, inInputVar);
         false  = intEq(inmarkValue, arrayElement);
-        outLocalList = listAppend({inInputVar},inLocalList);
         _ = arrayUpdate(inMark, inInputVar, inmarkValue); 
-      then outLocalList;
+      then inInputVar::inLocalList;
    else
       then inLocalList;
   end matchcontinue;
@@ -5108,8 +5122,7 @@ algorithm
     case (oneElem::rest,_, _)
       equation
         tmplist = arrayGet(inAccumList,oneElem);
-        tmplist = listAppend({inValue},tmplist);
-        accumList = arrayUpdate(inAccumList, oneElem, tmplist);
+        accumList = arrayUpdate(inAccumList, oneElem, inValue::tmplist);
        then transposeSparsePattern2(rest, accumList, inValue); 
   end match;
 end transposeSparsePattern2;
