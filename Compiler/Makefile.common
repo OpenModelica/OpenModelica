@@ -213,6 +213,7 @@ HashTableCrIntToExp.mo \
 HashTableCrToExpSourceTpl.mo \
 HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
+HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
 IOStream.mo \
 List.mo \
