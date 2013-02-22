@@ -831,6 +831,8 @@ template initStateSets(list<StateSet> stateSets)
     <<
     for (int jj = 0; jj < <%nCandidates%>; jj++)
         colSelect<%crefarray(crA)%>[jj] = jj;
+    for (int jj = 0; jj < <%nStates%>; jj++)
+        rowSelect<%crefarray(crA)%>[jj] = jj;
     >>
     ;separator="\n")
 end initStateSets;
@@ -845,6 +847,7 @@ template makeStateSelectHeader(list<StateSet> stateSets)
      <<
      <%jacDecl%>
      long int colSelect<%crefarray(crA)%>[<%nCandidates%>];
+     long int rowSelect<%crefarray(crA)%>[<%nStates%>];
      >>
      ; separator="\n")
 end makeStateSelectHeader;
@@ -869,18 +872,16 @@ template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> state
     let newStateAssign = (states |> stateVar hasindex i0 => '<%makeReinitDynamicState(stateVar,statescandidates,crA,nStates,i0)%>';separator="\n")
     <<
     calc_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_) => '<%name%>')%>();
-    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,colSelect<%crefarray(crA)%>))
+    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,rowSelect<%crefarray(crA)%>,colSelect<%crefarray(crA)%>))
     {
         for (int row = 0; row < <%nStates%>; row++)
             for (int col = 0; col < <%nCandidates%>; col++)
                 <%accessCrA(crA,nStates,"row","col")%> = 0;
         for (int row = 0; row < <%nStates%>; row++)
         {
-            for (int col = 0; col < <%nStates%>; col++)
-            {
-                int index = colSelect<%crefarray(crA)%>[<%nStates%>-col];
-                <%accessCrA(crA,nStates,"row","index")%> = 1;
-            }
+            int rowIndex = rowSelect<%crefarray(crA)%>[(<%nStates%>-1)-row];
+            int colIndex = colSelect<%crefarray(crA)%>[(<%nCandidates%>-1)-row];
+            <%accessCrA(crA,nStates,"rowIndex","colIndex")%> = 1;
         }
         <%newStateAssign%>
         doReinit = true;
