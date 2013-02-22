@@ -494,7 +494,6 @@ int radau3Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
-  N = kinOde->N;
 
   double* feq = NV_DATA_S(f);
   double h = nlp->dt;
@@ -510,7 +509,7 @@ int radau3Res(N_Vector x, N_Vector f, void* user_data)
   double*a = nlp->a;
   double* flow, *fup;
 
-
+  N = kinOde->N;
   flow = feq + N*n;
   fup  = flow + N*n;
 
@@ -550,7 +549,6 @@ int radau1Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
-  N = kinOde->N;
   double* feq = NV_DATA_S(f);
   double h = nlp->dt;
   double t0 = nlp->t0;
@@ -564,6 +562,8 @@ int radau1Res(N_Vector x, N_Vector f, void* user_data)
   double*derx = nlp->derx;
   double*a = nlp->a;
   double* flow, *fup;
+
+  N = kinOde->N;
 
   flow = feq + N*n;
   fup  = flow + N*n;
@@ -589,7 +589,7 @@ int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
-  N = kinOde->N;
+
   double* feq = NV_DATA_S(f);
   double h = nlp->dt;
   double t0 = nlp->t0;
@@ -603,6 +603,8 @@ int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   double*derx = nlp->derx;
   double*a = nlp->a;
   double* flow, *fup;
+
+  N = kinOde->N;
 
   flow = feq + N*n;
   fup  = flow + N*n;
@@ -631,7 +633,7 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
-  N = kinOde->N;
+
   double* feq = NV_DATA_S(f);
   double h = nlp->dt;
   double t0 = nlp->t0;
@@ -645,6 +647,8 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   double*derx = nlp->derx;
   double*a = nlp->a;
   double* flow, *fup;
+
+  N = kinOde->N;
 
   flow = feq + N*n;
   fup  = flow + N*n;
@@ -685,7 +689,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
-  N = kinOde->N;
+
   double* feq = NV_DATA_S(f);
   double h = nlp->dt;
   double t0 = nlp->t0;
@@ -699,6 +703,8 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   double*derx = nlp->derx;
   double*a = nlp->a;
   double* flow, *fup;
+
+  N = kinOde->N;
 
   flow = feq + N*n;
   fup  = flow + N*n;
