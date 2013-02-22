@@ -30,8 +30,9 @@
 
 #include "simulation_options.h"
 
-const char *FLAG_NAME[FLAG_MAX] = {
-  "LOG_UNKNOWN",
+const char *FLAG_NAME[FLAG_MAX+1] = {
+  "FLAG_UNKNOWN",
+  
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_F */                     "f",
@@ -43,6 +44,7 @@ const char *FLAG_NAME[FLAG_MAX] = {
   /* FLAG_INTERACTIVE */           "interactive",
   /* FLAG_IOM */                   "iom",
   /* FLAG_L */                     "l",
+  /* FLAG_LS */                    "ls",
   /* FLAG_LV */                    "lv",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
   /* FLAG_NLS */                   "nls",
@@ -53,11 +55,14 @@ const char *FLAG_NAME[FLAG_MAX] = {
   /* FLAG_PORT */                  "port",
   /* FLAG_R */                     "r",
   /* FLAG_S */                     "s",
-  /* FLAG_W */                     "w"
+  /* FLAG_W */                     "w",
+  
+  "FLAG_MAX"
 };
 
-const char *FLAG_DESC[FLAG_MAX] = {
+const char *FLAG_DESC[FLAG_MAX+1] = {
   "unknown",
+  
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
@@ -69,6 +74,7 @@ const char *FLAG_DESC[FLAG_MAX] = {
   /* FLAG_INTERACTIVE */           "specify interactive simulation",
   /* FLAG_IOM */                   "value specifies the initialization optimization method",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
+  /* FLAG_LS */                    "value specifies the linear solver method",
   /* FLAG_LV */                    "[string list] value specifies the logging level",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
@@ -79,10 +85,12 @@ const char *FLAG_DESC[FLAG_MAX] = {
   /* FLAG_PORT */                  "value specifies interactive simulation port",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_S */                     "value specifies the solver",
-  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive"
+  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
+  
+  "FLAG_MAX"
 };
 
-const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
+const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "unknown",
 
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT or -clock=CPU\n  RT=monotonic real-time clock, CPU=process-based CPU-time",
@@ -96,6 +104,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   /* FLAG_INTERACTIVE */           "specify interactive simulation",
   /* FLAG_IOM */                   "value specifies the initialization optimization method\n  nelder_mead_ex\n  nelder_mead_ex2\n  simplex\n  newuoa",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
+  /* FLAG_LS */                    "value specifies the linear solver method\n  lapack",
   /* FLAG_LV */                    "value specifies the logging level",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality\n  svg\n  jpg\n  ps\n  gif\n  ...",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
@@ -106,7 +115,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX] = {
   /* FLAG_PORT */                  "value specifies interactive simulation port",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_S */                     "value specifies the solver\n  dassl\n  euler\n  rungekutta\n  inline-euler\n  inline-rungekutta\n  dasslwort\n  dasslSymJac\n  dasslNumJac\n  dasslColorSymJac\n  dasslInternalNumJac\n  qss",
-  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive"
+  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
+  
+  "FLAG_MAX"
 };
 
 const int FLAG_TYPE[FLAG_MAX] = {
@@ -123,17 +134,16 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_INTERACTIVE */           FLAG_TYPE_FLAG,
   /* FLAG_IOM */                   FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
+  /* FLAG_LS */                    FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
   /* FLAG_NOEMIT */                FLAG_TYPE_FLAG,
-  /* FLAG_OUTPUT */                FLAG_TYPE_FLAG_VALUE,
-  /* FLAG_OVERRIDE */              FLAG_TYPE_FLAG_VALUE,
-  /* FLAG_OVERRIDE_FILE */         FLAG_TYPE_FLAG_VALUE,
+  /* FLAG_OUTPUT */                FLAG_TYPE_OPTION,
+  /* FLAG_OVERRIDE */              FLAG_TYPE_OPTION,
+  /* FLAG_OVERRIDE_FILE */         FLAG_TYPE_OPTION,
   /* FLAG_PORT */                  FLAG_TYPE_OPTION,
   /* FLAG_R */                     FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
 };
-
-

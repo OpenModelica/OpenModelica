@@ -2095,9 +2095,7 @@ char* System_getSimulationHelpText(int detailed)
     if (FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
       cur += snprintf(cur, 8191-(buf-cur), "<-%s>\n  %s\n", FLAG_NAME[i], desc[i]);
     } else if (FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
-      cur += snprintf(cur, 8191-(buf-cur), "<-%s=value>\n  %s\n", FLAG_NAME[i], desc[i]);
-    } else if (FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE) {
-      cur += snprintf(cur, 8191-(buf-cur), "<-%s value>\n  %s\n", FLAG_NAME[i], desc[i]);
+      cur += snprintf(cur, 8191-(buf-cur), "<-%s=value> or <-%s value>\n  %s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
     } else {
       cur += snprintf(cur, 8191-(buf-cur), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
     }

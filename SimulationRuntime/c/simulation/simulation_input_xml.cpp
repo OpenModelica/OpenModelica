@@ -221,8 +221,8 @@ void read_input_xml(int argc, char **argv,
   std::map<std::string, modelica_integer>::iterator it, itParam;
 
   /* read the filename from the command line (if any) */
-  if (optionSet("f",argc,argv)) {
-    filename = getOption("f",argc,argv);
+  if(omc_flag[FLAG_F]) {
+    filename = omc_flagValue[FLAG_F];
   } else {
     /* no file given on the command line? use the default */
     filename = string(modelData->modelFilePrefix)+"_init.xml";  /* model_name defined in generated code for model.*/
@@ -283,8 +283,8 @@ void read_input_xml(int argc, char **argv,
   }
 
   // deal with override
-  const char* override = getFlagValue("override", argc, argv);
-  const char* overrideFile = getFlagValue("overrideFile", argc, argv);
+  const char* override = omc_flagValue[FLAG_OVERRIDE];
+  const char* overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
   doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */

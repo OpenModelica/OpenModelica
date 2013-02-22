@@ -33,7 +33,7 @@
 #ifndef OPENMODELICA_SIMULATION_OPTIONS_H
 
 #if defined(__cplusplus)
-extern "C" {
+  extern "C" {
 #endif
 
 enum _FLAG
@@ -51,6 +51,7 @@ enum _FLAG
   FLAG_INTERACTIVE,
   FLAG_IOM,
   FLAG_L,
+  FLAG_LS,
   FLAG_LV,
   FLAG_MEASURETIMEPLOTFORMAT,
   FLAG_NLS,
@@ -71,19 +72,18 @@ enum _FLAG_TYPE
   FLAG_TYPE_UNKNOWN = 0,
   
   FLAG_TYPE_FLAG,         /* e.g. -f */
-  FLAG_TYPE_OPTION,       /* e.g. -f=value */
-  FLAG_TYPE_FLAG_VALUE,   /* e.g. -f value */
+  FLAG_TYPE_OPTION,       /* e.g. -f=value or -f value */
   
   FLAG_TYPE_MAX
 };
 
-extern const char *FLAG_NAME[FLAG_MAX];
-extern const char *FLAG_DESC[FLAG_MAX];
-extern const char *FLAG_DETAILED_DESC[FLAG_MAX];
+extern const char *FLAG_NAME[FLAG_MAX+1];
+extern const char *FLAG_DESC[FLAG_MAX+1];
+extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 extern const int FLAG_TYPE[FLAG_MAX];
 
 #if defined(__cplusplus)
-}
+  }
 #endif
 
 #endif

@@ -35,16 +35,17 @@
 #include "simulation_options.h"
 
 #ifdef __cplusplus
-extern "C" {
+  extern "C" {
 #endif
+
+extern int omc_flag[FLAG_MAX];
+extern char *omc_flagValue[FLAG_MAX];
+
+int helpFlagSet(int argc, char** argv);
 int checkCommandLineArguments(int argc, char **argv);
 
-int flagSet(const char*, int, char**);                        /* -f */
-int optionSet(const char *option, int argc, char** argv);     /* -f=value */
-const char* getOption(const char*, int, char **);      /* -f=value; returns NULL if not found */
-const char* getFlagValue(const char *, int , char **); /* -f value; returns NULL if not found */
 #ifdef __cplusplus
-}
+  }
 #endif
 
 #endif

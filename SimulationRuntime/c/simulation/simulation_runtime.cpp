@@ -155,12 +155,12 @@ void setTermMsg(const char *msg)
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
-  const char *cflags = getOption("lv", argc, argv);
+  const char *cflags = omc_flagValue[FLAG_LV];
   const string *flags = cflags ? new string(cflags) : NULL;
   int i;
   int error;
   
-  if(flagSet("w", argc, argv))
+  if(omc_flag[FLAG_W])
     showAllWarnings = 1;
 
   if(!flags)
@@ -250,7 +250,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
 int getNonlinearSolverMethod(int argc, char**argv)
 {
-  const char *cflags = getOption("nls", argc, argv);
+  const char *cflags = omc_flagValue[FLAG_NLS];
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
@@ -275,7 +275,7 @@ int getNonlinearSolverMethod(int argc, char**argv)
 
 int getlinearSolverMethod(int argc, char**argv)
 {
-  const char *cflags = getOption("ls", argc, argv);
+  const char *cflags = omc_flagValue[FLAG_LS];
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
@@ -384,11 +384,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   int measureSimTime = 0;
 
   /* linear model option is set : <-l lintime> */
-  int create_linearmodel = optionSet("l", argc, argv);
-  const char* lintime = getOption("l", argc, argv);
+  int create_linearmodel = omc_flag[FLAG_L];
+  const char* lintime = omc_flagValue[FLAG_L];
 
   /* activated measure time option with LOG_STATS */
-  if((ACTIVE_STREAM(LOG_STATS) || flagSet("cpu", argc, argv)) && !measure_time_flag)
+  if(ACTIVE_STREAM(LOG_STATS) || omc_flag[FLAG_CPU] && !measure_time_flag)
   {
     measure_time_flag = 1;
     measureSimTime = 1;
@@ -400,10 +400,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
     const char *clockName;
-    if (clockName=getOption("clock",argc,argv)) {
-      if (0==strcmp(clockName,"CPU")) {
+    if (clockName=omc_flagValue[FLAG_CLOCK]) {
+      if (0==strcmp(clockName, "CPU")) {
         clock = OMC_CLOCK_CPUTIME;
-      } else if (0==strcmp(clockName,"RT")) {
+      } else if (0==strcmp(clockName, "RT")) {
         clock = OMC_CLOCK_REALTIME;
       } else {
         WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT. Defaulting to RT.", clockName);
@@ -434,9 +434,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     INFO1(LOG_STDOUT, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
   }
 
-  if(optionSet("s", argc, argv))
+  if(omc_flag[FLAG_S])
   {
-    const string *method = new string(getOption("s", argc, argv));
+    const string *method = new string(omc_flagValue[FLAG_S]);
     if(method)
     {
       data->simulationInfo.solverMethod = method->c_str();
@@ -445,7 +445,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   }
 
   // Create a result file
-  const char *result_file = getOption("r", argc, argv);
+  const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
   if(!result_file)
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
@@ -460,30 +460,33 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string init_lambda_steps_string = "";
   int init_lambda_steps = 5;
   string outputVariablesAtEnd = "";
-  int cpuTime = flagSet("cpu", argc, argv);
+  int cpuTime = omc_flag[FLAG_CPU];
 
-  if(optionSet("iim", argc, argv)) {
-    init_initMethod = getOption("iim", argc, argv);
-  }
-  if(optionSet("iom", argc, argv)) {
-    init_optiMethod = getOption("iom", argc, argv);
-  }
-  if(optionSet("iif", argc, argv)) {
-    init_file = getOption("iif", argc, argv);
-  }
-  if(optionSet("iit", argc, argv))
+  if(omc_flag[FLAG_IIM])
   {
-    init_time_string = getOption("iit", argc, argv);
+    init_initMethod = omc_flagValue[FLAG_IIM];
+  }
+  if(omc_flag[FLAG_IOM])
+  {
+    init_optiMethod = omc_flagValue[FLAG_IOM];
+  }
+  if(omc_flag[FLAG_IIF])
+  {
+    init_file = omc_flagValue[FLAG_IIF];
+  }
+  if(omc_flag[FLAG_IIT])
+  {
+    init_time_string = omc_flagValue[FLAG_IIT];
     init_time = atof(init_time_string.c_str());
   }
-  if(optionSet("ils", argc, argv))
+  if(omc_flag[FLAG_ILS])
   {
-    init_lambda_steps_string = getOption("ils", argc, argv);
+    init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
-
-  if(flagSet("output", argc, argv)) {
-    outputVariablesAtEnd = getFlagValue("output", argc, argv);
+  if(omc_flag[FLAG_OUTPUT])
+  {
+    outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
   retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
@@ -511,7 +514,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
-    const char* plotFormat = getOption("measureTimePlotFormat", argc, argv);
+    const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
@@ -664,7 +667,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   int i, j;
   initDumpSystem();
 
-  if(flagSet("?", argc, argv) || flagSet("help", argc, argv) || checkCommandLineArguments(argc, argv))
+  if(helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
   {
     INFO1(LOG_STDOUT, "usage: %s", argv[0]);
     INDENT(LOG_STDOUT);
@@ -674,9 +677,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
         INFO2(LOG_STDOUT, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-        INFO2(LOG_STDOUT, "<-%s=value>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
-      else if(FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE)
-        INFO2(LOG_STDOUT, "<-%s value>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
+        INFO3(LOG_STDOUT, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
       else
         WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
     }
@@ -685,9 +686,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     EXIT(0);
   }
   
-  if(optionSet("help", argc, argv))
+  if(omc_flag[FLAG_HELP])
   {
-    std::string option = getOption("help", argc, argv);
+    std::string option = omc_flagValue[FLAG_HELP];
     
     for(i=1; i<FLAG_MAX; ++i)
     {
@@ -696,9 +697,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
         if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
           INFO2(LOG_STDOUT, "detaild flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s=value>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
-        else if(FLAG_TYPE[i] == FLAG_TYPE_FLAG_VALUE)
-          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s value>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+          INFO3(LOG_STDOUT, "detaild flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else
           WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
         
@@ -750,27 +749,23 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     return 1;
   }
 
-  /* verbose flag is set : -v */
-  if(flagSet("v", argc, argv))
-    useStream[LOG_STATS] = 1;
-  sim_noemit = flagSet("noemit", argc, argv);
-
+  sim_noemit = omc_flag[FLAG_NOEMIT];
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  interactiveSimulation = flagSet("interactive", argc, argv);
-  if(interactiveSimulation && flagSet("port", argc, argv)) {
+  interactiveSimulation = omc_flag[FLAG_INTERACTIVE];
+  if(interactiveSimulation && omc_flag[FLAG_PORT])
+  {
     cout << "userPort" << endl;
-    const char *portvalue = getOption("port", argc, argv);
-    std::istringstream stream(portvalue);
+    std::istringstream stream(omc_flagValue[FLAG_PORT]);
     int userPort;
     stream >> userPort;
     setPortOfControlServer(userPort);
-  } else if(!interactiveSimulation && flagSet("port", argc, argv))
+  }
+  else if(!interactiveSimulation && omc_flag[FLAG_PORT])
   {
-    const char *portvalue = getOption("port", argc, argv);
-    std::istringstream stream(portvalue);
+    std::istringstream stream(omc_flagValue[FLAG_PORT]);
     int port;
     stream >> port;
     sim_communication_port_open = 1;
