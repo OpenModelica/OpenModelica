@@ -225,9 +225,9 @@ algorithm
         markarr = arrayCreate(size,-1);
         (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,env,1,markarr,repl,repleval);
         // replace evaluated parameter in parameters
-        comps = BackendDAETransform.tarjanAlgorithm(mt, ass);        
+        comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
          // evaluate vars with bind expression consists of evaluated vars
-        (knvars,repl,repleval,cache,mark) = traverseVariablesSorted(comps,knvars,m,inieqns,cache,env,mark,markarr,repl,repleval);
+        (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,env,mark,markarr,repl,repleval);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repleval);
         // replace evaluated parameter in variables
         (systs,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
@@ -765,7 +765,7 @@ algorithm
   end matchcontinue;
 end replaceCrefWithBindStartExp;
 
-protected function traverseVariablesSorted
+protected function traverseParameterSorted
   input list<list<Integer>> inComps;
   input BackendDAE.Variables inKnVars;
   input BackendDAE.IncidenceMatrix m;
@@ -791,7 +791,6 @@ algorithm
       Integer i,mark;
       list<list<Integer>> rest;
       Env.Cache cache;
-      list<DAE.ComponentRef> crlst;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
       
@@ -801,21 +800,22 @@ algorithm
     case({i}::rest,_,_,_,_,_,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(inKnVars,i);
-        (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate);
-        (knvars,repl1,evrepl,cache,mark) =  traverseVariablesSorted(rest,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl1,evrepl);
+        (v,knvars,cache,repl1,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl);
+        (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,knvars,m,inIEqns,cache,env,mark,markarr,repl1,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
       then
         (knvars,repl1,evrepl,cache,mark);
     case (ilst::rest,_,_,_,_,_,_,_,_,_)
       equation
-        vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
-        crlst = List.map(vlst,BackendVariable.varCref); 
-        str = stringDelimitList(List.map(crlst,ComponentReference.printComponentRefStr),"\n");  
-        str = stringAppendList({"BackendDAEOptimize.traverseVariablesSorted faild because of strong connected Block in Parameters!\n",str,"\n"});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        // vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
+        // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
+        // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
       then
-        fail();
+        (knvars,repl1,evrepl,cache,mark);
   end matchcontinue;
-end traverseVariablesSorted;
+end traverseParameterSorted;
 
 protected function evaluateParameterBindings
   input BackendDAE.Var var;
@@ -859,7 +859,6 @@ algorithm
         (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
         (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
         v = BackendVariable.setVarAttributes(v,attr);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl);
         //false = Expression.expHasCrefs(e);
         // evaluate expression
         //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
@@ -867,18 +866,17 @@ algorithm
         // set bind value
         //v = BackendVariable.setBindExp(var,e1);
         v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
-        knVars = BackendVariable.setVarAt(knVars,index,v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then 
-        (knVars,repl,repleval,cache,mark);
+        (knVars,repl,repleval,iCache,iMark);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=NONE(),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(var,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-        true = BackendVariable.varFixed(v);
+        true = BackendVariable.varFixed(var);
         e = DAEUtil.getStartAttrFail(attr);
         // apply replacements
         (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
         (e,_) = ExpressionSimplify.simplify(e);
-        v = BackendVariable.setVarStartValue(v,e);
+        v = BackendVariable.setVarStartValue(var,e);
         (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
         (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
         v = BackendVariable.setVarAttributes(v,attr);
@@ -889,9 +887,9 @@ algorithm
         // set bind value
         //v = BackendVariable.setBindExp(var,e1);
         v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
-        knVars = BackendVariable.setVarAt(knVars,index,v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then 
-        (knVars,repl,repleval,cache,mark);
+        (knVars,repl,repleval,iCache,iMark);
     // other vars
     case (BackendDAE.VAR(bindExp=SOME(e),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
@@ -901,23 +899,19 @@ algorithm
         v = BackendVariable.setBindExp(var,e);
         (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
         v = BackendVariable.setVarAttributes(v,attr);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-        knVars = BackendVariable.setVarAt(knVars,index,v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then 
-        (knVars,repl,repleval,cache,mark);
+        (knVars,iRepl,repleval,iCache,iMark);
     case (BackendDAE.VAR(values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
         // apply replacements
         (attr,(repleval,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
         v = BackendVariable.setVarAttributes(var,attr);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-        knVars = BackendVariable.setVarAt(knVars,index,v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then 
-        (knVars,repl,repleval,cache,mark);
+        (knVars,iRepl,repleval,iCache,iMark);
     else
-      equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(var,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-      then (knVars,repl,iReplEvaluate,cache,iMark);
+      then (inKnVars,iRepl,iReplEvaluate,iCache,iMark);
   end matchcontinue;
 end evaluateParameterBindings;
 

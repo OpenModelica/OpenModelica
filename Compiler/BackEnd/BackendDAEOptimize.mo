@@ -1745,7 +1745,6 @@ algorithm
       Integer c;
       list<list<Integer>> rest;
       Env.Cache cache;
-      list<DAE.ComponentRef> crlst;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
       
@@ -1761,13 +1760,14 @@ algorithm
         (knvars,repl1,cache);
     case (ilst::rest,_,_,_,_,_)
       equation
-        vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
-        crlst = List.map(vlst,BackendVariable.varCref); 
-        str = stringDelimitList(List.map(crlst,ComponentReference.printComponentRefStr),"\n");  
-        str = stringAppendList({"BackendDAEOptimize.traverseVariablesSorted faild because of strong connected Block in Parameters!\n",str,"\n"});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        //vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
+        //str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");  
+        //str = stringAppendList({"BackendDAEOptimize.traverseVariablesSorted faild because of strong connected Block in Parameters!\n",str,"\n"});
+        //Error.addMessage(Error.INTERNAL_ERROR, {str});
+        (knvars,repl1,cache) =  traverseVariablesSorted(List.map(ilst,List.create),inKnVars,repl,replEvaluate,iCache,env);
+        (knvars,repl1,cache) =  traverseVariablesSorted(rest,knvars,repl,repl1,cache,env);
       then
-        fail();
+        (knvars,repl1,cache);
   end matchcontinue;
 end traverseVariablesSorted;
 
