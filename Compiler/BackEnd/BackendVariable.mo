@@ -2054,18 +2054,19 @@ public function getMinMaxAsserts "function getMinMaxAsserts
   input DAE.ElementSource source;
   input BackendDAE.VarKind kind;
   input BackendDAE.Type vartype;
-  output list<DAE.Algorithm> minmax;
+  input list<DAE.Algorithm> iMinmax;
+  output list<DAE.Algorithm> oMinmax;
 algorithm
-  minmax :=
-  matchcontinue (attr,name,source,kind,vartype)
+  oMinmax :=
+  matchcontinue (attr,name,source,kind,vartype,iMinmax)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str, format;
       DAE.Type tp;
     
-    case(_,_,_,BackendDAE.CONST(),_) then {};
-    case (_,_,_,_,_)
+    case(_,_,_,BackendDAE.CONST(),_,_) then iMinmax;
+    case (_,_,_,_,_,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
@@ -2086,8 +2087,8 @@ algorithm
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})};
-    case(_,_,_,_,_) then {};
+        DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
+    else then iMinmax;
   end matchcontinue;
 end getMinMaxAsserts;
 
@@ -2120,18 +2121,19 @@ public function getNominalAssert "function getNominalAssert
   input DAE.ElementSource source;
   input BackendDAE.VarKind kind;
   input BackendDAE.Type vartype;
-  output list<DAE.Algorithm> nominal;
+  input list<DAE.Algorithm> iNominal;
+  output list<DAE.Algorithm> oNominal;
 algorithm
   nominal :=
-  matchcontinue (attr,name,source,kind,vartype)
+  matchcontinue (attr,name,source,kind,vartype,iNominal)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str, format;
       DAE.Type tp;
     
-    case(_,_,_,BackendDAE.CONST(),_) then {};
-    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_)
+    case(_,_,_,BackendDAE.CONST(),_,_) then iNominal;
+    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
@@ -2151,8 +2153,8 @@ algorithm
               );
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})};
-    case(_,_,_,_,_) then {};
+        DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
+    else then iNominal;
   end matchcontinue;
 end getNominalAssert;
 

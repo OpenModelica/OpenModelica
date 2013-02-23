@@ -643,8 +643,8 @@ algorithm
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
-        _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp);
-        _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp);
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp, {});
+        _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp, {});
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, (SOME(functionTree), {DAE.NORM_INLINE()}));
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, comment, ct));
@@ -699,8 +699,8 @@ algorithm
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
-        _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp);
-        _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp);
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp, {});
+        _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp, {});
         fnstpl = (SOME(functionTree), {DAE.NORM_INLINE()});
         (bind1, source, inlineHT) = inlineExpOpt(bind, fnstpl, source, iInlineHT);
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, fnstpl);

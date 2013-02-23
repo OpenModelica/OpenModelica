@@ -1497,6 +1497,7 @@ algorithm
       (initDAE, varlst) = Initialization.solveInitialSystem(dlow, {}); 
       BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars=knownVars)) = dlow;
       tempvars = List.map2(varlst, dlowvarToSimvar, NONE(), knownVars);
+
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
@@ -1505,7 +1506,7 @@ algorithm
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
-      
+
       dlow2 = dlow;
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                         constraints=constrsarr, 
@@ -1515,19 +1516,19 @@ algorithm
                                                         eventInfo=BackendDAE.EVENT_INFO(sampleLookup=sampleLookup))) = dlow2;
       
       extObjInfo = createExtObjInfo(shared);
-      
+
       whenClauses = createSimWhenClauses(dlow2);
       zeroCrossings = Util.if_(ifcpp, getRelations(dlow2), getZeroCrossings(dlow2));
       relations = getRelations(dlow2);
       sampleZC = getSamples(dlow2);
       zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
-      
+
       // state set stuff
       (dlow2, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow2, {}, uniqueEqIndex, tempvars);
 
       // inline solver stuff
       (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
-      
+
       // initialization stuff
       (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
@@ -1542,23 +1543,23 @@ algorithm
 
       // Add model info
       modelInfo = createModelInfo(class_, dlow2, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
-      
+
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
       modelInfo = addTempVars(tempvars, modelInfo);
-      
+
       // Assertions and crap
       // create parameter equations
       ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createStartValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
       (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
       ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-      
+
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2, extractDiscreteModelVars, {});
       makefileParams = createMakefileParams(includeDirs, libs);
       (delayedExps, maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
-      
+
       //append removed equation to all equations, since these are actually 
       //just the algorithms without outputs
       algebraicEquations = listAppend(algebraicEquations, removedEquations::{});
@@ -1578,11 +1579,11 @@ algorithm
       SymbolicJacsStateSelect = indexStateSets(stateSets, {});
       (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsStateSelect) = countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsStateSelect);
       SymbolicJacs = listAppend(SymbolicJacsStateSelect, SymbolicJacs);
-      
+
       // generate jacobian or linear model matrices
       LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
       LinearMatrices = jacG::LinearMatrices;
-      
+
       (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices) = countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices);
       
       
@@ -1595,7 +1596,7 @@ algorithm
       numberofEqns = uniqueEqIndex; /* This is a *much* better estimate than the guessed number of equations */
       
       modelInfo = addNumEqnsandNumofSystems(modelInfo, numberofEqns, numberofLinearSys, numberofNonLinearSys, numberofMixedSys);
-      
+
       // replace div operator with div operator with check of Division by zero
       allEquations = List.map(allEquations, addDivExpErrorMsgtoSimEqSystem);
       odeEquations = List.mapList(odeEquations, addDivExpErrorMsgtoSimEqSystem);
@@ -1605,17 +1606,16 @@ algorithm
       parameterEquations = List.map(parameterEquations, addDivExpErrorMsgtoSimEqSystem);
       removedEquations = List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
       initialEquations = List.map(initialEquations, addDivExpErrorMsgtoSimEqSystem);
-      
+
       odeEquations = makeEqualLengthLists(odeEquations, Config.noProc());
       algebraicEquations = makeEqualLengthLists(algebraicEquations, Config.noProc());
-      
+
       Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n");
       crefToSimVarHT = createCrefToSimVarHT(modelInfo);
       Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n");
       
       constraints = arrayList(constrsarr);
       classAttributes = arrayList(clsattrsarra);
-      
       simCode = SimCode.SIMCODE(modelInfo, 
                                 {}, // Set by the traversal below... 
                                 recordDecls, 
@@ -5061,7 +5061,7 @@ algorithm
     case (((NONE(), ({}, ({}, {})), {}))::rest, _, _, name::restnames)
       equation
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, iuniqueEqIndex, restnames);
-        linearModelMatrices = listAppend({(({}, {}, name, ({}, ({}, {})), {}, 0))}, linearModelMatrices);
+        linearModelMatrices = (({}, {}, name, ({}, ({}, {})), {}, 0))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
         
@@ -5076,7 +5076,7 @@ algorithm
         s = intString(listLength(diffedCompRefs));
 
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, iuniqueEqIndex, restnames);
-        linearModelMatrices = listAppend({(({(({}, {}, s))}, seedVars, name, (sparsepattern, (seedVars, indexVars)), colsColors, maxColor))}, linearModelMatrices);
+        linearModelMatrices = (({(({}, {}, s))}, seedVars, name, (sparsepattern, (seedVars, indexVars)), colsColors, maxColor))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
         
@@ -5111,7 +5111,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, uniqueEqIndex, restnames);
-        linearModelMatrices = listAppend({(({((columnEquations, columnVars, s))}, seedVars, name, (sparsepattern, (seedVars, indexVars)), colsColors, maxColor))}, linearModelMatrices);
+        linearModelMatrices = (({((columnEquations, columnVars, s))}, seedVars, name, (sparsepattern, (seedVars, indexVars)), colsColors, maxColor))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
     else
@@ -5324,13 +5324,13 @@ algorithm
       BackendDAE.SymbolicJacobian jacobian;
       SimCode.JacobianMatrix jacG;
       Integer iniqueEqIndex;
-      
+/*
     case(DAE, _) equation
       true = Flags.isSet(Flags.SYMBOLIC_INITIALIZATION);
       (jacobian, _, DAE2) = BackendDAEOptimize.generateInitialMatrices(DAE);
       (jacG, iniqueEqIndex) = createInitSymbolicJacobianssSimCode(jacobian, DAE2, inIniqueEqIndex);
     then (jacG, iniqueEqIndex);
-      
+*/    
     case(DAE, _) equation
       jacG = ({}, {}, "G", ({}, ({}, {})), {}, 0);
     then (jacG, inIniqueEqIndex);
@@ -7336,9 +7336,9 @@ algorithm
       // calc. will override those entries!    
     case ((var as BackendDAE.VAR(varName=name, source=source), (eqns, av)))
       equation
-        SimCode.NOALIAS() = getAliasVar(var, SOME(av));
         startv = BackendVariable.varStartValueFail(var);
         false = Expression.isConst(startv);
+        SimCode.NOALIAS() = getAliasVar(var, SOME(av));
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, false);
       then
         ((var, (initialEquation :: eqns, av)));
@@ -7422,7 +7422,7 @@ algorithm
   matchcontinue (inTpl) 
     local
       BackendDAE.Var var;
-      list<DAE.Algorithm> asserts, asserts1, nominal;
+      list<DAE.Algorithm> asserts;
       DAE.ComponentRef name;
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
@@ -7431,10 +7431,9 @@ algorithm
       
     case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts))
       equation
-        nominal = BackendVariable.getNominalAssert(attr, name, source, kind, varType);
-        asserts1 = listAppend(asserts, nominal);
+        asserts = BackendVariable.getNominalAssert(attr, name, source, kind, varType, asserts);
       then
-        ((var, asserts1));
+        ((var, asserts));
         
     case _
       then inTpl;
@@ -7449,7 +7448,7 @@ algorithm
   matchcontinue (inTpl) 
     local
       BackendDAE.Var var;
-      list<DAE.Algorithm> asserts, asserts1, minmax;
+      list<DAE.Algorithm> asserts;
       DAE.ComponentRef name;
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
@@ -7458,10 +7457,9 @@ algorithm
       
     case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts))
       equation
-        minmax = BackendVariable.getMinMaxAsserts(attr, name, source, kind, varType);
-        asserts1 = listAppend(asserts, minmax);
+        asserts = BackendVariable.getMinMaxAsserts(attr, name, source, kind, varType, asserts);
       then
-        ((var, asserts1));
+        ((var, asserts));
         
     case _
       then inTpl;
@@ -8497,12 +8495,21 @@ algorithm
     local
       SimCode.HashTableCrefToSimVar ht;
       list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, aliasVars, intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars;
-    case (SimCode.MODELINFO(vars = SimCode.SIMVARS(
+      Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars;
+      Integer numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,size;
+    case (SimCode.MODELINFO(varInfo = SimCode.VARINFO(numStateVars=numStateVars,numInlineVars=numInlineVars,numAlgVars=numAlgVars,
+      numIntAlgVars=numIntAlgVars,numBoolAlgVars=numBoolAlgVars,numAlgAliasVars=numAlgAliasVars,numIntAliasVars=numIntAliasVars,
+      numBoolAliasVars=numBoolAliasVars,numParams=numParams,numIntParams=numIntParams,numBoolParams=numBoolParams,
+      numOutVars=numOutVars,numInVars=numInVars),
+      vars = SimCode.SIMVARS(
       stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars)))
       equation
-        ht = emptyHashTable();
+        size = numStateVars+numInlineVars+numAlgVars+numIntAlgVars+numBoolAlgVars+numAlgAliasVars+numIntAliasVars+
+               numBoolAliasVars+numParams+numIntParams+numBoolParams+numOutVars+numInVars;
+        size = intMax(size,1000);
+        ht = emptyHashTableSized(size);
         ht = List.fold(stateVars, addSimVarToHashTable, ht);
         ht = List.fold(derivativeVars, addSimVarToHashTable, ht);
         ht = List.fold(inlineVars, addSimVarToHashTable, ht);
@@ -10239,6 +10246,24 @@ algorithm
   emptyarr := arrayCreate(100, NONE());
   hashTable := SimCode.HASHTABLE(arr, SimCode.VALUE_ARRAY(0, 100, emptyarr), 1000, 0);
 end emptyHashTable;
+
+public function emptyHashTableSized "
+  author: PA
+  Returns an empty HashTable.
+  Using the bucketsize 100 and array size 10."
+  input Integer size;
+  output SimCode.HashTableCrefToSimVar hashTable;
+protected
+  array<list<tuple<SimCode.Key, Integer>>> arr;
+  list<Option<tuple<SimCode.Key, SimCode.Value>>> lst;
+  array<Option<tuple<SimCode.Key, SimCode.Value>>> emptyarr;
+  Integer szArr;
+algorithm
+  arr := arrayCreate(size, {});
+  emptyarr := arrayCreate(size, NONE());
+  szArr:=realInt(realMul(intReal(size), 0.6));
+  hashTable := SimCode.HASHTABLE(arr, SimCode.VALUE_ARRAY(0, szArr, emptyarr), size, 0);
+end emptyHashTableSized;
 
 /*
  public function isEmpty "Returns true if hashtable is empty"
