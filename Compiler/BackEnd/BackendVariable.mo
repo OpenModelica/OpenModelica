@@ -2370,26 +2370,25 @@ protected function vararraySetnth
  inputs:  (BackendDAE.VariableArray, int /* n */, BackendDAE.Var /* v */)
  outputs: BackendDAE.VariableArray ="
   input BackendDAE.VariableArray inVariableArray;
-  input Integer inInteger;
+  input Integer pos "1 Based";
   input BackendDAE.Var inVar;
   output BackendDAE.VariableArray outVariableArray;
 algorithm
-  outVariableArray := matchcontinue (inVariableArray,inInteger,inVar)
+  outVariableArray := matchcontinue (inVariableArray,pos,inVar)
     local
-      array<Option<BackendDAE.Var>> arr_1,arr;
-      Integer n,size,pos;
-      BackendDAE.Var v;
+      array<Option<BackendDAE.Var>> arr;
+      Integer n,size;
 
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos,v)
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_,_)
       equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(v));
+        true = intLe(pos,size);
+        arr = arrayUpdate(arr, pos, SOME(inVar));
       then
-        BackendDAE.VARIABLE_ARRAY(n,size,arr_1);
+        BackendDAE.VARIABLE_ARRAY(n,size,arr);
 
-    case (_,_,_)
+    else
       equation
-        print("- vararraySetnth failed\n");
+        print("- vararraySetnth failed at " +& intString(pos)  +& "\n");
       then
         fail();
   end matchcontinue;
@@ -3160,12 +3159,11 @@ algorithm
       equation
         (_,{indx}) = getVar(cr, vars);
         // print("adding when already present => Updating value\n");
-        indx_1 = indx - 1;
-        varr_1 = vararraySetnth(varr, indx_1, newv);
+        varr_1 = vararraySetnth(varr, indx, newv);
       then
         BackendDAE.VARIABLES(hashvec,varr_1,bsize,n);
 
-    case (_,_)
+    else
       equation
         print("- addVar failed\n");
       then
@@ -3295,6 +3293,34 @@ algorithm
         fail();
   end matchcontinue;
 end getVarAt;
+
+public function setVarAt
+"function: setVarAt
+  author: Frenkel TUD
+  set variable at a given position, enumerated from 1..n"
+  input BackendDAE.Variables inVariables;
+  input Integer pos;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVariables,pos,inVar)
+    local
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+      BackendDAE.VariableArray varArr;
+      Integer bucketSize,numberOfVars;
+    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr=varArr,bucketSize=bucketSize,numberOfVars=numberOfVars),_,_)
+      equation
+        varArr = vararraySetnth(varArr, pos, inVar);
+      then
+        BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars);
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "setVarAt failed to set the variable at index:" +& intString(pos));
+      then
+        fail();
+  end matchcontinue;
+end setVarAt;
 
 public function getVarSharedAt
 "function: getVarSharedAt

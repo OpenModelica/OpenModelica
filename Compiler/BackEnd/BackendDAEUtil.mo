@@ -74,6 +74,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Derive;
 protected import Error;
+protected import EvaluateParameter;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -3800,33 +3801,11 @@ algorithm
         b = List.isMemberOnTrue(i1, inVarIndxLst, intEq);
         vars = List.consOnTrue(not b, i1, inVarIndxLst);
       then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest,i::irest,_,_)
+    case (_::rest,i::irest,_,_)
       equation
         b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
         vars = List.consOnTrue(not b, i, inVarIndxLst);
       then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_)
-      equation
-        b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i, inVarIndxLst);
-      then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_)
-      equation
-        b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i, inVarIndxLst);
-      then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())::rest,i::irest,_,_)
-      equation
-        b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i, inVarIndxLst);
-      then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())::rest,i::irest,_,_)
-      equation
-        b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i, inVarIndxLst);
-      then incidenceRowExp1(rest,irest,vars,diffindex);
-    case (_::rest,_::irest,_,_)
-      then incidenceRowExp1(rest,irest,inVarIndxLst,diffindex);
   end match;
 end incidenceRowExp1;
 
@@ -8654,9 +8633,15 @@ algorithm
   allPreOptModules := {(RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
                        (RemoveSimpleEquations.allAcausal, "removeAllSimpleEquations", false),
                        (BackendDAEOptimize.inlineArrayEqn, "inlineArrayEqn", false),
-                       (BackendDAEOptimize.evaluateFinalParameters, "evaluateFinalParameters", false),
+                       (BackendDAEOptimize.evaluateFinalParameters, "evaluateFinalParametersOld", false),
                        (BackendDAEOptimize.evaluateParameters, "evaluateParameters", false),
                        (BackendDAEOptimize.removeFinalParameters, "removeFinalParameters", false),
+                       (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
+                       (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
+                       (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", false),
+                       (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", false),
+                       (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
+                       (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
                        (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
@@ -8695,6 +8680,12 @@ algorithm
                         (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
                         (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
                         (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
+                        (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
+                        (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
+                        (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", false),
+                        (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", false),
+                        (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
+                        (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
                         (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
                         (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
                         (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),

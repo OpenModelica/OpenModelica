@@ -69,20 +69,41 @@ public function listEquation "function listEquation
 protected
   Integer len, size, arrsize;
   Real rlen, rlen_1;
-  array<Option<BackendDAE.Equation>> optarr, eqnarr, newarr;
-  list<Option<BackendDAE.Equation>> eqn_optlst;
+  array<Option<BackendDAE.Equation>> optarr;
 algorithm
   len := listLength(inEquationList);
   rlen := intReal(len);
   rlen_1 := rlen *. 1.4;
   arrsize := realInt(rlen_1);
   optarr := arrayCreate(arrsize, NONE());
-  eqn_optlst := List.map(inEquationList, Util.makeOption);
-  eqnarr := listArray(eqn_optlst);
-  newarr := Util.arrayCopy(eqnarr, optarr);
-  size := equationLstSize(inEquationList);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size,len,arrsize,newarr);
+  (size,optarr) := listEquation1(inEquationList,1,0,optarr);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size,len,arrsize,optarr);
 end listEquation;
+
+protected function listEquation1
+  input list<BackendDAE.Equation> inEquationList;
+  input Integer pos;
+  input Integer iSize;
+  input array<Option<BackendDAE.Equation>> iOptArr;
+  output Integer oSize;
+  output array<Option<BackendDAE.Equation>> oOptArr;
+algorithm
+  (oSize,oOptArr) := match(inEquationList,pos,iSize,iOptArr)
+    local
+      BackendDAE.Equation eq;
+      list<BackendDAE.Equation> rest;
+      Integer size;
+      array<Option<BackendDAE.Equation>> optArr;
+    case ({},_,_,_) then (iSize,iOptArr);
+    case (eq::rest,_,_,_)
+      equation
+        size = equationSize(eq);
+        optArr = arrayUpdate(iOptArr,pos,SOME(eq));
+        (size,optArr) = listEquation1(rest,pos+1,size+iSize,optArr);
+      then
+        (size,optArr);
+end match;
+end listEquation1;
 
 public function emptyEqns
   output BackendDAE.EquationArray eqns;

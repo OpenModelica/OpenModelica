@@ -143,6 +143,7 @@ Causalize.mo \
 DAEQuery.mo \
 Derive.mo \
 DumpHTML.mo \
+EvaluateParameter.mo \
 ExpressionSolve.mo \
 GraphML.mo \
 HashTableCrSimVars.mo \
