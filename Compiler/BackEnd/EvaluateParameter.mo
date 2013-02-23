@@ -461,6 +461,33 @@ algorithm
       String msg;
       DAE.ElementSource source;
     // Parameter with evaluate=true
+    case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
+      equation
+        true = Expression.isConst(e);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+      then 
+        (inKnVars,iCache,repl,repleval);
+    case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
+      equation
+        // apply replacements
+        (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG());
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setBindExp(var, e1);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+      then 
+        (knvars,cache,repl,repleval);
+    // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
         true = Expression.isConst(e);
@@ -527,11 +554,15 @@ algorithm
     // try to evaluate with initial equations
     
     // report warning
-    else 
+    case(_,_,_,_,_,_,_,_) 
       equation
+        true = Flags.isSet(Flags.PEDANTIC);
         info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
         msg = "Cannot evaluate Variable \"" +& BackendDump.varString(var);
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
+      then
+        (inKnVars,iCache,iRepl,iReplEvaluate);
+    else 
       then
         (inKnVars,iCache,iRepl,iReplEvaluate);
   end matchcontinue;
@@ -722,8 +753,8 @@ algorithm
       Absyn.Info info;
       String msg;
       DAE.Exp e2;
-    case (false,_,_,_,_,_) then e1;
-    case (true,_,_,_,_,_)
+    case (true,_,_,_,_,_) then e1;
+    case (false,_,_,_,_,_)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         ((e2, (_,_,_))) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
@@ -1014,7 +1045,11 @@ algorithm
         v = BackendVariable.setVarAttributes(v,attr);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
       then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
-    else then inTpl;
+        
+    case  ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
+      equation 
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
+      then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 
