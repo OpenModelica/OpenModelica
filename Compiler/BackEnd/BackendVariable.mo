@@ -2124,7 +2124,7 @@ public function getNominalAssert "function getNominalAssert
   input list<DAE.Algorithm> iNominal;
   output list<DAE.Algorithm> oNominal;
 algorithm
-  nominal :=
+  oNominal :=
   matchcontinue (attr,name,source,kind,vartype,iNominal)
     local
       DAE.Exp e,cond,msg;

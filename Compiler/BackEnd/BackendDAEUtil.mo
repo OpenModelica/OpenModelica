@@ -8495,8 +8495,7 @@ protected
   list<tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>> allIndexReductionMethods;
   String strIndexReductionMethod;
 algorithm
- allIndexReductionMethods := {(BackendDAETransform.reduceIndexDummyDer,"dummyDerivative",IndexReduction.noStateDeselection,"dummyDerivative"),
-                              (IndexReduction.pantelidesIndexReduction,"Pantelites",IndexReduction.noStateDeselection,"uode"),
+ allIndexReductionMethods := {(IndexReduction.pantelidesIndexReduction,"Pantelites",IndexReduction.noStateDeselection,"uode"),
                               (IndexReduction.pantelidesIndexReduction,"Pantelites",IndexReduction.dynamicStateSelection,"dynamicStateSelection")};
  strIndexReductionMethod := getIndexReductionMethodString();
  strIndexReductionMethod := Util.getOptionOrDefault(ostrIndexReductionMethod,strIndexReductionMethod);
@@ -8555,8 +8554,7 @@ protected
   list<tuple<matchingAlgorithmFunc,String>> allMatchingAlgorithms;
   String strMatchingAlgorithm;
 algorithm
- allMatchingAlgorithms := {(BackendDAETransform.matchingAlgorithm,"omc"),
-                           (Matching.BFSB,"BFSB"),
+ allMatchingAlgorithms := {(Matching.BFSB,"BFSB"),
                            (Matching.DFSB,"DFSB"),
                            (Matching.MC21A,"MC21A"),
                            (Matching.PF,"PF"),
