@@ -2139,6 +2139,8 @@ algorithm
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
         str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
         format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
@@ -2147,8 +2149,6 @@ algorithm
               DAE.ADD(DAE.T_STRING_DEFAULT),
               DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
               );
-        // do not add if const true
-        false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})};
