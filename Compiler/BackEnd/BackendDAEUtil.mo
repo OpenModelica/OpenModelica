@@ -100,7 +100,6 @@ type EquationArray = BackendDAE.EquationArray;
 type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
-type MatchingOptions = BackendDAE.MatchingOptions;
 type EqSystems = BackendDAE.EqSystems;
 type WhenClause = BackendDAE.WhenClause;
 type ZeroCrossing = BackendDAE.ZeroCrossing; 
@@ -8088,7 +8087,7 @@ public function transformBackendDAE
 "function transformBackendDAE 
   Run the matching and index reduction algorithm"
   input BackendDAE.BackendDAE inDAE;
-  input Option<MatchingOptions> inMatchingOptions;
+  input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strindexReductionMethod;
   output BackendDAE.BackendDAE outDAE;

@@ -1276,7 +1276,7 @@ function getAvailableIndexReductionMethods
   external "builtin";
 end getAvailableIndexReductionMethods;
 
-function setIndexReductionMethod "example input: dummyDerivative"
+function setIndexReductionMethod "example input: dynamicStateSelection"
   input String method;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
