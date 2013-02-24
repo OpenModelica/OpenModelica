@@ -34,11 +34,10 @@
 #include <float.h>
 
 #include "simulation_data.h"
-#include "model_help.h"
 #include "openmodelica_func.h"
 #include "omc_error.h"
-#include "delay.h"
 #include "varinfo.h"
+#include "model_help.h"
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;

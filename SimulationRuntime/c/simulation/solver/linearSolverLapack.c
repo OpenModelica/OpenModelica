@@ -106,14 +106,14 @@ int solveLapack(DATA *data, int sysNumber)
   /* update vector b (rhs) */
   systemData->setb(data, systemData);
 
-  _omc_dgesv_((integer*) &systemData->size,
-              (integer*) &solverData->nrhs,
-              systemData->A,
-              (integer*) &systemData->size,
-              solverData->ipiv,
-              systemData->b,
-              (integer*) &systemData->size,
-              &solverData->info);
+  dgesv_( (integer*) &systemData->size,
+          (integer*) &solverData->nrhs,
+          systemData->A,
+          (integer*) &systemData->size,
+          solverData->ipiv,
+          systemData->b,
+          (integer*) &systemData->size,
+          &solverData->info);
 
   if(solverData->info < 0) {
     data->simulationInfo.found_solution = -3;

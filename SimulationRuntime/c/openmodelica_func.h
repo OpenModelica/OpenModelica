@@ -76,6 +76,22 @@ extern void callExternalObjectDestructors(DATA *_data);
  */
 extern void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
 
+/*! \fn initialLinearSystem
+ *
+ *  This function initialize nonlinear system structure.
+ *
+ *  \param [ref] [data]
+ */
+extern void initialLinearSystem(LINEAR_SYSTEM_DATA *data);
+
+/*! \fn initialNonLinearSystem
+ *
+ *  This function initialize nonlinear system structure.
+ *
+ *  \param [ref] [data]
+ */
+extern void initialMixedSystem(MIXED_SYSTEM_DATA *data);
+
 /*! \fn initialNonLinearSystem
  *
  *  This function initialize state set structure.

@@ -29,11 +29,11 @@
  *
  */
 
-/*! \file nonlinearSolverHybrd.h
+/*! \file linearSolverLapack.h
  */
 
-#ifndef _NONLINEARSOLVERHYBRD_H_
-#define _NONLINEARSOLVERHYBRD_H_
+#ifndef _LINEARSOLVERLAPACK_H_
+#define _LINEARSOLVERLAPACK_H_
 
 #include "simulation_data.h"
 
@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 extern
-int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
+int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
      *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 #ifdef __cplusplus

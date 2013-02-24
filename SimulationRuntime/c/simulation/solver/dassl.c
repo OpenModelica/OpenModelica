@@ -385,7 +385,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
-      WARNING1(LOG_DDASRT, "can't continue. time = %f", sData->timeValue);
+      WARNING1(LOG_STDOUT, "can't continue. time = %f", sData->timeValue);
       return retVal;
     }
 
@@ -440,7 +440,7 @@ continue_DASRT(fortran_integer* idid, double* atol)
     retValue = 1; /* adrpo: try to continue */
     break;
   case -2:
-    WARNING(LOG_DDASRT, "The error tolerances are too stringent");
+    WARNING(LOG_STDOUT, "The error tolerances are too stringent");
     retValue = -2;
     break;
   case -3:
@@ -449,35 +449,35 @@ continue_DASRT(fortran_integer* idid, double* atol)
     retValue = -3;
     break;
   case -6:
-    WARNING(LOG_DDASRT, "DDASSL had repeated error test failures on the last attempted step.");
+    WARNING(LOG_STDOUT, "DDASSL had repeated error test failures on the last attempted step.");
     retValue = -6;
     break;
   case -7:
-    WARNING(LOG_DDASRT, "The corrector could not converge.");
+    WARNING(LOG_STDOUT, "The corrector could not converge.");
     retValue = -7;
     break;
   case -8:
-    WARNING(LOG_DDASRT, "The matrix of partial derivatives is singular.");
+    WARNING(LOG_STDOUT, "The matrix of partial derivatives is singular.");
     retValue = -8;
     break;
   case -9:
-    WARNING(LOG_DDASRT, "The corrector could not converge. There were repeated error test failures in this step.");
+    WARNING(LOG_STDOUT, "The corrector could not converge. There were repeated error test failures in this step.");
     retValue = -9;
     break;
   case -10:
-    INFO(LOG_DDASRT, "The corrector could not converge because IRES was equal to minus one.");
+    INFO(LOG_STDOUT, "The corrector could not converge because IRES was equal to minus one.");
     retValue = -10;
     break;
   case -11:
-    WARNING(LOG_DDASRT, "IRES equal to -2 was encountered and control is being returned to the calling program.");
+    WARNING(LOG_STDOUT, "IRES equal to -2 was encountered and control is being returned to the calling program.");
     retValue = -11;
     break;
   case -12:
-    WARNING(LOG_DDASRT, "DDASSL failed to compute the initial YPRIME.");
+    WARNING(LOG_STDOUT, "DDASSL failed to compute the initial YPRIME.");
     retValue = -12;
     break;
   case -33:
-    WARNING(LOG_DDASRT, "The code has encountered trouble from which it cannot recover.");
+    WARNING(LOG_STDOUT, "The code has encountered trouble from which it cannot recover.");
     retValue = -33;
     break;
   }

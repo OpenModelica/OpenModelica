@@ -111,7 +111,6 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return lobatto6_step(data, solverInfo);
 #endif
 
-  default:
   case 1:
     return euler_ex_step(data, solverInfo);
   }
@@ -688,6 +687,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     rt_tick(SIM_TIMER_TOTAL);
   }
+  return retValue;
 }
 
 /*! \fn solver_main
