@@ -74,9 +74,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 extern "C" {
 #endif
 
-extern
-int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
-     *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 #ifdef __cplusplus
 }
@@ -511,7 +509,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     if (error_f <= tol_f) break;
 
     /* solve J*(x_{n+1} - x_n)=f */
-    _omc_dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
+    dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
 
     if (ACTIVE_STREAM(LOG_NLS_V)) {
       DEBUG(LOG_NLS_V,"Solved J*x=b");
