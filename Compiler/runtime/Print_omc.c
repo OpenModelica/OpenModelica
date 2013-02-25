@@ -31,21 +31,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "meta_modelica.h"
-extern "C" {
 
 #include "printimpl.c"
 
 extern int Print_saveAndClearBuf()
 {
-  // TODO: copy impl. from Print_rml.c 
-  MMC_THROW();
-  return 0;
+  int handle = PrintImpl__saveAndClearBuf();
+  if (handle) MMC_THROW();
+  return handle;
 }
 
-extern int Print_restoreBuf(int handle)
+extern void Print_restoreBuf(int handle)
 {
-// TODO: copy impl. from Print_rml.c
-  MMC_THROW();
+  if (PrintImpl__restoreBuf(handle))
+    MMC_THROW();
 }
 
 extern void Print_printErrorBuf(const char* str)
@@ -116,6 +115,4 @@ extern void Print_writeBuf(const char* filename)
   //fprintf(stderr, "Print_writeBuf %s: %s\n", filename, buf);
   if (PrintImpl__writeBuf(filename))
     MMC_THROW();
-}
-
 }

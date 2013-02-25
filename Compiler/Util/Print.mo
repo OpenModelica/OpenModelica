@@ -43,12 +43,12 @@ encapsulated package Print
 
  public function saveAndClearBuf "saves and clears content of buffer and return a handle to the saved buffer so it can be restored by restorBuf later on"
   output Integer handle;
-  external "C";
+  external "C" handle = Print_saveAndClearBuf() annotation(Library = "omcruntime");
 end saveAndClearBuf;
 
 public function restoreBuf 
   input Integer handle;
-  external "C";
+  external "C" Print_restoreBuf(handle) annotation(Library = "omcruntime");
 end restoreBuf;
 
 public function setBufSize

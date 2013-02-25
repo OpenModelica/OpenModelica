@@ -346,3 +346,72 @@ static int PrintImpl__hasBufNewLineAtEnd(void)
 {
   return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }
+
+static int PrintImpl__restoreBuf(long handle)
+{
+  if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
+    fprintf(stderr,"Internal error, hanlde %d out of range. Should be in [%d,&d]\n",handle,0,MAXSAVEDBUFFERS-1);
+    return 1;
+  } else {
+    if (buf) { free(buf);}
+    buf = savedBuffers[handle];
+    cursize = savedCurSize[handle];
+    nfilled = savedNfilled[handle];
+    savedBuffers[handle] = 0;
+    savedCurSize[handle] = 0;
+    savedNfilled[handle] = 0;
+    if (buf == 0) { 
+      fprintf(stderr,"Internal error, handle %d does not contain a valid buffer pointer\n",handle);
+      return 1;
+    }
+    return 0;
+  }
+}
+
+static long PrintImpl__saveAndClearBuf()
+{
+  long freeHandle,foundHandle=0;
+
+  if (! savedBuffers) { 
+    savedBuffers = (char**)malloc(MAXSAVEDBUFFERS*sizeof(char*));
+    if (!savedBuffers) { 
+      fprintf(stderr, "Internal error allocating savedBuffers in Print.saveAndClearBuf\n");
+      return -1;
+    }
+    memset(savedBuffers,0,MAXSAVEDBUFFERS);
+  }
+  if (! savedCurSize) { 
+    savedCurSize = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    if (!savedCurSize) { 
+      fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
+      return -1;
+    }
+    memset(savedCurSize,0,MAXSAVEDBUFFERS);
+  }
+  if (! savedNfilled) { 
+    savedNfilled = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    if (!savedNfilled) { 
+      fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
+      return -1;
+    }
+    memset(savedNfilled,0,MAXSAVEDBUFFERS);
+  }
+  for (freeHandle=0; freeHandle< MAXSAVEDBUFFERS; freeHandle++) {
+    if (savedBuffers[freeHandle]==0)
+    {
+      foundHandle = 1;
+      break;
+    }
+  }
+  if (!foundHandle) {
+    fprintf(stderr,"Internal error, can not save more than %d buffers, increase MAXSAVEDBUFFERS in printimpl.c\n",MAXSAVEDBUFFERS);
+    return -1;
+  }
+  savedBuffers[freeHandle] = buf;
+  savedCurSize[freeHandle] = cursize;
+  savedNfilled[freeHandle] = nfilled;
+  buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));  
+  nfilled=0;
+  cursize=0;
+  return freeHandle;
+}
