@@ -237,7 +237,6 @@ static void PrintImpl__clearBuf(void)
     free(buf);
     buf = NULL;
     cursize = 0;
-    increase_buffer(); /* Initialize it; the saved buffers cannot handle NULL */
   }
 }
 
@@ -407,11 +406,14 @@ static long PrintImpl__saveAndClearBuf()
     fprintf(stderr,"Internal error, can not save more than %d buffers, increase MAXSAVEDBUFFERS in printimpl.c\n",MAXSAVEDBUFFERS);
     return -1;
   }
+  if (!buf) {
+    increase_buffer(); /* Initialize it; the saved buffers cannot handle NULL */
+  }
   savedBuffers[freeHandle] = buf;
   savedCurSize[freeHandle] = cursize;
   savedNfilled[freeHandle] = nfilled;
   buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));  
   nfilled=0;
-  cursize=0;
+  cursize=INITIAL_BUFSIZE;
   return freeHandle;
 }
