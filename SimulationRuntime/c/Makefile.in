@@ -28,6 +28,8 @@ else
 LIBF2CINC=-I./simulation/libf2c/
 LIBF2CHEADER=./simulation/libf2c/f2c.h
 endif
+LIBSIMULATION=libSimulationRuntimeC.so
+LIBRUNTIME=libOpenModelicaRuntimeC.so
 
 EXTERNALCMAKEFILE=Makefile
 
