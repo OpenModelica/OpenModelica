@@ -1395,11 +1395,11 @@ public uniontype TailCall
   end TAIL;
 end TailCall;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
 
 public
 uniontype CallAttributes
@@ -1407,6 +1407,7 @@ uniontype CallAttributes
     Type ty "The type of the return value, if several return values this is undefined";
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
+    Boolean isImpure "if the function has prefix *impure* is true, else false";
     InlineType inlineType;
     TailCall tailCall "Input variables of the function if the call is tail-recursive";
   end CALL_ATTR;

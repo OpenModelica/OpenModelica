@@ -286,8 +286,8 @@ algorithm
       then
         ((e,(b or b2,options)));
         
-    // normal call 
-    case ((e as DAE.CALL(expLst=expl),(_,options)))
+    // normal (pure) call
+    case ((e as DAE.CALL(expLst=expl, attr=DAE.CALL_ATTR(isImpure=false)),(_,options)))
       equation
         true = Expression.isConstWorkList(expl, true);
         e2 = simplifyBuiltinConstantCalls(e);
@@ -444,7 +444,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("pre")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -459,7 +459,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("change")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -474,7 +474,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("edge")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -802,7 +802,7 @@ algorithm
     case (DAE.CALL(p1,exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
       equation
         true = Absyn.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type";
-      then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
     
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),_) 

@@ -5201,7 +5201,7 @@ algorithm
         e2 = generateSetExpressions(ifdexplst,index-1,crconexppre);
         eqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},crsetexp,e1,DAE.emptyElementSource,false),BackendDAE.EQUATION(crsetexp,e1,DAE.emptyElementSource,false));
         tp = Expression.typeof(crsetexp);
-        deqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),e2,DAE.emptyElementSource,false),BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.callAttrBuiltinReal),e2,DAE.emptyElementSource,false));
+        deqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),e2,DAE.emptyElementSource,false),BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.callAttrBuiltinReal),e2,DAE.emptyElementSource,false));
         startvalues = generateStartExpressions(istartvalues,index-1,contstartExp);
         varlst = setVarLstStartValue(isetvarlst,startvalues,{});
       then 
@@ -5233,7 +5233,7 @@ protected
   DAE.Type tp;
 algorithm
   tp := Expression.typeof(inExp);
-  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
 
 protected function changeVarToStartValue "

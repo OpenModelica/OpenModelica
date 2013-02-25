@@ -1667,31 +1667,31 @@ algorithm
       DAE.Const c;
       
     case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), c) 
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       
     case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _) 
       then DAE.BINARY(e1, inOper, e2);
         
     case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), c) 
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       
     case (Absyn.UNARY(_, _), e1, _, NONE(), _) 
         then DAE.UNARY(inOper,e1);
           
     case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), c)
-       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
          
     case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _) 
       then DAE.LBINARY(e1, inOper, e2);
     
     case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),c) 
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         
     case (Absyn.LUNARY(_, _), e1, _, NONE(), _) 
         then DAE.LUNARY(inOper,e1);
         
     case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),c) 
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
     
     case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _) 
       then DAE.RELATION(e1, inOper, e2, -1, NONE());
@@ -7182,7 +7182,7 @@ algorithm
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
-        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
+        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, _, st,pre,_)
@@ -7262,7 +7262,7 @@ algorithm
         prop = getProperties(outtype, tyconst);
         
         args_2 = expListFromSlots(newslots2);
-        callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         expProps = SOME((call_exp,prop_1));
@@ -7450,7 +7450,7 @@ protected
   DAE.Type restype,functype;
   DAE.FunctionBuiltin isBuiltin;
   DAE.FunctionParallelism funcParal;
-  Boolean isPure,tuple_,builtin;
+  Boolean isPure,tuple_,builtin,isImpure;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
   DAE.Properties prop,prop_1;
@@ -7468,7 +7468,10 @@ algorithm
    args_1,
    constlist,
    restype,
-   functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure = isPure, inline = inlineType, functionParallelism = funcParal)),
+   functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure=isPure,
+                                                                         isImpure=isImpure,
+                                                                         inline=inlineType,
+                                                                         functionParallelism=funcParal)),
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
@@ -7491,7 +7494,9 @@ algorithm
   (cache,args_2,slots2) := addDefaultArgs(cache,inEnv,args_1,fn_1,slots,impl,pre,info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure,inlineType,DAE.NO_TAIL()));
+  //ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
+  
   // create a replacement for input variables -> their binding
   //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
   //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
@@ -8430,7 +8435,7 @@ algorithm
       DAE.TypeSource ts;
 
     // We found a match.
-    case (cache,env,args,nargs,(t as DAE.T_FUNCTION(funcArg = params,funcResultType = restype, functionAttributes = functionAttributes, source = ts)) :: trest,_,impl,_,pre,_)
+    case (cache,env,args,nargs,(t as DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts))::trest,_,impl,_,pre,_)
       equation
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},st,pre,info);
@@ -8444,7 +8449,7 @@ algorithm
         (cache,args_1,clist,restype,t,dims,newslots);
 
     // We didn't find a match, try next function type
-    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg = params,funcResultType = restype) :: trest,_,impl,_,pre,_)
+    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg=params, funcResultType=restype)::trest,_,impl,_,pre,_)
       equation
         (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, checkTypes, impl, st, pre, info);
       then

@@ -1927,7 +1927,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-      Boolean tuple_,b;
+      Boolean tuple_,b, isImpure;
       DAE.Type ty,ty2;
       DAE.InlineType inlineType;
       DAE.TailCall tc;
@@ -1944,25 +1944,25 @@ algorithm
         _ = BaseHashTable.get(cref,checkcr);
       then
         ((e,(argmap,checkcr,false)));        
-    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,inlineType,tc)),ty),(argmap,checkcr,true)))
+    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
         expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,inlineType,tc));
+        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
       then
         ((e,(argmap,checkcr,true)));
-    case ((e as DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,inlineType,tc)),ty),(argmap,checkcr,true)))
+    case ((e as DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,_,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);        
         _ = BaseHashTable.get(cref,checkcr);
       then
         ((e,(argmap,checkcr,false)));        
         /* TODO: Use the inlineType of the function reference! */
-    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),(argmap,checkcr,true)))
+    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -1970,11 +1970,11 @@ algorithm
         expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
         (ty2,inlineType) = functionReferenceType(ty);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,inlineType,tc));
+        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,inlineType,tc));
         e = boxIfUnboxedFunRef(e,ty);
         (e,_) = ExpressionSimplify.simplify(e);
       then ((e,(argmap,checkcr,true)));
-    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),(argmap,checkcr,true)))
+    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);        

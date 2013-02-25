@@ -7213,14 +7213,14 @@ algorithm
       DAE.Exp e;
       Absyn.Path p;
       list<DAE.Exp> el;
-      Boolean t, b;
+      Boolean t, b, isImpure;
       DAE.InlineType i;
       DAE.Dimensions dims;
       Values.Value v;
       DAE.Type cevalType, ty;
       DAE.TailCall tc;
            
-     case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, 
+     case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, isImpure=isImpure,
            ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
@@ -7228,7 +7228,7 @@ algorithm
          ty = Types.typeOfValue(v);
          cevalType = Types.simplifyType(ty);
        then
-         (DAE.CALL(p, el, DAE.CALL_ATTR(cevalType, t, b, i, tc)), DAE.PROP(ty, DAE.C_PARAM()));
+         (DAE.CALL(p, el, DAE.CALL_ATTR(cevalType, t, b, isImpure, i, tc)), DAE.PROP(ty, DAE.C_PARAM()));
   end match;
 end cevalWholedimRetCall;
 

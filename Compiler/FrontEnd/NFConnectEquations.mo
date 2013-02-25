@@ -538,7 +538,7 @@ protected function makeInStreamCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp},
-    DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+    DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
@@ -548,7 +548,7 @@ protected function makePositiveMaxCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
-    {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()));
+    {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
 protected function removeStreamSetElement

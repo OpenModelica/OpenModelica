@@ -3271,8 +3271,7 @@ algorithm
 end expPow;
 
 
-public function expMaxScalar
-"function: expMax
+public function expMaxScalar "function: expMax
   author: Frenkel TUD 2011-04
   returns max(e1,e2)."
   input DAE.Exp e1;
@@ -3282,11 +3281,10 @@ protected
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMaxScalar;
 
-public function expMinScalar
-"function: expMin
+public function expMinScalar "function: expMin
   author: Frenkel TUD 2011-04
   returns min(e1,e2)."
   input DAE.Exp e1;
@@ -3297,7 +3295,7 @@ protected
   Boolean b;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMinScalar;
 
 public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
@@ -8524,7 +8522,7 @@ public function makeBuiltinCall
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeBuiltinCall;
 
 public function reductionIterName

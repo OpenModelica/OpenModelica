@@ -213,7 +213,7 @@ algorithm
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
-        DAE.CALL(a,expl_1,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));        
+        DAE.CALL(a,expl_1,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));        
     // case for arrays
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_ARRAY(dims=_))),(_,BackendDAE.SHARED(functionTree=functions)))
       equation
@@ -247,7 +247,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
         // ({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
-      then DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     // der(sign(x)) -> 0
     case (DAE.CALL(path = Absyn.IDENT("sign"),expLst = {e}),_)
@@ -820,7 +820,7 @@ algorithm
       list<DAE.Exp> expl,expl1,dexpl;
       BackendDAE.Variables timevars;
       Absyn.Path a,da;
-      Boolean b,c;
+      Boolean b,c,isImpure;
       DAE.InlineType dinl;
       DAE.Type ty;
       DAE.FunctionTree functions;
@@ -832,7 +832,7 @@ algorithm
       String typstring,dastring;
       DAE.TailCall tc;
     
-    case (DAE.CALL(path=a,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,ty=ty,tailCall=tc)),(timevars,BackendDAE.SHARED(functionTree=functions)))
+    case (DAE.CALL(path=a,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)),(timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
@@ -844,7 +844,7 @@ algorithm
         dexpl = List.map1(expl1,differentiateExpTime,inVarsandFuncs);
         expl1 = listAppend(expl,dexpl);
       then
-        DAE.CALL(da,expl1,DAE.CALL_ATTR(ty,b,c,dinl,tc));
+        DAE.CALL(da,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,dinl,tc));
     
     case (DAE.CALL(path=a,expLst=expl),(timevars,BackendDAE.SHARED(functionTree=functions)))
       equation

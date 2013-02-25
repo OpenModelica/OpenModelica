@@ -3037,6 +3037,7 @@ algorithm
         ty,
         false, 
         false, 
+        false,
         DAE.NO_INLINE(), 
         DAE.NO_TAIL()));
 end makeInStreamCall;
@@ -3058,6 +3059,7 @@ algorithm
           ty, 
           false, 
           true, 
+          false,
           DAE.NO_INLINE(), 
           DAE.NO_TAIL()));
 end makePositiveMaxCall;

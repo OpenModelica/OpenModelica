@@ -1489,7 +1489,7 @@ algorithm
         // make sure is not constrain as we don't support it.
         true = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
         e = List.fold(conditions, makeIfExp, DAE.BCONST(true));
-        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
+        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then 
         (beqns, eqns);
     case (DAE.NORETCALL(functionName = functionName, functionArgs=explst, source=source)::eqns, SOME(e), _, _, _)
@@ -1497,7 +1497,7 @@ algorithm
         // make sure is not constrain as we don't support it.
         true = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
         e = List.fold(conditions, makeIfExp, e);
-        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
+        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then 
         (beqns, eqns);        
     case (eqn::eqns, _, _, _, _)
@@ -2332,7 +2332,7 @@ algorithm
         b2 = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = boolOr(b1, b2);
         (functionArgs, source, _) = Inline.inlineExps(functionArgs, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(DAE.CALL(functionName, functionArgs, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)});
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(DAE.CALL(functionName, functionArgs, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)});
       then
         (inEquations, BackendDAE.ALGORITHM(0, alg, source)::inREquations, inIEquations);        
  

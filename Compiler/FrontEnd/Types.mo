@@ -4749,7 +4749,7 @@ algorithm
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
 
     /* See printFailure()
     case (exp,t1,t2,printFailtrace)

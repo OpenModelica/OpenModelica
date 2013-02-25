@@ -409,7 +409,7 @@ algorithm
 
     case(DAE.NORETCALL(p,elst,source),dae)
       equation
-        ((DAE.CALL(path=p,expLst=elst_1),dae)) = Expression.traverseExp(DAE.CALL(p,elst,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),elabExp,dae);
+        ((DAE.CALL(path=p,expLst=elst_1),dae)) = Expression.traverseExp(DAE.CALL(p,elst,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),elabExp,dae);
       then
         (DAE.NORETCALL(p,elst_1,source),dae);
 
@@ -1486,7 +1486,7 @@ algorithm
       then
         ((DAE.CALL(new_p,args_1,attr),(p,inputs,dae,current)));
     // fix calls to function pointer
-    case((DAE.CALL(orig_p,args,DAE.CALL_ATTR(ty,tup,false,inl,tc)),(p,inputs,dae,current)))
+    case((DAE.CALL(orig_p,args,DAE.CALL_ATTR(ty,tup,false,false,inl,tc)),(p,inputs,dae,current)))
       equation
         failure(_ = DAEUtil.getNamedFunctionFromList(orig_p,dae)); // if function exists, do not replace call
         crefs = List.map(inputs,DAEUtil.varCref);
@@ -1496,7 +1496,7 @@ algorithm
         args_1 = listAppend(args,args2);
         ty_1 = Expression.unboxExpType(ty);
       then
-        ((DAE.CALL(p,args_1,DAE.CALL_ATTR(ty_1,tup,false,inl,tc)),(p,inputs,dae,current)));
+        ((DAE.CALL(p,args_1,DAE.CALL_ATTR(ty_1,tup,false,false,inl,tc)),(p,inputs,dae,current)));
     case((e,(p,inputs,dae,current))) then ((e,(p,inputs,dae,current)));
   end matchcontinue;
 end fixCall;

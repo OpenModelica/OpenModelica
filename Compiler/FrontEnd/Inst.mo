@@ -11762,7 +11762,6 @@ algorithm
     /* normal functions */
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info)),inst_dims,_)
       equation
-        
         false = SCode.isExternalFunctionRestriction(funcRest);
         isImpure = SCode.isImpureFunctionRestriction(funcRest);
         
@@ -15173,7 +15172,7 @@ algorithm
         accumNames = listReverse(inAccumNames);
 
         ety = Types.simplifyType(Types.arrayElementType(inRecordType));
-        exp = DAE.CALL(inRecordName, accumExps, DAE.CALL_ATTR(ety, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
+        exp = DAE.CALL(inRecordName, accumExps, DAE.CALL_ATTR(ety, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
         val = Values.RECORD(inRecordName, accumVals, accumNames, -1);
         (exp, val) = liftRecordBinding(inRecordType, exp, val);
         binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -18149,19 +18148,19 @@ algorithm
       Absyn.Path path1,path2;
       String str;
       DAE.InlineType i;
-      Boolean b1,b2;
+      Boolean b1,b2,b3;
       DAE.Type tp,et;
       list<DAE.Exp> es,inputs;
       DAE.Exp e1,e2,e3;
       list<DAE.Element> localDecls;
       DAE.MatchType matchType;
       list<DAE.MatchCase> cases;
-    case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,i,DAE.NO_TAIL())),_,_)
+    case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,b3,i,DAE.NO_TAIL())),_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
         Debug.bcall3(Flags.isSet(Flags.TAIL),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
-      then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars))),true);
+      then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,b3,i,DAE.TAIL(vars))),true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
         (e2,b1) = optimizeStatementTail3(path,e2,vars,source);
