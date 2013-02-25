@@ -412,7 +412,8 @@ static long PrintImpl__saveAndClearBuf()
   savedBuffers[freeHandle] = buf;
   savedCurSize[freeHandle] = cursize;
   savedNfilled[freeHandle] = nfilled;
-  buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));  
+  buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
+  *buf = 0;
   nfilled=0;
   cursize=INITIAL_BUFSIZE;
   return freeHandle;
