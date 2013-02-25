@@ -756,7 +756,7 @@ constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(43, "maxTraversals",
   Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(44, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("rederect the dump to file. If file ends with .html HTML code is generated."));
+  Util.gettext("Redirect the dump to file. If the file ends with .html HTML code is generated."));
 constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(45, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
@@ -770,6 +770,9 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
     ("olleroAmselem", Util.gettext("Ollero-Amselem tearing")),
     ("steward", Util.gettext("Steward tearing"))})),
     Util.gettext("tearing method to use.select no tearing or choose tearing method"));
+constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
   
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -820,7 +823,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MAXTRAVERSALS,
   DUMP_TARGET,
   DELAY_BREAK_LOOP,
-  TEARING_METHOD
+  TEARING_METHOD,
+  SCALARIZE_MINMAX
 };
 
 public function new

@@ -529,5 +529,11 @@ algorithm
   outShowErrorMessages := Flags.getConfigBool(Flags.SHOW_ERROR_MESSAGES);
 end showErrorMessages;
 
+public function scalarizeMinMax
+  output Boolean outScalarizeMinMax;
+algorithm
+  outScalarizeMinMax := Flags.getConfigBool(Flags.SCALARIZE_MINMAX);
+end scalarizeMinMax;
+
 end Config;
 
