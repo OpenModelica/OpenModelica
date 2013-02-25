@@ -751,15 +751,14 @@ algorithm
   outString := matchcontinue (inText)
     local
       Text txt;
-      String str, buf_old;
+      String str;
+      Integer handle;
     case (txt)
       equation
-        buf_old = Print.getString();
-        Print.clearBuf();
+        handle = Print.saveAndClearBuf();
         textStringBuf(txt);
         str = Print.getString();
-        Print.clearBuf();
-        Print.printBuf(buf_old);
+        Print.restoreBuf(handle);
       then
         str;
     
