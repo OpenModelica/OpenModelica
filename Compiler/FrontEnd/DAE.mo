@@ -332,6 +332,7 @@ public uniontype Function
     list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
     Type type_;
     Boolean partialPrefix "MetaModelica extension";
+    Boolean isImpure "Modelica 3.3 impure/pure, by default isImpure = false all the time only if prefix *impure* function is specified";
     InlineType inlineType;
     ElementSource source "the origin of the component/equation/algorithm" ;
     Option<SCode.Comment> comment;
@@ -974,15 +975,16 @@ public uniontype CodeType
   end C_VARIABLENAMES;
 end CodeType;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 
 public
 uniontype FunctionAttributes
   record FUNCTION_ATTRIBUTES
     InlineType inline;
-    Boolean isPure;
+    Boolean isOpenModelicaPure "if the function has __OpenModelica_Impure";
+    Boolean isImpure "if the function has prefix *impure* is true, else false";
     FunctionBuiltin isBuiltin;
     FunctionParallelism functionParallelism;
   end FUNCTION_ATTRIBUTES;

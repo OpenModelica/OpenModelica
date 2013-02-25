@@ -8773,7 +8773,7 @@ algorithm
     case (cr,p)
       equation
         path = Absyn.crefToPath(cr);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_)),_,_) = getPathedClassInProgram(path, p);
       then
         true;
     case (cr,p) then false;
@@ -19152,11 +19152,20 @@ algorithm
         strs = getDefinitionParts(parts, addFunctions);
         strs = ident :: strs;
       then stringDelimitList(strs, "\n");
-    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())),_)
+    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))),_)
+      equation
+        strs = {"(partial impure function", ident, ")"};
+      then stringDelimitList(strs, " ");
+    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_))),_)
       equation
         strs = {"(partial function", ident, ")"};
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())),true)
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))),true)
+      equation
+        strs = getDefinitionParts(parts, true);
+        strs = "(impure function" :: ident :: strs;
+      then stringDelimitList(strs, " ");
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_))),true)
       equation
         strs = getDefinitionParts(parts, true);
         strs = "(function" :: ident :: strs;

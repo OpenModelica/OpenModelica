@@ -1069,9 +1069,18 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
 end Restriction;
 
+public
+uniontype FunctionPurity "function purity"
+  record PURE   end PURE;
+  record IMPURE end IMPURE;
+  record NO_PURITY end NO_PURITY;
+end FunctionPurity;
+
 public 
 uniontype FunctionRestriction
-  record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+  record FR_NORMAL_FUNCTION "a normal function"
+    FunctionPurity purity "function purity";
+  end FR_NORMAL_FUNCTION;
   record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
   record FR_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FR_PARALLEL_FUNCTION;
   record FR_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FR_KERNEL_FUNCTION;
@@ -4218,7 +4227,9 @@ algorithm
     case R_EXP_CONNECTOR() then "EXPANDABLE CONNECTOR";
     case R_TYPE() then "TYPE";
     case R_PACKAGE() then "PACKAGE";
-    case R_FUNCTION(FR_NORMAL_FUNCTION()) then "FUNCTION";
+    case R_FUNCTION(FR_NORMAL_FUNCTION(PURE())) then "PURE FUNCTION";
+    case R_FUNCTION(FR_NORMAL_FUNCTION(IMPURE())) then "IMPURE FUNCTION";
+    case R_FUNCTION(FR_NORMAL_FUNCTION(NO_PURITY())) then "FUNCTION";
     case R_FUNCTION(FR_OPERATOR_FUNCTION()) then "OPERATOR FUNCTION";
     case R_PREDEFINED_INTEGER() then "PREDEFINED_INT";
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";

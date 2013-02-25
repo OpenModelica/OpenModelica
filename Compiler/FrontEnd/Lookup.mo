@@ -2343,7 +2343,7 @@ algorithm
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,SCode.CLASS(restriction = SCode.R_FUNCTION(funcRest)),_) = lookupClass(cache,i_env,path,false);
         // External functions without external declaration have parts. We don't consider them builtin.
-        failure(equality(funcRest = SCode.FR_EXTERNAL_FUNCTION()));
+        false = SCode.isExternalFunctionRestriction(funcRest);
       then (cache,false);
     
     case (cache,path)

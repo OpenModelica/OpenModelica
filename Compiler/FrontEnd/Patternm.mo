@@ -1657,7 +1657,7 @@ algorithm
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
-        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match")), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll, {});
+        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll, {});
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
@@ -1965,7 +1965,7 @@ algorithm
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
 
-        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
+        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"), false);
         (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           dummyFunc, ld_mod, {}, {}, {}, impl);

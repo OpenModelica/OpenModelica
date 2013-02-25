@@ -110,7 +110,7 @@ runtimeCPP:
 runtimeCPPinstall: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
 
-omc-diff: 
+omc-diff: mkbuilddirs 
 	$(MAKE) -C testsuite/ -f Makefile omc-diff
 
 testlibrariemsl31cpp:

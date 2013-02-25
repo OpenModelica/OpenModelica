@@ -401,25 +401,25 @@ algorithm
        list<DAE.FunctionDefinition> derFuncs;
        DAE.InlineType inlineType;
        DAE.Type ftp;
-       Boolean partialPrefix;
+       Boolean partialPrefix,isImpure;
        DAE.ElementSource source;
        Absyn.Path path;
        DAE.ExternalDecl extdecl;
        Option<SCode.Comment> cmt;
        
-    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,inlineType,source,cmt)::dae,repl,condExpFunc)
+    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source,cmt)::dae2;
+        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
     
-    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source,cmt)::dae,repl,condExpFunc)
+    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source,cmt)::dae2;
+        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
   end matchcontinue;
 end applyReplacementsFunctions;
 

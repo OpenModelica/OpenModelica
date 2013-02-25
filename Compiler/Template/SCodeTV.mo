@@ -365,9 +365,14 @@ package SCode
   end Restriction;
   
   uniontype FunctionRestriction
-    record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+    record FR_NORMAL_FUNCTION "a normal function"
+      Boolean isImpure;
+    end FR_NORMAL_FUNCTION;
+    record FR_EXTERNAL_FUNCTION "an external function"
+      Boolean isImpure;
+    end FR_EXTERNAL_FUNCTION;  
+    
     record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
-    record FR_EXTERNAL_FUNCTION "an operator function" end FR_EXTERNAL_FUNCTION;
     record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
   end FunctionRestriction;
 

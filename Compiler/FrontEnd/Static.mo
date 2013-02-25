@@ -7468,7 +7468,7 @@ algorithm
    args_1,
    constlist,
    restype,
-   functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType, functionParallelism = funcParal)),
+   functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure = isPure, inline = inlineType, functionParallelism = funcParal)),
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;

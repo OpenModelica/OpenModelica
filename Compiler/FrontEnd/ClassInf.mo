@@ -95,6 +95,7 @@ uniontype State "- Machine states, the string contains the classname."
 
   record FUNCTION
     Absyn.Path path;
+    Boolean isImpure;
   end FUNCTION;
 
   record ENUMERATION
@@ -204,7 +205,8 @@ algorithm
     case CONNECTOR(path = p) then "connector";
     case TYPE(path = p) then "type";
     case PACKAGE(path = p) then "package";
-    case FUNCTION(path = p) then "function";
+    case FUNCTION(path = p, isImpure = true) then "impure function";
+    case FUNCTION(path = p) then "impure function";
     case TYPE_INTEGER(path = p) then "Integer";
     case TYPE_REAL(path = p) then "Real";
     case TYPE_STRING(path = p) then "String";
@@ -276,6 +278,12 @@ algorithm
     case PACKAGE(path = p)
       equation
         Print.printBuf("PACKAGE ");
+        Print.printBuf(Absyn.pathString(p));
+      then
+        ();
+    case FUNCTION(path = p, isImpure = true)
+      equation
+        Print.printBuf("IMPURE FUNCTION ");
         Print.printBuf(Absyn.pathString(p));
       then
         ();
@@ -384,7 +392,7 @@ public function start "!includecode
 algorithm
   outState:=
   match (inRestriction,inPath)
-    local Absyn.Path p; Boolean isExpandable;
+    local Absyn.Path p; Boolean isExpandable, isImpure;
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then MODEL(p);
@@ -393,7 +401,9 @@ algorithm
     case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable);
     case (SCode.R_TYPE(),p) then TYPE(p);
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
-    case (SCode.R_FUNCTION(_),p) then FUNCTION(p);
+    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
+    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
+    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);    
     case (SCode.R_OPERATOR(),p) then RECORD(p);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
@@ -421,26 +431,26 @@ algorithm
       Absyn.Path p;
       State st;
       Event ev;
-      Boolean isExpandable,b,b1,b2,b3;
+      Boolean isExpandable,b,b1,b2,b3,isImpure;
       String s;
       list<String> msg;
     case (UNKNOWN(path = p),NEWDEF()) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);
-    case (MODEL(path = p),NEWDEF()) then MODEL(p);
-    case (RECORD(path = p),NEWDEF()) then RECORD(p);
-    case (BLOCK(path = p),NEWDEF()) then BLOCK(p);
-    case (CONNECTOR(path = p,isExpandable=isExpandable),NEWDEF()) then CONNECTOR(p,isExpandable);
+    case (OPTIMIZATION(path = p),NEWDEF()) then inState;
+    case (MODEL(path = p),NEWDEF()) then inState;
+    case (RECORD(path = p),NEWDEF()) then inState;
+    case (BLOCK(path = p),NEWDEF()) then inState;
+    case (CONNECTOR(path = p,isExpandable=isExpandable),NEWDEF()) then inState;
     case (TYPE(path = p),NEWDEF()) then TYPE(p); // A type can be constructed with long definition
     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
-    case (FUNCTION(path = p),NEWDEF()) then FUNCTION(p);
-    case (ENUMERATION(path = p),NEWDEF()) then ENUMERATION(p);
-    case (TYPE_INTEGER(path = p),NEWDEF()) then TYPE_INTEGER(p);
-    case (TYPE_REAL(path = p),NEWDEF()) then TYPE_REAL(p);
-    case (TYPE_STRING(path = p),NEWDEF()) then TYPE_STRING(p);
-    case (TYPE_BOOL(path = p),NEWDEF()) then TYPE_BOOL(p);
-    case (TYPE_ENUM(path = p),NEWDEF()) then TYPE_ENUM(p);  /* Event `FOUND_EQUATION\' */
-    case (META_UNIONTYPE(path = p),NEWDEF()) then META_UNIONTYPE(p);  // Added 2009-05-11. sjoelund
-    case (META_RECORD(path = p),NEWDEF()) then META_RECORD(p);  // Added 2009-08-18. sjoelund
+    case (FUNCTION(path = p, isImpure = isImpure),NEWDEF()) then inState;
+    case (ENUMERATION(path = p),NEWDEF()) then inState;
+    case (TYPE_INTEGER(path = p),NEWDEF()) then inState;
+    case (TYPE_REAL(path = p),NEWDEF()) then inState;
+    case (TYPE_STRING(path = p),NEWDEF()) then inState;
+    case (TYPE_BOOL(path = p),NEWDEF()) then inState;
+    case (TYPE_ENUM(path = p),NEWDEF()) then inState;
+    case (META_UNIONTYPE(path = p),NEWDEF()) then inState;  // Added 2009-05-11. sjoelund
+    case (META_RECORD(path = p),NEWDEF()) then inState;  // Added 2009-08-18. sjoelund
 
    /* Event 'FOUND_COMPONENT' */
     case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
@@ -731,7 +741,7 @@ public function stateToSCodeRestriction
   output Absyn.Path outPath;
 algorithm
   (outRestriction, outPath) := match (inState)
-    local Absyn.Path p; Boolean isExpandable;
+    local Absyn.Path p; Boolean isExpandable, isImpure;
     
     case UNKNOWN(p) then (SCode.R_CLASS(),p);
     case OPTIMIZATION(p) then (SCode.R_OPTIMIZATION(),p);
@@ -741,7 +751,7 @@ algorithm
     case CONNECTOR(p,isExpandable) then (SCode.R_CONNECTOR(isExpandable),p);
     case TYPE(p) then (SCode.R_TYPE(),p);
     case PACKAGE(p) then (SCode.R_PACKAGE(),p) ;
-    case FUNCTION(p) then (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),p);
+    case FUNCTION(p,isImpure) then (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p);
     case ENUMERATION(p) then (SCode.R_ENUMERATION(),p);
     case TYPE_INTEGER(p) then (SCode.R_PREDEFINED_INTEGER(),p);
     case TYPE_REAL(p) then (SCode.R_PREDEFINED_REAL(),p);

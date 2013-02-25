@@ -775,7 +775,7 @@ algorithm
       list<DAE.Element> elist,elist_1;
       DAE.Function el,res;
       DAE.Type t;
-      Boolean partialPrefix;
+      Boolean partialPrefix, isImpure;
       Absyn.Path p;
       DAE.ExternalDecl ext;
       DAE.InlineType inlineType;
@@ -785,17 +785,17 @@ algorithm
 
     case({},_,_) then listReverse(iAcc);
     
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source,cmt) :: cdr,_,_)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
         (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source,cmt);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
       then
         inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
     // external functions
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source,cmt) :: cdr,_,_)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
         (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source,cmt);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
       then
         inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
 

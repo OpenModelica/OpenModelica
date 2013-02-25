@@ -3042,11 +3042,11 @@ algorithm
     // package can be extendended by package
     case (SCode.R_PACKAGE(), SCode.R_PACKAGE()) then ();
     // normal function -> normal function
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_))) then ();
     // external function -> normal function
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_))) then ();
     // operator function -> normal function 
-    case (SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    case (SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_))) then ();
     // operator function -> operator function
     case (SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION())) then ();
     // type -> type
@@ -9513,13 +9513,13 @@ algorithm
 
     // Partial function definitions with no output - stefan
     case (cache, env, ih, _,
-      cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
+      cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)),
                         partialPrefix = SCode.PARTIAL()), _, _) 
       then 
         (cache,{},cl,DAE.NOMOD());
 
     case (cache, env, ih, _, 
-      SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
+      SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)),
                   partialPrefix = SCode.NOT_PARTIAL()),_,_)
       equation
         Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id}, info);
@@ -11686,7 +11686,7 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD(), partialPrefix = pPrefix)),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
@@ -11755,7 +11755,7 @@ algorithm
       Absyn.Info info;
       DAE.InlineType inlineType;
       SCode.ClassDef cd;
-      Boolean partialPrefixBool;
+      Boolean partialPrefixBool, isImpure;
       Option<SCode.Comment> cmt;
       SCode.FunctionRestriction funcRest;
     
@@ -11763,7 +11763,8 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info)),inst_dims,_)
       equation
         
-        failure(equality(funcRest = SCode.FR_EXTERNAL_FUNCTION()));
+        false = SCode.isExternalFunctionRestriction(funcRest);
+        isImpure = SCode.isImpureFunctionRestriction(funcRest);
         
         // if we're not MetaModelica set it to non-partial
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
@@ -11794,10 +11795,10 @@ algorithm
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
         Debug.bcall3(false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,isImpure,inlineType,source,cmt)});
 
     /* External functions should also have their type in env, but no dae. */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION())),
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
         classDef = cd as (parts as SCode.PARTS(elementLst = els)), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
@@ -11818,7 +11819,7 @@ algorithm
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre,
-            ClassInf.FUNCTION(fpath), n,parts, restr, vis, partialPrefix,
+            ClassInf.FUNCTION(fpath,isImpure), n,parts, restr, vis, partialPrefix,
             encapsulatedPrefix, inst_dims, true, INNER_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet, NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
@@ -11829,15 +11830,15 @@ algorithm
         cmt = extractClassDefComment(cache, env, cd);
         checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source,cmt)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,cmt)});
 
     /* Instantiate overloaded functions */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())),
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
           classDef = SCode.OVERLOAD(pathLst = funcnames,comment=cmt))),inst_dims,_)
       equation
         (cache,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
         (cache,fpath) = makeFullyQualified(cache,env,Absyn.IDENT(n));
-        resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,true,DAE.NO_INLINE(),DAE.emptyElementSource,cmt)::resfns;
+        resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,cmt)::resfns;
       then
         (cache,env,ih,resfns);
     
@@ -11931,7 +11932,7 @@ algorithm
     list<DAE.FunctionDefinition> funcs;
     DAE.Type tp;
     Absyn.Path p;
-    Boolean part;
+    Boolean part,isImpure;
     DAE.InlineType inlineType;
     DAE.ElementSource source;
     Option<SCode.Comment> cmt;
@@ -11939,11 +11940,11 @@ algorithm
 
     case({},_) then {};
 
-    case(DAE.FUNCTION(p,funcs,tp,part,inlineType,source,cmt)::elts,_)
+    case(DAE.FUNCTION(p,funcs,tp,part,isImpure,inlineType,source,cmt)::elts,_)
       equation
         elts = addNameToDerivativeMapping(elts,path);
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION(p,funcs,tp,part,inlineType,source,cmt)::elts;
+      then DAE.FUNCTION(p,funcs,tp,part,isImpure,inlineType,source,cmt)::elts;
 
     case(elt::elts,_)
       equation
@@ -15422,7 +15423,7 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp) = elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
         //Debug.fprint(Flags.REC_CONST, "calling inst_var\n");
-        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
+        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
         //Debug.fprint(Flags.REC_CONST, "Type of argument:");
         Debug.fprint(Flags.REC_CONST, Types.printTypeStr(tp_1));
@@ -17801,20 +17802,21 @@ algorithm
   attr := matchcontinue (cl,vl)
     local
       SCode.Restriction restriction;
-      Boolean purity;
+      Boolean isOpenModelicaPure, isImpure;
       DAE.FunctionBuiltin isBuiltin;
       DAE.InlineType inlineType;
       String name;
       list<DAE.Var> inVars,outVars;
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION())),_)
+    
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),_)
       equation
         inVars = List.filter(vl,Types.isInputVar);
         outVars = List.filter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc2(cl);
-        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
-    
+        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
+        
     //parallel functions: There are some builtin functions.    
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
       equation
@@ -17822,27 +17824,28 @@ algorithm
         outVars = List.filter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc2(cl);
-        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
+        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
     
     //parallel functions: non-builtin
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
       equation
         inlineType = isInlineFunc2(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
-        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,purity,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
+        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
     
     //kernel functions: never builtin and never inlined.
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
-      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());       
-   
+      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,false,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());       
+      
     case (SCode.CLASS(restriction=restriction),_)
       equation
         inlineType = isInlineFunc2(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
-        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,purity,isBuiltin,DAE.FP_NON_PARALLEL());
+        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+        isImpure = SCode.isRestrictionImpure(restriction);
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
 

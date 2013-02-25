@@ -711,7 +711,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
         
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_NON_PARALLEL()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_NON_PARALLEL()) = funAttrs;
         
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
@@ -731,7 +731,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
         
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
         
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
@@ -751,7 +751,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
         
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
         
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);

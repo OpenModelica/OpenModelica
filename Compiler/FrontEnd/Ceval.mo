@@ -1110,7 +1110,7 @@ protected
 algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(name=fid,restriction = SCode.R_FUNCTION(funcRest), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
-  SCode.FR_EXTERNAL_FUNCTION() := funcRest;
+  SCode.FR_EXTERNAL_FUNCTION(_) := funcRest;
   SOME(SCode.EXTERNALDECL(oid,lan,out,args,_)) := extdecl;
   // oid=NONE() is more safe, but most of the functions are declared is a certain way =/
   id := Util.getOptionOrDefault(oid,fid);

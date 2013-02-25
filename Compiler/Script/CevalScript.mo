@@ -6754,7 +6754,7 @@ algorithm
       Absyn.Exp lib;
 
     //only some external functions.
-    case (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), 
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)), 
       classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
         funcName = SOME(fid), 
         annotation_ = SOME(SCode.ANNOTATION(mod)))))))

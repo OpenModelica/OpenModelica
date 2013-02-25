@@ -1813,8 +1813,8 @@ algorithm
     case (_, SCode.NON_PARALLEL(), _, _) then DAE.NON_PARALLEL();
     
     //In functions. No worries.
-    case (_, SCode.PARGLOBAL(), ClassInf.FUNCTION(_), _) then DAE.PARGLOBAL();
-    case (_, SCode.PARLOCAL(), ClassInf.FUNCTION(_), _) then DAE.PARLOCAL();
+    case (_, SCode.PARGLOBAL(), ClassInf.FUNCTION(_,_), _) then DAE.PARGLOBAL();
+    case (_, SCode.PARLOCAL(), ClassInf.FUNCTION(_,_), _) then DAE.PARLOCAL();
       
     // In other classes print warning  
     case (_, SCode.PARGLOBAL(), _, _) 
@@ -3938,7 +3938,7 @@ algorithm
     local
       list<DAE.Element> elist,elist2;
       DAE.Type ftp,tp;
-      Boolean partialPrefix;
+      Boolean partialPrefix, isImpure;
       Absyn.Path path;
       DAE.ExternalDecl extDecl;
       list<DAE.FunctionDefinition> derFuncs;
@@ -3947,15 +3947,15 @@ algorithm
       Option<SCode.Comment> cmt;
       Type_a extraArg;
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),_,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,isImpure,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source,cmt),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt),extraArg);
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),_,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,isImpure,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE(),source,cmt),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,isImpure,DAE.NO_INLINE(),source,cmt),extraArg);
     
     case(DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);

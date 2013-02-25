@@ -4037,9 +4037,57 @@ extern struct record_description Absyn_Restriction_R__UNKNOWN__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,24) {&Absyn_Restriction_R__UNKNOWN__desc}};
 static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionPurity_PURE__desc_added
+#define Absyn_FunctionPurity_PURE__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionPurity_PURE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionPurity_PURE__desc = {
+  "Absyn_FunctionPurity_PURE",
+  "Absyn.FunctionPurity.PURE",
+  Absyn_FunctionPurity_PURE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionPurity_PURE__desc;
+#endif
+#define Absyn__PURE_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__PURE__struct,1,3) {&Absyn_FunctionPurity_PURE__desc}};
+static void *Absyn__PURE = MMC_REFSTRUCTLIT(Absyn__PURE__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionPurity_IMPURE__desc_added
+#define Absyn_FunctionPurity_IMPURE__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionPurity_IMPURE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionPurity_IMPURE__desc = {
+  "Absyn_FunctionPurity_IMPURE",
+  "Absyn.FunctionPurity.IMPURE",
+  Absyn_FunctionPurity_IMPURE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionPurity_IMPURE__desc;
+#endif
+#define Absyn__IMPURE_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__IMPURE__struct,1,4) {&Absyn_FunctionPurity_IMPURE__desc}};
+static void *Absyn__IMPURE = MMC_REFSTRUCTLIT(Absyn__IMPURE__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionPurity_NO__PURITY__desc_added
+#define Absyn_FunctionPurity_NO__PURITY__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionPurity_NO__PURITY__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionPurity_NO__PURITY__desc = {
+  "Absyn_FunctionPurity_NO__PURITY",
+  "Absyn.FunctionPurity.NO_PURITY",
+  Absyn_FunctionPurity_NO__PURITY__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionPurity_NO__PURITY__desc;
+#endif
+#define Absyn__NO_5fPURITY_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__NO_5fPURITY__struct,1,5) {&Absyn_FunctionPurity_NO__PURITY__desc}};
+static void *Absyn__NO_5fPURITY = MMC_REFSTRUCTLIT(Absyn__NO_5fPURITY__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc_added
 #define Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc__fields[1] = {"purity"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc = {
   "Absyn_FunctionRestriction_FR__NORMAL__FUNCTION",
   "Absyn.FunctionRestriction.FR_NORMAL_FUNCTION",
@@ -4049,9 +4097,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR
 #else /* Only use the file as a header */
 extern struct record_description Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc;
 #endif
-#define Absyn__FR_5fNORMAL_5fFUNCTION_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Absyn__FR_5fNORMAL_5fFUNCTION__struct,1,3) {&Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc}};
-static void *Absyn__FR_5fNORMAL_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fNORMAL_5fFUNCTION__struct);
+#define Absyn__FR_5fNORMAL_5fFUNCTION_3dBOX1 3
+#define Absyn__FR_5fNORMAL_5fFUNCTION(purity) (mmc_mk_box2(3,&Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc,purity))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc_added
 #define Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc_added

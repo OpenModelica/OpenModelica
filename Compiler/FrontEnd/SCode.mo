@@ -96,9 +96,14 @@ end Restriction;
 // FR_EXTERNAL_FUNCTION and FR_RECORD_CONSTRUCTOR.
 public 
 uniontype FunctionRestriction
-  record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+  record FR_NORMAL_FUNCTION "a normal function"
+    Boolean isImpure "true for impure functions, false otherwise";
+  end FR_NORMAL_FUNCTION;
+  record FR_EXTERNAL_FUNCTION "an external function"
+    Boolean isImpure "true for impure functions, false otherwise";
+  end FR_EXTERNAL_FUNCTION;
+  
   record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
-  record FR_EXTERNAL_FUNCTION "an external function" end FR_EXTERNAL_FUNCTION;
   record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
   record FR_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FR_PARALLEL_FUNCTION;
   record FR_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FR_KERNEL_FUNCTION;
@@ -990,8 +995,8 @@ public function isFunctionOrExtFunctionRestriction
   output Boolean res;
 algorithm
   res := matchcontinue(r)
-    case (R_FUNCTION(FR_NORMAL_FUNCTION())) then true;
-    case (R_FUNCTION(FR_EXTERNAL_FUNCTION())) then true;
+    case (R_FUNCTION(FR_NORMAL_FUNCTION(_))) then true;
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(_))) then true;
     case(_) then false;
   end matchcontinue;
  end isFunctionOrExtFunctionRestriction;
@@ -1185,9 +1190,10 @@ public function funcRestrictionEqual
   input FunctionRestriction funcRestr2;
   output Boolean equal;
 algorithm
-  equal := match(funcRestr1,funcRestr2)     
-    case (FR_NORMAL_FUNCTION(),FR_NORMAL_FUNCTION()) then true;
-    case (FR_EXTERNAL_FUNCTION(),FR_EXTERNAL_FUNCTION()) then true;
+  equal := match(funcRestr1,funcRestr2)
+    local Boolean b1, b2;     
+    case (FR_NORMAL_FUNCTION(b1),FR_NORMAL_FUNCTION(b2)) then boolEq(b1, b2);
+    case (FR_EXTERNAL_FUNCTION(b1),FR_EXTERNAL_FUNCTION(b2)) then boolEq(b1, b2);
     case (FR_OPERATOR_FUNCTION(),FR_OPERATOR_FUNCTION()) then true;
     case (FR_RECORD_CONSTRUCTOR(),FR_RECORD_CONSTRUCTOR()) then true;
     case (FR_PARALLEL_FUNCTION(),FR_PARALLEL_FUNCTION()) then true;
@@ -3090,15 +3096,15 @@ algorithm
       String outVar1,outVar2;
       list<String> argsStr;
       list<Absyn.Exp> args;
-    case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
     case (CLASS(name=name,restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
     case (CLASS(restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 ==& outVar1;
@@ -3106,7 +3112,7 @@ algorithm
         equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
-      restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),
+      restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),
       classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
         true = listMember(name,knownExternalCFunctions);
@@ -4750,6 +4756,38 @@ algorithm
 
   end match;
 end partitionElements2;
+
+public function isExternalFunctionRestriction
+  input FunctionRestriction inRestr;
+  output Boolean isExternal;
+algorithm
+  isExternal := match(inRestr)
+    case (FR_EXTERNAL_FUNCTION(_)) then true;
+    else false;
+  end match;
+end isExternalFunctionRestriction;
+
+public function isImpureFunctionRestriction
+  input FunctionRestriction inRestr;
+  output Boolean isExternal;
+algorithm
+  isExternal := match(inRestr)
+    case (FR_EXTERNAL_FUNCTION(true)) then true;
+    case (FR_NORMAL_FUNCTION(true)) then true;
+    else false;
+  end match;
+end isImpureFunctionRestriction;
+
+public function isRestrictionImpure
+  input Restriction inRestr;
+  output Boolean isExternal;
+algorithm
+  isExternal := match(inRestr)
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(true))) then true;
+    case (R_FUNCTION(FR_NORMAL_FUNCTION(true))) then true;
+    else false;
+  end match;
+end isRestrictionImpure;
 
 end SCode;
 

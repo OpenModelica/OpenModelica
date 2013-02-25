@@ -50,6 +50,7 @@ package ClassInf
   
     record FUNCTION
       Absyn.Path path;
+      Boolean isImpure;
     end FUNCTION;
   
     record ENUMERATION
@@ -858,6 +859,7 @@ package DAE
       list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
       Type type_;
       Boolean partialPrefix "MetaModelica extension";
+      Boolean isImpure;
       InlineType inlineType;
       ElementSource source "the origin of the component/equation/algorithm";
       Option<SCode.Comment> comment;

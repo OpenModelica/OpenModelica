@@ -295,9 +295,6 @@ CODE_NAME : '$TypeName';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
 
-PURE : 'pure';
-IMPURE : 'impure';
-
 STRING : '"' STRING_GUTS '"'
        {
          pANTLR3_STRING text = $STRING_GUTS.text;

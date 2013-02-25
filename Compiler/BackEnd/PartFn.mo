@@ -435,27 +435,27 @@ algorithm
       list<DAE.Function> cdr,cdr_1,dae;
       DAE.Type fullType;
       Absyn.Path p;
-      Boolean pp;
+      Boolean pp, isImpure;
       DAE.ExternalDecl ed;
       DAE.InlineType inlineType;
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
       
     case ({},dae) then ({},dae);
-    case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,inlineType,source,cmt) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,isImpure,inlineType,source,cmt) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabFunctions(cdr,dae);
-        fn = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts_1)},fullType,pp,inlineType,source,cmt);
+        fn = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts_1)},fullType,pp,isImpure,inlineType,source,cmt);
         dae = replaceFnInFnLst(fn,dae);
       then
         (fn :: cdr_1,dae);
 
-    case(DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts,ed)},fullType,pp,inlineType,source,cmt) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts,ed)},fullType,pp,isImpure,inlineType,source,cmt) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabFunctions(cdr,dae);
-        fn = DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts_1,ed)},fullType,pp,inlineType,source,cmt);
+        fn = DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts_1,ed)},fullType,pp,isImpure,inlineType,source,cmt);
         dae = replaceFnInFnLst(fn,dae);
       then
         (fn :: cdr_1,dae);
@@ -844,18 +844,18 @@ algorithm
       list<DAE.Function> dae;
       list<DAE.Element> fnparts,fnparts_1;
       DAE.Type ty;
-      Boolean pp;
+      Boolean pp, isImpure;
       Integer numArgs;
       list<DAE.Var> vars;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
 
-    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(fnparts)},ty,pp,inlineType,source,cmt),smallfn,p,dae,numArgs)
+    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(fnparts)},ty,pp,isImpure,inlineType,source,cmt),smallfn,p,dae,numArgs)
       equation
         (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
-        res = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(fnparts_1)},ty,pp,inlineType,source,cmt);
+        res = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(fnparts_1)},ty,pp,isImpure,inlineType,source,cmt);
       then
         res;
     case(_,_,_,_,_)

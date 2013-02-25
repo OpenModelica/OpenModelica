@@ -590,7 +590,9 @@ algorithm
     case Absyn.R_TYPE() then "type";
     case Absyn.R_UNIONTYPE() then "uniontype";
     case Absyn.R_PACKAGE() then "package";
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) then "function";
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())) then "impure function";
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE())) then "pure function";
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())) then "function";
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) then "operator function";
     case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) then "parallel function";
     case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()) then "kernel function";
@@ -883,7 +885,12 @@ algorithm
     case Absyn.R_EXP_CONNECTOR() equation Print.printBuf("Absyn.R_EXP_CONNECTOR"); then ();
     case Absyn.R_TYPE() equation Print.printBuf("Absyn.R_TYPE"); then ();
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION)"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())) 
+      equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE))"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE())) 
+      equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE))"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())) 
+      equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY))"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION)"); then ();
@@ -5851,9 +5858,12 @@ protected function printFunctionRestrictionAsCorbaString
   input Absyn.FunctionRestriction functionRestriction;
 algorithm
   _ := match functionRestriction
-    case Absyn.FR_NORMAL_FUNCTION()
+    local Absyn.FunctionPurity purity; 
+    case Absyn.FR_NORMAL_FUNCTION(purity)
       equation
-        Print.printBuf("record Absyn.FR_NORMAL_FUNCTION end Absyn.FR_NORMAL_FUNCTION;"); 
+        Print.printBuf("record Absyn.FR_NORMAL_FUNCTION purity = ");
+        printFunctionPurityAsCorbaString(purity);
+        Print.printBuf(" end Absyn.FR_NORMAL_FUNCTION;"); 
       then ();
     case Absyn.FR_OPERATOR_FUNCTION()
       equation
@@ -5869,6 +5879,25 @@ algorithm
       then ();
   end match;
 end printFunctionRestrictionAsCorbaString;
+
+protected function printFunctionPurityAsCorbaString
+  input Absyn.FunctionPurity functionPurity;
+algorithm
+  _ := match functionPurity 
+    case Absyn.PURE()
+      equation
+        Print.printBuf("record Absyn.PURE end Absyn.PURE;"); 
+      then ();
+    case Absyn.IMPURE()
+      equation
+        Print.printBuf("record Absyn.IMPURE end Absyn.IMPURE;"); 
+      then ();
+    case Absyn.NO_PURITY()
+      equation
+        Print.printBuf("record Absyn.NO_PURITY end Absyn.NO_PURITY;"); 
+      then ();
+  end match;
+end printFunctionPurityAsCorbaString;
 
 protected function printClassPartAsCorbaString
   input Absyn.ClassPart classPart;

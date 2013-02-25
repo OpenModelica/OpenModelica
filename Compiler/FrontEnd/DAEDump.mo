@@ -1633,18 +1633,22 @@ protected function dumpFunction
 algorithm
   _ := matchcontinue (inElement)
     local
-      String fstr,inlineTypeStr, ext_decl_str, parallelism_str;
+      String fstr,inlineTypeStr, ext_decl_str, parallelism_str, impureStr;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
       DAE.InlineType inlineType;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
+      Boolean isImpure;
     
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+                      type_ = t,isImpure = isImpure,comment = c)
       equation
         parallelism_str = dumpParallelismStr(t);
         Print.printBuf(parallelism_str);
+        impureStr = Util.if_(isImpure, "impure ", "");
+        Print.printBuf(impureStr);
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
@@ -1663,8 +1667,11 @@ algorithm
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),type_ = t, comment = c)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+                      type_ = t, isImpure = isImpure, comment = c)
       equation
+        impureStr = Util.if_(isImpure, "impure ", "");
+        Print.printBuf(impureStr);
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
@@ -1704,9 +1711,9 @@ protected function dumpParallelismStr
   output String outString;
 algorithm
   outString := match(inType)
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_NON_PARALLEL()), _)) then "";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_PARALLEL_FUNCTION()), _)) then "parallel ";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_KERNEL_FUNCTION()), _)) then "kernel ";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_NON_PARALLEL()), _)) then "";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_PARALLEL_FUNCTION()), _)) then "parallel ";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_KERNEL_FUNCTION()), _)) then "kernel ";
     else "#dumpParallelismStr failed#";
 end match;
 end dumpParallelismStr;
@@ -3905,7 +3912,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, ext_decl_str;
+      String fstr, ext_decl_str, impureStr;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -3914,11 +3921,15 @@ algorithm
       IOStream.IOStream str;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
+      Boolean isImpure;
       
-    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c), str)
+    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+                       type_ = t, isImpure = isImpure, comment = c), str)
       equation
         str = IOStream.append(str, dumpParallelismStr(t));
         fstr = Absyn.pathStringNoQual(fpath);
+        impureStr = Util.if_(isImpure, "impure ", "");
+        str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
@@ -3935,9 +3946,12 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),type_ = t, comment = c), str)
+      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+                         type_ = t, isImpure = isImpure, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
+        impureStr = Util.if_(isImpure, "impure ", "");
+        str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));

@@ -441,9 +441,9 @@ algorithm
     case SCode.R_OPERATOR() then "OP";
     case SCode.R_TYPE() then "TY";
     case SCode.R_PACKAGE() then "PK";
-    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()) then "FU";
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)) then "FU";
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)) then "EF";
     case SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()) then "OF";
-    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) then "EF";
     case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "RC";
     case SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()) then "PF";
     case SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()) then "KF";
