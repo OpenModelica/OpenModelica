@@ -2603,7 +2603,7 @@ algorithm
 
     case (Connect.SET(ty = Connect.EQU(), elements = eql), _, _, _)
       equation
-        // here we do some overcosntrained connection breaking
+        // here we do some overconstrained connection breaking
         eql = ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
         dae = generateEquEquations(eql);
       then
@@ -2656,6 +2656,7 @@ algorithm
       ConnectorElement e1, e2;
       list<DAE.Element> eq;
       String str;
+      Boolean order_conn;
 
     case {} then DAEUtil.emptyDae;
     
@@ -2664,8 +2665,10 @@ algorithm
     case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
           (e2 as Connect.CONNECTOR_ELEMENT(name = y, source = y_src)) :: rest_el)
       equation
-        e1 = Util.if_(Config.orderConnections(), e1, e2);
+        order_conn = Config.orderConnections();
+        e1 = Util.if_(order_conn, e1, e2);
         DAE.DAE(eq) = generateEquEquations(e1 :: rest_el);
+        (x, y) = Util.swap(shouldFlipEquEquation(x, x_src, order_conn), x, y);
         src = DAEUtil.mergeSources(x_src, y_src);
         src = DAEUtil.addElementSourceConnectOpt(src, SOME((x, y)));
       then
@@ -2682,6 +2685,28 @@ algorithm
   end matchcontinue;
 end generateEquEquations;
 
+protected function shouldFlipEquEquation
+  "If the flag +orderConnections=false is used, then we should keep the order of
+   the connector elements as they occur in the connection (if possible). In that
+   case we check if the cref of the first argument to the first connection
+   stored in the element source is a prefix of the connector element cref. If
+   it isn't, indicate that we should flip the generated equation."
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ElementSource inLhsSource;
+  input Boolean inShouldOrder;
+  output Boolean outShouldFlip;
+algorithm
+  outShouldFlip := matchcontinue(inLhsCref, inLhsSource, inShouldOrder)
+    local
+      DAE.ComponentRef lhs;
+
+    case (_, DAE.SOURCE(connectEquationOptLst = SOME((lhs, _)) :: _), false)
+      then not ComponentReference.crefPrefixOf(lhs, inLhsCref);
+
+    else false;
+  end matchcontinue;
+end shouldFlipEquEquation;
+    
 protected function generateFlowEquations
   "Generating equations from a flow connection set is a little trickier that
    from a non-flow set. Only one equation is generated, but it has to consider
