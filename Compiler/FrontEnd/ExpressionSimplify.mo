@@ -966,6 +966,17 @@ algorithm
         e = Expression.makeLBinary(expl,DAE.OR(DAE.T_BOOL_DEFAULT));
       then e;
 
+    case DAE.CALL(path=Absyn.IDENT(name), expLst = {DAE.ARRAY(array = expl as _ :: _ :: _)},
+        attr = DAE.CALL_ATTR(ty = tp))
+      equation
+        true = Config.scalarizeMinMax();
+        true = stringEq(name, "max") or stringEq(name, "min");
+        e1 :: e2 :: expl = listReverse(expl);
+        e1 = Expression.makeBuiltinCall(name, {e2, e1}, tp);
+        e1 = List.fold2(expl, makeNestedReduction, name, tp, e1);
+      then
+        e1;
+
     // cross
     case (e as DAE.CALL(path = Absyn.IDENT("cross"), expLst = expl))
       equation
@@ -1150,6 +1161,16 @@ algorithm
 
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function makeNestedReduction
+  input DAE.Exp inExp;
+  input String inName;
+  input DAE.Type inType;
+  input DAE.Exp inCall;
+  output DAE.Exp outCall;
+algorithm
+  outCall := Expression.makeBuiltinCall(inName, {inExp, inCall}, inType);
+end makeNestedReduction;
 
 protected function simplifySymmetric
   input array<array<DAE.Exp>> marr;
