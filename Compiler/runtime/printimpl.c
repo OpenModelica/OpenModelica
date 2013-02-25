@@ -237,6 +237,7 @@ static void PrintImpl__clearBuf(void)
     free(buf);
     buf = NULL;
     cursize = 0;
+    increase_buffer(); /* Initialize it; the saved buffers cannot handle NULL */
   }
 }
 
