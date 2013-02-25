@@ -206,7 +206,7 @@ algorithm
     case TYPE(path = p) then "type";
     case PACKAGE(path = p) then "package";
     case FUNCTION(path = p, isImpure = true) then "impure function";
-    case FUNCTION(path = p) then "impure function";
+    case FUNCTION(path = p) then "function";
     case TYPE_INTEGER(path = p) then "Integer";
     case TYPE_REAL(path = p) then "Real";
     case TYPE_STRING(path = p) then "String";
