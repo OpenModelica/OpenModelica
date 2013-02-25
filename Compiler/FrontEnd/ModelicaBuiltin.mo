@@ -1082,6 +1082,25 @@ external "builtin";
 annotation(preferredView="text");
 end setCompiler;
 
+function setCFlags "CFLAGS"
+  input String inString;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+Sets the CFLAGS passed to the C-compiler. Remember to add -fPIC if you are on a 64-bit platform. If you want to see the defaults before you modify this variable, check the output of <a href=\"modelica://OpenModelica.Scripting.getCFlags\">getCFlags()</a>. ${SIM_OR_DYNLOAD_OPT_LEVEL} can be used to get a default lower optimization level for dynamically loaded functions. And ${MODELICAUSERCFLAGS} is nice to add so you can easily modify the CFLAGS later by using an environment variable.
+</html>"),
+  preferredView="text");
+end setCFlags;
+
+public function getCFlags "CFLAGS"
+  output String outString;
+external "builtin";
+annotation(Documentation(info="<html>
+See <a href=\"modelica://OpenModelica.Scripting.setCFlags\">setCFlags()</a> for details.
+</html>"),
+  preferredView="text");
+end getCFlags;
+
 function getCXXCompiler "CXX"
   output String compiler;
 external "builtin";

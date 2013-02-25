@@ -1598,6 +1598,18 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
+    case (cache,env,"setCFlags",{Values.STRING(str)},st,_)
+      equation
+        System.setCFlags(str);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"getCFlags",{},st,_)
+      equation
+        str = System.getCFlags();
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,env,"setCompiler",{Values.STRING(str)},st,_)
       equation
         System.setCCompiler(str);
