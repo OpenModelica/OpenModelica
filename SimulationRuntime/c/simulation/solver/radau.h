@@ -68,6 +68,7 @@
 
     typedef struct{
       double *x0;
+      double *f0;
       double *x;
       int nStates;
       double dt;

@@ -328,12 +328,14 @@ int initKinsol(KINODE *kinOde)
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
   double* derx;
-  double tmp,tmp1,h;
+  double tmp,h;
   double* xeq = NV_DATA_S(kData->x);
+
   nlp->currentStep = &kinOde->solverInfo->currentStepSize;
-  kinOde->nlp->derx = data->localData[0]->realVars + nStates;
-  kinOde->nlp->x0 = data->localData[1]->realVars;
-  kinOde->nlp->t0 = data->localData[1]->timeValue;
+  nlp->derx = data->localData[0]->realVars + nStates;
+  nlp->x0 = data->localData[1]->realVars;
+  nlp->f0 = data->localData[1]->realVars + nStates;
+  nlp->t0 = data->localData[1]->timeValue;
   derx = nlp->derx;
 
   xlow = xeq + N*nStates;
@@ -349,45 +351,44 @@ int initKinsol(KINODE *kinOde)
       KINInit(kData->kmem, radau5Res, kinOde->kData->x);
       break;
     case 7:
-      nlp->dt = *(kinOde->nlp->currentStep);
-      KINInit(kinOde->kData->kmem, radau3Res, kinOde->kData->x);
+      nlp->dt = *(nlp->currentStep);
+      KINInit(kData->kmem, radau3Res, kinOde->kData->x);
       break;
     case 8:
-      nlp->dt = *(kinOde->nlp->currentStep);
-      KINInit(kinOde->kData->kmem, radau1Res, kinOde->kData->x);
+      nlp->dt = *(nlp->currentStep);
+      KINInit(kData->kmem, radau1Res, kinOde->kData->x);
       break;
     case 9:
-      nlp->dt = *(kinOde->nlp->currentStep);
-      KINInit(kinOde->kData->kmem, lobatto2Res, kinOde->kData->x);
+      nlp->dt = *(nlp->currentStep);
+      KINInit(kData->kmem, lobatto2Res, kinOde->kData->x);
       break;
     case 10:
-      nlp->dt = *(kinOde->nlp->currentStep);
-      KINInit(kinOde->kData->kmem, lobatto4Res, kinOde->kData->x);
+      nlp->dt = *(nlp->currentStep);
+      KINInit(kData->kmem, lobatto4Res, kinOde->kData->x);
       break;
     case 11:
-      nlp->dt = *(kinOde->nlp->currentStep);
-      KINInit(kinOde->kData->kmem, lobatto6Res, kinOde->kData->x);
+      nlp->dt = *(nlp->currentStep);
+      KINInit(kData->kmem, lobatto6Res, kinOde->kData->x);
       break;
 
     default:
       assert(0);
   }
+
   h = nlp->dt;
+
   for(j=0,k=0;j<N;j++)
   {
     for(i=0;i<nStates;i++,k++)
     {
-      tmp1 = fabs(derx[i])*h;
-      tmp = tmp1 > 1e-6 ? 1.0/(tmp1) : 1e6;
       if(nlp->a != NULL)
-      {
-          tmp /= nlp->a[j] > 0 ? nlp->a[j] : 1.0;
-          xeq[k] = nlp->x0[i] + nlp->a[j]*derx[i]*h;
-      }
+        xeq[k] = nlp->x0[i] + nlp->a[j]*nlp->f0[i]*h;
       else
-        xeq[k] = nlp->x0[i] + derx[i]*h;
+        xeq[k] = nlp->x0[i] + nlp->f0[i]*h;
+
       xlow[k] = xeq[k] - nlp->min[i];
       xup[k] = xeq[k] - nlp->max[i];
+      tmp = 1.0/(fabs(nlp->x0[i] - xeq[k]) + 1e-6);
       seq[k] = tmp;
       slow[k] = tmp;
       sup[k] = tmp;
@@ -560,7 +561,6 @@ int radau1Res(N_Vector x, N_Vector f, void* user_data)
   int n = nlp->nStates;
   double* xlow, *xup;
   double*derx = nlp->derx;
-  double*a = nlp->a;
   double* flow, *fup;
 
   N = kinOde->N;
@@ -597,30 +597,27 @@ int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   double* lb = nlp->min;
   double* ub = nlp->max;
 
-  double *x0,*x1;
+  double *x0,*x1, *f0;
   int n = nlp->nStates;
   double* xlow, *xup;
   double*derx = nlp->derx;
-  double*a = nlp->a;
   double* flow, *fup;
 
   N = kinOde->N;
 
-  flow = feq + N*n;
-  fup  = flow + N*n;
+  flow = feq + n;
+  fup  = flow + n;
 
   x0 = nlp->x0;
+  f0 = nlp->f0;
   x1 = NV_DATA_S(x);
   xlow = x1 + n;
-  xup  = xlow + N*n;
-
-  for(i = 0;i<n;i++)
-    feq[i] = derx[i];
+  xup  = xlow + n;
 
   refreshModell(data, x1,t0 + h);
   for(i = 0;i<n;i++)
   {
-    feq[i] = x0[i] - x1[i] + 0.5*h*(derx[i]+feq[i]);
+    feq[i] = x0[i] - x1[i] + 0.5*h*(f0[i]+derx[i]);
     flow[i] = xlow[i] - x1[i] + lb[i];
     fup[i] = xup[i] - x1[i] +  ub[i];
   }
@@ -641,7 +638,7 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   double* lb = nlp->min;
   double* ub = nlp->max;
 
-  double *x0, *x1, *x2;
+  double *x0, *x1, *x2, *f0;
   int n = nlp->nStates;
   double* xlow, *xup;
   double*derx = nlp->derx;
@@ -653,21 +650,17 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   flow = feq + N*n;
   fup  = flow + N*n;
 
+  f0 = nlp->f0;
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
   x2 = x1 + n;
   xlow = x2 + n;
   xup  = xlow + N*n;
-  for(i = 0;i<n;i++)
-  {
-    feq[i] = derx[i];
-    feq[i+n] = derx[i];
-  }
 
   refreshModell(data, x1,t0 + 0.5*h);
   for(i = 0;i<n;i++)
   {
-    feq[i] = (h*(2.0*derx[i] +feq[i]) + 5.0*x0[i]) - (4*x1[i] + x2[i]);
+    feq[i] = (h*(2.0*derx[i] +f0[i]) + 5.0*x0[i]) - (4*x1[i] + x2[i]);
     flow[i] = xlow[i] - x1[i] + lb[i];
     fup[i] = xup[i] - x1[i] +  ub[i];
   }
@@ -676,7 +669,7 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<n;i++)
   {
     sub2 = i + n;
-    feq[sub2] = (2.0*h*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*h*feq[sub2]);
+    feq[sub2] = (2.0*h*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*h*f0[i]);
     flow[sub2] = xlow[sub2] - x2[i] + lb[i];
     fup[sub2] = xup[sub2] - x2[i] +  ub[i];
   }
@@ -697,7 +690,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   double* lb = nlp->min;
   double* ub = nlp->max;
 
-  double *x0, *x1, *x2, *x3;
+  double *x0, *x1, *x2, *x3, *f0;
   int n = nlp->nStates;
   double* xlow, *xup;
   double*derx = nlp->derx;
@@ -709,6 +702,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   flow = feq + N*n;
   fup  = flow + N*n;
 
+  f0 = nlp->f0;
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
   x2 = x1 + n;
@@ -716,17 +710,11 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 
   xlow = x3 + n;
   xup  = xlow + N*n;
-  for(i = 0;i<n;i++)
-  {
-    feq[i] = derx[i];
-    feq[i+n] = derx[i];
-    feq[i+2*n] = derx[i];
-  }
 
   refreshModell(data, x1,t0 + nlp->a[0]*h);
   for(i = 0;i<n;i++)
   {
-    feq[i] = (h*(derx[i] + nlp->c[0][4]*feq[i]) + nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i]) - (nlp->c[0][1]*x1[i] + nlp->c[0][3]*x3[i]);
+    feq[i] = (h*(derx[i] + nlp->c[0][4]*f0[i]) + nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i]) - (nlp->c[0][1]*x1[i] + nlp->c[0][3]*x3[i]);
     flow[i] = xlow[i] - x1[i] + lb[i];
     fup[i] = xup[i] - x1[i] +  ub[i];
   }
@@ -735,7 +723,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<n;i++)
   {
     sub2 = i + n;
-    feq[sub2] = (h*derx[i] + nlp->c[1][1]*x1[i]) - (h*nlp->c[1][4]*feq[sub2] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
+    feq[sub2] = (h*derx[i] + nlp->c[1][1]*x1[i]) - (h*nlp->c[1][4]*f0[i] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
     flow[sub2] = xlow[sub2] - x2[i] + lb[i];
     fup[sub2] = xup[sub2] - x2[i] +  ub[i];
   }
@@ -744,7 +732,7 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<n;i++)
   {
     sub2 = i + 2*n;
-    feq[sub2] = (h*(feq[sub2] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
+    feq[sub2] = (h*(f0[i] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
     flow[sub2] = xlow[sub2] - x3[i] + lb[i];
     fup[sub2] = xup[sub2] - x3[i] +  ub[i];
   }
@@ -755,7 +743,6 @@ int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 
 int kinsolOde(void* ode)
 {
-  int retValue;
   KINODE *kinOde = (KINODE*) ode;
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
@@ -773,10 +760,9 @@ int kinsolOde(void* ode)
                                 kData->glstr,          /* global stragegy choice */
                                 kData->sVars,          /* scaling vector, for the variable cc */
                                 kData->sEqns );
-    retValue = kData->error_code;
-  }while(retValue < 0 && (++kData->glstr) <= KIN_LINESEARCH);
+  }while(kData->error_code < 0 && (++kData->glstr) <= KIN_LINESEARCH);
   refreshModell(kinOde->data, NV_DATA_S(kData->x) + (N-1)*nlp->nStates, nlp->t0 + (nlp->dt));
-  return retValue;
+  return kData->error_code;
 }
 #else
 
