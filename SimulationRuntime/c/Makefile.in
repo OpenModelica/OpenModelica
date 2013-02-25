@@ -30,6 +30,7 @@ LIBF2CHEADER=./simulation/libf2c/f2c.h
 endif
 LIBSIMULATION=libSimulationRuntimeC.so
 LIBRUNTIME=libOpenModelicaRuntimeC.so
+LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 
 EXTERNALCMAKEFILE=Makefile
 

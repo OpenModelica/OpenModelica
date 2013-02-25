@@ -6,7 +6,7 @@
 
 include Makefile.objs
 
-CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(top_builddir)/3rdParty/gc-7.2/include
+CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(top_builddir)/3rdParty/FMIL/install/include/
 CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
@@ -78,6 +78,7 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
 	$(AR) $@ $(ALL_OBJS)
+
 	ranlib $@
 
 libSimulationRuntimeC.so: $(ALL_OBJS)
@@ -93,6 +94,15 @@ libOpenModelicaRuntimeC.a: $(BASE_OBJS)
 libOpenModelicaRuntimeC.so: $(BASE_OBJS)
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS)
+
+libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
+	@rm -f $@
+	$(AR) $@ $(FMILIB) $(FMIOBJSPATH)
+	ranlib $@
+
+libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH)
+	@rm -f $@
+	$(CC) -shared -o $@ $(FMIOBJSPATH)
 
 $(METAOBJSPATH):%.o: %.c $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)
@@ -131,9 +141,9 @@ simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 endif
 
-install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
+install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
 	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBRUNTIME) \
+	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ./ModelicaExternalC/libModelicaExternalC.a \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
