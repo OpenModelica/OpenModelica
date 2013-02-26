@@ -97,7 +97,7 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
   return path;
 }
 
-static char* winLibPath = NULL;
+char* winLibPath = NULL;
 
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
@@ -129,10 +129,6 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  /* already set, set it only once! */
-  if (winLibPath != NULL)
-    return winLibPath;
-
   /* adrpo: translate this to forward slashes! */
   /* duplicate the path */
   winLibPath = strdup(path);
