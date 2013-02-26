@@ -55,6 +55,9 @@ AC_SUBST(FPMATHFORTRAN)
 AC_SUBST(OMOPTIM_CC)
 AC_SUBST(OMOPTIM_CXX)
 AC_SUBST(LIBGC)
+AC_SUBST(LIBSIMULATION)
+AC_SUBST(LIBRUNTIME)
+AC_SUBST(LIBFMIRUNTIME)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -638,9 +641,15 @@ fi
 if test "Darwin" = `uname`; then
   EXE=".app"
   LIBGC="build/lib/omc/libgc.a"
+  LIBSIMULATION=libSimulationRuntimeC.a
+  LIBRUNTIME=libOpenModelicaRuntimeC.a
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 else
   EXE=""
   LIBGC="build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3"
+  LIBSIMULATION=libSimulationRuntimeC.a
+  LIBRUNTIME=libOpenModelicaRuntimeC.so
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 fi
 
 if test "Darwin" != `uname`; then
