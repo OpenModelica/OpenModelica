@@ -52,7 +52,7 @@ THREAD_RET_TYPE threadServerControl(void*)
 
          if (!shutDownInProgress)
          {
-                cout << "Server recieved message: " << message << endl; fflush(stdout);
+                cout << ("Server recieved message: " + message) << endl; fflush(stdout);
          }
   }
   return 0;
@@ -86,7 +86,7 @@ THREAD_RET_TYPE threadServerTransfer(void*)
 
          if (!shutDownInProgress)
          {
-                cout << "Server recieved message: " << message << endl; fflush(stdout);
+                cout << ("Server recieved message: " + message) << endl; fflush(stdout);
          }
   }
   return 0;
