@@ -65,6 +65,8 @@ void ErrorImpl__delCheckpoint(const char* id);
 void ErrorImpl__rollBack(const char* id);
 char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string that we rolled back. free this resource
 
+extern int showErrorMessages;
+
 #ifdef __cplusplus
   }
 #endif
@@ -79,7 +81,7 @@ char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string t
        const char* severity,
        const char* message,
        std::list<std::string> tokens);
-       
+
   void add_source_message(int errorID,
         const char* type,
         const char* severity,
@@ -91,8 +93,6 @@ char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string t
         int endCol,
         bool isReadOnly,
         const char* filename);
-
-extern int showErrorMessages;
 
 #endif
 

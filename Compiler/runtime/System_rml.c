@@ -328,11 +328,20 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
   rewind(fp2);
 
   if(fileSize1 != fileSize2)
+  {
     res=-1;
+  }
   else
+  {
     for(i=0;i<fileSize1;++i)
+    {
       if(fgetc(fp1) != fgetc(fp2))
+      {
         res=-1;
+        break;
+      }
+    }
+  }
   fclose(fp1);fclose(fp2);
 
   rmlA0 = res != -1 ? RML_TRUE : RML_FALSE;
@@ -1231,7 +1240,7 @@ void System_5finit(void)
  * Author BZ
  * helper function for getSymbolicLinkPath
  **/
-char *mergePathWithLink(char *path,char *linkPath)
+static char *mergePathWithLink(char *path,char *linkPath)
 {
     char *lastSlash;
     char *newPath = (char *) malloc(sizeof(char)*MAXPATHLEN);
@@ -1254,7 +1263,7 @@ return newPath;
  * to produce resulting path ( if a link is refering to a relative dir or not).
  *
  * */
-char *getSymbolicLinkPath(char* path)
+static char *getSymbolicLinkPath(char* path)
 {
     int err,readChars;
     char *buffer;
@@ -1298,41 +1307,43 @@ char *getSymbolicLinkPath(char* path)
  * 3) isLink(/home/bjozac/linkToNewDir) => true, new path: /home/bjozac/NewDir/
  * 4) isLink(/home/bjozac/newDir/a.mo)
  **/
-char* findSymbolicLinks(char* path)
+static char* findSymbolicLinks(char* path)
 {
-    int i;
-    char *curRes = (char *) malloc(sizeof(char)*MAXPATHLEN);
-    char *curPos;
-    char *endPos;
-    curRes[0]='\0';
-    curPos = path;
-    if(path[0]=='/'){
-  curRes = strcat(curRes,"/");
-        curPos = &path[1]; // skip first slash, will add when finished.
-    }
+  int i;
+  char *curRes = (char *) malloc(sizeof(char)*MAXPATHLEN);
+  char *curPos;
+  char *endPos;
+  curRes[0]='\0';
+  curPos = path;
+  if(path[0]=='/'){
+    curRes = strcat(curRes,"/");
+    curPos = &path[1]; // skip first slash, will add when finished.
+  }
 
-    for(i=0;i<100;++i){
-        endPos = strchr(curPos,'/');
-        if(endPos==NULL){ // End OF String
+  for(i=0;i<100;++i){
+    endPos = strchr(curPos,'/');
+    if(endPos==NULL){ // End OF String
       endPos = strrchr(curPos,'\0');
       strncat(curRes,curPos,endPos-curPos); // add filename
       //printf(" check: %s ==> " ,curRes);
       curRes = getSymbolicLinkPath(curRes);
       //printf("\tbecame: %s\n",curRes);
       free(path);
-          return curRes;
-  }
-  strncat(curRes,curPos,endPos-curPos);
-  curRes = getSymbolicLinkPath(curRes);
-  if(curRes[strlen(curRes)-1] != '/')
-          strcat(curRes,"/");
-  //printf("path: %s\n",curRes);
-  curPos = endPos+1;
+      return curRes;
     }
+    strncat(curRes,curPos,endPos-curPos);
+    curRes = getSymbolicLinkPath(curRes);
+    if(curRes[strlen(curRes)-1] != '/')
+    {
+      strcat(curRes,"/");
+    }
+    //printf("path: %s\n",curRes);
+    curPos = endPos+1;
+  }
     if(strchr(path,'/')!=NULL)
   fprintf(stderr,"possible error in save-function\n");
-    free(path);
-    return curRes;
+  free(path);
+  return curRes;
 }
 
 
@@ -1340,7 +1351,7 @@ char* findSymbolicLinks(char* path)
    returns NULL on failure.
 
 */
-char* normalizePath(const char* src)
+static char* normalizePath(const char* src)
 {
   const char* srcEnd = src + strlen(src);
   const char* srcPos = src;
@@ -1540,7 +1551,7 @@ RML_BEGIN_LABEL(System__moFiles)
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
     /* adrpo added 2004-10-28 */
     //free(files[i]->d_name);
-  free(files[i]);
+    free(files[i]);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);

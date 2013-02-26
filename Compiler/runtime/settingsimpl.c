@@ -65,7 +65,7 @@ static int   echo = 1; //true
 extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
 extern int SystemImpl__directoryExists(const char*);
 
-char* winPath = NULL;
+static char* winPath = NULL;
 
 // Do not free or modify the returned variable. It's part of the environment!
 const char* SettingsImpl__getInstallationDirectoryPath() {
@@ -92,14 +92,12 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
     if (winPath[i] == '\\') winPath[i] = '/';
     i++;
   }
-  /* set the termination */
-  winPath[i] = '\0';
   return (const char*)winPath;
 #endif
   return path;
 }
 
-char* winLibPath = NULL;
+static char* winLibPath = NULL;
 
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
@@ -131,6 +129,10 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+  /* already set, set it only once! */
+  if (winLibPath != NULL)
+    return winLibPath;
+
   /* adrpo: translate this to forward slashes! */
   /* duplicate the path */
   winLibPath = strdup(path);
@@ -145,8 +147,6 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     if (winLibPath[i] == '\\') winLibPath[i] = '/';
     i++;
   }
-  /* set the termination */
-  winLibPath[i] = '\0';
   return winLibPath;
 #endif
 

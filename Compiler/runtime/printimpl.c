@@ -35,8 +35,7 @@
 #include "errorext.h"
 #include "systemimpl.h"
 
-/* adrpo: this is defined in errorext. (enabled with omc +showErrorMessages) */
-extern int showErrorMessages;
+/* adrpo: "int showErrorMessages" is defined in errorext. (enabled with omc +showErrorMessages) */
 
 #define GROWTH_FACTOR 1.4  /* According to some rumors of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
@@ -49,18 +48,18 @@ extern int showErrorMessages;
 #define errorNfilled Print_var_errorNfilled
 #define errorCursize Print_var_errorCursize
 
-char *buf = NULL;
-char *errorBuf = NULL;
+static char *buf = NULL;
+static char *errorBuf = NULL;
 
-int nfilled=0;
-int cursize=0;
+static int nfilled=0;
+static int cursize=0;
 
-int errorNfilled=0;
-int errorCursize=0;
+static int errorNfilled=0;
+static int errorCursize=0;
 
- char** savedBuffers=0;
- long* savedCurSize;
- long* savedNfilled;
+static char** savedBuffers=0;
+static long* savedCurSize;
+static long* savedNfilled;
 
 static int increase_buffer(void)
 {
@@ -135,7 +134,7 @@ static int error_increase_buffer(void)
   return 0;
 }
 
-int print_error_buf_impl(const char *str)
+static int print_error_buf_impl(const char *str)
 {
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
 
@@ -241,7 +240,7 @@ static void PrintImpl__clearBuf(void)
 }
 
 /* returns NULL on failure */
-const char* PrintImpl__getString(void)
+static const char* PrintImpl__getString(void)
 {
   if(buf == NULL || buf[0]=='\0' || cursize==0){
     return "";
@@ -359,7 +358,7 @@ static int PrintImpl__restoreBuf(long handle)
     savedBuffers[handle] = 0;
     savedCurSize[handle] = 0;
     savedNfilled[handle] = 0;
-    if (buf == 0) { 
+    if (buf == 0) {
       fprintf(stderr,"Internal error, handle %d does not contain a valid buffer pointer\n",handle);
       return 1;
     }
@@ -371,25 +370,25 @@ static long PrintImpl__saveAndClearBuf()
 {
   long freeHandle,foundHandle=0;
 
-  if (! savedBuffers) { 
+  if (! savedBuffers) {
     savedBuffers = (char**)malloc(MAXSAVEDBUFFERS*sizeof(char*));
-    if (!savedBuffers) { 
+    if (!savedBuffers) {
       fprintf(stderr, "Internal error allocating savedBuffers in Print.saveAndClearBuf\n");
       return -1;
     }
     memset(savedBuffers,0,MAXSAVEDBUFFERS);
   }
-  if (! savedCurSize) { 
+  if (! savedCurSize) {
     savedCurSize = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
-    if (!savedCurSize) { 
+    if (!savedCurSize) {
       fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
       return -1;
     }
     memset(savedCurSize,0,MAXSAVEDBUFFERS);
   }
-  if (! savedNfilled) { 
+  if (! savedNfilled) {
     savedNfilled = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
-    if (!savedNfilled) { 
+    if (!savedNfilled) {
       fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
       return -1;
     }

@@ -32,26 +32,31 @@
  * author: team Bielefeld :)
  */
 
+#include <string.h>
+
 #include "radau.h"
 #ifdef WITH_SUNDIALS
 
-int allocateNlpOde(KINODE *kinOde);
-int allocateKINSOLODE(KINODE *kinOde);
+static int allocateNlpOde(KINODE *kinOde);
+static int allocateKINSOLODE(KINODE *kinOde);
 
-int boundsVars(KINODE *kinOde);
+static int freeImOde(void *nlpode, int N);
+static int freeKinsol(void * kOde);
 
-int radau1Coeff(KINODE *kinOd);
-int radau3Coeff(KINODE *kinOde);
-int radau5Coeff(KINODE *kinOd);
-int lobatto4Coeff(KINODE *kinOd);
-int lobatto6Coeff(KINODE *kinOd);
+static int boundsVars(KINODE *kinOde);
 
-int radau1Res(N_Vector z, N_Vector f, void* user_data);
-int radau3Res(N_Vector z, N_Vector f, void* user_data);
-int radau5Res(N_Vector z, N_Vector f, void* user_data);
-int lobatto2Res(N_Vector z, N_Vector f, void* user_data);
-int lobatto4Res(N_Vector z, N_Vector f, void* user_data);
-int lobatto6Res(N_Vector z, N_Vector f, void* user_data);
+static int radau1Coeff(KINODE *kinOd);
+static int radau3Coeff(KINODE *kinOde);
+static int radau5Coeff(KINODE *kinOd);
+static int lobatto4Coeff(KINODE *kinOd);
+static int lobatto6Coeff(KINODE *kinOd);
+
+static int radau1Res(N_Vector z, N_Vector f, void* user_data);
+static int radau3Res(N_Vector z, N_Vector f, void* user_data);
+static int radau5Res(N_Vector z, N_Vector f, void* user_data);
+static int lobatto2Res(N_Vector z, N_Vector f, void* user_data);
+static int lobatto4Res(N_Vector z, N_Vector f, void* user_data);
+static int lobatto6Res(N_Vector z, N_Vector f, void* user_data);
 
 int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
 {
@@ -67,7 +72,7 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   return 0;
 }
 
-int allocateNlpOde(KINODE *kinOde)
+static int allocateNlpOde(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   int flag = kinOde->flag;
@@ -104,7 +109,7 @@ int allocateNlpOde(KINODE *kinOde)
   return 0;
 }
 
-int boundsVars(KINODE *kinOde)
+static int boundsVars(KINODE *kinOde)
 {
   int i;
   double tmp;
@@ -126,7 +131,7 @@ int boundsVars(KINODE *kinOde)
   return 0;
 }
 
-int radau5Coeff(KINODE *kinOde)
+static int radau5Coeff(KINODE *kinOde)
 {
   int i, N;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
@@ -159,7 +164,7 @@ int radau5Coeff(KINODE *kinOde)
   return 0;
 }
 
-int radau3Coeff(KINODE *kinOde)
+static int radau3Coeff(KINODE *kinOde)
 {
   int i, N;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
@@ -184,7 +189,7 @@ int radau3Coeff(KINODE *kinOde)
   return 0;
 }
 
-int radau1Coeff(KINODE *kinOde)
+static int radau1Coeff(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   nlp->c = NULL;
@@ -192,7 +197,7 @@ int radau1Coeff(KINODE *kinOde)
   return 0;
 }
 
-int lobatto4Coeff(KINODE *kinOde)
+static int lobatto4Coeff(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   nlp->c = NULL;
@@ -202,7 +207,7 @@ int lobatto4Coeff(KINODE *kinOde)
   return 0;
 }
 
-int lobatto6Coeff(KINODE *kinOde)
+static int lobatto6Coeff(KINODE *kinOde)
 {
   int i, N;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
@@ -238,7 +243,7 @@ int lobatto6Coeff(KINODE *kinOde)
   return 0;
 }
 
-int allocateKINSOLODE(KINODE *kinOde)
+static int allocateKINSOLODE(KINODE *kinOde)
 {
   int N = kinOde->N;
   DATA *data = kinOde->data;
@@ -288,7 +293,7 @@ int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   return 0;
 }
 
-int freeImOde(void *nlpode, int N)
+static int freeImOde(void *nlpode, int N)
 {
   int i;
   NLPODE *nlp = (NLPODE*) nlpode;
@@ -306,7 +311,7 @@ int freeImOde(void *nlpode, int N)
   return 0;
 }
 
-int freeKinsol(void * kOde)
+static int freeKinsol(void * kOde)
 {
   KDATAODE *kData = (KDATAODE*) kOde;
   N_VDestroy_Serial(kData->x);
@@ -316,7 +321,7 @@ int freeKinsol(void * kOde)
   KINFree(&kData->kmem);
 }
 
-int initKinsol(KINODE *kinOde)
+static int initKinsol(KINODE *kinOde)
 {
   int i,j,k;
   int flag = kinOde->flag;
@@ -406,7 +411,7 @@ int initKinsol(KINODE *kinOde)
   return 0;
 }
 
-int refreshModell(DATA* data, double* x, double time)
+static int refreshModell(DATA* data, double* x, double time)
 {
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -418,7 +423,7 @@ int refreshModell(DATA* data, double* x, double time)
   return 0;
 }
 
-int radau5Res(N_Vector x, N_Vector f, void* user_data)
+static int radau5Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i,sub2,sub3;
   KINODE* kinOde = (KINODE*)user_data;
@@ -489,7 +494,7 @@ int radau5Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
-int radau3Res(N_Vector x, N_Vector f, void* user_data)
+static int radau3Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i,sub2, N;
   KINODE* kinOde = (KINODE*)user_data;
@@ -544,7 +549,7 @@ int radau3Res(N_Vector x, N_Vector f, void* user_data)
 }
 
 
-int radau1Res(N_Vector x, N_Vector f, void* user_data)
+static int radau1Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i,sub2, N;
   KINODE* kinOde = (KINODE*)user_data;
@@ -583,7 +588,7 @@ int radau1Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
-int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
+static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i, N;
   KINODE* kinOde = (KINODE*)user_data;
@@ -624,7 +629,7 @@ int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
-int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
+static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i,sub2, N;
   KINODE* kinOde = (KINODE*)user_data;
@@ -676,7 +681,7 @@ int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
-int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
+static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 {
   int i,sub2, N;
   KINODE* kinOde = (KINODE*)user_data;

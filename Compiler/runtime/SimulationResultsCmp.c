@@ -116,7 +116,7 @@ static inline void fixCommaInName(char **str, size_t len)
   }
 }
 
-double absdouble(double d)
+static inline double absdouble(double d)
 {
   if (d > 0.0)
     return d;
@@ -124,7 +124,7 @@ double absdouble(double d)
     return -1.0*d;
 }
 
-char ** getVars(void *vars, unsigned int* nvars)
+static char ** getVars(void *vars, unsigned int* nvars)
 {
   char **cmpvars=NULL;
   char *var;
@@ -169,7 +169,7 @@ char ** getVars(void *vars, unsigned int* nvars)
   return cmpvars;
 }
 
-DataField getData(const char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
+static DataField getData(const char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
 {
   DataField res;
   void *cmpvar,*dataset,*lst,*datasetBackup;
@@ -220,7 +220,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
 }
 
 /* see http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/ */
-char AlmostEqualRelativeAndAbs(double A, double B)
+static char AlmostEqualRelativeAndAbs(double A, double B)
 {
   /* Check if the numbers are really close -- needed
   when comparing numbers near zero. */
@@ -237,7 +237,7 @@ char AlmostEqualRelativeAndAbs(double A, double B)
   return 0;
 }
 
-unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx)
+static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx)
 {
   unsigned int i,j,k,j_event;
   double t,tr,d,dr,err,d_left,d_right,dr_left,dr_right,t_event;
@@ -540,7 +540,7 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
   return vardiffindx;
 }
 
-int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const char *reff,double reltol,double abstol)
+static int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const char *reff,double reltol,double abstol)
 {
   FILE* fout;
   unsigned int i;

@@ -30,7 +30,7 @@ typedef struct {
   FILE *csvReader;
 } SimulationResult_Globals;
 
-void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
+static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
 {
   switch (simresglob->curFormat) {
   case MATLAB4: omc_free_matlab4_reader(&simresglob->matReader); break;
