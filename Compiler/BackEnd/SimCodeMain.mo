@@ -416,13 +416,13 @@ algorithm
       then ();
     case (_,_,"C")
       equation
-        Tpl.tplNoret(SimCodeDump.dumpSimCode, simCode);
+        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
         Tpl.tplNoret(CodegenC.translateModel, simCode);
       then ();        
     case (_,_,"Dump")
       equation
         // Yes, do this better later on...
-        str = Tpl.tplString(SimCodeDump.dumpSimCode, simCode);
+        str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);
         0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
         print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
       then ();
@@ -459,11 +459,6 @@ algorithm
       equation
         Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
       then (); 
-    case (_,"Dump")
-      equation
-        // Yes, do this better later on...
-        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
-      then ();
     case (_,_)
       equation
         str = "Unknown template target: " +& target;
@@ -478,33 +473,7 @@ protected function callTargetTemplatesXML
   input SimCode.SimCode simCode;
   input String target;
 algorithm
-  _ := match (simCode,target)
-    local
-      String str;
-      
-    case (_,"C")
-      equation
-        Tpl.tplNoret(CodegenXML.translateModel, simCode);
-      then ();        
-    case (_,"Cpp")
-      equation
-        Tpl.tplNoret(CodegenXML.translateModel, simCode);
-      then (); 
-    case (_,"Dump")
-      equation
-        // Yes, do this better later on...
-        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
-      then ();      
-    case (_,"XML")
-      equation
-        Tpl.tplNoret(CodegenXML.translateModel, simCode);
-      then ();        
-    case (_,_)
-      equation
-        str = "Unknown template target : " +& target;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end match;
+  Tpl.tplNoret(CodegenXML.translateModel, simCode);
 end callTargetTemplatesXML;
 
 public function translateModel
