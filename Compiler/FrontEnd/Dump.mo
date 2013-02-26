@@ -496,8 +496,8 @@ protected function unparseEnumliterals
 algorithm
   outString := matchcontinue (inAbsynEnumLiteralLst)
     local
-      Ident s1,s2,res,str,str2;
-      Option<Absyn.Comment> optcmt,optcmt2;
+      Ident s1,s2,res,str;
+      Option<Absyn.Comment> optcmt;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
     
@@ -511,14 +511,15 @@ algorithm
       then
         res;
     
-    case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt),Absyn.ENUMLITERAL(literal = str2,comment = optcmt2)})
+    case ({Absyn.ENUMLITERAL(literal = str,comment = NONE())}) then str;
+    case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt as SOME(_))})
       equation
         s1 = unparseCommentOption(optcmt);
-        s2 = unparseCommentOption(optcmt2);
-        res = stringAppendList({str," ",s1,", ",str2," ",s2});
+        res = stringAppendList({str," ",s1});
       then
         res;
-  end matchcontinue;
+
+    end matchcontinue;
 end unparseEnumliterals;
 
 protected function printEnumliterals
