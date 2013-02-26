@@ -1381,68 +1381,6 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end writeFile;
 
-function readFileShowLineNumbers "
-  Prefixes each line in the file with <n>:, where n is the line number.
-  Note: Scales O(n^2)"
-  input String fileName;
-  output String out;
-protected
-  String line;
-  Integer num:=1;
-algorithm
-  out := "";
-  for line in strtok(readFile(fileName),"\n") loop
-    out := out + String(num) + ": " + line + "\n";
-    num := num + 1;
-  end for;
-annotation(preferredView="text");
-end readFileShowLineNumbers;
-
-function readFilePostprocessLineDirective "
-  Searches lines for the #modelicaLine directive. If it is found, all lines up
-  until the next #modelicaLine or #endModelicaLine are put on a single file,
-  following a #line linenumber \"filename\" line.
-  This causes GCC to output an executable that we can set breakpoints in and
-  debug.
-  Note: You could use a stack to keep track of start/end of #modelicaLine and
-  match them up. But this is not really desirable since that will cause extra
-  breakpoints for the same line (you would get breakpoints before and after
-  each case if you break on a match-expression, etc).
-  "
-  input String fileName;
-  output String out;
-protected
-  constant String regexStart := "^ *..#modelicaLine";
-  constant String regexEnd := "^ *..#endModelicaLine";
-  constant String regexSplit := "^ *..#modelicaLine .([A-Za-z.]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$";
-  constant Integer numInRegex := 3;
-  String str,line,currentModelicaFileName;
-  Integer lineNumInOutputFile:=1,numMatches:=0;
-  Boolean insideModelicaLine:=false;
-  String splitLine[numInRegex] := {"","",""};
-algorithm
-  str := readFile(fileName);
-  out := "";
-  for line in strtok(str,"\n") loop
-    (numMatches,splitLine) := regex(line,regexSplit,numInRegex);
-    if numMatches == 3 then
-      insideModelicaLine := true;
-      out := out + "#line " + splitLine[3] + " \"" + splitLine[2] + "\"\n";
-      lineNumInOutputFile := lineNumInOutputFile + 1;
-    elseif regexBool(line,regexEnd) then
-      insideModelicaLine := false;
-      out := out + "\n" + "#line " + String(lineNumInOutputFile+1) + " \"" + fileName + "\"\n";
-      lineNumInOutputFile := lineNumInOutputFile + 3;
-    elseif insideModelicaLine then
-      out := out + " " + line;
-    else
-      out := out + line + "\n";
-      lineNumInOutputFile := lineNumInOutputFile + 1;
-    end if;
-  end for;
-annotation(preferredView="text");
-end readFilePostprocessLineDirective;
-
 function regex  "Sets the error buffer and returns -1 if the regex does not compile.
 
   The returned result is the same as POSIX regex():

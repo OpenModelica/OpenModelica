@@ -16047,7 +16047,7 @@ algorithm
       Boolean b;
     case (elts,b,access,env)
       equation
-        ((lst as (_ :: _))) = getComponentsInfo2(elts, inBoolean, access, env);
+        ((lst as (_ :: _))) = getComponentsInfo2(elts, inBoolean, access, env, {});
         lst_1 = stringDelimitList(lst, "},{");
         res = stringAppendList({"{",lst_1,"}"});
       then
@@ -16065,25 +16065,22 @@ protected function getComponentsInfo2
   input Boolean inBoolean;
   input String inString;
   input Env.Env inEnv;
+  input list<String> acc;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  match (inAbsynElementLst,inBoolean,inString,inEnv)
+  outStringLst := match (inAbsynElementLst,inBoolean,inString,inEnv,acc)
     local
-      list<String> lst1,lst2,res;
+      list<String> res;
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
       list<Env.Frame> env;
       Boolean b;
-    case ({},_,_,_) then {};
-    case ((elt :: rest),b,access,env)
+    case ({},_,_,_,_) then listReverse(acc);
+    case ((elt :: rest),b,access,env,_)
       equation
-        lst1 = getComponentInfo(elt, b, access, env);
-        lst2 = getComponentsInfo2(rest, b, access, env);
-        res = listAppend(lst1, lst2);
-      then
-        res;
+        res = getComponentInfo(elt, b, access, env);
+      then getComponentsInfo2(rest, b, access, env, listAppend(listReverse(res),acc));
   end match;
 end getComponentsInfo2;
 
