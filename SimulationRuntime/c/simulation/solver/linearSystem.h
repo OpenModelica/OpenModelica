@@ -29,7 +29,7 @@
  *
  */
 
-/*! \file nonlinearSystem.h
+/*! \file linearSystem.h
  */
 
 

@@ -853,6 +853,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations)
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then
        let contEqsIndex = equationIndex(cont)
+       let solvedContinuous = match cont case SES_LINEAR(__) then 'data->simulationInfo.linearSystemData[<%indexLinearSystem%>].solved' case SES_NONLINEAR(__) then 'data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].solved'
        let &preDisc = buffer "" /*BUFD*/
        let &varDecls = buffer "" /*BUFD*/
        let discExp = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
@@ -866,6 +867,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations)
        {
          DATA* data = (DATA*) inData;
          eqFunction_<%contEqsIndex%>(data);
+         data->simulationInfo.mixedSystemData[<%indexMixedSystem%>].continuous_solution = <%solvedContinuous%>;
        }
              
        void updateIterationExpMixedSystem<%index%>(void *inData)

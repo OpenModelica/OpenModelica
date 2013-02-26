@@ -173,6 +173,8 @@ int solveMixedSearch(DATA *data, int sysNumber)
   DATA_SEARCHMIXED_SOLVER* solverData = (DATA_SEARCHMIXED_SOLVER*)systemData->solverData;
 
   int eqSystemNumber = systemData->equationIndex;
+
+  int found_solution = 0;
   /*
    * We are given the number of the non-linear system.
    * We want to look it up among all equations.
@@ -210,7 +212,8 @@ int solveMixedSearch(DATA *data, int sysNumber)
       solverData->iterationVars2[i] = *(systemData->iterationVarsPtr[i]);
 
 
-    /* check discrete values */
+    found_solution = systemData->continuous_solution;
+    DEBUG1(LOG_NLS, "####  continuous system solution status = %d", found_solution);
 
     /* restart if any relation has changed */
     if (checkRelations(data))
@@ -219,32 +222,31 @@ int solveMixedSearch(DATA *data, int sysNumber)
       systemData->updateIterationExps(data);
       DEBUG(LOG_NLS, "#### System relation changed restart iteration");
       if (mixedIterations++ > 200)
-        data->simulationInfo.found_solution = -4; /* mixedIterations++ > 200 */
+        found_solution = -4; /* mixedIterations++ > 200 */
     }
 
-    DEBUG2(LOG_NLS, "####  Check VAR (system %d) found_solution = %d", eqSystemNumber, data->simulationInfo.found_solution);
-    if (data->simulationInfo.found_solution == -1)
+    if (found_solution == -1)
     {
       /* system of equations failed */
-      data->simulationInfo.found_solution = -2;
+      found_solution = -2;
       DEBUG(LOG_NLS, "####  NO SOLUTION ");
     }
     else
     {
-      data->simulationInfo.found_solution = 1;
+      found_solution = 1;
       for (i = 0; i < systemData->size; i++)
       {
         DEBUG3(LOG_NLS, " check iterationVar[%d] = %d <-> %d", i, solverData->iterationVars[i], solverData->iterationVars2[i]);
         if (solverData->iterationVars[i] != solverData->iterationVars2[i])
         {
-          data->simulationInfo.found_solution = 0;
+          found_solution  = 0;
           break;
         }
       }
-      DEBUG1(LOG_NLS, "#### SOLUTION = %c", data->simulationInfo.found_solution ? 'T' : 'F');
+      DEBUG1(LOG_NLS, "#### SOLUTION = %c", found_solution  ? 'T' : 'F');
     }
 
-    if (!data->simulationInfo.found_solution)
+    if (!found_solution )
     {
       /* try next set of values*/
       if (nextVar(solverData->stateofSearch, systemData->size))
@@ -275,12 +277,12 @@ int solveMixedSearch(DATA *data, int sysNumber)
               eqSystemNumber, data->localData[0]->timeValue);
         }
         data->simulationInfo.needToIterate = 1;
-        data->simulationInfo.found_solution = -1;
+        found_solution  = -1;
         /*TODO: "break simulation?"*/
       }
     }
     /* we found a solution*/
-    if (data->simulationInfo.found_solution == 1)
+    if (found_solution  == 1)
     {
       success = 1;
       if (ACTIVE_STREAM(LOG_NLS))
@@ -300,7 +302,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
     stepCount++;
     mixedIterations++;
 
-  }while(!data->simulationInfo.found_solution);
+  }while(!found_solution);
 
   RELEASE(LOG_NLS);
   DEBUG1(LOG_NLS, "####  Finished mixed equation system in steps %d.\n", stepCount);

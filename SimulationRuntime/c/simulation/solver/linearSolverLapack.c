@@ -116,7 +116,6 @@ int solveLapack(DATA *data, int sysNumber)
           &solverData->info);
 
   if(solverData->info < 0) {
-    data->simulationInfo.found_solution = -3;
     WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info);
     success = 0;
   }else if(solverData->info > 0) {
@@ -151,8 +150,6 @@ int solveLapack(DATA *data, int sysNumber)
       DEBUG(LOG_LS, buffer);
       RELEASE(LOG_LS);
     }
-    /* used for hybrid systems */
-    data->simulationInfo.found_solution = -3;
 
     success = 0;
   }

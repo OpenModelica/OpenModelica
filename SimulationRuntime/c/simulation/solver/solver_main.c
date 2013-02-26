@@ -425,7 +425,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     }
 
     rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
-    data->simulationInfo.found_solution = 0;  /* reset nls-messages */
 
     /***** Calculation next step size *****/
     /* Calculate new step size after an event */
@@ -483,8 +482,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     if(measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
     /***** End event handling *****/
-    
-    /* ASSERT1(data->simulationInfo.found_solution >= 0, "linear/non-linear solver failed [error-code: %d]", data->simulationInfo.found_solution); */
 
     /***** check state selection *****/
     if(stateSelection(data, 1))

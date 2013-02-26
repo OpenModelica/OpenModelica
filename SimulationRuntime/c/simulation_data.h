@@ -294,6 +294,7 @@ typedef struct MIXED_SYSTEM_DATA
 {
   modelica_integer size;
   modelica_integer equationIndex;     /* index for EQUATION_INFO */
+  modelica_boolean continuous_solution; /* indicates if the continuous part could be solved */
 
   /* solveContinuousPart */
   void (*solveContinuousPart)(void* data);
@@ -428,11 +429,6 @@ typedef struct SIMULATION_INFO
   modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
   modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
-  modelica_boolean found_solution;     /* helper for mixed systems {  1: ???;
-                                                                      0: ???;
-                                                                     -1: ???;
-                                                                     -2: continuous system of equations failed;
-                                                                     -4: mixedIterations++ > 200}*/
 
   void** extObjs;                      /* External objects */
   

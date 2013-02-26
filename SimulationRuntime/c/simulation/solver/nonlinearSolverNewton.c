@@ -285,7 +285,6 @@ int solveNewton(DATA *data, int sysNumber) {
     /* check for proper inputs */
     if (solverData->info == 0) {
       printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
-      data->simulationInfo.found_solution = -1;
     }
 
     /* check for error  */
@@ -340,7 +339,6 @@ int solveNewton(DATA *data, int sysNumber) {
               " - iteration making no progress:\t try nominal values as initial solution.");
         }
     } else {
-      data->simulationInfo.found_solution = -1;
 
       printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 

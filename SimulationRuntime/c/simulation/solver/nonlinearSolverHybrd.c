@@ -489,7 +489,6 @@ int solveHybrd(DATA *data, int sysNumber)
     if(solverData->info == 0) {
       printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber),
           data->localData[0]->timeValue);
-      data->simulationInfo.found_solution = -1;
     }
 
     /* evaluate with discontinuities */
@@ -805,7 +804,6 @@ int solveHybrd(DATA *data, int sysNumber)
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     } else if(solverData->info >= 2 && solverData->info <= 5) {
-      data->simulationInfo.found_solution = -1;
 
       /* while the initialization it's ok to every time a solution */
       if(!data->simulationInfo.initial){
