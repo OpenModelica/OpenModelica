@@ -31,8 +31,8 @@ ADD_CUSTOM_TARGET(omc_communication ALL DEPENDS ${IDL_OUTPUT})
 
 # Quellen und Header
 SET(CORBASRC ${IDL_OUTPUT} omc_communication_impl.cpp corbaimpl.cpp)
-SET(SRC	socketimpl.c printimpl.c systemimpl.c settingsimpl.c dynload.c SimulationResults.c)
-SET(CPPSRC  unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp
+SET(SRC	socketimpl.c printimpl.c systemimpl.c settingsimpl.c SimulationResults.c)
+SET(CPPSRC  unitparser.cpp unitparserext.cpp ptolemyio.cpp Dynload.cpp BackendDAEEXT.cpp ErrorMessage.cpp errorext.cpp
             systemimplmisc.cpp ${CORBASRC})
 SET(OBJ ${SRC} ${CPPSRC})
 

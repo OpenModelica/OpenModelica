@@ -56,7 +56,7 @@ typedef struct {
     fmiBoolean loggingOn;
     fmiEventInfo eventInfo;
     ModelState state;
-    void* fmuObj;
+    void* fmuData;
 } ModelInstance;
 
 
