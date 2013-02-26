@@ -2283,7 +2283,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   <<
   
   <%tempeqns%>
-  void eqFunction_<%ix%>(DATA *data)
+  static void eqFunction_<%ix%>(DATA *data)
   {
     <%&varD%>
     <%x%>
