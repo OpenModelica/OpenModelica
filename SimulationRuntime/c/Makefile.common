@@ -24,6 +24,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
 ./meta/meta_modelica_real.h \
+./meta/meta_modelica_segv.h \
 ./meta/meta_modelica_string_lit.h \
 ./openmodelica_func.h \
 ./openmodelica.h \

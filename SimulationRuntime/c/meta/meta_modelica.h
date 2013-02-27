@@ -46,6 +46,7 @@ extern "C" {
 #include "mmc_gc.h"
 #include "meta_modelica_string_lit.h"
 #include "meta_modelica_builtin.h"
+#include "meta_modelica_segv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -631,12 +632,16 @@ extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
 extern int jmp_buf_index;
 */
 extern jmp_buf *mmc_jumper;
-#define MMC_TRY() { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = X; X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY() MMC_TRY_INTERNAL(mmc_jumper)
+
 #if !defined(_MSC_VER)
-#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state); mmc_catch_dummy_fn();}
+#define MMC_CATCH_INTERNAL(X) } X = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state); mmc_catch_dummy_fn();}
 #else
-#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state);}
+#define MMC_CATCH_INTERNAL(X) } X = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state);}
 #endif
+#define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)
+
 #define MMC_THROW() longjmp(*mmc_jumper,1)
 #define MMC_ELSE() } else {
 
