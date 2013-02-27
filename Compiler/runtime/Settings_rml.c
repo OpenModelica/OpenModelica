@@ -138,7 +138,8 @@ RML_BEGIN_LABEL(Settings__getModelicaPath)
   if (path == NULL)
     RML_TAILCALLK(rmlFC);
   else
-    rmlA0 = (void*) mk_scon(path);
+    rmlA0 = mk_scon(path);
+  free(path);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

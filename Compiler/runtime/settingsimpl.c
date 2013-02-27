@@ -65,9 +65,7 @@ static int   echo = 1; //true
 extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
 extern int SystemImpl__directoryExists(const char*);
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
 static char* winPath = NULL;
-#endif
 
 // Do not free or modify the returned variable. It's part of the environment!
 const char* SettingsImpl__getInstallationDirectoryPath() {
@@ -95,14 +93,11 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
     i++;
   }
   return (const char*)winPath;
-#else
-  return path;
 #endif
+  return path;
 }
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-static char* winLibPath = NULL;
-#endif
+char* winLibPath = NULL;
 
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
@@ -134,17 +129,13 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  /* already set, set it only once! */
-  if (winLibPath != NULL)
-    return winLibPath;
-
   /* adrpo: translate this to forward slashes! */
   /* duplicate the path */
   winLibPath = strdup(path);
 
   /* ?? not enough memory for duplication */
   if (!winLibPath)
-    return path;
+    return strdup(path);
 
   /* convert \\ to / */
   while(winLibPath[i] != '\0')
@@ -153,9 +144,9 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     i++;
   }
   return winLibPath;
-#else
-  return path;
 #endif
+
+  return strdup(path);
 }
 
 static const char* SettingsImpl__getCompileCommand()

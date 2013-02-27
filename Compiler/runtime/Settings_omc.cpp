@@ -53,7 +53,7 @@ extern const char* Settings_getModelicaPath(int runningTestsuite)
   const char *path = SettingsImpl__getModelicaPath(runningTestsuite);
   if (path == NULL)
     MMC_THROW();
-  return strdup(path);
+  return path;
 }
 
 extern const char* Settings_getCompileCommand()
