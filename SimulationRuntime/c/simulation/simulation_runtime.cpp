@@ -347,29 +347,115 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     return;
 
   rc = regcomp(&myregex, filter, flags);
-  if(rc) {
+  if(rc)
+  {
     char err_buf[2048] = {0};
     regerror(rc, &myregex, err_buf, 2048);
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
+  
   /* new imple */
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput)
-    modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+  for(int i = 0; i < modelData->nAliasReal; i++)
+  {
+    if(modelData->realAlias[i].aliasType == 0)  /* variable */
+    {
+      if(!modelData->realAlias[i].filterOutput && !modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput)
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->realAlias[i].filterOutput = 0;
+        modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
+      }
+    }
+    else if(modelData->realAlias[i].aliasType == 1)  /* parameter */
+    {
+      if(!modelData->realAlias[i].filterOutput && !modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput)
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->realAlias[i].filterOutput = 0;
+        modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+      }
+    }
+  }
   for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput)
-    modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+  for(int i = 0; i < modelData->nAliasInteger; i++)
+  {
+    if(modelData->integerAlias[i].aliasType == 0)  /* variable */
+    {
+      if(!modelData->integerAlias[i].filterOutput && !modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput)
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->integerAlias[i].filterOutput = 0;
+        modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
+      }
+    }
+    else if(modelData->integerAlias[i].aliasType == 1)  /* parameter */
+    {
+      if(!modelData->integerAlias[i].filterOutput && !modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput)
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->integerAlias[i].filterOutput = 0;
+        modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+      }
+    }
+  }
   for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput)
-    modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+  for(int i = 0; i < modelData->nAliasBoolean; i++)
+  {
+    if(modelData->booleanAlias[i].aliasType == 0)  /* variable */
+    {
+      if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput)
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->booleanAlias[i].filterOutput = 0;
+        modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+      }
+    }
+    else if(modelData->booleanAlias[i].aliasType == 1)  /* parameter */
+    {
+      if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput)
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->booleanAlias[i].filterOutput = 0;
+        modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+      }
+    }
+  }
   for(int i = 0; i < modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput)
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput)
-    modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+  for(int i = 0; i < modelData->nAliasString; i++)
+  {
+    if(modelData->stringAlias[i].aliasType == 0)  /* variable */
+    {
+      if(!modelData->stringAlias[i].filterOutput && !modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput)
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->stringAlias[i].filterOutput = 0;
+        modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
+      }
+    }
+    else if(modelData->stringAlias[i].aliasType == 1)  /* parameter */
+    {
+      if(!modelData->stringAlias[i].filterOutput && !modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput)
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+      else
+      {
+        modelData->stringAlias[i].filterOutput = 0;
+        modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+      }
+    }
+  }
   regfree(&myregex);
 #endif
   return;

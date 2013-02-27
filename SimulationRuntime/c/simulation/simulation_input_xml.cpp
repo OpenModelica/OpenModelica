@@ -217,8 +217,8 @@ void read_input_xml(int argc, char **argv,
   FILE* file = NULL;
   XML_Parser parser = NULL;
   int done = 0;
-  std::map<std::string, modelica_integer> mapAlias, mapAliasParam;
-  std::map<std::string, modelica_integer>::iterator it, itParam;
+  std::map<std::string, long> mapAlias, mapAliasParam;
+  std::map<std::string, long>::iterator it, itParam;
 
   /* read the filename from the command line (if any) */
   if(omc_flag[FLAG_F]) {
@@ -359,10 +359,10 @@ void read_input_xml(int argc, char **argv,
     EXIT(-1);
   }
 
-  /* Read all static data from File for every variable */
-  /* Read states static data */
+  /* read all static data from File for every variable */
+  /* read states static data */
   INFO(LOG_DEBUG, "read xml file for states:");
-  for(int i=0; i<modelData->nStates; i++)
+  for(long i=0; i<modelData->nStates; i++)
   {
     /* read var info */
     read_value(mi.rSta[i]["name"], &(modelData->realVarsData[i].info.name));
@@ -401,11 +401,12 @@ void read_input_xml(int argc, char **argv,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[i].info.name)] = i;
+    DEBUG2(LOG_DEBUG, "real states: mapAlias[%s] = %ld", modelData->realVarsData[i].info.name, i);
   }
 
-  /* Read stateDerivatives static data */
+  /* read stateDerivatives static data */
   DEBUG(LOG_DEBUG, "read xml file for stateDerivatives:");
-  for(int i=0; i<modelData->nStates; i++)
+  for(long i=0; i<modelData->nStates; i++)
   {
     /* read var info */
     read_value(mi.rDer[i]["name"], &(modelData->realVarsData[modelData->nStates + i].info.name));
@@ -443,14 +444,15 @@ void read_input_xml(int argc, char **argv,
       modelData->realVarsData[modelData->nStates+i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAlias[(modelData->realVarsData[modelData->nStates+i].info.name)]= modelData->nStates+i;
+    mapAlias[(modelData->realVarsData[modelData->nStates+i].info.name)] = modelData->nStates+i;
+    DEBUG2(LOG_DEBUG, "real stateDerivatives: mapAlias[%s] = %ld", modelData->realVarsData[modelData->nStates+i].info.name, modelData->nStates+i);
   }
 
-  /* Read real algebraics static data */
+  /* read real algebraics static data */
   DEBUG(LOG_DEBUG, "read xml file for real algebraic:");
-  for(int i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
+  for(long i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
   {
-    int j = 2*modelData->nStates + i;
+    long j = 2*modelData->nStates + i;
 
     /* read var info */
     read_value(mi.rAlg[i]["name"], &(modelData->realVarsData[j].info.name));
@@ -488,12 +490,13 @@ void read_input_xml(int argc, char **argv,
       modelData->realVarsData[j].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAlias[(modelData->realVarsData[j].info.name)]= j;
+    mapAlias[modelData->realVarsData[j].info.name] = j;
+    DEBUG2(LOG_DEBUG, "real algebraics: mapAlias[%s] = %ld", modelData->realVarsData[j].info.name, j);
   }
 
-  /* Read integer variables static data */
+  /* read integer variables static data */
   DEBUG(LOG_DEBUG, "read xml file for integer algebraic:");
-  for(int i=0; i<modelData->nVariablesInteger; i++)
+  for(long i=0; i<modelData->nVariablesInteger; i++)
   {
     /* read var info */
     read_value(mi.iAlg[i]["name"], &(modelData->integerVarsData[i].info.name));
@@ -529,13 +532,13 @@ void read_input_xml(int argc, char **argv,
       modelData->integerVarsData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAlias[(modelData->integerVarsData[i].info.name)]= i;
+    mapAlias[modelData->integerVarsData[i].info.name] = i;
+    DEBUG2(LOG_DEBUG, "integer variables: mapAlias[%s] = %ld", modelData->integerVarsData[i].info.name, i);
   }
 
-  /* Read boolean variables static data */
+  /* read boolean variables static data */
   DEBUG(LOG_DEBUG, "read xml file for boolean algebraic:");
-
-  for(int i=0; i<modelData->nVariablesBoolean; i++)
+  for(long i=0; i<modelData->nVariablesBoolean; i++)
   {
     /* read var info */
     read_value(mi.bAlg[i]["name"], &(modelData->booleanVarsData[i].info.name));
@@ -569,12 +572,13 @@ void read_input_xml(int argc, char **argv,
       modelData->booleanVarsData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAlias[(modelData->booleanVarsData[i].info.name)]= i;
+    mapAlias[modelData->booleanVarsData[i].info.name] = i;
+    DEBUG2(LOG_DEBUG, "boolean variables: mapAlias[%s] = %ld", modelData->booleanVarsData[i].info.name, i);
   }
 
   /* read string variables static data */
   DEBUG(LOG_DEBUG, "read xml file for string algebraic:");
-  for(int i=0; i<modelData->nVariablesString; i++)
+  for(long i=0; i<modelData->nVariablesString; i++)
   {
     /* read var info */
     read_value(mi.sAlg[i]["name"], &(modelData->stringVarsData[i].info.name));
@@ -607,7 +611,8 @@ void read_input_xml(int argc, char **argv,
       modelData->stringVarsData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAlias[(modelData->stringVarsData[i].info.name)]=i;
+    mapAlias[modelData->stringVarsData[i].info.name] = i;
+    DEBUG2(LOG_DEBUG, "string variables: mapAlias[%s] = %ld", modelData->stringVarsData[i].info.name, i);
   }
 
   /*
@@ -615,7 +620,7 @@ void read_input_xml(int argc, char **argv,
    */
   /* read Parameters static data */
   DEBUG(LOG_DEBUG, "read xml file for real parameters:");
-  for(int i=0; i<modelData->nParametersReal; i++)
+  for(long i=0; i<modelData->nParametersReal; i++)
   {
     /* read var info */
     read_value(mi.rPar[i]["name"], &(modelData->realParameterData[i].info.name));
@@ -653,12 +658,13 @@ void read_input_xml(int argc, char **argv,
       modelData->realParameterData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAliasParam[(modelData->realParameterData[i].info.name)]=i;
+    mapAliasParam[modelData->realParameterData[i].info.name] = i;
+    DEBUG2(LOG_DEBUG, "real parameters: mapAlias[%s] = %ld", modelData->realParameterData[i].info.name, i);
   }
 
-  /* Read integer parameters static data */
+  /* read integer parameters static data */
   DEBUG(LOG_DEBUG, "read xml file for integer parameters:");
-  for(int i=0; i<modelData->nParametersInteger; i++)
+  for(long i=0; i<modelData->nParametersInteger; i++)
   {
     /* read var info */
     read_value(mi.iPar[i]["name"], &(modelData->integerParameterData[i].info.name));
@@ -694,12 +700,12 @@ void read_input_xml(int argc, char **argv,
       modelData->integerParameterData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAliasParam[(modelData->integerParameterData[i].info.name)]=i;
+    mapAliasParam[(modelData->integerParameterData[i].info.name)] = i;
   }
 
-  /* Read boolean parameters static data */
+  /* read boolean parameters static data */
   DEBUG(LOG_DEBUG, "read xml file for boolean parameters:");
-  for(int i=0; i<modelData->nParametersBoolean; i++)
+  for(long i=0; i<modelData->nParametersBoolean; i++)
   {
     /* read var info */
     read_value(mi.bPar[i]["name"], &(modelData->booleanParameterData[i].info.name));
@@ -733,12 +739,12 @@ void read_input_xml(int argc, char **argv,
       modelData->booleanParameterData[i].filterOutput = 1;
 
     /* create a mapping for Alias variable to get the correct index */
-    mapAliasParam[(modelData->booleanParameterData[i].info.name)]=i;
+    mapAliasParam[(modelData->booleanParameterData[i].info.name)] = i;
   }
 
-  /* Read string parameters static data */
+  /* read string parameters static data */
   DEBUG(LOG_DEBUG, "read xml file for string parameters:");
-  for(int i=0; i<modelData->nParametersString; i++)
+  for(long i=0; i<modelData->nParametersString; i++)
   {
     /* read var info */
     read_value(mi.sPar[i]["name"], &(modelData->stringParameterData[i].info.name));
@@ -778,7 +784,7 @@ void read_input_xml(int argc, char **argv,
    * real all alias vars
    */
   DEBUG(LOG_DEBUG, "read xml file for real alias vars:");
-  for(int i=0; i<modelData->nAliasReal; i++)
+  for(long i=0; i<modelData->nAliasReal; i++)
   {
     /* read var info */
     read_value(mi.rAli[i]["name"], &(modelData->realAlias[i].info.name));
@@ -845,7 +851,7 @@ void read_input_xml(int argc, char **argv,
    * integer all alias vars
    */
   DEBUG(LOG_DEBUG, "read xml file for integer alias vars:");
-  for(int i=0; i<modelData->nAliasInteger; i++)
+  for(long i=0; i<modelData->nAliasInteger; i++)
   {
     /* read var info */
     read_value(mi.iAli[i]["name"], &(modelData->integerAlias[i].info.name));
@@ -910,7 +916,7 @@ void read_input_xml(int argc, char **argv,
    * boolean all alias vars
    */
   DEBUG(LOG_DEBUG, "read xml file for boolean alias vars:");
-  for(int i=0; i<modelData->nAliasBoolean; i++)
+  for(long i=0; i<modelData->nAliasBoolean; i++)
   {
     /* read var info */
     read_value(mi.bAli[i]["name"], &(modelData->booleanAlias[i].info.name));
@@ -975,7 +981,7 @@ void read_input_xml(int argc, char **argv,
    * string all alias vars
    */
   DEBUG(LOG_DEBUG, "read xml file for string alias vars:");
-  for(int i=0; i<modelData->nAliasString; i++)
+  for(long i=0; i<modelData->nAliasString; i++)
   {
     /* read var info */
     read_value(mi.sAli[i]["name"], &(modelData->stringAlias[i].info.name));
@@ -1189,56 +1195,56 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     mi.de["variableFilter"] = mOverrides.count("variableFilter") ? mOverrides["variableFilter"] : mi.de["variableFilter"];
 
     // override all found!
-    for(int i=0; i<modelData->nStates; i++)
+    for(long i=0; i<modelData->nStates; i++)
     {
       mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? mOverrides[mi.rSta[i]["name"]] : mi.rSta[i]["start"];
       mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? mOverrides[mi.rDer[i]["name"]] : mi.rDer[i]["start"];
     }
-    for(int i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
+    for(long i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
     {
       mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? mOverrides[mi.rAlg[i]["name"]] : mi.rAlg[i]["start"];
     }
-    for(int i=0; i<modelData->nVariablesInteger; i++)
+    for(long i=0; i<modelData->nVariablesInteger; i++)
     {
       mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? mOverrides[mi.iAlg[i]["name"]] : mi.iAlg[i]["start"];
     }
-    for(int i=0; i<modelData->nVariablesBoolean; i++)
+    for(long i=0; i<modelData->nVariablesBoolean; i++)
     {
       mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? mOverrides[mi.bAlg[i]["name"]] : mi.bAlg[i]["start"];
     }
-    for(int i=0; i<modelData->nVariablesString; i++)
+    for(long i=0; i<modelData->nVariablesString; i++)
     {
       mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? mOverrides[mi.sAlg[i]["name"]] : mi.sAlg[i]["start"];
     }
-    for(int i=0; i<modelData->nParametersReal; i++)
+    for(long i=0; i<modelData->nParametersReal; i++)
     {
       mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? mOverrides[mi.rPar[i]["name"]] : mi.rPar[i]["start"];
     }
-    for(int i=0; i<modelData->nParametersInteger; i++)
+    for(long i=0; i<modelData->nParametersInteger; i++)
     {
       mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? mOverrides[mi.iPar[i]["name"]] : mi.iPar[i]["start"];
     }
-    for(int i=0; i<modelData->nParametersBoolean; i++)
+    for(long i=0; i<modelData->nParametersBoolean; i++)
     {
       mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? mOverrides[mi.bPar[i]["name"]] : mi.bPar[i]["start"];
     }
-    for(int i=0; i<modelData->nParametersString; i++)
+    for(long i=0; i<modelData->nParametersString; i++)
     {
       mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? mOverrides[mi.sPar[i]["name"]] : mi.sPar[i]["start"];
     }
-    for(int i=0; i<modelData->nAliasReal; i++)
+    for(long i=0; i<modelData->nAliasReal; i++)
     {
       mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? mOverrides[mi.rAli[i]["name"]] : mi.rAli[i]["start"];
     }
-    for(int i=0; i<modelData->nAliasInteger; i++)
+    for(long i=0; i<modelData->nAliasInteger; i++)
     {
       mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? mOverrides[mi.iAli[i]["name"]] : mi.iAli[i]["start"];
     }
-    for(int i=0; i<modelData->nAliasBoolean; i++)
+    for(long i=0; i<modelData->nAliasBoolean; i++)
     {
       mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? mOverrides[mi.bAli[i]["name"]] : mi.bAli[i]["start"];
     }
-    for(int i=0; i<modelData->nAliasString; i++)
+    for(long i=0; i<modelData->nAliasString; i++)
     {
       mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? mOverrides[mi.sAli[i]["name"]] : mi.sAli[i]["start"];
     }
