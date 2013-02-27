@@ -47,13 +47,7 @@ public import Types;
 
 protected import ComponentReference;
 protected import NFConnectCheck;
-protected import NFConnectEquations;
-protected import Config;
 protected import DAEUtil;
-protected import Debug;
-protected import Error;
-protected import Expression;
-protected import Flags;
 protected import NFInstUtil;
 protected import List;
 protected import Util;

@@ -57,7 +57,6 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
 protected import HashTable4;
-protected import IndexReduction;
 protected import List;
 protected import Matching;
 protected import Util;

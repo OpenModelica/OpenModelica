@@ -56,7 +56,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashSet;
 public import DAE;
 protected import ComponentReference;
-protected import System;
 
 public type Key = DAE.ComponentRef;
 

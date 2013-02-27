@@ -47,13 +47,10 @@ public import NFInstTypes;
 public import SCode;
 public import Env;
 
-protected import ComponentReference;
 protected import Debug;
 protected import FEnvExtends;
 protected import Flags;
-protected import NFInstUtil;
 protected import List;
-protected import FSCodeCheck;
 protected import FFlattenImports;
 protected import FFlattenRedeclare;
 protected import FEnv;

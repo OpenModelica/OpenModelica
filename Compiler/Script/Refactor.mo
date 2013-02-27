@@ -44,7 +44,6 @@ encapsulated package Refactor
 public import Absyn;
 protected import List;
 protected import Interactive;
-protected import Util;
 protected import Inst;
 protected import Env;
 

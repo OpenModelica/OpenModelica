@@ -28,7 +28,6 @@ public import DAE;
 protected import ComponentReference;
 protected import Expression;
 protected import ExpressionDump;
-protected import System;
 
 public type Key = DAE.Exp;
 public type Value = DAE.ComponentRef;

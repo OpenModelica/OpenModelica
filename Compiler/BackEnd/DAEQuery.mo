@@ -43,7 +43,6 @@ public import SCode;
 // protected imports
 protected import Absyn;
 protected import Algorithm;
-protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;

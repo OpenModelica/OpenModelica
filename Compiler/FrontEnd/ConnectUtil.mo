@@ -71,7 +71,6 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import InstSection;
-protected import ExpressionDump;
 
 // Import some types from Connect.
 public type Face = Connect.Face;

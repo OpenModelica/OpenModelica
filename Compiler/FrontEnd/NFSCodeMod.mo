@@ -53,7 +53,6 @@ protected import Flags;
 protected import List;
 protected import NFInstDump;
 protected import NFSCodeLookup;
-protected import SCodeDump;
 protected import System;
 protected import Util;
 

@@ -27,7 +27,6 @@ public import BaseHashTable;
 public import DAE;
 protected import Expression;
 protected import ExpressionDump;
-protected import System;
 
 public type Key = DAE.Exp;
 public type Value = DAE.Exp;

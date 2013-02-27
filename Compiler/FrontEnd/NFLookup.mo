@@ -43,7 +43,6 @@ public import Error;
 public import NFEnv;
 public import SCode;
 
-protected import List;
 protected import NFBuiltin;
 
 public type Env = NFEnv.Env;

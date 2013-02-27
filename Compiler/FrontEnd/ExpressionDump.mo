@@ -41,7 +41,6 @@ encapsulated package ExpressionDump
 
 // public imports
 public import Absyn;
-public import ClassInf;
 public import DAE;
 public import Graphviz;
 
@@ -57,7 +56,6 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
 protected import Dump;
-protected import Error;
 protected import Expression;
 public import ExpressionDumpTpl;
 protected import List;

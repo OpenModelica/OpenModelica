@@ -27,7 +27,6 @@ public import BaseHashTable;
 public import DAE;
 public import SimCode;
 protected import ComponentReference;
-protected import System;
 protected import List;
 
 public type Key = DAE.ComponentRef;

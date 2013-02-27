@@ -63,7 +63,6 @@ public type Ident = Absyn.Ident;
 
 protected import FEnvExtends;
 protected import Error;
-protected import NFInstTypes;
 protected import List;
 protected import SCodeDump;
 protected import FFlattenRedeclare;

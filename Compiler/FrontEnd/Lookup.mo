@@ -73,7 +73,6 @@ protected import Prefix;
 protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
-protected import FLookup;
 
 public uniontype SearchStrategy
   record SEARCH_LOCAL_ONLY

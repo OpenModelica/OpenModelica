@@ -26,7 +26,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
-protected import HashTable2;
 
 public type Key = DAE.ComponentRef;
 public type Value = list<DAE.ComponentRef>;

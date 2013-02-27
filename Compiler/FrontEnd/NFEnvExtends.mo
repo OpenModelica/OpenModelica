@@ -124,7 +124,6 @@ public import Absyn;
 public import SCode;
 public import NFSCodeEnv;
 
-protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;

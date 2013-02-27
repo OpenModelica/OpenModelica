@@ -42,7 +42,6 @@ encapsulated package Tearing
                
   RCS: $Id: Tearing.mo 13560 2012-10-22 23:00:33Z jfrenkel $"
 
-public import Absyn;
 public import BackendDAE;
 public import DAE;
 
@@ -52,18 +51,9 @@ protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashSet;
-protected import ClassInf;
-protected import ComponentReference;
 protected import Config;
 protected import Debug;
-protected import Derive;
-protected import Expression;
-protected import ExpressionSolve;
-protected import ExpressionSimplify;
 protected import Flags;
-protected import HashSet;
 protected import List;
 protected import Matching;
 protected import Util;

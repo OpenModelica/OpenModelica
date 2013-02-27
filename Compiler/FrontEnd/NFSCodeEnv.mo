@@ -46,7 +46,6 @@ public import Util;
 
 protected import NFEnvExtends;
 protected import Error;
-protected import NFInstTypes;
 protected import List;
 protected import SCodeDump;
 protected import NFSCodeFlattenRedeclare;

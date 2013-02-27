@@ -53,7 +53,6 @@ encapsulated package NFEvalFunction
 // [EOPT]  Expression optimization functions.
 
 // public imports
-public import NFInstTypes;
 
 // protected imports
 

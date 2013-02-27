@@ -58,7 +58,6 @@ protected import Print;
 protected import System;
 protected import Types;
 protected import Util;
-protected import DAEUtil;
 
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});

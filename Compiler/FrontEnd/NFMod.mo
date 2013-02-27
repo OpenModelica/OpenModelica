@@ -45,7 +45,6 @@ public import SCode;
 public import NFEnv;
 public import NFInstTypes;
 
-protected import BaseHashTable;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -54,7 +53,6 @@ protected import List;
 protected import NFInstDump;
 protected import NFLookup;
 protected import SCodeDump;
-protected import System;
 protected import Util;
 
 public type Binding = NFInstTypes.Binding;

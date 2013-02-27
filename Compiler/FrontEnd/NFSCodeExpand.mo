@@ -46,7 +46,6 @@ protected import Absyn;
 protected import Algorithm;
 protected import BaseHashTable;
 protected import ComponentReference;
-protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;

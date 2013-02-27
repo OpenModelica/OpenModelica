@@ -73,7 +73,6 @@ protected import HashSet;
 protected import Inline;
 protected import List;
 protected import Util;
-protected import System;
 
 protected type EquationAttributes = tuple<DAE.ElementSource,Boolean> "eqnAttributes";
 

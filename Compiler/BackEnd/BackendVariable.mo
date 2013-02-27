@@ -56,7 +56,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import HashTable2;
 protected import HashSet;
 protected import List;
 protected import SCode;

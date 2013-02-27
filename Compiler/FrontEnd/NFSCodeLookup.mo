@@ -41,19 +41,15 @@ encapsulated package NFSCodeLookup
 "
 
 public import Absyn;
-public import DAE;
 public import Error;
 public import NFInstTypes;
 public import SCode;
 public import NFSCodeEnv;
 
-protected import ComponentReference;
 protected import Debug;
 protected import NFEnvExtends;
 protected import Flags;
-protected import NFInstUtil;
 protected import List;
-protected import NFSCodeCheck;
 protected import NFSCodeFlattenImports;
 protected import NFSCodeFlattenRedeclare;
 

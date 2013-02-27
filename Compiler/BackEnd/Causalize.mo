@@ -41,23 +41,18 @@ encapsulated package Causalize
 
 public import BackendDAE;
 public import DAE;
-public import Env;
 
 protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import IndexReduction;
-protected import Inline;
 protected import List;
 protected import Matching;
-protected import Util;
 
 /*
  * types

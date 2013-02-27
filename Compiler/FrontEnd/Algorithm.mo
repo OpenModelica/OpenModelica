@@ -60,7 +60,6 @@ public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
 protected import ComponentReference;
-protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;

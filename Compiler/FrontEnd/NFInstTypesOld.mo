@@ -40,7 +40,6 @@ encapsulated package NFInstTypesOld
 "
 
 public import Absyn;
-public import NFConnect2;
 public import DAE;
 public import SCode;
 public import NFSCodeEnv;

@@ -27,7 +27,6 @@ public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
 protected import ExpressionDump;
-protected import System;
 
 public type Key = DAE.ComponentRef;
 public type Value = DAE.Exp;

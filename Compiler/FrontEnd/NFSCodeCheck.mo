@@ -43,7 +43,6 @@ public import NFInstTypes;
 public import SCode;
 public import NFSCodeEnv;
 
-protected import Config;
 protected import Debug;
 protected import Dump;
 protected import Error;

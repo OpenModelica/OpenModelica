@@ -85,7 +85,6 @@ protected import Parser;
 protected import Prefix;
 protected import Print;
 protected import Refactor;
-protected import NFSCodeFlatten;
 protected import SimCodeMain;
 protected import StaticScript;
 protected import System;

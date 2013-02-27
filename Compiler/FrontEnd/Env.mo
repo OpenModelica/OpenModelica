@@ -102,8 +102,6 @@ protected import List;
 protected import Print;
 protected import Types;
 protected import SCodeDump;
-protected import Mod;
-protected import Lookup;
 protected import FEnv;
 
 public type Ident = String " An identifier is just a string " ;

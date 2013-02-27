@@ -45,15 +45,12 @@ encapsulated package BackendDAETransform
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import HashTable3;
-public import HashTableCG;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
