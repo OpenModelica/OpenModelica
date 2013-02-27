@@ -410,8 +410,9 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     free(filename);
   }
 
-  if(ACTIVE_STREAM(LOG_DEBUG))
-    printAllVars(data, 0, LOG_DEBUG);
+#ifdef USE_DEBUG_OUTPUT
+  printAllVarsDebug(data, 0);
+#endif
 
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
@@ -529,8 +530,9 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     }
     sim_result.emit(&sim_result,data);
 
-    if(ACTIVE_STREAM(LOG_DEBUG))
-      printAllVars(data, 0, LOG_DEBUG);
+#ifdef USE_DEBUG_OUTPUT
+    printAllVarsDebug(data, 0);
+#endif
 
     /***** end of Emit this time step *****/
 

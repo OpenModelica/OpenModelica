@@ -91,6 +91,9 @@ void saveZeroCrossings(DATA *data);
 
 void copyStartValuestoInitValues(DATA *data);
 
+#ifdef USE_DEBUG_OUTPUT
+  void printAllVarsDebug(DATA *data, int ringSegment);
+#endif
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printParameters(DATA *data, int stream);
 void printRelations(DATA *data);

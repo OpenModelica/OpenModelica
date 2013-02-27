@@ -217,6 +217,75 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   RELEASE(stream);
 }
 
+#ifdef USE_DEBUG_OUTPUT
+/*! \fn printAllVarsDebug
+ *
+ *  prints all variable values
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [ringSegment]
+ */
+void printAllVarsDebug(DATA *data, int ringSegment)
+{
+  long i;
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  DEBUG2(LOG_DEBUG, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  INDENT(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "states variables");
+  INDENT(LOG_DEBUG);
+  for(i=0; i<mData->nStates; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  RELEASE(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "derivatives variables");
+  INDENT(LOG_DEBUG);
+  for(i=mData->nStates; i<2*mData->nStates; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  RELEASE(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "other real values");
+  INDENT(LOG_DEBUG);
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  RELEASE(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "integer variables");
+  INDENT(LOG_DEBUG);
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+  }
+  RELEASE(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "boolean variables");
+  INDENT(LOG_DEBUG);
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
+  }
+  RELEASE(LOG_DEBUG);
+
+  DEBUG(LOG_DEBUG, "string variables");
+  INDENT(LOG_DEBUG);
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    DEBUG4(LOG_DEBUG, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
+  }
+  RELEASE(LOG_DEBUG);
+
+  RELEASE(LOG_DEBUG);
+}
+#endif
+
 
 /*! \fn printParameters
  *
@@ -257,6 +326,8 @@ void printParameters(DATA *data, int stream)
   INDENT(stream);
   for(i=0; i<mData->nParametersString; ++i)
     INFO3(stream, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+  RELEASE(stream);
+  
   RELEASE(stream);
 }
 
@@ -350,22 +421,22 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    DEBUG2(LOG_DEBUG, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    DEBUG2(LOG_DEBUG, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    DEBUG2(LOG_DEBUG, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    DEBUG2(LOG_DEBUG, "set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
@@ -386,22 +457,22 @@ void setAllParamsToStart(DATA *data)
   for(i=0; i<mData->nParametersReal; ++i)
   {
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    DEBUG2(LOG_DEBUG, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    DEBUG2(LOG_DEBUG, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    DEBUG2(LOG_DEBUG, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    DEBUG2(LOG_DEBUG, "set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 

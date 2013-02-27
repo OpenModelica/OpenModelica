@@ -50,10 +50,8 @@ typedef struct EXPRESSION_DELAY_BUFFER
   TIME_AND_VALUE *expressionDelayBuffer;
 }EXPRESSION_DELAY_BUFFER;
 
-
-
 #ifdef __cplusplus
-extern "C" {
+  extern "C" {
 #endif
 
   void initDelay(DATA* data, double startTime);
@@ -61,7 +59,7 @@ extern "C" {
   void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax);
 
 #ifdef __cplusplus
-}
+  }
 #endif
 
 #endif
