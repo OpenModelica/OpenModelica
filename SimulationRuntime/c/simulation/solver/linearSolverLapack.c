@@ -59,7 +59,7 @@ int allocateLapackData(int size, void** voiddata)
   DATA_LAPACK* data = (DATA_LAPACK*) malloc(sizeof(DATA_LAPACK));
 
   data->ipiv = (integer*) malloc(size*sizeof(modelica_integer));
-  ASSERT(data->ipiv, "Could not allocate datae for linear solver lapack.");
+  ASSERT(data->ipiv, "Could not allocate data for linear solver lapack.");
   data->nrhs = 1;
   data->info = 0;
 
@@ -73,12 +73,11 @@ int allocateLapackData(int size, void** voiddata)
 int freeLapackData(void **voiddata)
 {
   DATA_LAPACK* data = (DATA_LAPACK*) *voiddata;
-
+  
   free(data->ipiv);
 
   return 0;
 }
-
 
 /*! \fn solve linear system with lapack method
  *
@@ -95,7 +94,6 @@ int solveLapack(DATA *data, int sysNumber)
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
   int eqSystemNumber = systemData->equationIndex;
-
   int success = 1;
 
   /* reset matrix A */
@@ -106,21 +104,24 @@ int solveLapack(DATA *data, int sysNumber)
   /* update vector b (rhs) */
   systemData->setb(data, systemData);
 
-  dgesv_( (integer*) &systemData->size,
-          (integer*) &solverData->nrhs,
-          systemData->A,
-          (integer*) &systemData->size,
-          solverData->ipiv,
-          systemData->b,
-          (integer*) &systemData->size,
-          &solverData->info);
+  dgesv_((integer*) &systemData->size, 
+         (integer*) &solverData->nrhs, 
+         systemData->A, 
+         (integer*) &systemData->size, 
+         solverData->ipiv, 
+         systemData->b, 
+         (integer*) &systemData->size, 
+         &solverData->info);
 
-  if(solverData->info < 0) {
+  if(solverData->info < 0)
+  {
     WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info);
     success = 0;
-  }else if(solverData->info > 0) {
-    WARNING4(LOG_STDOUT,
-        "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d,%d].",
+  }
+  else if(solverData->info > 0)
+  {
+    WARNING4(LOG_STDOUT, 
+        "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].", 
         (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info+1, solverData->info+1);
 
     /* debug output */
@@ -130,24 +131,24 @@ int solveLapack(DATA *data, int sysNumber)
       long int k = 0;
       char buffer[4096];
       INDENT(LOG_LS);
-      DEBUG(LOG_LS,"Matrix U:");
-      for (l = 0; l < systemData->size; l++)
+      DEBUG(LOG_LS, "Matrix U:");
+      for(l = 0; l < systemData->size; l++)
       {
         buffer[0] = 0;
-        for (k = 0; k < systemData->size; k++)
+        for(k = 0; k < systemData->size; k++)
           sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
-        DEBUG(LOG_LS, buffer);
+        DEBUG1(LOG_LS, "%s", buffer);
       }
-      DEBUG(LOG_LS,"Solution x:");
+      DEBUG(LOG_LS, "Solution x:");
       buffer[0] = 0;
-      for (k = 0; k < systemData->size; k++)
+      for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      DEBUG(LOG_LS, buffer);
-      DEBUG(LOG_LS,"Solution x:");
+      DEBUG1(LOG_LS, "%s", buffer);
+      DEBUG(LOG_LS, "Solution x:");
       buffer[0] = 0;
-      for (k = 0; k < systemData->size; k++)
+      for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      DEBUG(LOG_LS, buffer);
+      DEBUG1(LOG_LS, "%s", buffer);
       RELEASE(LOG_LS);
     }
 
@@ -156,8 +157,6 @@ int solveLapack(DATA *data, int sysNumber)
 
   /* take the solution */
   memcpy(systemData->x, systemData->b, systemData->size*(sizeof(modelica_real)));
-
-
 
   return success;
 }

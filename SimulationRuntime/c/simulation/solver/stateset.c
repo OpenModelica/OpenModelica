@@ -192,7 +192,7 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       buffer[0] = 0;
       for(j=0; j < data->simulationInfo.analyticJacobians[jacIndex].sizeCols; j++)
         sprintf(buffer, "%s%.5e ", buffer, jac[i*data->simulationInfo.analyticJacobians[jacIndex].sizeCols+j]);
-      DEBUG(LOG_DSS, buffer);
+      DEBUG1(LOG_DSS, "%s", buffer);
     }
     RELEASE(LOG_DSS);
   }

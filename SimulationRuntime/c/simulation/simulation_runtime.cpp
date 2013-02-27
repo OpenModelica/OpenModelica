@@ -339,7 +339,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   int rc;
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if(modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name,"$dummy")) {
+  if(modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
     modelData->realVarsData[0].filterOutput = 1;
     modelData->realVarsData[modelData->nStates].filterOutput = 1;
   }
@@ -582,7 +582,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
-    INFO(LOG_STDOUT,"Linear model is created!");
+    INFO(LOG_STDOUT, "Linear model is created!");
   }
 
   /* disable measure_time_flag to prevent producing
@@ -601,7 +601,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
-    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
+    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg", 
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
 
@@ -643,8 +643,8 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
   }
-  sim_result.init(&sim_result,simData);
-  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
+  sim_result.init(&sim_result, simData);
+  INFO2(LOG_SOLVER, "Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
   return 0;
 }
 
@@ -658,7 +658,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
+int callSolver(DATA* simData, string result_file_cstr, string init_initMethod, 
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
@@ -729,8 +729,8 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 #ifdef _OMC_QSS_LIB
   } else if(simData->simulationInfo.solverMethod == std::string("qss")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
-                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
+    retVal = qss_main(argc, argv, simData->simulationInfo.startTime, 
+                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize, 
                       simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
@@ -739,7 +739,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     retVal = 1;
   }
 
-  sim_result.free(&sim_result,simData);
+  sim_result.free(&sim_result, simData);
 
   return retVal;
 }
@@ -817,7 +817,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
   function_initMemoryState();
   read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
-  initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
+  initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);
@@ -876,11 +876,11 @@ void SimulationRuntime_printStatus(int sig)
   printf("<model>%s</model>\n", data->modelData.modelFilePrefix);
   printf("<phase>UNKNOWN</phase>\n");
   printf("<currentStepSize>%g</currentStepSize>\n", data->simulationInfo.stepSize);
-  printf("<oldTime>%.12g</oldTime>\n",data->localData[1]->timeValue);
-  printf("<oldTime2>%.12g</oldTime2>\n",data->localData[2]->timeValue);
-  printf("<diffOldTime>%g</diffOldTime>\n",data->localData[1]->timeValue-data->localData[2]->timeValue);
-  printf("<currentTime>%g</currentTime>\n",data->localData[0]->timeValue);
-  printf("<diffCurrentTime>%g</diffCurrentTime>\n",data->localData[0]->timeValue-data->localData[1]->timeValue);
+  printf("<oldTime>%.12g</oldTime>\n", data->localData[1]->timeValue);
+  printf("<oldTime2>%.12g</oldTime2>\n", data->localData[2]->timeValue);
+  printf("<diffOldTime>%g</diffOldTime>\n", data->localData[1]->timeValue-data->localData[2]->timeValue);
+  printf("<currentTime>%g</currentTime>\n", data->localData[0]->timeValue);
+  printf("<diffCurrentTime>%g</diffCurrentTime>\n", data->localData[0]->timeValue-data->localData[1]->timeValue);
   */
   printf("</status>\n");
 }

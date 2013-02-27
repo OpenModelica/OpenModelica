@@ -38,23 +38,22 @@
 #include "simulation_data.h"
 
 #ifdef __cplusplus
-extern "C" {
+  extern "C" {
 #endif
 
 #include "blaswrap.h"
 #include "f2c.h"
+
 #ifdef VOID
-#undef VOID
+  #undef VOID
 #endif
 
-extern
-int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
-     *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, 
+                  integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 #ifdef __cplusplus
-}
+  }
 #endif
-
 
 int allocateLapackData(int size, void **data);
 int freeLapackData(void **data);
