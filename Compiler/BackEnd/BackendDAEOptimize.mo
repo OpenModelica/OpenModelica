@@ -5737,7 +5737,15 @@ public function countOperations "function countOperations
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
+  outDAE := matchcontinue(inDAE)
+    case (_)
+      equation
+        true = Flags.isSet(Flags.COUNT_OPERATIONS);
+        (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
+      then
+        outDAE;
+    else then inDAE;
+  end matchcontinue;
 end countOperations;
 
 protected function countOperations0 "function countOperations0
