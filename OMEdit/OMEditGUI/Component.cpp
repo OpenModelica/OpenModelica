@@ -1139,8 +1139,10 @@ void Component::getClassComponents(QString className, int type, Component *pPare
   foreach (ComponentsProperties *componentProperties, components)
   {
     if (static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
+    {
+      i++;
       continue;
-
+    }
     if (type == StringHandler::ICON)
     {
       if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
