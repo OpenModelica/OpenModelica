@@ -29,6 +29,8 @@
  */
 
 /* Stack overflow handling */
+
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -136,3 +138,11 @@ void init_metamodelica_segv_handler()
   sigaction(SIGSEGV, &sa, &default_segv_action);
   sigfillset(&segvset);
 }
+#else
+void printStacktraceMessages()
+{
+}
+void init_metamodelica_segv_handler()
+{
+}
+#endif
