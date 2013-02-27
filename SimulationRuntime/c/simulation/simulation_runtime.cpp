@@ -356,9 +356,9 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   }
   
   /* new imple */
-  for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
+  for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasReal; i++)
+  for(long i=0; i<modelData->nAliasReal; i++)
   {
     if(modelData->realAlias[i].aliasType == 0)  /* variable */
     {
@@ -381,9 +381,9 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
+  for(long i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasInteger; i++)
+  for(long i=0; i<modelData->nAliasInteger; i++)
   {
     if(modelData->integerAlias[i].aliasType == 0)  /* variable */
     {
@@ -406,9 +406,9 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
+  for(long i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasBoolean; i++)
+  for(long i=0; i<modelData->nAliasBoolean; i++)
   {
     if(modelData->booleanAlias[i].aliasType == 0)  /* variable */
     {
@@ -431,9 +431,9 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for(int i = 0; i < modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput)
+  for(long i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput)
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(int i = 0; i < modelData->nAliasString; i++)
+  for(long i=0; i<modelData->nAliasString; i++)
   {
     if(modelData->stringAlias[i].aliasType == 0)  /* variable */
     {
