@@ -365,35 +365,33 @@ constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(99, "doLinearTearing",
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));    
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(100, "dumpinitialsystem",
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SOLVE_INITIAL_SYSTEM = DEBUG_FLAG(101, "solveinitialsystem",
-  Util.gettext("solve the initial equation system symbolical."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(102, "scodeInstShortcut",
+constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(101, "scodeInstShortcut",
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(103, "showSCode",
+constant DebugFlag SHOW_SCODE = DEBUG_FLAG(102, "showSCode",
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(104, "dumpConstrepl",
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(103, "dumpConstrepl",
   Util.gettext("dump the found replacements for constants"));
-constant DebugFlag PEDANTIC = DEBUG_FLAG(105, "pedantic",
+constant DebugFlag PEDANTIC = DEBUG_FLAG(104, "pedantic",
   Util.gettext("switch into pedantic debug-mode, to get much more feedback"));
-constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(106, "showRedeclareAnalysis",
+constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(105, "showRedeclareAnalysis",
   Util.gettext("prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)"));
-constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(107, "showProgramChanges",
+constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(106, "showProgramChanges",
     Util.gettext("prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)"));
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(108, "showEquationSource",
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(107, "showEquationSource",
     Util.gettext("display the element source information in the dumped DAE for easier debugging"));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(109, "NLSanalyticJacobian",
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(108, "NLSanalyticJacobian",
     Util.gettext("generates analytical jacobian for non-linear algebraic loops")); 
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(110, "inlineSolver",
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(109, "inlineSolver",
     Util.gettext("generates code for inline solver"));
-constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(111, "dumpInlineSolver",
+constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(110, "dumpInlineSolver",
     Util.gettext("dumps the inline solver equation system"));
-constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(112, "dumpEncapsulateWhenConditions",
+constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(111, "dumpEncapsulateWhenConditions",
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions"));
-constant DebugFlag ON_RELAXATION = DEBUG_FLAG(113, "onRelaxation",
+constant DebugFlag ON_RELAXATION = DEBUG_FLAG(112, "onRelaxation",
     Util.gettext("perform O(n) Relaxation"));
-constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(114, "shortOutput",
+constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(113, "shortOutput",
     Util.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
-constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(115, "countOperations",
+constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(114, "countOperations",
     Util.gettext("count operations"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -501,7 +499,6 @@ constant list<DebugFlag> allDebugFlags = {
   NO_MIXED_TEARING,
   LINEAR_TEARING,
   DUMP_INITIAL_SYSTEM,
-  SOLVE_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
   SHOW_SCODE,
   DUMP_CONST_REPL,

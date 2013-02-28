@@ -7538,7 +7538,6 @@ algorithm
       Boolean optimizationfound;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knownVars=knvars,initialEqs=inieqns)))
       equation
-        false = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
         // search 
         initalAliases = HashTable2.emptyHashTable();
         eqnlst = BackendEquation.equationList(inieqns);

@@ -6597,8 +6597,6 @@ algorithm
                                  shared as BackendDAE.SHARED(knownVars=knvars, 
                                                              aliasVars=aliasVars, 
                                                              removedEqs=removedEqs))), _, _) equation
-//      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
-
       // generate equations from the solved systems
       (uniqueEqIndex, _, _, allEquations, tempvars) = createEquationsForSystems(systs, shared, iuniqueEqIndex, {}, {}, {}, itempvars);
       // generate equations from the removed equations
@@ -6619,9 +6617,7 @@ algorithm
     case (_, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
-      Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
       Error.addCompilerWarning("No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
-      //Error.addCompilerWarning("No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
