@@ -161,10 +161,11 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
     chars[1][20] = '\0';
   line = lexer->getLine(lexer);
   offset = lexer->getCharPositionInLine(lexer)+1;
-  if (*chars[1])
+  if (*chars[1] && !ModelicaParser_lexerError) {
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer got '%s' but failed to recognize the rest: '%s'", (const char**) chars, 2, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
-  else
+  } else if (!ModelicaParser_lexerError) {
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer failed to recognize '%s'", (const char**) chars, 1, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+  }
   ModelicaParser_lexerError = ANTLR3_TRUE;
   free(chars[0]);
   free(chars[1]);
