@@ -521,6 +521,9 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
       toleranceControlled, relativeTolerance);
   *eventInfo  = comp->eventInfo;
 
+  /* set zero-crossing tolerance */
+  setZCtol(relativeTolerance);
+
   setStartValues(comp);
   copyStartValuestoInitValues(comp->fmuData);
   /* read input vars */

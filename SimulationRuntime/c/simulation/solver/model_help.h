@@ -114,6 +114,7 @@ modelica_boolean checkRelations(DATA *data);
 void printHysteresisRelations(DATA *data);
 void activateHysteresis(DATA* data);
 void updateHysteresis(DATA* data);
+void setZCtol(double relativeTol);
 
 double getNextSampleTimeFMU(DATA *data);
 

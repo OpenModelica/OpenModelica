@@ -910,53 +910,59 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
-static const double tolZC = 1e-10;
+static double tolZC = 1e-10;
 
-modelica_boolean LessZC(double a, double b, modelica_boolean direction)
+void setZCtol(double relativeTol)
 {
-  modelica_boolean retVal;
-  double eps = (direction)? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
-  /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)", a, b, (a < b)?'t':'f' , direction?'t':'f');*/
-  retVal = (direction)? (a < b + eps):(a + eps < b);
-  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
-  return retVal;
+  tolZC = 1e-4*relativeTol;
+  INFO1(LOG_EVENTS, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
+inline
+modelica_boolean LessZC(double a, double b, modelica_boolean direction)
+{
+  double eps = tolZC*fabs(a-b)+tolZC;
+  return (direction)? (a - b <= eps):(a - b <= -eps);
+}
+
+inline
 modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 {
   return (!GreaterZC(a, b, !direction));
 }
 
+inline
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
-  modelica_boolean retVal;
-  double eps = (direction)? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
-  /*INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)", a, b, (a > b)?'t':'f' , direction?'t':'f');*/
-  retVal = (direction)? (a + eps > b ):(a  > b + eps);
-  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
-  return retVal;
+  double eps = tolZC*fabs(a-b)+tolZC;
+  return (direction)? (a - b >= -eps ):(a - b >= eps);
 }
 
+inline
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
 {
   return (!LessZC(a, b, !direction));
 }
 
+inline
 modelica_boolean Less(double a, double b)
 {
   return a < b;
 }
 
+inline
 modelica_boolean LessEq(double a, double b)
 {
   return a <= b;
 }
 
+inline
 modelica_boolean Greater(double a, double b)
 {
   return a > b;
 }
 
+inline
 modelica_boolean GreaterEq(double a, double b)
 {
   return a >= b;

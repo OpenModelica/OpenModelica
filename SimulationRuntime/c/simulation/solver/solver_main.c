@@ -336,6 +336,8 @@ int initializeModel(DATA* data, const char* init_initMethod,
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
 
+  /* set tolerance for ZeroCrossings */
+  setZCtol(simInfo->tolerance);
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
   {
