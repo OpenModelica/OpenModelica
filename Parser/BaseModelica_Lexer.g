@@ -184,7 +184,12 @@ IDENT;
 }
 
 T_ALGORITHM : 'algorithm';
-T_AND : 'and';
+T_AND : 'and' | '&&' {
+            ModelicaParser_lexerError = ANTLR3_TRUE;
+            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'and' for logical and since '&&' is not a valid Modelica construct.",
+               NULL, 0, $line, $pos+1, $line, $pos+3,
+               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+     };
 T_ANNOTATION : 'annotation';
 BLOCK : 'block';
 CLASS : 'class';
@@ -218,11 +223,21 @@ INNER : 'inner';
 T_INPUT : 'input';
 LOOP : 'loop';
 MODEL : 'model';
-T_NOT : 'not';
+T_NOT : 'not' | '!' {
+            ModelicaParser_lexerError = ANTLR3_TRUE;
+            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'not' for logical not since '!' is not a valid Modelica construct.",
+               NULL, 0, $line, $pos+1, $line, $pos+2,
+               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+     };
 T_OUTER : 'outer';
 OPERATOR : 'operator'; 
 OVERLOAD : '$overload'; // OpenModelica extension
-T_OR : 'or';
+T_OR : 'or' | '||' {
+            ModelicaParser_lexerError = ANTLR3_TRUE;
+            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'or' for logical or since '||' is not a valid Modelica construct.",
+               NULL, 0, $line, $pos+1, $line, $pos+3,
+               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+     };
 T_OUTPUT : 'output';
 T_PACKAGE : 'package';
 PARAMETER : 'parameter';
