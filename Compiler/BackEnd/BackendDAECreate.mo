@@ -105,16 +105,19 @@ protected
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
   BackendDAE.SampleLookup sampleLookup;
+  Integer nVars,nKnVars,nExtVars;
+  list<BackendDAE.Var> lstVars,lstKnVars,lstExtVars;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.execStat("Enter Backend", CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems), functionTree, sampleLookup) := processBuiltinExpressions(lst, functionTree);
-  vars := BackendVariable.emptyVars();
-  knvars := BackendVariable.emptyVars();
-  extVars := BackendVariable.emptyVars();
-  (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, _) := 
-    lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, HashTableExpToExp.emptyHashTable());
+  ((lstVars,nVars), (lstKnVars,nKnVars), (lstExtVars,nExtVars), eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, _) := 
+    lower2(listReverse(elems), functionTree, ({},0), ({},0), ({},0), {}, {}, {}, {}, {}, {}, {}, {}, HashTableExpToExp.emptyHashTable());
+  // use sized arrays to have good hashing
+  vars := BackendVariable.listVarSized(lstVars,nVars);
+  knvars := BackendVariable.listVarSized(lstKnVars,nKnVars);
+  extVars := BackendVariable.listVarSized(lstExtVars,nExtVars);
   whenclauses_1 := listReverse(whenclauses);
   aliasVars := BackendVariable.emptyVars();
   // handle alias equations
@@ -155,9 +158,9 @@ protected function lower2
   "Helper function to lower."
   input list<DAE.Element> inElements "input is in reverse order. this is faster than reversing all accumulators at the end";
   input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inVars "The time depend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inKnVars "The time independend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inExVars "The external Variables";
   input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
   input list<BackendDAE.Equation> inREqnsLst "The algebraic Equations";
   input list<BackendDAE.Equation> inIEqnsLst "The initial Equations";
@@ -167,9 +170,9 @@ protected function lower2
   input BackendDAE.ExternalObjectClasses inExtObjClasses;
   input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outKnownVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outExternalVariables;
   output list<BackendDAE.Equation> oEqnsLst;
   output list<BackendDAE.Equation> oREqnsLst;
   output list<BackendDAE.Equation> oIEqnsLst;
@@ -185,7 +188,7 @@ algorithm
    match (inElements, functionTree, inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, 
       inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT)
     local
-      BackendDAE.Variables vars, knvars, extVars;
+      tuple<list<BackendDAE.Var>,Integer> vars, knvars, extVars;
       list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqns, reqns, ieqns;
       list<DAE.Constraint> constrs;
@@ -216,9 +219,9 @@ protected function lower3
   "Helper function to lower."
   input DAE.Element inElement "input is in reverse order. this is faster than reversing all accumulators at the end";
   input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inVars "The time depend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inKnVars "The time independend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inExVars "The external Variables";
   input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
   input list<BackendDAE.Equation> inREqnsLst "The algebraic Equations";
   input list<BackendDAE.Equation> inIEqnsLst "The initial Equations";
@@ -228,9 +231,9 @@ protected function lower3
   input BackendDAE.ExternalObjectClasses inExtObjClasses;
   input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outKnownVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outExternalVariables;
   output list<BackendDAE.Equation> oEqnsLst;
   output list<BackendDAE.Equation> oREqnsLst;
   output list<BackendDAE.Equation> oIEqnsLst;
@@ -252,7 +255,7 @@ algorithm
       DAE.ClassAttributes clsattrs_1;
       list<DAE.ClassAttributes> clsAttrs;
       Absyn.Path path;
-      BackendDAE.Variables vars, knvars, extVars;
+      tuple<list<BackendDAE.Var>,Integer> vars, knvars, extVars;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       list<BackendDAE.Equation> eqns, reqns, ieqns;
@@ -516,14 +519,14 @@ protected function lowerVar
   outputs: Var"
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inVars "The time depend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inKnVars "The time independend Variables";
+  input tuple<list<BackendDAE.Var>,Integer> inExVars "The external Variables";
   input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outKnownVariables;
+  output tuple<list<BackendDAE.Var>,Integer> outExternalVariables;
   output list<BackendDAE.Equation> oEqnsLst;
   output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
 algorithm
@@ -534,46 +537,43 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Var backendVar1;
       DAE.Exp e1, e2;
-      BackendDAE.Variables vars, knvars, extvars;
+      list<BackendDAE.Var> vars, knvars, extvars;
+      Integer nVars,nKnVars,nExtVars;
       String str;
       HashTableExpToExp.HashTable inlineHT;
     // external object variables
-    case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), _, _, _, _, _, _)
+    case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), _, _, _, (extvars,nExtVars), _, _)
       equation
         backendVar1 = lowerExtObjVar(inElement, functionTree);
-        extvars = BackendVariable.addVar(backendVar1, inExVars);
       then
-        (inVars, inKnVars, extvars, inEqnsLst, iInlineHT);
+        (inVars, inKnVars, (backendVar1::extvars,nExtVars+1), inEqnsLst, iInlineHT);
 
     // variables: states and algebraic variables with binding equation
-    case (DAE.VAR(componentRef = cr, binding=SOME(e2), source = source), _, _, _, _, _, _)
+    case (DAE.VAR(componentRef = cr, binding=SOME(e2), source = source), _, (vars,nVars), _, _, _, _)
       equation
         // adrpo 2009-09-07 - according to MathCore
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(inElement);
         (backendVar1) = lowerDynamicVar(inElement, functionTree);
         (e2, source, _) = Inline.inlineExp(e2, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        vars = BackendVariable.addVar(backendVar1, inVars);
         e1 = Expression.crefExp(cr);
       then
-        (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, false)::inEqnsLst, iInlineHT);
+        ((backendVar1::vars,nVars+1), inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, false)::inEqnsLst, iInlineHT);
         
     // variables: states and algebraic variables with NO binding equation
-    case (DAE.VAR(binding=NONE(), source = source), _, _, _, _, _, _)
+    case (DAE.VAR(binding=NONE(), source = source), _, (vars,nVars), _, _, _, _)
       equation
         true = isStateOrAlgvar(inElement);
         (backendVar1) = lowerDynamicVar(inElement, functionTree);
-        vars = BackendVariable.addVar(backendVar1, inVars);
       then
-        (vars, inKnVars, inExVars, inEqnsLst, iInlineHT);
+        ((backendVar1::vars,nVars+1), inKnVars, inExVars, inEqnsLst, iInlineHT);
    
     // known variables: parameters and constants
-    case (DAE.VAR(componentRef = _), _, _, _, _, _, _)
+    case (DAE.VAR(componentRef = _), _, _, (knvars,nKnVars), _, _, _)
       equation
         (backendVar1, inlineHT) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed." ;
-        knvars = BackendVariable.addVar(backendVar1, inKnVars);
       then
-        (inVars, knvars, inExVars, inEqnsLst, inlineHT);
+        (inVars, (backendVar1::knvars,nKnVars+1), inExVars, inEqnsLst, inlineHT);
 
     else
       equation
