@@ -1150,6 +1150,43 @@ algorithm
   end match;
 end uniqueIntN_work;
 
+public function uniqueIntNArr
+  "Takes a list of integes and returns a list with duplicates removed, so that
+   each element in the new list is unique. O(listLength(inList)). The function
+   also takes an array of Integer of size N+1 to mark the already selected entries <= N.
+   The last entrie of the array is used for the mark index. It will be updated after 
+   each call"
+  input list<Integer> inList;
+  input array<Integer> markarr;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(inList,markarr,iAcc)
+    local
+      Integer i,len,mark;
+      list<Integer> ilst,acc;
+    case ({},_,_)
+      equation
+        len = arrayLength(markarr);
+        _=arrayUpdate(markarr,len,markarr[len]+1);
+      then iAcc;
+    case (i::ilst,_,_)
+      equation
+        len = arrayLength(markarr);
+        true = intLt(i,len);
+        mark = markarr[len];
+        acc = consOnTrue(intNe(markarr[i],mark),i,iAcc);
+        _=arrayUpdate(markarr,i,mark);
+      then
+        uniqueIntNArr(ilst,markarr,acc);
+    else
+      equation
+        print("List.uniqueIntNArr failed entrie to large\n");
+      then
+        fail();
+  end matchcontinue;
+end uniqueIntNArr;
+
 public function uniqueOnTrue
   "Takes a list of elements and a comparison function over two elements of the
    list and returns a list with duplicates removed, so that each element in the
@@ -5410,12 +5447,12 @@ end reduce1;
 
 public function flatten
   "Takes a list of lists and flattens it out, producing one list of all elements
-   of the sublists.
+   of the sublists. O(len(outList))
      Example: flatten({{1, 2}, {3, 4, 5}, {6}, {}}) => {1, 2, 3, 4, 5, 6}"
   input list<list<ElementType>> inList;
   output list<ElementType> outList;
 algorithm
-  outList := flatten_tail(inList, {});
+  outList := flatten_tail(listReverse(inList), {});
 end flatten;
 
 protected function flatten_tail
@@ -5432,7 +5469,7 @@ algorithm
     case ({}, _) then inAccumList;
     case (e :: rest, _)
       equation
-        res = listAppend(inAccumList, e);
+        res = listAppend(e,inAccumList);
       then
         flatten_tail(rest, res);
 
