@@ -42,7 +42,6 @@
 #include <assert.h>
 #include <pthread.h>
 #include <setjmp.h>
-#include <ucontext.h>
 
 /* Really 64kB memory for this? Oh well... */
 #define TRACE_NFRAMES 65536
@@ -93,7 +92,6 @@ static sigset_t segvset;
 static void handler(int signo, siginfo_t *si, void *ptr)
 {
   int isStackOverflow;
-  ucontext_t *uc = (ucontext_t *)ptr;
   isStackOverflow = si->si_addr < stackBottom && (si->si_addr > stackBottom - LIMIT_FOR_STACK_OVERFLOW);
   if (isStackOverflow) {
     setTrace(3,0);
@@ -108,17 +106,28 @@ static void handler(int signo, siginfo_t *si, void *ptr)
 }
 
 static void getStackBase() {
+  /* Warning: These functions are highly non-portable and are recommended to not be used.
+   * We only tested them on Linux and OSX.
+   * On OSX we get the top of the stack and the size
+   * On Linux we get the bottom, so we don't need the size... YMMV
+   */
+#if !defined(__APPLE_CC__)
   struct rlimit rl;
-  size_t stackSize = 0;
+  size_t size = 0;
   pthread_attr_t sattr;
   pthread_attr_init(&sattr);
   pthread_t thread = pthread_self();
   pthread_getattr_np(thread, &sattr);
-  assert(0==getrlimit(RLIMIT_STACK,&rl));
-  stackSize = rl.rlim_cur;
-  assert(0==pthread_attr_getstack(&sattr, &stackBottom, &stackSize));
+  /* assert(0==getrlimit(RLIMIT_STACK,&rl));
+  stackSize = rl.rlim_cur; */
+  assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
   assert(stackBottom);
   pthread_attr_destroy(&sattr);
+#else
+  void* addr = pthread_get_stackaddr_np(self);
+  size_t size = pthread_get_stacksize_np(self);
+  stackBottom = ((long)stackBottom) - size;
+#endif
 }
 
 void init_metamodelica_segv_handler()
