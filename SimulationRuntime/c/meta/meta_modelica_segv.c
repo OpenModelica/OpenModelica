@@ -111,13 +111,13 @@ static void getStackBase() {
    * On OSX we get the top of the stack and the size
    * On Linux we get the bottom, so we don't need the size... YMMV
    */
+  pthread_t self = pthread_self();
 #if !defined(__APPLE_CC__)
   struct rlimit rl;
   size_t size = 0;
   pthread_attr_t sattr;
   pthread_attr_init(&sattr);
-  pthread_t thread = pthread_self();
-  pthread_getattr_np(thread, &sattr);
+  pthread_getattr_np(self, &sattr);
   /* assert(0==getrlimit(RLIMIT_STACK,&rl));
   stackSize = rl.rlim_cur; */
   assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
