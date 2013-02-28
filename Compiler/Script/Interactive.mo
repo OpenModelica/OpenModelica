@@ -1955,6 +1955,14 @@ algorithm
         resstr = boolString(b1);
       then
         (resstr,st);
+   case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "isOptimization");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        b1 = isOptimization(cr, p);
+        resstr = boolString(b1);
+      then
+        (resstr,st);
 
    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -8753,6 +8761,31 @@ algorithm
     case (cr,p) then false;
   end matchcontinue;
 end isBlock;
+
+protected function isOptimization
+"function: isOptimization
+   This function takes a component reference and a program.
+   It returns true if the refrenced class has the restriction
+   \"Optimization\", otherwise it returns false."
+  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inComponentRef,inProgram)
+    local
+      Absyn.Path path;
+      Absyn.ComponentRef cr;
+      Absyn.Program p;
+    case (cr,p)
+      equation
+        path = Absyn.crefToPath(cr);
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPTIMIZATION(),_,_) = getPathedClassInProgram(path, p);
+      then
+        true;
+    case (cr,p) then false;
+  end matchcontinue;
+end isOptimization;
 
 public function isFunction
 "function: isFunction
