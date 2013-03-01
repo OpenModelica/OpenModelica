@@ -1930,16 +1930,6 @@ algorithm
 
    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "isModel");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        b1 = isModel(path, p);
-        resstr = boolString(b1);
-      then
-        (resstr,st);
-
-   case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "isRecord");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isRecord(cr, p);
