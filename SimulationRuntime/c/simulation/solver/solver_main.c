@@ -815,8 +815,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Radau5 IIA     ***********************************/
 int radau5_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-
-  kinsolOde(solverInfo->solverData, 3, data, 6);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
@@ -824,7 +823,7 @@ int radau5_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Radau3 IIA     ***********************************/
 int radau3_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData, 2, data, 7);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
@@ -832,7 +831,7 @@ int radau3_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Radau1 IIA     ***********************************/
 int radau1_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData, 1, data, 8);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
@@ -840,7 +839,7 @@ int radau1_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Lobatto2 IIA     ***********************************/
 int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData, 1, data, 9);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
@@ -848,7 +847,7 @@ int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Lobatto4 IIA     ***********************************/
 int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData, 2, data, 10);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
@@ -856,7 +855,7 @@ int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    Lobatto6 IIA     ***********************************/
 int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData, 3, data, 11);
+  kinsolOde(solverInfo->solverData);
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }

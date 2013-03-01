@@ -104,7 +104,7 @@
 #endif /* SUNDIALS */
   int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N);
   int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N);
-
+  int kinsolOde(void* ode);
 #ifdef __cplusplus
 };
 #endif

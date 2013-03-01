@@ -735,7 +735,11 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 #endif
   } else {
     INFO1(LOG_STDOUT, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
+#ifdef WITH_SUNDIALS
+    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss, radau1, radau3, radau5, lobatto2, lobatto4");
+#else
     INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss.");
+#endif
     retVal = 1;
   }
 

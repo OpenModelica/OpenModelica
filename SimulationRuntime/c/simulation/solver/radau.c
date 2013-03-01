@@ -251,6 +251,7 @@ static int allocateKINSOLODE(KINODE *kinOde)
   int nn = 3*N*n; /* 3*N = N*(subintervalls) * 3*var(eq,low,up) */
   int i, j, k;
   double* ceq,*clow,*cup;
+  double* seq,*slow,*sup;
   double* sveq,*svlow,*svup;
   KDATAODE * kData = (kinOde)->kData;
   NLPODE *nlp = kinOde->nlp;
@@ -266,6 +267,9 @@ static int allocateKINSOLODE(KINODE *kinOde)
   sveq = NV_DATA_S(kData->sVars);
   svlow = sveq + N*n;
   svup = svlow + N*n;
+  seq = NV_DATA_S(kData->sEqns);
+  slow = seq + N*n;
+  sup = slow + N*n;
 
   for(j=0, k=0; j<N; j++)
   {
@@ -277,6 +281,8 @@ static int allocateKINSOLODE(KINODE *kinOde)
       sveq[k] = s[i];
       svlow[k] = s[i];
       svup[k] = s[i];
+      slow[k] = s[i];
+      sup[k] = s[i];
     }
   }
   KINSetUserData(kinOde->kData->kmem, (void*) kinOde);
@@ -395,8 +401,6 @@ static int initKinsol(KINODE *kinOde)
       xup[k] = xeq[k] - nlp->max[i];
       tmp = 1.0/(fabs(nlp->x0[i] - xeq[k]) + 1e-6);
       seq[k] = tmp;
-      slow[k] = tmp;
-      sup[k] = tmp;
     }
   }
 
@@ -425,7 +429,7 @@ static int refreshModell(DATA* data, double* x, double time)
 
 static int radau5Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,sub2,sub3;
+  int i,k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -463,32 +467,28 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i] + h*derx[i]) -
              (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
 
-
     flow[i] = xlow[i] - x1[i] + lb[i];
     fup[i] = xup[i] - x1[i] +  ub[i];
   }
 
   refreshModell(data, x2,t0 + a[1]*h);
-  for(i = 0;i<n;i++)
+  for(i = 0, k=n; i<n; i++, k++)
   {
-    sub2 = i + n;
-
-    feq[sub2] = (nlp->c[1][1]*x1[i] + h*derx[i]) -
+    feq[k] = (nlp->c[1][1]*x1[i] + h*derx[i]) -
                 (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
 
-    flow[sub2] = xlow[sub2] - x2[i] + lb[i];
-    fup[sub2] = xup[sub2] -  x2[i] + ub[i];
+    flow[k] = xlow[k] - x2[i] + lb[i];
+    fup[k] = xup[k] -  x2[i] + ub[i];
   }
 
-  refreshModell(data, x3, t0 + a[2]*h);
-  for(i = 0;i<n;i++)
+  refreshModell(data, x3, t0 + h);
+  for(i = 0;i<n;i++,k++)
   {
-    sub3 = i + 2*n;
-    feq[sub3] =  (nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i] + h*derx[i]) -
+    feq[k] =  (nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i] + h*derx[i]) -
                  (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
 
-    flow[sub3] = xlow[sub3] - x3[i] + lb[i];
-    fup[sub3] = xup[sub3] - x3[i] + ub[i];
+    flow[k] = xlow[k] - x3[i] + lb[i];
+    fup[k] = xup[k] - x3[i] + ub[i];
   }
 
   return 0;
@@ -496,7 +496,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
 
 static int radau3Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,sub2, N;
+  int i,k, N;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -534,15 +534,13 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
     fup[i] = xup[i] - x1[i] +  ub[i];
   }
 
-  refreshModell(data, x2,t0 + a[1]*h);
-  for(i = 0;i<n;i++)
+  refreshModell(data, x2,t0 + h);
+  for(i = 0, k=n;i<n;i++,k++)
   {
-    sub2 = i + n;
-
-    feq[sub2] = (nlp->c[1][1]*x1[i] + h*derx[i]) -
+    feq[k] = (nlp->c[1][1]*x1[i] + h*derx[i]) -
                 (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i]);
-    flow[sub2] = xlow[sub2] - x2[i] + lb[i];
-    fup[sub2] = xup[sub2] -  x2[i] + ub[i];
+    flow[k] = xlow[k] - x2[i] + lb[i];
+    fup[k] = xup[k] -  x2[i] + ub[i];
   }
 
   return 0;
@@ -551,7 +549,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
 
 static int radau1Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,sub2, N;
+  int i, N;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -631,7 +629,7 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
 
 static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,sub2, N;
+  int i,k, N;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -671,19 +669,18 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   }
 
   refreshModell(data, x2,t0 + h);
-  for(i = 0;i<n;i++)
+  for(i = 0,k=n;i<n;i++,k++)
   {
-    sub2 = i + n;
-    feq[sub2] = (2.0*h*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*h*f0[i]);
-    flow[sub2] = xlow[sub2] - x2[i] + lb[i];
-    fup[sub2] = xup[sub2] - x2[i] +  ub[i];
+    feq[k] = (2.0*h*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*h*f0[i]);
+    flow[k] = xlow[k] - x2[i] + lb[i];
+    fup[k] = xup[k] - x2[i] +  ub[i];
   }
   return 0;
 }
 
 static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,sub2, N;
+  int i,k, N;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -725,21 +722,19 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   }
 
   refreshModell(data, x2,t0 + nlp->a[1]*h);
-  for(i = 0;i<n;i++)
+  for(i = 0,k=n;i<n;i++,k++)
   {
-    sub2 = i + n;
-    feq[sub2] = (h*derx[i] + nlp->c[1][1]*x1[i]) - (h*nlp->c[1][4]*f0[i] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
-    flow[sub2] = xlow[sub2] - x2[i] + lb[i];
-    fup[sub2] = xup[sub2] - x2[i] +  ub[i];
+    feq[k] = (h*derx[i] + nlp->c[1][1]*x1[i]) - (h*nlp->c[1][4]*f0[i] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
+    flow[k] = xlow[k] - x2[i] + lb[i];
+    fup[k] = xup[k] - x2[i] +  ub[i];
   }
 
   refreshModell(data, x3,t0 + h);
-  for(i = 0;i<n;i++)
+  for(i = 0;i<n;i++,k++)
   {
-    sub2 = i + 2*n;
-    feq[sub2] = (h*(f0[i] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
-    flow[sub2] = xlow[sub2] - x3[i] + lb[i];
-    fup[sub2] = xup[sub2] - x3[i] +  ub[i];
+    feq[k] = (h*(f0[i] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
+    flow[k] = xlow[k] - x3[i] + lb[i];
+    fup[k] = xup[k] - x3[i] +  ub[i];
   }
 
   return 0;
