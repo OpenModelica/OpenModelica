@@ -111,16 +111,6 @@ algorithm
   eqns := listEquation({});
 end emptyEqns;
 
-public function emptyEqnsSized
-  input Integer size;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  array<Option<BackendDAE.Equation>> optarr;
-algorithm
-  optarr := arrayCreate(size, NONE());
-  outEquationArray := BackendDAE.EQUATION_ARRAY(0,0,size,optarr);
-end emptyEqnsSized;
-
 public function equationList "function equationList
   author: PA
   Transform the expandable BackendDAE.Equation array to a list of Equations."
@@ -1794,13 +1784,13 @@ public function compressEquations
 algorithm
   outEquationArray := matchcontinue(inEquationArray)
     local
-      Integer numberOfElement,arrSize;
+      Integer size,numberOfElement,arrSize;
       array<Option<BackendDAE.Equation>> equOptArr;
-    case BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,equOptArr=equOptArr)
+    case BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr)
       equation
-        outEquationArray = emptyEqnsSized(numberOfElement);
+        numberOfElement = compressEquations1(1,1,numberOfElement,equOptArr);
       then
-        compressEquations1(1,numberOfElement,equOptArr,outEquationArray);
+        BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr);
     else
       equation
         print("BackendEquation.compressEquations failed\n");
@@ -1811,45 +1801,46 @@ end compressEquations;
 
 protected function compressEquations1
 " function: compressEquations1
-  author: Frenkel TUD 2012-09"
+  author: Frenkel TUD 2012-11"
   input Integer index;
-  input Integer nEqns;
+  input Integer insertindex;
+  input Integer numberOfElement;
   input array<Option<BackendDAE.Equation>> equOptArr;
-  input BackendDAE.EquationArray iEqns;
-  output BackendDAE.EquationArray oEqns;
+  output Integer newnumberOfElement;
 algorithm
-  oEqns := matchcontinue(index,nEqns,equOptArr,iEqns)
+  newnumberOfElement := matchcontinue(index,insertindex,numberOfElement,equOptArr)
     local
       BackendDAE.Equation eqn;
-      BackendDAE.EquationArray eqns;
     // found element
     case(_,_,_,_)
       equation
-        true = intLe(index,nEqns);
+        true = intLe(index,numberOfElement);
         SOME(eqn) = equOptArr[index];
-        eqns = equationAdd(eqn,iEqns);
+        // insert on new pos
+        _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
       then
-        compressEquations1(index+1,nEqns,equOptArr,eqns);
+        compressEquations1(index+1,insertindex+1,numberOfElement,equOptArr);
     // found non element
     case(_,_,_,_)
       equation
-        true = intLe(index,nEqns);
+        true = intLe(index,numberOfElement);
         NONE() = equOptArr[index];
       then
-        compressEquations1(index+1,nEqns,equOptArr,iEqns);
+        compressEquations1(index+1,insertindex,numberOfElement,equOptArr);
     // at the end
     case(_,_,_,_)
       equation
-        false = intLe(index,nEqns);
+        false = intLe(index,numberOfElement);
       then
-        iEqns;
+        insertindex-1;
     else
       equation
-        print("BackendEquation.compressEquations1 failed for index " +& intString(index) +& " and Number of Equations " +& intString(nEqns) +& "\n");
+        print("BackendEquation.compressEquations1 failed\n");
       then
         fail();
   end matchcontinue;
 end compressEquations1;
+
 
 public function equationToScalarResidualForm "function: equationToScalarResidualForm
   author: Frenkel TUD 2012-06
