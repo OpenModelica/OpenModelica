@@ -1145,7 +1145,7 @@ algorithm
         (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
               
     // if size of unmatched eqns is equal to size of states without used derivative change all to algebraic
-    case (true,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
+    case (true,_::_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         // change varKind
         varlst = List.map1r(statesWithUnusedDer,BackendVariable.getVarAt,v);
