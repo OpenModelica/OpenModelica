@@ -415,6 +415,9 @@ record Dialog
    parameter String tab = \"General\";
    parameter String group = \"Parameters\";
    parameter Boolean enable = true;
+   parameter Boolean showStartAttribute = false;
+   parameter String groupImage = \"\";
+   parameter Boolean connectorSizing = false;
 end Dialog;
 
 //
