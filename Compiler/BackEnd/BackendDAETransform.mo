@@ -1364,7 +1364,7 @@ algorithm
         (stack,comp) = checkStack(vn, rest, number, top :: icomp);
       then
         (stack,comp);
-    case (_,_,_,_) then (istack,listReverse(icomp));
+    case (_,_,_,_) then (istack,icomp);
   end matchcontinue;
 end checkStack;
 
