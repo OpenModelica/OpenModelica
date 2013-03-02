@@ -148,6 +148,8 @@ void init_metamodelica_segv_handler()
   sigfillset(&segvset);
 }
 #else
+#include <setjmp.h>
+jmp_buf *mmc_stack_overflow_jumper;
 void printStacktraceMessages()
 {
 }
