@@ -906,7 +906,7 @@ algorithm
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
-      Absyn.ComponentRef crefCName;
+      Absyn.ComponentRef crefCPath, crefCName;
       list<tuple<String,Values.Value>> resultValues;
       list<Real> realVals;
       list<tuple<String,list<String>>> deps;
@@ -2117,6 +2117,23 @@ algorithm
         v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
       then
         (cache,v,st);
+        
+    case (cache,env,"getDerivedClassModifierNames",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        args = Interactive.getDerivedClassModifierNames(absynClass);
+        vals = List.map(args, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
+        
+    case (cache,env,"getDerivedClassModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        crefCName = Absyn.pathToCref(className);
+        str = Interactive.getDerivedClassModifierValue(absynClass, crefCName);
+      then
+        (cache,Values.STRING(str),st);
 
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation

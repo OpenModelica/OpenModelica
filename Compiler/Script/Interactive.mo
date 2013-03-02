@@ -9197,6 +9197,48 @@ algorithm
   end match;
 end getEnumLiterals;
 
+public function getDerivedClassModifierNames
+"function: getDerivedClassModifierNames
+  Returns the derived class modifier names."
+  input Absyn.Class inClass;
+  output list<String> outString;
+algorithm
+  outString:= match (inClass)
+    local
+      list<Absyn.ElementArg> args;
+      list<String> modifierNames;
+    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.DERIVED(arguments = args)))
+      equation
+        modifierNames = getModificationNames(args);
+      then
+        modifierNames;
+    case (_) then {};
+  end match;
+end getDerivedClassModifierNames;
+
+public function getDerivedClassModifierValue
+"function: getDerivedClassModifierValue
+  Returns the derived class modifier value."
+  input Absyn.Class inClass;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString:= match (inClass, inComponentRef)
+    local
+      list<Absyn.ElementArg> args;
+      String res;
+      Absyn.ComponentRef ident;
+      Absyn.Modification mod;
+    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.DERIVED(arguments = args)), ident)
+      equation
+        mod = getModificationValue(args, ident);
+        res = Dump.unparseModificationStr(mod);
+      then
+        res;
+    case (_,_) then "";
+  end match;
+end getDerivedClassModifierValue;
+
 protected function getElementitemContainsName
 "function: getElementitemContainsName
   Returns the element that has the component name given as argument."

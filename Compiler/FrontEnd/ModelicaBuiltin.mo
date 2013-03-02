@@ -2695,6 +2695,36 @@ annotation(
   preferredView="text");
 end getAvailableLibraries;
 
+function getDerivedClassModifierNames "Returns the derived class modifier names.
+  Example command:
+  type Resistance = Real(final quantity=\"Resistance\",final unit=\"Ohm\");
+  getDerivedClassModifierNames(Resistance) => {\"quantity\",\"unit\"}"
+  input TypeName className;
+  output String[:] modifierNames;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Finds the modifiers of the derived class.
+</html>"),
+  preferredView="text");
+end getDerivedClassModifierNames;
+
+function getDerivedClassModifierValue "Returns the derived class modifier value.
+  Example command:
+  type Resistance = Real(final quantity=\"Resistance\",final unit=\"Ohm\");
+  getDerivedClassModifierValue(Resistance, unit); => \" = \"Ohm\"\"
+  getDerivedClassModifierValue(Resistance, unit); => \" = \"Resistance\"\""
+  input TypeName className;
+  input TypeName modifierName;
+  output String modifierValue;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Finds the modifier value of the derived class.
+</html>"),
+  preferredView="text");
+end getDerivedClassModifierValue;
+
 annotation(preferredView="text");
 end Scripting;
 
