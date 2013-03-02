@@ -274,6 +274,7 @@ protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   DAE.FunctionTree funcs;
+  array<Boolean> stackflag;
 algorithm
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
@@ -333,9 +334,10 @@ algorithm
   //  subsyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
   //  BackendDump.printEqSystem(subsyst);
   number := arrayCreate(size,0);
-  lowlink := arrayCreate(size,0);        
+  lowlink := arrayCreate(size,0);
+  stackflag := arrayCreate(size,false);
   number := setIntArray(residual,number,size);
-  (_,_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, size, 0, 1, {}, {});        
+  (_,_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, stackflag, size, 0, 1, {}, {});        
   Debug.fcall(Flags.TEARING_DUMP, print, "OtherEquationsOrder:\n"); 
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps); 
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");

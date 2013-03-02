@@ -1056,12 +1056,14 @@ algorithm
       Integer n;
       list<list<Integer>> comps;
       array<Integer> number,lowlink;
+      array<Boolean> stackflag;
     case (_,_)
       equation
         n = arrayLength(ass2);
         number = arrayCreate(n,0);
         lowlink = arrayCreate(n,0);
-        (_,_,comps) = strongConnectMain(mt, ass2, number, lowlink, n, 0, 1, {}, {});
+        stackflag = arrayCreate(n,false);
+        (_,_,comps) = strongConnectMain(mt, ass2, number, lowlink, stackflag, n, 0, 1, {}, {});
       then
         comps;
     else
@@ -1093,6 +1095,7 @@ public function strongConnectMain "function: strongConnectMain
   input array<Integer> a2;
   input array<Integer> number;
   input array<Integer> lowlink;
+  input array<Boolean> stackflag;
   input Integer n;
   input Integer i;
   input Integer w;
@@ -1103,29 +1106,29 @@ public function strongConnectMain "function: strongConnectMain
   output list<list<Integer>> ocomps;
 algorithm
   (oi,ostack,ocomps):=
-  matchcontinue (mt,a2,number,lowlink,n,i,w,istack,icomps)
+  matchcontinue (mt,a2,number,lowlink,stackflag,n,i,w,istack,icomps)
     local
       Integer i1,num;
       list<Integer> stack;
       list<list<Integer>> comps;
       
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         (w > n) = true;
       then
         (i,istack,icomps);
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(number[w],0);
-        (i1,stack,comps) = strongConnect(mt,a2,number,lowlink,i,w,istack,icomps);
-        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink,n,i,w + 1,stack,comps);
+        (i1,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,i,w,istack,icomps);
+        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink,stackflag,n,i,w + 1,stack,comps);
       then
         (i1,stack,comps);
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         num = number[w];
         (num == 0) = false;
-        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink, n, i, w + 1, istack, icomps);
+        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink, stackflag, n, i, w + 1, istack, icomps);
       then
         (i1,stack,comps);
   end matchcontinue;
@@ -1143,7 +1146,8 @@ protected function strongConnect "function: strongConnect
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
   input array<Integer> number;
-  input array<Integer> lowlink;  
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
   input Integer i;
   input Integer v;
   input list<Integer> stack;
@@ -1153,20 +1157,21 @@ protected function strongConnect "function: strongConnect
   output list<list<Integer>> ocomps;
 algorithm
   (oi,ostack,ocomps):=
-  matchcontinue (mt,a2,number,lowlink,i,v,stack,comps)
+  matchcontinue (mt,a2,number,lowlink,stackflag,i,v,stack,comps)
     local
       Integer i_1;
       list<Integer> stack_1,eqns,stack_2,stack_3,comp;
       list<list<Integer>> comps_1,comps_2;
-    case (_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
         _ = arrayUpdate(number,v,i_1);
         _ = arrayUpdate(lowlink,v,i_1);
         stack_1 = (v :: stack);
+        _ = arrayUpdate(stackflag,v,true);
         eqns = reachableNodes(v, mt, a2);
-        (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, mt, a2,number,lowlink, i_1, v, stack_1, comps);
-        (stack_3,comp) = checkRoot(v, stack_2,number,lowlink);
+        (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, mt, a2, number, lowlink, stackflag, i_1, v, stack_1, comps);
+        (stack_3,comp) = checkRoot(v, stack_2, number, lowlink, stackflag);
         comps_2 = consIfNonempty(comp, comps_1);
       then
         (i_1,stack_3,comps_2);
@@ -1251,7 +1256,8 @@ protected function iterateReachableNodes "function: iterateReachableNodes
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
   input array<Integer> number;
-  input array<Integer> lowlink;   
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
   input Integer i;
   input Integer v;
   input list<Integer> istack;
@@ -1261,45 +1267,45 @@ protected function iterateReachableNodes "function: iterateReachableNodes
   output list<list<Integer>> outComps;
 algorithm
   (outI,outStack,outComps):=
-  matchcontinue (eqns,mt,a2,number,lowlink,i,v,istack,icomps)
+  matchcontinue (eqns,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
     local
       Integer i1,lv,lw,minv,w,nw,nv,lowlinkv;
       list<Integer> stack,ws;
       list<list<Integer>> comps_1,comps_2,comps;
     
     // empty case
-    case ({},_,_,_,_,_,_,_,_) then (i,istack,icomps);    
+    case ({},_,_,_,_,_,_,_,_,_) then (i,istack,icomps);    
     
     // nw is 0
-    case ((w :: ws),_,_,_,_,_,_,_,_)
+    case ((w :: ws),_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(number[w],0);
-        (i1,stack,comps_1) = strongConnect(mt, a2, number, lowlink, i, w, istack, icomps);
+        (i1,stack,comps_1) = strongConnect(mt, a2, number, lowlink, stackflag, i, w, istack, icomps);
         lv = lowlink[v];
         lw = lowlink[w];
         minv = intMin(lv, lw);
         _ = arrayUpdate(lowlink,v,minv);
-        (i1,stack,comps_2) = iterateReachableNodes(ws, mt, a2, number, lowlink, i1, v, stack, comps_1);
+        (i1,stack,comps_2) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i1, v, stack, comps_1);
       then
         (i1,stack,comps_2);
     
     // nw 
-    case ((w :: ws),_,_,_,_,_,_,_,_)
+    case ((w :: ws),_,_,_,_,_,_,_,_,_)
       equation
         nw = number[w];
         nv = lowlink[v];        
         (nw < nv) = true;
-        true = listMember(w, istack);
+        true = stackflag[w];
         lowlinkv = lowlink[v];
         minv = intMin(nw, lowlinkv);
         _ = arrayUpdate(lowlink,v,minv);
-        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, i, v, istack, icomps);
+        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
       then
         (i1,stack,comps);
 
-    case ((_ :: ws),_,_,_,_,_,_,_,_)
+    case ((_ :: ws),_,_,_,_,_,_,_,_,_)
       equation
-        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, i, v, istack, icomps);
+        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
       then
         (i1,stack,comps);
     
@@ -1317,24 +1323,25 @@ protected function checkRoot "function: checkRoot
   input Integer v;
   input list<Integer> istack;
   input array<Integer> number;
-  input array<Integer> lowlink;   
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
   output list<Integer> ostack;
   output list<Integer> ocomps;
 algorithm
   (ostack,ocomps):=
-  matchcontinue (v,istack,number,lowlink)
+  matchcontinue (v,istack,number,lowlink,stackflag)
     local
       Integer lv,nv;
       list<Integer> comps,stack;
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         lv = lowlink[v];
         nv = number[v];
         true = intEq(lv,nv);
-        (stack,comps) = checkStack(nv, istack, number, {});
+        (stack,comps) = checkStack(nv, istack, number, stackflag, {});
       then
         (stack,comps);
-    case (_,_,_,_) then (istack,{});
+    else then (istack,{});
   end matchcontinue;
 end checkRoot;
 
@@ -1349,22 +1356,24 @@ protected function checkStack "function: checkStack
   input Integer vn;
   input list<Integer> istack;
   input array<Integer> number;
+  input array<Boolean> stackflag;
   input list<Integer> icomp;
   output list<Integer> ostack;
   output list<Integer> ocomp;
 algorithm
   (ostack,ocomp):=
-  matchcontinue (vn,istack,number,icomp)
+  matchcontinue (vn,istack,number,stackflag,icomp)
     local
       Integer top;
       list<Integer> rest,comp,stack;
-    case (_,(top :: rest),_,_)
+    case (_,(top :: rest),_,_,_)
       equation
         true = intGe(number[top],vn);
-        (stack,comp) = checkStack(vn, rest, number, top :: icomp);
+        _ = arrayUpdate(stackflag,top,false);
+        (stack,comp) = checkStack(vn, rest, number, stackflag, top :: icomp);
       then
         (stack,comp);
-    case (_,_,_,_) then (istack,icomp);
+    else then (istack,listReverse(icomp));
   end matchcontinue;
 end checkStack;
 
