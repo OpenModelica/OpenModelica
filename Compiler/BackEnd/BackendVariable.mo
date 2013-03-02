@@ -2278,7 +2278,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
   BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
-  crefIdxLstArr1 := arrayCreate(size1, {});
+  crefIdxLstArr1 := arrayCreate(bucketSize, {});
   crefIdxLstArr1 := Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
   varOptArr1 := arrayCreate(size1, NONE());
   varOptArr1 := Util.arrayCopy(varOptArr, varOptArr1);
