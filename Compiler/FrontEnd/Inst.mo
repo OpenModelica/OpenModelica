@@ -5016,7 +5016,7 @@ algorithm
         // false = valueEq(re, SCode.R_FUNCTION());
         false = valueEq(re, SCode.R_ENUMERATION());
         false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
-        false = SCode.isConnector(re);
+        // false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
         
@@ -18733,7 +18733,8 @@ algorithm
       
       case(_, _, _)
         equation
-          print("Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
+          true = Flags.isSet(Flags.FAILTRACE);
+          Debug.fprint(Flags.FAILTRACE, "Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
         then
           fail();
           

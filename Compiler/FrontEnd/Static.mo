@@ -12895,8 +12895,8 @@ algorithm
   outPath := match(inType1)
   local     
     Absyn.Path path;
-    case (DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_)) then path;
-    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_,_)) then path;
+    case (DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path})) then path;
+    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path}),_,_)) then path;
     else fail();
   end match;
         
