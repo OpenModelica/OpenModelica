@@ -1609,6 +1609,9 @@ algorithm
 
       odeEquations = makeEqualLengthLists(odeEquations, Config.noProc());
       algebraicEquations = makeEqualLengthLists(algebraicEquations, Config.noProc());
+      /* Filter out empty systems to improve code generation */
+      odeEquations = List.filterOnTrue(odeEquations, List.isNotEmpty);
+      algebraicEquations = List.filterOnTrue(algebraicEquations, List.isNotEmpty);
 
       Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n");
       crefToSimVarHT = createCrefToSimVarHT(modelInfo);

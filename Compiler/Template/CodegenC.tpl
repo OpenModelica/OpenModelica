@@ -1520,11 +1520,16 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
   let funcs = eqs |> eq hasindex i1 fromindex 0 => functionXXX_system(eq,name,i1) ; separator="\n"
   let nFuncs = listLength(eqs)
   let funcNames = eqs |> e hasindex i1 fromindex 0 => 'function<%name%>_system<%i1%>' ; separator=",\n"
+  let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
   let &varDecls += 'int id, th_id;<%\n%>'
   let &loop +=
   /* Text for the loop body that calls the equations */
+  match listLength(eqs)
+  case 0 then ""
+  case 1 then 'function<%name%>_systems[0](data,omp_get_thread_num());'
+  else
   <<
-  <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
+  <%head%>
   for(id=0; id<<%nFuncs%>; id++) {
     th_id = omp_get_thread_num();
     function<%name%>_systems[id](data,th_id);
