@@ -52,6 +52,8 @@
 #define DATABASE_MAX_DATABASES 1024
 sqlite3 *DATABASES[1024] = {0};
 
+static int callback(void *result, int argc, char **argv, char **azColName);
+
 int checkIndex(int index)
 {
   if (index >= DATABASE_MAX_DATABASES || index < 0)
@@ -65,22 +67,6 @@ void DatabaseImpl_init(void)
 {
    sqlite3_libversion(); // Make sure we link against sqlite3 :)
    // do nothing for now
-}
-
-static int callback(void *result, int argc, char **argv, char **azColName){
-  int i;
-  void** res = (void**)result;
-  for(i = 0; i < argc; i++)
-  {
-    /* the result is a list of string tuples (name, value)*/
-    *res = mk_cons(
-             mk_box2(
-               0,
-               mk_scon(azColName[i]),
-               mk_scon(argv[i] ? argv[i] : "NULL")),
-             *res);
-  }
-  return 0;
 }
 
 int DatabaseImpl_open(int index, const char* name)

@@ -37,6 +37,7 @@ extern "C" {
 
 #include "systemimpl.h"
 #include "errorext.h"
+#include "modelica_string.h"
 
 #define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
@@ -468,6 +469,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     case fmi2_fmu_kind_cs:
       modelIdentifier = fmi2_import_get_model_identifier_CS(fmi);
       break;
+    default: break;
   }
   /* Read the FMI GUID from FMU's modelDescription.xml file. */
   const char* guid = fmi2_import_get_GUID(fmi);

@@ -68,12 +68,14 @@ RML_BEGIN_LABEL(Print__setBufSize)
 {
   long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   PrintImpl__setBufSize(newSize);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__unSetBufSize)
 {
   PrintImpl__unSetBufSize();
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

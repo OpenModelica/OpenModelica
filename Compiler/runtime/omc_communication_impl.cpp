@@ -108,8 +108,6 @@ extern bool corba_waiting;
 extern char* omc_cmd_message;
 extern char* omc_reply_message;
 
-using namespace std;
-
 //This is the implementation of the omc communication using mico (CORBA)
 
 OmcCommunication_impl::OmcCommunication_impl()

@@ -40,6 +40,7 @@ void ModelicaInternal_print(const char*,const char*);
 const char* ModelicaInternal_readLine(const char*,int,int*);
 int ModelicaInternal_countLines(const char*);
 const char* ModelicaInternal_fullPathName(const char*);
+int ModelicaInternal_stat(const char*);
 void ModelicaStreams_closeFile(const char*);
 void ModelicaStrings_scanReal(const char*,int,int,int*,double*);
 int ModelicaStrings_skipWhiteSpace(const char*,int);

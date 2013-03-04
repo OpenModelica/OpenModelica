@@ -348,7 +348,7 @@ static int PrintImpl__hasBufNewLineAtEnd(void)
 static int PrintImpl__restoreBuf(long handle)
 {
   if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
-    fprintf(stderr,"Internal error, hanlde %d out of range. Should be in [%d,&d]\n",handle,0,MAXSAVEDBUFFERS-1);
+    fprintf(stderr,"Internal error, handle %ld out of range. Should be in [%d,%d]\n",handle,0,MAXSAVEDBUFFERS-1);
     return 1;
   } else {
     if (buf) { free(buf);}
@@ -359,7 +359,7 @@ static int PrintImpl__restoreBuf(long handle)
     savedCurSize[handle] = 0;
     savedNfilled[handle] = 0;
     if (buf == 0) {
-      fprintf(stderr,"Internal error, handle %d does not contain a valid buffer pointer\n",handle);
+      fprintf(stderr,"Internal error, handle %ld does not contain a valid buffer pointer\n",handle);
       return 1;
     }
     return 0;
