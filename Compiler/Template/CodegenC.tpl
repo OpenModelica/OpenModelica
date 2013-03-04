@@ -4943,9 +4943,6 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
-  let marker = '<%contextCref(var.name,contextFunction)%>'
-  //let &varInits += '/* varOutput varInits(<%marker%>) */ <%\n%>'
-  //let &varAssign += '/* varOutput varAssign(<%marker%>) */ <%\n%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
@@ -5682,21 +5679,14 @@ match stmt
 case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &preExp = buffer "" /*BUFD*/
   let &afterExp = buffer "" /*BUFD*/
-  let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
-  let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
-  //let &preExp += '/* algStmtTupleAssign: preExp buffer created for <%marker%> */<%\n%>' 
-  //let &afterExp += '/* algStmtTupleAssign: afterExp buffer created for <%marker%> */<%\n%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 1 =>
                     let rhsStr = '<%retStruct%>.c<%i1%>'
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
                   ;separator="\n" ; empty)
   <<
-  /* algStmtTupleAssign: preExp printout <%marker%>*/
   <%preExp%>
-  /* algStmtTupleAssign: writeLhsCref <%marker%> */
   <%lhsCrefs%>
-  /* algStmtTupleAssign: afterExp printout <%marker%> */
   <%afterExp%>
   >>
 case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
@@ -6494,7 +6484,6 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
           tmp
     
   case ecr then
-    // let &preExp += '/* daeExpCrefRhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) preExp */<%\n%>'
     error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefRhs2;
 
@@ -6625,7 +6614,6 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    let &afterExp += '/* daeExpCrefLhs2 begin afterExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
     let box = daeExpCrefLhsArrayBox(ecr, context, &afterExp, &varDecls)
     if box then
       box
@@ -6642,7 +6630,6 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
         if crefSubIsScalar(cr) 
         then
           // The array subscript results in a scalar
-          let &afterExp += '/* daeExpCrefLhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
           let arrName = contextCref(crefStripLastSubs(cr), context)
           let arrayType = expTypeArray(ty)
           let dimsLenStr = listLength(crefSubs(cr))
@@ -6665,7 +6652,6 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
 
         else
           // The array subscript denotes a slice
-          let &afterExp += '/* daeExpCrefLhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
           let arrName = contextArrayCref(cr, context)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
@@ -6674,12 +6660,7 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
           tmp
     
   case ecr then
-    let &afterExp += '/* daeExpCrefLhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) afterExp */<%\n%>'
-    <<
-    /* SimCodeC.tpl template: daeExpCrefLhs2: UNHANDLED EXPRESSION: 
-     * <%ExpressionDump.printExpStr(ecr)%>
-     */
-    >>
+    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhs2: UNHANDLED EXPRESSION:  <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefLhs2;
 
 template daeExpCrefLhsIndexSpec(list<Subscript> subs, Context context,
@@ -7436,7 +7417,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let &postExp = buffer ""
     let tail = daeExpTailCall(expLst,tail.vars,context,&preExp,&postExp,&varDecls)
     let res = <<
-    /* Tail recursive call <%printExpStr(exp)%> */
+    /* Tail recursive call */
     <%tail%><%&postExp%>goto _tailrecursive;
     /* TODO: Make sure any eventual dead code below is never generated */
     >>
