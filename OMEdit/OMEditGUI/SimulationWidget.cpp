@@ -47,8 +47,8 @@ SimulationWidget::SimulationWidget(MainWindow *pParent)
   : QDialog(pParent, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation));
-  setMinimumSize(400, 475);
   mpParentMainWindow = pParent;
+  resize(550, 550);
   setUpForm();
   mpProgressDialog = new ProgressDialog(this);
   connect(this, SIGNAL(showPlottingView()), mpParentMainWindow, SLOT(switchToPlottingView()));
@@ -146,6 +146,12 @@ void SimulationWidget::setUpForm()
   mpSimulationTabWidget->addTab(mpOutputTab, tr("Output"));
   // Simulation Flags Tab
   mpSimulationFlagsTab = new QWidget;
+  // Simulation Flags Tab scroll area
+  mpSimulationFlagsTabScrollArea = new QScrollArea;
+  mpSimulationFlagsTabScrollArea->setFrameShape(QFrame::NoFrame);
+  mpSimulationFlagsTabScrollArea->setBackgroundRole(QPalette::Base);
+  mpSimulationFlagsTabScrollArea->setWidgetResizable(true);
+  mpSimulationFlagsTabScrollArea->setWidget(mpSimulationFlagsTab);
   // Model Setup File
   mpModelSetupFileLabel = new QLabel(tr("Model Setup File (Optional):"));
   mpModelSetupFileTextBox = new QLineEdit;
@@ -193,6 +199,25 @@ void SimulationWidget::setUpForm()
     i++;
   }
   mpIndexReductionComboBox->setCurrentIndex(mpIndexReductionComboBox->findText(mpParentMainWindow->mpOMCProxy->getIndexReductionMethod()));
+  // clock
+  mpClockLabel = new QLabel(tr("Clock:"));
+  mpClockComboBox = new QComboBox;
+  mpClockComboBox->addItems(Helper::clockOptions.split(","));
+  // Linear Solvers
+  mpLinearSolverLabel = new QLabel(tr("Linear Solver:"));
+  mpLinearSolverComboBox = new QComboBox;
+  mpLinearSolverComboBox->addItems(Helper::linearSolvers.split(","));
+  // Non Linear Solvers
+  mpNonLinearSolverLabel = new QLabel(tr("Non Linear Solver:"));
+  mpNonLinearSolverComboBox = new QComboBox;
+  mpNonLinearSolverComboBox->addItems(Helper::nonLinearSolvers.split(","));
+  // time where the linearization of the model should be performed
+  mpLinearizationTimeLabel = new QLabel(tr("Linearization Time:"));
+  mpLinearizationTimeTextBox = new QLineEdit;
+  // output variables
+  mpOutputVariablesLabel = new QLabel(tr("Output Variables:"));
+  mpOutputVariablesTextBox = new QLineEdit;
+  mpOutputVariablesTextBox->setToolTip(tr("Comma separated list of variables"));
   // Logging
   mpLogDasslSolverCheckBox = new QCheckBox(tr("DASSL Solver Information"));
   mpLogDebugCheckBox = new QCheckBox(tr("Debug"));
@@ -212,37 +237,32 @@ void SimulationWidget::setUpForm()
   mpLogStatsCheckBox = new QCheckBox(tr("Timer/Events/Solver Statistics"));
   mpLogUtilCheckBox = new QCheckBox(tr("Util"));
   mpLogZeroCrossingsCheckBox = new QCheckBox(tr("Zero Crossings"));
-  // layout for logging group
-  QGridLayout *pLoggingGroupLayout = new QGridLayout;
-  pLoggingGroupLayout->addWidget(mpLogDasslSolverCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogDebugCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogDynamicStateSelectionCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogJacobianDynamicStateSelectionCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogEventsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogVerboseEventsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogInitializationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogJacobianCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogVerboseNonLinearSystemsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogJacobianNonLinearSystemsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogResidualsInitializationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogSimulationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogSolverCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogFinalSolutionOfInitializationCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogStatsCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogUtilCheckBox);
-  pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox);
-  mpLoggingGroup = new QGroupBox(tr("Logging (Optional)"));
-  mpLoggingGroup->setLayout(pLoggingGroupLayout);
-  mpLoggingScrollArea = new QScrollArea;
-  mpLoggingScrollArea->setFrameShape(QFrame::NoFrame);
-  mpLoggingScrollArea->setBackgroundRole(QPalette::Base);
-  mpLoggingScrollArea->setWidgetResizable(true);
-  mpLoggingScrollArea->setWidget(mpLoggingGroup);
   // measure simulation time checkbox
   mpMeasureTimeCheckBox = new QCheckBox(tr("Measure simulation time (~5-25% overhead)"));
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU time"));
+  // layout for logging group
+  QGridLayout *pLoggingGroupLayout = new QGridLayout;
+  pLoggingGroupLayout->addWidget(mpLogDasslSolverCheckBox, 0, 0);
+  pLoggingGroupLayout->addWidget(mpLogDebugCheckBox, 0, 1);
+  pLoggingGroupLayout->addWidget(mpLogDynamicStateSelectionCheckBox, 1, 0);
+  pLoggingGroupLayout->addWidget(mpLogJacobianDynamicStateSelectionCheckBox, 1, 1);
+  pLoggingGroupLayout->addWidget(mpLogEventsCheckBox, 2, 0);
+  pLoggingGroupLayout->addWidget(mpLogVerboseEventsCheckBox, 2, 1);
+  pLoggingGroupLayout->addWidget(mpLogInitializationCheckBox, 3, 0);
+  pLoggingGroupLayout->addWidget(mpLogJacobianCheckBox, 3, 1);
+  pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox, 4, 0);
+  pLoggingGroupLayout->addWidget(mpLogVerboseNonLinearSystemsCheckBox, 4, 1);
+  pLoggingGroupLayout->addWidget(mpLogJacobianNonLinearSystemsCheckBox, 5, 0);
+  pLoggingGroupLayout->addWidget(mpLogResidualsInitializationCheckBox, 5, 1);
+  pLoggingGroupLayout->addWidget(mpLogSimulationCheckBox, 6, 0);
+  pLoggingGroupLayout->addWidget(mpLogSolverCheckBox, 6, 1);
+  pLoggingGroupLayout->addWidget(mpLogFinalSolutionOfInitializationCheckBox, 7, 0);
+  pLoggingGroupLayout->addWidget(mpLogStatsCheckBox, 7, 1);
+  pLoggingGroupLayout->addWidget(mpLogUtilCheckBox, 8, 0);
+  pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox, 8, 1);
+  mpLoggingGroup = new QGroupBox(tr("Logging (Optional)"));
+  mpLoggingGroup->setLayout(pLoggingGroupLayout);
   // set Output Tab Layout
   QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
   pSimulationFlagsTabLayout->setAlignment(Qt::AlignTop);
@@ -262,12 +282,22 @@ void SimulationWidget::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpMatchingAlgorithmComboBox, 5, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionLabel, 6, 0);
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionComboBox, 6, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingScrollArea, 7, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpMeasureTimeCheckBox, 8, 0);
-  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 9, 0);
+  pSimulationFlagsTabLayout->addWidget(mpClockLabel, 7, 0);
+  pSimulationFlagsTabLayout->addWidget(mpClockComboBox, 7, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLinearSolverLabel, 8, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLinearSolverComboBox, 8, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverLabel, 9, 0);
+  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverComboBox, 9, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeLabel, 10, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeTextBox, 10, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 11, 0);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 11, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpMeasureTimeCheckBox, 12, 0);
+  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 13, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 14, 0, 1, 3);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpSimulationFlagsTab, tr("Simulation Flags"));
+  mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Add the validators
   QDoubleValidator *doubleValidator = new QDoubleValidator(this);
   doubleValidator->setBottom(0);
@@ -455,6 +485,31 @@ void SimulationWidget::simulate()
     if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
     {
       simulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
+    }
+    // clock
+    if (!mpClockComboBox->currentText().isEmpty())
+    {
+      simulationFlags.append(QString("-clock=").append(mpClockComboBox->currentText()));
+    }
+    // linear solver
+    if (!mpLinearSolverComboBox->currentText().isEmpty())
+    {
+      simulationFlags.append(QString("-ls=").append(mpLinearSolverComboBox->currentText()));
+    }
+    // non linear solver
+    if (!mpNonLinearSolverComboBox->currentText().isEmpty())
+    {
+      simulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
+    }
+    // time where the linearization of the model should be performed
+    if (!mpLinearizationTimeTextBox->text().isEmpty())
+    {
+      simulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
+    }
+    // output variables
+    if (!mpOutputVariablesTextBox->text().isEmpty())
+    {
+      simulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
     }
     // setup Logging flags
     if (mpLogDasslSolverCheckBox->isChecked() ||

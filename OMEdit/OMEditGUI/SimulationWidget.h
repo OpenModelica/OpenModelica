@@ -89,6 +89,7 @@ private:
   QLineEdit *mpVariableFilterTextBox;
   // Simulation Flags Tab
   QWidget *mpSimulationFlagsTab;
+  QScrollArea *mpSimulationFlagsTabScrollArea;
   QLabel *mpModelSetupFileLabel;
   QLineEdit *mpModelSetupFileTextBox;
   QPushButton *mpModelSetupFileBrowseButton;
@@ -105,7 +106,16 @@ private:
   QComboBox *mpMatchingAlgorithmComboBox;
   QLabel *mpIndexReductionLabel;
   QComboBox *mpIndexReductionComboBox;
-  QScrollArea *mpLoggingScrollArea;
+  QLabel *mpClockLabel;
+  QComboBox *mpClockComboBox;
+  QLabel *mpLinearSolverLabel;
+  QComboBox *mpLinearSolverComboBox;
+  QLabel *mpNonLinearSolverLabel;
+  QComboBox *mpNonLinearSolverComboBox;
+  QLabel *mpLinearizationTimeLabel;
+  QLineEdit *mpLinearizationTimeTextBox;
+  QLabel *mpOutputVariablesLabel;
+  QLineEdit *mpOutputVariablesTextBox;
   QGroupBox *mpLoggingGroup;
   QCheckBox *mpLogDasslSolverCheckBox;
   QCheckBox *mpLogDebugCheckBox;

@@ -77,6 +77,9 @@ public:
   static QString ModelicaSimulationOutputFormats;
   static QString ModelicaInitializationMethods;
   static QString ModelicaOptimizationMethods;
+  static QString clockOptions;
+  static QString linearSolvers;
+  static QString nonLinearSolvers;
   static QString fontSizes;
   static QString notificationLevel;
   static QString warningLevel;
