@@ -14918,8 +14918,8 @@ algorithm
 
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
-    case (cr,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_)))),_,impl)
-    then DAEUtil.emptyDae;
+    case (cr,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()),_,_)))),_,impl)
+      then DAEUtil.emptyDae;
     
     // Special case if the dimensions of the expression is 0.
     // If this is true, and it is instantiated normally, matching properties

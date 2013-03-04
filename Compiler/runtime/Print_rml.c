@@ -48,7 +48,6 @@ void Print_5finit(void)
 
 RML_BEGIN_LABEL(Print__saveAndClearBuf)
 {
-  if (!buf) increase_buffer();
   long handle = PrintImpl__saveAndClearBuf();
   if (handle < 0)
     RML_TAILCALLK(rmlFC);

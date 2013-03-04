@@ -2577,7 +2577,7 @@ algorithm
         List.map1Flat(crefs,expandCref_impl,true);        
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(ty = DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2586,7 +2586,7 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(dims = dims), {}),_)
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2594,7 +2594,7 @@ algorithm
         expandCref2(id, ty, subs, dims);
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(ty = DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
       equation
         // Use the subscripts to generate only the wanted elements.
         crefs = expandCref2(id, ty, subs, dims);
@@ -2602,7 +2602,7 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(dims = dims), subs),_)
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
         // Use the subscripts to generate only the wanted elements.
       then
         expandCref2(id, ty, subs, dims);

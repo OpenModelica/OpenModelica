@@ -562,7 +562,7 @@ algorithm
         ty = ty as DAE.T_ARRAY(dims = _)))
       equation
         dims = Types.getDimensions(ty);
-        cr = DAE.CREF_IDENT(name, ty, {});
+        cr = DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
         crefs = expandArrayCref(cr, dims, {});
       then
         crefs;

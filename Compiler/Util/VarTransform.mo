@@ -1071,12 +1071,12 @@ protected function addReplacementInv2 "function: addReplacementInv2
   will update the rule.
 "
   input HashTable3.HashTable invHt;
-  input DAE.ComponentRef dst;
   input DAE.ComponentRef src;
+  input DAE.ComponentRef dst;
   output HashTable3.HashTable outInvHt;
 algorithm
   outInvHt:=
-  matchcontinue (invHt,dst,src)
+  matchcontinue (invHt,src,dst)
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> srcs;
