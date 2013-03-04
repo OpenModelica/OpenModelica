@@ -216,6 +216,7 @@ HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
 HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
+HashTableExpToReal.mo \
 IOStream.mo \
 List.mo \
 Util.mo \

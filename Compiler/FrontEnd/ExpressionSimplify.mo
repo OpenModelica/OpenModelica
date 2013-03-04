@@ -53,6 +53,7 @@ public type Type = DAE.Type;
 public type Subscript = DAE.Subscript;
 
 // protected imports
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
@@ -62,6 +63,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
+protected import HashTableExpToReal;
 protected import List;
 protected import Prefix;
 protected import Static;
@@ -2699,11 +2701,11 @@ algorithm
     local
       list<tuple<DAE.Exp, Real>> exp_const,exp_const_1;
       list<DAE.Exp> expl_1,expl;
-    
+      Integer n;
     case (expl)
       equation
-        exp_const = simplifyAdd2(expl);
-        exp_const_1 = simplifyAddJoinTerms(exp_const);
+        (exp_const,n) = simplifyAdd2(expl,{},0);
+        exp_const_1 = simplifyAddJoinTerms(exp_const,intLt(n,5),n);
         expl_1 = simplifyAddMakeMul(exp_const_1);
       then
         expl_1;
@@ -2721,25 +2723,26 @@ protected function simplifyAdd2
   author: PA
   Helper function to simplifyAdd"
   input list<DAE.Exp> inExpLst;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  input Integer iN;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+  output Integer oN;
 algorithm
-  outTplExpRealLst := matchcontinue (inExpLst)
+  (outTplExpRealLst,oN) := matchcontinue (inExpLst,inTplExpRealLst,iN)
     local
-      DAE.Exp e_1,e;
-      Real coeff;
-      list<tuple<DAE.Exp, Real>> rest;
+      DAE.Exp e;
+      tuple<DAE.Exp, Real> tpl;
       list<DAE.Exp> es;
     
-    case ({}) then {};
+    case ({},_,_) then (inTplExpRealLst,iN);
     
-    case ((e :: es))
+    case ((e :: es),_,_)
       equation
-        (e_1,coeff) = simplifyBinaryAddCoeff2(e);
-        rest = simplifyAdd2(es);
+        tpl = simplifyBinaryAddCoeff2(e);
+       (outTplExpRealLst,oN) = simplifyAdd2(es,tpl::inTplExpRealLst,iN+1);
       then
-        ((e_1,coeff) :: rest);
-    
-    case (_)
+       (outTplExpRealLst,oN);
+    else
       equation
         Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd2 failed\n");
       then
@@ -2749,6 +2752,61 @@ end simplifyAdd2;
 
 protected function simplifyAddJoinTerms
 "function: simplifyAddJoinTerms
+  author: Frenkel TUD
+  Helper function to simplifyAdd.
+  check if listLength(inTplExpRealLst) is small ore huge and use
+  appropriate join functions."
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  input Boolean small;
+  input Integer n;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+algorithm
+  outTplExpRealLst := match (inTplExpRealLst,small,n)
+    local
+      HashTableExpToReal.HashTable ht;
+    
+    case (_,false,_)
+      equation
+        ht = HashTableExpToReal.emptyHashTableSized(2*n);
+        ht = List.fold(inTplExpRealLst,simplifyAddJoinTermsHuge,ht);
+      then
+        BaseHashTable.hashTableList(ht);
+    else
+      then
+        simplifyAddJoinTermsSmall(inTplExpRealLst);
+  end match;
+end simplifyAddJoinTerms;
+
+protected function simplifyAddJoinTermsHuge
+"function: simplifyAddJoinTermsHuge
+  author: Frenkel TUD 2013-02
+  Helper function to simplifyAdd.
+  Join all terms with the same expression.
+  i.e. 2a+4a gives an element (a,6) in the list."
+  input tuple<DAE.Exp, Real> inTplExpReal;
+  input HashTableExpToReal.HashTable iHt;
+  output HashTableExpToReal.HashTable oHt;
+algorithm
+  oHt := matchcontinue (inTplExpReal,iHt)
+    local
+      Real coeff,coeff1,coeff2;
+      DAE.Exp e;
+    
+    case ((e,coeff),_)
+      equation
+        coeff1 = BaseHashTable.get(e,iHt);
+        coeff2 = coeff +. coeff1;
+      then
+        BaseHashTable.add((e,coeff2),iHt);
+    
+    case ((e,coeff),_)
+      then
+        BaseHashTable.add((e,coeff),iHt);
+  end matchcontinue;
+end simplifyAddJoinTermsHuge;
+
+protected function simplifyAddJoinTermsSmall
+"function: simplifyAddJoinTermsSmall
   author: PA
   Helper function to simplifyAdd.
   Join all terms with the same expression.
@@ -2767,12 +2825,12 @@ algorithm
     case (((e,coeff) :: rest))
       equation
         (coeff2,rest_1) = simplifyAddJoinTermsFind(e, rest);
-        res = simplifyAddJoinTerms(rest_1);
+        res = simplifyAddJoinTermsSmall(rest_1);
         coeff3 = coeff +. coeff2;
       then
         ((e,coeff3) :: res);
   end match;
-end simplifyAddJoinTerms;
+end simplifyAddJoinTermsSmall;
 
 protected function simplifyAddJoinTermsFind
 "function: simplifyAddJoinTermsFind
@@ -2852,51 +2910,52 @@ protected function simplifyBinaryAddCoeff2
 "function: simplifyBinaryAddCoeff2
   This function checks for x+x+x+x and returns (x,4.0)"
   input DAE.Exp inExp;
-  output DAE.Exp outExp;
-  output Real outReal;
+  output tuple<DAE.Exp,Real> outExp;
 algorithm
-  (outExp,outReal) := matchcontinue (inExp)
+  outExp := match (inExp)
     local
       DAE.Exp exp,e1,e2,e;
       Real coeff,coeff_1;
       Integer icoeff;
       Type tp;
+      Boolean b;
     
-    case ((exp as DAE.CREF(componentRef = _))) then (exp,1.0);
+    case ((exp as DAE.CREF(componentRef = _))) then ((exp,1.0));
     
     case (DAE.UNARY(operator = DAE.UMINUS(ty = DAE.T_REAL(varLst = _)), exp = exp))
       equation
-        (exp,coeff) = simplifyBinaryAddCoeff2(exp);
+        ((exp,coeff)) = simplifyBinaryAddCoeff2(exp);
         coeff = realMul(-1.0,coeff);
-      then (exp,coeff);
+      then ((exp,coeff));
     
     case (DAE.BINARY(exp1 = DAE.RCONST(real = coeff),operator = DAE.MUL(ty = _),exp2 = e1))
-      then (e1,coeff);
+      then ((e1,coeff));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = DAE.RCONST(real = coeff)))
-      then (e1,coeff);
+      then ((e1,coeff));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = DAE.ICONST(integer = icoeff)))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
     
     case (DAE.BINARY(exp1 = DAE.ICONST(integer = icoeff),operator = DAE.MUL(ty = _),exp2 = e1))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2))
       equation
-        true = Expression.expEqual(e1, e2);
+        b = Expression.expEqual(e1, e2);
+        coeff_1 = Util.if_(b,2.0,1.0);
       then
-        (e1,2.0);
+        ((e1,coeff_1));
     
-    case (e) then (e,1.0);
+    else then ((inExp,1.0));
 
-  end matchcontinue;
+  end match;
 end simplifyBinaryAddCoeff2;
 
 protected function simplifyBinaryMulCoeff2
