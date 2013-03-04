@@ -66,7 +66,7 @@ end FuncExpStr;
 
 protected function hashFunc
 "Calculates a hash value for Key"
-  input Key cr;
+  input Key key;
   input Integer mod;
   output Integer res;
 protected
