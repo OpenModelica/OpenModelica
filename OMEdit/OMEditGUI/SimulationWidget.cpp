@@ -200,22 +200,22 @@ void SimulationWidget::setUpForm()
   }
   mpIndexReductionComboBox->setCurrentIndex(mpIndexReductionComboBox->findText(mpParentMainWindow->mpOMCProxy->getIndexReductionMethod()));
   // clock
-  mpClockLabel = new QLabel(tr("Clock:"));
+  mpClockLabel = new QLabel(tr("Clock (Optional):"));
   mpClockComboBox = new QComboBox;
   mpClockComboBox->addItems(Helper::clockOptions.split(","));
   // Linear Solvers
-  mpLinearSolverLabel = new QLabel(tr("Linear Solver:"));
+  mpLinearSolverLabel = new QLabel(tr("Linear Solver (Optional):"));
   mpLinearSolverComboBox = new QComboBox;
   mpLinearSolverComboBox->addItems(Helper::linearSolvers.split(","));
   // Non Linear Solvers
-  mpNonLinearSolverLabel = new QLabel(tr("Non Linear Solver:"));
+  mpNonLinearSolverLabel = new QLabel(tr("Non Linear Solver (Optional):"));
   mpNonLinearSolverComboBox = new QComboBox;
   mpNonLinearSolverComboBox->addItems(Helper::nonLinearSolvers.split(","));
   // time where the linearization of the model should be performed
-  mpLinearizationTimeLabel = new QLabel(tr("Linearization Time:"));
+  mpLinearizationTimeLabel = new QLabel(tr("Linearization Time (Optional):"));
   mpLinearizationTimeTextBox = new QLineEdit;
   // output variables
-  mpOutputVariablesLabel = new QLabel(tr("Output Variables:"));
+  mpOutputVariablesLabel = new QLabel(tr("Output Variables (Optional):"));
   mpOutputVariablesTextBox = new QLineEdit;
   mpOutputVariablesTextBox->setToolTip(tr("Comma separated list of variables"));
   // Logging
