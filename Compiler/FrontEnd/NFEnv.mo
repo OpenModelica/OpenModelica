@@ -40,28 +40,55 @@ encapsulated package NFEnv
 public import Absyn;
 public import SCode;
 
+protected import Debug;
+protected import Dump;
 protected import Error;
+protected import Flags;
 protected import List;
+protected import NFBuiltin;
 protected import NFLookup;
 protected import Util;
+
+public constant Integer tmpTickIndex = 2;
+
+public uniontype EntryOrigin
+  record LOCAL_ORIGIN "An entry declared in the local scope." end LOCAL_ORIGIN;
+  record BUILTIN_ORIGIN "An entry declared in the builtin scope." end BUILTIN_ORIGIN;
+
+  record INHERITED_ORIGIN
+    "An entry that has been inherited through an extends clause."
+    Absyn.Path baseClass "The path of the baseclass the entry was inherited from.";
+    Absyn.Info info "The info of the extends clause.";
+    list<EntryOrigin> origin "The origins of the element in the baseclass.";
+    Env originEnv "The environment the entry was inherited from.";
+  end INHERITED_ORIGIN;
+
+  record REDECLARED_ORIGIN
+    "An entry that has replaced another entry through redeclare."
+    Env originEnv "The environment the replacement came from.";
+  end REDECLARED_ORIGIN;
+
+  record IMPORTED_ORIGIN
+    "An entry that has been imported with an import statement."
+    Absyn.Import imp;
+    Absyn.Info info; 
+    Env originEnv "The environment the entry was imported from.";
+  end IMPORTED_ORIGIN;
+end EntryOrigin;
 
 public uniontype Entry
   record ENTRY
     String name;
     SCode.Element element;
     Integer scopeLevel;
+    list<EntryOrigin> origins;
   end ENTRY;
-
-  record IMPORTED_ENTRY
-    Entry entry "The imported entry.";
-    Env originEnv "The environment this entry was imported from.";
-    Integer scopeLevel "The scope level this entry was imported to.";
-  end IMPORTED_ENTRY;
 end Entry;
 
 public uniontype ScopeType
   record NORMAL_SCOPE end NORMAL_SCOPE;
   record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
+  record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
 end ScopeType;
 
 public uniontype Env
@@ -125,11 +152,14 @@ end exitScopes;
 public function topScope
   input Env inEnv;
   output Env outEnv;
-protected
-  list<Env> scopes;
 algorithm
-  ENV(scopes = scopes) := inEnv;
-  outEnv := List.secondLast(scopes);
+  outEnv := match(inEnv)
+    local
+      list<Env> scopes;
+
+    case ENV(scopes = {_}) then inEnv;
+    case ENV(scopes = scopes) then List.secondLast(scopes);
+  end match;
 end topScope;
 
 public function builtinScope
@@ -172,8 +202,22 @@ protected
 algorithm
   scope_lvl := scopeCount(inEnv);
   name := SCode.elementName(inElement);
-  outEntry := ENTRY(name, inElement, scope_lvl);
+  outEntry := ENTRY(name, inElement, scope_lvl, {});
 end makeEntry;
+
+public function makeEntryWithOrigin
+  input SCode.Element inElement;
+  input list<EntryOrigin> inOrigin;
+  input Env inEnv;
+  output Entry outEntry;
+protected
+  Integer scope_lvl;
+  String name;
+algorithm
+  scope_lvl := scopeCount(inEnv);
+  name := SCode.elementName(inElement);
+  outEntry := ENTRY(name, inElement, scope_lvl, inOrigin);
+end makeEntryWithOrigin;
 
 public function insertEntry
   input Entry inEntry;
@@ -187,9 +231,285 @@ protected
   AvlTree entries;
 algorithm
   ENV(name, ty, scopes, sc, entries) := inEnv;
-  entries := avlTreeAdd(entries, entryName(inEntry), inEntry);
+  entries := avlTreeAdd(entries, entryName(inEntry), inEntry, mergeEntry);
   outEnv := ENV(name, ty, scopes, sc, entries); 
 end insertEntry;
+  
+protected function mergeEntry
+  "Update function used by insertEntry to resolve conflicts when trying to add
+   an entry which already exists."
+  input Entry inOldEntry;
+  input Entry inNewEntry;
+  output Entry outEntry;
+algorithm
+  outEntry := matchcontinue(inOldEntry, inNewEntry)
+    local
+      String name;
+      SCode.Element old_element, new_element, element;
+      Integer old_scope, new_scope, scope;
+      list<EntryOrigin> old_origins, new_origins, origins;
+      EntryOrigin origin;
+
+    // If the scope level of the new entry is larger than the old, then it will
+    // simply shadowe the old entry.
+    case (ENTRY(name = name, scopeLevel = old_scope), ENTRY(scopeLevel = new_scope))
+      equation
+        true = new_scope > old_scope;
+      then
+        inNewEntry;
+
+    // Otherwise, merge the origins to make sure that it's a valid insertion.
+    // Then update the old entry with the new origins.
+    case (ENTRY(name, old_element, scope, old_origins),
+          ENTRY(element = new_element, origins = new_origins))
+      equation
+        // New entries should only have one origin.
+        origin = getSingleOriginFromList(new_origins);
+        element = checkOrigin(origin, old_origins, old_element, new_element);
+        origins = mergeOrigin(origin, old_origins);
+      then
+        ENTRY(name, element, scope, origins);
+        
+    case (ENTRY(name = name), _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFEnv.mergeEntry failed on entry " +& name);
+      then
+        fail();
+
+  end matchcontinue;
+end mergeEntry;
+
+protected function getSingleOriginFromList
+  input list<EntryOrigin> inOrigins;
+  output EntryOrigin outOrigin;
+algorithm
+  outOrigin := match(inOrigins)
+    local
+      EntryOrigin origin;
+
+    case {} then LOCAL_ORIGIN();
+    case {origin} then origin;
+
+  end match;
+end getSingleOriginFromList;
+
+protected function mergeOrigin
+  "Adds a new origin to a list of origins."
+  input EntryOrigin inNewOrigin;
+  input list<EntryOrigin> inOldOrigins;
+  output list<EntryOrigin> outOrigins;
+algorithm
+  outOrigins := matchcontinue(inNewOrigin, inOldOrigins)
+    local
+      list<EntryOrigin> rest_origins;
+
+    // The new origin is inherited, try to merge it with an existing origin.
+    case (INHERITED_ORIGIN(baseClass = _), _)
+      then mergeInheritedOrigin(inNewOrigin, inOldOrigins);
+
+    // The first origin is local. Keep it at the head of the list, so that we
+    // can quickly determine if an entry is local or not.
+    case (_, LOCAL_ORIGIN() :: rest_origins)
+      then LOCAL_ORIGIN() :: inNewOrigin :: rest_origins;
+
+    // Otherwise, just add the new origin to the head of the list.
+    else inNewOrigin :: inOldOrigins;
+
+  end matchcontinue;
+end mergeOrigin;
+
+protected function mergeInheritedOrigin
+  "This function handles the case when an element has multiple origins from the
+   same base class, i.e. when an element is inherited from multiple sources in a
+   base class. In that case we can merge the sub-origins of those origins. Fails
+   if no matching origin is found."
+  input EntryOrigin inNewOrigin;
+  input list<EntryOrigin> inOldOrigins;
+  output list<EntryOrigin> outOrigins; 
+algorithm
+  outOrigins := matchcontinue(inNewOrigin, inOldOrigins)
+    local
+      Absyn.Path bc1, bc2;
+      list<EntryOrigin> origin1, origin2, rest_origins;
+      Absyn.Info info;
+      EntryOrigin origin;
+      Env env;
+
+    // Found two origins with the same base class, merge their origins.
+    case (INHERITED_ORIGIN(baseClass = bc1, origin = origin1),
+        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
+      equation
+        true = Absyn.pathEqual(bc1, bc2);
+        origin2 = List.fold(origin1, mergeOrigin, origin2);
+      then
+        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
+
+    // No match, search the rest.
+    case (_, origin :: rest_origins)
+      equation
+        rest_origins = mergeInheritedOrigin(inNewOrigin, rest_origins);
+      then
+        origin :: rest_origins;
+
+  end matchcontinue;
+end mergeInheritedOrigin;
+  
+protected function checkOrigin
+  "Checks that it's possible to merge a new origin with a list of existing
+   origins for an entry. Also determines whether we should keep the old or the
+   new element. Assumes that elements are added in the order local -> imported
+   -> inherited."
+  input EntryOrigin inNewOrigin;
+  input list<EntryOrigin> inOldOrigins;
+  input SCode.Element inOldElement;
+  input SCode.Element inNewElement;
+  output SCode.Element outElement;
+algorithm
+  outElement := match(inNewOrigin, inOldOrigins, inOldElement, inNewElement)
+    local
+      list<EntryOrigin> rest_origins;
+      String name, err_msg;
+      EntryOrigin origin;
+
+    // Elements imported with unqualified imports can be shadowed by other
+    // elements, and they have the lowest priority of all entry types. The
+    // shadowing might be on purpose though, since an unqualified import can
+    // import elements the user isn't interested in, so we don't print a warning
+    // for this. It's also illegal to find a name in multiple unqualified
+    // imports, but that's only an error if we actually try to look the name up
+    // so we can't print an error for that here.
+
+    // The new element was imported from an unqualified import, keep the old.
+    case (IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)), _, _, _)
+      then inOldElement;
+
+    // The old element was imported from an unqualified import, replace with the new.
+    case (_, IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)) :: _, _, _)
+      then inNewElement;
+
+    // The new element is imported by a named or qualified import, which means
+    // that we either have conflicting imports or that the imported element is
+    // shadowed by a local/inherited element.
+    case (IMPORTED_ORIGIN(imp = _), _, _, _)
+      equation
+        // Check if we have conflicting imports.
+        List.map1_0(inOldOrigins, checkOriginImportConflict, inNewOrigin);
+
+        // If we reached here there was no conflict, but the imported entry
+        // will be shadowed by the old entry. This makes the import useless, so
+        // we print a warning but keep the old entry and continue.
+        printImportShadowWarning(inNewOrigin, inOldElement);
+      then
+        inOldElement;
+
+    // If the old element was imported, then it will be shadowed by the new
+    // element. Note that if the old element would have had more than one
+    // origin, then we would already have printed a warning in the case above
+    // when it was added.
+    case (_, {origin as IMPORTED_ORIGIN(imp = _)}, _, _)
+      equation
+        printImportShadowWarning(origin, inNewElement);
+      then
+        inNewElement;
+
+    // The new element was inherited, check that it's identical to the existing
+    // element. Keep the old one in that case, so that e.g. error messages favor
+    // the local elements.
+    case (INHERITED_ORIGIN(baseClass = _), _, _, _)
+      equation
+        /*********************************************************************/
+        // TODO: Check duplicate elements due to inheritance here.
+        //       Or perhaps we shouldn't check this here, but in NFInstFlatten
+        //       instead so we get the qualified name of the class.
+        /*********************************************************************/
+      then
+        inOldElement;
+
+    // The new element is a local element. Since local elements are added first
+    // this means that we have duplicate elements in the scope. This is not
+    // allowed, so print an error and fail.
+    case (LOCAL_ORIGIN(), _, _, _)
+      equation
+        printDoubleDeclarationError(inOldElement, inNewElement);
+      then
+        fail();
+
+    // Same as case above, but with builtin elements.
+    case (BUILTIN_ORIGIN(), _, _, _)
+      equation
+        printDoubleDeclarationError(inOldElement, inNewElement);
+      then
+        fail();
+
+    // Other cases shouldn't occur.
+    else
+      equation
+        name = SCode.elementName(inNewElement);
+        err_msg = "NFEnv.checkOrigin failed on unhandled origin!";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
+      then
+        fail();
+
+  end match;
+end checkOrigin;
+
+protected function checkOriginImportConflict
+  "Helper function to checkOrigin. Print an error message if the two given
+   origins are both imports, since multiple named/qualified imports may not
+   have the same import name."
+  input EntryOrigin inOldOrigin;
+  input EntryOrigin inNewOrigin;
+algorithm
+  _ := match(inOldOrigin, inNewOrigin)
+    local
+      Absyn.Import imp;
+      String name;
+      Absyn.Info info1, info2;
+      SCode.Element el;
+
+    case (IMPORTED_ORIGIN(imp = imp, info = info1), IMPORTED_ORIGIN(info = info2))
+      equation
+        name = Absyn.importName(imp);
+        Error.addMultiSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
+          {name}, {info2, info1});
+      then
+        fail();
+
+    else ();
+  end match;
+end checkOriginImportConflict;
+   
+protected function printImportShadowWarning
+  "Prints a warning that an import was shadowed by a local/inherited element.
+   This is allowed, but since it makes the import useless it's almost certainly a
+   user mistake."
+  input EntryOrigin inImportOrigin;
+  input SCode.Element inShadowElement;
+protected
+  Absyn.Import imp;
+  Absyn.Info info1, info2;
+  String import_str;
+algorithm
+  info1 := SCode.elementInfo(inShadowElement);
+  IMPORTED_ORIGIN(imp = imp, info = info2) := inImportOrigin;
+  import_str := Dump.unparseImportStr(imp);
+  Error.addMultiSourceMessage(Error.LOOKUP_SHADOWING,
+    {import_str}, {info1, info2});
+end printImportShadowWarning;
+ 
+protected function printDoubleDeclarationError
+  input SCode.Element inOldElement;
+  input SCode.Element inNewElement;
+protected
+  Absyn.Info info1, info2;
+  String name;
+algorithm
+  (name, info1) := SCode.elementNameInfo(inNewElement);
+  info2 := SCode.elementInfo(inOldElement);
+  Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
+    {name}, {info2, info1});
+end printDoubleDeclarationError;
   
 public function insertElement
   input SCode.Element inElement;
@@ -199,6 +519,80 @@ algorithm
   outEnv := insertEntry(makeEntry(inElement, inEnv), inEnv);
 end insertElement;
 
+public function insertElementWithOrigin
+  input SCode.Element inElement;
+  input list<EntryOrigin> inOrigin;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := insertEntry(makeEntryWithOrigin(inElement, inOrigin, inEnv), inEnv);
+end insertElementWithOrigin;
+
+public function replaceElement
+  input SCode.Element inReplacement;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Entry entry;
+algorithm
+  entry := makeEntry(inReplacement, inEnv);
+  outEnv := replaceEntry(entry, inEnv);
+end replaceElement;
+
+public function replaceEntry
+  input Entry inReplacement;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  ScopeType ty;
+  list<Env> scopes;
+  Integer sc;
+  AvlTree entries;
+  String entry_name;
+algorithm
+  ENV(name, ty, scopes, sc, entries) := inEnv;
+  entry_name := entryName(inReplacement);
+  //entries := avlTreeUpdate(entries, entry_name, replaceElement2, inReplacement);
+  outEnv := ENV(name, ty, scopes, sc, entries);
+end replaceEntry;
+
+public function insertIterators
+  "Opens up a new implicit scope in the environment and adds the given
+   iterators."
+  input Absyn.ForIterators inIterators;
+  input Integer inIterIndex;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Env env;
+  list<Env> scopes;
+  Integer sc;
+  AvlTree entries;
+algorithm
+  ENV(_, _, scopes, sc, entries) := inEnv;
+  sc := sc + 1;
+  scopes := inEnv :: scopes;
+  env := ENV(SOME("$for$"), IMPLICIT_SCOPE(inIterIndex), scopes, sc, entries);
+  outEnv := List.fold(inIterators, insertIterator, env);
+end insertIterators;
+
+protected function insertIterator
+  input Absyn.ForIterator inIterator;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Absyn.Ident iter_name;
+  SCode.Element iter;
+algorithm
+  Absyn.ITERATOR(name = iter_name) := inIterator;
+  iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
+    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
+    Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+    NONE(), NONE(), Absyn.dummyInfo);
+  outEnv := insertElement(iter, inEnv);
+end insertIterator;
+  
 public function lookupEntry
   input String inName;
   input Env inEnv;
@@ -236,7 +630,7 @@ algorithm
   end matchcontinue;
 end entryEnv;
 
-public function resolveImportedEntry
+public function resolveEntry
   input Entry inEntry;
   input Env inEnv;
   output Entry outEntry;
@@ -246,33 +640,100 @@ algorithm
     local
       Entry entry;
       Env env;
+      EntryOrigin origin;
 
-    case (IMPORTED_ENTRY(entry = entry, originEnv = env), _) then (entry, env);
-    else (inEntry, inEnv);
+    // Local entry => nothing to resolve.
+    case (ENTRY(origins = {}), _) then (inEntry, inEnv);
+    case (ENTRY(origins = LOCAL_ORIGIN() :: _), _) then (inEntry, inEnv);
+    case (ENTRY(origins = BUILTIN_ORIGIN() :: _), _) then (inEntry, inEnv);
+
+    // Some origins => choose the first.
+    case (ENTRY(origins = origin :: _), _)
+      equation
+        env = originEnv(origin);
+        entry = setEntryScope(inEntry, env);
+      then
+        (entry, env);
+        
+  end match;
+end resolveEntry;
+
+protected function originEnv
+  input EntryOrigin inOrigin;
+  output Env outEnv;
+algorithm
+  outEnv := match(inOrigin)
+    local
+      Env env;
+      Entry entry;
+
+    case INHERITED_ORIGIN(originEnv = env) then env;
+    case REDECLARED_ORIGIN(originEnv = env) then env;
+    case IMPORTED_ORIGIN(originEnv = env) then env;
 
   end match;
-end resolveImportedEntry;
+end originEnv;
+  
+protected function setEntryOrigin
+  input Entry inEntry;
+  input list<EntryOrigin> inOrigin;
+  output Entry outEntry;
+protected
+  String name;
+  SCode.Element element;
+  Integer scope;
+algorithm
+  ENTRY(name, element, scope, _) := inEntry;
+  outEntry := ENTRY(name, element, scope, inOrigin);
+end setEntryOrigin;
 
+protected function setEntryScope
+  input Entry inEntry;
+  input Env inEnv;
+  output Entry outEntry;
+protected
+  String name;
+  SCode.Element element;
+  list<EntryOrigin> origins;
+  Integer scope;
+algorithm
+  ENTRY(name, element, _, origins) := inEntry;
+  scope := scopeCount(inEnv);
+  outEntry := ENTRY(name, element, scope, origins);
+end setEntryScope;
+  
 protected function entryScopeLevel
   input Entry inEntry;
   output Integer outScopeLevel;
 algorithm
-  outScopeLevel := match(inEntry)
-    local
-      Integer scope_lvl;
-
-    case ENTRY(scopeLevel = scope_lvl) then scope_lvl;
-    case IMPORTED_ENTRY(scopeLevel = scope_lvl) then scope_lvl;
-
-  end match;
+  ENTRY(scopeLevel = outScopeLevel) := inEntry;
 end entryScopeLevel;
 
 protected function scopeCount
+  "Returns the number of scopes in the environment."
   input Env inEnv;
   output Integer outScopeCount;
 algorithm
   ENV(scopeCount = outScopeCount) := inEnv;
 end scopeCount;
+
+protected function scopeExplicitCount
+  "Counts the number of explicit scopes in the environment, i.e. disregarding
+   any implicit scopes such as for-loop scopes. Assumes that implicit scopes are
+   always the most nested of the scopes."
+  input Env inEnv;
+  output Integer outScopeCount;
+algorithm
+  outScopeCount := match(inEnv)
+    local
+      Integer sc;
+
+    case ENV(scopeType = IMPLICIT_SCOPE(iterIndex = _))
+      then scopeExplicitCount(exitScope(inEnv));
+
+    case ENV(scopeCount = sc) then sc;
+  end match;
+end scopeExplicitCount;
 
 public function isScopeEncapsulated
   input Env inEnv;
@@ -284,14 +745,33 @@ algorithm
   end match;
 end isScopeEncapsulated;
 
+public function getImplicitScopeIndex
+  "Returns the index of the implicit scope, or fails if the current scope is
+   explicit."
+  input Env inEnv;
+  output Integer outIndex;
+algorithm
+  ENV(scopeType = IMPLICIT_SCOPE(iterIndex = outIndex)) := inEnv;
+end getImplicitScopeIndex;
+  
 public function isLocalScopeEntry
   input Entry inEntry;
   input Env inEnv;
   output Boolean outIsLocal;
 algorithm
-  outIsLocal := intEq(entryScopeLevel(inEntry), scopeCount(inEnv));
+  outIsLocal := intGe(entryScopeLevel(inEntry), scopeExplicitCount(inEnv));
 end isLocalScopeEntry;
   
+public function entryHasBuiltinOrigin
+  input Entry inEntry;
+  output Boolean outBuiltin;
+algorithm
+  outBuiltin := match(inEntry)
+    case ENTRY(origins = {BUILTIN_ORIGIN()}) then true;
+    else false;
+  end match;
+end entryHasBuiltinOrigin;
+
 public function entryName
   input Entry inEntry;
   output String outName;
@@ -299,6 +779,19 @@ algorithm
   ENTRY(name = outName) := inEntry;
 end entryName;
 
+public function renameEntry
+  input Entry inEntry;
+  input String inName;
+  output Entry outEntry;
+protected
+  SCode.Element element;
+  Integer scope;
+  list<EntryOrigin> origins;
+algorithm
+  ENTRY(_, element, scope, origins) := inEntry;
+  outEntry := ENTRY(inName, element, scope, origins);
+end renameEntry;
+    
 public function entryElement
   input Entry inEntry;
   output SCode.Element outElement;
@@ -477,9 +970,9 @@ protected
   SCode.Program prog, builtin;
 algorithm
   env := emptyEnv;
-  //env := insertEntry(makeEntry(BUILTIN_TIME, env), env);
+  env := insertElement(NFBuiltin.BUILTIN_TIME, env);
   (builtin, prog) := List.splitOnTrue(inProgram, SCode.isBuiltinElement);
-  env := List.fold(builtin, insertElement, env);
+  env := List.fold1(builtin, insertElementWithOrigin, {BUILTIN_ORIGIN()}, env);
   env := openScope(NONE(), SCode.NOT_ENCAPSULATED(), env);
   outEnv := List.fold(prog, insertElement, env);
 end buildInitialEnv;
@@ -491,99 +984,517 @@ public function enterEntryScope
 algorithm
   outEnv := match(inEntry, inEnv)
     local
-      String name;
-      SCode.Encapsulated ep;
       Env env;
       SCode.ClassDef cdef;
+      Absyn.Info info;
+      Absyn.TypeSpec ty;
+      Entry entry;
 
-    case (ENTRY(element = SCode.CLASS(name = name,
-        encapsulatedPrefix = ep, classDef = cdef)), _)
+    case (ENTRY(element = SCode.CLASS(classDef = cdef, info = info)), _)
       equation
-        env = openScope(SOME(name), ep, inEnv);
-        env = populateEnvWithClassDef(cdef, env, env);
+        env = openClassEntryScope(inEntry, inEnv);
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
+          elementSplitterRegular, info, env);
       then
         env;
 
-    case (ENTRY(element = SCode.COMPONENT(name = name)), _)
+    case (ENTRY(element = SCode.COMPONENT(typeSpec = ty, info = info)), _)
       equation
-        print("NFEnv.enterEntryScope: IMPLEMENT ME!\n");
+        (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, info);
+        env = enterEntryScope(entry, env);
       then
-        fail();
+        env;
 
   end match;
 end enterEntryScope;
-        
+
+protected function openClassEntryScope
+  input Entry inClass;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  String name;
+  SCode.Encapsulated ep;
+algorithm
+  ENTRY(element = SCode.CLASS(name = name, encapsulatedPrefix = ep)) := inClass;
+  outEnv := openScope(SOME(name), ep, inEnv);
+end openClassEntryScope;
+  
+protected function elementSplitterRegular
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+      then (inClsAndVars, inElement :: inExtends, inImports);
+
+    case (SCode.IMPORT(imp = _), _, _, _)
+      then (inClsAndVars, inExtends, inElement :: inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterRegular;
+
+partial function SplitFunc
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+end SplitFunc;
+
 protected function populateEnvWithClassDef
   input SCode.ClassDef inClassDef;
+  input SCode.Visibility inVisibility;
+  input list<EntryOrigin> inOrigins;
   input Env inEnv;
+  input SplitFunc inSplitFunc;
+  input Absyn.Info inInfo;
   input Env inAccumEnv;
-  output Env outEnv;
+  output Env outAccumEnv;
 algorithm
-  outEnv := match(inClassDef, inEnv, inAccumEnv)
+  outAccumEnv := match(inClassDef, inVisibility, inOrigins, inEnv, inSplitFunc,
+      inInfo, inAccumEnv)
     local
-      list<SCode.Element> elems, comps, cls, exts, imps;
+      list<SCode.Element> elems, cls_vars, exts, imps;
       Env env;
+      list<EntryOrigin> origin;
+      Entry entry;
+      list<SCode.Enum> enums;
+      Absyn.Path path;
+      SCode.ClassDef cdef;
+      Absyn.TypeSpec ty;
 
-    case (SCode.PARTS(elementLst = elems), _, env)
+    case (SCode.PARTS(elementLst = elems), _, _, _, _, _, env)
       equation
-        (comps, cls, exts, imps, _) = SCode.partitionElements(elems);
-        env = List.fold(comps, insertElement, env);
-        env = List.fold(cls, insertElement, env);
-        env = List.fold1(exts, populateEnvWithExtends, inEnv, env);
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(elems, inSplitFunc, {}, {}, {});
+        cls_vars = applyVisibilityToElements(cls_vars, inVisibility);
+        exts = applyVisibilityToElements(exts, inVisibility);
+
+        origin = collapseInheritedOrigins(inOrigins);
+        // Add classes, component and imports first, so that extends can be found.
+        env = populateEnvWithElements(cls_vars, origin, env);
+        env = populateEnvWithImports(imps, env, false);
+        env = populateEnvWithExtends(exts, inOrigins, inEnv, env);
       then
         env;
 
-    else
-      equation
-        print("NFEnv.populateEnvWithClassDef: IMPLEMENT ME!\n");
-      then
-        fail();
+    case (SCode.CLASS_EXTENDS(composition = cdef), _, _, _, _, _, _)
+      then populateEnvWithClassDef(cdef, inVisibility, inOrigins, inEnv,
+        inSplitFunc, inInfo, inAccumEnv);
 
+    case (SCode.DERIVED(typeSpec = ty), _, _, _, _, _, _)
+      equation
+        (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, inInfo);
+        ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
+        // TODO: Only create this environment if needed, i.e. if the cdef
+        // contains extends.
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
+          elementSplitterExtends, inInfo, inAccumEnv);
+        env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
+          inSplitFunc, inInfo, inAccumEnv);
+      then
+        env;
+        
+    case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, env)
+      equation
+        path = envPath(inEnv);
+        env = insertEnumLiterals(enums, path, 1, env);
+      then
+        env;
+                
   end match;
 end populateEnvWithClassDef;
 
+protected function applyVisibilityToElements
+  input list<SCode.Element> inElements;
+  input SCode.Visibility inVisibility;
+  output list<SCode.Element> outElements;
+algorithm
+  outElements := match(inElements, inVisibility)
+    case (_, SCode.PUBLIC()) then inElements;
+    else List.map1(inElements, SCode.setElementVisibility, inVisibility);
+  end match;
+end applyVisibilityToElements;
+
+protected function populateEnvWithClassDef2
+  input list<SCode.Element> inElements;
+  input SplitFunc inSplitFunc;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElements, inSplitFunc, inClsAndVars, inExtends, inImports)
+    local
+      SCode.Element el;
+      list<SCode.Element> rest_el, cls_vars, exts, imps;
+
+    case (el :: rest_el, _, cls_vars, exts, imps)
+      equation
+        (cls_vars, exts, imps) = inSplitFunc(el, cls_vars, exts, imps);
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(rest_el, inSplitFunc, cls_vars, exts, imps);
+      then
+        (cls_vars, exts, imps);
+
+    case ({}, _, _, _, _) then (inClsAndVars, inExtends, inImports);
+
+  end match;
+end populateEnvWithClassDef2;
+        
+protected function insertEnumLiterals
+  input list<SCode.Enum> inEnum;
+  input Absyn.Path inEnumPath;
+  input Integer inNextValue;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv)
+    local
+      SCode.Enum lit;
+      list<SCode.Enum> rest_lits;
+      Env env;
+
+    case (lit :: rest_lits, _, _, _)
+      equation
+        env = insertEnumLiteral(lit, inEnumPath, inNextValue, inEnv);
+      then
+        insertEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
+
+    case ({}, _, _, _) then inEnv;
+
+  end match;
+end insertEnumLiterals;
+      
+protected function insertEnumLiteral
+  "Extends the environment with an enumeration."
+  input SCode.Enum inEnum;
+  input Absyn.Path inEnumPath;
+  input Integer inValue;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  SCode.Element enum_lit;
+  SCode.Ident lit_name;
+  Absyn.TypeSpec ty;
+  String index;
+algorithm
+  SCode.ENUM(literal = lit_name) := inEnum;
+  index := intString(inValue);
+  ty := Absyn.TPATH(Absyn.QUALIFIED("$EnumType",
+    Absyn.QUALIFIED(index, inEnumPath)), NONE());
+  enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
+    SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
+    SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+  outEnv := insertElement(enum_lit, inEnv);
+end insertEnumLiteral;
+
+protected function populateEnvWithElements
+  input list<SCode.Element> inElements;
+  input list<EntryOrigin> inOrigin;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := List.fold1(inElements, insertElementWithOrigin, inOrigin, inEnv);
+end populateEnvWithElements;
+
+protected function populateEnvWithImports
+  input list<SCode.Element> inImports;
+  input Env inEnv;
+  input Boolean inIsExtended;
+  output Env outEnv;
+algorithm
+  outEnv := match(inImports, inEnv, inIsExtended)
+    local
+      Env top_env, env;
+
+    case (_, _, true) then inEnv;
+    case ({}, _, _) then inEnv;
+
+    else
+      equation
+        top_env = topScope(inEnv);
+        env = List.fold1(inImports, populateEnvWithImport, top_env, inEnv);
+      then
+        env;
+
+  end match;
+end populateEnvWithImports;
+
+protected function populateEnvWithImport
+  input SCode.Element inImport;
+  input Env inTopScope;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inImport, inTopScope, inEnv)
+    local
+      Absyn.Import imp;
+      Absyn.Info info;
+      Absyn.Path path;
+      Entry entry;
+      Env env;
+      EntryOrigin origin;
+
+    case (SCode.IMPORT(imp = imp, info = info), _, _)
+      equation
+        // Look up the import name.
+        path = Absyn.importPath(imp);
+        (entry, env) = NFLookup.lookupImportPath(path, inTopScope, info);
+        // Convert the entry to an entry imported into the given environment.
+        origin = IMPORTED_ORIGIN(imp, info, env);
+        entry = makeEntryWithOrigin(entryElement(entry), {origin}, inEnv);
+        // Add the imported entry to the environment.
+        env = populateEnvWithImport2(imp, entry, env, info, inEnv);
+      then
+        env;
+
+  end match;
+end populateEnvWithImport;
+
+protected function populateEnvWithImport2
+  input Absyn.Import inImport;
+  input Entry inEntry;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
+algorithm
+  outAccumEnv := match(inImport, inEntry, inEnv, inInfo, inAccumEnv)
+    local
+      String name;
+      Absyn.Path path;
+      Env env;
+      Entry entry;
+      SCode.ClassDef cdef;
+      list<EntryOrigin> origins;
+
+    // A renaming import, 'import D = A.B.C'.
+    case (Absyn.NAMED_IMPORT(name = name), _, _, _, _)
+      equation
+        entry = renameEntry(inEntry, name); 
+        env = insertEntry(entry, inAccumEnv);
+      then
+        env;
+
+    // A qualified import, 'import A.B.C'.
+    case (Absyn.QUAL_IMPORT(path = _), _, _, _, _)
+      equation
+        env = insertEntry(inEntry, inAccumEnv);
+      then
+        env;
+
+    // An unqualified import, 'import A.B.*'.
+    case (Absyn.UNQUAL_IMPORT(path = _),
+        ENTRY(element = SCode.CLASS(classDef = cdef), origins = origins), _, _, _)
+      equation
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), origins, inEnv,
+          elementSplitterRegular, inInfo, inAccumEnv);
+      then
+        env;
+
+    // This should not happen, group imports are split into separate imports by
+    // SCodeUtil.translateImports.
+    case (Absyn.GROUP_IMPORT(prefix = _), _, _, _, _)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"NFEnv.populateEnvWithImport2 got unhandled group import!\n"}, inInfo);
+      then
+        inEnv;
+
+  end match;
+end populateEnvWithImport2;
+
+protected function collapseInheritedOrigins
+  "Collapses a list of INHERITED_ORIGIN into a list of one nested
+   INHERITED_ORIGIN."
+  input list<EntryOrigin> inOrigins;
+  output list<EntryOrigin> outOrigins;
+algorithm
+  outOrigins := match(inOrigins)
+    local
+      EntryOrigin origin;
+      list<EntryOrigin> rest_origins;
+
+    // One or more origins, collapse with fold.
+    case (origin :: rest_origins)
+      equation
+        origin = List.fold(rest_origins, collapseInheritedOrigins2, origin);
+      then
+        {origin};
+
+    // Already collapsed.
+    else inOrigins;
+
+  end match;
+end collapseInheritedOrigins;
+
+protected function collapseInheritedOrigins2
+  input EntryOrigin inOrigin1;
+  input EntryOrigin inOrigin2;
+  output EntryOrigin outOrigin;
+protected
+  Absyn.Path bc;
+  Absyn.Info info;
+  list<EntryOrigin> origins;
+  Env env;
+algorithm
+  INHERITED_ORIGIN(bc, info, origins, env) := inOrigin1;
+  origins := inOrigin2 :: origins;
+  outOrigin := INHERITED_ORIGIN(bc, info, origins, env);
+end collapseInheritedOrigins2;
+  
 protected function populateEnvWithExtends
-  input SCode.Element inExtends;
+  input list<SCode.Element> inExtends;
+  input list<EntryOrigin> inOrigins;
   input Env inEnv;
   input Env inAccumEnv;
   output Env outAccumEnv;
 algorithm
-  outAccumEnv := match(inExtends, inEnv, inAccumEnv)
-    local
-      Entry entry;
-      Env env;
-      Absyn.Path bc;
-      Absyn.Info info;
-
-    case (SCode.EXTENDS(baseClassPath = bc, info = info), _, _)
-      equation
-        (entry, env) = NFLookup.lookupBaseClassName(bc, inEnv, info);
-        env = populateEnvWithEntry(entry, env, inAccumEnv);
-      then
-        env;
-
-  end match;
+  outAccumEnv := List.fold2(inExtends, populateEnvWithExtend, inOrigins, inEnv,
+    inAccumEnv);
 end populateEnvWithExtends;
 
-protected function populateEnvWithEntry
-  input Entry inEntry;
+protected function populateEnvWithExtend
+  input SCode.Element inExtends;
+  input list<EntryOrigin> inOrigins;
   input Env inEnv;
   input Env inAccumEnv;
-  output Env outEnv;
+  output Env outAccumEnv;
 algorithm
-  outEnv := match(inEntry, inEnv, inAccumEnv)
+  outAccumEnv := match(inExtends, inOrigins, inEnv, inAccumEnv)
     local
+      Entry entry;
+      Env env, accum_env;
       SCode.ClassDef cdef;
-      Env env;
+      EntryOrigin origin;
+      list<EntryOrigin> origins;
+      Absyn.Path bc;
+      Absyn.Info info;
+      SCode.Visibility vis;
 
-    case (ENTRY(element = SCode.CLASS(classDef = cdef)), _, _)
+    case (SCode.EXTENDS(baseClassPath = bc, visibility = vis, info = info), _, _, _)
       equation
-        env = populateEnvWithClassDef(cdef, inEnv, inAccumEnv);
+        // Look up the base class and check that it's a valid base class.
+        (entry, env) = NFLookup.lookupBaseClassName(bc, inEnv, info);
+        checkRecursiveExtends(bc, env, inEnv, info);
+
+        // Check entry: not var, not replaceable
+        // Create an environment for the base class if needed.
+        ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
+          elementSplitterExtends, info, env);
+        // Populate the accumulated environment with the inherited elements.
+        origin = INHERITED_ORIGIN(bc, info, {}, env);
+        origins = origin :: inOrigins;
+        accum_env = populateEnvWithClassDef(cdef, vis, origins, env,
+          elementSplitterInherited, info, inAccumEnv);
       then
-        env;
+        accum_env;
 
   end match;
-end populateEnvWithEntry;
+end populateEnvWithExtend;
+
+protected function checkRecursiveExtends
+  input Absyn.Path inExtendedClass;
+  input Env inFoundEnv;
+  input Env inOriginEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inExtendedClass, inFoundEnv, inOriginEnv, inInfo)
+    local
+      String bc_name, path_str;
+      Env env;
+
+    case (_, _, _, _)
+      equation
+        bc_name = Absyn.pathLastIdent(inExtendedClass);
+        env = openScope(SOME(bc_name), SCode.NOT_ENCAPSULATED(), inFoundEnv);
+        false = isPrefix(env, inOriginEnv);
+      then
+        ();
+
+    else
+      equation
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkRecursiveExtends;
+
+protected function elementSplitterExtends
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.IMPORT(imp = _), _, _, _)
+      then (inClsAndVars, inExtends, inElement :: inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterExtends;
+
+protected function elementSplitterInherited
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+      then (inClsAndVars, inElement :: inExtends, inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterInherited;
 
 // AVL Tree implementation
 public type AvlKey = String;
@@ -616,8 +1527,93 @@ algorithm
   tree := emptyAvlTree;
 end avlTreeNew;
 
-public function avlTreeAdd
-  "Inserts a new value into the tree."
+protected function avlTreeAdd
+  "Inserts a new value into the tree. If the key already exists, then the value
+   is updated with the given update function."
+  input AvlTree inAvlTree;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  input UpdateFunc inUpdateFunc;
+  output AvlTree outAvlTree;
+
+  partial function UpdateFunc
+    input AvlValue inOldValue;
+    input AvlValue inNewValue;
+    output AvlValue outValue;
+  end UpdateFunc;
+algorithm
+  outAvlTree := match(inAvlTree, inKey, inValue, inUpdateFunc)
+    local
+      AvlKey key;
+      Integer key_comp;
+      AvlTree tree;
+
+    // Empty node, create a new node for the value.
+    case (AVLTREENODE(value = NONE(), left = NONE(), right = NONE()), _, _, _)
+      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), 1, NONE(), NONE());
+
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = key))), _, _, _)
+      equation
+        key_comp = stringCompare(inKey, key);
+        tree = avlTreeAdd2(inAvlTree, key_comp, inKey, inValue, inUpdateFunc);
+        tree = avlBalance(tree);
+      then
+        tree;
+
+  end match;
+end avlTreeAdd;
+
+protected function avlTreeAdd2
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  input UpdateFunc inUpdateFunc;
+  output AvlTree outAvlTree;
+
+  partial function UpdateFunc
+    input AvlValue inOldValue;
+    input AvlValue inNewValue;
+    output AvlValue outValue;
+  end UpdateFunc;
+algorithm
+  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue, inUpdateFunc)
+    local
+      AvlKey key;
+      AvlValue value;
+      Option<AvlTree> left, right;
+      Integer h;
+      AvlTree t;
+      Option<AvlTreeValue> oval;
+
+    // Existing node, update it with the given update function.
+    case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
+      equation
+        value = inUpdateFunc(value, inValue);
+      then
+        AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+
+    // Insert into right subtree.
+    case (AVLTREENODE(oval, h, left, right), 1, _, _, _)
+      equation
+        t = avlCreateEmptyIfNone(right);
+        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
+      then
+        AVLTREENODE(oval, h, left, SOME(t));
+
+    // Insert into left subtree.
+    case (AVLTREENODE(oval, h, left, right), -1, _, _, _)
+      equation
+        t = avlCreateEmptyIfNone(left);
+        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
+      then
+        AVLTREENODE(oval, h, SOME(t), right);
+
+  end match;
+end avlTreeAdd2;
+  
+protected function avlTreeAddUnique
+  "Inserts a new value into the tree. Fails if the key already exists in the tree."
   input AvlTree inAvlTree;
   input AvlKey inKey;
   input AvlValue inValue;
@@ -633,18 +1629,18 @@ algorithm
       then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), 1, NONE(), NONE());
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
-      then avlBalance(avlTreeAdd2(inAvlTree, stringCompare(key, rkey), key, value));
+      then avlBalance(avlTreeAddUnique2(inAvlTree, stringCompare(key, rkey), key, value));
  
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAddUnique failed"});
       then fail();
 
   end match;
-end avlTreeAdd;
+end avlTreeAddUnique;
 
-protected function avlTreeAdd2
-  "Helper function to avlTreeAdd."
+protected function avlTreeAddUnique2
+  "Helper function to avlTreeAddUnique."
   input AvlTree inAvlTree;
   input Integer inKeyComp;
   input AvlKey inKey;
@@ -661,24 +1657,12 @@ algorithm
       Option<AvlTreeValue> oval;
       Absyn.Info info;
 
-    // Don't allow replacing of nodes.
-    //case (_, 0, key, _)
-    //  equation
-    //    info = getItemInfo(inValue);
-    //    Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
-    //      {inKey}, info);
-    //  then
-    //    fail();
-
-    case (AVLTREENODE(height = h, left = left, right = right), 0, key, value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
-
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
         1, key, value)
       equation
         t = avlCreateEmptyIfNone(right);
-        t = avlTreeAdd(t, key, value);
+        t = avlTreeAddUnique(t, key, value);
       then  
         AVLTREENODE(oval, h, left, SOME(t));
 
@@ -687,13 +1671,13 @@ algorithm
         -1, key, value)
       equation
         t = avlCreateEmptyIfNone(left);
-        t = avlTreeAdd(t, key, value);
+        t = avlTreeAddUnique(t, key, value);
       then
         AVLTREENODE(oval, h, SOME(t), right);
   end match;
-end avlTreeAdd2;
+end avlTreeAddUnique2;
 
-public function avlTreeGet
+protected function avlTreeGet
   "Get a value from the binary tree given a key."
   input AvlTree inAvlTree;
   input AvlKey inKey;
@@ -732,7 +1716,7 @@ algorithm
   end match;
 end avlTreeGet2;
 
-public function avlTreeReplace
+protected function avlTreeReplace
   "Replaces the value of an already existing node in the tree with a new value."
   input AvlTree inAvlTree;
   input AvlKey inKey;
@@ -765,6 +1749,73 @@ protected function avlTreeReplace2
 algorithm
   outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
     local
+      Option<AvlTree> left, right;
+      Integer h;
+      AvlTree t;
+      Option<AvlTreeValue> oval;
+
+    // Replace this node.
+    case (AVLTREENODE(SOME(_), h, left, right), 0, _, _)
+      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), h, left, right);
+
+    // Insert into right subtree.
+    case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _)
+      equation
+        t = avlTreeReplace(t, inKey, inValue);
+      then  
+        AVLTREENODE(oval, h, left, SOME(t));
+
+    // Insert into left subtree.
+    case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _)
+      equation
+        t = avlTreeReplace(t, inKey, inValue);
+      then
+        AVLTREENODE(oval, h, SOME(t), right);
+
+  end match;
+end avlTreeReplace2;
+
+protected function avlTreeUpdate
+  input AvlTree inAvlTree;
+  input AvlKey inKey;
+  input UpdateFunc inUpdateFunc;
+  input ArgType inArg;
+  output AvlTree outAvlTree;
+
+  partial function UpdateFunc
+    input AvlValue inValue;
+    input ArgType inArg;
+    output AvlValue outValue;
+  end UpdateFunc;
+
+  replaceable type ArgType subtypeof Any;
+protected
+  AvlKey key;
+  Integer key_comp;
+algorithm
+  AVLTREENODE(value = SOME(AVLTREEVALUE(key = key))) := inAvlTree;
+  key_comp := stringCompare(key, inKey);
+  outAvlTree := avlTreeUpdate2(inAvlTree, key_comp, inKey, inUpdateFunc, inArg);
+end avlTreeUpdate;
+
+protected function avlTreeUpdate2
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  input UpdateFunc inUpdateFunc;
+  input ArgType inArg;
+  output AvlTree outAvlTree;
+
+  partial function UpdateFunc
+    input AvlValue inValue;
+    input ArgType inArg;
+    output AvlValue outValue;
+  end UpdateFunc;
+
+  replaceable type ArgType subtypeof Any;
+algorithm
+  outAvlTree := match(inAvlTree, inKeyComp, inKey, inUpdateFunc, inArg)
+    local
       AvlKey key;
       AvlValue value;
       Option<AvlTree> left, right;
@@ -772,30 +1823,26 @@ algorithm
       AvlTree t;
       Option<AvlTreeValue> oval;
 
-    // Replace this node.
-    case (AVLTREENODE(value = SOME(_), height = h, left = left, right = right),
-        0, key, value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
-
-    // Insert into right subtree.
-    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        1, key, value)
+    case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
       equation
-        t = avlCreateEmptyIfNone(right);
-        t = avlTreeReplace(t, key, value);
-      then  
+        value = inUpdateFunc(value, inArg);
+      then
+        AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+
+    case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _, _)
+      equation
+        t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
-    // Insert into left subtree.
-    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        -1, key, value)
+    case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _, _)
       equation
-        t = avlCreateEmptyIfNone(left);
-        t = avlTreeReplace(t, key, value);
+        t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
       then
         AVLTREENODE(oval, h, SOME(t), right);
+
   end match;
-end avlTreeReplace2;
+end avlTreeUpdate2;
 
 protected function avlCreateEmptyIfNone 
   "Help function to AvlTreeAdd"
@@ -1018,7 +2065,7 @@ algorithm
   end match;
 end avlGetHeight;
 
-public function avlPrintTreeStrPP
+protected function avlPrintTreeStrPP
   input AvlTree inTree;
   output String outString;
 algorithm

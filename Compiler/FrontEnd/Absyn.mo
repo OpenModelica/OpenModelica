@@ -5883,4 +5883,39 @@ algorithm
   end match;
 end isInitial;
 
+public function importPath
+  "Return the path of the given import."
+  input Import inImport;
+  output Path outPath;
+algorithm
+  outPath := match(inImport)
+    local
+      Path path;
+
+    case NAMED_IMPORT(path = path) then path;
+    case QUAL_IMPORT(path = path) then path;
+    case UNQUAL_IMPORT(path = path) then path;
+    case GROUP_IMPORT(prefix = path) then path;
+
+  end match;
+end importPath;
+
+public function importName
+  "Returns the import name of a named or qualified import."
+  input Import inImport;
+  output Ident outName;
+algorithm
+  outName := match(inImport)
+    local
+      Ident name;
+      Path path;
+
+    // Named import has a given name, 'import D = A.B.C' => D.
+    case NAMED_IMPORT(name = name) then name;
+    // Qualified import uses the last identifier, 'import A.B.C' => C.
+    case QUAL_IMPORT(path = path) then pathLastIdent(path);
+
+  end match;
+end importName;
+
 end Absyn;

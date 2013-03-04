@@ -7635,7 +7635,7 @@ algorithm
       Env.Cache cache;
       SCode.Element c1, c2;
       Absyn.Path tpath1, tpath2;
-      Absyn.Info aInfo;
+      Absyn.Info old_info, new_info;
       SCode.Prefixes prefixes1, prefixes2;
       SCode.Attributes attr1,attr2;
       Absyn.TypeSpec tp1,tp2;
@@ -7650,13 +7650,14 @@ algorithm
         // NOTE: Should be type identical instead? see spec.
         // p.23, check of flattening. "Check that duplicate elements are identical".
         true = SCode.elementEqual(oldElt,newElt);
-      then ();
+      then
+        ();
     
     // adrpo: see if they are not syntactically equivalent, but semantically equivalent!
     //        see Modelica Spec. 3.1, page 66.
     // COMPONENT
-    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo),oldMod),
-                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _),newMod))
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, old_info),oldMod),
+                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, new_info),newMod))
       equation
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
@@ -7675,13 +7676,15 @@ algorithm
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt);
         s2 = SCodeDump.unparseElementStr(newElt);
-        Error.addSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,{s1,s2}, aInfo);
-      then ();
+        Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,
+          {s1, s2}, {old_info, new_info});
+      then
+        ();
     
     // adrpo: handle bug: https://trac.modelica.org/Modelica/ticket/627
     //        TODO! FIXME! REMOVE! remove when the bug is fixed!
-    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo),oldMod),
-                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _),newMod))
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, old_info),oldMod),
+                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, new_info),newMod))
       equation
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
@@ -7703,17 +7706,20 @@ algorithm
         s2 = SCodeDump.unparseElementStr(newElt);
         s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +&
             s1 +& "\n\tsecond: " +& s2 +& "\nContinue ....";
-        Error.addSourceMessage(Error.COMPILER_WARNING, {s}, aInfo);
+        Error.addMultiSourceMessage(Error.COMPILER_WARNING, {s}, {old_info, new_info});
       then ();
     
     // fail baby and add a source message!
-    case (cache, env, (oldElt as SCode.COMPONENT(info=aInfo),oldMod),(newElt,newMod))
+    case (cache, env, (oldElt as SCode.COMPONENT(info = old_info),oldMod),
+                      (newElt as SCode.COMPONENT(info = new_info),newMod))
       equation
         s1 = SCodeDump.unparseElementStr(oldElt);
         s2 = SCodeDump.unparseElementStr(newElt);
-        Error.addSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,{s1,s2}, aInfo);
-        //print(" *** error message added *** \n");
-      then fail();
+        Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
+          {s1, s2}, {old_info, new_info});
+      then
+        fail();
+
   end matchcontinue;
 end checkMultipleElementsIdentical;
 

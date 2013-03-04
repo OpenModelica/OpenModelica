@@ -49,13 +49,13 @@ public type Env = NFEnv.Env;
 public type Entry = NFEnv.Entry;
 
 protected constant Entry REAL_TYPE_ENTRY = NFEnv.ENTRY(
-    "Real", NFBuiltin.BUILTIN_REAL, 0);
+    "Real", NFBuiltin.BUILTIN_REAL, 0, {NFEnv.BUILTIN_ORIGIN()});
 protected constant Entry INT_TYPE_ENTRY = NFEnv.ENTRY(
-    "Integer", NFBuiltin.BUILTIN_INTEGER, 0);
+    "Integer", NFBuiltin.BUILTIN_INTEGER, 0, {NFEnv.BUILTIN_ORIGIN()});
 protected constant Entry BOOL_TYPE_ENTRY = NFEnv.ENTRY(
-    "Boolean", NFBuiltin.BUILTIN_BOOLEAN, 0);
+    "Boolean", NFBuiltin.BUILTIN_BOOLEAN, 0, {NFEnv.BUILTIN_ORIGIN()});
 protected constant Entry STRING_TYPE_ENTRY = NFEnv.ENTRY(
-    "String", NFBuiltin.BUILTIN_BOOLEAN, 0);
+    "String", NFBuiltin.BUILTIN_BOOLEAN, 0, {NFEnv.BUILTIN_ORIGIN()});
 
 public function lookupNameSilent
   "Looks up a name, but doesn't print an error message if it fails."
@@ -91,11 +91,33 @@ algorithm
     else
       equation
         (entry, env) = lookupName(inName, inEnv, inInfo, SOME(Error.LOOKUP_ERROR));
+        checkEntryIsClass(entry, inInfo);
       then
         (entry, env);
 
   end matchcontinue;
 end lookupClassName;
+
+protected function checkEntryIsClass
+  input Entry inEntry;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inEntry, inInfo)
+    local
+      String name;
+      Absyn.Info info;
+
+    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), _) then ();
+
+    case (NFEnv.ENTRY(element = SCode.COMPONENT(name = name, info = info)), _)
+      equation
+        Error.addMultiSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP,
+          {name}, {info, inInfo});
+      then
+        fail();
+
+  end match;
+end checkEntryIsClass;
 
 public function lookupBaseClassName
   "Calls lookupName with the 'Baseclass not found' error message."
@@ -135,6 +157,27 @@ algorithm
     SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
+protected function checkEntryIsVar
+  input Entry inEntry;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inEntry, inInfo)
+    local
+      String name;
+      Absyn.Info info;
+
+    case (NFEnv.ENTRY(element = SCode.COMPONENT(name = _)), _) then ();
+
+    case (NFEnv.ENTRY(element = SCode.CLASS(name = name, info = info)), _)
+      equation
+        Error.addMultiSourceMessage(Error.LOOKUP_COMP_FOUND_TYPE,
+          {name}, {info, inInfo});
+      then
+        fail();
+
+  end match;
+end checkEntryIsVar;
+
 public function lookupFunctionName
   "Calls lookupName with the 'Function not found' error message."
   input Absyn.Path inName;
@@ -146,6 +189,37 @@ algorithm
   (outEntry, outEnv) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_FUNCTION_ERROR));
 end lookupFunctionName;
+
+public function lookupImportPath
+  input Absyn.Path inPath;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Entry outEntry;
+  output Env outEnv;
+algorithm
+  (outEntry, outEnv) := matchcontinue(inPath, inEnv, inInfo)
+    local
+      Entry entry;
+      Env env;
+      String path_str, env_str;
+
+    case (_, _, _)
+      equation
+        (entry, env) = lookupFullyQualified(inPath, inEnv);
+      then
+        (entry, env);
+
+    else
+      equation
+        path_str = Absyn.pathString(inPath);
+        env_str = NFEnv.printEnvPathStr(inEnv);
+        Error.addSourceMessage(Error.LOOKUP_IMPORT_ERROR,
+          {path_str, env_str}, inInfo);
+      then
+        fail();
+         
+  end matchcontinue;
+end lookupImportPath;
 
 public function lookupTypeSpec
   "Looks up a type specification and returns the environment entry and enclosing
@@ -194,7 +268,7 @@ algorithm
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
 end makeDummyMetaType;
 
-public function lookupUnresolvedSimpleName
+protected function lookupUnresolvedSimpleName
   "Looks up a name and returns the unresolved entry from the environment."
   input String inName;
   input Env inEnv;
@@ -305,7 +379,7 @@ algorithm
     case (_, _)
       equation
         entry = NFEnv.lookupEntry(inName, inEnv);
-        (entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
+        (entry, env) = NFEnv.resolveEntry(entry, inEnv);
         env = NFEnv.entryEnv(entry, env);
       then
         (entry, env);
@@ -344,7 +418,7 @@ protected
 algorithm
   entry := NFEnv.lookupEntry(inName, inEnv);
   true := NFEnv.isLocalScopeEntry(entry, inEnv);
-  (outEntry, env) := NFEnv.resolveImportedEntry(entry, inEnv);
+  (outEntry, env) := NFEnv.resolveEntry(entry, inEnv);
   outEnv := NFEnv.entryEnv(outEntry, env);
 end lookupInLocalScope;
 
@@ -399,4 +473,25 @@ algorithm
   end match;
 end lookupNameInEntry;
 
+public function isNameGlobal
+  "Returns whether a simple name is global or not, as well as it's entry and
+   environment. Global in this case means a non-local class."
+  input String inName;
+  input Env inEnv;
+  output Boolean outIsGlobal;
+  output Entry outEntry;
+  output Env outEnv;
+protected
+  Boolean is_local, is_class;
+algorithm
+  // Look up the name unresolved and check if it's a local name.
+  outEntry := lookupUnresolvedSimpleName(inName, inEnv);
+  is_local := NFEnv.isLocalScopeEntry(outEntry, inEnv);
+  // Then resolve the entry and check if it refers to a class.
+  (outEntry, outEnv) := NFEnv.resolveEntry(outEntry, inEnv);
+  is_class := NFEnv.isClassEntry(outEntry);
+  outEnv := NFEnv.entryEnv(outEntry, outEnv);
+  outIsGlobal := not is_local and is_class;
+end isNameGlobal;
+  
 end NFLookup;

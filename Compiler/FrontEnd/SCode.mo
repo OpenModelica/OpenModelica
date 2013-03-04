@@ -3620,6 +3620,20 @@ algorithm
   PREFIXES(visibility = outVisibility) := inPrefixes;
 end prefixesVisibility;
 
+public function prefixesSetVisibility
+  input Prefixes inPrefixes;
+  input Visibility inVisibility;
+  output Prefixes outPrefixes;
+protected
+  Redeclare rd;
+  Final f;
+  Absyn.InnerOuter io;
+  Replaceable rp;
+algorithm
+  PREFIXES(_, rd, f, io, rp) := inPrefixes;
+  outPrefixes := PREFIXES(inVisibility, rd, f, io, rp);
+end prefixesSetVisibility;
+
 public function eachEqual "Returns true if two each attributes are equal"
   input Each each1;
   input Each each2;
@@ -4788,6 +4802,55 @@ algorithm
     else false;
   end match;
 end isRestrictionImpure;
+
+public function setElementVisibility
+  input Element inElement;
+  input Visibility inVisibility;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inVisibility)
+    local
+      Ident name;
+      Prefixes prefs;
+      Attributes attr;
+      Absyn.TypeSpec ty;
+      Mod mod;
+      Option<Comment> cmt;
+      Option<Absyn.Exp> cond;
+      Absyn.Info info;
+      Encapsulated ep;
+      Partial pp;
+      Restriction res;
+      ClassDef cdef;
+      Absyn.Path bc;
+      Option<Annotation> ann;
+      Absyn.Import imp;
+      Option<String> unit;
+      Option<Real> weight;
+
+    case (COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)
+      equation
+        prefs = prefixesSetVisibility(prefs, inVisibility);
+      then
+        COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
+
+    case (CLASS(name, prefs, ep, pp, res, cdef, info), _)
+      equation
+        prefs = prefixesSetVisibility(prefs, inVisibility);
+      then
+        CLASS(name, prefs, ep, pp, res, cdef, info);
+
+    case (EXTENDS(bc, _, mod, ann, info), _)
+      then EXTENDS(bc, inVisibility, mod, ann, info);
+
+    case (IMPORT(imp, _, info), _)
+      then IMPORT(imp, inVisibility, info);
+
+    case (DEFINEUNIT(name, _, unit, weight), _)
+      then DEFINEUNIT(name, inVisibility, unit, weight);
+
+  end match;
+end setElementVisibility;
 
 end SCode;
 

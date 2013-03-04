@@ -179,6 +179,7 @@ public constant list<SCode.Element> BUILTIN_REAL_ATTRIBUTES = {
   BUILTIN_REAL_MAX,
   BUILTIN_REAL_START,
   BUILTIN_ATTR_FIXED,
+  BUILTIN_REAL_NOMINAL,
   BUILTIN_ATTR_STATESELECT
 };
 
@@ -226,7 +227,7 @@ public constant SCode.Element BUILTIN_STRING = SCode.CLASS("String",
 
 
 // Builtin variable time:
-protected constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
+public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
     Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
 

@@ -142,13 +142,13 @@ public constant Message ASSIGN_READONLY_ERROR = MESSAGE(8, TRANSLATION(), ERROR(
 public constant Message ASSIGN_TYPE_MISMATCH_ERROR = MESSAGE(9, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in assignment in %s := %s of %s := %s"));
 public constant Message IF_CONDITION_TYPE_ERROR = MESSAGE(10, TRANSLATION(), ERROR(),
-  Util.gettext("Type error in conditional ( %s). Expected Boolean, got %s."));
+  Util.gettext("Type error in conditional '%s'. Expected Boolean, got %s."));
 public constant Message FOR_EXPRESSION_TYPE_ERROR = MESSAGE(11, TRANSLATION(), ERROR(),
-  Util.gettext("Type error in for expression (%s). Expected array got %s."));
+  Util.gettext("Type error in iteration range '%s'. Expected array got %s."));
 public constant Message WHEN_CONDITION_TYPE_ERROR = MESSAGE(12, TRANSLATION(), ERROR(),
-  Util.gettext("Type error in when conditional (%s). Expected Boolean scalar or vector, got %s."));
+  Util.gettext("Type error in when conditional '%s'. Expected Boolean scalar or vector, got %s."));
 public constant Message WHILE_CONDITION_TYPE_ERROR = MESSAGE(13, TRANSLATION(), ERROR(),
-  Util.gettext("Type error in while conditional (%s). Expected Boolean got %s."));
+  Util.gettext("Type error in while conditional '%s'. Expected Boolean got %s."));
 public constant Message END_ILLEGAL_USE_ERROR = MESSAGE(14, TRANSLATION(), ERROR(),
   Util.gettext("'end' can not be used outside array subscripts."));
 public constant Message DIVISION_BY_ZERO = MESSAGE(15, TRANSLATION(), ERROR(),
@@ -261,6 +261,10 @@ public constant Message WRONG_TYPE_OR_NO_OF_ARGS = MESSAGE(68, TRANSLATION(), ER
   Util.gettext("Wrong type or wrong number of arguments to %s (in component %s)"));
 public constant Message DIFFERENT_DIM_SIZE_IN_ARGUMENTS = MESSAGE(69, TRANSLATION(), ERROR(),
   Util.gettext("Different dimension sizes in arguments to %s in component %s"));
+public constant Message LOOKUP_IMPORT_ERROR = MESSAGE(70, TRANSLATION(), ERROR(),
+  Util.gettext("Import %s not found in scope %s."));
+public constant Message LOOKUP_SHADOWING = MESSAGE(71, TRANSLATION(), WARNING(),
+  Util.gettext("Import %s is shadowed by a local element."));
 public constant Message ARGUMENT_MUST_BE_INTEGER = MESSAGE(72, TRANSLATION(), ERROR(),
   Util.gettext("%s argument to %s in component %s must be Integer expression"));
 public constant Message ARGUMENT_MUST_BE_DISCRETE_VAR = MESSAGE(73, TRANSLATION(), ERROR(),
@@ -582,6 +586,8 @@ public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(246, TRANSLATION(), E
   Util.gettext("Found duplicate names in package.order file: %s."));
 public constant Message ERRONEOUS_TYPE_ERROR = MESSAGE(247, TRANSLATION(), ERROR(),
   Util.gettext("Got type mismatch error, but matching types %s.\nThis is a ***COMPILER BUG***, please report it to https://trac.openmodelica.org/OpenModelica."));
+public constant Message REINIT_MUST_BE_VAR_OR_ARRAY = MESSAGE(225, TRANSLATION(), ERROR(),
+  Util.gettext("The first argument to reinit must be a variable of type Real or an array of such variables.")); 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value"));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -790,6 +796,43 @@ algorithm
   end match;
 end addSourceMessage;
 
+public function addMultiSourceMessage
+  "Adds an error message given the message, token and a list of file info. The
+   the last file info in the list is used for the message itself, the rest of the
+   file infos are used to print a trace of where the error came from."
+  input Message inErrorMsg;
+  input MessageTokens inMessageTokens;
+  input list<Absyn.Info> inInfo;
+algorithm
+  _ := match(inErrorMsg, inMessageTokens, inInfo)
+    local
+      Absyn.Info info;
+      list<Absyn.Info> rest_info;
+
+    // Only one info left, print out the message.
+    case (_, _, {info})
+      equation
+        addSourceMessage(inErrorMsg, inMessageTokens, info);
+      then
+        ();
+
+    // Multiple infos left, print a trace with the first info.
+    case (_, _, info :: rest_info)
+      equation
+        addSourceMessage(ERROR_FROM_HERE, {}, info);
+        addMultiSourceMessage(inErrorMsg, inMessageTokens, rest_info);
+      then
+        ();
+
+    // No infos given, print a sourceless error.
+    case (_, _, {})
+      equation
+        addMessage(inErrorMsg, inMessageTokens);
+      then
+        ();
+
+  end match;
+end addMultiSourceMessage;
 
 public function addMessageOrSourceMessage
 "@author:adrpo

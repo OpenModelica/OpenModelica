@@ -115,6 +115,8 @@ algorithm
         //System.startTimer();
         System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
         System.tmpTickResetIndex(1, NFSCodeEnv.extendsTickIndex);
+        // TODO: Enable this when NFSCodeEnv.tmpTickIndex is removed.
+        //System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
 
         env = NFSCodeEnv.buildInitialEnv();
         env = NFSCodeEnv.extendEnvWithClasses(prog, env);

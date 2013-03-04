@@ -1166,12 +1166,11 @@ algorithm
     // input/output prefixes.
     case ((dir1, info1), (dir2, info2), _, _)
       equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
         dir_str1 = directionString(dir1);
         dir_str2 = directionString(dir2);
         el_name = Absyn.pathString(inElementName);
-        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {dir_str1, inElementType, el_name, dir_str2}, info1);
+        Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {dir_str1, inElementType, el_name, dir_str2}, {info2, info1});
       then
         fail();
 
@@ -1211,12 +1210,11 @@ algorithm
     // Trying to overwrite a flow/stream prefix => show error.
     case ((ct1, info1), (ct2, info2), _, _)
       equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
         ct1_str = SCodeDump.connectorTypeStr(ct1);
         ct2_str = SCodeDump.connectorTypeStr(ct2);
         el_name = Absyn.pathString(inElementName);
-        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {ct2_str, inElementType, el_name, ct1_str}, info2);
+        Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {ct2_str, inElementType, el_name, ct1_str}, {info1, info2});
       then
         fail();
 

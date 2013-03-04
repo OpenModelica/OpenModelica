@@ -283,7 +283,7 @@ algorithm
     case (_, NFEnv.ENTRY(element = SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
         classDef = SCode.PARTS(elementLst = _))), _, _, _, _, _, ip, globals)
       equation
-        // (vars, globals) = instBasicTypeAttributes(inMod, env, globals);
+        (vars, globals) = instBasicTypeAttributes(inClassMod, name, globals);
         ty = instBasicType(name, {});
       then
         (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
@@ -469,43 +469,147 @@ algorithm
   end match;
 end instBasicType;
 
-//protected function instBasicTypeAttributes
-//  input Modifier inMod;
-//  input Env inEnv;
-//  input Globals inGlobals;
-//  output list<DAE.Var> outVars;
-//  output Globals outGlobals;
-//algorithm
-//  (outVars, outGlobals) :=
-//  match(inMod, inEnv, inGlobals)
-//    local
-//      list<Modifier> submods;
-//      NFSCodeEnv.AvlTree attrs;
-//      list<DAE.Var> vars;
-//      SCode.Element el;
-//      Absyn.Info info;
-//      Globals globals;
-//
-//    case (NFInstTypes.NOMOD(), _, globals) then ({}, globals);
-//
-//    case (NFInstTypes.MODIFIER(subModifiers = submods), 
-//        NFSCodeEnv.FRAME(clsAndVars = attrs) :: _, globals)
-//      equation
-//        (vars, globals) =
-//          List.map1Fold(submods, instBasicTypeAttribute, attrs, globals);
-//      then
-//        (vars, globals);
-//
-//    case (NFInstTypes.REDECLARE(element = el), _, _)
-//      equation
-//        info = SCode.elementInfo(el);
-//        Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
-//      then
-//        fail();
-//         
-//  end match;
-//end instBasicTypeAttributes;
-//
+protected function instBasicTypeAttributes
+  input Modifier inMod;
+  input String inTypeName;
+  input Globals inGlobals;
+  output list<DAE.Var> outVars;
+  output Globals outGlobals;
+algorithm
+  (outVars, outGlobals) := match(inMod, inTypeName, inGlobals)
+    local
+      list<Modifier> submods;
+      list<DAE.Var> vars;
+      SCode.Element el;
+      Absyn.Info info;
+      Globals globals;
+
+    case (NFInstTypes.NOMOD(), _, globals) then ({}, globals);
+
+    case (NFInstTypes.MODIFIER(subModifiers = submods), _, globals)
+      equation
+        (vars, globals) =
+          List.map1Fold(submods, instBasicTypeAttribute, inTypeName, globals);
+      then
+        (vars, globals);
+
+    case (NFInstTypes.REDECLARE(element = el), _, _)
+      equation
+        info = SCode.elementInfo(el);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
+      then
+        fail();
+         
+  end match;
+end instBasicTypeAttributes;
+
+protected function instBasicTypeAttribute
+  input Modifier inMod;
+  input String inTypeName;
+  input Globals inGlobals;
+  output DAE.Var outAttribute;
+  output Globals outGlobals;
+algorithm
+  (outAttribute, outGlobals) := match(inMod, inTypeName, inGlobals)
+    local
+      String ident;
+      DAE.Type ty;
+      Absyn.Exp bind_exp;
+      DAE.Exp inst_exp;
+      DAE.Binding binding;
+      Env env;
+      Prefix prefix;
+      Globals globals;
+      Absyn.Info info;
+
+    case (NFInstTypes.MODIFIER(name = ident, subModifiers = {}, binding =
+        NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
+      equation
+        ty = getBasicTypeAttributeType(inTypeName, ident, info);
+        (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
+        binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
+          DAE.BINDING_FROM_DEFAULT_VALUE());
+      then
+        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
+
+  end match;
+end instBasicTypeAttribute;
+
+protected function getBasicTypeAttributeType
+  input String inTypeName;
+  input String inAttributeName;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := matchcontinue(inTypeName, inAttributeName, inInfo)
+    case ("Real", _, _) then getBasicTypeAttrTypeReal(inAttributeName);
+    case ("Integer", _, _) then getBasicTypeAttrTypeInt(inAttributeName);
+    case ("Boolean", _, _) then getBasicTypeAttrTypeBool(inAttributeName);
+    case ("String", _, _) then getBasicTypeAttrTypeString(inAttributeName);
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttributeName, inTypeName}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end getBasicTypeAttributeType;
+
+protected function getBasicTypeAttrTypeReal
+  input String inAttributeName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttributeName)
+    case "quantity" then DAE.T_STRING_DEFAULT;
+    case "unit" then DAE.T_STRING_DEFAULT;
+    case "displayUnit" then DAE.T_STRING_DEFAULT;
+    case "min" then DAE.T_REAL_DEFAULT;
+    case "max" then DAE.T_REAL_DEFAULT;
+    case "start" then DAE.T_REAL_DEFAULT;
+    case "fixed" then DAE.T_BOOL_DEFAULT;
+    case "nominal" then DAE.T_REAL_DEFAULT;
+    case "stateSelect" then DAE.T_ENUMERATION_DEFAULT;
+  end match;
+end getBasicTypeAttrTypeReal;
+
+protected function getBasicTypeAttrTypeInt
+  input String inAttributeName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttributeName)
+    case "quantity" then DAE.T_STRING_DEFAULT;
+    case "min" then DAE.T_INTEGER_DEFAULT;
+    case "max" then DAE.T_INTEGER_DEFAULT;
+    case "start" then DAE.T_INTEGER_DEFAULT;
+    case "fixed" then DAE.T_BOOL_DEFAULT;
+  end match;
+end getBasicTypeAttrTypeInt;
+
+protected function getBasicTypeAttrTypeBool
+  input String inAttributeName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttributeName)
+    case "quantity" then DAE.T_STRING_DEFAULT;
+    case "start" then DAE.T_BOOL_DEFAULT;
+    case "fixed" then DAE.T_BOOL_DEFAULT;
+  end match;
+end getBasicTypeAttrTypeBool;
+
+protected function getBasicTypeAttrTypeString
+  input String inAttributeName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttributeName)
+    case "quantity" then DAE.T_STRING_DEFAULT;
+    case "start" then DAE.T_STRING_DEFAULT;
+  end match;
+end getBasicTypeAttrTypeString;
+
+
+
+  
 //protected function instBasicTypeAttribute
 //  input Modifier inMod;
 //  input NFSCodeEnv.AvlTree inAttributes;
@@ -779,7 +883,7 @@ algorithm
   (outElement, outGlobals) := match(inElement, inModifiers, inPrefixes, inEnv,
       inPrefix, inInstPolicy, inGlobals)
     local
-      String name;
+      String name, enum_idx_str;
       Absyn.ArrayDim ad;
       Absyn.Info info;
       Absyn.Path tpath, path;
@@ -790,7 +894,7 @@ algorithm
       Env env;
       list<DAE.Dimension> dims;
       Prefix prefix;
-      Integer dim_count;
+      Integer dim_count, enum_idx;
       Modifier mod, cmod;
       Prefixes prefs, cls_prefs;
       DAE.Type ty;
@@ -799,35 +903,37 @@ algorithm
       array<Dimension> dim_arr;
       Class cls;
       Component comp;
+      list<SCode.Element> redecl;
 
-//    // an outer component
-//    case (SCode.COMPONENT(name = name, 
-//        typeSpec = Absyn.TPATH(path = tpath),
-//        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, _, globals)
-//      equation
-//        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
-//        path = NFInstUtil.prefixToPath(prefix);
-//        comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
-//      then
-//        (NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath)), globals);
-//
-//    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
-//        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
-//        _, _, _, _, ip, globals)
-//      equation
-//        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
-//        enum_idx = stringInt(enum_idx_str);
-//
-//        (entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
-//        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-//        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, entry, inClassMod,
-//          NFMod.emptyModTable, inPrefixes, env, inPrefix, ip, globals);
-//
-//        binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
-//        comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
-//          NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
-//      then
-//        (NFInstTypes.ELEMENT(comp, cls), globals);
+    // an outer component
+    case (SCode.COMPONENT(name = name, 
+        typeSpec = Absyn.TPATH(path = tpath),
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
+      equation
+        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        path = NFInstUtil.prefixToPath(prefix);
+        comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
+      then
+        (NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath)), globals);
+
+    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
+        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
+        _, _, _, _, ip, globals)
+      equation
+        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
+        enum_idx = stringInt(enum_idx_str);
+
+        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+
+        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
+          NFMod.emptyModTable, inPrefixes, env, inPrefix, ip, globals);
+
+        binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
+        comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
+          NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
+      then
+        (NFInstTypes.ELEMENT(comp, cls), globals);
 
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
@@ -859,8 +965,10 @@ algorithm
         prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
         pty = NFInstUtil.paramTypeFromPrefixes(prefs);
 
+        //redecl = NFMod.extractRedeclares(smod);
+
         (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, mod,
-          NFMod.emptyModTable, prefs, inEnv, prefix, ip, globals);
+          NFMod.emptyModTable, prefs, env, prefix, ip, globals);
         
         prefs = NFInstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
 
@@ -938,7 +1046,6 @@ algorithm
       equation
         // Look up the base class in the environment.
         (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
-        checkRecursiveExtends(path, env, inEnv, info);
 //
 //        // Apply the redeclarations.
 //        (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
@@ -1005,36 +1112,6 @@ algorithm
     else false;
   end match;
 end hasSpecialExtends;
-
-public function checkRecursiveExtends
-  input Absyn.Path inExtendedClass;
-  input Env inFoundEnv;
-  input Env inOriginEnv;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inExtendedClass, inFoundEnv, inOriginEnv, inInfo)
-    local
-      String bc_name, path_str;
-      Env env;
-
-    case (_, _, _, _)
-      equation
-        bc_name = Absyn.pathLastIdent(inExtendedClass);
-        env = NFEnv.openScope(SOME(bc_name), SCode.NOT_ENCAPSULATED(), inFoundEnv);
-        false = NFEnv.isPrefix(env, inOriginEnv);
-      then
-        ();
-
-    else
-      equation
-        path_str = Absyn.pathString(inExtendedClass);
-        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
-end checkRecursiveExtends;
-        
 
 protected function instPackageConstants
   input SCode.Element inPackage;
@@ -2126,14 +2203,15 @@ algorithm
       equation
         // Look up the first part of the cref
         name_str = ComponentReference.crefFirstIdent(inCref);
-        entry = NFLookup.lookupUnresolvedSimpleName(name_str, inEnv);
-        is_local = NFEnv.isLocalScopeEntry(entry, inEnv);
-        (entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
-        is_class = NFEnv.isClassEntry(entry);
-        env = NFEnv.entryEnv(entry, env);
+        (is_global, entry, env) = NFLookup.isNameGlobal(name_str, inEnv);
+        //entry = NFLookup.lookupUnresolvedSimpleName(name_str, inEnv);
+        //is_local = NFEnv.isLocalScopeEntry(entry, inEnv);
+        //(entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
+        //is_class = NFEnv.isClassEntry(entry);
+        //env = NFEnv.entryEnv(entry, env);
 
-        // If it is a non-local class, consider it to be global.
-        is_global = not is_local and is_class;
+        //// If it is a non-local class, consider it to be global.
+        //is_global = not is_local and is_class;
         cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
         (cref, globals) = instPackageConstant(is_global, cref, inCrefPath, env, inInfo, inGlobals);
       then
@@ -2179,7 +2257,7 @@ protected function prefixLocalCref
   input Env inEnv "The environment where we found the cref.";
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inPrefix, inEnv)
+  outCref := matchcontinue(inCref, inPrefix, inEnv)
     local
       String id;
       Integer iterIndex;
@@ -2188,15 +2266,16 @@ algorithm
       Absyn.Path path;
       
     // Don't prefix iterators.
-    //case (DAE.CREF_IDENT(id, ty, subs), _, NFSCodeEnv.FRAME(frameType =
-    //    NFSCodeEnv.IMPLICIT_SCOPE(iterIndex= iterIndex)) :: _)
-    //  then DAE.CREF_ITER(id, iterIndex, ty, subs);
+    case (DAE.CREF_IDENT(id, ty, subs), _, _)
+      equation
+        iterIndex = NFEnv.getImplicitScopeIndex(inEnv);
+      then
+        DAE.CREF_ITER(id, iterIndex, ty, subs);
 
     // In any other case, apply the given prefix.
-    case (_, _, _) then NFInstUtil.prefixCref(inCref, inPrefix);
-    //else NFInstUtil.prefixCref(inCref, inPrefix);
+    else NFInstUtil.prefixCref(inCref, inPrefix);
 
-  end match;
+  end matchcontinue;
 end prefixLocalCref;
 
 protected function prefixGlobalCref
@@ -2319,6 +2398,80 @@ algorithm
 
   end match;
 end reducePrefix;
+
+protected function prefixPath
+  input Absyn.Path inPath;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inPrefix, inEnv)
+    local
+      Env env;
+      Boolean is_global;
+      String name_str;
+      Absyn.Path path;
+
+    case (Absyn.FULLYQUALIFIED(path = _), _, _) then inPath;
+
+    case (_, _, _)
+      equation
+        name_str = Absyn.pathFirstIdent(inPath);
+        (is_global, _, env) = NFLookup.isNameGlobal(name_str, inEnv);
+        path = prefixPath2(inPath, inPrefix, inEnv, env, is_global);
+      then
+        path;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFInst.prefixPath failed on " +&
+          Absyn.pathString(inPath) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end prefixPath;
+
+protected function prefixPath2
+  input Absyn.Path inPath;
+  input Prefix inPrefix;
+  input Env inOriginEnv;
+  input Env inFoundEnv;
+  input Boolean inIsGlobal;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inPrefix, inOriginEnv, inFoundEnv, inIsGlobal)
+    local
+      list<String> oenv, fenv;
+      Prefix prefix;
+      Absyn.Path path;
+
+    // Local path, apply the given prefix.
+    case (_, _, _, _, false) then NFInstUtil.prefixPath(inPath, inPrefix);
+
+    // Partially global path, see prefixGlobalCref.
+    case (_, _, _, _, true)
+      equation
+        (fenv as _ :: _) = NFEnv.scopeNames(inFoundEnv);
+        oenv = NFEnv.scopeNames(inOriginEnv);
+        oenv = reduceEnv(oenv, fenv);
+        oenv = listReverse(oenv);
+        prefix = reducePrefix(oenv, inPrefix);
+        path = NFInstUtil.prefixPath(inPath, prefix);
+      then
+        path;
+
+    else
+      equation
+        fenv = NFEnv.scopeNames(inFoundEnv);
+        fenv = listReverse(fenv);
+        path = List.fold(fenv, Absyn.prefixPath, inPath);
+      then
+        path;
+
+  end matchcontinue;
+end prefixPath2;
 
 protected function instPackageConstant
   input Boolean inIsGlobal;
@@ -2584,7 +2737,7 @@ algorithm
       equation
         path = Absyn.crefToPath(inName);
         (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
-        //path = instFunctionName(item, path, origin, env, inPrefix);
+        path = instFunctionName(path, entry, inEnv, inPrefix);
         (cls, ty, _, (consts, functions)) = instClassEntry(path, entry,
           NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
           env, NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
@@ -2603,6 +2756,27 @@ algorithm
       then fail();
   end matchcontinue;
 end instFunction;
+
+protected function instFunctionName
+  input Absyn.Path inPath;
+  input Entry inEntry;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEntry, inEnv, inPrefix)
+
+    // Don't prefix builtin functions.
+    case (_, _, _, _)
+      equation
+        true = NFEnv.entryHasBuiltinOrigin(inEntry);
+      then
+        inPath;
+
+    else prefixPath(inPath, inPrefix, inEnv);
+
+  end matchcontinue;
+end instFunctionName;
 
 protected function instFunction2
   input Absyn.Path inName;
@@ -2813,47 +2987,6 @@ algorithm
   end match;
 end dimensionDeps;
 
-//protected function instFunctionName
-//  input Item inItem;
-//  input Absyn.Path inPath;
-//  input NFSCodeLookup.Origin inOrigin;
-//  input Env inEnv;
-//  input Prefix inPrefix;
-//  output Absyn.Path outPath;
-//algorithm
-//  outPath := match(inItem, inPath, inOrigin, inEnv, inPrefix)
-//    local
-//      String name;
-//      Absyn.Path path;
-//
-//    // Fully qualified path should stay the same
-//    case (_, Absyn.FULLYQUALIFIED(_), _, _, _)
-//      then inPath;
-//
-//    // The name of a builtin function should not be prefixed.
-//    case (_, _, NFSCodeLookup.BUILTIN_ORIGIN(), _, _)
-//      then inPath;
-//
-//    // A qualified name with class origin should be prefixed with the package
-//    // name.
-//    case (_, _, NFSCodeLookup.CLASS_ORIGIN(), _, _)
-//      equation
-//        name = NFSCodeEnv.getItemName(inItem);
-//        path = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-//      then
-//        path;
-//
-//    // A name with instance origin or a non-qualified name with class origin
-//    // (i.e. a local name), should be prefixed with the instance prefix.
-//    else
-//      equation
-//        path = NFInstUtil.prefixPath(inPath, inPrefix);
-//      then
-//        path;
-//
-//  end match;
-//end instFunctionName;
-//
 protected function instNamedArg
   input Absyn.NamedArg inNamedArg;
   input Env inEnv;
@@ -3558,25 +3691,24 @@ algorithm
         (NFInstTypes.CONNECT_EQUATION(dcref1, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
           dcref2, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), globals);
 
-    //case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
-    //    info = info), _, _, globals)
-    //  equation
-    //    index = System.tmpTickIndex(NFSCodeEnv.tmpTickIndex);
-    //    env = NFSCodeEnv.extendEnvWithIterators(
-    //      {Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-    //    (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
-    //    (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
-    //  then
-    //    (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info), globals);
+    case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
+        info = info), _, _, globals)
+      equation
+        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
+      then
+        (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info), globals);
 
-    //case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
-    //    info = info), _, _, globals)
-    //  equation
-    //    index = System.tmpTickIndex(NFSCodeEnv.tmpTickIndex);
-    //    env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-    //    (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
-    //  then
-    //    (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), globals);
+    case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
+        info = info), _, _, globals)
+      equation
+        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
+      then
+        (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), globals);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
         elseBranch = eql, info = info), _, _, globals)
@@ -3701,22 +3833,22 @@ algorithm
         (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
       then (NFInstTypes.ASSIGN_STMT(dexp1, dexp2, info), globals);
 
-    //case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, globals)
-    //  equation
-    //    index = System.tmpTickIndex(NFSCodeEnv.tmpTickIndex);
-    //    env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-    //    (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
-    //    (ibody, globals) = instStatements(body, env, inPrefix, globals);
-    //  then
-    //    (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info), globals);
+    case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, globals)
+      equation
+        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+        (ibody, globals) = instStatements(body, env, inPrefix, globals);
+      then
+        (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info), globals);
 
-    //case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, globals)
-    //  equation
-    //    index = System.tmpTickIndex(NFSCodeEnv.tmpTickIndex);
-    //    env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-    //    (ibody, globals) = instStatements(body, env, inPrefix, globals);
-    //  then
-    //    (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info), globals);
+    case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, globals)
+      equation
+        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+        (ibody, globals) = instStatements(body, env, inPrefix, globals);
+      then
+        (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info), globals);
 
     case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, globals)
       equation

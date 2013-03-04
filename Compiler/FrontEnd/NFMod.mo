@@ -424,11 +424,10 @@ algorithm
 
     case (_, _, _, NFInstTypes.MODIFIER(finalPrefix = SCode.FINAL()), _)
       equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOuterInfo);
         NFInstTypes.RAW_BINDING(bindingExp = oexp) = getModifierBinding(inOuterMod);
         oexp_str = Dump.printExpStr(oexp);
-        Error.addSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-          {inName, oexp_str}, inInnerInfo);
+        Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
+          {inName, oexp_str}, {inOuterInfo, inInnerInfo});
       then
         fail();
 
@@ -647,9 +646,8 @@ algorithm
           NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
         comp_str = NFInstDump.prefixStr(inPrefix);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
-        Error.addSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
-          {inElementName, comp_str}, info1);
+        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
+          {inElementName, comp_str}, {info2, info1});
       then
         fail();
 
@@ -1065,5 +1063,49 @@ algorithm
         
   end matchcontinue;
 end removeRedeclaresFromSubMod;
+
+public function extractRedeclares
+  "Returns a list of the redeclare elements contained in the given modifier."
+  input SCode.Mod inMod;
+  output list<SCode.Element> outRedeclares;
+algorithm
+  outRedeclares := match(inMod)
+    local
+      list<SCode.SubMod> sub_mods;
+      list<SCode.Element> redeclares;
+
+    case SCode.MOD(subModLst = sub_mods)
+      equation
+        redeclares = List.fold(sub_mods, extractRedeclareFromSubMod, {});
+      then
+        redeclares;
+
+    else {};
+
+  end match;
+end extractRedeclares;
+
+protected function extractRedeclareFromSubMod
+  "Checks a submodifier and adds the redeclare element to the list of redeclares
+   if the modifier is a redeclaration modifier."
+  input SCode.SubMod inMod;
+  input list<SCode.Element> inRedeclares;
+  output list<SCode.Element> outRedeclares;
+algorithm
+  outRedeclares := match(inMod, inRedeclares)
+    local
+      SCode.Element redecl;
+
+    case (SCode.NAMEMOD(A = SCode.REDECL(element = redecl)), _)
+      equation
+        //NFSCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
+      then
+        redecl :: inRedeclares;
+
+    // Skip modifiers that are not redeclarations.
+    else inRedeclares;
+
+  end match;
+end extractRedeclareFromSubMod;
 
 end NFMod;
