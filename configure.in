@@ -355,7 +355,8 @@ if ! test "$NO_SUNDIALS" = "yes"; then
 else
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: No"
   WITH_SUNDIALS="/* Without Sundials */"
-  SUNDIALS_LDFLAGS=""
+# We need -llapack regardless if we use Sundials or not
+  SUNDIALS_LDFLAGS="-llapack"
 fi
 
 AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
