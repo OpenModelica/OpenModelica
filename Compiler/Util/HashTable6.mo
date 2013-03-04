@@ -87,7 +87,7 @@ algorithm
     local
       DAE.ComponentRef cr11,cr12,cr21,cr22;
     case ((cr11,cr12),(cr21,cr22))
-      then ComponentReference.crefEqual(cr11,cr21) and ComponentReference.crefEqual(cr12,cr22);
+      then ComponentReference.crefEqualNoStringCompare(cr11,cr21) and ComponentReference.crefEqualNoStringCompare(cr12,cr22);
   end matchcontinue;
 end keyEqual;
 
