@@ -2705,7 +2705,7 @@ algorithm
     case (expl)
       equation
         (exp_const,n) = simplifyAdd2(expl,{},0);
-        exp_const_1 = simplifyAddJoinTerms(exp_const,intLt(n,5),n);
+        exp_const_1 = simplifyAddJoinTerms(exp_const,/* intLt(n,50), this was commented out because is works good for large models but not for slow. A more general solution is needed */ true,n);
         expl_1 = simplifyAddMakeMul(exp_const_1);
       then
         expl_1;
