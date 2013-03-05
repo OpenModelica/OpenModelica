@@ -573,8 +573,8 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
      * But it works fine in Qt 4.8.
      */
     QFileInfo fileInfo(fileName);
-#ifdef Q_OS_LINUX
-    if (fileInfo.suffix().compare(defaultSuffix, Qt::CaseInsensitive) != 0)
+#ifdef Q_OS_LINUX && QT_VERSION < 0x040800
+    if (fileInfo.suffix() == QString(""))
       fileName.append(".").append(defaultSuffix);
 #else
     Q_UNUSED(defaultSuffix);
