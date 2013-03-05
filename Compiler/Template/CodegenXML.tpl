@@ -185,9 +185,9 @@ case SIMVAR(__) then
       <QualifiedName>
         <%qualifiedNamePartXml(name)%>
       </QualifiedName>
-	  <isLinearTimedVariables>
-      	<TimePoint index="0" isLinear="true"/>
-	  </isLinearTimedVariables>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
       <VariableCategory><%variableCategory%></VariableCategory>  
     </ScalarVariable> <%\n%> 
   >> 
@@ -413,10 +413,10 @@ template crefToXmlStr(ComponentRef cr)
     >>
   case OPTIMICA_ATTR_INST_CREF(__) then
     << 
-	<exp:TimedVariable timePointIndex = "0">
-        <%crefToXmlStr(componentRef)%>
-		<exp:Instant><%instant%></exp:Instant>
-	</exp:TimedVariable>    
+    <exp:TimedVariable timePointIndex = "0">
+      <%crefToXmlStr(componentRef)%>
+      <exp:Instant><%instant%></exp:Instant>
+    </exp:TimedVariable>    
     >>
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -1426,13 +1426,13 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
         </opt:IntervalFinalTime>
         >>
       let timePointIndex = match startTimeE case SOME(exp) then
-		<<
-      	index = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
-      	>>
+      <<
+        index = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
+      >>
       let timePointValue = match finalTimeE case SOME(exp) then
-      	<<
-      	value = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
-      	>>
+      <<
+        value = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
+      >>
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraintsXml(constraints)              
         <<
         <opt:Optimization>
@@ -1441,9 +1441,9 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <%startTime%>
           <%finalTime%>
           <opt:TimePoints>
-          	<opt:TimePoint <%timePointIndex%> <%timePointValue%>>
-          	<%test%>
-          	</opt:TimePoint>
+            <opt:TimePoint <%timePointIndex%> <%timePointValue%>>
+            <%test%>
+            </opt:TimePoint>
           </opt:TimePoints>
           <opt:PathConstraints>
               <%constraints%>
@@ -3354,14 +3354,14 @@ end daeExpCallXml;
 template builtinFunctionNameXml(Path path)
 ::=
   match path
-	case IDENT(name="DIVISION") then 'Div'
-	case IDENT(name="ADDITION") then 'Add'
-	case IDENT(name="SUBTRACTION") then 'Sub'
-	case IDENT(name="POWER") then 'Pow'
-	case IDENT(name="sin") then 'Sin'
-	case IDENT(name="cos") then 'Cos'
-	case IDENT(name="exp") then 'Exp'
-	else "Builtin Function is not yet implemented "
+  case IDENT(name="DIVISION") then 'Div'
+  case IDENT(name="ADDITION") then 'Add'
+  case IDENT(name="SUBTRACTION") then 'Sub'
+  case IDENT(name="POWER") then 'Pow'
+  case IDENT(name="sin") then 'Sin'
+  case IDENT(name="cos") then 'Cos'
+  case IDENT(name="exp") then 'Exp'
+  else "Builtin Function is not yet implemented "
 end builtinFunctionNameXml;
 
 template daeExpTailCallXml(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
