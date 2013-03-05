@@ -9054,9 +9054,9 @@ algorithm
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
         str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
         str3 ="\"-L" +& str +& "\"";
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
         libs = List.consOnTrue(System.directoryExists(str), str3, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
       then libs;
     case (_, _, _, libs)
       equation
@@ -9067,9 +9067,9 @@ algorithm
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
         str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
         str3 ="\"-L" +& str +& "\"";
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
         libs = List.consOnTrue(System.directoryExists(str), str3, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
+        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
       then libs;
     else inLibs;
   end matchcontinue;

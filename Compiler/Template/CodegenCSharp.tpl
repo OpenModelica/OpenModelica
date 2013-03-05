@@ -46,6 +46,11 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
     
     <%functionCallExternalObjectConstructors(extObjInfo, simCode)%>
     
+    <%functionCallExternalObjectDestructors(extObjInfo, simCode)%>
+    
+    <%functionExtraResiduals(initialEquations, simCode)%>
+    <%functionExtraResiduals(inlineEquations, simCode)%>
+    <%functionExtraResiduals(parameterEquations, simCode)%>
     <%functionExtraResiduals(allEquations, simCode)%>
       
     <%functionInput(modelInfo, simCode)%>
@@ -59,7 +64,9 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
     <%functionInitial(startValueEquations, simCode)%>
 
     <%functionInitialResidual(residualEquations, simCode)%>
-
+    
+    <%functionInitialEquations(useSymbolicInitialization, initialEquations, simCode)%>
+    
     <%functionBoundParameters(parameterEquations, simCode)%>
 
     <%functionODE(odeEquations, simCode)%>
@@ -319,7 +326,7 @@ end funStatement;
 constant String localRepresentationArrayDefines =
 "var X = states; var Xd = statesDerivatives; var Y = algebraics; var P = parameters; var H = helpVars; var EO = externalObjects;
 var preX = savedStates; var preXd = savedStatesDerivatives; var preY = savedAlgebraics; var preH = savedHelpVars;
-var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; 
+var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; var PS = parametersString;
 /*TODO: HACK FOR non-time varying params*/ var preP = P; var prePI = PI; var prePB = PB;";
        
 
@@ -352,7 +359,7 @@ const int
   NPSTR = <%varInfo.numStringParamVars%>;
 
 public override string ModelName        { get { return "<%dotPath(name)%>"; }}
-public override int HelpVarsCount       { get { return NHELP; } }
+public override int HelpVarsCount       { get { return 0; } }
 public override int ZeroCrossingsCount  { get { return NG; } }
 public override int RelationsCount      { get { return NREL; } }
 public override int SampleTypesCount    { get { return NG_SAM; } }
@@ -363,6 +370,7 @@ public override int AlgebraicsBoolCount { get { return NYB; } }
 public override int ParametersCount     { get { return NP; } }
 public override int ParametersIntCount  { get { return NPI; } }
 public override int ParametersBoolCount { get { return NPB; } }
+public override int ParametersStringCount { get { return NPSTR; } }
         
 public override int OutputsCount   { get { return NO; } }
 public override int InputsCount    { get { return NI; } }
@@ -438,6 +446,9 @@ public <%lastIdentOfPath(name)%>() {
     
     //**** parameters Bool *****  
     <%initVals("parametersBool", vars.boolParamVars, simCode)%>
+    
+    //**** parameters String *****  
+    <%initVals("parametersString", vars.stringParamVars, simCode)%>
 }
 #endregion
 >>
@@ -492,7 +503,7 @@ end varInfos;
 template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
   varsLst |> sv as SIMVAR(__) =>
     match initialValue 
-      case SOME(v) then 
+    case SOME(v) then 
       let &preExp = buffer "" //dummy ... the value is always a constant
       match daeExp(v, contextOther, &preExp, simCode) 
       case vStr as "0"
@@ -505,7 +516,7 @@ template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
       case vStr then
        '<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
         end match
-      else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'    
+    else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'    
   ;separator="\n"
 end initVals;
 
@@ -536,7 +547,24 @@ case EXTOBJINFO(__) then
   >>
 end functionCallExternalObjectConstructors;
 
+template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, SimCode simCode)
+ "Generates external objects construction calls."
+::=
+match extObjInfo
+case EXTOBJINFO(__) then
+  <<
+  public override void FunCallExternalObjectDestructors() {
+    <% localRepresentationArrayDefines %>
+    <% vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 
+      <<
+      _<%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name, simCode)%>); 
+      >>
+      ;separator="\n"
+    %>
+  }
 
+  >>
+end functionCallExternalObjectDestructors;
 
 template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
@@ -924,6 +952,18 @@ template functionExtraResidual(SimEqSystem equ, SimCode simCode) ::=
     >> 
 end functionExtraResidual;
 
+template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, SimCode simCode) ::=
+let()= System.tmpTickReset(1)
+<<
+public override bool UseSymbolicInitialization { get { return <%useSymbolicInitialization%>; } }
+public override void FunInitialEquations()
+{
+  <% localRepresentationArrayDefines %>
+  <%initalEquations |> eq => equation_(eq, contextSimulationDiscrete, simCode) ;separator="\n"%>
+}
+>>
+end functionInitialEquations;
+
 template functionBoundParameters(list<SimEqSystem> parameterEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
@@ -1248,7 +1288,8 @@ template representationArrayNameTypePostfix(Type type_) ::=
   case T_INTEGER(__)
   case T_ENUMERATION(__)  then "I"
   case T_BOOL(__) then "B"
-  case T_REAL(__) then ""
+  case T_REAL(__) then "" 
+  case T_STRING(__) then "S"  
   else "BAD_ARRAY_NAME_POSTFIX"
 end representationArrayNameTypePostfix;
 
@@ -2223,6 +2264,7 @@ template expTypeShort(DAE.Type it) ::=
   case T_REAL(__)   then "double"
   case T_STRING(__) then "string"
   case T_BOOL(__)   then "bool"
+  case T_ENUMERATION(__)   then "int"
   case T_UNKNOWN(__)  then "UNKNOWN_TYPE_NOT_SUPPORTED"
   case T_ANYTYPE(__)  then "ANYTYPE_TYPE_NOT_SUPPORTED"
   case T_ARRAY(__)  then expTypeShort(ty)   
