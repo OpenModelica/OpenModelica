@@ -2811,8 +2811,7 @@ algorithm
 end makeArray;
 
 public function makeScalarArray
-"function: makeRealArray
-  Construct an array node of an DAE.Exp list of type REAL."
+  "Constructs an array of the given scalar type."
   input list<DAE.Exp> inExpLst;
   input DAE.Type et;
   output DAE.Exp outExp;
@@ -3733,52 +3732,32 @@ protected function arrayFill2
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm 
-  oExp := matchcontinue(iDims,inExp)
-  local
-    Integer i;
-    DAE.Dimension d;
-    Type ty;
-    list<DAE.Exp> expl;
-    DAE.Exp arrexp;
-    DAE.Dimensions dims;
-  case({d},_)
-    equation
-      ty = typeof(inExp);
-      i = dimensionSize(d);
-      expl = listCreateExp(i,inExp);
-    then
-      DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
-  
-  case(d::dims,_)
-    equation
-      arrexp = arrayFill2({d},inExp);
-      arrexp = arrayFill2(dims,arrexp);      
-    then
-      arrexp;
-  end matchcontinue;
-end arrayFill2;
+  oExp := match(iDims,inExp)
+    local
+      Integer i;
+      DAE.Dimension d;
+      Type ty;
+      list<DAE.Exp> expl;
+      DAE.Exp arrexp;
+      DAE.Dimensions dims;
 
-protected function listCreateExp "
-Author BZ
-Creates a lsit of exps containing the input Expression.
-"
-input Integer n;
-input DAE.Exp e;
-output list<DAE.Exp> expl;
-algorithm expl := matchcontinue(n,e)
-  case(_,_)
-    equation
-    true = intEq(n,0);
-    then
-      {};
-  case(_,_)
-    equation
-      true = n>0;
-      expl = listCreateExp(n-1,e);
+    case({d},_)
+      equation
+        ty = typeof(inExp);
+        i = dimensionSize(d);
+        expl = List.fill(inExp, i);
       then
-        e::expl;
-  end matchcontinue;
-end listCreateExp;
+        DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
+    
+    case(d::dims,_)
+      equation
+        arrexp = arrayFill2({d},inExp);
+        arrexp = arrayFill2(dims,arrexp);      
+      then
+        arrexp;
+
+  end match;
+end arrayFill2;
 
 public function makeIndexSubscript
 "function makeIndexSubscript
@@ -7204,6 +7183,21 @@ algorithm
   end match;
 end isMatrix;
 
+public function isVector
+  "Returns true if the expression is a vector, i.e. an array with one dimension,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsVector;
+algorithm
+  outIsVector := match(inExp)
+    // Nested arrays are not vectors.
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = _))) then false;
+    // Non-nested array with one dimension is a vector.
+    case DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_})) then true;
+    else false;
+  end match;
+end isVector;
+
 public function isUnary " function: isUnary
 returns true if expression is an unary.
 "
@@ -8129,34 +8123,20 @@ algorithm
   end matchcontinue;
 end operatorEqual;
 
-public function arrayContainZeroDimension " function containZeroDimension
-Check wheter an arrayDim contains a zero dimension or not."
-  input DAE.Dimensions inDim;
-  output Boolean zero;
+public function arrayContainZeroDimension
+  "Checks if one of the dimensions in a list is zero."
+  input list<DAE.Dimension> inDimensions;
+  output Boolean outContainZeroDim;
 algorithm
-  zero := matchcontinue(inDim)
+  outContainZeroDim := match(inDimensions)
     local
-      DAE.Dimension d;
-      DAE.Dimensions iLst;
-      Boolean retVal;
-    
-    case({}) then true;
-    
-    case (DAE.DIM_UNKNOWN() :: iLst)
-      equation
-        retVal = arrayContainZeroDimension(iLst);
-      then
-        retVal;
-    
-    case (d :: iLst)
-      equation
-        false = (dimensionSize(d) >= 1);
-        retVal = arrayContainZeroDimension(iLst);
-      then
-        retVal;
+      list<DAE.Dimension> rest_dims;
 
-    case(_) then false;
-  end matchcontinue;
+    case (DAE.DIM_INTEGER(0) :: _) then true;
+    case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
+    case ({}) then false;
+
+  end match;
 end arrayContainZeroDimension;
 
 public function arrayContainWholeDimension
@@ -9436,6 +9416,57 @@ algorithm
     case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(Absyn.pathString(path)) ;
     end matchcontinue;
 end hashOp;
+
+public function matrixToArray
+  input DAE.Exp inMatrix;
+  output DAE.Exp outArray;
+algorithm
+  outArray := match(inMatrix)
+    local
+      DAE.Type ty, row_ty;
+      list<list<Exp>> matrix;
+      list<DAE.Exp> rows;
+
+    case DAE.MATRIX(ty = ty, matrix = matrix)
+      equation
+        row_ty = unliftArray(ty);
+        rows = List.map2(matrix, makeArray, row_ty, true);
+      then
+        DAE.ARRAY(ty, false, rows);
+
+    else inMatrix;
+
+  end match;
+end matrixToArray;
+
+public function transposeArray
+  input DAE.Exp inArray;
+  output DAE.Exp outArray;
+algorithm
+  outArray := match(inArray)
+    local
+      DAE.Type ty, row_ty;
+      DAE.Dimension dim1, dim2;
+      DAE.TypeSource ty_src;
+      list<Exp> expl;
+      list<list<Exp>> matrix;
+
+    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, {})
+      then DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, {});
+
+    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, expl)
+      equation
+        row_ty = DAE.T_ARRAY(ty, {dim1}, ty_src);
+        matrix = List.map(expl, getArrayContents);
+        matrix = List.transposeList(matrix);
+        expl = List.map2(matrix, makeArray, row_ty, true);
+      then
+        DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, expl);
+
+    else inArray;
+
+  end match;
+end transposeArray;
 
 end Expression;
 

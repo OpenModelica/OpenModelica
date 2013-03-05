@@ -1810,27 +1810,20 @@ protected function transposeList_tail
   input list<list<ElementType>> inAccum;
   output list<list<ElementType>> outList;
 algorithm
-  outList := matchcontinue(inList, inAccum)
+  outList := match(inList, inAccum)
     local
       list<ElementType> firstl;
       list<list<ElementType>> restl;
 
     case ({}, _) then listReverse(inAccum);
     case ({} :: _, _) then listReverse(inAccum);
-    case (_, _)
+    else
       equation
         (firstl, restl) = map_2(inList, splitFirst);
       then
         transposeList_tail(restl, firstl :: inAccum);
 
-    //else
-    //  equation
-    //    bools = map(inList, isNotEmpty);
-    //    false = reduce(bools, boolOr);
-    //  then
-    //    listReverse(inAccum);
-
-  end matchcontinue;
+  end match;
 end transposeList_tail;
 
 public function setEqualOnTrue 

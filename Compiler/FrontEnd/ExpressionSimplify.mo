@@ -1657,12 +1657,6 @@ algorithm
       then
         e_1;
 
-    case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
-      equation
-        res = simplifyScalarProduct(e1, e2);
-      then
-        res;
-
     case(e1,op as DAE.ADD_ARR(ty = _),e2)
       equation
         a1 = simplifyVectorBinary0(e1,op,e2);
@@ -1765,154 +1759,33 @@ algorithm
 end simplifyBinaryArray;
 
 public function simplifyScalarProduct
-"function: simplifyScalarProduct
-  author: PA
-  Simplifies scalar product:
-   v1v2, M  v1 and v1  M
-  for vectors v1,v2 and matrix M."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  output DAE.Exp outExp;
+  "Simplifies the scalar product of two vectors."
+  input DAE.Exp inVector1;
+  input DAE.Exp inVector2;
+  output DAE.Exp outProduct;
 algorithm
-  outExp := matchcontinue (inExp1,inExp2)
+  outProduct := match(inVector1, inVector2)
     local
-      list<DAE.Exp> expl,expl1,expl2,expl_1;
+      list<DAE.Exp> expl, expl1, expl2;
       DAE.Exp exp;
-      Type tp1,tp2,tp;
-      Boolean sc1,sc2,sc;
-      Integer size;
-      list<list<DAE.Exp>> lstexpl1,lstexpl2;
-      DAE.Dimension d;
-      DAE.TypeSource ts;
+      Type tp1, tp2, tp;
     
-    case (DAE.ARRAY(ty = tp1,scalar = sc1,array = expl1),DAE.ARRAY(ty = tp2,scalar = sc2,array = expl2)) /* v1  v2 */
+    // Both arrays are empty. The result is defined in the spec by sum, so we
+    // return the default value which is 0.
+    case (DAE.ARRAY(ty = tp, array = {}), DAE.ARRAY(array = {}))
+      then Expression.makeConstZero(tp);
+
+    // Normal scalar product of two vectors.
+    case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2))
       equation
+        true = Expression.isVector(inVector1) and Expression.isVector(inVector2);
         expl = List.threadMap(expl1, expl2, Expression.expMul);
         exp = List.reduce(expl, Expression.expAdd);
       then
         exp;
     
-    // M * v1, use first dimension of M as the dimension of the result, in case the array has dimension 1, i.e. is a scalar.
-    case (DAE.MATRIX(ty = DAE.T_ARRAY(ty = tp1, dims = d :: _, source = ts), matrix = lstexpl1),
-          DAE.ARRAY(scalar = sc,array = expl2))
-      equation
-        expl_1 = simplifyScalarProductMatrixVector(lstexpl1, expl2);
-      then
-        DAE.ARRAY(DAE.T_ARRAY(tp1, {d}, ts),sc,expl_1);
-    
-    case (DAE.ARRAY(ty = tp1,scalar = sc,array = expl1),
-          DAE.MATRIX(ty = tp2,integer = size,matrix = lstexpl2))
-      equation
-        expl_1 = simplifyScalarProductVectorMatrix(expl1, lstexpl2);
-      then
-        DAE.ARRAY(tp2,sc,expl_1);
-    
-    case (DAE.ARRAY(ty = tp as DAE.T_ARRAY(dims= _::_::{}),array = expl1),exp as 
-          DAE.ARRAY(ty = tp2,scalar = sc,array = expl2))
-      equation 
-        expl_1 = simplifyScalarProductMatrixVector1(expl1, expl2);
-      then
-        DAE.ARRAY(tp2,sc,expl_1);
-  end matchcontinue;
-end simplifyScalarProduct;
-
-protected function simplifyScalarProductMatrixVector
-"function: simplifyScalarProductMatrixVector
-  Simplifies scalar product of matrix  vector."
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
-  input list<DAE.Exp> inExpLst;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst := matchcontinue (inTplExpBooleanLstLst,inExpLst)
-    local
-      list<DAE.Exp> row_1,expl,res,v1;
-      DAE.Exp exp;
-      list<DAE.Exp> row;
-      list<list<DAE.Exp>> rows;
-      Integer x;
-    
-    case ({},_) then {};
-    
-    case ((row :: rows),v1)
-      equation
-        row_1 = row;
-        x = listLength(row_1);
-        true = (x<=0);
-        res = simplifyScalarProductMatrixVector(rows, v1);
-      then
-        (DAE.ICONST(0) :: res);
-    
-    case ((row :: rows),v1)
-      equation
-        row_1 = row;
-        expl = List.threadMap(row_1, v1, Expression.expMul);
-        exp = List.reduce(expl, Expression.expAdd);
-        res = simplifyScalarProductMatrixVector(rows, v1);
-      then
-        (exp :: res);
-  end matchcontinue;
-end simplifyScalarProductMatrixVector;
-
-protected function simplifyScalarProductMatrixVector1
-"function: simplifyScalarProductMatrixVector1
-  Simplifies scalar product of matrix  vector."
-  input list<DAE.Exp> inExpLst;
-  input list<DAE.Exp> inExpLst1;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst := match (inExpLst,inExpLst1)
-    local
-      list<DAE.Exp> row,rows,res,v1,expl;
-      DAE.Exp exp;
-    
-    case ({},_) then {};
-    
-    case ((DAE.ARRAY(array=row) :: rows),v1)
-      equation
-        expl = List.threadMap(row, v1, Expression.expMul);
-        exp = List.reduce(expl, Expression.expAdd);
-        res = simplifyScalarProductMatrixVector1(rows, v1);
-      then
-        (exp :: res);
   end match;
-end simplifyScalarProductMatrixVector1;
-
-protected function simplifyScalarProductVectorMatrix
-"function: simplifyScalarProductVectorMatrix
-  Simplifies scalar product of vector  matrix"
-  input list<DAE.Exp> inExpLst;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst := matchcontinue (inExpLst,inTplExpBooleanLstLst) // non working
-    local
-      list<DAE.Exp> row_1,expl,res,v1;
-      DAE.Exp exp;
-      DAE.Exp texp;
-      list<DAE.Exp> heads;
-      list<list<DAE.Exp>> rows,tails;
-    
-    case (v1,  ((texp :: {}) :: rows)    )
-      equation
-        heads = List.map(((texp :: {}) :: rows),List.first);
-        row_1 = heads;
-        expl = List.threadMap(v1, row_1, Expression.expMul);
-        exp = List.reduce(expl, Expression.expAdd);
-      then
-        (exp :: {});
-    
-    case (v1,(rows))
-      equation
-        heads = List.map((rows),List.first);
-        tails = List.map((rows),List.rest);
-        row_1 = heads;
-        expl = List.threadMap(v1, row_1, Expression.expMul);
-        exp = List.reduce(expl, Expression.expAdd);
-        res = simplifyScalarProductVectorMatrix(v1, tails);
-      then
-        (exp :: res);
-  end matchcontinue;
-end simplifyScalarProductVectorMatrix;
+end simplifyScalarProduct;
 
 protected function unliftOperator
   input DAE.Exp inArray;
@@ -2264,120 +2137,124 @@ algorithm
 end simplifyMatrixPow1;
 
 protected function simplifyMatrixProduct
-"function: simplifyMatrixProduct
-  author: PA
-  Simplifies matrix products A * B for matrices A and B."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  output DAE.Exp outExp;
+  "Simplifies matrix multiplication."
+  input DAE.Exp inMatrix1;
+  input DAE.Exp inMatrix2;
+  output DAE.Exp outProduct;
+protected
+  DAE.Exp mat1, mat2;
 algorithm
-  outExp := match (inExp1,inExp2)
-    local
-      list<DAE.Exp> es;
-      list<list<DAE.Exp>> expl_1,expl1,expl2;
-      Type tp;
-      Integer n, p;
-      DAE.TypeSource ts;
-      DAE.Exp e1,e2;
-      
-    /* A[n, m] * B[m, p] = C[n, p] */
-    case (e1,e2)
-      equation
-        DAE.T_ARRAY(ty=tp,source=ts) = Types.simplifyType(Expression.typeof(e1));
-        (expl1) = Expression.get2dArrayOrMatrixContent(e1);
-        (expl2) = Expression.get2dArrayOrMatrixContent(e2);
-        (expl_1 as es::_) = simplifyMatrixProduct2(expl1, expl2);
-        n = listLength(expl_1);
-        p = listLength(es);
-      then
-        DAE.MATRIX(DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(n), DAE.DIM_INTEGER(p)}, ts),n,expl_1);
-  end match;
+  // Convert any DAE.MATRIX expressions to DAE.ARRAY.
+  mat1 := Expression.matrixToArray(inMatrix1);
+  mat2 := Expression.matrixToArray(inMatrix2);
+  // Transpose the second matrix. This makes it easier to do the multiplication,
+  // since we can do row-row multiplications instead of row-column.
+  mat2 := Expression.transposeArray(mat2);
+  outProduct := simplifyMatrixProduct2(mat1, mat2);
 end simplifyMatrixProduct;
 
 protected function simplifyMatrixProduct2
-"function: simplifyMatrixProduct2
-  author: PA
-  Helper function to simplifyMatrixProduct."
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst1;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst2;
-  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
+  "Helper function to simplifyMatrixProduct, does the actual work. Assumes that
+   the second matrix has been transposed to make the multiplication easier."
+  input DAE.Exp inMatrix1;
+  input DAE.Exp inMatrix2;
+  output DAE.Exp outProduct;
 algorithm
-  outTplExpBooleanLstLst:=
-  match (inTplExpBooleanLstLst1,inTplExpBooleanLstLst2)
+  outProduct := matchcontinue(inMatrix1, inMatrix2)
     local
-      list<DAE.Exp> res1,e1lst;
-      list<list<DAE.Exp>> res2,rest1,m2;
-    case ((e1lst :: rest1),m2)
+      DAE.Dimension n, m, p;
+      list<DAE.Exp> expl1, expl2;
+      DAE.Type ty, row_ty;
+      DAE.TypeSource tp;
+      list<list<DAE.Exp>> matrix;
+      DAE.Exp zero;
+      list<DAE.Dimension> dims;
+
+    // The common dimension of the matrices is zero, the result will be an array
+    // of zeroes (the default value of sum).
+    case (DAE.ARRAY(ty = ty as DAE.T_ARRAY(dims = dims)), DAE.ARRAY(ty = _))
       equation
-        res1 = simplifyMatrixProduct3(e1lst, m2);
-        res2 = simplifyMatrixProduct2(rest1, m2);
+        // It's sufficient to check the first array, because the only case where
+        // the second array alone determines the result dimensions is the
+        // vector-matrix case. The instantiation should just remove the
+        // equations in that case, since the result will be an empty array.
+        true = Expression.arrayContainZeroDimension(dims);
+        zero = Expression.makeConstZero(ty);
+        dims = simplifyMatrixProduct4(inMatrix1, inMatrix2);
       then
-        (res1 :: res2);
-    case ({},_) then {};
-  end match;
+        Expression.arrayFill(dims, zero);
+
+    // Matrix-vector multiplication, c[n] = a[n, m] * b[m].
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, m}, tp), array = expl1),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_}), array = expl2))
+      equation
+        // c[i] = a[i, :] * b for i in 1:n
+        expl1 = List.map1(expl1, simplifyScalarProduct, inMatrix2);
+        ty = DAE.T_ARRAY(ty, {n}, tp);
+      then
+        DAE.ARRAY(ty, true, expl1);
+
+    // Vector-matrix multiplication, c[m] = a[n] * b[n, m].
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_}), array = expl1),
+          DAE.ARRAY(ty = DAE.T_ARRAY(ty, {m, n}, tp), array = expl2))
+      equation
+        // c[i] = a * b[:, i] for i in 1:m
+        expl1 = List.map1r(expl2, simplifyScalarProduct, inMatrix1);
+        ty = DAE.T_ARRAY(ty, {m}, tp);
+      then
+        DAE.ARRAY(ty, true, expl1);
+
+    // Matrix-matrix multiplication, c[n, p] = a[n, m] * b[m, p].
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, m}, tp), array = expl1),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {p, _}), array = expl2))
+      equation
+        // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p
+        matrix = List.map1(expl1, simplifyMatrixProduct3, expl2);
+        row_ty = DAE.T_ARRAY(ty, {p}, tp);
+        expl1 = List.map2(matrix, Expression.makeArray, row_ty, true);
+      then
+        DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}, tp), false, expl1);
+
+  end matchcontinue;
 end simplifyMatrixProduct2;
 
 protected function simplifyMatrixProduct3
-"function: simplifyMatrixProduct3
-  author: PA
-  Helper function to simplifyMatrixProduct2. Extract each column at
-  a time from the second matrix to calculate vector products with the
-  first argument."
-  input list<DAE.Exp> inTplExpBooleanLst;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
-  output list<DAE.Exp> outTplExpBooleanLst;
+  "Helper function to simplifyMatrixProduct2. Multiplies the given matrix row
+   with each row in the given matrix and returns a list with the results."
+  input DAE.Exp inRow;
+  input list<DAE.Exp> inMatrix;
+  output list<DAE.Exp> outRow;
 algorithm
-  outTplExpBooleanLst:=
-  matchcontinue (inTplExpBooleanLst,inTplExpBooleanLstLst)
-    local
-      list<DAE.Exp> first_col,es,expl;
-      list<list<DAE.Exp>> mat_1,mat;
-      DAE.Exp e_1;
-    case ({},_) then {};
-    case (expl,mat)
-      equation
-        first_col = List.map(mat, List.first);
-        mat_1 = List.map(mat, List.rest);
-        e_1 = simplifyMatrixProduct4(expl, first_col);
-        //tp = Expression.typeof(e_1);
-        //builtin = Expression.typeBuiltin(tp);
-        es = simplifyMatrixProduct3(expl, mat_1);
-      then
-        (e_1 :: es);
-    case (_,_) then {};
-  end matchcontinue;
+  outRow := List.map1r(inMatrix, simplifyScalarProduct, inRow);
 end simplifyMatrixProduct3;
 
 protected function simplifyMatrixProduct4
-"function simplifyMatrixProduct4
-  author: PA
-  Helper function to simplifyMatrix3,
-  performs a scalar mult of vectors"
-  input list<DAE.Exp> inTplExpBooleanLst1;
-  input list<DAE.Exp> inTplExpBooleanLst2;
-  output DAE.Exp outExp;
+  "Helper function to simplifyMatrixProduct2. Returns the dimensions of the
+   matrix multiplication product for two matrices."
+  input DAE.Exp inMatrix1;
+  input DAE.Exp inMatrix2;
+  output list<DAE.Dimension> outDimensions;
 algorithm
-  outExp:=
-  matchcontinue (inTplExpBooleanLst1,inTplExpBooleanLst2)
+  outDimensions := match(inMatrix1, inMatrix2)
     local
-      Type tp,tp_1;
-      DAE.Exp e1,e2,e,res;
-      list<DAE.Exp> es1,es2;
-    case ({e1},{e2})
-      equation
-        tp = Expression.typeof(e1);
-        tp_1 = Expression.arrayEltType(tp);
-      then
-        DAE.BINARY(e1,DAE.MUL(tp_1),e2);
-    case (e1 :: es1,e2 :: es2)
-      equation
-        e = simplifyMatrixProduct4(es1, es2);
-        tp = Expression.typeof(e);
-        tp_1 = Expression.arrayEltType(tp);
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp_1),e2),DAE.ADD(tp_1),e);
-      then
-        res;
-  end matchcontinue;
+      DAE.Dimension n, m, p;
+
+    // c[n] = a[n, m] * b[m]
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {n, _})),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_})))
+      then {n};
+
+    // c[m] = a[n] * b[n, m]
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_})),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {m, _})))
+      then {m};
+
+    // c[n, p] = a[n, m] * b[m, p]
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {n, _})),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {p, _})))
+      then {n, p};
+
+  end match;
 end simplifyMatrixProduct4;
 
 protected function simplifyBinarySortConstants
@@ -3170,14 +3047,6 @@ algorithm
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),sub)
       equation
         e = simplifyMatrixProduct(e1,e2);
-        e = simplifyAsub(e, sub);
-      then
-        e;
-    
-    // For scalar product v1 * v2, M * v1 and v1 * M
-    case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),sub)
-      equation
-        e = simplifyScalarProduct(e1,e2);
         e = simplifyAsub(e, sub);
       then
         e;
