@@ -2735,7 +2735,8 @@ algorithm
     case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
       equation
         iters = compareIterators(listReverse(riters), iters);
-      then getElementDependenciesTraverserExit((exp, (all_el, accum_el, iters)));
+      then
+        ((exp, (all_el, accum_el, iters)));
 
     else inTuple;
   end match;
@@ -2752,16 +2753,22 @@ algorithm
       DAE.ReductionIterators riters;
       list<String> iters;
 
-    case (DAE.REDUCTIONITER(id=id1)::riters, id2::iters)
+    case (DAE.REDUCTIONITER(id = id1) :: riters, id2 :: iters)
       equation
-        true = stringEqual(id1,id2);
-      then compareIterators(riters,iters);
+        true = stringEqual(id1, id2);
+      then
+        compareIterators(riters, iters);
+
+    case ({}, _) then inIters;
 
     // This should never happen, print an error if it does.
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Different iterators in CevalFunction.compareIterators."});
-      then fail();
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Different iterators in CevalFunction.compareIterators."});
+      then
+        fail();
+
   end matchcontinue;
 end compareIterators;
 
