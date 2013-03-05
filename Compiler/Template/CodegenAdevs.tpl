@@ -459,6 +459,9 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFD*/)
        ;separator="\n")   
+     let arrayprebody = (eq.eqs |> eq2 as SES_ARRAY_CALL_ASSIGN(__) =>
+         equation_(eq2, contextOther, &varDecls /*BUFD*/)
+       ;separator="\n")   
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
@@ -484,6 +487,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
        <%varDecls%>
        <%algs%>
        <%prebody%>
+       <%arrayprebody%>
        <%body%>
      }
 
@@ -1411,19 +1415,19 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    copy_boolean_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    copy_boolean_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
     >>
   case "integer" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    copy_integer_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    copy_integer_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
     >>
   case "real" then
     <<
     <%preExp%>
-    copy_real_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
+    copy_real_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
 end equationArrayCallAssign;
@@ -5726,70 +5730,6 @@ template literalExpConstBoxedVal(Exp lit)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>') 
 end literalExpConstBoxedVal;
-
-template equationInfo(list<SimEqSystem> eqs)
-::=
-  match eqs
-  case {} then "const struct omc_equationInfo equation_info[1] = {{0,NULL}};"
-  else
-    let &preBuf = buffer ""
-    let res =
-    <<
-    const int nEquation = <%listLength(eqs)%>;
-    const struct omc_equationInfo equation_info[<%listLength(eqs)%>] = {
-      <% eqs |> eq hasindex i0 =>
-        <<{<%System.tmpTick()%>,<%match eq
-          case SES_RESIDUAL(__) then '"SES_RESIDUAL <%i0%>",0,NULL'
-          case SES_SIMPLE_ASSIGN(__) then
-            let var = '<%cref(cref)%>__varInfo'
-            let &preBuf += 'const struct omc_varInfo *equationInfo_cref<%i0%> = &<%var%>;<%\n%>'
-            '"SES_SIMPLE_ASSIGN <%i0%>",1,&equationInfo_cref<%i0%>'
-          case SES_ARRAY_CALL_ASSIGN(__) then
-            //let var = '<%cref(componentRef)%>__varInfo'
-            //let &preBuf += 'const struct omc_varInfo *equationInfo_cref<%i0%> = &<%var%>;'
-            '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
-          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>",0,NULL'
-          case SES_WHEN(__) then '"SES_WHEN <%i0%>",0,NULL'
-          case SES_LINEAR(__) then '"LINEAR<%index%>",0,NULL'
-          case SES_NONLINEAR(__) then
-            let &preBuf += 'const struct omc_varInfo *residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'&<%cref(cr)%>__varInfo'; separator=","%>};'
-            '"residualFunc<%index%>",<%listLength(crefs)%>,residualFunc<%index%>_crefs'
-          case SES_MIXED(__) then '"MIXED<%index%>",0,NULL'
-          else '"unknown equation <%i0%>",0,NULL'%>}
-        >> ; separator=",\n"%>
-    };
-    >>
-    <<
-    <%preBuf%>
-    <%res%>
-    <% eqs |> eq hasindex i0 => match eq
-      case SES_MIXED(__)
-      case SES_LINEAR(__)
-      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
-    ; separator="\n"
-    %>
-    const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq hasindex i0 => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
-        case SES_NONLINEAR(__) then '+1'
-      %>;
-    const int omc_equationInfo_reverse_prof_index[] = {
-      <% eqs |> eq hasindex i0 => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
-        case SES_NONLINEAR(__) then '<%i0%>,<%\n%>'
-      ; empty
-      %>
-    };
-    <% eqs |> eq hasindex i0 => match eq
-      case SES_MIXED(__)
-      case SES_LINEAR(__)
-      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
-    ; separator="\n"
-    %>
-    >>
-end equationInfo;
-
 
 template error(Absyn.Info srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
