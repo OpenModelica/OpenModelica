@@ -55,7 +55,7 @@
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
 GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
-  : QGraphicsView(parent), mIconType(iconType)
+  : QGraphicsView(parent), mIconType(iconType), mSkipBackground(false)
 {
   mpParentProjectTab = parent;
   setFrameShape(QGraphicsView::NoFrame);
