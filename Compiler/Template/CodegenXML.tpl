@@ -1,10 +1,10 @@
 // This file defines templates for transforming flattened Modelica code to Xml code.
-// @author Alachew Shitahun <alash325@student.liu.se> - Some templates taken from CodegenC.tpl
+// + Optimica code to XML code
+// @author Alachew Shitahun <alash325@student.liu.se> - Some of the template taken from CodegenC.tpl
 
 package CodegenXML
 
 import interface SimCodeTV;
-
 
 
 /*********************************************************************
@@ -54,12 +54,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%algorithmicEquationsXml(allEquations)%>
   
     <%initialEquationsXml(modelInfo)%>
-  
+    
     <%recordsXml(recordDecls)%>
   
     <%functionsXml(modelInfo.functions)%>
-  
-    <%/*optimizationXml(constraints)*/%>
     
     <%objectiveFunctionXml(classAttributes, simCode)%>  
     
@@ -71,7 +69,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  *      SECTION: GENERATE XML for MODEL DESCRIPTION AND SCALAR VARIABLES IN SIMULATION FILE
  *************************************************************************************/
 
- template vendorAnnotationsXml(SimCode simCode) ::=
+template vendorAnnotationsXml(SimCode simCode) 
+::=
  match simCode
  case SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(__))) then
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
@@ -137,17 +136,20 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stateVars |> var => ScalarVariableXml(var) ;separator="\n"%>  
   <%vars.derivativeVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.algVars |> var => ScalarVariableXml(var) ;separator="\n"%>
-  <%vars.paramVars |> var => ScalarVariableXml(var) ;separator="\n"%>
-  <%vars.aliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.intAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
-  <%vars.intParamVars |> var => ScalarVariableXml(var) ;separator="\n"%>
-  <%vars.intAliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.boolAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%/*vars.inputVars |> var => ScalarVariableXml(var) ;separator="\n"*/%>
+  <%vars.outputVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.aliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.intAliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.boolAliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.paramVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.intParamVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.boolParamVars |> var => ScalarVariableXml(var) ;separator="\n"%>  
-  <%vars.boolAliasVars |> var => ScalarVariableXml(var) ;separator="\n"%>  
   <%vars.stringAlgVars |> var => ScalarVariableXml(var) ; separator="\n"%>
   <%vars.stringParamVars |> var => ScalarVariableXml(var) ; separator="\n"%> 
   <%vars.stringAliasVars |> var => ScalarVariableXml(var) ; separator="\n"%>
+  <%vars.extObjVars |> var => ScalarVariableXml(var) ; separator="\n"%>
   <%vars.constVars |> var => ScalarVariableXml(var) ; separator="\n"%>
   <%vars.intConstVars |> var => ScalarVariableXml(var) ; separator="\n"%> 
   <%vars.boolConstVars |> var => ScalarVariableXml(var) ; separator="\n"%> 
@@ -183,8 +185,11 @@ case SIMVAR(__) then
       <QualifiedName>
         <%qualifiedNamePartXml(name)%>
       </QualifiedName>
+	  <isLinearTimedVariables>
+      	<TimePoint index="0" isLinear="true"/>
+	  </isLinearTimedVariables>
       <VariableCategory><%variableCategory%></VariableCategory>  
-    </ScalarVariable> <%\n%>
+    </ScalarVariable> <%\n%> 
   >> 
 end ScalarVariableAttributesXml;
 
@@ -228,7 +233,7 @@ template variableCategoryXml(VarKind varKind)
   case DUMMY_DER(__)   then "algebraic" 
   case DUMMY_STATE(__) then "algebraic" 
   case DISCRETE(__)    then "algebraic"
-  case PARAM(__)       then "parameter" 
+  case PARAM(__)       then "independentParameter" 
   case CONST(__)       then "independentConstant"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
@@ -399,12 +404,19 @@ template crefToXmlStr(ComponentRef cr)
     <exp:Der>
       <%crefToXmlStr(componentRef)%>  
     </exp:Der>
-   >>
+    >>
   case CREF_QUAL(__) then 
     <<
     <exp:Identifier>
       <%qualifiedNamePartXml(cr)%>
     </exp:Identifier>
+    >>
+  case OPTIMICA_ATTR_INST_CREF(__) then
+    << 
+	<exp:TimedVariable timePointIndex = "0">
+        <%crefToXmlStr(componentRef)%>
+		<exp:Instant><%instant%></exp:Instant>
+	</exp:TimedVariable>    
     >>
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -540,7 +552,6 @@ end underscorePathXml;
 /*****************************************************************************
  *         SECTION: GENERATE All Function IN SIMULATION FILE
  *****************************************************************************/
-
 
 template functionWhenReinitStatementXml(WhenOperator reinit, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
@@ -1024,7 +1035,6 @@ template recordBodyXml(Variable var)
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end  recordBodyXml;
 
-
 /*********************************************************************************************
  * SECTION: GENERATE All USER DEFINED FUNCTIONS INCLUDING EXTERNAL FUNCTIONS IN SIMULATION FILE
  **********************************************************************************************/
@@ -1386,6 +1396,11 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
     case OPTIMIZATION_ATTRS(__) then
       let &varDecls = buffer "" /*BUFD*/
       let &preExp = buffer "" /*BUFD*/
+      let test = match objetiveE case SOME(exp) then 
+        <<
+        <%daeExpXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>
+        >>
+        else 'no cref'
       let objectiveFunction = match objetiveE case SOME(exp) then
         <<
         <opt:ObjectiveFunction>
@@ -1411,13 +1426,13 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
         </opt:IntervalFinalTime>
         >>
       let timePointIndex = match startTimeE case SOME(exp) then
-       <<
-       <opt:Index><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Index>
-       >>
+		<<
+      	index = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
+      	>>
       let timePointValue = match finalTimeE case SOME(exp) then
-       <<
-       <opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
-       >>
+      	<<
+      	value = "<%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>"
+      	>>
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraintsXml(constraints)              
         <<
         <opt:Optimization>
@@ -1426,15 +1441,16 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <%startTime%>
           <%finalTime%>
           <opt:TimePoints>
-           <%timePointIndex%>
-           <%timePointValue%>
+          	<opt:TimePoint <%timePointIndex%> <%timePointValue%>>
+          	<%test%>
+          	</opt:TimePoint>
           </opt:TimePoints>
-          <opt:pathConstraints>
+          <opt:PathConstraints>
               <%constraints%>
-          </opt:pathConstraints>          
+          </opt:PathConstraints>          
         </opt:Optimization>
         >> 
-    else error(sourceInfo(), 'Unknown Constraint List')
+    else error(sourceInfo(), 'Unknown Optimization attribute')
 end classAttributesXml;
 
 template constraintsXml( list<DAE.Constraint> constraints)
@@ -1580,7 +1596,6 @@ template algStmtAssignXml(DAE.Statement stmt, Context context, Text &varDecls /*
     </fun:Assign>
     >>
 end algStmtAssignXml;
-
 
 template algStmtAssignArrXml(DAE.Statement stmt, Context context,
                  Text &varDecls /*BUFP*/)
@@ -1960,7 +1975,6 @@ case SOME(when as STMT_WHEN(__)) then
     >>
 end algStatementWhenElseXml;
 
-
 template algStmtReinitXml(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an assigment algorithm statement."
 ::=
@@ -2086,8 +2100,7 @@ template daeExternalXmlExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text
     case T_ARRAY(__) then  // Array-expressions
       <<
       <%daeExpXml(exp, context, &preExp, &varDecls)%>
-      >>
-      
+      >>     
 end daeExternalXmlExp;
 
 template daeExpSconstXml(String string, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -2096,9 +2109,7 @@ template daeExpSconstXml(String string, Context context, Text &preExp /*BUFP*/, 
   <<
   "<%Util.escapeModelicaStringToCString(string)%>"
   >>
-
 end daeExpSconstXml;
-
 
 
 /*********************************************************************
@@ -2106,7 +2117,6 @@ end daeExpSconstXml;
  *                       RIGHT HAND SIDE
  *********************************************************************
  *********************************************************************/
-
 
 template daeExpCrefRhsXml(Exp exp, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)
@@ -2130,8 +2140,7 @@ template daeExpCrefRhsXml(Exp exp, Context context, Text &preExp /*BUFP*/,
     <<
     <%crefStrXml(cr)%>
     >>
- 
-  else daeExpCrefRhs2Xml(exp, context, &preExp, &varDecls)
+   else daeExpCrefRhs2Xml(exp, context, &preExp, &varDecls)
 end daeExpCrefRhsXml;
 
 template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
@@ -2259,7 +2268,6 @@ template daeExpCrefRhsIndexSpecXml(list<Subscript> subs, Context context,
   tmp
 end daeExpCrefRhsIndexSpecXml;
 
-
 template daeExpCrefRhsArrayBoxXml(Exp ecr, Context context, Text &preExp /*BUFP*/,
                                Text &varDecls /*BUFP*/)
  "Helper to daeExpCrefRhs."
@@ -2292,9 +2300,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
    <<
    <%vars%>
    >>
-
 end daeExpRecordCrefRhsXml;
-
 
 
 /*********************************************************************
@@ -2331,8 +2337,7 @@ template daeExpCrefLhsXml(Exp exp, Context context, Text &afterExp /*BUFP*/,
     <<
     <%crefStrXml(cr)%>
     >>
- 
-  else daeExpCrefLhs2Xml(exp, context, &afterExp, &varDecls)
+   else daeExpCrefLhs2Xml(exp, context, &afterExp, &varDecls)
 end daeExpCrefLhsXml;
 
 template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
@@ -2462,7 +2467,6 @@ end daeExpRecordCrefLhsXml;
  *********************************************************************
  *********************************************************************/
  
- 
 template daeExpBinaryXml(Exp exp, Context context, Text &preExp /*BUFP*/,
                       Text &varDecls /*BUFP*/)
  "Generates code for a binary expression."
@@ -2591,7 +2595,6 @@ case BINARY(__) then
   case POW_ARR2(__) then 'daeExpBinary:ERR for POW_ARR2'
   else "daeExpBinary:ERR"
 end daeExpBinaryXml;
-
 
 template daeExpUnaryXml(Exp exp, Context context, Text &preExp /*BUFP*/,
                      Text &varDecls /*BUFP*/)
@@ -3004,7 +3007,6 @@ case IFEXP(__) then
       resVar)
 end daeExpIfXml;
 
-
 template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
  "Generates code for a function call."
@@ -3055,14 +3057,12 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     <<
     <%crefXml(arg.componentRef)%>
     >>
-   
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
     <<
     <%crefXml(arg.componentRef)%>
-    >>
-    
+    >> 
   case CALL(path=IDENT(name="change"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
   
@@ -3321,7 +3321,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
      // non tuple calls (single return value)
       case CALL(attr=CALL_ATTR(tuple_=false)) then
         if attr.builtin then 
-          <<
+          << 
           <exp:<%builtinFunctionName%>>
             <%argStr%>  
           </exp:<%builtinFunctionName%>>
@@ -3354,11 +3354,14 @@ end daeExpCallXml;
 template builtinFunctionNameXml(Path path)
 ::=
   match path
- case IDENT(name="DIVISION") then 'Div'
- case IDENT(name="ADDITION") then 'Add'
- case IDENT(name="SUBTRACTION") then 'Sub'
- case IDENT(name="POWER") then 'Pow'
- else "Builtin Function is not yet implemented "
+	case IDENT(name="DIVISION") then 'Div'
+	case IDENT(name="ADDITION") then 'Add'
+	case IDENT(name="SUBTRACTION") then 'Sub'
+	case IDENT(name="POWER") then 'Pow'
+	case IDENT(name="sin") then 'Sin'
+	case IDENT(name="cos") then 'Cos'
+	case IDENT(name="exp") then 'Exp'
+	else "Builtin Function is not yet implemented "
 end builtinFunctionNameXml;
 
 template daeExpTailCallXml(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
@@ -3429,7 +3432,6 @@ template daeExpMatrixXml(Exp exp, Context context, Text &preExp /*BUFP*/,
     let &preExp += ''
     tmp
 end daeExpMatrixXml;
-
 
 template daeExpMatrixRowXml(list<Exp> row, String arrayTypeStr,
                          Context context, Text &preExp /*BUFP*/,
@@ -3634,7 +3636,6 @@ template daeExpSharedLiteralXml(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp case exp as SHARED_LITERAL(__) then ''  // alachew changed from _OMC_LIT<%exp.index%>
 end daeExpSharedLiteralXml;
 
-
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
@@ -3667,7 +3668,6 @@ end arrayScalarRhsXml;
 /*****************************************************************************
  *         SECTION: 
  *****************************************************************************/
-
 
 template outDeclXml(String ty, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
@@ -3715,12 +3715,10 @@ end varTypeXml;
 
 template varTypeBoxedXml(Variable var)
 ::=
-match var
-case VARIABLE(__) then 'modelica_metatype'
-case FUNCTION_PTR(__) then 'modelica_fnptr'
+  match var
+  case VARIABLE(__) then 'modelica_metatype'
+  case FUNCTION_PTR(__) then 'modelica_fnptr'
 end varTypeBoxedXml;
-
-
 
 template expTypeRWXml(DAE.Type type)
  "Helper to writeOutVarRecordMembers."
@@ -3786,13 +3784,11 @@ template expTypeXml(DAE.Type ty, Boolean array)
   case false then expTypeModelicaXml(ty)
 end expTypeXml;
 
-
 template expTypeModelicaXml(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlagXml(ty, 2)
 end expTypeModelicaXml;
-
 
 template expTypeArrayXml(DAE.Type ty)
  "Generate type helper."
@@ -3800,13 +3796,11 @@ template expTypeArrayXml(DAE.Type ty)
   expTypeFlagXml(ty, 3)
 end expTypeArrayXml;
 
-
 template expTypeArrayIfXml(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlagXml(ty, 4)
 end expTypeArrayIfXml;
-
 
 template expTypeFromExpShortXml(Exp exp)
  "Generate type helper."
@@ -3814,13 +3808,11 @@ template expTypeFromExpShortXml(Exp exp)
   expTypeFromExpFlagXml(exp, 1)
 end expTypeFromExpShortXml;
 
-
 template expTypeFromExpModelicaXml(Exp exp)
  "Generate type helper."
 ::=
   expTypeFromExpFlagXml(exp, 2)
 end expTypeFromExpModelicaXml;
-
 
 template expTypeFromExpArrayXml(Exp exp)
  "Generate type helper."
@@ -3828,13 +3820,11 @@ template expTypeFromExpArrayXml(Exp exp)
   expTypeFromExpFlagXml(exp, 3)
 end expTypeFromExpArrayXml;
 
-
 template expTypeFromExpArrayIfXml(Exp exp)
  "Generate type helper."
 ::=
   expTypeFromExpFlagXml(exp, 4)
 end expTypeFromExpArrayIfXml;
-
 
 template expTypeFlagXml(DAE.Type ty, Integer flag)
  "Generate type helper."
@@ -3901,7 +3891,6 @@ template expTypeFromExpFlagXml(Exp exp, Integer flag)
   case c as SHARED_LITERAL(__) then expTypeFlagXml(c.ty, flag)
   else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
 end expTypeFromExpFlagXml;
-
 
 template expTypeFromOpFlagXml(Operator op, Integer flag)
  "Generate type helper."
