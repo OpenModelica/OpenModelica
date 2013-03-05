@@ -2637,20 +2637,23 @@ algorithm
   end match;
 end expandCref_impl;
 
-protected protected function setQualType "help function to expandCref_impl. Sets the type for qualified crefs, fix so 
+protected function setQualType "help function to expandCref_impl. Sets the type for qualified crefs, fix so 
 array type can be inserted for arrays."
-  input DAE.ComponentRef cref;
-  input DAE.Type tp;
+  input DAE.ComponentRef inCref;
+  input DAE.Type inType;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(cref,tp)
-   local
-    String id;
-    list<DAE.Subscript> subs;
-    ComponentRef cr;
-    case(DAE.CREF_QUAL(id,_,subs,cr),tp) then DAE.CREF_QUAL(id,tp,subs,cr);
-    case(cref,tp) then cref;
-  end matchcontinue;
+  outCref := match(inCref, inType)
+    local
+      String id;
+      list<DAE.Subscript> subs;
+      ComponentRef cr;
+
+    case (DAE.CREF_QUAL(id, _, subs, cr), _) 
+      then DAE.CREF_QUAL(id, inType, subs, cr);
+
+    else inCref;
+  end match;
 end setQualType;
 
 protected function expandCrefLst
