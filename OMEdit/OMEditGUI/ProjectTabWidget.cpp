@@ -100,7 +100,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
   Q_UNUSED(rect);
 
-  if (mpParentProjectTab->isReadOnly())
+  if (mpParentProjectTab->isReadOnly() || mSkipBackground)
     return;
   // draw scene rectangle
   painter->setPen(Qt::black);
@@ -1277,6 +1277,19 @@ void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCo
     if (update)
       mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
   }
+}
+
+//! Gets the bounding rectangle of all the items added to the view, excluding background and so on
+QRectF GraphicsView::iconBoundingRect()
+{
+  QRectF rect;
+  foreach(QGraphicsItem *item, mComponentsList){
+    rect |= item->sceneBoundingRect();
+  }
+  foreach(QGraphicsItem *item, mShapesList){
+    rect |= item->sceneBoundingRect();
+  }
+  return mapFromScene(rect).boundingRect();
 }
 
 //! Resets zoom factor to 100%.

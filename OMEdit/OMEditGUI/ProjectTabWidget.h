@@ -105,6 +105,7 @@ public:
   void createConnection(Component *pStartComponent, QString startIconCompName, Component *pComponent, QString endIconCompName);
   void deleteConnection(QString startIconCompName, QString endIconCompName, bool update = true);
   void addConnectorForArray(Component *pStartComponent,Component *pEndComponent ,int startindex, int endindex);
+  QRectF iconBoundingRect();
   QList<Component*> mComponentsList;
   QList<ShapeAnnotation*> mShapesList;
   LineAnnotation *mpLineShape;
@@ -126,6 +127,7 @@ public:
   bool mIsCreatingText;
   bool mIsCreatingBitmap;
   bool mCustomScale;
+  bool mSkipBackground; /* Do not draw the background rectangle */
   QVector<Connector*> mConnectorsVector;
   ProjectTab *mpParentProjectTab;
   QAction *mpCancelConnectionAction;
