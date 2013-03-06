@@ -951,7 +951,7 @@ algorithm
          dae,numArgs,current)
       equation
         inputs = List.select(smallparts,isInput);
-        s = Absyn.pathStringNoQual(p);
+        s = Absyn.pathString2(Absyn.makeNotFullyQualified(p), "_");
         inputs = List.map1(inputs,renameInput,s);
         inputs = listReverse(getFirstNInputs(listReverse(inputs),numArgs));
         res = insertAfterInputs(parts,inputs);
