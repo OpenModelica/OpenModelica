@@ -26,7 +26,7 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage 
+ * For more information about the Qt-library visit TrollTech's webpage
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
