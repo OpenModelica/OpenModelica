@@ -2,10 +2,10 @@
 #include  "ISimData.h"
 class ISimController
 {
- 
+
 public:
-    /// Enumeration to control the time integration 
-    
+    /// Enumeration to control the time integration
+
     virtual ~ISimController()    {};
 
 

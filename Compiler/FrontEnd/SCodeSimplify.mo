@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -35,7 +35,7 @@ encapsulated package SCodeSimplify
   description: SCodeSimplify is used to further simplify SCode
 
   RCS: $Id: SCodeSimplify.mo 8980 2011-05-13 09:12:21Z perost $
-  
+
   For now SCodeSimplify has the following simplifications:
   - removes extends *Icons*
   - *add more things here if needed*
@@ -45,7 +45,7 @@ public import Absyn;
 public import SCode;
 
 public function simplifyProgram
- "transforms scode to scode simplified"  
+ "transforms scode to scode simplified"
   input SCode.Program inSCodeProgram;
   output SCode.Program outSCodeProgram;
 algorithm
@@ -53,7 +53,7 @@ algorithm
     local
       SCode.Element c, el;
       SCode.Program rest, acc;
-    
+
     // handle empty
     case ({}) then {};
 
@@ -81,19 +81,19 @@ algorithm
       SCode.Prefixes pref;
       SCode.Encapsulated ecpf;
       SCode.Partial ppf;
-      SCode.Restriction res;      
-      
+      SCode.Restriction res;
+
     case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, info))
       equation
         ncDef = simplifyClassDef(cDef);
       then
         SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, info);
-      
-  end match; 
+
+  end match;
 end simplifyClass;
 
 protected function simplifyClassDef
-"simplifies a classdef."  
+"simplifies a classdef."
   input SCode.ClassDef inClassDef;
   output SCode.ClassDef outClassDef;
 algorithm
@@ -111,7 +111,7 @@ algorithm
       list<SCode.AlgorithmSection> na "the list of algorithms";
       list<SCode.AlgorithmSection> ia "the list of initial algorithms";
       list<SCode.ConstraintSection> nc "the list of constraints for optimization";
-      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions"; 
+      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions";
       Option<SCode.ExternalDecl> ed "used by external functions";
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
@@ -122,48 +122,48 @@ algorithm
       SCode.Attributes attr;
       Option<SCode.Comment> cmt;
       Absyn.TypeSpec typeSpec;
-    
+
     // handle parts
     case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c))
       equation
         els = simplifyElements(els);
-      then 
+      then
         SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c);
-    
+
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
       equation
         cDef = simplifyClassDef(cDef);
-      then 
+      then
         SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
-    
+
     // handle derived!
     case (SCode.DERIVED(typeSpec, mod, attr, cmt))
-      then 
+      then
         inClassDef;
-    
+
     // handle enumeration, just return the same
     case (SCode.ENUMERATION(enumLst = _))
-      then 
+      then
         inClassDef;
-    
+
     // handle overload
     case (SCode.OVERLOAD(pathLst = _))
-      then 
+      then
         inClassDef;
-    
+
     // handle pder
     case (SCode.PDER(functionPath = _))
-      then 
+      then
         inClassDef;
-        
-  end match; 
+
+  end match;
 end simplifyClassDef;
 
 protected function simplifyElements
 "simplify elements"
   input list<SCode.Element> inElements;
-  output list<SCode.Element> outElements;  
+  output list<SCode.Element> outElements;
 algorithm
   outElements := matchcontinue(inElements)
     local
@@ -171,40 +171,40 @@ algorithm
       list<SCode.Element> rest, els;
       Absyn.Info info;
       Absyn.Path bcp;
-    
-    // handle classes without elements!  
+
+    // handle classes without elements!
     case ({}) then {};
-    
+
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
       equation
         true = Absyn.pathContains(bcp, Absyn.IDENT("Icons"));
         els = simplifyElements(rest);
-      then 
+      then
         els;
-        
-    // remove Modelica.Icons -> not working yet because of Modelica.Mechanics.MultiBody.Types uses it !/ 
+
+    // remove Modelica.Icons -> not working yet because of Modelica.Mechanics.MultiBody.Types uses it !/
     //case (SCode.CLASS(name = "Icons", restriction = SCode.R_PACKAGE())::rest)
     //  equation
     //    els = simplifyElements(rest);
-    //  then 
+    //  then
     //    els;
-    
+
     // handle classes
     case ((el as SCode.CLASS(name = _))::rest)
       equation
         el = simplifyClass(el);
         els = simplifyElements(rest);
-      then 
+      then
         el::els;
-    
+
     // handle rest
     case (el::rest)
       equation
         els = simplifyElements(rest);
-      then 
+      then
         el::els;
-  end matchcontinue; 
+  end matchcontinue;
 end simplifyElements;
 
 end SCodeSimplify;

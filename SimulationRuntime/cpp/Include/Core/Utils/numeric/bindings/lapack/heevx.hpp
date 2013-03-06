@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  * Copyright Thomas Klimpel 2008
  *
@@ -283,7 +283,7 @@ namespace boost { namespace numeric { namespace bindings {
       typedef typename A::value_type                               value_type ;
       typedef typename traits::type_traits< value_type >::real_type real_type ;
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<A>::matrix_structure, 
+        typename traits::matrix_traits<A>::matrix_structure,
         traits::hermitian_t
       >::value || (boost::is_same<
         typename traits::matrix_traits<A>::matrix_structure,
@@ -300,7 +300,7 @@ namespace boost { namespace numeric { namespace bindings {
       assert ( uplo=='U' || uplo=='L' );
       assert ( jobz=='N' || jobz=='V' );
 
-      int info; 
+      int info;
       detail::Heevx< n_workspace_args<typename A::value_type>::value >() (
         jobz, range, uplo, n,
         traits::matrix_storage (a),

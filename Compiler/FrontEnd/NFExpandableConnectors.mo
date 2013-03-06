@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -151,7 +151,7 @@ algorithm
   (conn1, outSets) := elaborateNonExpandable2(conn1, conn2, info, inSets);
   outConnection := NFConnect2.CONNECTION(conn1, conn2, info);
 end elaborateNonExpandable;
-     
+
 protected function elaborateNonExpandable2
   input Connector inUndeclared;
   input Connector inDeclared;
@@ -185,7 +185,7 @@ algorithm
 
   end match;
 end elaborateNonExpandable2;
-      
+
 protected function findConnectorByName
   input DAE.ComponentRef inName;
   input DisjointSets inSets;
@@ -230,7 +230,7 @@ algorithm
 
   end match;
 end augmentConnector;
-  
+
 protected function makeNewConnector
   input DAE.ComponentRef inUndeclaredName;
   input Connector inDeclared;
@@ -345,9 +345,9 @@ algorithm
         /*********************************************************************/
         // TODO: Implement this.
         /*********************************************************************/
-        
+
         // Update the type of all connectors to have the same type (what about
-        // input/output?) 
+        // input/output?)
         connl = List.map1(inSet, updateExpandableConnectorType, vars);
         print("3\n");
         // Update the connectors in the sets.
@@ -355,7 +355,7 @@ algorithm
         print("4\n");
       then
         sets;
-        
+
   end match;
 end elaborateExpandable;
 
@@ -373,7 +373,7 @@ algorithm
         print("Got unknown type in NFExpandableConnectors.extractVarsFromConnector.\n");
       then
         fail();
-        
+
   end match;
 end extractVarsFromConnector;
 

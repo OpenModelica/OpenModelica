@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -62,7 +62,7 @@ protected import List;
 protected import Util;
 
 public
-uniontype VariableReplacements 
+uniontype VariableReplacements
 "VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
  To eliminate a variable from an equation system a replacement rule varname->expression is added to this
  datatype.
@@ -159,7 +159,7 @@ public function addReplacement "function: addReplacement
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
@@ -178,7 +178,7 @@ algorithm
      //   olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail" ;
      // then
      //   fail();
-     
+
     case (_,src,dst,_)
       equation
         (REPLACEMENTS(ht,invHt,eht,iv,derConst),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
@@ -272,18 +272,18 @@ protected function traversingCrefFinder "
 Author: Frenkel 2012-12"
   input tuple<DAE.Exp, HashSet.HashSet > inExp;
   output tuple<DAE.Exp, Boolean, HashSet.HashSet > outExp;
-algorithm 
+algorithm
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
       HashSet.HashSet set;
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set))
-      then ((e,false,set));       
+      then ((e,false,set));
     case((e as DAE.CREF(componentRef = cr), set))
       equation
         set = BaseHashSet.add(cr,set);
-      then ((e,false,set));  
+      then ((e,false,set));
     case((e,set)) then ((e,true,set));
   end matchcontinue;
 end traversingCrefFinder;
@@ -347,7 +347,7 @@ protected function makeTransitive "function: makeTransitive
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   match (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -355,7 +355,7 @@ algorithm
       VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
-      
+
     case (_,_,_,_)
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst,inFuncTypeExpExpToBooleanOption);
@@ -380,7 +380,7 @@ protected function makeTransitive1 "function: makeTransitive1
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;    
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -413,7 +413,7 @@ in singleRepl."
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;    
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   outRepl := matchcontinue(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet)
     local
@@ -431,10 +431,10 @@ algorithm
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
         repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-      then 
+      then
         makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption,set);
     case(_::crs,_,_,_,_)
-      then 
+      then
         makeTransitive12(crs,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet);
   end matchcontinue;
 end makeTransitive12;
@@ -453,7 +453,7 @@ protected function makeTransitive2 "function: makeTransitive2
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -525,15 +525,15 @@ algorithm
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
         // Create a list of crefs from names
         crefs =  List.map(varLst,ComponentReference.creffromVar);
-        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);        
-      then erepl;      
+        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);
+      then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
-      then erepl;          
+      then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
@@ -543,7 +543,7 @@ algorithm
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
     case (_,DAE.CREF_IDENT(ident=_),_)
-      then 
+      then
         extendrepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
@@ -585,7 +585,7 @@ algorithm
   end matchcontinue;
 end addExtendReplacement;
 
-protected function addIterationVar 
+protected function addIterationVar
 "function addRiterationVar
   add a var to the iterationVars"
   input VariableReplacements repl;
@@ -605,7 +605,7 @@ algorithm
   end match;
 end addIterationVar;
 
-protected function removeIterationVar 
+protected function removeIterationVar
 "function removeiterationVar
   remove the first equal var from the iterationVars"
   input VariableReplacements repl;
@@ -627,7 +627,7 @@ algorithm
   end match;
 end removeIterationVar;
 
-protected function isIterationVar 
+protected function isIterationVar
 "function isIterationVar
   remove true if it is an iteration var"
   input VariableReplacements repl;
@@ -654,7 +654,7 @@ protected function removeFirstOnTrue
     input ArgType1 inElement;
     input ArgType2 value;
     output Boolean outIsEqual;
-  end CompFunc;  
+  end CompFunc;
   replaceable type ArgType1 subtypeof Any;
   replaceable type ArgType2 subtypeof Any;
 algorithm
@@ -662,7 +662,7 @@ algorithm
     local
       ArgType1 arg;
       list<ArgType1> arglst;
-      
+
     case ({},_,_,_) then listReverse(iAcc);
     case (arg::arglst,_,_,_)
       equation
@@ -671,11 +671,11 @@ algorithm
         listAppend(listReverse(iAcc),arglst);
     case (arg::arglst,_,_,_)
       then
-        removeFirstOnTrue(arglst,func,value,arg::iAcc);        
+        removeFirstOnTrue(arglst,func,value,arg::iAcc);
   end matchcontinue;
 end removeFirstOnTrue;
 
-public function addDerConstRepl 
+public function addDerConstRepl
 "function addDerConstRepl
   add a var to the derConst replacements, replace der(const) with 0.0"
   input DAE.ComponentRef inComponentRef;
@@ -856,7 +856,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Ident ident;
       HashTable2.HashTable derConst;
-      
+
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
     case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),repl,cond)
@@ -1082,7 +1082,7 @@ algorithm
       DAE.Exp exp;
       Boolean c1,c2;
       list<DAE.Subscript> subs;
-      
+
     case ({},_,_) then ({},false);
     case (DAE.WHOLEDIM()::subs, _, _)
       equation
@@ -1109,7 +1109,7 @@ algorithm
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);
       then
         (DAE.WHOLE_NONEXP(exp)::subs, c1 or c2);
-    
+
   end match;
 end replaceCrefSubs2;
 
@@ -1131,7 +1131,7 @@ algorithm
       DAE.Exp exp;
       Boolean c,acc2;
       list<DAE.Exp> expl, acc1;
-      
+
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (exp::expl,_,_,acc1,acc2)
       equation
@@ -1160,7 +1160,7 @@ algorithm
       Boolean c;
       list<Boolean> acc2;
       list<DAE.Exp> expl, acc1;
-      
+
     case ({},_,_,acc1,acc2) then (listReverse(acc1),listReverse(acc2));
     case (exp::expl,_,_,acc1,acc2)
       equation
@@ -1194,7 +1194,7 @@ algorithm
       list<DAE.ReductionIterator> iters;
       list<DAE.ReductionIterator> acc1;
       Boolean acc2;
-      
+
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_,_,acc1,_)
       equation
@@ -1265,7 +1265,7 @@ algorithm
       list<list<DAE.Exp>> es;
       list<list<DAE.Exp>> acc1;
       Boolean acc2;
-      
+
     case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
@@ -1319,7 +1319,7 @@ algorithm
     case DAE.CREF_QUAL(ident = "$ZERO") then true;
     case DAE.CREF_QUAL(ident = "$_DER") then true;
     case DAE.CREF_QUAL(ident = "$pDER") then true;
-    // keep same a while untill we know which are needed  
+    // keep same a while untill we know which are needed
     //case DAE.CREF_QUAL(ident = "$DER") then true;
     else then false;
   end match;
@@ -1342,7 +1342,7 @@ public function replaceEquationsArr
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
     local
@@ -1356,7 +1356,7 @@ algorithm
       then
         (outEqns,replacementPerformed);
     else
-      then 
+      then
         (inEqns,false);
   end matchcontinue;
 end replaceEquationsArr;
@@ -1394,7 +1394,7 @@ public function replaceEquations
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
     local
@@ -1407,7 +1407,7 @@ algorithm
       then
         (eqns,replacementPerformed);
     else
-      then 
+      then
         (inEqns,false);
   end matchcontinue;
 end replaceEquations;
@@ -1423,7 +1423,7 @@ protected function replaceEquations2
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;   
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
   matchcontinue (inBackendDAEEquationLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
@@ -1452,7 +1452,7 @@ protected function replaceEquation
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;   
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
   matchcontinue (inBackendDAEEquation,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
@@ -1528,7 +1528,7 @@ algorithm
       equation
         (whenEqn1,source,true) = replaceWhenEquation(whenEqn,repl,inFuncTypeExpExpToBooleanOption,source);
       then
-        (BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc,true); 
+        (BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc,true);
    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source),repl,_,_,_)
       equation
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption, {}, {});
@@ -1542,7 +1542,7 @@ algorithm
         eqns = optimizeIfEquation(expl2,eqnslst,eqns,{},{},source,inAcc);
       then
         (eqns,true);
-        
+
     case (a,_,_,_,_) then (a::inAcc,iReplacementPerformed);
   end matchcontinue;
 end replaceEquation;
@@ -1562,29 +1562,29 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> explst;
       list<list<BackendDAE.Equation>> eqnslst;
-      list<BackendDAE.Equation> eqns; 
-      
+      list<BackendDAE.Equation> eqns;
+
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_) 
-      then 
-        listAppend(elseenqs,inEqns);   
+    case ({},{},_,{},{},_,_)
+      then
+        listAppend(elseenqs,inEqns);
     // true case left with condition<>false
     case ({},{},_,_,_,_,_)
-      equation 
-        explst = listReverse(conditions1);  
-        eqnslst = listReverse(theneqns1);  
-      then 
+      equation
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+      then
         BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
     // if true use it if it is the first one
     case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
-      then 
-        listAppend(eqns,inEqns); 
+      then
+        listAppend(eqns,inEqns);
     // if true use it as new else if it is not the first one
     case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
       equation
-        explst = listReverse(conditions1);  
-        eqnslst = listReverse(theneqns1);  
-      then 
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+      then
         BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source)::inEqns;
     // if false skip it
     case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_)
@@ -1614,10 +1614,10 @@ algorithm
     case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.LUNARY(op,inRhs));
     else
       equation
-        msg = "BackendVarTransform: failed to replace left hand side of when equation " +& 
+        msg = "BackendVarTransform: failed to replace left hand side of when equation " +&
               ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(inLhs) +& "\n";
         // print(msg +& "\n");
-        Debug.fprintln(Flags.FAILTRACE, msg);        
+        Debug.fprintln(Flags.FAILTRACE, msg);
       then
         fail();
   end match;
@@ -1634,9 +1634,9 @@ protected function replaceWhenEquation "Replaces variables in a when equation"
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;     
+  end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outWhenEqn,osource,replacementPerformed) := 
+  (outWhenEqn,osource,replacementPerformed) :=
   match(whenEqn,repl,inFuncTypeExpExpToBooleanOption,isource)
   local
     DAE.ComponentRef cr,cr1;
@@ -1658,9 +1658,9 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
         b4 = b1 or b2 or b3;
-        weqn = Util.if_(b4,BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()),whenEqn);       
-      then 
-        (weqn,source,b4);        
+        weqn = Util.if_(b4,BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()),whenEqn);
+      then
+        (weqn,source,b4);
 
     case (BackendDAE.WHEN_EQ(cond,cr,e,SOME(elsePart)),_,_,_)
       equation
@@ -1673,11 +1673,11 @@ algorithm
         (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
         (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);    
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
         b1 = b1 or b2 or b3 or b4;
-        weqn = Util.if_(b1,BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)),whenEqn);       
-      then 
+        weqn = Util.if_(b1,BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)),whenEqn);
+      then
         (weqn,source,b1);
   end match;
 end replaceWhenEquation;
@@ -1699,7 +1699,7 @@ public function replaceWhenClauses
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 protected
   HashTable2.HashTable ht;
 algorithm
@@ -1710,12 +1710,12 @@ algorithm
       equation
         // Do not do empty replacements; it just takes time ;)
         true = intGt(BaseHashTable.hashTableCurrentSize(ht),0);
-        (whenclauses,replacementPerformed) = 
+        (whenclauses,replacementPerformed) =
           replaceWhenClausesLst(iWhenclauses,repl,inFuncTypeExpExpToBooleanOption,false,{});
       then
         (whenclauses,replacementPerformed);
     else
-      then 
+      then
         (iWhenclauses,false);
   end matchcontinue;
 end replaceWhenClauses;
@@ -1734,7 +1734,7 @@ protected function replaceWhenClausesLst
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (oWhenclauses,oReplacementPerformed) :=
    match (inWhenClauseLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
@@ -1742,7 +1742,7 @@ algorithm
       Option<Integer> elsindx;
       list<BackendDAE.WhenOperator> reinitStmtLst,reinitStmtLst1;
       DAE.Exp cond,cond1;
-      list<BackendDAE.WhenClause> wclst,wclst1;  
+      list<BackendDAE.WhenClause> wclst,wclst1;
       Boolean b,b1,b2;
       BackendDAE.WhenClause wc,wc1;
 
@@ -1774,9 +1774,9 @@ protected function replaceWhenOperator
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;  
+  end FuncTypeExp_ExpToBoolean;
 algorithm
-  (oReinitStmtLst,oReplacementPerformed) := 
+  (oReinitStmtLst,oReplacementPerformed) :=
   match (inReinitStmtLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
     local
       list<BackendDAE.WhenOperator> res,res1;
@@ -1827,7 +1827,7 @@ algorithm
         wop1 = Util.if_(b,BackendDAE.NORETCALL(functionName,functionArgs1,source),wop);
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
-        (res1,b);        
+        (res1,b);
   end match;
 end replaceWhenOperator;
 
@@ -1849,7 +1849,7 @@ function: replaceStatementLst
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;   
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outStatementLst,replacementPerformed) :=
   matchcontinue (inStatementLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc)
@@ -1870,9 +1870,9 @@ algorithm
       Integer index;
       Boolean b,b1,b2,b3;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
-          
+
     case ({},_,_,_,_) then (listReverse(inAcc),inBAcc);
-    
+
     case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -1886,7 +1886,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSIGN(type_,e1_2,e2_2,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_TUPLE_ASSIGN(type_=type_,expExpLst=expExpLst,exp=e2,source=source)::es),repl,_,_,_)
       equation
         (expExpLst_1,b1) = replaceExpList(expExpLst,repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1898,11 +1898,11 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e2,source=source)::es),repl,_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        (e1_1,b1) = replaceExp(e1,repl,inFuncTypeExpExpToBooleanOption);        
+        (e1_1,b1) = replaceExp(e1,repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
@@ -1912,7 +1912,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,es_1,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -1921,7 +1921,7 @@ algorithm
         (es_1,b) = replaceSTMT_IF(e1_2,statementLst,else_,source,es,repl,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc or b1);
       then
         (es_1,b);
-    
+
     case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,source=source)::es),repl,_,_,_)
       equation
         repl = addIterationVar(repl,ident);
@@ -1935,7 +1935,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
-        
+
     case ((DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1947,7 +1947,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_PARFOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,loopPrlVars,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1959,7 +1959,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHILE(e1_2,statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_WHEN(exp=e1,conditions=conditions,initialCall=initialCall,statementLst=statementLst,elseWhen=NONE(),source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1971,7 +1971,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,NONE(),source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_WHEN(exp=e1,conditions=conditions,initialCall=initialCall,statementLst=statementLst,elseWhen=SOME(statement),source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1984,7 +1984,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_WHEN(e1_2,conditions,initialCall,statementLst_1,SOME(statement_1),source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_ASSERT(cond=e1,msg=e2,level=e3,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -2000,7 +2000,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSERT(e1_2,e2_2,e3_2,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_TERMINATE(msg=e1,source=source)::es),repl,_,_,_)
       equation
         (e1_1,true) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -2010,7 +2010,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_TERMINATE(e1_2,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_REINIT(var=e1,value=e2,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -2023,7 +2023,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_REINIT(e1_2,e2_2,source)::inAcc,true);
       then
         (es_1,b);
-    
+
     case ((DAE.STMT_NORETCALL(exp=e1,source=source)::es),repl,_,_,_)
       equation
         (e1_1,true) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -2033,7 +2033,7 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_NORETCALL(e1_2,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     // MetaModelica extension. KS
     case ((DAE.STMT_FAILURE(body=statementLst,source=source)::es),repl,_,_,_)
       equation
@@ -2041,22 +2041,22 @@ algorithm
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_FAILURE(statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
-    
+
     case ((DAE.STMT_TRY(tryBody=statementLst,source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,true) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption, DAE.STMT_TRY(statementLst_1,source)::inAcc,true);
       then
         (es_1,b);
-    
+
     case ((DAE.STMT_CATCH(catchBody=statementLst,source=source)::es),repl,_,_,_)
       equation
         (statementLst_1,true) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_CATCH(statementLst_1,source)::inAcc,true);
       then
         (es_1,b);
-    
-    case ((statement::es),repl,_,_,_) 
+
+    case ((statement::es),repl,_,_,_)
       equation
         (es_1,b1) = replaceStatementLst(es,repl,inFuncTypeExpExpToBooleanOption,statement::inAcc,inBAcc);
       then
@@ -2123,12 +2123,12 @@ algorithm
         statementLst;
     else
       equation
-        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +& 
+        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +&
               ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(lhs) +& "\n";
         // print(msg +& "\n");
-        Debug.fprintln(Flags.FAILTRACE, msg);        
+        Debug.fprintln(Flags.FAILTRACE, msg);
       then
-        fail();        
+        fail();
   end matchcontinue;
  end validLhsArrayAssignSTMT;
 
@@ -2165,7 +2165,7 @@ protected function replaceElse "function: replaceElse
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;   
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outElse,replacementPerformed) := matchcontinue (inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
@@ -2182,7 +2182,7 @@ algorithm
         true = b1 or b2;
       then
         (else_1,true);
-    case (DAE.ELSE(statementLst=statementLst),repl,_) 
+    case (DAE.ELSE(statementLst=statementLst),repl,_)
       equation
         (statementLst_1,true) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
       then
@@ -2205,7 +2205,7 @@ protected function replaceElse1 "function: replaceElse1
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;    
+  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outElse,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
@@ -2245,16 +2245,16 @@ protected function replaceSTMT_IF
   input list<DAE.Statement> inStatementRestLst;
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input list<DAE.Statement> inAcc; 
+  input list<DAE.Statement> inAcc;
   input Boolean inBAcc;
-  output list<DAE.Statement> outStatementLst; 
+  output list<DAE.Statement> outStatementLst;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;   
+  end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outStatementLst,replacementPerformed) := 
+  (outStatementLst,replacementPerformed) :=
   matchcontinue (inExp,inStatementLst,inElse,inSource,inStatementRestLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc)
     local
       DAE.Exp exp,exp_e;
@@ -2270,16 +2270,16 @@ algorithm
         then (es_1,b);
       case (DAE.BCONST(false),_,else_ as DAE.NOELSE(),source,es,repl,_,_,_)
         equation
-          (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,inAcc,true); 
+          (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
       case (DAE.BCONST(false),_,else_ as DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e),source,es,repl,_,_,_)
-        equation        
+        equation
           (es_1,b) = replaceSTMT_IF(exp_e,statementLst_e,else_e,source,es,repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
       case (DAE.BCONST(false),_,else_ as DAE.ELSE(statementLst=statementLst_e),source,es,repl,_,_,_)
         equation
           statementLst = listAppend(statementLst_e,es);
-          (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,statementLst,true);         
+          (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,statementLst,true);
         then (es_1,b);
       case (exp,statementLst,else_,source,es,repl,_,_,_)
         equation
@@ -2293,7 +2293,7 @@ algorithm
           (es_1,b1) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_IF(exp,statementLst,else_,source)::inAcc,inBAcc);
         then (es_1,b1);
    end matchcontinue;
-end replaceSTMT_IF; 
+end replaceSTMT_IF;
 
 /*********************************************************/
 /* dump replacements  */

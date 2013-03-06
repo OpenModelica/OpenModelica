@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -59,7 +59,7 @@ algorithm
     local
       SCode.Program sp;
       list<String> names;
-      
+
     case (sp)
       equation
         names = SCode.elementNames(sp);
@@ -79,7 +79,7 @@ algorithm
       SCode.Program sp;
       list<SCode.Element> elts;
       Absyn.Info info;
-      
+
     case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts),info=info)
       equation
         checkDuplicateElements(elts);
@@ -126,7 +126,7 @@ algorithm
 
     case (_, _, _ :: _, _)
       equation
-        ts_path = Absyn.typeSpecPath(inTypeSpec); 
+        ts_path = Absyn.typeSpecPath(inTypeSpec);
         ty_path = NFSCodeEnv.getEnvPath(inTypeEnv);
         false = isSelfReference(inTypeName, ty_path, ts_path);
       then
@@ -142,7 +142,7 @@ algorithm
 
   end matchcontinue;
 end checkRecursiveShortDefinition;
-        
+
 protected function isSelfReference
   input String inTypeName;
   input Absyn.Path inTypePath;
@@ -152,7 +152,7 @@ algorithm
   selfRef := match(inTypeName, inTypePath, inReferencedName)
     local
       Absyn.Path p1, p2;
-    
+
     case (_, p1, Absyn.FULLYQUALIFIED(p2))
       then Absyn.pathEqual(Absyn.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
 
@@ -195,7 +195,7 @@ algorithm
     local
       SCode.Element e;
 
-    case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef = 
+    case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
         SCode.DERIVED(typeSpec = _))), _, _)
       equation
         checkRedeclareModifier2(e, inBaseClass, inEnv);
@@ -218,7 +218,7 @@ algorithm
       String name, ty_str;
       Absyn.Path ty_path;
 
-    case (SCode.CLASS(name = name, 
+    case (SCode.CLASS(name = name,
         classDef = SCode.DERIVED(typeSpec = ty)), _, _)
       equation
         ty_path = Absyn.typeSpecPath(ty);
@@ -226,7 +226,7 @@ algorithm
       then
         ();
 
-    case (SCode.CLASS(name = name, 
+    case (SCode.CLASS(name = name,
         classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
       equation
         ty_str = Dump.unparseTypeSpec(ty);
@@ -234,10 +234,10 @@ algorithm
           {name, ty_str}, info);
       then
         fail();
-        
+
   end matchcontinue;
 end checkRedeclareModifier2;
-        
+
 public function checkModifierIfRedeclare
   input NFSCodeEnv.Item inItem;
   input SCode.Mod inModifier;
@@ -276,10 +276,10 @@ algorithm
       String ty;
       Integer err_count;
 
-    case (NFSCodeEnv.VAR(var = 
+    case (NFSCodeEnv.VAR(var =
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
-            visibility = vis1, finalPrefix = fin, replaceablePrefix = repl), 
-          attributes = SCode.ATTR(variability = var), info = info)), 
+            visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
+          attributes = SCode.ATTR(variability = var), info = info)),
         SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
         err_count = Error.getNumErrorMessages();
@@ -292,9 +292,9 @@ algorithm
       then
         ();
 
-    case (NFSCodeEnv.CLASS(cls = 
+    case (NFSCodeEnv.CLASS(cls =
         SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-          visibility = vis1, finalPrefix = fin, replaceablePrefix = repl), 
+          visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
           restriction = res, info = info)),
         SCode.CLASS(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
@@ -366,7 +366,7 @@ algorithm
     case (_, _, SCode.FINAL(), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE, 
+        Error.addSourceMessage(Error.INVALID_REDECLARE,
           {"final", inType, inName}, inInfo);
       then
         ();
@@ -384,7 +384,7 @@ algorithm
     case (_, _, SCode.CONST(), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE, 
+        Error.addSourceMessage(Error.INVALID_REDECLARE,
           {"constant", inType, inName}, inInfo);
       then
         ();
@@ -483,12 +483,12 @@ algorithm
         true;
 
     case (_, _, redecl :: rest_redecls)
-      then checkDuplicateRedeclarations2(inRedeclareName, 
+      then checkDuplicateRedeclarations2(inRedeclareName,
         inRedeclareInfo, rest_redecls);
-        
+
   end matchcontinue;
 end checkDuplicateRedeclarations2;
-        
+
 public function checkRecursiveComponentDeclaration
   "Checks if a component is declared with a type that is one of the enclosing
    classes, e.g:
@@ -510,7 +510,7 @@ algorithm
       String cls_name, ty_name;
       NFSCodeEnv.AvlTree tree;
       SCode.Element el;
-    
+
     // No environment means one of the basic types.
     case (_, _, {}, _, _) then ();
 
@@ -530,7 +530,7 @@ algorithm
         true = SCode.isFunction(el);
       then
         ();
-        
+
     else
       equation
         ty_name = NFSCodeEnv.getItemName(inTypeItem);
@@ -612,7 +612,7 @@ algorithm
 
   end matchcontinue;
 end checkInstanceRestriction;
-  
+
 protected function isInstantiableClassRestriction
   input SCode.Restriction inRestriction;
   output Boolean outIsInstantiable;
@@ -649,5 +649,5 @@ algorithm
     else ();
   end match;
 end checkPartialInstance;
-        
+
 end NFSCodeCheck;

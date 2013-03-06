@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -87,7 +87,7 @@ algorithm
 
     case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
       equation
-        (Env.CLASS(env = {cls_env}, classType = cls_ty), _) = 
+        (Env.CLASS(env = {cls_env}, classType = cls_ty), _) =
           FLookup.lookupInClass(name, inEnv);
         env = FEnv.enterFrame(cls_env, inEnv);
 
@@ -304,7 +304,7 @@ algorithm
 
   end match;
 end flattenTypeSpec;
-        
+
 protected function flattenExtends
   input SCode.Element inExtends;
   input Env inEnv;
@@ -440,7 +440,7 @@ algorithm
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
-        
+
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
         env = FEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(Env.tmpTickIndex), env);
@@ -448,7 +448,7 @@ algorithm
       then
         ((stmt, env));
 
-    case ((stmt, env)) 
+    case ((stmt, env))
       equation
         info = SCode.getStatementInfo(stmt);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
@@ -554,7 +554,7 @@ algorithm
       SCode.Element element;
       SCode.ClassDef cdef;
 
-    case (SCode.CLASS(name, prefixes, ep, pp, res, 
+    case (SCode.CLASS(name, prefixes, ep, pp, res,
           cdef as SCode.DERIVED(typeSpec = _), info), _)
       equation
         cdef = flattenDerivedClassDef(cdef, inEnv, info);
@@ -564,7 +564,7 @@ algorithm
     case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
       then
         inElement;
-              
+
     case (SCode.COMPONENT(name = _), _)
       equation
         element = flattenComponent(inElement, inEnv);
@@ -573,7 +573,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, 
+        Error.addMessage(Error.INTERNAL_ERROR,
           {"Unknown redeclare in FFlattenImports.flattenRedeclare"});
       then
         fail();
@@ -650,17 +650,17 @@ algorithm
       then
         ((Absyn.CREF(cref), tup));
 
-    case ((exp as Absyn.CALL(functionArgs = 
+    case ((exp as Absyn.CALL(functionArgs =
         Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
       equation
         env = FEnv.extendEnvWithIterators(iters, System.tmpTickIndex(Env.tmpTickIndex), env);
       then
         ((exp, (env, info)));
 
-    case ((Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _)) 
+    case ((Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _))
       then inTuple;
 
-    case ((Absyn.CALL(function_ = cref, functionArgs = args), 
+    case ((Absyn.CALL(function_ = cref, functionArgs = args),
         tup as (env, info)))
       equation
         cref = FLookup.lookupComponentRef(cref, env, info);
@@ -668,14 +668,14 @@ algorithm
       then
         ((Absyn.CALL(cref, args), tup));
 
-    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), 
+    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args),
         tup as (env, info)))
       equation
         cref = FLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
         ((Absyn.PARTEVALFUNCTION(cref, args), tup));
-    
+
     case ((exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info)))
       equation
         env = FEnv.extendEnvWithMatch(exp, System.tmpTickIndex(Env.tmpTickIndex), env);
@@ -700,7 +700,7 @@ algorithm
       then
         ((e, (env, info)));
 
-    case ((e as Absyn.MATCHEXP(matchTy = _), 
+    case ((e as Absyn.MATCHEXP(matchTy = _),
         (Env.FRAME(frameType = Env.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
@@ -742,5 +742,5 @@ algorithm
 
   end match;
 end flattenComponentRefSubs;
-        
+
 end FFlattenImports;

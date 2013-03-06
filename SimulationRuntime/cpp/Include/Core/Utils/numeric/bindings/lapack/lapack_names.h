@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Toon Knapen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -18,7 +18,7 @@
 #  include <boost/numeric/bindings/traits/fortran.h>
 #else
 #  define FORTRAN_ID( id ) id##_
-#endif 
+#endif
 
 /* linear systems */
 
@@ -174,7 +174,7 @@
 
 
 /********************************************/
-/* eigenproblems */ 
+/* eigenproblems */
 
 #define LAPACK_SGEES FORTRAN_ID( sgees )
 #define LAPACK_DGEES FORTRAN_ID( dgees )
@@ -212,7 +212,7 @@
 #define LAPACK_ZTREXC FORTRAN_ID( ztrexc )
 
 /********************************************/
-/* eigenproblems for Hessenberg matrices */ 
+/* eigenproblems for Hessenberg matrices */
 
 #define LAPACK_SHSEQR FORTRAN_ID( shseqr )
 #define LAPACK_DHSEQR FORTRAN_ID( dhseqr )
@@ -220,7 +220,7 @@
 #define LAPACK_ZHSEQR FORTRAN_ID( zhseqr )
 
 /********************************************/
-/* eigenproblems for banded matrices */ 
+/* eigenproblems for banded matrices */
 
 #define LAPACK_SSBEV FORTRAN_ID( ssbev )
 #define LAPACK_DSBEV FORTRAN_ID( dsbev )
@@ -233,7 +233,7 @@
 #define LAPACK_ZHBEVX FORTRAN_ID( zhbevx )
 
 /********************************************/
-/* eigenproblems for tridiagonal matrices */ 
+/* eigenproblems for tridiagonal matrices */
 
 #define LAPACK_SSTEQR FORTRAN_ID( ssteqr )
 #define LAPACK_DSTEQR FORTRAN_ID( dsteqr )
@@ -241,9 +241,9 @@
 /********************************************/
 /* generalized eigenvalue/eigenvector */
 
-#define LAPACK_SSYGV FORTRAN_ID( ssygv ) 
+#define LAPACK_SSYGV FORTRAN_ID( ssygv )
 #define LAPACK_DSYGV FORTRAN_ID( dsygv )
-#define LAPACK_CHEGV FORTRAN_ID( chegv ) 
+#define LAPACK_CHEGV FORTRAN_ID( chegv )
 #define LAPACK_ZHEGV FORTRAN_ID( zhegv )
 
 /********************************************/
@@ -285,7 +285,7 @@
 
 
 /********************************************/
-/* Least Squares */ 
+/* Least Squares */
 
 #define LAPACK_SGELS FORTRAN_ID( sgels )
 #define LAPACK_DGELS FORTRAN_ID( dgels )
@@ -303,10 +303,10 @@
 #define LAPACK_ZGELSD FORTRAN_ID( zgelsd )
 
 /********************************************/
-/* auxiliary */ 
+/* auxiliary */
 
 #define LAPACK_ILAENV FORTRAN_ID( ilaenv )
 
 
-#endif 
+#endif
 

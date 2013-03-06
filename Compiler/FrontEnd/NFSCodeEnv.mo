@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -141,7 +141,7 @@ public uniontype Item
     ClassType classType;
   end CLASS;
 
-  record ALIAS 
+  record ALIAS
     "An alias for another Item, see comment in SCodeFlattenRedeclare package."
     String name;
     Option<Absyn.Path> path;
@@ -340,7 +340,7 @@ public function newClassItem
 algorithm
   outClassItem := CLASS(inClass, inEnv, inClassType);
 end newClassItem;
-  
+
 public function newVarItem
   "Creates a new variable environment item."
   input SCode.Element inVar;
@@ -379,7 +379,7 @@ algorithm
   outType := match(inClassDef)
     // A builtin class.
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-        lang = SOME("builtin"))))) 
+        lang = SOME("builtin")))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
@@ -417,7 +417,7 @@ algorithm
   exts := newExtendsTable();
   outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end removeExtendsFromLocalScope;
-  
+
 public function removeExtendFromLocalScope
   "Removes a given extends clause from the local scope."
   input Absyn.Path inExtend;
@@ -435,7 +435,7 @@ protected
   Option<SCode.Element> cei;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable =
-    EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei), 
+    EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei),
     importTable = imps, isUsed = iu) :: rest := inEnv;
   (bcl, _) := List.deleteMemberOnTrue(inExtend, bcl, isExtendNamed);
   outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, re, cei), imps, iu) :: rest;
@@ -451,7 +451,7 @@ algorithm
   EXTENDS(baseClass = bc) := inExtends;
   outIsNamed := Absyn.pathEqual(inName, bc);
 end isExtendNamed;
-  
+
 public function removeRedeclaresFromLocalScope
   input Env inEnv;
   output Env outEnv;
@@ -499,7 +499,7 @@ protected
   ExtendsTable exts;
   Option<Util.StatefulBoolean> is_used;
 algorithm
-  FRAME(name = name, frameType = ty, clsAndVars = outClsAndVars, 
+  FRAME(name = name, frameType = ty, clsAndVars = outClsAndVars,
     extendsTable = exts, importTable = imps, isUsed = is_used) := inFrame;
   tree := avlTreeNew();
   outFrame := FRAME(name, ty, tree, exts, imps, is_used);
@@ -598,7 +598,7 @@ algorithm
       then VAR(elem, is_used);
 
     case (CLASS(env = {FRAME(isUsed = is_used)}),
-        CLASS(cls = elem, classType = cls_ty, env = 
+        CLASS(cls = elem, classType = cls_ty, env =
           {FRAME(name, ft, cv, exts, imps, _)}))
       then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
 
@@ -692,7 +692,7 @@ algorithm
         class_env = makeClassEnvironment(inClassDefElement, false);
         cls_type = getClassType(cdef);
         // Add the class with it's environment to the environment.
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type), 
+        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, cls_name);
       then
         env;
@@ -713,7 +713,7 @@ algorithm
   SCode.CLASS(name = cls_name, classDef = cdef, info = info) := inClassDefElement;
   env := openScope(emptyEnv, inClassDefElement);
   enclosing_env := Util.if_(inInModifierScope, emptyEnv, env);
-  outClassEnv := 
+  outClassEnv :=
     extendEnvWithClassComponents(cls_name, cdef, env, enclosing_env, info);
 end makeClassEnvironment;
 
@@ -791,13 +791,13 @@ algorithm
       Option<Util.StatefulBoolean> is_used;
 
     // Unqualified imports
-    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
-        FRAME(name, ty, tree, exts, 
+    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
+        FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
         unqual_imps = imp :: unqual_imps;
       then
-        FRAME(name, ty, tree, exts, 
+        FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
 
     // Qualified imports
@@ -808,7 +808,7 @@ algorithm
         checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
-        FRAME(name, ty, tree, exts, 
+        FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
   end match;
 end extendEnvWithImport;
@@ -848,7 +848,7 @@ protected
   Env env;
   Integer index;
 algorithm
-  SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) := 
+  SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) :=
     inExtends;
   redecls := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
   index := System.tmpTickIndex(extendsTickIndex);
@@ -913,7 +913,7 @@ algorithm
       equation
         NFSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
           inEnclosingScope, inInfo);
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods, 
+        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
           NONE(), inInfo), inEnv);
       then
         env;
@@ -943,7 +943,7 @@ algorithm
     // redeclare-as-element component
     case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);        
+        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithVar(inElement, env);
       then
         env;
@@ -1026,7 +1026,7 @@ algorithm
   outEqual := matchcontinue(inImport1, inImport2)
     local
       Absyn.Ident name1, name2;
-    
+
     case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
       equation
         true = stringEqual(name1, name2);
@@ -1060,7 +1060,7 @@ algorithm
 
   end match;
 end extendEnvWithEnumLiterals;
-      
+
 protected function extendEnvWithEnum
   "Extends the environment with an enumeration."
   input SCode.Enum inEnum;
@@ -1127,7 +1127,7 @@ protected
 algorithm
   frame := newFrame(SOME("$match$"), IMPLICIT_SCOPE(iterIndex));
   Absyn.MATCHEXP(localDecls = local_decls) := inMatchExp;
-  outEnv := List.fold(local_decls, extendEnvWithElementItem, 
+  outEnv := List.fold(local_decls, extendEnvWithElementItem,
     frame :: inEnv);
 end extendEnvWithMatch;
 
@@ -1148,7 +1148,7 @@ algorithm
         // Translate the element item to a SCode element.
         el = SCodeUtil.translateElement(element, SCode.PROTECTED());
         env = List.fold(el, extendEnvWithElement, inEnv);
-      then 
+      then
         env;
 
     else then inEnv;
@@ -1192,7 +1192,7 @@ algorithm
     case ({FRAME(name = SOME(name))})
       then Absyn.IDENT(name);
 
-    case ({FRAME(name = SOME(name)), FRAME(name = NONE())}) 
+    case ({FRAME(name = SOME(name)), FRAME(name = NONE())})
       then Absyn.IDENT(name);
 
     case (FRAME(name = SOME(name)) :: rest)
@@ -1249,7 +1249,7 @@ algorithm
         true = stringEqual(n1, n2);
       then
         envPrefixOf2(rest1, rest2);
-   
+
     else false;
   end matchcontinue;
 end envPrefixOf2;
@@ -1345,15 +1345,15 @@ public function itemStr
   output String outName;
 algorithm
   outName := matchcontinue(inItem)
-    local 
+    local
       String name, alias_str;
       SCode.Element el;
       Absyn.Path path;
       Item item;
 
-    case VAR(var = el) 
+    case VAR(var = el)
       then SCodeDump.unparseElementStr(el);
-    case CLASS(cls = el) 
+    case CLASS(cls = el)
       then SCodeDump.unparseElementStr(el);
     case ALIAS(name = name, path = SOME(path))
       equation
@@ -1367,10 +1367,10 @@ algorithm
         name = itemStr(item);
       then
         "redeclared " +& name;
-    
+
     else "UNHANDLED ITEM";
-      
-      
+
+
   end matchcontinue;
 end itemStr;
 
@@ -1403,7 +1403,7 @@ algorithm
 
     case CLASS(env = env) then env;
     case REDECLARED_ITEM(item = item) then getItemEnv(item);
-  
+
   end match;
 end getItemEnv;
 
@@ -1426,7 +1426,7 @@ algorithm
         str = "NO ENV FOR ITEM: " +& getItemName(inItem);
         f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
         env = {f};
-      then 
+      then
         env;
 
   end matchcontinue;
@@ -1445,9 +1445,9 @@ algorithm
       SCode.Element cls;
       ClassType ct;
 
-    case (CLASS(cls, env, ct), _) 
+    case (CLASS(cls, env, ct), _)
       then CLASS(cls, inNewEnv, ct);
-    case (REDECLARED_ITEM(item = item), _) 
+    case (REDECLARED_ITEM(item = item), _)
       then setItemEnv(item, inNewEnv);
   end match;
 end setItemEnv;
@@ -1497,9 +1497,9 @@ algorithm
       Env env;
 
     case (REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env, {(inItem, inEnv)});
-    
+
     else (inItem, inEnv, {});
-    
+
   end match;
 end resolveRedeclaredItem;
 
@@ -1527,20 +1527,20 @@ public function getDerivedClassRedeclares
  output list<Redeclaration> outRedeclarations;
 algorithm
   outRedeclarations := matchcontinue(inDerivedName, inTypeSpec, inEnv)
-    local 
+    local
       Absyn.Path bc, path;
       list<Redeclaration> rm;
       Absyn.Info i;
-    
-    // only one extends! 
+
+    // only one extends!
     case (_, Absyn.TPATH(path, _), _)
       equation
-        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} = 
+        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
           getEnvExtendsFromTable(inEnv);
-        true = Absyn.pathSuffixOf(path, bc);        
+        true = Absyn.pathSuffixOf(path, bc);
       then
         rm;
-    
+
     case (_, Absyn.TPATH(path, _), _)
       equation
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
@@ -1549,11 +1549,11 @@ algorithm
         print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
       then
         rm;
-        
-    // else nothing 
+
+    // else nothing
     else then {};
 
-  end matchcontinue; 
+  end matchcontinue;
 end getDerivedClassRedeclares;
 
 public function setEnvExtendsTable
@@ -1636,7 +1636,7 @@ algorithm
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
     else then inTS;
-    
+
   end matchcontinue;
 end mergeTypeSpecWithEnvPath;
 
@@ -1697,7 +1697,7 @@ algorithm
         (name, info) = SCode.elementNameInfo(el);
       then
         (name, info);
-        
+
   end match;
 end getRedeclarationNameInfo;
 
@@ -1741,7 +1741,7 @@ end addDummyClassToTree;
 public type AvlKey = String;
 public type AvlValue = Item;
 
-public uniontype AvlTree 
+public uniontype AvlTree
   "The binary tree data structure"
   record AVLTREENODE
     Option<AvlTreeValue> value "Value";
@@ -1751,7 +1751,7 @@ public uniontype AvlTree
   end AVLTREENODE;
 end AvlTree;
 
-public uniontype AvlTreeValue 
+public uniontype AvlTreeValue
   "Each node in the binary tree can have a value associated with it."
   record AVLTREEVALUE
     AvlKey key "Key" ;
@@ -1759,7 +1759,7 @@ public uniontype AvlTreeValue
   end AVLTREEVALUE;
 end AvlTreeValue;
 
-protected function avlTreeNew 
+protected function avlTreeNew
   "Return an empty tree"
   output AvlTree tree;
 algorithm
@@ -1788,7 +1788,7 @@ algorithm
       ExtendsTable exts;
       ImportTable imps;
       String name_str, ty_str, tree_str, ext_str, imp_str, out;
-    
+
     case (FRAME(name, ty, tree, exts, imps, _))
       equation
         name_str = printFrameNameStr(name);
@@ -1797,7 +1797,7 @@ algorithm
         ext_str = printExtendsTableStr(exts);
         imp_str = printImportTableStr(imps);
         name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
-        out = name_str +& 
+        out = name_str +&
               "\tImports:\n" +& imp_str +&
               "\n\tExtends:\n" +& ext_str +&
               "\n\tComponents:\n" +& tree_str +& "\n";
@@ -1891,14 +1891,14 @@ public function printExtendsTableStr
 protected
   list<Extends> bcl;
   list<SCode.Element> re;
-  Option<SCode.Element> cei;  
+  Option<SCode.Element> cei;
 algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
-  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
+  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +&
     "\n\t\tRedeclare elements:\n\t\t\t" +&
     stringDelimitList(List.map(re, SCodeDump.unparseElementStr), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
-    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr)); 
+    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr));
 end printExtendsTableStr;
 
 public function printExtendsStr
@@ -1921,9 +1921,9 @@ public function printRedeclarationStr
 algorithm
   outString := matchcontinue(inRedeclare)
     local String name; Absyn.Path p;
-    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p)))) 
+    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p))))
       then "ALIAS(" +& Absyn.pathString(p) +& "." +& name +& ")";
-    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name))) 
+    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
       then "ALIAS(" +& name +& ")";
     case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare));
   end matchcontinue;
@@ -1936,7 +1936,7 @@ protected
   list<Import> qual_imps, unqual_imps;
   String qual_str, unqual_str;
 algorithm
-  IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps) 
+  IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps)
     := inImports;
   qual_str := stringDelimitList(
     List.map(qual_imps, Absyn.printImportString), "\n\t\t");
@@ -1963,7 +1963,7 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
       then balance(avlTreeAdd2(inAvlTree, stringCompare(key, rkey), key, value));
- 
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
@@ -2005,7 +2005,7 @@ algorithm
       equation
         t = createEmptyAvlIfNone(right);
         t = avlTreeAdd(t, key, value);
-      then  
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
@@ -2072,7 +2072,7 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
       then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
- 
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
@@ -2109,7 +2109,7 @@ algorithm
       equation
         t = createEmptyAvlIfNone(right);
         t = avlTreeReplace(t, key, value);
-      then  
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
@@ -2123,7 +2123,7 @@ algorithm
   end match;
 end avlTreeReplace2;
 
-protected function createEmptyAvlIfNone 
+protected function createEmptyAvlIfNone
   "Help function to AvlTreeAdd"
     input Option<AvlTree> t;
     output AvlTree outT;
@@ -2134,7 +2134,7 @@ algorithm
   end match;
 end createEmptyAvlIfNone;
 
-protected function balance 
+protected function balance
   "Balances an AvlTree"
   input AvlTree bt;
   output AvlTree outBt;
@@ -2145,7 +2145,7 @@ algorithm
   outBt := doBalance(d, bt);
 end balance;
 
-protected function doBalance 
+protected function doBalance
   "Performs balance if difference is > 1 or < -1"
   input Integer difference;
   input AvlTree bt;
@@ -2160,7 +2160,7 @@ algorithm
   end match;
 end doBalance;
 
-protected function doBalance2 
+protected function doBalance2
 "help function to doBalance"
   input Boolean inDiffIsNegative;
   input AvlTree inBt;
@@ -2168,12 +2168,12 @@ protected function doBalance2
 algorithm
   outBt := match(inDiffIsNegative,inBt)
     local AvlTree bt;
-    case(true,bt) 
+    case(true,bt)
       equation
         bt = doBalance3(bt);
         bt = rotateLeft(bt);
       then bt;
-    case(false,bt) 
+    case(false,bt)
       equation
         bt = doBalance4(bt);
         bt = rotateRight(bt);
@@ -2215,7 +2215,7 @@ algorithm
   end matchcontinue;
 end doBalance4;
 
-protected function setRight 
+protected function setRight
   "set right treenode"
   input AvlTree node;
   input Option<AvlTree> right;
@@ -2229,7 +2229,7 @@ algorithm
   outNode := AVLTREENODE(value, height, l, right);
 end setRight;
 
-protected function setLeft 
+protected function setLeft
   "set left treenode"
   input AvlTree node;
   input Option<AvlTree> left;
@@ -2243,7 +2243,7 @@ algorithm
   outNode := AVLTREENODE(value, height, left, r);
 end setLeft;
 
-protected function leftNode 
+protected function leftNode
   "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
@@ -2251,7 +2251,7 @@ algorithm
   AVLTREENODE(left = subNode) := node;
 end leftNode;
 
-protected function rightNode 
+protected function rightNode
   "Retrieve the right subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
@@ -2259,7 +2259,7 @@ algorithm
   AVLTREENODE(right = subNode) := node;
 end rightNode;
 
-protected function exchangeLeft 
+protected function exchangeLeft
   "help function to balance"
   input AvlTree inNode;
   input AvlTree inParent;
@@ -2273,7 +2273,7 @@ algorithm
   outParent := balance(node);
 end exchangeLeft;
 
-protected function exchangeRight 
+protected function exchangeRight
   "help function to balance"
   input AvlTree inNode;
   input AvlTree inParent;
@@ -2287,7 +2287,7 @@ algorithm
   outParent := balance(node);
 end exchangeRight;
 
-protected function rotateLeft 
+protected function rotateLeft
   "help function to balance"
   input AvlTree node;
   output AvlTree outNode "updated node";
@@ -2295,7 +2295,7 @@ algorithm
   outNode := exchangeLeft(Util.getOption(rightNode(node)), node);
 end rotateLeft;
 
-protected function rotateRight 
+protected function rotateRight
   "help function to balance"
   input AvlTree node;
   output AvlTree outNode "updated node";
@@ -2303,7 +2303,7 @@ algorithm
   outNode := exchangeRight(Util.getOption(leftNode(node)), node);
 end rotateRight;
 
-protected function differenceInHeight 
+protected function differenceInHeight
   "help function to balance, calculates the difference in height between left
   and right child"
   input AvlTree node;
@@ -2315,7 +2315,7 @@ algorithm
   diff := getHeight(l) - getHeight(r);
 end differenceInHeight;
 
-protected function computeHeight 
+protected function computeHeight
   "Compute the height of the AvlTree and store in the node info."
   input AvlTree bt;
   output AvlTree outBt;
@@ -2325,7 +2325,7 @@ protected
   AvlValue val;
   Integer hl,hr,height;
 algorithm
-  AVLTREENODE(value = v as SOME(AVLTREEVALUE(value = val)), 
+  AVLTREENODE(value = v as SOME(AVLTREEVALUE(value = val)),
     left = l, right = r) := bt;
   hl := getHeight(l);
   hr := getHeight(r);
@@ -2333,7 +2333,7 @@ algorithm
   outBt := AVLTREENODE(v, height, l, r);
 end computeHeight;
 
-protected function getHeight 
+protected function getHeight
   "Retrieve the height of a node"
   input Option<AvlTree> bt;
   output Integer height;

@@ -328,7 +328,7 @@ static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
-  
+
   {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
     void **data = p->data;
@@ -348,7 +348,7 @@ static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
   mmc_GC_add_roots(&x2, 1, 0, "");
-  
+
   {
 
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);

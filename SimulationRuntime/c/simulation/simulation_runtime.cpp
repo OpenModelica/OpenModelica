@@ -138,10 +138,10 @@ void setTermMsg(const char *msg)
         TermMsg = (char*)malloc((length+1)*sizeof(char));
       }
     }
-    
+
     for(i=0; i<length; i++)
       TermMsg[i] = msg[i];
-      
+
     /* set the terminating 0 */
     TermMsg[i] = '\0';
   }
@@ -159,7 +159,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   const string *flags = cflags ? new string(cflags) : NULL;
   int i;
   int error;
-  
+
   if(omc_flag[FLAG_W])
     showAllWarnings = 1;
 
@@ -232,7 +232,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   /* print LOG_NLS if LOG_NLS_V if active */
   if(useStream[LOG_NLS_V])
     useStream[LOG_NLS] = 1;
-    
+
   /* print LOG_EVENTS if LOG_EVENTS_V if active */
   if(useStream[LOG_EVENTS_V])
     useStream[LOG_EVENTS] = 1;
@@ -240,7 +240,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   /* print LOG_NLS if LOG_NLS_JAC if active */
   if(useStream[LOG_NLS_JAC])
     useStream[LOG_NLS] = 1;
-    
+
   /* print LOG_DSS if LOG_DSS_JAC if active */
   if(useStream[LOG_DSS_JAC])
     useStream[LOG_DSS] = 1;
@@ -354,7 +354,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
-  
+
   /* new imple */
   for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
@@ -601,7 +601,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
-    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg", 
+    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
 
@@ -658,7 +658,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int callSolver(DATA* simData, string result_file_cstr, string init_initMethod, 
+int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
@@ -729,8 +729,8 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 #ifdef _OMC_QSS_LIB
   } else if(simData->simulationInfo.solverMethod == std::string("qss")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = qss_main(argc, argv, simData->simulationInfo.startTime, 
-                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize, 
+    retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
+                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
                       simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
@@ -761,7 +761,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   {
     INFO1(LOG_STDOUT, "usage: %s", argv[0]);
     INDENT(LOG_STDOUT);
-    
+
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
@@ -771,15 +771,15 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
       else
         WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
     }
-      
+
     RELEASE(LOG_STDOUT);
     EXIT(0);
   }
-  
+
   if(omc_flag[FLAG_HELP])
   {
     std::string option = omc_flagValue[FLAG_HELP];
-    
+
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(option == std::string(FLAG_NAME[i]))
@@ -790,7 +790,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
           INFO3(LOG_STDOUT, "detaild flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else
           WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
-        
+
         /* detailed information for some flags */
         INDENT(LOG_STDOUT);
         if(i == FLAG_LV)
@@ -799,11 +799,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
             INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
         }
         RELEASE(LOG_STDOUT);
-            
+
         EXIT(0);
       }
     }
-    
+
     WARNING1(LOG_STDOUT, "invalid command line option: -help=%s", option.c_str());
     WARNING1(LOG_STDOUT, "use %s -help for a list of all command-line flags", argv[0]);
     EXIT(0);

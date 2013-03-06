@@ -58,7 +58,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
-./linearization/linearize.h 
+./linearization/linearize.h
 
 RUNTIME_HEADERS_FMU = \
 ./simulation/solver/initialization/initialization.h \
@@ -69,7 +69,7 @@ RUNTIME_HEADERS_FMU = \
 
 .PHONY : clean all ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
 
-all : install 
+all : install
 
 
 #recompile all if a header changes!
@@ -160,10 +160,10 @@ install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME)
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
-	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica	
+	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica
 
 clean:
 	rm -f $(ALL_PATHS_CLEAN_OBJS) *.a
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-	
+

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -120,7 +120,7 @@ public function regex "Fails and sets Error.mo if the regex does not compile.
   input Boolean sensitive;
   output Integer numMatches "0 means no match, else returns a number 1..maxMatches (1 if maxMatches<0)";
   output list<String> strs "This list has length = maxMatches. Substrings that did not match are filled with the empty string";
-  
+
   external "C" strs=System_regex(str,re,maxMatches,extended,sensitive,numMatches) annotation(Library = "omcruntime");
 end regex;
 
@@ -619,7 +619,7 @@ public function tmpTickIndex
 end tmpTickIndex;
 
 public function tmpTickIndexReserve
-  "returns a tick that can be reset and reserves N values in it. 
+  "returns a tick that can be reset and reserves N values in it.
    TODO: remove me when bootstrapped (default argument index=0)"
   input Integer index;
   input Integer reserve "current tick + reserve";
@@ -726,11 +726,11 @@ function getTimerIntervalTime
   this function will return the time that
   passed between the last [startTimer,stopTimer] interval.
   Notice that if start/stop are called recursively this
-  function will return the time passed between the 
+  function will return the time passed between the
   corresponding intervals.
   Example:
-  (start1, 
-    (start2, 
+  (start1,
+    (start2,
       (start3, stop3) call getTimerIntervalTime -> (stop3-start3)
      stop2) call getTimerIntervalTime -> (stop2-start2)
    stop1)  call getTimerIntervalTime -> (stop1-start1)"
@@ -740,18 +740,18 @@ end getTimerIntervalTime;
 
 function getTimerCummulatedTime
 "@autor: adrpo
-  this function will return the cummulated time 
+  this function will return the cummulated time
   by adding all the interval times [startTimer,stopTimer].
   Note that if you have recursive calls to start/stop
   this function will not return the *correct* time.
   Example:
-   Recursive: 
+   Recursive:
      (start1, (start2, (start3, stop3) stop2) stop1)
-     getTimerCummulatedTime = 
+     getTimerCummulatedTime =
        stop3-start3 + stop2-start2 + stop1-start1.
-   Serial: 
+   Serial:
      (start1, stop1) (start2, stop2) (start3, stop3)
-     getTimerCummulatedTime = 
+     getTimerCummulatedTime =
        stop3-start3 + stop2-start2 + stop1-start1."
   output Real timerCummulatedTime;
   external "C" timerCummulatedTime=System_getTimerCummulatedTime() annotation(Library = "omcruntime");
@@ -759,7 +759,7 @@ end getTimerCummulatedTime;
 
 function getTimerElapsedTime
 "@autor: adrpo
-  this function will return the time 
+  this function will return the time
   passed since the first call to startTimeer
   Example:
     (start1, (start2, (start3, stop3), stop2) ...
@@ -770,12 +770,12 @@ end getTimerElapsedTime;
 
 function getTimerStackIndex
 "@autor: adrpo
-  this function will return number of 
+  this function will return number of
   times start/stop was called recursively.
-  You can use this function for pretty printing. 
+  You can use this function for pretty printing.
   Example:
      index 0
-    (start1, index 1 
+    (start1, index 1
        (start2, index 2
           (start3, index 3
            stop3), index 2
@@ -873,7 +873,7 @@ public function modelicaPlatform "Returns the standardized platform name accordi
   win64 [Microsoft Windows 64 bit]
   linux32 [Linux Intel 32 bit]
   linux64 [Linux Intel 64 bit]
-  Else, the openModelicaPlatform() is returned 
+  Else, the openModelicaPlatform() is returned
   "
   output String platform;
   external "C" platform=System_modelicaPlatform() annotation(Library = "omcruntime");

@@ -2,7 +2,7 @@
 // oder häufig verwendete projektspezifische Includedateien,
 // die nur in unregelmäßigen Abständen geändert werden.
 //
- 
+
 #pragma once
 #ifndef BOOST_THREAD_USE_DLL
 #define BOOST_THREAD_USE_DLL
@@ -11,7 +11,7 @@
 #define BOOST_ALL_DYN_LINK
 #endif
 
-#define WIN32_LEAN_AND_MEAN        
+#define WIN32_LEAN_AND_MEAN
 
 #include <map>
 #include <boost/ref.hpp>

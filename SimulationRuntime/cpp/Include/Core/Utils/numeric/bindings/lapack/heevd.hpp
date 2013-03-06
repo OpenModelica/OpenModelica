@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  * Copyright Thomas Klimpel 2008
  *
@@ -250,7 +250,7 @@ namespace boost { namespace numeric { namespace bindings {
 
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<A>::matrix_structure, 
+        typename traits::matrix_traits<A>::matrix_structure,
         traits::general_t
       >::value));
 #endif
@@ -261,7 +261,7 @@ namespace boost { namespace numeric { namespace bindings {
       assert ( uplo=='U' || uplo=='L' );
       assert ( jobz=='N' || jobz=='V' );
 
-      int info; 
+      int info;
       detail::Heevd< n_workspace_args<typename A::value_type>::value >() (
         jobz, uplo, n,
         traits::matrix_storage (a),

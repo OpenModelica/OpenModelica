@@ -13,7 +13,7 @@
 #include <boost/numeric/bindings/traits/vector_traits.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
-#include <cassert> 
+#include <cassert>
 
 namespace boost { namespace numeric { namespace bindings { namespace blas {
 
@@ -59,7 +59,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
   // y <- alpha * x + y
   template < typename value_type, typename vector_type_x, typename vector_type_y >
   void axpy(const value_type& alpha, const vector_type_x &x, vector_type_y &y )
-  { 
+  {
 #ifdef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     BOOST_STATIC_ASSERT( ( is_same< value_type, typename vector_type_x::value_type >::value ) ) ;
     BOOST_STATIC_ASSERT( ( is_same< value_type, typename vector_type_y::value_type >::value ) ) ;
@@ -75,14 +75,14 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
     const value_type *x_ptr = traits::vector_storage( x ) ;
     value_type *y_ptr = traits::vector_storage( y ) ;
 
-    detail::axpy( n, alpha, x_ptr, stride_x, y_ptr, stride_y ) ; 
+    detail::axpy( n, alpha, x_ptr, stride_x, y_ptr, stride_y ) ;
   }
 
 
   // dot <- x^T * y  (real vectors)
   template < typename vector_type_x, typename vector_type_y >
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-  typename traits::vector_traits< vector_type_x >::value_type 
+  typename traits::vector_traits< vector_type_x >::value_type
 #else
   typename vector_type_x::value_type
 #endif
@@ -98,7 +98,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
 
     typedef
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-    typename traits::vector_traits< vector_type_x >::value_type 
+    typename traits::vector_traits< vector_type_x >::value_type
 #else
     typename vector_type_x::value_type
 #endif
@@ -117,7 +117,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
   // dotu <- x^T * y  (complex vectors)
   template < typename vector_type_x, typename vector_type_y >
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-  typename traits::vector_traits< vector_type_x >::value_type 
+  typename traits::vector_traits< vector_type_x >::value_type
 #else
   typename vector_type_x::value_type
 #endif
@@ -143,16 +143,16 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
     const int stride_y = traits::vector_stride( y ) ;
     const value_type *x_ptr = traits::vector_storage( x ) ;
     const value_type *y_ptr = traits::vector_storage( y ) ;
-    
+
     value_type ret ;
     detail::dotu( ret, n, x_ptr, stride_x, y_ptr, stride_y ) ;
     return ret;
   }
 
-  // dotc <- x^H * y  (complex vectors) 
+  // dotc <- x^H * y  (complex vectors)
   template < typename vector_type_x, typename vector_type_y >
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-  typename traits::vector_traits< vector_type_x >::value_type 
+  typename traits::vector_traits< vector_type_x >::value_type
 #else
   typename vector_type_x::value_type
 #endif
@@ -178,7 +178,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
     const int stride_y = traits::vector_stride( y ) ;
     const value_type *x_ptr = traits::vector_storage( x ) ;
     const value_type *y_ptr = traits::vector_storage( y ) ;
-    
+
     value_type ret ;
     detail::dotc( ret, n, x_ptr, stride_x, y_ptr, stride_y ) ;
     return ret;
@@ -192,7 +192,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
 #else
   typename traits::type_traits< typename vector_type::value_type >::real_type
 #endif
-  nrm2(const vector_type &x) 
+  nrm2(const vector_type &x)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     typedef typename traits::vector_traits< vector_type >::value_type value_type;
@@ -212,11 +212,11 @@ namespace boost { namespace numeric { namespace bindings { namespace blas {
   // .. for now works only with real vectors
   template < typename vector_type >
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-  typename traits::type_traits< typename traits::vector_traits< vector_type >::value_type >::real_type 
+  typename traits::type_traits< typename traits::vector_traits< vector_type >::value_type >::real_type
 #else
   typename traits::type_traits< typename vector_type::value_type >::real_type
 #endif
-  asum(const vector_type &x) 
+  asum(const vector_type &x)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     typedef typename traits::vector_traits< vector_type >::value_type value_type;

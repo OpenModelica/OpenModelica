@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -104,14 +104,14 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
   const DATA *simData = data;
   int i;
   double cpuTimeValue = 0;
-  
+
   rt_accumulate(SIM_TIMER_TOTAL);
   cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
-  
+
   {
     data_[pltData->currentPos++] = simData->localData[0]->timeValue;
-    
+
     if(self->cpuTime)
       data_[pltData->currentPos++] = cpuTimeValue;
 
@@ -262,7 +262,7 @@ void plt_free(simulation_result *self,DATA *data)
       printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars]);
   fprintf(f, "\n");
   varn++;
-  
+
   /* $cpuTime variable. */
   if(self->cpuTime)
   {

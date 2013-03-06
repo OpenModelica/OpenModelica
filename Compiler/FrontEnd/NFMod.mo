@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -30,7 +30,7 @@
  */
 
 
-encapsulated package NFMod 
+encapsulated package NFMod
 " file:        NFMod.mo
   package:     NFMod
   description: Modification handling for NFInst.
@@ -39,7 +39,7 @@ encapsulated package NFMod
 
   Functions for handling modifications, used by NFInst.
   "
-  
+
 public import Absyn;
 public import SCode;
 public import NFEnv;
@@ -134,7 +134,7 @@ algorithm
     case (SOME((bind_exp, _)), _, _, _, _, _)
       equation
         pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
-      then 
+      then
         NFInstTypes.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
 
   end match;
@@ -191,7 +191,7 @@ algorithm
         eq_name = stringEq(inner_name, outer_name);
       then
         addModToTable2(eq_name, inMod, mod, rest_mods);
-         
+
     case (_, {}) then inMod :: inModTable;
 
   end match;
@@ -293,7 +293,7 @@ algorithm
 
   end matchcontinue;
 end lookupMod;
-  
+
 protected function checkClassModifier
   "This function checks that a modifier isn't trying to replace a class, i.e.
    c(A = B), where A and B are classes. This should only be allowed if the
@@ -310,7 +310,7 @@ algorithm
 
     // The modified element is a class but the modifier has no binding, e.g.
     // c(A(x = 3)). This is ok.
-    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), 
+    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)),
         (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
       then ();
 
@@ -520,8 +520,8 @@ end mergeSubMod_tail2;
 protected function splitMod
   "Splits a modifier that contains sub modifiers info a list of tuples of
    element names with their corresponding modifiers. Ex:
-     MOD(x(w = 2), y = 3, x(z = 4) = 5) => 
-      {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}" 
+     MOD(x(w = 2), y = 3, x(z = 4) = 5) =>
+      {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}"
   input Modifier inMod;
   input Prefix inPrefix;
   output list<tuple<String, Modifier>> outMods;
@@ -646,7 +646,7 @@ algorithm
           NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
         comp_str = NFInstDump.prefixStr(inPrefix);
-        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
+        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {inElementName, comp_str}, {info2, info1});
       then
         fail();
@@ -719,7 +719,7 @@ public function propagateMod
   "Saves information about how a modifier has been propagated. Since arrays are
    not expanded during the instantiation we need to know where a binding comes
    from, e.g:
-  
+
      model A
        Real x;
      end A;
@@ -792,7 +792,7 @@ algorithm
     case (NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
       equation
         pd = pd + inDimensions;
-      then 
+      then
         NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info);
 
     else inBinding;
@@ -864,15 +864,15 @@ algorithm
       SCode.Each ep;
       Option<tuple<Absyn.Exp, Boolean>> b;
       Absyn.Info i;
-      
+
     case (SCode.MOD(fp, ep, sl, b, i),_)
       equation
         sl = removeModFromSubModContainingCref(sl, id);
       then
         SCode.MOD(fp, ep, sl, b, i);
-    
+
     else inMod;
-    
+
   end match;
 end removeModFromModContainingCref;
 
@@ -890,20 +890,20 @@ algorithm
       Absyn.Exp e;
       list<Absyn.ComponentRef> cl;
       SCode.SubMod sm;
-    
+
     case ({}, _) then {};
-    
+
     case (SCode.NAMEMOD(ident = n, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true);
-        true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);  
+        true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
       then
         rest;
-    
-    case (sm::rest, _) 
+
+    case (sm::rest, _)
       equation
         sl = removeModFromSubModContainingCref(rest, id);
-      then 
+      then
         sm::sl;
   end matchcontinue;
 end removeModFromSubModContainingCref;
@@ -925,22 +925,22 @@ algorithm
       Absyn.Info i;
       Absyn.Exp e;
       Boolean b;
-      
+
     case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
       equation
         sl = removeCrefPrefixFromSubModExp(sl, id);
-        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id); 
+        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id);
       then
         SCode.MOD(fp, ep, sl, SOME((e, b)), i);
-        
+
     case (SCode.MOD(fp, ep, sl, NONE(), i),_)
       equation
         sl = removeCrefPrefixFromSubModExp(sl, id);
       then
         SCode.MOD(fp, ep, sl, NONE(), i);
-    
+
     else inMod;
-    
+
   end match;
 end removeCrefPrefixFromModExp;
 
@@ -959,27 +959,27 @@ algorithm
       SCode.SubMod sm;
       SCode.Mod m;
       list<SCode.Subscript> ssl;
-    
+
     case ({}, _) then {};
-    
+
     case (SCode.NAMEMOD(n, m)::rest, _)
       equation
         m = removeCrefPrefixFromModExp(m, id);
-        sl = removeCrefPrefixFromSubModExp(rest, id); 
+        sl = removeCrefPrefixFromSubModExp(rest, id);
       then
         SCode.NAMEMOD(n, m)::sl;
-        
+
     case (SCode.IDXMOD(ssl, m)::rest, _)
       equation
-        m = removeCrefPrefixFromModExp(m, id); 
+        m = removeCrefPrefixFromModExp(m, id);
         sl = removeCrefPrefixFromSubModExp(rest, id);
       then
         SCode.IDXMOD(ssl, m)::sl;
-    
-    case (sm::rest, _) 
+
+    case (sm::rest, _)
       equation
         sl = removeCrefPrefixFromSubModExp(rest, id);
-      then 
+      then
         sm::sl;
   end matchcontinue;
 end removeCrefPrefixFromSubModExp;
@@ -991,14 +991,14 @@ algorithm
   outCrefExp_outPrefix := matchcontinue(inCrefExp_inPrefix)
     local
       Absyn.ComponentRef cr, pre;
-      
+
     case ((Absyn.CREF(cr), pre))
       equation
         true = Absyn.crefFirstEqual(cr, pre);
-        cr = Absyn.crefStripFirst(cr);  
+        cr = Absyn.crefStripFirst(cr);
       then
         ((Absyn.CREF(cr), pre));
-    
+
     else inCrefExp_inPrefix;
   end matchcontinue;
 end removeCrefPrefix;
@@ -1017,17 +1017,17 @@ algorithm
       SCode.Each ep;
       Absyn.Info i;
       Option<tuple<Absyn.Exp, Boolean>> binding;
-      
+
     case (SCode.MOD(fp, ep, sl, binding, i))
       equation
-        sl = removeRedeclaresFromSubMod(sl); 
+        sl = removeRedeclaresFromSubMod(sl);
       then
         SCode.MOD(fp, ep, sl, binding, i);
-    
+
     case (SCode.REDECL(element = _)) then SCode.NOMOD();
-    
+
     else inMod;
-    
+
   end match;
 end removeRedeclaresFromMod;
 
@@ -1044,23 +1044,23 @@ algorithm
       SCode.SubMod sm;
       SCode.Mod m;
       list<SCode.Subscript> ssl;
-    
+
     case ({}) then {};
-    
+
     case (SCode.NAMEMOD(n, m)::rest)
       equation
         m = removeRedeclaresFromMod(m);
         sl = removeRedeclaresFromSubMod(rest);
       then
         SCode.NAMEMOD(n, m)::sl;
-        
+
     case (SCode.IDXMOD(ssl, m)::rest)
       equation
-        m = removeRedeclaresFromMod(m); 
+        m = removeRedeclaresFromMod(m);
         sl = removeRedeclaresFromSubMod(rest);
       then
         SCode.IDXMOD(ssl, m)::sl;
-        
+
   end matchcontinue;
 end removeRedeclaresFromSubMod;
 

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,11 +28,11 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 encapsulated package BackendQSS
 " file:        BackendQSS.mo
   package:     BackendQSS
-  description: BackendQSS contains the datatypes used by the backend for QSS 
+  description: BackendQSS contains the datatypes used by the backend for QSS
                solver.
   authors:     florosx, fbergero
 
@@ -68,7 +68,7 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   end QSSINFO;
 end QSSinfo;
 
-public function generateStructureCodeQSS 
+public function generateStructureCodeQSS
   input BackendDAE.BackendDAE inBackendDAE;
   /*input array<Integer> equationIndices;
   input array<Integer> variableIndices;
@@ -77,7 +77,7 @@ public function generateStructureCodeQSS
   input BackendDAE.StrongComponents strongComponents;
   */
   input SimCode.SimCode simCode;
-  
+
   output QSSinfo QSSinfo_out;
   output SimCode.SimCode simC;
 algorithm
@@ -99,7 +99,7 @@ algorithm
       list<Integer> eqsindex;
       SimCode.SimCode sc;
       Integer offset;
-       
+
     case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), sc as SimCode.SIMCODE(odeEquations={eqs},zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");
@@ -122,21 +122,21 @@ algorithm
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end generateStructureCodeQSS;
 
 public function getAllVars
-"function: getAllVars 
+"function: getAllVars
  outputs a list with all variables and the subset of state variables contained in DAELow
  author: XF
 "
   input BackendDAE.BackendDAE inDAELow1;
-  output list<BackendDAE.Var> allVarsList; 
-  output list<BackendDAE.Var> stateVarsList; 
-  output list<BackendDAE.Var> orderedVarsList; 
-   
-algorithm 
+  output list<BackendDAE.Var> allVarsList;
+  output list<BackendDAE.Var> stateVarsList;
+  output list<BackendDAE.Var> orderedVarsList;
+
+algorithm
   (allVarsList, stateVarsList, orderedVarsList):=
   match (inDAELow1)
     local
@@ -151,53 +151,53 @@ algorithm
       stateVarsList = BackendVariable.getAllStateVarFromVariables(v);
   then
      (allVarsList, stateVarsList,orderedVarsList) ;
-  end match;     
+  end match;
 end getAllVars;
 
-public function getStateIndices 
-"function: getStateIndices 
+public function getStateIndices
+"function: getStateIndices
  finds the indices of the state indices inside a list with variables.
  author: XF
 "
   input list<BackendDAE.Var> allVars;
   input list<Integer> stateIndices1;
   input Integer loopIndex1;
-  
+
   output list<Integer> stateIndices;
 
 algorithm
   stateIndices:=
   matchcontinue (allVars, stateIndices1, loopIndex1)
     local
-      
+
       list<Integer> stateIndices2;
       Integer loopIndex;
       list<BackendDAE.Var> rest;
-      BackendDAE.Var var1; 
-    
+      BackendDAE.Var var1;
+
     case ({}, stateIndices2, loopIndex)
-      equation             
+      equation
       then
         stateIndices2;
-        
+
     case (var1::rest, stateIndices2, loopIndex)
-      equation     
+      equation
         false = BackendVariable.isStateVar(var1);
-        stateIndices = getStateIndices(rest, stateIndices2, loopIndex+1);  
+        stateIndices = getStateIndices(rest, stateIndices2, loopIndex+1);
       then
         stateIndices;
     case (var1::rest, stateIndices2, loopIndex)
-      equation     
+      equation
         true = BackendVariable.isStateVar(var1);
         stateIndices2 = listAppend(stateIndices2, {loopIndex});
-        stateIndices2 = getStateIndices(rest, stateIndices2, loopIndex+1);  
+        stateIndices2 = getStateIndices(rest, stateIndices2, loopIndex+1);
       then
         stateIndices2;
   end matchcontinue;
 end getStateIndices;
 
-public function getDiscreteIndices 
-"function: getDiscreteIndices 
+public function getDiscreteIndices
+"function: getDiscreteIndices
  finds the indices of the state indices inside a list with variables.
  author: XF
 "
@@ -205,31 +205,31 @@ public function getDiscreteIndices
   input list<BackendDAE.Var> allVars;
   input list<Integer> stateIndices1;
   input Integer loopIndex1;
-  
+
   output list<Integer> stateIndices;
 
 algorithm
   stateIndices:=
   matchcontinue (allVars, stateIndices1, loopIndex1)
     local
-      
+
       list<Integer> stateIndices2;
       Integer loopIndex;
       list<BackendDAE.Var> rest;
-      BackendDAE.Var var1; 
-    
+      BackendDAE.Var var1;
+
     case ({}, stateIndices2, loopIndex)
-      equation             
+      equation
       then
         stateIndices2;
-        
+
     case (var1::rest, stateIndices2, loopIndex)
-      equation     
+      equation
         false = BackendVariable.isVarDiscrete(var1);
       then
         getDiscreteIndices(rest, stateIndices2, loopIndex+1);
     case (var1::rest, stateIndices2, loopIndex)
-      equation     
+      equation
         true = BackendVariable.isVarDiscrete(var1);
         stateIndices2 = listAppend(stateIndices2, {loopIndex});
       then
@@ -240,7 +240,7 @@ end getDiscreteIndices;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/////  EQUATION GENERATION 
+/////  EQUATION GENERATION
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public function getStateIndexList
@@ -303,7 +303,7 @@ function replaceInExp
 algorithm
   tplExpStatesOut:=
   matchcontinue (tplExpStates)
-    local 
+    local
       DAE.Exp e,e2,expCond,expThen,expElse;
       list<DAE.ComponentRef> states;
       list<DAE.ComponentRef> disc;
@@ -355,7 +355,7 @@ algorithm
       equation
       ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.IFEXP(expCond=expCond as DAE.RELATION(_,_,_,_,_), expThen=expThen,expElse=expElse),(states,disc,algs))) 
+    case ((e as DAE.IFEXP(expCond=expCond as DAE.RELATION(_,_,_,_,_), expThen=expThen,expElse=expElse),(states,disc,algs)))
       then ((DAE.BINARY(DAE.BINARY(DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal),DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
              DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal)),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
     case ((e as DAE.IFEXP(expCond=expCond, expThen=expThen,expElse=expElse),(states,disc,algs)))
@@ -391,8 +391,8 @@ algorithm
 expout := match (exp,states,disc,algs)
   local
     DAE.Exp e;
-  case (_,_,_,_) 
-  equation 
+  case (_,_,_,_)
+  equation
     ((e,_))=Expression.traverseExp(exp,replaceInExp,(states,disc,algs));
     (e,_)=ExpressionSimplify.simplify(e);
   then e;
@@ -409,14 +409,14 @@ function computeStateRef
 algorithm
 indexs:=
   matchcontinue (stateVarsList,eqs,acc)
-    local 
+    local
       DAE.ComponentRef cref;
       list<SimCode.SimEqSystem> tail;
       Integer p;
       list<list<Integer>> acc_1;
 
     case (_,{},_) then acc;
-    case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_) 
+    case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_)
     equation
       /*
       print(ComponentReference.crefStr(cref));
@@ -440,13 +440,13 @@ end computeStateRef;
 function isDiscreteVar
   input BackendDAE.Var var;
   output Boolean result;
-algorithm 
-result := 
+algorithm
+result :=
           BackendVariable.isVarDiscrete(var) or
           BackendVariable.isVarIntAlg(var) or
           BackendVariable.isVarBoolAlg(var) ;
 end isDiscreteVar;
-  
+
 public function replaceCref
   input DAE.ComponentRef cr;
   input list<DAE.ComponentRef> states;
@@ -455,7 +455,7 @@ public function replaceCref
   output String out;
 algorithm
   out:=matchcontinue (cr,states,disc,algs)
-      local 
+      local
         Integer p;
         DAE.ComponentRef r;
         DAE.Ident ident;
@@ -491,7 +491,7 @@ public function negate
 algorithm
   exp_out:=
     matchcontinue (exp)
-    local 
+    local
       DAE.Exp e1,e2;
       Integer i;
       DAE.Type t;
@@ -503,7 +503,7 @@ algorithm
     case (e1) then e1;
   end matchcontinue;
 end negate;
-  
+
 public  function generateHandler
     input BackendDAE.EquationArray eqs;
     input list<Integer> handlers;
@@ -517,14 +517,14 @@ public  function generateHandler
     output String out;
 algorithm
   out:=
-    matchcontinue (eqs,handlers,states,disc,algs,condition,v,zc_exps,offset) 
-      local 
+    matchcontinue (eqs,handlers,states,disc,algs,condition,v,zc_exps,offset)
+      local
         Integer h;
         DAE.Exp exp,e1;
         DAE.Exp scalar "scalar" ;
         String s;
         Integer p;
-       case (_,{h},_,_,_,_,true,_,_) 
+       case (_,{h},_,_,_,_,true,_,_)
        equation
          BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
@@ -533,7 +533,7 @@ algorithm
          s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
          s= stringAppend(s,";");
        then s;
-       case (_,{h},_,_,_,_,true,_,_) 
+       case (_,{h},_,_,_,_,true,_,_)
        equation
          BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
@@ -543,7 +543,7 @@ algorithm
          s= stringAppend(s,";");
        then s;
 
-       case (_,{h},_,_,_,_,true,_,_) 
+       case (_,{h},_,_,_,_,true,_,_)
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
@@ -554,8 +554,8 @@ algorithm
          s = stringAppend(s,intString(p+1+offset));
          s = stringAppend(s,"] := 1.0;\n");
        then s;
- 
-       case (_,{h},_,_,_,_,false,_,_) 
+
+       case (_,{h},_,_,_,_,false,_,_)
        equation
          BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
@@ -565,7 +565,7 @@ algorithm
          s= stringAppend(s,";");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
-       case (_,{h},_,_,_,_,false,_,_) 
+       case (_,{h},_,_,_,_,false,_,_)
        equation
          BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
@@ -575,7 +575,7 @@ algorithm
          s= stringAppend(s,";");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
-       case (_,{h},_,_,_,_,false,_,_) 
+       case (_,{h},_,_,_,_,false,_,_)
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
@@ -606,12 +606,12 @@ function computeAlgs
   output list<DAE.ComponentRef> algs;
 algorithm
   algs:=matchcontinue (eqs,states,i_algs)
-    local 
+    local
       list<SimCode.SimEqSystem> tail;
       list<SimCode.SimVar> vars;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> vars_cref;
-    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_) 
+    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_)
     equation
       true = List.notMember(cref,List.map(states,ComponentReference.crefPrefixDer));
       true = List.notMember(cref,states);
@@ -619,23 +619,23 @@ algorithm
       print(ComponentReference.printComponentRefStr(cref));
       print("\n");
     then computeAlgs(tail,states,listAppend(i_algs,{cref}));
-    case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_) 
+    case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_)
     equation
       vars_cref = List.map(vars,SimCodeUtil.varName);
     then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
     case ({},_,_)
     equation
       then i_algs;
-    case (_ :: tail,_,_) 
+    case (_ :: tail,_,_)
     then computeAlgs(tail,states,i_algs);
   end matchcontinue;
 end computeAlgs;
 
-function getExpResidual 
+function getExpResidual
   input SimCode.SimEqSystem i;
   output DAE.Exp o;
 algorithm
-  o:=match (i) 
+  o:=match (i)
   local DAE.Exp e;
   case (SimCode.SES_RESIDUAL(exp=e)) then e;
   end match;
@@ -646,7 +646,7 @@ function getExpCrefs
   output tuple<DAE.Exp,list<DAE.ComponentRef>> out;
 algorithm
   out:=matchcontinue (i)
-    local 
+    local
       list<DAE.ComponentRef> l;
       DAE.ComponentRef cr;
       DAE.Exp e;
@@ -665,7 +665,7 @@ algorithm
           list<DAE.Exp> tail;
           list<DAE.ComponentRef> l;
     case ({},_) then acc;
-    case (e1 :: tail ,_) 
+    case (e1 :: tail ,_)
     equation
       ((_,l)) = Expression.traverseExp(e1,getExpCrefs,{});
       then getCrefs(tail,listAppend(acc,l));
@@ -679,8 +679,8 @@ public function getRHSVars
   input list<DAE.ComponentRef> states,disc,algs;
   output list<DAE.ComponentRef> out;
 algorithm
-  out:= match (beqs,vars,simJac,states,disc,algs) 
-    local 
+  out:= match (beqs,vars,simJac,states,disc,algs)
+    local
       list<DAE.ComponentRef> vars_cref;
       list<DAE.Exp> eqs;
   case (_,_,_,_,_,_)
@@ -700,14 +700,14 @@ function getInitExp
   output String s;
 algorithm
   s:=
-    matchcontinue(vars,d) 
-    local 
+    matchcontinue(vars,d)
+    local
       list<SimCode.SimVar> tail;
       DAE.Exp initialExp;
       DAE.ComponentRef name;
       String t;
     case ({},_) then stringAppend(stringAppend("0.0 /* ",ComponentReference.crefStr(d))," */ ;");
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: tail,_) 
+    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: tail,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("(",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -715,7 +715,7 @@ algorithm
       t = stringAppend(t,ComponentReference.crefStr(d));
       t = stringAppend(t,"*/;");
     then t;
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp)):: tail,_) 
+    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp)):: tail,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -723,7 +723,7 @@ algorithm
       t = stringAppend(t,ComponentReference.crefStr(d));
       t = stringAppend(t,"*/;");
     then t;
- 
+
     case (_:: tail,_) then getInitExp(tail,d);
   end matchcontinue;
 end getInitExp;
@@ -738,7 +738,7 @@ public function generateDInit
   output String out;
 algorithm
   out:=matchcontinue(disc,vars,acc,total,nWhenClause)
-    local 
+    local
       list<DAE.ComponentRef> tail;
       DAE.ComponentRef cref;
       String s;
@@ -746,7 +746,7 @@ algorithm
       list<SimCode.SimVar> boolAlgVars;
       list<SimCode.SimVar> algVars;
     case ({},_,_,_,_) then "";
-    case (cref::tail,_,_,_,_) 
+    case (cref::tail,_,_,_,_)
     equation
       true = total - acc -1  < nWhenClause;
       s=stringAppend("","d[");
@@ -755,8 +755,8 @@ algorithm
       //s=stringAppend(s,getStartTime(listNth({},total-acc-2)));
       s=stringAppend(s,";\n");
     then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
- 
-    case (cref::tail,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_) 
+
+    case (cref::tail,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_)
     equation
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
@@ -764,7 +764,7 @@ algorithm
       s=stringAppend(s,getInitExp(listAppend(algVars,listAppend(intAlgVars,boolAlgVars)),cref));
       s=stringAppend(s,"\n");
     then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
- 
+
   end matchcontinue;
 end generateDInit;
 
@@ -773,13 +773,13 @@ public function generateInitialParamEquations
   input  SimCode.SimEqSystem eq;
   output String t;
 algorithm
-  t:= 
+  t:=
   match (eq)
   local
     DAE.ComponentRef cref;
     DAE.Exp exp;
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))
-        
+
   equation
     t = stringAppend("",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
     t = stringAppend(t," := ");
@@ -794,7 +794,7 @@ public function generateExtraParams
   input SimCode.SimVars vars;
   output String s;
 algorithm
-  s:= 
+  s:=
   match (eq,vars)
   local
     DAE.ComponentRef cref;
@@ -807,9 +807,9 @@ algorithm
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp),
         SimCode.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
   equation
-    failure(i = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));  
-    failure(i = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));  
-    failure(i = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));  
+    failure(i = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));
+    failure(i = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));
+    failure(i = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));
     t = stringAppend("parameter Real ",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
     t = stringAppend(t," = ");
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));
@@ -825,7 +825,7 @@ public function replaceVarsInputs
 algorithm
   exp_out:=
     match (exp,inp)
-    local 
+    local
       DAE.Exp e;
     case (_,_)
     equation
@@ -872,8 +872,8 @@ public function getDiscRHSVars
   input list<DAE.ComponentRef> algs;
   output list<DAE.ComponentRef> out;
 algorithm
-  out:= match (beqs,vars,simJac,states,disc,algs) 
-    local 
+  out:= match (beqs,vars,simJac,states,disc,algs)
+    local
       list<DAE.ComponentRef> vars_cref;
       list<DAE.Exp> eqs;
   case (_,_,_,_,_,_)
@@ -895,15 +895,15 @@ public function simpleWhens
 algorithm
   o:=
     matchcontinue i
-    local 
+    local
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
     /* lochel: conditions is now a list of ComponentRefs
-    case (SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))}) :: tail) 
+    case (SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))}) :: tail)
       then simpleWhens(tail);
      */
-    case (head :: tail) 
+    case (head :: tail)
       then listAppend({head},simpleWhens(tail));
     end matchcontinue;
 end simpleWhens;
@@ -915,15 +915,15 @@ public function sampleWhens
 algorithm
   o:=
     matchcontinue i
-    local 
+    local
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
     case {} then {};
     /* lochel: conditions is now a list of ComponentRefs
-    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail) 
+    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail)
       then listAppend({head},sampleWhens(tail));
      */
-    case (head :: tail) 
+    case (head :: tail)
       then sampleWhens(tail);
     end matchcontinue;
 end sampleWhens;
@@ -940,7 +940,7 @@ algorithm
     case ({},_) then {};
     case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_BOOL(_,_))) :: tail,_) then newDiscreteVariables(tail,zc);
     case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_INTEGER(_,_))) :: tail,_) then newDiscreteVariables(tail,zc);
-    case ( _ :: tail,_) 
+    case ( _ :: tail,_)
     equation
       print("Found one discontinuous equation\n");
       s = stringAppend("zc ",intString(zc));
@@ -954,7 +954,7 @@ function getEquationsWithDiscont
   output list<DAE.Exp> outexp;
 algorithm
  (out,outexp) := match zeroCrossings
-  local 
+  local
     list<BackendDAE.ZeroCrossing> tail;
     list<Integer> occurEquLst;
     list<Integer> o;
@@ -965,7 +965,7 @@ algorithm
     equation
       (o,exps) = getEquationsWithDiscont(tail);
     then (listAppend(occurEquLst,o),listAppend({relation},exps));
-  end match;   
+  end match;
 end getEquationsWithDiscont;
 
 
@@ -975,20 +975,20 @@ function getEquations
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
   outEquationLst := match (eqsdae,indx)
-    local 
+    local
       list<Integer> tail;
       Integer p;
       list<BackendDAE.Equation> res;
       BackendDAE.Equation eq;
     case (_,{}) then {};
-    case (_,p::tail) 
+    case (_,p::tail)
     equation
       eq = BackendDAEUtil.equationNth(eqsdae,p);
       res = listAppend({eq},getEquations(eqsdae,tail));
     then res;
   end match;
 end getEquations;
-  
+
 function replaceDiscontsInOde
   input SimCode.SimCode sin;
   input list<DAE.Exp> zc_exps;
@@ -1020,7 +1020,7 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
       BackendDAE.SampleLookup sampleLookup;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
-          algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
+          algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
           sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
@@ -1030,10 +1030,10 @@ algorithm
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
                          initialEquations, startValueEquations, parameterEquations, inlineEquations,
-                         removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, 
+                         removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, sampleLookup,
                          whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes, 
+                         makefileParams, delayedExps, jacobianMatrixes,
                          simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
 
   end match;
@@ -1045,9 +1045,9 @@ function replaceZC
   input list<DAE.Exp> zc_exps;
   output SimCode.SimEqSystem eq_out;
 algorithm
-  eq_out := 
+  eq_out :=
     matchcontinue (eq,zc_exps)
-      local 
+      local
         Integer index;
         DAE.Exp exp;
         DAE.ComponentRef cref;
@@ -1066,13 +1066,13 @@ function replaceExpZC
   input Integer indx;
   output DAE.Exp out;
 algorithm
-  out := 
+  out :=
     match (exp,zc_exps,indx)
-    local 
+    local
       DAE.Exp exp1,e;
       list<DAE.Exp> tail;
     case (_,{},_) then exp;
-    case (_,exp1::tail,_) 
+    case (_,exp1::tail,_)
     equation
       ((e,_))=Expression.traverseExp(exp,replaceInExpZC,(exp1,indx));
     then replaceExpZC(e,tail,indx+1);
@@ -1084,9 +1084,9 @@ function replaceInExpZC
   input tuple<DAE.Exp, tuple<DAE.Exp,Integer> > tplExpIn;
   output tuple<DAE.Exp, tuple<DAE.Exp,Integer> > tplExpOut;
 algorithm
-  tplExpOut := 
+  tplExpOut :=
     matchcontinue tplExpIn
-    local 
+    local
       DAE.Exp e,zc;
       Integer i;
       String s;

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -58,7 +58,7 @@ protected import NFInstUtil;
 protected import List;
 protected import Types;
 protected import Util;
-  
+
 protected type Equation = NFInstTypes.Equation;
 public type FunctionHashTable = HashTablePathToFunction.HashTable;
 protected type Statement = NFInstTypes.Statement;
@@ -92,13 +92,13 @@ algorithm
       DAE.FunctionTree tree;
       Integer vars, params;
       list<DAE.Function> funcs;
-    
+
     case (_, _, _)
       equation
         el = expandClass(inClass, {}, {});
         el = listReverse(el);
         dae = DAE.DAE({DAE.COMP(inName, el, DAE.emptyElementSource, NONE())});
-        
+
         funcs = List.map(BaseHashTable.hashTableValueList(inFunctions), expandFunction);
 
         tree = DAEUtil.emptyFuncTree;
@@ -175,7 +175,7 @@ algorithm
       list<list<Statement>> al;
 
     case (NFInstTypes.BASIC_TYPE(_), _, _) then inAccumEl;
-    
+
     case (NFInstTypes.COMPLEX_CLASS(components = comps, equations = eq, algorithms = al), _, _)
       equation
         el = List.fold2(comps, expandElement, EXPAND_MODEL(), inSubscripts, inAccumEl);
@@ -226,7 +226,7 @@ algorithm
     case (NFInstTypes.CONDITIONAL_ELEMENT(component = comp), _, _, _)
       equation
         path = NFInstUtil.getComponentName(comp);
-        err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +& 
+        err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +&
           Absyn.pathString(path) +& "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
@@ -263,7 +263,7 @@ algorithm
         el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
       then
         el;
-        
+
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _, _, _)
       equation
         err_msg = "NFSCodeExpand.expandComponent got untyped component " +&
@@ -295,7 +295,7 @@ protected function expandArray
   input ExpandScalarFunc inScalarFunc;
   output list<AccumType> outElements;
 algorithm
-  outElements := 
+  outElements :=
   match(inElement, inKind, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       Integer dim,start;
@@ -315,7 +315,7 @@ algorithm
         el = inScalarFunc(inElement, subs :: rest_subs, inAccumEl);
       then
         el;
-        
+
     case (_, _, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
       equation
         start = Util.if_(isExpandFunction(inKind),dim,1);
@@ -360,7 +360,7 @@ protected function expandArrayIntDim
   input ExpandScalarFunc inScalarFunc;
   output list<AccumType> outElements;
 algorithm
-  outElements := 
+  outElements :=
   matchcontinue(inElement, inKind, inIndex, inDimSize, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       list<DAE.Subscript> subs;
@@ -383,7 +383,7 @@ algorithm
           inSubscripts, el, inScalarFunc);
 
   end matchcontinue;
-end expandArrayIntDim;      
+end expandArrayIntDim;
 
 protected function expandArrayEnumDim
   input ElementType inElement;
@@ -461,7 +461,7 @@ algorithm
       Option<DAE.Exp> bind_exp;
       NFInstTypes.DaePrefixes prefs;
 
-    case (NFInstTypes.TYPED_COMPONENT(prefixes = 
+    case (NFInstTypes.TYPED_COMPONENT(prefixes =
         NFInstTypes.DAE_PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
@@ -520,7 +520,7 @@ algorithm
         sub_exps = List.map(flat_subs, Expression.getSubscriptExp);
         exp = DAE.ASUB(exp, sub_exps);
         (exp, _) = ExpressionSimplify.simplify(exp);
-      then 
+      then
         SOME(exp);
 
     else
@@ -640,7 +640,7 @@ algorithm
 
     case (_, {}, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +&  
+        str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +&
           ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
           ComponentReference.printComponentRefStr(inCref) +& "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -649,7 +649,7 @@ algorithm
 
     case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +&  
+        str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +&
           ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
           ComponentReference.printComponentRefStr(inCref) +& "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -691,7 +691,7 @@ algorithm
 
     case NFInstTypes.DAE_PREFIXES(vis, kind, _, _, dir, ct)
       then (kind, dir, vis, ct);
-    
+
     case NFInstTypes.NO_DAE_PREFIXES()
       then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
 
@@ -720,7 +720,7 @@ algorithm
       Option<DAE.Exp> range "The range expression to loop over.";
       list<Equation> body   "The body of the for loop.";
       list<tuple<DAE.Exp, list<Equation>>> branches;
-      
+
 
     case (NFInstTypes.EQUALITY_EQUATION(lhs = lhs, rhs = rhs), _, _)
       equation
@@ -730,20 +730,20 @@ algorithm
           expandEqEquation);
       then
         accum_el;
-        
+
     case (NFInstTypes.CONNECT_EQUATION(lhs = _), _, _)
       equation
         print("Skipping expansion of connect\n");
       then
         inAccumEl;
-        
+
     case (NFInstTypes.FOR_EQUATION(name, index, indexType, range, body, info), _, _)
       equation
         accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
         accum_el = listAppend(accum_el, inAccumEl);
       then
         accum_el;
-        
+
     case (NFInstTypes.IF_EQUATION(branches, info), _, _)
       equation
          //accum_el = DAE.IF_EQUATION();
@@ -751,7 +751,7 @@ algorithm
          accum_el = inAccumEl;
       then
         accum_el;
-        
+
     case (NFInstTypes.WHEN_EQUATION(branches, info), _, _)
       equation
          //accum_el = DAE.IF_EQUATION();
@@ -759,7 +759,7 @@ algorithm
          accum_el = inAccumEl;
       then
         accum_el;
-        
+
     case (NFInstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level, info = info), _, _)
       equation
         ty1 = Expression.typeof(exp);
@@ -767,7 +767,7 @@ algorithm
         accum_el = DAE.ASSERT(exp, msg, level, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
-        
+
     case (NFInstTypes.TERMINATE_EQUATION(message = msg, info = info), _, _)
       equation
         ty1 = Expression.typeof(msg);
@@ -775,7 +775,7 @@ algorithm
         accum_el = DAE.TERMINATE(msg, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
-        
+
     case (NFInstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp, info = info), _, _)
       equation
         ty1 = Expression.typeof(exp);
@@ -783,7 +783,7 @@ algorithm
         accum_el = DAE.REINIT(cref1, exp, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
-        
+
     case (NFInstTypes.NORETCALL_EQUATION(exp = exp as DAE.CALL(path, expLst, _)), _, _)
       equation
         ty1 = Expression.typeof(exp);
@@ -791,7 +791,7 @@ algorithm
         accum_el = DAE.NORETCALL(path, expLst, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
-        
+
     else
       equation
         print("NFSCodeExpand.expandEquation failed on equation:\n" +&
@@ -800,7 +800,7 @@ algorithm
         inAccumEl;
 
   end matchcontinue;
-end expandEquation; 
+end expandEquation;
 
 protected function expandEqEquation
   input tuple<DAE.Exp, DAE.Exp> inTuple;
@@ -827,7 +827,7 @@ algorithm
         eq = DAE.EQUATION(lhs, rhs, DAE.emptyElementSource);
       then
         eq :: inAccumEl;
-        
+
   end match;
 end expandEqEquation;
 
@@ -903,7 +903,7 @@ algorithm
         expl = List.map2(expl, subscriptExp, {}, inAllSubscripts);
       then
         DAE.ARRAY(ty, scalar, expl);
-       
+
   end match;
 end subscriptArrayElements;
 
@@ -986,7 +986,7 @@ algorithm
           inAccumEl);
       then
         accum_el;
-        
+
     case (NFInstTypes.NORETCALL_STMT(exp = exp), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
@@ -1050,7 +1050,7 @@ algorithm
       list<NFInstTypes.Statement> al;
       DAE.Type recType;
       DAE.Element outRec;
-      
+
     case NFInstTypes.FUNCTION(path=path,inputs=inputs,outputs=outputs,locals=locals,algorithms=al)
       equation
         el = {};
@@ -1060,23 +1060,23 @@ algorithm
         el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
         el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
-      
-      
+
+
     case NFInstTypes.RECORD_CONSTRUCTOR(path, recType , inputs, locals, _)
       equation
-        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, {});     
+        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, {});
         el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
-        
+
         // Create the return variable for the record constructor which will have the type of the
         // record itself.
-        outRec = DAE.VAR(DAE.CREF_IDENT("$res", DAE.T_UNKNOWN_DEFAULT, {}), DAE.VARIABLE(), 
+        outRec = DAE.VAR(DAE.CREF_IDENT("$res", DAE.T_UNKNOWN_DEFAULT, {}), DAE.VARIABLE(),
           DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.PUBLIC(), recType,
           NONE(), {}, DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE(), NONE(),
           Absyn.NOT_INNER_OUTER());
         el = outRec::el;
         el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
-        
+
   end match;
 end expandFunction;
 

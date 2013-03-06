@@ -48,7 +48,7 @@
   #undef VOID
 #endif
 
-extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, 
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
                   integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 #ifdef __cplusplus

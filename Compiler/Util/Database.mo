@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -42,7 +42,7 @@ encapsulated package Database
 public function open "opens a datbase with the given index and the given name. fails if it cannot do it."
   input Integer index "the index, max 1024";
   input String name "the name of the file or :memory: to have an in-memory database";
-  
+
   external "C" Database_open(index, name) annotation(Library = "omcruntime");
 end open;
 
@@ -50,7 +50,7 @@ public function query "query a datbase with the given index (previously open). f
   input Integer index "the index, max 1024";
   input String sql "the sql query string";
   output list<tuple<String,String>> result "returns a list of tuples (columnName, value)";
-  
+
   external "C" result = Database_query(index, sql) annotation(Library = "omcruntime");
 end query;
 

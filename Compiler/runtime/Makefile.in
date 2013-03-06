@@ -25,9 +25,9 @@ ifdef USE_CORBA
 else
   CORBASRC = corbaimpl_stub.c
   CORBAOBJ = corbaimpl_stub.o
-  CORBAINCL =  
+  CORBAINCL =
   OMCCORBASRC = corbaimpl_stub_omc.o
-  IDLPYTHONTARGET = 
+  IDLPYTHONTARGET =
 endif
 
 SHELL	= /bin/sh

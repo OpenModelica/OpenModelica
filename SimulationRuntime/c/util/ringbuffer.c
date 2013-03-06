@@ -27,7 +27,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 /*
  * this does not work
  * we need to seperate RingBuffer and expandable queue

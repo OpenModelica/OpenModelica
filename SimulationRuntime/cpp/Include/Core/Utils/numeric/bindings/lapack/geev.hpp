@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (c) Andreas Kloeckner 2004
  *               Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  *
@@ -7,7 +7,7 @@
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -22,26 +22,26 @@
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 // #include <boost/numeric/bindings/traits/std_vector.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // Eigendecomposition of a general matrix A * V = V * D
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      * geev() computes the eigendecomposition of a N x N matrix,
-     * where V is a N x N matrix and D is a diagonal matrix. The 
-     * diagonal element D(i,i) is an eigenvalue of A and Q(:,i) is 
+     * where V is a N x N matrix and D is a diagonal matrix. The
+     * diagonal element D(i,i) is an eigenvalue of A and Q(:,i) is
      * a corresponding eigenvector.
      *
      *
@@ -65,9 +65,9 @@ namespace boost { namespace numeric { namespace bindings {
      * If you choose to leave them real, you have to pick apart the complex-conjugate
      * eigenpairs as per the LAPACK documentation. If you choose them complex,
      * the code will do the picking-apart on your behalf, at the expense of 4*N
-     * extra storage. Only if vr is complex, it will really fulfill its invariant 
+     * extra storage. Only if vr is complex, it will really fulfill its invariant
      * on exit to the code in all cases, since complex pairs spoil that relation.
-     */ 
+     */
 
     namespace detail {
 
@@ -98,12 +98,12 @@ namespace boost { namespace numeric { namespace bindings {
 	       float* rwork)
       {
 	int info;
-	LAPACK_CGEEV(jobvl, jobvr, n, 
-		     traits::complex_ptr(a), lda, 
-		     traits::complex_ptr(w), 
-		     traits::complex_ptr(vl), ldvl, 
-		     traits::complex_ptr(vr), ldvr, 
-		     traits::complex_ptr(work), lwork, 
+	LAPACK_CGEEV(jobvl, jobvr, n,
+		     traits::complex_ptr(a), lda,
+		     traits::complex_ptr(w),
+		     traits::complex_ptr(vl), ldvl,
+		     traits::complex_ptr(vr), ldvr,
+		     traits::complex_ptr(work), lwork,
 		     rwork, &info);
 	return info;
       }
@@ -115,12 +115,12 @@ namespace boost { namespace numeric { namespace bindings {
 	       double* rwork)
       {
 	int info;
-	LAPACK_ZGEEV(jobvl, jobvr, n, 
-		     traits::complex_ptr(a), lda, 
-		     traits::complex_ptr(w), 
-		     traits::complex_ptr(vl), ldvl, 
-		     traits::complex_ptr(vr), ldvr, 
-		     traits::complex_ptr(work), lwork, 
+	LAPACK_ZGEEV(jobvl, jobvr, n,
+		     traits::complex_ptr(a), lda,
+		     traits::complex_ptr(w),
+		     traits::complex_ptr(vl), ldvl,
+		     traits::complex_ptr(vr), ldvr,
+		     traits::complex_ptr(work), lwork,
 		     rwork, &info);
 	return info;
       }
@@ -135,7 +135,7 @@ namespace boost { namespace numeric { namespace bindings {
 
       // real case
       template <typename A, typename W, typename V>
-      int geev(real_case, const char jobvl, const char jobvr, A& a, W& w, 
+      int geev(real_case, const char jobvl, const char jobvr, A& a, W& w,
 	       V* vl, V *vr)
       {
 	int const n = traits::matrix_size1(a);
@@ -155,8 +155,8 @@ namespace boost { namespace numeric { namespace bindings {
 	int lwork = -1;
 	value_type work_temp;
 	int result = geev_backend(&jobvl, &jobvr, &n,
-				  traits::matrix_storage(a), &n, 
-				  wr.storage(), wi.storage(), 
+				  traits::matrix_storage(a), &n,
+				  wr.storage(), wi.storage(),
 				  vl_real, &ldvl, vr_real, &ldvr,
 				  &work_temp, &lwork);
 	if (result != 0)
@@ -165,8 +165,8 @@ namespace boost { namespace numeric { namespace bindings {
 	lwork = (int) work_temp;
 	traits::detail::array<value_type> work(lwork);
 	result = geev_backend(&jobvl, &jobvr, &n,
-			      traits::matrix_storage(a), &n, 
-			      wr.storage(), wi.storage(), 
+			      traits::matrix_storage(a), &n,
+			      wr.storage(), wi.storage(),
 			      vl_real, &ldvl, vr_real, &ldvr,
 			      work.storage(), &lwork);
 
@@ -177,7 +177,7 @@ namespace boost { namespace numeric { namespace bindings {
 
       // mixed (i.e. real with complex vectors) case
       template <typename A, typename W, typename V>
-      int geev(mixed_case, const char jobvl, const char jobvr, A& a, W& w, 
+      int geev(mixed_case, const char jobvl, const char jobvr, A& a, W& w,
 	       V* vl, V *vr)
       {
 	int const n = traits::matrix_size1(a);
@@ -194,8 +194,8 @@ namespace boost { namespace numeric { namespace bindings {
 	int lwork = -1;
 	value_type work_temp;
 	int result = geev_backend(&jobvl, &jobvr, &n,
-				  traits::matrix_storage(a), &n, 
-				  wr.storage(), wi.storage(), 
+				  traits::matrix_storage(a), &n,
+				  wr.storage(), wi.storage(),
 				  vl2.storage(), &ldvl2, vr2.storage(), &ldvr2,
 				  &work_temp, &lwork);
 	if (result != 0)
@@ -204,8 +204,8 @@ namespace boost { namespace numeric { namespace bindings {
 	lwork = (int) work_temp;
 	traits::detail::array<value_type> work(lwork);
 	result = geev_backend(&jobvl, &jobvr, &n,
-			      traits::matrix_storage(a), &n, 
-			      wr.storage(), wi.storage(), 
+			      traits::matrix_storage(a), &n,
+			      wr.storage(), wi.storage(),
 			      vl2.storage(), &ldvl2, vr2.storage(), &ldvr2,
 			      work.storage(), &lwork);
 
@@ -223,7 +223,7 @@ namespace boost { namespace numeric { namespace bindings {
 	  vr_stor = traits::matrix_storage(*vr);
 	  ldvr = traits::matrix_size2(*vr);
 	}
-	
+
 	for (int i = 0; i < n; i++)
         {
           traits::vector_storage(w)[i] = std::complex<value_type>(wr[i], wi[i]);
@@ -266,7 +266,7 @@ namespace boost { namespace numeric { namespace bindings {
 
       // complex case
       template <typename A, typename W, typename V>
-      int geev(complex_case, const char jobvl, const char jobvr, A& a, W& w, 
+      int geev(complex_case, const char jobvl, const char jobvr, A& a, W& w,
 	       V* vl, V *vr)
       {
 	typedef typename A::value_type value_type;
@@ -286,7 +286,7 @@ namespace boost { namespace numeric { namespace bindings {
 	int lwork = -1;
 	value_type work_temp;
 	int result = geev_backend(&jobvl, &jobvr, &n,
-				  traits::matrix_storage(a), &n, 
+				  traits::matrix_storage(a), &n,
 				  traits::vector_storage(w),
 				  vl_real, &ldvl, vr_real, &ldvr,
 				  &work_temp, &lwork, rwork.storage());
@@ -296,10 +296,10 @@ namespace boost { namespace numeric { namespace bindings {
 	lwork = (int) std::real(work_temp);
 	traits::detail::array<value_type> work(lwork);
 	result = geev_backend(&jobvl, &jobvr, &n,
-			      traits::matrix_storage(a), &n, 
+			      traits::matrix_storage(a), &n,
 			      traits::vector_storage(w),
 			      vl_real, &ldvl, vr_real, &ldvr,
-			      work.storage(), &lwork, 
+			      work.storage(), &lwork,
 			      rwork.storage());
 
 	return result;
@@ -310,25 +310,25 @@ namespace boost { namespace numeric { namespace bindings {
 
     // gateway / dispatch routine
     template <typename A, typename W, typename V>
-    int geev(A& a, W& w,  V* vl, V* vr, optimal_workspace) 
+    int geev(A& a, W& w,  V* vl, V* vr, optimal_workspace)
     {
       // input checking
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-			   typename traits::matrix_traits<A>::matrix_structure, 
+			   typename traits::matrix_traits<A>::matrix_structure,
 			   traits::general_t
-			   >::value)); 
-#endif 
+			   >::value));
+#endif
 
 #ifndef NDEBUG
       int const n = traits::matrix_size1(a);
 #endif
 
-      assert(traits::matrix_size2(a)==n); 
-      assert(traits::vector_size(w)==n); 
-      assert(traits::vector_size(w)==n); 
-      assert(!vr || traits::matrix_size1(*vr)==n); 
-      assert(!vl || traits::matrix_size1(*vl)==n); 
+      assert(traits::matrix_size2(a)==n);
+      assert(traits::vector_size(w)==n);
+      assert(traits::vector_size(w)==n);
+      assert(!vr || traits::matrix_size1(*vr)==n);
+      assert(!vl || traits::matrix_size1(*vl)==n);
 
       // preparation
       typedef typename A::value_type value_type;
@@ -343,7 +343,7 @@ namespace boost { namespace numeric { namespace bindings {
 			  detail::real_case,
 			  detail::mixed_case>::type,
 			  detail::complex_case>::type(),
-			  vl != 0 ? 'V' : 'N', 
+			  vl != 0 ? 'V' : 'N',
 			  vr != 0 ? 'V' : 'N',
 			  a, w, vl, vr);
     }
@@ -352,4 +352,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 }}}
 
-#endif 
+#endif

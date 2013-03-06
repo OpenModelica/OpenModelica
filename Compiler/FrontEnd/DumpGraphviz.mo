@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -68,7 +68,7 @@ algorithm
     local
       list<Node> nl;
       list<Absyn.Class> cs;
-    
+
     case (Absyn.PROGRAM(classes = cs))
       equation
         nl = printClasses(cs);
@@ -88,9 +88,9 @@ algorithm
       list<Node> nl;
       Absyn.Class c;
       list<Absyn.Class> cs;
-    
+
     case {} then {};
-    
+
     case (c :: cs)
       equation
         node = printClass(c);
@@ -112,7 +112,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
-    
+
     case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
       equation
         rs = Absyn.restrString(r);
@@ -133,9 +133,9 @@ algorithm
       list<Node> nl;
       Absyn.ClassPart c;
       list<Absyn.ClassPart> cs;
-    
+
     case {} then {};
-    
+
     case (c :: cs)
       equation
         node = printClassPart(c);
@@ -156,31 +156,31 @@ algorithm
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
       list<Absyn.AlgorithmItem> als;
-    
+
     case (Absyn.PUBLIC(contents = el))
       equation
         nl = printElementitems(el);
       then
         Graphviz.NODE("PUBLIC",{},nl);
-    
+
     case (Absyn.PROTECTED(contents = el))
       equation
         nl = printElementitems(el);
       then
         Graphviz.NODE("PROTECTED",{},nl);
-    
+
     case (Absyn.EQUATIONS(contents = eqs))
       equation
         nl = printEquations(eqs);
       then
         Graphviz.NODE("EQUATIONS",{},nl);
-    
+
     case (Absyn.ALGORITHMS(contents = als))
       equation
         nl = printAlgorithms(als);
       then
         Graphviz.NODE("ALGORITHMS",{},nl);
-    
+
     case (_) then Graphviz.NODE(" DumpGraphViz.printClassPart PART_ERROR",{},{});
   end matchcontinue;
 end printClassPart;
@@ -196,15 +196,15 @@ algorithm
       list<Absyn.ElementItem> el;
       Graphviz.Node node;
       Absyn.Element e;
-    
+
     case {} then {};
-    
+
     case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: el))
       equation
         nl = printElementitems(el);
       then
         nl;
-    
+
     case ((Absyn.ELEMENTITEM(element = e) :: el))
       equation
         node = printElement(e);
@@ -246,7 +246,7 @@ algorithm
       Graphviz.Node elsp;
       Boolean finalPrefix;
       Absyn.ElementSpec spec;
-    
+
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,specification = spec))
       equation
         fa = makeBoolAttr("final", finalPrefix);
@@ -285,20 +285,20 @@ algorithm
       Absyn.TypeSpec tspec;
       list<Absyn.ComponentItem> cs;
       String s;
-    
+
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
       equation
         nl = printClass(cl);
         ra = makeBoolAttr("replaceable", repl);
       then
         Graphviz.NODE("CLASSDEF",{ra},{});
-    
+
     case (Absyn.EXTENDS(path = p,elementArg = l))
       equation
         en = printPath(p);
       then
         Graphviz.NODE("EXTENDS",{},{en});
-    
+
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = tspec,components = cs))
       equation
         s = Dump.unparseTypeSpec(tspec);
@@ -306,7 +306,7 @@ algorithm
         cns = printComponents(cs);
       then
         Graphviz.NODE("COMPONENTS",{},(pn :: cns));
-    
+
     case (_)
       then
         Graphviz.NODE(" DumpGraphviz.printElementspec ELSPEC_ERROR",{},{});
@@ -324,9 +324,9 @@ algorithm
       list<Node> nl;
       Absyn.ComponentItem c;
       list<Absyn.ComponentItem> cs;
-    
+
     case {} then {};
-    
+
     case (c :: cs)
       equation
         n = printComponentitem(c);
@@ -347,7 +347,7 @@ algorithm
       Ident n;
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
-    
+
     case (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = a,modification = m)))
       equation
         nn = Graphviz.NODE(n,{},{});
@@ -368,9 +368,9 @@ algorithm
       Absyn.Equation eq;
       Option<Absyn.Comment> ann;
       list<Absyn.EquationItem> el;
-    
+
     case {} then {};
-    
+
     case (Absyn.EQUATIONITEM(equation_ = eq,comment = ann) :: el)
       equation
         node = printEquation(eq);
@@ -394,7 +394,7 @@ algorithm
       list<Node> eqn;
       list<Absyn.EquationItem> eqs;
       Absyn.ForIterators iterators;
-    
+
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         s1 = Dump.printExpStr(e1);
@@ -403,7 +403,7 @@ algorithm
         s_1 = stringAppend(s, s2);
       then
         Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
-    
+
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2))
       equation
         s1 = Dump.printComponentRefStr(c1);
@@ -413,14 +413,14 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         Graphviz.LNODE("EQ_CONNECT",{s_2},{},{});
-    
+
     case (Absyn.EQ_FOR(iterators=iterators,forEquations = eqs))
       equation
         eqn = printEquations(eqs);
         es = Dump.printIteratorsStr(iterators);
       then
         Graphviz.LNODE("EQ_FOR",{es},{},eqn);
-    
+
     case (_) then Graphviz.NODE("EQ_ERROR",{},{});
 
   end matchcontinue;
@@ -437,9 +437,9 @@ algorithm
       list<Node> nl;
       Absyn.AlgorithmItem e;
       list<Absyn.AlgorithmItem> el;
-    
+
     case {} then {};
-    
+
     case (e :: el)
       equation
         node = printAlgorithmitem(e);
@@ -458,7 +458,7 @@ algorithm
     local
       Graphviz.Node node;
       Absyn.Algorithm alg;
-    
+
     case (Absyn.ALGORITHMITEM(algorithm_ = alg))
       equation
         node = printAlgorithm(alg);
@@ -476,7 +476,7 @@ algorithm
   outNode := matchcontinue (inAlgorithm)
     local
       Absyn.Exp e;
-    
+
     case (Absyn.ALG_ASSIGN(assignComponent = _,value = e)) then Graphviz.NODE("ALG_ASSIGN",{},{});
     case (_) then Graphviz.NODE(" DumpGraphviz.printAlgorithm ALG_ERROR",{},{});
   end matchcontinue;

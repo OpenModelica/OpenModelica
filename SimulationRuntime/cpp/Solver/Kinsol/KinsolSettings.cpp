@@ -1,5 +1,5 @@
 #include "stdafx.h"
- 
+
 
 #include "KinsolSettings.h"
 
@@ -18,7 +18,7 @@ long int     KinsolSettings::getNewtMax()
 void     KinsolSettings::setNewtMax(long int max)
 {
   iNewt_max =max;
-} 
+}
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double     KinsolSettings::getRtol()
 {
@@ -27,25 +27,25 @@ double     KinsolSettings::getRtol()
 void     KinsolSettings::setRtol(double t)
 {
   dRtol=t;
-}       
+}
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double     KinsolSettings::getAtol()
 {
   return dAtol;
-}           
+}
 void     KinsolSettings::setAtol(double t)
 {
   dAtol =t;
-}       
+}
 /*Dämpfungsfaktor (default: 0.9)*/
 double       KinsolSettings::getDelta()
 {
   return dDelta;
-}             
+}
 void       KinsolSettings::setDelta(double t)
 {
   dDelta = t;
-} 
+}
 
 void KinsolSettings::load(string)
 {

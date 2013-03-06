@@ -50,32 +50,32 @@ int helpFlagSet(int argc, char** argv)
 int checkCommandLineArguments(int argc, char **argv)
 {
   int i,j;
-  
+
   /* This works not that well - but is probably better than no check */
   ASSERT(!strcmp(FLAG_NAME[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_NAME");
   ASSERT(!strcmp(FLAG_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DESC");
   ASSERT(!strcmp(FLAG_DETAILED_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DETAILED_DESC");
-  
+
   for(i=0; i<FLAG_MAX; ++i)
   {
     omc_flag[i] = 0;
     omc_flagValue[i] = NULL;
   }
-  
+
 #ifdef USE_DEBUG_OUTPUT
   DEBUG(LOG_STDOUT, "used command line options");
   INDENT(LOG_STDOUT);
   for(i=1; i<argc; ++i)
     DEBUG1(LOG_STDOUT, "%s", argv[i]);
   RELEASE(LOG_STDOUT);
-  
+
   DEBUG(LOG_STDOUT, "interpreted command line options");
 #endif
-  
+
   for(i=1; i<argc; ++i)
-  { 
+  {
     int found=0;
-    
+
     for(j=1; j<FLAG_MAX; ++j)
     {
       if ((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
@@ -85,10 +85,10 @@ int checkCommandLineArguments(int argc, char **argv)
           WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
-        
+
         omc_flag[j] = 1;
         found=1;
-        
+
 #ifdef USE_DEBUG_OUTPUT
         INDENT(LOG_STDOUT);
         DEBUG1(LOG_STDOUT, "-%s", FLAG_NAME[j]);
@@ -104,12 +104,12 @@ int checkCommandLineArguments(int argc, char **argv)
           WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
-        
+
         omc_flag[j] = 1;
         omc_flagValue[j] = (char*)getFlagValue(FLAG_NAME[j], 1, argv+i);
         i++;
         found=1;
-        
+
 #ifdef USE_DEBUG_OUTPUT
         INDENT(LOG_STDOUT);
         DEBUG2(LOG_STDOUT, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
@@ -125,11 +125,11 @@ int checkCommandLineArguments(int argc, char **argv)
           WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
-        
+
         omc_flag[j] = 1;
         omc_flagValue[j] = (char*)getOption(FLAG_NAME[j], 1, argv+i);
         found=1;
-        
+
 #ifdef USE_DEBUG_OUTPUT
         INDENT(LOG_STDOUT);
         DEBUG2(LOG_STDOUT, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
@@ -138,14 +138,14 @@ int checkCommandLineArguments(int argc, char **argv)
         break;
       }
     }
-    
+
     if(!found)
     {
       WARNING1(LOG_STDOUT, "invalid command line option: %s", argv[i]);
       return 1;
     }
   }
-  
+
   return 0;
 }
 

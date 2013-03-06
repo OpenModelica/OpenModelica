@@ -30,7 +30,7 @@
 
 #include <string.h>
 #include "solver_qss/qss_signal.h"
-#include "solver_qss/simulator.h" 
+#include "solver_qss/simulator.h"
 #include "solver_qss/sampler.h"
 #include "solver_qss/integrator.h"
 #include "solver_qss/static_function.h"
@@ -53,7 +53,7 @@ QssSignal *derX;  // Derivates of states
 QssSignal *X;     // States
 QssSignal *q;     // Quantized versions of states
 QssSignal *alg;   // Quantized versions of the algebraics
-QssSignal *zc;    // Quantized versions of the zero crossings 
+QssSignal *zc;    // Quantized versions of the zero crossings
 SimulatorQSS **childs;
 
 string *result_file_cstr;
@@ -239,7 +239,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     //  dynamic_cast<StaticFunction*>(childs[i+globalData->nStates])->setCrossing(i-staticPureBlocks);
     tn[i+globalData->nStates] = globalData->timeValue+childs[i+globalData->nStates]->ta();
   }
- 
+
   // Zero crossings detectors - One per zero crossings
   for (int i=0;i<zeroCrossings;i++)
   {
@@ -248,7 +248,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     childs[index]->init(globalData->timeValue,i);
     tn[index] = globalData->timeValue+childs[index]->ta();
   }
- 
+
   // Periodic sampler for outputs
   //childs[size-1] = new Sampler(outputSteps,start,stop);
   childs[size-1]->init(globalData->timeValue,0);
@@ -269,7 +269,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
         next_tn=tn[i];
       }
     }
-    if (next_tn<globalData->timeValue) 
+    if (next_tn<globalData->timeValue)
     {
       cout << "Error" << endl;
       break;
@@ -383,7 +383,7 @@ void init_ompd()
       cerr << "Unknown output format: " << outputFormat << endl;
       return;
   }
- 
+
   //work-around problem with discrete algorithm vars
   //
   //functionDAE(needToIterate);
@@ -446,7 +446,7 @@ void init_ompd()
 
   saveall();
   sim_result->emit();
- 
+
 }
 
 void clean_ompd()
@@ -466,7 +466,7 @@ int
 main_qss(int argc, char**argv)
 {
   int retVal = -1;
-  
+
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 

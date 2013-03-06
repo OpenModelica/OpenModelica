@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,23 +28,23 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 
 /*
 
  This file contains OpenCL related utility functions.
- These include 
-   - Functions for selection and initlizing of an 
+ These include
+   - Functions for selection and initlizing of an
      OpenCL device, building/compiling OpenCL source code, creating
      kernels from OpenCl programs and executing the kernels.
    - Functions and variables for thread managment i.e. number
      of threads to be used, arrangment of threads in to dimensions,
      organization of threads in to work groups.
    - Error handling.
- 
 
- Mahder.Gebremedhin@liu.se  2012-03-31 
-   
+
+ Mahder.Gebremedhin@liu.se  2012-03-31
+
 */
 
 
@@ -87,19 +87,19 @@ void ocl_get_device();
 //Creates context and command queues neccesary for launching kernel
 void ocl_create_context_and_comm_queue();
 
-//Extracts and creates a kernel from a given program. 
+//Extracts and creates a kernel from a given program.
 cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name);
 
 //sets Kernel arguments. count is the number of arguments beieng passed
 void ocl_set_kernel_args(cl_kernel kernel, int count, ...);
 
-//sets a single Kernel cl_mem (device pointer) argument. 
+//sets a single Kernel cl_mem (device pointer) argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, cl_mem in_arg);
 
-//sets a single Kernel Real argument. 
+//sets a single Kernel Real argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
 
-//sets a single Kernel Integer argument. 
+//sets a single Kernel Integer argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
 
 //executes a kernel
@@ -109,14 +109,14 @@ void ocl_execute_kernel(cl_kernel kernel);
 // arguments are arrays of work_dim size specifiying each workgroup dimension
 void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
 
-// sets the number of threads for subsequent parallel operations. 
+// sets the number of threads for subsequent parallel operations.
 // similar to the above function with arrays of size 1 only.
 void ocl_set_num_threads(modelica_integer global_threads_in, modelica_integer local_threads_in);
 
 //sets the number of threads for subsequent parallel operations.
 //This time only the total number of threads desired is given. OpenCL will
 //automatically distribute workitems/threads into work groups.
-//it ca also be used(by passing 0) to reset the number of total threads to the max value of one group (default). 
+//it ca also be used(by passing 0) to reset the number of total threads to the max value of one group (default).
 void ocl_set_num_threads(modelica_integer global_threads_in);
 
 //returns the current number of threads.

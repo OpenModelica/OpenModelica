@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "CVodeSettings.h"
- 
+
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
   : SolverSettings    (globalSettings)
   ,_denseOutput(false)
@@ -16,7 +16,7 @@ bool CVodeSettings::getDenseOutput()
 void CVodeSettings::setDenseOutput(bool dense)
 {
   _denseOutput = dense;
-}  
+}
 
 
 bool CVodeSettings::getEventOutput()

@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -84,10 +84,10 @@ static int calcDataSize(simulation_result *self,DATA *data)
   const MODEL_DATA *modelData = &(data->modelData);
 
   int sz = 1; /* start with one for the timeValue */
-  
+
   if(self->cpuTime)
     sz++;
-    
+
   for(int i = 0; i < modelData->nVariablesReal; i++)
     if(!modelData->realVarsData[i].filterOutput)
     {
@@ -309,7 +309,7 @@ void mat4_emit(simulation_result *self,DATA *data)
   mat_data *matData = (mat_data*) self->storage;
   double datPoint=0;
   rt_tick(SIM_TIMER_OUTPUT);
-  
+
   rt_accumulate(SIM_TIMER_TOTAL);
   double cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
@@ -617,8 +617,8 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
 
   /* calculate number of rows and columns */
   rows = 2;
-  cols = 1 + mData->nParametersReal + 
-             mData->nParametersInteger + 
+  cols = 1 + mData->nParametersReal +
+             mData->nParametersInteger +
              mData->nParametersBoolean;
 
   /* allocate data buffer */

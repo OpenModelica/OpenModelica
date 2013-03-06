@@ -1,9 +1,9 @@
 package AbsynDumpTpl
- 
+
 import interface AbsynDumpTV;
 
 template dumpPath(Absyn.Path path)
-::= 
+::=
 match path
   case FULLYQUALIFIED(__) then
     '.<%dumpPath(path)%>'
@@ -96,7 +96,7 @@ match exp
     let array_str = (arrayExp |> e => dumpExp(e) ;separator=", ")
     '{<%array_str%>}'
   case MATRIX(__) then
-    let matrix_str = (matrix |> row => 
+    let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
     '[<%matrix_str%>]'
   case e as RANGE(step = SOME(step)) then
@@ -133,7 +133,7 @@ template dumpOperand(Absyn.Exp operand, Absyn.Exp operation)
 end dumpOperand;
 
 template dumpIfExp(Absyn.Exp if_exp)
-::= 
+::=
 match if_exp
   case IFEXP(__) then
     let cond_str = dumpExp(ifExp)
@@ -145,7 +145,7 @@ end dumpIfExp;
 
 template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if)
 ::=
-  else_if |> eib as (cond, branch) => 
+  else_if |> eib as (cond, branch) =>
     let cond_str = dumpExp(cond)
     let branch_str = dumpExp(branch)
     ' elseif <%cond_str%> then <%branch_str%>' ;separator="\n"
@@ -186,9 +186,9 @@ end dumpOperator;
 template dumpCref(Absyn.ComponentRef cref)
 ::=
 match cref
-  case CREF_QUAL(__) then 
+  case CREF_QUAL(__) then
     '<%name%><%dumpSubscripts(subscripts)%>.<%dumpCref(componentRef)%>'
-  case CREF_IDENT(__) 
+  case CREF_IDENT(__)
     then '<%name%><%dumpSubscripts(subscripts)%>'
   case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
   case WILD(__) then '_'
@@ -225,7 +225,7 @@ match iterator
     let guard_str = match guardExp case SOME(g) then ' guard <%dumpExp(g)%>'
     '<%name%><%range_str%><%guard_str%>'
 end dumpForIterator;
-    
+
 template errorMsg(String errMessage)
 ::=
 let() = Tpl.addTemplateError(errMessage)

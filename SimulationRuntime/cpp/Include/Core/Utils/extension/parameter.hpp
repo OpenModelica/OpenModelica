@@ -144,7 +144,7 @@ public:
                       new default_converter<S>()));
   }
 private:
-  
+
   template <class S>
   class default_converter :
     public generic_parameter<TypeInfo>::basic_converter {

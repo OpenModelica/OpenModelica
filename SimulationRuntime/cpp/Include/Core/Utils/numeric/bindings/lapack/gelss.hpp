@@ -21,10 +21,10 @@
 
 // included to implicitly convert a vector to an nx1 matrix
 // so that it is compatible with lapack binding
-#include <boost/numeric/bindings/traits/ublas_vector2.hpp> 
+#include <boost/numeric/bindings/traits/ublas_vector2.hpp>
 
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
 #endif
@@ -32,47 +32,47 @@
 namespace boost { namespace numeric { namespace bindings {
 
 	namespace lapack {
-		
+
 		namespace detail {
 
-			inline void gelss(const int m, const int n, const int nrhs, 
-							  float *a, const int lda, float *b, const int ldb, 
+			inline void gelss(const int m, const int n, const int nrhs,
+							  float *a, const int lda, float *b, const int ldb,
 							  float *s, const float rcond, int *rank, float *work,
                               const int lwork, int *info)
 			{
 				LAPACK_SGELSS(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, rank, work, &lwork, info);
 			}
 
-			inline void gelss(const int m, const int n, const int nrhs, 
-							  double *a, const int lda, double *b, const int ldb, 
+			inline void gelss(const int m, const int n, const int nrhs,
+							  double *a, const int lda, double *b, const int ldb,
 							  double *s, const double rcond, int *rank, double *work,
 							  const int lwork, int *info)
 			{
 				LAPACK_DGELSS(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, rank, work, &lwork, info);
 			}
 
-			inline void gelss(const int m, const int n, const int nrhs, 
-							  traits::complex_f *a, const int lda, traits::complex_f *b, 
-							  const int ldb, float *s, const float rcond, int *rank, 
+			inline void gelss(const int m, const int n, const int nrhs,
+							  traits::complex_f *a, const int lda, traits::complex_f *b,
+							  const int ldb, float *s, const float rcond, int *rank,
 							  traits::complex_f *work, const int lwork, float *rwork, int *info)
 			{
-				LAPACK_CGELSS(&m, &n, &nrhs, traits::complex_ptr(a), 
-							  &lda, traits::complex_ptr(b), &ldb, s, 
-							  &rcond, rank, traits::complex_ptr(work), 
+				LAPACK_CGELSS(&m, &n, &nrhs, traits::complex_ptr(a),
+							  &lda, traits::complex_ptr(b), &ldb, s,
+							  &rcond, rank, traits::complex_ptr(work),
 							  &lwork, rwork, info);
 			}
 
-			inline void gelss(const int m, const int n, const int nrhs, 
-							  traits::complex_d *a, const int lda, traits::complex_d *b, 
-							  const int ldb, double *s, const double rcond, int *rank, 
+			inline void gelss(const int m, const int n, const int nrhs,
+							  traits::complex_d *a, const int lda, traits::complex_d *b,
+							  const int ldb, double *s, const double rcond, int *rank,
 							  traits::complex_d *work, const int lwork, double *rwork, int *info)
 			{
-				LAPACK_ZGELSS(&m, &n, &nrhs, traits::complex_ptr(a), 
-							  &lda, traits::complex_ptr(b), &ldb, s, 
-							  &rcond, rank, traits::complex_ptr(work), 
+				LAPACK_ZGELSS(&m, &n, &nrhs, traits::complex_ptr(a),
+							  &lda, traits::complex_ptr(b), &ldb, s,
+							  &rcond, rank, traits::complex_ptr(work),
 							  &lwork, rwork, info);
 			}
-			
+
 			// gelss for real type
 			template <typename MatrA, typename MatrB, typename VecS, typename Work>
 			inline int gelss(MatrA& A, MatrB& B, VecS& s, Work& work)
@@ -178,7 +178,7 @@ namespace boost { namespace numeric { namespace bindings {
 					const int minmn = std::min(m, n);			// minmn = m < n ? m : n
 					const int maxmn = std::max(m, n);			// maxmn = m > n ? m : n
 					const int maxmnr = std::max(maxmn, rhs);	// maxmnr = maxmn > rhs ? maxmn : rhs
-					
+
 					traits::detail::array<val_t> work(3*minmn + std::max(2*minmn, maxmnr));
 
 					return gelss(A, B, s, work);
@@ -255,7 +255,7 @@ namespace boost { namespace numeric { namespace bindings {
 
 					traits::detail::array<val_t> work(2*minmn + maxmnr);
 					traits::detail::array<real_t> rwork(std::max(1, (5*minmn)));
-					
+
 					return gelss(A, B, s, work, rwork);
 				}
 

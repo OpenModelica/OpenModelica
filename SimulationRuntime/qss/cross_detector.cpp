@@ -34,7 +34,7 @@ void CrossDetector::makeStep(Time t)
     */
 }
 
-void CrossDetector::update(Time t) 
+void CrossDetector::update(Time t)
 {
   /*
   if (zc[index].value()>0)

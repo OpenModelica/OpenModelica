@@ -19,13 +19,13 @@ void IntegratorQSS::init(Time t, unsigned int i)
       break;
     }
   }
- 
+
   sigma=0;
   X[state].setCoeff(0,globalData->states[state]);
   q[state].setOrder(order-1);
   X[state].setOrder(order);
   derX[state].setOrder(order);
-  q[state].setCoeff(0,X[state].value()); 
+  q[state].setCoeff(0,X[state].value());
   X[state].sampledAt(t);
   q[state].sampledAt(t);
   dQ = fabs(X[state].value())*dQrel;
@@ -38,13 +38,13 @@ void IntegratorQSS::makeStep(Time t)
   X[state].advanceBy(sigma);
   X[state].sampledAt(t);
   q[state].sampledAt(t);
-  q[state].setCoeff(0,X[state].value()); 
+  q[state].setCoeff(0,X[state].value());
   dQ = fabs(X[state].value())*dQrel;
   if (dQ<dQmin)
     dQ = dQmin;
   if (X[state].coeff(1)==0.0)
     sigma = INF;
-  else 
+  else
     sigma = fabs(dQ/X[state].coeff(1));
 }
 
@@ -86,13 +86,13 @@ void IntegratorQSS2::init(Time t, unsigned int i)
       break;
     }
   }
- 
+
   sigma=0;
   X[state].setCoeff(0,globalData->states[state]);
   q[state].setOrder(order-1);
   X[state].setOrder(order);
   derX[state].setOrder(order);
-  q[state].setCoeff(0,X[state].value()); 
+  q[state].setCoeff(0,X[state].value());
   X[state].sampledAt(t);
   q[state].sampledAt(t);
   dQ = fabs(X[state].value())*dQrel;
@@ -105,14 +105,14 @@ void IntegratorQSS2::makeStep(Time t)
   X[state].advanceBy(sigma);
   X[state].sampledAt(t);
   q[state].sampledAt(t);
-  q[state].setCoeff(0,X[state].value()); 
-  q[state].setCoeff(1,X[state].coeff(1)); 
+  q[state].setCoeff(0,X[state].value());
+  q[state].setCoeff(1,X[state].coeff(1));
   dQ = fabs(X[state].value())*dQrel;
   if (dQ<dQmin)
     dQ = dQmin;
   if (X[state].coeff(2)==0.0)
     sigma = INF;
-  else 
+  else
     sigma = sqrt(fabs(dQ/X[state].coeff(2)));
 }
 

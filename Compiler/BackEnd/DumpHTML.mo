@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -41,7 +41,7 @@ protected import List;
 protected import System;
 
 /*************************************************
- * types 
+ * types
  ************************************************/
 
 public type Style = list<tuple<String,String>>;
@@ -57,7 +57,7 @@ public uniontype Tag
     String text;
   end HYPERLINK;
   record ANKER
-    String name; 
+    String name;
   end ANKER;
   record LINE
     String text;
@@ -83,15 +83,15 @@ public uniontype Document
   end DOCUMENT;
 end Document;
 
-public constant Document emptyDocument = DOCUMENT("",{},{}); 
+public constant Document emptyDocument = DOCUMENT("",{},{});
 
 /*************************************************
- * public 
+ * public
  ************************************************/
 
 public function emtypDocumentWithToggleFunktion
 "function emtypDocumentWithToggleFunktion
-  return a document 
+  return a document
   author Frenkel TUD 2012-11"
   output Document outDoc;
 algorithm
@@ -286,11 +286,11 @@ algorithm
   str := str +& "\n<body>";
   str := List.fold(listReverse(body),dumpTag,str);
   str := str +& "\n</body>\n</html>";
-  System.writeFile(name,str);           
+  System.writeFile(name,str);
 end dumpDocument;
 
 /*************************************************
- * protected 
+ * protected
  ************************************************/
 
 protected function addHeadTag
@@ -382,7 +382,7 @@ protected
   String name,value;
 algorithm
   (name,value) := st;
-  oBuffer := name +& ": " +& value; 
+  oBuffer := name +& ": " +& value;
 end dumpStyle;
 
 

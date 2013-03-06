@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -39,11 +39,11 @@ encapsulated package Scope
 
   The Scope representation is a list of segments of name ids in Name"
 
-public 
+public
 import Name;
 import Pool;
 
-protected 
+protected
 import Util;
 import List;
 
@@ -56,14 +56,14 @@ public
 uniontype Kind
   record TY "a type/class segment"
   end TY;
-  
+
   record CO "a component segment"
     Integer tyScopeId  "points us into Scopes";
   end CO;
-  
+
   record UN "a unit segment"
-  end UN;  
-  
+  end UN;
+
   record NI "an named import segment"
     Integer nameId   "points us into Names";
     Integer scopeId  "points us into Scopes";
@@ -72,23 +72,23 @@ uniontype Kind
   record UI "an unqualified import"
     Integer scopeId  "points us into Scopes";
   end UI;
-  
+
   record EX "an extends segment"
     Integer tyScopeId  "points us into Scopes";
   end EX;
-  
+
   record IS "instantiation segment"
     Integer scopeId  "points us into Scopes, any of the above kind";
   end IS;
 end Kind;
 
 uniontype Segment "a scope segment can be any of these"
-  record S 
+  record S
     Integer id       "points us into Scopes";
     Integer parentId "points us into Scopes, 0 for top";
     Integer nameId   "points us into Names";
     Kind    kind     "the segment kind";
-  end S;  
+  end S;
 end Segment;
 
 type Scope = list<Segment> "BEWARE! Scope segments are in reverse!";
@@ -153,7 +153,7 @@ protected
   Integer nameId;
 algorithm
   scope := get(inScopes, parentId);
-  (outNames, nameId) := Name.new(inNames, inName);  
+  (outNames, nameId) := Name.new(inNames, inName);
   segment := S(Pool.autoId, parentId, nameId, kind);
   scope := segment::scope;
   (outScopes, outIndex) := Pool.addUnique(inScopes, scope, SOME(updateId), SOME(scopeEqual));
@@ -168,21 +168,21 @@ algorithm
     local
       Integer nameId;
       String n;
-              
+
     // fine
     case (names, S(nameId = nameId)::_)
       equation
         n = Name.get(names, nameId);
       then
         n;
-        
+
     // failure
     case (names, scope)
       equation
         print("Failure in Node.lastSegmentName with " +& scopeStr(names, scope) +& "!\n");
       then
-        fail(); 
-        
+        fail();
+
   end matchcontinue;
 end lastSegmentName;
 
@@ -205,28 +205,28 @@ public function dumpPool
   input Scopes inScopes;
   input Names inNames;
 algorithm
-  _ := Util.arrayApplyR(Pool.members(inScopes), Pool.next(inScopes), dump, inNames);  
+  _ := Util.arrayApplyR(Pool.members(inScopes), Pool.next(inScopes), dump, inNames);
 end dumpPool;
 
 function dump
   input Names names;
   input Option<Scope> inScopeOpt;
 algorithm
-  _ := match(names, inScopeOpt) 
-    local 
+  _ := match(names, inScopeOpt)
+    local
       Scope s;
       list<String> lst;
-    
-    case (names, SOME(s)) 
-      equation 
+
+    case (names, SOME(s))
+      equation
         lst = List.map1r(listReverse(s), segmentStr, names);
-        print(stringDelimitList(lst, ".") +& "\n"); 
+        print(stringDelimitList(lst, ".") +& "\n");
       then ();
-    
-    case (_, _) 
-      equation 
+
+    case (_, _)
+      equation
         print("\n");
-      then 
+      then
         ();
   end match;
 end dump;
@@ -236,23 +236,23 @@ function segmentStr
   input Segment inSegment;
   output String outStr;
 algorithm
-  outStr := match(names, inSegment) 
-    local 
+  outStr := match(names, inSegment)
+    local
       Integer scopeId "points us into Scopes";
       Integer parentId "points us into Scopes; 0 for top";
       Integer nameId "points us into Names";
       Kind    kind "what kind of segment it is";
       String n, str;
-    
-    case (names, S(scopeId, parentId, nameId, kind)) 
-      equation 
+
+    case (names, S(scopeId, parentId, nameId, kind))
+      equation
         n = Name.get(names, nameId);
-        str = kindStr(kind) +&  
+        str = kindStr(kind) +&
           "[" +& n +& "," +&
           intString(scopeId) +& "," +&
           intString(parentId) +&
-          "]"; 
-      then str;    
+          "]";
+      then str;
   end match;
 end segmentStr;
 
@@ -281,16 +281,16 @@ algorithm
       Integer nameId;
       String n;
       Scope rest;
-      
+
     case (names, {}) then "Scope(<empty>)";
-        
+
     // last element
     case (names, {S(nameId = nameId)})
       equation
         n = Name.get(names, nameId);
       then
         n;
-        
+
     // rest elements
     case (names, S(nameId = nameId)::rest)
       equation
@@ -301,9 +301,9 @@ algorithm
   end matchcontinue;
 end scopeStr;
 
-public 
+public
 function scopeEqual
-"disregards the segment id when comparing to be able to use the auto id update in Pool" 
+"disregards the segment id when comparing to be able to use the auto id update in Pool"
   input Option<Scope> inOld;
   input Option<Scope> inNew;
   output Boolean isEqual;
@@ -313,11 +313,11 @@ algorithm
       Integer pID1, nID1, pID2, nID2;
       Scope rest1, rest2;
       Kind k1, k2;
-      
+
     case (NONE(), NONE()) then true;
     case (NONE(),      _) then false;
     case (_,      NONE()) then false;
-    case (SOME(S(_,pID1,nID1,k1)::rest1), SOME(S(_,pID2,nID2,k2)::rest2)) 
+    case (SOME(S(_,pID1,nID1,k1)::rest1), SOME(S(_,pID2,nID2,k2)::rest2))
       equation
         true = intEq(pID1, pID2);
         true = intEq(nID1, nID2);

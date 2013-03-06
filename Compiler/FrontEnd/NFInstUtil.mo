@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -290,7 +290,7 @@ algorithm
     case DAE.STREAM() then SCode.STREAM();
   end match;
 end daeToSCodeConnectorType;
-  
+
 public function makeDerivedClassType
   input DAE.Type inType;
   input ClassInf.State inState;
@@ -530,9 +530,9 @@ algorithm
       array<Dimension> idimensions;
       list<Dimension> idims;
       DAE.Dimensions dims;
-    
+
     case NFInstTypes.TYPED_COMPONENT(ty = ty)
-      equation 
+      equation
         dims = Types.getDimensions(ty);
       then dims;
   end match;
@@ -551,12 +551,12 @@ algorithm
 
   end match;
 end getComponentBinding;
- 
+
 public function getComponentBindingExp
   input Component inComponent;
   output DAE.Exp outExp;
 algorithm
-  NFInstTypes.TYPED_COMPONENT(binding = 
+  NFInstTypes.TYPED_COMPONENT(binding =
     NFInstTypes.TYPED_BINDING(bindingExp = outExp)) := inComponent;
 end getComponentBindingExp;
 
@@ -568,13 +568,13 @@ algorithm
     local
       SCode.Variability var;
 
-    case NFInstTypes.UNTYPED_COMPONENT(prefixes = 
+    case NFInstTypes.UNTYPED_COMPONENT(prefixes =
       NFInstTypes.PREFIXES(variability = var)) then var;
 
-    case NFInstTypes.TYPED_COMPONENT(prefixes = 
+    case NFInstTypes.TYPED_COMPONENT(prefixes =
       NFInstTypes.DAE_PREFIXES(variability = DAE.CONST())) then SCode.CONST();
 
-    case NFInstTypes.TYPED_COMPONENT(prefixes = 
+    case NFInstTypes.TYPED_COMPONENT(prefixes =
       NFInstTypes.DAE_PREFIXES(variability = DAE.PARAM())) then SCode.PARAM();
 
     else SCode.VAR();
@@ -698,7 +698,7 @@ algorithm
 
   end match;
 end getBindingDimension;
-  
+
 public function getExpDimension
   input DAE.Exp inExp;
   input Integer inDimIndex;
@@ -724,7 +724,7 @@ algorithm
 
   end matchcontinue;
 end getExpDimension;
- 
+
 public function getBindingExp
   input Binding inBinding;
   output DAE.Exp outExp;
@@ -857,7 +857,7 @@ public function wrapTypedDimension
 algorithm
   outDimension := NFInstTypes.TYPED_DIMENSION(inDimension);
 end wrapTypedDimension;
-  
+
 public function unwrapDimension
   input Dimension inDimension;
   output DAE.Dimension outDimension;
@@ -1157,7 +1157,7 @@ algorithm
     // If either prefix is unset, return the other.
     case (_, (Absyn.BIDIR(), _), _, _) then inOuterDirection;
     case ((Absyn.BIDIR(), _), _, _, _) then inInnerDirection;
-    
+
     // we need this for now, see i.e. Modelica.Blocks.Math.Add3
     case ((Absyn.INPUT(), _), (Absyn.INPUT(), _),  _, _) then inInnerDirection;
     case ((Absyn.OUTPUT(), _), (Absyn.OUTPUT(), _),  _, _) then inInnerDirection;
@@ -1176,7 +1176,7 @@ algorithm
 
   end match;
 end mergeDirection;
-   
+
 protected function directionString
   input Absyn.Direction inDirection;
   output String outString;
@@ -1251,7 +1251,7 @@ algorithm
 
     case (_, NFInstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
 
-    case (_, NFInstTypes.PREFIX(name = name, 
+    case (_, NFInstTypes.PREFIX(name = name,
         restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
       then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 
@@ -1263,7 +1263,7 @@ algorithm
 
   end match;
 end prefixCref;
- 
+
 public function prefixToCref
   input Prefix inPrefix;
   output DAE.ComponentRef outCref;
@@ -1431,7 +1431,7 @@ algorithm
   name := prefixPath(name, inPrefix);
   outComponent := setComponentName(inComponent, name);
 end prefixComponent;
-        
+
 public function prefixClass
   input Class inClass;
   input Prefix inPrefix;
@@ -1541,14 +1541,14 @@ algorithm
     local
       DAE.ComponentRef prefix_cref, rest_cref, cref;
       SymbolTable st;
-    
+
     case (_, st)
       equation
         (prefix_cref, rest_cref) = ComponentReference.splitCrefLast(inCref);
         (cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
       then
         (cref, st);
-        
+
   end match;
 end replaceCrefOuterPrefix;
 
@@ -1583,7 +1583,7 @@ algorithm
         (new_cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
       then
         (new_cref, st);
-         
+
   end matchcontinue;
 end replaceCrefOuterPrefix2;
 
@@ -1604,7 +1604,7 @@ algorithm
 
     case NFInstTypes.CONDITIONAL_COMPONENT(element = el)
       then SCode.isInnerComponent(el);
-        
+
     else false;
   end match;
 end isInnerComponent;
@@ -1696,7 +1696,7 @@ algorithm
 
   end match;
 end traverseClassComponents2;
-  
+
 protected function traverseClassElement
   input Element inElement;
   input TraverseArgType inArg;
@@ -1880,7 +1880,7 @@ algorithm
     else false;
   end match;
 end isFlowComponent;
-  
+
 public function getFunctionInputs
   input Function inFunction;
   output list<Element> outInputs;
@@ -1922,20 +1922,20 @@ algorithm
       DaePrefixes pref;
       Binding binding;
       Absyn.Info info;
-    
-    case (_, NONE()) then inComponent; 
-    
+
+    case (_, NONE()) then inComponent;
+
     case (NFInstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), _)
     then NFInstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
-    
+
     case (NFInstTypes.PACKAGE(name, _), _)
     then NFInstTypes.PACKAGE(name, inParent);
-    
+
     case (_, _) then inComponent;
-    
+
   end matchcontinue;
 end setComponentParent;
-      
+
 public function makeTypedComponentCref
   input Component inComponent;
   output DAE.ComponentRef outCref;
@@ -2121,13 +2121,13 @@ algorithm
       Absyn.Path path;
 
     case NFInstTypes.EMPTY_PREFIX(classPath = NONE()) then "E()";
-    
+
     case NFInstTypes.EMPTY_PREFIX(classPath = SOME(path))
       equation
         str = "E(" +& Absyn.pathLastIdent(path) +& ")";
       then
         str;
-    
+
     case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
       equation
         str = prefixToStr(rest_prefix) +& "." +& name;
@@ -2149,7 +2149,7 @@ algorithm
 
     case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
 
-    case NFInstTypes.PREFIX(name = name, 
+    case NFInstTypes.PREFIX(name = name,
          restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
       then
         name;
@@ -2176,7 +2176,7 @@ algorithm
     case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
     case NFInstTypes.PREFIX(name = name) then name;
 
-  end match; 
+  end match;
 end prefixFirstName;
 
 
@@ -2187,22 +2187,22 @@ algorithm
   outBool := match(inElement)
     local
       Component comp;
-      
+
     case(NFInstTypes.ELEMENT(comp, _)) then isModifiableComponent(comp);
-      
+
   end match;
 end isModifiableElement;
 
 public function isModifiableComponent
 "@mahge:
- Returns true if a component is modifiable from outside of scope. 
- Protected, final and constants with bidings can not be modifed. 
+ Returns true if a component is modifiable from outside of scope.
+ Protected, final and constants with bidings can not be modifed.
  Everything else can be.
 "
   input Component inComponent;
   output Boolean outBool;
 algorithm
-  outBool := matchcontinue(inComponent)  
+  outBool := matchcontinue(inComponent)
     local
       Prefixes prefixes;
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(visibility = SCode.PROTECTED()))) then false;
@@ -2210,7 +2210,7 @@ algorithm
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = SCode.CONST()))) then false;
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(finalPrefix = SCode.FINAL()))) then false;
     else true;
-  end matchcontinue;   
+  end matchcontinue;
 end isModifiableComponent;
 
 public function markElementAsInput
@@ -2221,12 +2221,12 @@ algorithm
     local
       Component comp;
       Class cls;
-      
-    case(NFInstTypes.ELEMENT(comp, cls)) 
+
+    case(NFInstTypes.ELEMENT(comp, cls))
       equation
         comp = markComponentAsInput(comp);
       then NFInstTypes.ELEMENT(comp, cls);
-      
+
   end match;
 end markElementAsInput;
 
@@ -2234,7 +2234,7 @@ public function markComponentAsInput
   input Component inComponent;
   output Component outComponent;
 algorithm
-  outComponent := match(inComponent)  
+  outComponent := match(inComponent)
     local
       Absyn.Path name;
       DAE.Type baseType;
@@ -2242,15 +2242,15 @@ algorithm
       ParamType paramType;
       Binding binding;
       Absyn.Info info;
-      
-    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info)) 
+
+    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info))
       then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_INPUT_PREFIXES, paramType, binding, info);
 
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsInput failed"});
       then fail();
-  end match;   
+  end match;
 end markComponentAsInput;
 
 public function markElementAsProtected
@@ -2261,12 +2261,12 @@ algorithm
     local
       Component comp;
       Class cls;
-      
-    case(NFInstTypes.ELEMENT(comp, cls)) 
+
+    case(NFInstTypes.ELEMENT(comp, cls))
       equation
         comp = markComponentAsProtected(comp);
       then NFInstTypes.ELEMENT(comp, cls);
-      
+
   end match;
 end markElementAsProtected;
 
@@ -2274,7 +2274,7 @@ public function markComponentAsProtected
   input Component inComponent;
   output Component outComponent;
 algorithm
-  outComponent := match(inComponent)  
+  outComponent := match(inComponent)
     local
       Absyn.Path name;
       DAE.Type baseType;
@@ -2282,15 +2282,15 @@ algorithm
       ParamType paramType;
       Binding binding;
       Absyn.Info info;
-      
-    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info)) 
+
+    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info))
       then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_PROTECTED_PREFIXES, paramType, binding, info);
 
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsProtected failed"});
       then fail();
-  end match;   
+  end match;
 end markComponentAsProtected;
 
 end NFInstUtil;

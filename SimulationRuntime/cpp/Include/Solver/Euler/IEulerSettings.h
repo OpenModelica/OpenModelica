@@ -1,6 +1,6 @@
 #pragma once
- 
- 
+
+
 
 /*****************************************************************************/
 /**
@@ -8,7 +8,7 @@
 Encapsulation of settings for euler solver
 
 \date     October, 1st, 2008
-\author 
+\author
 
 
 */
@@ -25,7 +25,7 @@ public:
         EULERFORWARD    = 0,    ///< Explicit Euler
         EULERBACKWARD    = 1,    ///< Implicit Euler
         MIDPOINT        = 2,        ///< Midpoint rule
-        
+
     };
 
     /// Enum to choose the method for zero search
@@ -36,7 +36,7 @@ public:
         LINEAR_INTERPOLATION    = 2,    ///< Linear interpolation
     };
     virtual ~IEulerSettings()    {};
-    
+
     /**
     Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)
     **/
@@ -46,8 +46,8 @@ public:
      Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
     */
     virtual unsigned int getZeroSearchMethod() =0;
-        virtual void setZeroSearchMethod(unsigned int ) =0;        
-        
+        virtual void setZeroSearchMethod(unsigned int ) =0;
+
     /**
     Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
     */
@@ -57,14 +57,14 @@ public:
     For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gewählt werden. ([false,true]; default: false = Fixpunktiteration)
     */
     virtual bool getUseNewtonIteration() =0;
-    virtual void setUseNewtonIteration(bool) =0;    
+    virtual void setUseNewtonIteration(bool) =0;
     /**
     Equidistant output(by interpolation polynominal) ([true,false]; default: false)
     */
     virtual bool getDenseOutput() =0;
-    virtual void setDenseOutput(bool) =0;    
+    virtual void setDenseOutput(bool) =0;
         /**
-    Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)    
+    Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
     */
     virtual double getIterTol()=0;
     virtual void setIterTol(double)=0;

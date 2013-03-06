@@ -15,11 +15,11 @@ using namespace std;
 #endif
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
-#include <boost/unordered_map.hpp> 
+#include <boost/unordered_map.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/lexical_cast.hpp> 
+#include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include "boost/tuple/tuple.hpp"
 #include <boost/circular_buffer.hpp>
@@ -29,7 +29,7 @@ using namespace std;
 #include "Utils/extension/factory.hpp"
 #include "Utils/extension/type_map.hpp"
 #include "Utils/extension/convenience.hpp"
-#include <boost/numeric/ublas/storage.hpp> 
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -45,7 +45,7 @@ using namespace std;
 #include <boost/shared_ptr.hpp>
 #include <functional>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp> 
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>

@@ -107,7 +107,7 @@ clean:
 	$(antlr_compile) $<
 %.tokens: %.g
 	$(antlr_compile) $<
-  
+
 %Lexer.java: %.g
 	$(antlr_compile) $<
 %Parser.java: %.g

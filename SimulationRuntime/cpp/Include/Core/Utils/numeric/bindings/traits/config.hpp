@@ -2,15 +2,15 @@
 //  Copyright (c) 2002-2003
 //  Toon Knapen, Kresimir Fresl, Joerg Walter
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
 #ifndef BOOST_NUMERIC_BINDINGS_CONFIG_HPP
 #define BOOST_NUMERIC_BINDINGS_CONFIG_HPP
 
-#include <boost/config.hpp> 
+#include <boost/config.hpp>
 
 // Microsoft Visual C++
 #if defined (BOOST_MSVC)
@@ -36,17 +36,17 @@
 // because the checks above are no longer in sync with "boost/config/select_compiler_config.hpp"
 //#error bindings do not recognise compiler
 #endif
- 
+
 
 #if defined (BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS)
 
 // structure checks require proper traits
-#  define BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#  define BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 
-// type checks require proper traits 
-#  define BOOST_NUMERIC_BINDINGS_NO_TYPE_CHECK 
+// type checks require proper traits
+#  define BOOST_NUMERIC_BINDINGS_NO_TYPE_CHECK
 
-#endif 
+#endif
 
 #endif
 

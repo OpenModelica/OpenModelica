@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -70,7 +70,7 @@ type SegmentKind = .Scope.Kind;
 type Reference   = .Reference.Reference;
 type Instance    = .Instance.Instance;
 type Element     = .Element.Element;
-  
+
 type VisitedScopes = .Visited.Visited      "an array of unique scope ids visited during lookup, the integer points to the previous scope";
 
 uniontype LookupStatus
@@ -85,18 +85,18 @@ uniontype Relations "relations in the graph other than the edges; add more if yo
   record RELS "relations in the graph other than the edges"
     Scope2Node scope2node "fast access from scope+node type to node";
     Node2Edge  node2edge  "fast access from source node+edge type to target node";
-    Node2Kids  node2kids  "fast access from nodes+children node type to their children";    
-  end RELS;  
-end Relations;  
-    
+    Node2Kids  node2kids  "fast access from nodes+children node type to their children";
+  end RELS;
+end Relations;
+
 uniontype Graph "the graph"
-  record GRAPH "the graph"    
+  record GRAPH "the graph"
     Nodes          nodes "the nodes in the graph";
     Edges          edges "the edges in the graph";
     // additional info
     Names          names  "the names in the scopes";
     Scopes         scopes "the scopes";
-    Relations      relations "other relations in the graph for fast access";    
+    Relations      relations "other relations in the graph for fast access";
     LookupStatus   lookupStatus "structure to help us do lookup";
   end GRAPH;
 end Graph;
@@ -127,17 +127,17 @@ protected
   Graph g;
 algorithm
   // create names, scopes, nodes and edges pools
-  nodes   := Node.pool();  
+  nodes   := Node.pool();
   edges   := Edge.pool();
   names   := Name.pool();
   scopes  := Scope.pool();
   visited := Visited.pool();
-  
+
   // create relations
   scope2node := Relation.bidirectional("scope2node",
-                  Relation.intPairCompare, Relation.intCompare, // comparison functions 
+                  Relation.intPairCompare, Relation.intCompare, // comparison functions
                   SOME(Relation.intPairStr), SOME(intString), // printing functions
-                  NONE(), NONE() // no update check functions 
+                  NONE(), NONE() // no update check functions
                   );
   node2edge  := Relation.bidirectional("node2edge",
                   Relation.intPairCompare, Relation.intPairCompare, // comparison functions
@@ -145,7 +145,7 @@ algorithm
                   NONE(), NONE() // no update check function
                 );
   node2kids  := Relation.unidirectional("node2kids",
-                  Relation.intPairCompare, // comparison 
+                  Relation.intPairCompare, // comparison
                   SOME(Relation.intPairStr), SOME(Relation.intListStr), // printing functions
                   NONE()// no update check function
                 );
@@ -153,25 +153,25 @@ algorithm
   lookupStatus   := LS(visited, 0, 0);
 
   g := GRAPH(nodes, edges, names, scopes, RELS(scope2node, node2edge, node2kids), lookupStatus);
-  
+
   // add the root name, will get ID 1
-  (g, nameId) := newName(g, rootName); 
+  (g, nameId) := newName(g, rootName);
   // add the root scope, will get ID 1
-  (g, scopeId) := addScope(g, rootScope); 
-  
+  (g, scopeId) := addScope(g, rootScope);
+
   // add the root node, ID 1
   (g, nodeId) := addNode(g, Node.N(autoId, scopeId, Node.E(Element.E(rootElement, 0))));
   // create a root instance, ID 2
   (g, instanceId) := addNode(g, Node.N(autoId, scopeId, Node.I(Instance.initialTI)));
-  
+
   // add the edge, ID 1
   (g, edgeId) := addEdge(g, Edge.E(autoId, instanceId, nodeId, Edge.cb));
-  
+
   outGraph := g;
 end emptyGraph;
 
-public  
-uniontype Context "extra information that is passed along for the ride to all the functions, updated and returned back, like a hitchhiker" 
+public
+uniontype Context "extra information that is passed along for the ride to all the functions, updated and returned back, like a hitchhiker"
   record CONTEXT "the extra info"
     Integer sID "current scope";
     Integer nID "the parent node id";
@@ -181,7 +181,7 @@ end Context;
 
 
 public function create
-"populates the SCodeGraph and expands the nodes on the path we want to instantiate"  
+"populates the SCodeGraph and expands the nodes on the path we want to instantiate"
   input SCode.Program inSCodeProgram;
   input Absyn.Path inClassPath;
   input Context inContext;
@@ -201,37 +201,37 @@ algorithm
     case (program, path, iContext)
       equation
         // build an root package element from a program
-        rootElement = 
+        rootElement =
           SCode.CLASS(
-            "", 
-            SCode.defaultPrefixes, 
-            SCode.ENCAPSULATED(), 
-            SCode.NOT_PARTIAL(), 
-            SCode.R_PACKAGE(), 
-            SCode.PARTS(program, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), 
+            "",
+            SCode.defaultPrefixes,
+            SCode.ENCAPSULATED(),
+            SCode.NOT_PARTIAL(),
+            SCode.R_PACKAGE(),
+            SCode.PARTS(program, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
             Absyn.dummyInfo);
         graph = emptyGraph(rootElement);
-        
+
         // expand nodes on path
         (graph, oContext) = expandNodesOnPath(graph, iContext, path);
       then
         (graph, oContext);
-        
+
     // failure
     case(_, path, _)
       equation
         print("Failure in SCodeGraph.createGraph for path: " +& Absyn.pathString(path) +& "!\n");
       then
         fail();
-        
+
   end matchcontinue;
 end create;
 
 protected function expandNodesOnPath
-"expands nodes in graph on the path we want to instantiate"  
+"expands nodes in graph on the path we want to instantiate"
   input Graph inGraph;
   input Context inContext;
-  input Absyn.Path inClassPath;  
+  input Absyn.Path inClassPath;
   output Graph outGraph;
   output Context outContext "contains the last instance on the path";
 algorithm
@@ -247,7 +247,7 @@ algorithm
       Node parentNode;
       String name;
       Element el;
-      
+
     // nothing more to expand than this node Absyn.IDENT
     case (g, iContext as CONTEXT(scopeId, nodeParentId, instanceParentId), path as Absyn.IDENT(name))
       equation
@@ -258,7 +258,7 @@ algorithm
         (g, oContext) = analyzeClass(g, iContext, el, Element.order(el));
       then
         (g, oContext);
-      
+
     // handle qualified Absyn.QUALIFIED
     case (g, iContext as CONTEXT(scopeId, nodeParentId, instanceParentId), path as Absyn.QUALIFIED(name, rest))
       equation
@@ -270,7 +270,7 @@ algorithm
         (g, oContext) = expandNodesOnPath(g, oContext, rest);
       then
         (g, oContext);
-        
+
     // failure
     case(g, iContext, path)
       equation
@@ -289,14 +289,14 @@ algorithm
     local
       Integer nameId;
       String n;
-              
+
     // fine
     case (graph, scope)
       equation
         n = Scope.lastSegmentName(getNames(graph), scope);
       then
         n;
-    
+
   end matchcontinue;
 end getLastNameFromScope;
 
@@ -312,7 +312,7 @@ algorithm
       Scope.Scope scope, scopeNotExpanded;
       String name;
       Names names;
-    
+
     // see if we have an expanded node with this scope
     case(graph, scopeId)
       equation
@@ -322,13 +322,13 @@ algorithm
         Node.N(content = Node.E(Element.E(element = element, order = order))) = getNodeById(graph, nodeId);
       then
         Element.E(element, order);
-        
+
     // no expanded node with this scope, find the last expanded one
     case(graph, scopeId)
       equation
         nodeId = getNodeIdByScopeId(graph, scopeId);
         // did we find it?
-        false = intNe(nodeId, 0);        
+        false = intNe(nodeId, 0);
         // TODO! CHEK if we have more non-expanded nodes!!
         (Node.N(content = Node.E(Element.E(element = element, order = order))), scopeNotExpanded) = getLastExpandedNodeFromScopeId(graph, scopeId);
         name = getLastNameFromScope(graph, scopeNotExpanded);
@@ -343,8 +343,8 @@ algorithm
         printGraph(graph);
       then
         fail();
- 
-  end matchcontinue; 
+
+  end matchcontinue;
 end getElementByScopeId;
 
 protected function getLastExpandedNodeFromScopeId
@@ -359,24 +359,24 @@ algorithm
       Integer nodeId;
       Scope.Scope scope, s;
       Node node;
-    
+
     // see if we have an expanded node with this scope
     case(graph, scopeId)
       equation
         scope = getScopeById(graph, scopeId);
         // revese it, so we have the top scope first
         scope = listReverse(scope);
-        
+
         (node, s) = getLastExpandedNodeFromScope(graph, scope);
       then
         (node, s);
-        
+
     case(graph, scopeId)
       equation
         print("Failure in SCodeGraph.getLastExpandedNodeFromScopeId for scopeId: " +& intString(scopeId) +& "!\n");
       then
-        fail();                
-  end matchcontinue;   
+        fail();
+  end matchcontinue;
 end getLastExpandedNodeFromScopeId;
 
 protected function getLastExpandedNodeFromScope
@@ -398,7 +398,7 @@ algorithm
         print("Damn, this should not happen!!\n");
       then
         fail();
-        
+
     // parent expanded, current not expanded
     case(graph, Scope.S(id = parentId)::(s as Scope.S(id = scopeId))::rest)
       equation
@@ -410,8 +410,8 @@ algorithm
         node = getNodeById(graph, nodeId);
       then
         (node, listReverse(s::rest));
-        
-    // 
+
+    //
     case(graph, Scope.S(id = scopeId, parentId = parentId)::rest)
       equation
         nodeId = getNodeIdByScopeId(graph, scopeId);
@@ -420,14 +420,14 @@ algorithm
         (node, rest) = getLastExpandedNodeFromScope(graph, rest);
       then
         (node, rest);
-    
-    // 
+
+    //
     case(graph, _)
       equation
         print("Failure in SCodeGraph.getLastExpandedNodeFromScope \n");
       then
-        fail();  
-  end matchcontinue;   
+        fail();
+  end matchcontinue;
 end getLastExpandedNodeFromScope;
 
 protected function getNodeIdByScopeId
@@ -441,7 +441,7 @@ algorithm
       Integer nodeId;
       Nodes nodes;
       Scope2Node scope2node;
-    
+
     // do we already have a node, return it!
     case(graph, scopeId)
       equation
@@ -450,16 +450,16 @@ algorithm
         //print("Scope: [" +& intString(scopeId) +& "]" +& scopeStr(graph,scopeId) +& " node id: " +& intString(nodeId) +& "\n");
       then
         nodeId;
-    
+
     // failure above, return 0
     case(graph, scopeId)
       equation
-        //print("Scope: [" +& intString(scopeId) +& "]" +& scopeStr(graph, scopeId) +& " node id: 0\n"); 
+        //print("Scope: [" +& intString(scopeId) +& "]" +& scopeStr(graph, scopeId) +& " node id: 0\n");
         //print("Scope2Node: \n" +& Relation.printRelationStr(getScope2Node(graph)) +& "\n");
-      then 
+      then
         virtualId;
-    
-  end matchcontinue; 
+
+  end matchcontinue;
 end getNodeIdByScopeId;
 
 protected function getNodeById
@@ -473,7 +473,7 @@ algorithm
       Integer nodeId;
       Nodes nodes;
       Node node;
-    
+
     // fetch the node!
     case(graph, nodeId)
       equation
@@ -481,14 +481,14 @@ algorithm
         node = Node.get(nodes, nodeId);
       then
         node;
-        
+
     case(graph, nodeId)
       equation
         print("Failure in SCodeGraph.getNodeById for nodeId: " +& intString(nodeId) +& "!\n");
       then
-        fail();                
+        fail();
 
-  end matchcontinue; 
+  end matchcontinue;
 end getNodeById;
 
 protected function getScopeById
@@ -502,7 +502,7 @@ algorithm
       Integer scopeId;
       Scopes scopes;
       Scope.Scope scope;
-    
+
     // fetch the scope!
     case(graph, scopeId)
       equation
@@ -510,7 +510,7 @@ algorithm
         scope = Scope.get(scopes, scopeId);
       then
         scope;
-  end matchcontinue; 
+  end matchcontinue;
 end getScopeById;
 
 protected function getNameById
@@ -524,7 +524,7 @@ algorithm
       Integer nameId;
       Names names;
       String name;
-    
+
     // fetch the name!
     case(graph, nameId)
       equation
@@ -532,7 +532,7 @@ algorithm
         name = Name.get(names, nameId);
       then
         name;
-  end matchcontinue; 
+  end matchcontinue;
 end getNameById;
 
 protected function newName
@@ -560,12 +560,12 @@ protected
   Scopes scopes;
   Names names;
 algorithm
-  scopes := getScopes(inGraph); 
+  scopes := getScopes(inGraph);
   names := getNames(inGraph);
-  
+
   (scopes, names, outIndex) := Scope.new(scopes, names, inName, inParentId, kind);
-  
-  graph := setScopes(inGraph, scopes); 
+
+  graph := setScopes(inGraph, scopes);
   outGraph := setNames(graph, names);
 end newScope;
 
@@ -579,7 +579,7 @@ protected
   Scopes scopes;
   Names names;
 algorithm
-  scopes := getScopes(inGraph); 
+  scopes := getScopes(inGraph);
   (scopes, outIndex) := Scope.addAutoUpdateId(scopes, inScope);
   graph := setScopes(inGraph, scopes);
   outGraph := graph;
@@ -597,8 +597,8 @@ function setNodes
   input Nodes inNodes;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(inNodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus);
@@ -616,8 +616,8 @@ function setScope2Node
   input Scope2Node inS2N;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, edges, names, scopes, RELS(inS2N, n2e, n2k), lookupStatus);
@@ -635,8 +635,8 @@ function setNode2Edge
   input Node2Edge inN2E;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, edges, names, scopes, RELS(s2n, inN2E, n2k), lookupStatus);
@@ -654,8 +654,8 @@ function setNode2Kids
   input Node2Kids inN2K;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, inN2K), lookupStatus);
@@ -673,8 +673,8 @@ function setNames
   input Names inNames;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, edges, inNames, scopes, RELS(s2n, n2e, n2k), lookupStatus);
@@ -692,8 +692,8 @@ function setEdges
   input Edges inEdges;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, inEdges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus);
@@ -711,8 +711,8 @@ function setScopes
   input Scopes inScopes;
   output Graph outGraph;
 protected
-  Nodes nodes; Edges edges; Names names; Scopes scopes; 
-  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus; 
+  Nodes nodes; Edges edges; Names names; Scopes scopes;
+  Scope2Node s2n; Node2Edge n2e; Node2Kids n2k; LookupStatus lookupStatus;
 algorithm
   GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus) := inGraph;
   outGraph := GRAPH(nodes, edges, names, inScopes, RELS(s2n, n2e, n2k), lookupStatus);
@@ -726,12 +726,12 @@ algorithm
   () := matchcontinue(inGraph)
     local
       Nodes nodes; Edges edges; Names names; Scopes scopes;
-      LookupStatus lookupStatus; Scope2Node s2n; Node2Edge n2e; 
+      LookupStatus lookupStatus; Scope2Node s2n; Node2Edge n2e;
       Node2Kids n2k;
-    
+
     case GRAPH(nodes, edges, names, scopes, RELS(s2n, n2e, n2k), lookupStatus)
       equation
-        print("Graph stats:" +& 
+        print("Graph stats:" +&
               "\n\tnames     [" +& intString(Name.next(names)) +& "]" +&
               "\n\tscopes    [" +& intString(Pool.next(scopes)) +& "]" +&
               "\n\tnodes     [" +& intString(Pool.next(nodes)) +& "]" +&
@@ -750,8 +750,8 @@ algorithm
         print("Node2Kids: \n" +& Relation.printRelationStr(n2k));
         print("\n--------------------------\n\n");
         */
-      then 
-        ();  
+      then
+        ();
   end matchcontinue;
 end printGraph;
 
@@ -799,7 +799,7 @@ algorithm
       Integer sID, nID, iID;
       Context iContext, oContext;
 
-    // get the instance and see its status: initial      
+    // get the instance and see its status: initial
     case (g, iContext as CONTEXT(sID, nID, iID))
       equation
         // get the node that created this instance from instance2node relation.
@@ -816,7 +816,7 @@ algorithm
         printGraph(g);
       then
         fail();
-  end matchcontinue; 
+  end matchcontinue;
 end analyzeInstance;
 
 public function analyzeNode
@@ -848,22 +848,22 @@ algorithm
       equation
         // analyze element
         Node.N(content = Node.E(e)) = getNodeById(g, nID);
-        // we can only start from classes!        
+        // we can only start from classes!
         (g, oContext) = analyzeElement(g, iContext, e, 1);
       then
         (g, oContext);
-    
+
     // fail
     case(g, iContext)
       equation
-        print("Failure in SCodeGraph.analyzeNode for scope/instance/node: " +& 
-               intString(contextSID(iContext)) +& "/" +& 
+        print("Failure in SCodeGraph.analyzeNode for scope/instance/node: " +&
+               intString(contextSID(iContext)) +& "/" +&
                intString(contextNID(iContext)) +& "/" +&
                intString(contextIID(iContext)) +& "!\n");
         printGraph(g);
       then
         fail();
-  end matchcontinue; 
+  end matchcontinue;
 end analyzeNode;
 
 public function analyzeElement
@@ -885,14 +885,14 @@ algorithm
         (g, oContext) = analyzeImport(g, iContext, inEl, order);
       then
         (g, oContext);
-    
+
     // extends
     case (g, iContext, inEl as Element.E(element = SCode.EXTENDS(baseClassPath = _)), order)
       equation
         (g, oContext) = analyzeExtends(g, iContext, inEl, order);
       then
         (g, oContext);
-    
+
     // class
     case (g, iContext, inEl as Element.E(element = SCode.CLASS(name = _)), order)
       equation
@@ -906,27 +906,27 @@ algorithm
         (g, oContext) = analyzeComponent(g, iContext, inEl, order);
       then
         (g, oContext);
-    
+
     // unit
     case (g, iContext, inEl as Element.E(element = SCode.DEFINEUNIT(name = _)), order)
       equation
         (g, oContext) = analyzeUnit(g, iContext, inEl, order);
       then
         (g, oContext);
-    
+
     // fail
     case(g, iContext, inEl, order)
       equation
-        print("Failure in SCodeGraph.analyzeElement for scope/instance/node/element: " +& 
-               intString(contextSID(iContext)) +& "/" +& 
+        print("Failure in SCodeGraph.analyzeElement for scope/instance/node/element: " +&
+               intString(contextSID(iContext)) +& "/" +&
                intString(contextNID(iContext)) +& "/" +&
                intString(contextIID(iContext)) +& "/\n" +&
-               SCodeDump.unparseElementStr(Element.element(inEl)) +& 
+               SCodeDump.unparseElementStr(Element.element(inEl)) +&
                "\n");
         printGraph(g);
       then
         fail();
-  end matchcontinue; 
+  end matchcontinue;
 end analyzeElement;
 
 public function analyzeImport
@@ -995,11 +995,11 @@ algorithm
       Node n;
       Integer scopeId, nodeId, instanceId, edgeId, sID, nID, iID;
       SCode.Element e;
-      String name; 
+      String name;
       Context iContext, oContext;
       SCode.ClassDef cdef;
 
-    // class 
+    // class
     case (g, iContext as CONTEXT(sID, nID, iID), inEl as Element.E(element = SCode.CLASS(name = name, classDef = cdef)), order)
       equation
         // make a new element node and instance node for this class
@@ -1008,7 +1008,7 @@ algorithm
         (g, oContext) = analyzeClassDef(g, iContext, cdef, order);
       then
         (g, oContext);
-           
+
   end matchcontinue;
 end analyzeClass;
 
@@ -1029,13 +1029,13 @@ algorithm
       Integer scopeId, nodeId, instanceId, edgeId, sID, nID, iID;
       SCode.Element e;
       Reference ureferences;
-      String name; 
+      String name;
       Absyn.Path path;
       list<SCode.Element> els;
       list<SCode.Equation> nel, iel;
       list<SCode.AlgorithmSection> nal,ial;
       list<SCode.ConstraintSection> nc;
-      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions"; 
+      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions";
       Option<SCode.ExternalDecl> exd;
       list<SCode.Annotation> anl;
       Option<SCode.Comment> cmt;
@@ -1049,7 +1049,7 @@ algorithm
       list<SCode.Enum> enumLst;
       SCode.ClassDef cdef;
 
-    // class 
+    // class
     case (g, iContext as CONTEXT(sID, nID, iID), SCode.PARTS(els,nel,iel,nal,ial,nc,clats,exd,anl,cmt), order)
       equation
         // dive into parts with new input
@@ -1074,7 +1074,7 @@ algorithm
         oContext = iContext;
       then
         (g, oContext);
-        
+
     // class extends
     case (g, iContext as CONTEXT(sID, nID, iID), SCode.CLASS_EXTENDS(baseClassName, modifications, cdef), order)
       equation
@@ -1082,8 +1082,8 @@ algorithm
         (g, oContext) = analyzeClassDef(g, iContext, cdef, order);
       then
         (g, oContext);
-        
-    // enumeration 
+
+    // enumeration
     case (g, iContext as CONTEXT(sID, nID, iID), SCode.ENUMERATION(enumLst, comment), order)
       equation
          //(g, oContext) = analyzeEnumList(g, oContext, enumLst, 1);
@@ -1112,14 +1112,14 @@ algorithm
 
     // empty
     case (g, iContext, {}, order) then (g, iContext);
-      
+
     case (g, iContext, SCode.EQUATION(eEquation)::rest, o)
       equation
         //(g, _) = analyzeEquation(g, iContext, eEquation, o);
         (g, oContext) = analyzeEquations(g, iContext, rest, o + 1);
       then
         (g, oContext);
-    
+
     case (g, iContext, inEqs, o)
       equation
         print("Failed in SCodeGraph.analyzeEquations\n");
@@ -1147,18 +1147,18 @@ algorithm
 
     // empty
     case (g, iContext, {}, order) then (g, iContext);
-      
+
     case (g, iContext, e::rest, o)
       equation
         (g, _) = analyzeElement(g, iContext, Element.E(e, o), o);
         (g, oContext) = analyzeElements(g, iContext, rest, o + 1);
       then
         (g, oContext);
-    
+
     case (g, iContext, inEls, o)
       equation
         print("Failed in SCodeGrap.analyzeElements for: " +&
-          stringDelimitList(List.map(inEls, SCodeDump.printElementStr), "\n") +& 
+          stringDelimitList(List.map(inEls, SCodeDump.printElementStr), "\n") +&
           "\n--------------------\n");
       then
         fail();
@@ -1227,26 +1227,26 @@ algorithm
       String id;
       list<SCode.Element> elts;
       Integer o;
-    
+
     // class
     case (id, SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
       equation
         (elt, o) = getElementNamedFromElts(id, elts, 1);
       then
         (elt, o);
-    
+
     // class extends
     case (id, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
       equation
         (elt,o) = getElementNamedFromElts(id, elts, 1);
       then
         (elt,o);
-        
-    // failure 
+
+    // failure
     case (id, inClass)
       equation
-        print("Failure in SCodeGraph.getElementByName for name: " +& 
-          id +& " class:\n" +& SCodeDump.unparseElementStr(inClass) +& "\n"); 
+        print("Failure in SCodeGraph.getElementByName for name: " +&
+          id +& " class:\n" +& SCodeDump.unparseElementStr(inClass) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1267,17 +1267,17 @@ algorithm
       String byName,id;
       list<SCode.Element> rest;
       Integer o;
-    
+
     // fail if the list is empty
-    case (byName,{},startAt) 
-      then fail(); 
-    
+    case (byName,{},startAt)
+      then fail();
+
     case (byName, (elt as SCode.COMPONENT(name = id)) :: _, startAt)
       equation
         true = stringEq(id, byName);
       then
         (elt, startAt);
-    
+
     case (byName, (elt as SCode.CLASS(name = id)) :: _, startAt)
       equation
         true = stringEq(id, byName);
@@ -1290,7 +1290,7 @@ algorithm
         (elt, o) = getElementNamedFromElts(byName, rest, startAt + 1);
       then
         (elt, o);
-    
+
   end matchcontinue;
 end getElementNamedFromElts;
 
@@ -1326,20 +1326,20 @@ protected function addScope2Name
   output Scope2Node os2n;
 algorithm
   os2n := matchcontinue(is2n, node)
-    local 
+    local
       Node n;
       Scope2Node s2n;
-    
+
     // only add element nodes
     case (is2n, n /*as Node.N(content = Node.E(_))*/)
       equation
         s2n = Relation.add(is2n, ((Node.scopeId(n),Node.kind(n))), Node.id(n));
       then
         s2n;
-    
+
     // ignore other node types
     case (is2n, n) then is2n;
-    
+
   end matchcontinue;
 end addScope2Name;
 
@@ -1356,7 +1356,7 @@ protected
   Scopes scopes;
   Scope2Node s2n;
   Node2Edge n2e;
-  Node2Kids n2k;  
+  Node2Kids n2k;
   LookupStatus lookupStatus;
   Node nSource, nTarget;
 algorithm
@@ -1384,7 +1384,7 @@ algorithm
       list<Integer> kids;
       Node2Kids n2k;
       Integer sourceID, targetID, sourceKind;
-    
+
     // see if target already has some children
     case (n2k, source, target, edgeKind)
       equation
@@ -1397,7 +1397,7 @@ algorithm
         n2k = Relation.add(n2k, (targetID, sourceKind), sourceID::kids);
       then
         n2k;
-      
+
     // no children yet, add this one
     case (n2k, source, target, edgeKind)
       equation
@@ -1407,7 +1407,7 @@ algorithm
         n2k = Relation.add(n2k, (targetID, sourceKind), {sourceID});
       then
         n2k;
-      
+
   end matchcontinue;
 end addKidsRelation;
 
@@ -1428,52 +1428,52 @@ algorithm
       Instance i;
       Context context;
       Graph g;
-  
+
     case (g, CONTEXT(sID, nID, iID), inEl)
       equation
         (name, segmentKind) = Element.properties(inEl);
-        
+
         // make a new scope for this element
         (g, scopeId) = newScope(g, name, sID, segmentKind);
-        
+
         // make new node containing this element
         (g, nodeId) = addNode(g, Node.N(autoId, scopeId, Node.E(inEl)));
-        
+
         // make a void node for the instance to get an id
-        (g, instanceId) = addNode(g, Node.N(autoId, scopeId, Node.V()));                
-        
+        (g, instanceId) = addNode(g, Node.N(autoId, scopeId, Node.V()));
+
         // no changes in the context from now on!
         context = CONTEXT(scopeId, nodeId, instanceId);
-        
+
         // create an instance node, references, etc
         (g, context) = elementInstance(g, context, inEl);
-        
+
         // create an edge between the node and the instance
         (g, edgeId) = addEdge(g, Edge.E(autoId, instanceId, nodeId, Edge.cb));
-        
+
         // add parent edges
         (g, edgeId) = addEdge(g, Edge.E(autoId, nodeId, nID, Edge.co));
         (g, edgeId) = addEdge(g, Edge.E(autoId, instanceId, iID, Edge.co));
-        
+
         // create reference nodes for refs
-        
+
         // add edges from refs to the instance
-        
+
       then
         (g, context);
-      
+
   end matchcontinue;
 end createElementNodeAndInstance;
 
 public function elementInstance "returns the element properties and the instance"
   input Graph inG;
-  input Context inContext; 
+  input Context inContext;
   input Element inEl;
   output Graph outG;
   output Context outContext;
 algorithm
   (outG, outContext) := matchcontinue(inG, inContext, inEl)
-    local 
+    local
       String id;
       Absyn.Path p;
       Absyn.Import imp;
@@ -1481,7 +1481,7 @@ algorithm
       Graph g;
       Node iNode;
       Instance i;
-    
+
     case (g, iContext, Element.E(element = SCode.IMPORT(imp = imp)))
       equation
         id = Absyn.printImportString(imp);
@@ -1494,9 +1494,9 @@ algorithm
         // update the node in graph
         g = setNodes(g, Node.set(getNodes(g), contextIID(iContext), iNode));
         oContext = iContext;
-      then 
+      then
         (g, oContext);
-    
+
     case (g, iContext, Element.E(element = SCode.EXTENDS(baseClassPath = p)))
       equation
         id = Absyn.pathString(p);
@@ -1508,10 +1508,10 @@ algorithm
         iNode = Node.setContent(iNode, Node.I(i));
         // update the node in graph
         g = setNodes(g, Node.set(getNodes(g), contextIID(iContext), iNode));
-        oContext = iContext;         
-      then 
+        oContext = iContext;
+      then
         (g, oContext);
-        
+
     case (g, iContext, Element.E(element = SCode.CLASS(name = id)))
       equation
         // get the void instance node
@@ -1523,9 +1523,9 @@ algorithm
         // update the node in graph
         g = setNodes(g, Node.set(getNodes(g), contextIID(iContext), iNode));
         oContext = iContext;
-      then 
+      then
         (g, oContext);
-    
+
     case (g, iContext, Element.E(element = SCode.COMPONENT(name = id)))
       equation
         // get the void instance node
@@ -1537,9 +1537,9 @@ algorithm
         // update the node in graph
         g = setNodes(g, Node.set(getNodes(g), contextIID(iContext), iNode));
         oContext = iContext;
-      then 
-        (g, oContext);    
-    
+      then
+        (g, oContext);
+
     case (g, iContext, Element.E(element = SCode.DEFINEUNIT(name = id)))
       equation
         // get the void instance node
@@ -1551,9 +1551,9 @@ algorithm
         // update the node in graph
         g = setNodes(g, Node.set(getNodes(g), contextIID(iContext), iNode));
         oContext = iContext;
-      then 
+      then
         (g, oContext);
-    
+
   end matchcontinue;
 end elementInstance;
 

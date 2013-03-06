@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -217,7 +217,7 @@ algorithm
           {path_str, env_str}, inInfo);
       then
         fail();
-         
+
   end matchcontinue;
 end lookupImportPath;
 
@@ -237,7 +237,7 @@ algorithm
       Entry entry;
       Env env;
       SCode.Element cls;
-      
+
     // A normal type.
     case (Absyn.TPATH(path = path), _, _)
       equation
@@ -255,15 +255,15 @@ algorithm
 
   end match;
 end lookupTypeSpec;
-   
+
 protected function makeDummyMetaType
   input String inTypeName;
   output SCode.Element outClass;
 algorithm
-  outClass := 
+  outClass :=
   SCode.CLASS(
-    inTypeName, 
-    SCode.defaultPrefixes, 
+    inTypeName,
+    SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
 end makeDummyMetaType;
@@ -422,7 +422,7 @@ algorithm
   outEnv := NFEnv.entryEnv(outEntry, env);
 end lookupInLocalScope;
 
-public function lookupNameInPackage 
+public function lookupNameInPackage
   input Absyn.Path inName;
   input Env inEnv;
   output Entry outEntry;
@@ -493,5 +493,5 @@ algorithm
   outEnv := NFEnv.entryEnv(outEntry, outEnv);
   outIsGlobal := not is_local and is_class;
 end isNameGlobal;
-  
+
 end NFLookup;

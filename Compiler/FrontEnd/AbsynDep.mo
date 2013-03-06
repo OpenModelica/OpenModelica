@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package AbsynDep 
+encapsulated package AbsynDep
 " file:        AbsynDep.mo
   package:     AbsynDep
   description: AbsynDep builds dependencies based on a start class (program slicing)
@@ -52,7 +52,7 @@ encapsulated package AbsynDep
   getUsesTransitive(depends,class) -> avltree of used classes under transitive closure
 
   getUsedBy(depends,class) => avltree of classes that uses the class (e.g as component)
-  
+
 "
 
 public uniontype Depends " dependency information (uses/usedBy) for classes"
@@ -173,7 +173,7 @@ protected function avlAddUses "Help function to getUses, adds all uses to an avl
    output AvlTree outTree;
  algorithm
    outTree := match(inTree,inVals)
-     local 
+     local
        Absyn.Path p;
        AvlTree tree;
        AvlValue vals;
@@ -192,7 +192,7 @@ public function getUsesTransitive "returns the transitive closure of getUses"
    output AvlTree uses;
 algorithm
   uses := matchcontinue(inDepends,inCl)
-    local 
+    local
       AvlTree outUses,treeUses;
       list<Absyn.Path> v;
       Depends depends;
@@ -214,7 +214,7 @@ protected function getUsesTransitive2 "Help function to getUsesTransitive"
    output AvlTree outUses;
 algorithm
   outUses := matchcontinue(inDepends,inCl,inUses)
-    local 
+    local
       AvlTree treeUses,uses;
       AvlValue v;
       Depends depends;
@@ -259,12 +259,12 @@ protected function getUsesTransitive2Lst "Help function to getUsesTransitive2"
   output AvlTree outUses;
 algorithm
   outUses := match(inDepends,inPathList,inUses)
-    local 
+    local
       Absyn.Path path;
       Depends depends;
       list<Absyn.Path> pathList;
       AvlTree uses;
-      
+
     case(depends,{},uses) then uses;
     case(depends,path::pathList,uses) equation
       uses = getUsesTransitive2(depends,path,uses);
@@ -462,10 +462,10 @@ protected function balance "Balances a AvlTree"
   output AvlTree outBt;
 algorithm
   outBt := matchcontinue(inBt)
-    local 
+    local
       Integer d;
       AvlTree bt;
-      
+
     case(bt) equation
       d = differenceInHeight(bt);
       bt = doBalance(d,bt);
@@ -487,7 +487,7 @@ algorithm
     case(-1,bt) then computeHeight(bt);
     case(0,bt)  then computeHeight(bt);
     case(1,bt)  then computeHeight(bt);
-    // d < -1 or d > 1 
+    // d < -1 or d > 1
     case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
@@ -539,7 +539,7 @@ protected function doBalance4 "help function to doBalance2"
 algorithm
   outBt := match(inBt)
     local AvlTree rl,bt;
-    case(bt) 
+    case(bt)
       equation
         true = differenceInHeight(getOption(leftNode(bt))) < 0;
         rl = rotateLeft(getOption(leftNode(bt)));
@@ -554,7 +554,7 @@ protected function setRight "set right treenode"
   output AvlTree outNode;
 algorithm
   outNode := match(node,right)
-    local 
+    local
       Option<AvlTreeValue> value;
       Option<AvlTree> l,r;
       Integer height;
@@ -568,7 +568,7 @@ protected function setLeft "set left treenode"
   output AvlTree outNode;
 algorithm
   outNode := match(node,left)
-    local 
+    local
       Option<AvlTreeValue> value;
       Option<AvlTree> l,r;
       Integer height;
@@ -660,7 +660,7 @@ between left and right child"
   output Integer diff;
 algorithm
   diff := match(node)
-    local 
+    local
       Integer lh,rh;
       Option<AvlTree> l,r;
     case(AVLTREENODE(left=l,right=r)) equation
@@ -693,8 +693,8 @@ algorithm
       AvlKey rkey,key;
       AvlValue rval,res;
       AvlTree left,right;
-    
-    // hash func Search to the right 
+
+    // hash func Search to the right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
         true = Absyn.pathEqual(rkey,key);
@@ -724,7 +724,7 @@ protected function avlTreeGetSubsopt
   input AvlKey inKey;
   output AvlValue outValue;
   AvlTree item;
-algorithm 
+algorithm
   outValue := matchcontinue(inAvlTree,inKey)
     case(NONE(),_) then {};
     case(SOME(item),inKey) then avlTreeGetSubs (item,inKey);
@@ -735,7 +735,7 @@ public function avlTreeGetSubs "  Get values from the binary tree given a key."
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
-algorithm 
+algorithm
   outValue:= matchcontinue (inAvlTree,inKey)
     local
       AvlKey rkey,key;
@@ -744,7 +744,7 @@ algorithm
       Integer rhval;
       Boolean b1,b2;
       String s1;
-  
+
     // end of tree case
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE(),right = NONE()),key)
       equation
@@ -829,7 +829,7 @@ protected function computeHeight "compute the heigth of the AvlTree and store in
   output AvlTree outBt;
 algorithm
  outBt := match(bt)
-   local 
+   local
      Option<AvlTree> l,r;
      Option<AvlTreeValue> v;
      AvlValue val;

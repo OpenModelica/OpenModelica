@@ -32,7 +32,7 @@
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file implements the MetaModelica mark-and-sweep garbage collector (GC)
- * 
+ *
  * RCS: $Id: marksweep.h 8047 2011-03-01 10:19:49Z perost $
  *
  * At first a configurable number of pages of configurable size
@@ -63,7 +63,7 @@
 #define META_MODELICA_GC_MARKSWEEP_H_
 
 #if defined(__cplusplus)
-extern "C" 
+extern "C"
 {
 #endif
 

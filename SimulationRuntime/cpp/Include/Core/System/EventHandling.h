@@ -4,9 +4,9 @@
 
 /**
 Auxiliary  class to handle system events
-Implements the Modelica pre,edge,change operators 
+Implements the Modelica pre,edge,change operators
 Holds a help vector for the discrete variables
-Holds an event queue to handle all events occured at the same time 
+Holds an event queue to handle all events occured at the same time
 */
 typedef boost::function<void (unsigned int)> resetHelpVar_type;
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
@@ -16,15 +16,15 @@ public:
     ~EventHandling(void);
     //Inits the event variables
     void init(IMixedSystem* system,int dim);
-    //Returns the help vector 
+    //Returns the help vector
     void giveHelpVars(double* h);
     //sets the help vector
     void setHelpVars(const double* h);
     //returns the dimension of the help vector
-    int getDimHelpVars() const;    
-    
-    
-    
+    int getDimHelpVars() const;
+
+
+
     //saves a variable in _pre_vars vector
     void save(double var,string key);
     //saves all helpvariables
@@ -58,7 +58,7 @@ public:
 private:
     //Stores all varibales occured before an event
     unordered_map<string,double> _pre_vars;
-    //stores all eventes 
+    //stores all eventes
   unordered_map<string,double> _pre_discrete_vars;
     IMixedSystem* _system;
     //Helpvarsvector for discrete variables

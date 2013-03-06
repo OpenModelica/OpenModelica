@@ -508,7 +508,7 @@
 
     /* debug output */
     dumpInitialization(initData);
-    
+
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
       THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 

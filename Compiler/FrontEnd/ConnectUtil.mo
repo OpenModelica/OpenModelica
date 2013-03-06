@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -141,7 +141,7 @@ algorithm
         true = isEmptySet(inChildSets);
       then
         inParentSets;
-    
+
     // If both sets are nameless, i.e. a top scope set, just return the child
     // set as it is. This is to avoid getting nestled top scope sets in some
     // cases, and the child should be a superset of the parent.
@@ -254,7 +254,7 @@ public function addArrayConnection
   input SCode.ConnectorType inConnectorType;
   output Connect.Sets outSets;
 algorithm
-  outSets := 
+  outSets :=
   match(inSets, inCref1, inFace1, inCref2, inFace2, inSource, inConnectorType)
     local
       list<DAE.ComponentRef> crefs1, crefs2;
@@ -335,7 +335,7 @@ algorithm
       Absyn.Path class_path;
       list<DAE.Var>  streams, flows;
       Sets cs;
-    
+
     // check balance of non expandable connectors!
     case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _, _)
       equation
@@ -370,24 +370,24 @@ public function isExpandable
   output Boolean isExpandableConnector;
 algorithm
   isExpandableConnector := matchcontinue(inName)
-    local 
+    local
       DAE.Type ty;
       Boolean b;
       DAE.ComponentRef cr;
-    
+
     case (DAE.CREF_IDENT(identType = ty))
       equation
         b = InstSection.isExpandableConnectorType(ty);
       then
         b;
-    
+
     case (DAE.CREF_QUAL(identType = ty, componentRef = cr))
       equation
         b = InstSection.isExpandableConnectorType(ty);
-        b = boolOr(b, isExpandable(cr));  
+        b = boolOr(b, isExpandable(cr));
       then
         b;
-    
+
     else false;
   end matchcontinue;
 end isExpandable;
@@ -402,14 +402,14 @@ algorithm
       list<DAE.Element> rest_vars;
       DAE.ComponentRef name;
       Boolean b;
-    
+
     // if we didn't detect any there aren't any
     case (_)
       equation
-        false = System.getHasExpandableConnectors(); 
+        false = System.getHasExpandableConnectors();
       then
         false;
-      
+
     case (DAE.DAE({})) then false;
 
     case (DAE.DAE(DAE.VAR(componentRef = name) :: rest_vars))
@@ -475,7 +475,7 @@ algorithm
     case ((var as DAE.TYPES_VAR(attributes = DAE.ATTR(
         connectorType = SCode.FLOW()))) :: rest_vars, _, _)
       equation
-        (flows, streams) = 
+        (flows, streams) =
           getStreamAndFlowVariables(rest_vars, var :: inAccFlows, inAccStreams);
       then
         (flows, streams);
@@ -548,7 +548,7 @@ algorithm
       then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
 
     // Complex type
-    case (DAE.TYPES_VAR(name = name, 
+    case (DAE.TYPES_VAR(name = name,
         ty = DAE.T_COMPLEX(varLst = vars)))
       equation
         crefs = List.mapFlat(vars, daeVarToCrefs);
@@ -558,7 +558,7 @@ algorithm
         crefs;
 
     // Array
-    case (DAE.TYPES_VAR(name = name, 
+    case (DAE.TYPES_VAR(name = name,
         ty = ty as DAE.T_ARRAY(dims = _)))
       equation
         dims = Types.getDimensions(ty);
@@ -694,13 +694,13 @@ algorithm
         sc = sc + 1;
         src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
                 PrefixUtil.printPrefixStr(inPrefix) +& "/" +&
-                ComponentReference.printComponentRefStr(inCref) +&  
+                ComponentReference.printComponentRefStr(inCref) +&
                 ")");
         e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), src, sc);
         sets = setTrieAdd(e, sets);
       then
         Connect.SETS(sets, sc, c, cc, o);
-  
+
   end matchcontinue;
 end addInsideFlowVariable;
 
@@ -732,14 +732,14 @@ algorithm
 
   end match;
 end addStreamFlowAssociation2;
-  
+
 protected function getStreamFlowAssociation
   "Returns the associated flow variable for a stream variable."
   input DAE.ComponentRef inStreamCref;
   input Connect.Sets inSets;
   output DAE.ComponentRef outFlowCref;
 protected
-  SetTrie sets; 
+  SetTrie sets;
 algorithm
   Connect.SETS(sets = sets) := inSets;
   Connect.SET_TRIE_LEAF(flowAssociation = SOME(outFlowCref)) :=
@@ -777,7 +777,7 @@ algorithm
   outSets := Connect.SETS(sets, sc, c, cc, inOuterConnects);
 end setOuterConnects;
 
-public function addOuterConnection 
+public function addOuterConnection
   "Adds a connection with a reference to an outer connector These are added to a
    special list, such that they can be moved up in the instance hierarchy to a
    place where both instances are defined."
@@ -809,7 +809,7 @@ algorithm
   end matchcontinue;
 end addOuterConnection;
 
-protected function outerConnectionMatches 
+protected function outerConnectionMatches
   "Returns true if Connect.OuterConnect matches the two component references
   passed as argument."
   input Connect.OuterConnect oc;
@@ -819,7 +819,7 @@ protected function outerConnectionMatches
 algorithm
   matches := match(oc,cr1,cr2)
     local DAE.ComponentRef cr11,cr22;
-    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),_,_) 
+    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),_,_)
       equation
         matches =
         ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
@@ -939,7 +939,7 @@ algorithm
     local
       Sets sets;
       Boolean added;
-    
+
     // Both are outer => error.
     case (_, _, true, true, _, _, _, _)
       equation
@@ -981,11 +981,11 @@ protected function addOuterConnectToSets3
   output Sets outSets;
   output Boolean outAdded;
 algorithm
-  (outSets, outAdded) := 
+  (outSets, outAdded) :=
   matchcontinue(inOuterCref, inInnerCref, inOuterFace, inInnerFace, inSets)
     local
       Sets sets;
-      SetTrieNode node; 
+      SetTrieNode node;
       SetTrie trie;
       Integer sc, sets_added;
       list<ConnectorElement> outer_els, inner_els;
@@ -998,14 +998,14 @@ algorithm
         // Collect all connector elements in the node.
         outer_els = collectOuterElements(node, inOuterFace);
         // Find or create inner elements corresponding to the outer elements.
-        inner_els = List.map3(outer_els, findInnerElement, inInnerCref, 
+        inner_els = List.map3(outer_els, findInnerElement, inInnerCref,
           inInnerFace, inSets);
         // Merge the inner and outer sets pairwise from the two lists.
         (sets as Connect.SETS(setCount = sets_added)) = List.threadFold(outer_els, inner_els, mergeSets, inSets);
         // Check if the number of sets changed.
         added = not intEq(sc, sets_added);
       then
-        (sets, added); 
+        (sets, added);
 
     else (inSets, false);
 
@@ -1108,7 +1108,7 @@ algorithm
   outElement := matchcontinue(inCref, inFace, inType, inSource, inSets)
     local
       SetTrie sets;
-    
+
     // first try the actual face
     case (_, _, _, _, Connect.SETS(sets = sets))
       then setTrieGetElement(inCref, inFace, sets);
@@ -1121,7 +1121,7 @@ algorithm
       then setTrieGetElement(inCref, Connect.OUTSIDE(), sets);
     */
 
-    else 
+    else
       newElement(inCref, inFace, inType, inSource, Connect.NEW_SET);
   end matchcontinue;
 end findElement;
@@ -1140,7 +1140,7 @@ algorithm
   outElement := Connect.CONNECTOR_ELEMENT(inCref, inFace, inType, inSource,
     inSet);
 end newElement;
-  
+
 protected function isNewElement
   "Checks if the element is new, i.e. hasn't been assigned to a set yet."
   input ConnectorElement inElement;
@@ -1215,7 +1215,7 @@ algorithm
   outLeaf := match(inId, inElement)
     local
       String name;
-    
+
     case (_, Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()))
       then Connect.SET_TRIE_LEAF(inId, SOME(inElement), NONE(), NONE());
 
@@ -1239,13 +1239,13 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
       ConnectorElement el;
-      
+
     // A simple identifier, just create a new leaf.
     case (DAE.CREF_IDENT(ident = _), _)
       equation
         id = ComponentReference.printComponentRefStr(inCref);
         el = setElementName(inElement, inCref);
-      then 
+      then
         setTrieNewLeaf(id, el);
 
     // A qualified identifier, call this function recursively.
@@ -1415,7 +1415,7 @@ algorithm
   node := setTrieGet(inCref, inTrie, false);
   outElement := setTrieGetLeafElement(node, inFace);
 end setTrieGetElement;
-  
+
 protected function setTrieAddLeafElement
   "Adds a connector element to a trie leaf."
   input ConnectorElement inElement;
@@ -1438,7 +1438,7 @@ algorithm
 
   end match;
 end setTrieAddLeafElement;
-  
+
 protected function setTrieGetLeafElement
   "Returns the connector element of a trie leaf, given a face."
   input SetTrieNode inNode;
@@ -1567,7 +1567,7 @@ algorithm
         node = setTrieUpdateNode2(wholeCref, inArg, inUpdateFunc);
       then
         {node};
-         
+
     case (_, _, _, _, (node as Connect.SET_TRIE_NODE(name = id)) :: rest_nodes, _)
       equation
         true = stringEqual(inId, id);
@@ -1580,7 +1580,7 @@ algorithm
         rest_nodes = setTrieUpdateNode(inId, wholeCref, inCref, inArg, rest_nodes, inUpdateFunc);
       then
         node :: rest_nodes;
-       
+
   end matchcontinue;
 end setTrieUpdateNode;
 
@@ -1727,7 +1727,7 @@ algorithm
 
     case (Connect.SET_TRIE_NODE(name, cref, nodes), _, _)
       equation
-        (nodes, arg) = List.map1Fold(nodes, setTrieTraverseLeaves, 
+        (nodes, arg) = List.map1Fold(nodes, setTrieTraverseLeaves,
           inUpdateFunc, inArg);
       then
         (Connect.SET_TRIE_NODE(name, cref, nodes), arg);
@@ -1735,7 +1735,7 @@ algorithm
      case (Connect.SET_TRIE_LEAF(name = _), _, _)
        equation
          (node, arg) = inUpdateFunc(inNode, inArg);
-       then 
+       then
          (node, arg);
 
      case (Connect.SET_TRIE_DELETED(name = _), _, _)
@@ -1768,11 +1768,11 @@ algorithm
       then
         setTrieGet(rest_cref, node, inMatchPrefix);
 
-    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs), 
+    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs),
         Connect.SET_TRIE_NODE(nodes = nodes), _)
       equation
         id = ComponentReference.printComponentRef2Str(id, subs);
-      then 
+      then
         setTrieGetNode(id, nodes);
 
     case (DAE.CREF_QUAL(ident = id, subscriptLst = subs),
@@ -1876,22 +1876,22 @@ algorithm
         sets = arrayList(set_array);
         //print("Sets:\n");
         //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
-        
+
         has_expandable = daeHasExpandableConnectors(inDae);
         sets = removeNonRequiredExpandableConnections(sets, has_expandable);
-        
+
         // send in the connection graph and build the connected/broken connects
         // we do this here so we do it once and not for every EQU set.
         (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, inDae);
-        
+
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
         dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
         has_stream = System.getHasStreamConnectors();
         dae = evaluateStreamOperators(has_stream, inSets, set_array, dae);
-        
+
         // add the equality constraint equations to the dae.
         dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
-        
+
         dae = removeUnconnectedExpandablePotentials(dae, sets, has_expandable);
       then
         dae;
@@ -1909,20 +1909,20 @@ protected function getExpandableEquSetsAsCrefs
   output list<list<DAE.ComponentRef>> outSets;
 algorithm
   outSets := matchcontinue(inSets, inSetsAcc)
-    local 
+    local
       list<Set> rest;
       list<DAE.ComponentRef> crefSet;
       Set set;
-      
+
     case ({}, _) then inSetsAcc;
-      
+
     case ((set as Connect.SET(ty = Connect.EQU()))::rest, _)
       equation
         crefSet = getAllEquCrefs({set}, {});
         true = List.applyAndFold(crefSet, boolOr, isExpandable, false);
-      then 
+      then
         getExpandableEquSetsAsCrefs(rest, crefSet::inSetsAcc);
-    
+
     case (_::rest, _)
       then getExpandableEquSetsAsCrefs(rest, inSetsAcc);
   end matchcontinue;
@@ -1942,7 +1942,7 @@ algorithm
       list<Set> sets;
       list<list<DAE.ComponentRef>> setsAsCrefs;
       list<DAE.ComponentRef> crefs;
-      
+
     case (_, false) then inSets;
 
     case (_, _)
@@ -1959,8 +1959,8 @@ algorithm
         sets = removeCrefsFromSets(inSets, crefs);
       then
         sets;
-            
-  end matchcontinue;    
+
+  end matchcontinue;
 end removeNonRequiredExpandableConnections;
 
 protected function removeCrefsFromSets
@@ -1969,7 +1969,7 @@ protected function removeCrefsFromSets
   output list<Set> outSets;
 algorithm
   outSets := matchcontinue(inSets, inNonUsefulExpandable)
-    local 
+    local
       list<Set> rest, sets;
       Set set;
       list<ConnectorElement> elms;
@@ -1977,28 +1977,28 @@ algorithm
       list<DAE.ComponentRef> setCrefs;
       Boolean b;
       String str;
-      
+
     case ({}, _) then {};
-      
+
     case (set::rest, _)
       equation
-        setCrefs = getAllEquCrefs({set}, {}); 
+        setCrefs = getAllEquCrefs({set}, {});
         {} = List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
-        sets = removeCrefsFromSets(rest, inNonUsefulExpandable); 
+        sets = removeCrefsFromSets(rest, inNonUsefulExpandable);
       then
         set::sets;
-    
+
     case (set::rest, _)
       equation
-        setCrefs = getAllEquCrefs({set}, {}); 
+        setCrefs = getAllEquCrefs({set}, {});
         _::_ = List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
         // b = allCrefsAreExpandable(setCrefs);
         // print("AllExpandable: " +& boolString(b) +& "\n");
         // print("removingSet:\n\t" +& stringDelimitList(List.map(setCrefs, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        sets = removeCrefsFromSets(rest, inNonUsefulExpandable); 
+        sets = removeCrefsFromSets(rest, inNonUsefulExpandable);
       then
         sets;
-  
+
   end matchcontinue;
 end removeCrefsFromSets;
 
@@ -2010,7 +2010,7 @@ algorithm
     local
       list<DAE.ComponentRef> set, set1, set2;
       list<list<DAE.ComponentRef>> rest, sets;
-    
+
     case ({}) then {};
     case ({set}) then {set};
     case (set::rest)
@@ -2032,7 +2032,7 @@ algorithm
     local
       list<DAE.ComponentRef> set, set1, set2;
       list<list<DAE.ComponentRef>> rest, sets;
-    
+
     case (_, {}) then (inSet, inSets);
     // we can't merge it
     case (set1, set2::rest)
@@ -2041,9 +2041,9 @@ algorithm
          //print("NotMerge Set1:\n\t" +& stringDelimitList(List.map(set1, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
          //print("NotMerge Set2:\n\t" +& stringDelimitList(List.map(set2, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
          (set, rest) = mergeWithRest(set1, rest);
-      then 
+      then
         (set, set2::rest);
-    
+
     // we can merge it
     case (set1, set2::rest)
       equation
@@ -2053,7 +2053,7 @@ algorithm
          // print("Merge Set2:\n\t" +& stringDelimitList(List.map(set2, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
          // print("Resulting Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
          (set, rest) = mergeWithRest(set, rest);
-      then 
+      then
         (set, rest);
   end matchcontinue;
 end mergeWithRest;
@@ -2067,17 +2067,17 @@ algorithm
     local
       list<DAE.ComponentRef> set, acc;
       list<list<DAE.ComponentRef>> rest, sets;
-    
+
     case ({}, _) then inAcc;
-    
+
     case (set::rest, _)
       equation
-        // print("OnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");        
+        // print("OnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
         acc = Debug.bcallret2(allCrefsAreExpandable(set), listAppend, set, inAcc, inAcc);
         acc = getOnlyExpandableConnectedCrefs(rest, acc);
       then
         acc;
-  
+
   end match;
 end getOnlyExpandableConnectedCrefs;
 
@@ -2086,18 +2086,18 @@ public function allCrefsAreExpandable
   output Boolean allAreExpandable;
 algorithm
   allAreExpandable := matchcontinue(inConnects)
-    local 
+    local
       list<DAE.ComponentRef> rest;
       DAE.ComponentRef name;
       Boolean b;
-    
+
     case ({}) then true;
-    
+
     case (name::rest)
       equation
         b = Debug.bcallret1(isExpandable(name), allCrefsAreExpandable, rest, false);
       then b;
-    
+
   end matchcontinue;
 end allCrefsAreExpandable;
 
@@ -2114,9 +2114,9 @@ algorithm
       list<DAE.Element> pvars, elems;
       list<DAE.ComponentRef> equVars, potentialVars, unconnected;
       DAE.DAElist dae;
-    
+
     case (_, _, false) then inDAE;
-    
+
     case (DAE.DAE(elems), _, _)
       equation
         equVars = getAllEquCrefs(inSets, {});
@@ -2130,8 +2130,8 @@ algorithm
         dae = DAEUtil.removeVariables(inDAE, unconnected);
       then
         dae;
-    
-    else 
+
+    else
       equation
         print("ConnectUtil.removeUnconnectedExpandablePotentials: internal error!\n");
       then
@@ -2145,34 +2145,34 @@ protected function getAllEquCrefs
   output list<DAE.ComponentRef> outCrefs;
 algorithm
   outCrefs := match (inSets, inAcc)
-    local 
+    local
       list<Set> rest;
       list<ConnectorElement> elms;
       DAE.ComponentRef name;
       list<DAE.ComponentRef> acc;
-      
+
     case ({}, _) then inAcc;
-      
+
     case (Connect.SET(ty = Connect.EQU(), elements = {})::rest, _)
       then getAllEquCrefs(rest, inAcc);
-    
+
     case (Connect.SET(ty = Connect.EQU(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
       equation
         acc = getAllEquCrefs(Connect.SET(Connect.EQU(), elms)::rest, name::inAcc);
-      then 
+      then
         acc;
     /* TODO! FIXME! check if flow can be here or not, in an expandable connector
     case (Connect.SET(ty = Connect.FLOW(), elements = {})::rest, _)
       then getAllEquCrefs(rest, inAcc);
-    
+
     case (Connect.SET(ty = Connect.FLOW(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
       equation
         acc = getAllEquCrefs(Connect.SET(Connect.FLOW(), elms)::rest, name::inAcc);
-      then 
+      then
         acc;
     */
     case (_::rest, _)
-      then getAllEquCrefs(rest, inAcc); 
+      then getAllEquCrefs(rest, inAcc);
   end match;
 end getAllEquCrefs;
 
@@ -2188,7 +2188,7 @@ algorithm
       list<SetConnection> connections;
       array<Set> set_array;
 
-    case (Connect.SETS(sets = sets, setCount = set_count, 
+    case (Connect.SETS(sets = sets, setCount = set_count,
         connections = connections))
       equation
         // Create a new array.
@@ -2268,7 +2268,7 @@ algorithm
         (sets, graph) = setArrayAddConnection(inIndex, edges, inSets, inGraph);
       then
         setArrayAddConnections2(inIndex + 1, graph, sets);
-  
+
     else
       setArrayAddConnections2(inIndex + 1, inGraph, inSets);
 
@@ -2305,7 +2305,7 @@ algorithm
         (sets, graph) = setArrayAddConnection(inSet, rest_edges, sets, graph);
       then
         (sets, graph);
-      
+
     case (_, edge :: rest_edges, _, _)
       equation
         (sets, graph) = setArrayAddConnection(inSet, rest_edges, inSets,
@@ -2315,7 +2315,7 @@ algorithm
 
   end matchcontinue;
 end setArrayAddConnection;
-        
+
 protected function setArrayAddConnection2
   "Helper function to setArrayAddConnection, adds a pointer from the given
    pointer to the pointee."
@@ -2364,7 +2364,7 @@ algorithm
       list<DAE.ComponentRef> prefix;
 
     case (Connect.SET_TRIE_NODE(cref = DAE.WILD(), nodes = nodes), _, _)
-      then 
+      then
         List.fold1(nodes, generateSetArray2, inPrefix, inSetArray);
 
     case (Connect.SET_TRIE_NODE(name = name, cref = node_cr, nodes = nodes),
@@ -2401,7 +2401,7 @@ algorithm
       DAE.ElementSource source;
       Integer set;
 
-    case (SOME(Connect.CONNECTOR_ELEMENT(name = name, face = face, 
+    case (SOME(Connect.CONNECTOR_ELEMENT(name = name, face = face,
         ty = Connect.STREAM(NONE()), source = source, set = set)),
         SOME(flow_cr))
       then
@@ -2430,21 +2430,21 @@ algorithm
 
     // No element, do nothing.
     case (NONE(), _, _) then inSets;
-  
+
     // An element but no prefix, add the element as it is.
     case (SOME(el as Connect.CONNECTOR_ELEMENT(set = set)), NONE(), _)
       then setArrayUpdate(inSets, set, el);
 
     // Both an element and a prefix, add the prefix to the element before adding
     // it to the array.
-    case (SOME(Connect.CONNECTOR_ELEMENT(name, face, ty, src, set)), 
+    case (SOME(Connect.CONNECTOR_ELEMENT(name, face, ty, src, set)),
         SOME(prefix), _)
       equation
         name = ComponentReference.joinCrefs(prefix, name);
         el = Connect.CONNECTOR_ELEMENT(name, face, ty, src, set);
       then
         setArrayUpdate(inSets, set, el);
-        
+
   end match;
 end setArrayAddElement;
 
@@ -2523,7 +2523,7 @@ algorithm
       Integer index;
 
     // Sort the elements if orderConnections is true and the set is an equality set.
-    case (_, Connect.SET(elements = el), _, 
+    case (_, Connect.SET(elements = el), _,
         Connect.CONNECTOR_ELEMENT(ty = ty as Connect.EQU()))
       equation
         true = Config.orderConnections();
@@ -2582,14 +2582,14 @@ algorithm
       then setArrayGet(inSetArray, set);
   end match;
 end setArrayGet2;
-  
+
 protected function equationsDispatch
   "Dispatches to the correct equation generating function based on the type of
   the given set."
   input Set inSet;
   input ConnectionGraph.DaeEdges inConnected;
   input ConnectionGraph.DaeEdges inBroken;
-  input DAE.DAElist inDae;  
+  input DAE.DAElist inDae;
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue(inSet, inConnected, inBroken, inDae)
@@ -2622,7 +2622,7 @@ algorithm
 
     case (Connect.SET(ty = Connect.NO_TYPE()), _, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, 
+        Error.addMessage(Error.INTERNAL_ERROR,
           {"ConnectUtil.equationsDispatch failed on connection set with no type."});
       then
         fail();
@@ -2658,7 +2658,7 @@ algorithm
       Boolean order_conn;
 
     case {} then DAEUtil.emptyDae;
-    
+
     case {_} then DAEUtil.emptyDae;
 
     case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
@@ -2705,7 +2705,7 @@ algorithm
     else false;
   end matchcontinue;
 end shouldFlipEquEquation;
-    
+
 protected function generateFlowEquations
   "Generating equations from a flow connection set is a little trickier that
    from a non-flow set. Only one equation is generated, but it has to consider
@@ -2744,7 +2744,7 @@ algorithm
 
   end match;
 end makeFlowExp;
-        
+
 protected function generateStreamEquations
   "Generates the equations for a stream connection set."
   input list<ConnectorElement> inElements;
@@ -2894,7 +2894,7 @@ protected function sumMap
   input list<SetElement> inElements;
   input FuncType inFunc;
   output DAE.Exp outExp;
-  
+
   replaceable type SetElement subtypeof Any;
 
   partial function FuncType
@@ -2948,7 +2948,7 @@ algorithm
 end flowExp;
 
 protected function sumOutside1
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps) * inStream(stream_exp)
   given a stream set element."
   input ConnectorElement inElement;
@@ -2962,7 +2962,7 @@ algorithm
 end sumOutside1;
 
 protected function sumInside1
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps) * stream_exp
   given a stream set element."
   input ConnectorElement inElement;
@@ -2972,13 +2972,13 @@ protected
   DAE.Type flowTy, streamTy;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
-  flowTy := Expression.typeof(flow_exp); 
+  flowTy := Expression.typeof(flow_exp);
   flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
   outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
 end sumInside1;
 
 protected function sumOutside2
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps)
   given a stream set element."
   input ConnectorElement inElement;
@@ -2991,7 +2991,7 @@ algorithm
 end sumOutside2;
 
 protected function sumInside2
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps)
   given a stream set element."
   input ConnectorElement inElement;
@@ -3028,16 +3028,16 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inStreamExp);
-  outInStreamCall := 
+  outInStreamCall :=
     DAE.CALL(
-      Absyn.IDENT("inStream"), 
+      Absyn.IDENT("inStream"),
       {inStreamExp},
       DAE.CALL_ATTR(
         ty,
-        false, 
-        false, 
         false,
-        DAE.NO_INLINE(), 
+        false,
+        false,
+        DAE.NO_INLINE(),
         DAE.NO_TAIL()));
 end makeInStreamCall;
 
@@ -3050,16 +3050,16 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inFlowExp);
-  outPositiveMaxCall := 
+  outPositiveMaxCall :=
      DAE.CALL(
-        Absyn.IDENT("max"), 
-        {inFlowExp, DAE.RCONST(1e-15)}, 
+        Absyn.IDENT("max"),
+        {inFlowExp, DAE.RCONST(1e-15)},
         DAE.CALL_ATTR(
-          ty, 
-          false, 
-          true, 
+          ty,
           false,
-          DAE.NO_INLINE(), 
+          true,
+          false,
+          DAE.NO_INLINE(),
           DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
@@ -3122,7 +3122,7 @@ algorithm
       DAE.Type ty;
       String s;
 
-    // sometimes we get ASUB(inStream/actualStream, 1) so we should remove that 
+    // sometimes we get ASUB(inStream/actualStream, 1) so we should remove that
     /*/ TODO! FIXME! make this work correctly without this workaround!
     case ((DAE.ASUB(e, _), sets))
       equation
@@ -3133,23 +3133,23 @@ algorithm
       then
         ((e, sets));*/
 
-    case ((DAE.CALL(path = Absyn.IDENT("inStream"), 
+    case ((DAE.CALL(path = Absyn.IDENT("inStream"),
                     expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
       equation
         e = evaluateInStream(cr, sets);
         // print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
-      then 
+      then
         ((e, sets));
-    case ((DAE.CALL(path = Absyn.IDENT("actualStream"), 
+    case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
                     expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
       equation
         e = evaluateActualStream(cr, sets);
         // print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
       then
         ((e, sets));
-    
+
     else inTuple;
-  
+
   end matchcontinue;
 end evaluateStreamOperatorsExp;
 
@@ -3161,19 +3161,19 @@ protected function mkArrayIfNeeded
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inTy, inExp)
-    local 
+    local
       DAE.Exp exp;
       DAE.Dimensions dims;
-    
+
     case (_, _)
       equation
         dims = Types.getDimensions(inTy);
         exp = Expression.arrayFill(dims, inExp);
       then
         exp;
-    
-    else inExp; 
-    
+
+    else inExp;
+
   end matchcontinue;
 end mkArrayIfNeeded;
 
@@ -3266,7 +3266,7 @@ algorithm
     case (_, {Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
               Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())}, _)
       equation
-        {Connect.CONNECTOR_ELEMENT(name = c)} = 
+        {Connect.CONNECTOR_ELEMENT(name = c)} =
           removeStreamSetElement(inStreamCref, inStreams);
         e = Expression.crefExp(c);
       then
@@ -3274,11 +3274,11 @@ algorithm
 
     // One inside, one outside connected stream connector:
     // inStream(c1) = inStream(c2);
-    case (_, {Connect.CONNECTOR_ELEMENT(face = f1), 
+    case (_, {Connect.CONNECTOR_ELEMENT(face = f1),
               Connect.CONNECTOR_ELEMENT(face = f2)}, _)
       equation
         false = faceEqual(f1, f2);
-        {Connect.CONNECTOR_ELEMENT(name = c)} = 
+        {Connect.CONNECTOR_ELEMENT(name = c)} =
           removeStreamSetElement(inStreamCref, inStreams);
         e = evaluateInStream(c, inSets);
       then
@@ -3326,7 +3326,7 @@ algorithm
         e;
   end match;
 end evaluateActualStream;
-        
+
 protected function removeStreamSetElement
   "This function removes the given cref from a connection set."
   input DAE.ComponentRef inCref;
@@ -3335,7 +3335,7 @@ protected function removeStreamSetElement
 algorithm
   (outElements, _) := List.deleteMemberOnTrue(inCref, inElements, compareCrefStreamSet);
 end removeStreamSetElement;
-        
+
 protected function compareCrefStreamSet
   "Helper function to removeStreamSetElement. Checks if the cref in a stream set
   element matches the given cref."
@@ -3364,11 +3364,11 @@ public function componentFace
     non-qualifed cref                => OUTSIDE
     qualified cref and non-connector => INSIDE
 
-  Modelica Specification 4.0 
+  Modelica Specification 4.0
   Section: 9.1.2 Inside and Outside Connectors
-  In an element instance M, each connector element of M is called an outside connector with respect to M. 
-  All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
-  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
+  In an element instance M, each connector element of M is called an outside connector with respect to M.
+  All other connector elements that are hierarchically inside M, but not in one of the outside connectors
+  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements
   to corresponding inner ones."
   input Env.Env env;
   input InnerOuter.InstHierarchy inIH;
@@ -3382,18 +3382,18 @@ algorithm
       InnerOuter.InstHierarchy ih;
 
     // is a non-qualified cref => OUTSIDE
-    case (_,ih,DAE.CREF_IDENT(ident = _)) 
+    case (_,ih,DAE.CREF_IDENT(ident = _))
       then Connect.OUTSIDE();
 
-    // is a qualified cref and is a connector => OUTSIDE 
-    case (_,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
+    // is a qualified cref and is a connector => OUTSIDE
+    case (_,ih,DAE.CREF_QUAL(ident = id,componentRef = cr))
       equation
-       (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_) 
+       (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
          = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
-    case (_,ih,DAE.CREF_QUAL(componentRef =_)) 
+    case (_,ih,DAE.CREF_QUAL(componentRef =_))
       then Connect.INSIDE();
   end matchcontinue;
 end componentFace;
@@ -3401,18 +3401,18 @@ end componentFace;
 public function componentFaceType
 "function: componentFaceType
   Author: BZ, 2008-12
-  Same functionalty as componentFace, with the difference that 
+  Same functionalty as componentFace, with the difference that
   this function checks ident-type rather then env->lookup ==> type.
   Rules:
     qualified cref and connector     => OUTSIDE
     non-qualifed cref                => OUTSIDE
     qualified cref and non-connector => INSIDE
-  
-  Modelica Specification 4.0 
+
+  Modelica Specification 4.0
   Section: 9.1.2 Inside and Outside Connectors
-  In an element instance M, each connector element of M is called an outside connector with respect to M. 
-  All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
-  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
+  In an element instance M, each connector element of M is called an outside connector with respect to M.
+  All other connector elements that are hierarchically inside M, but not in one of the outside connectors
+  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements
   to corresponding inner ones."
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
@@ -3483,7 +3483,7 @@ algorithm
           flow_str, ")."});
         Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
           {class_str, error_str}, info);
-      then 
+      then
         fail();
 
     // Modelica 3.2 section 15.1:
@@ -3495,7 +3495,7 @@ algorithm
         flow_str = intString(inFlowVars);
         class_str = Absyn.pathString(path);
         error_str = stringAppendList({
-          "A stream connector must have exactly one flow variable, this connector has ", 
+          "A stream connector must have exactly one flow variable, this connector has ",
           flow_str, " flow variables."});
         Error.addSourceMessage(Error.INVALID_STREAM_CONNECTOR,
           {class_str, error_str}, info);
@@ -3656,7 +3656,7 @@ algorithm
     case (ClassInf.CONNECTOR(path = class_path),
         SCode.ATTR(connectorType = ct, direction = Absyn.BIDIR()), _)
       equation
-        // The connector might be either flow, stream or neither. 
+        // The connector might be either flow, stream or neither.
         // This will set either fv, sv, or pv to 1, and the rest to 0, and
         // checkConnectorBalance2 will then be called to provide the appropriate
         // error message (or might actually succeed if +std=2.x or 1.x).
@@ -3670,7 +3670,7 @@ algorithm
         true;
 
     // Previous case failed, not a valid connector.
-    case (ClassInf.CONNECTOR(path = _), 
+    case (ClassInf.CONNECTOR(path = _),
       SCode.ATTR(direction = Absyn.BIDIR()), _) then false;
 
     // All other cases are ok.
@@ -3684,19 +3684,19 @@ public function isReferenceInConnects
   output Boolean isThere;
 algorithm
   isThere := matchcontinue(inConnects, inCref)
-    local 
+    local
       list<ConnectorElement> rest;
       DAE.ComponentRef name;
       Boolean b;
-    
+
     case ({}, _) then false;
-    
+
     case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
       equation
         true = ComponentReference.crefPrefixOf(inCref, name);
       then
         true;
-    
+
     case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
       equation
         false = ComponentReference.crefPrefixOf(inCref, name);
@@ -3714,15 +3714,15 @@ public function removeReferenceFromConnects
   output Boolean wasRemoved;
 algorithm
   (outConnects, wasRemoved) := matchcontinue(inConnects, inCref, inPrefix)
-    local 
+    local
       list<ConnectorElement> rest, prefix, all;
       ConnectorElement e;
       DAE.ComponentRef name;
       Boolean b;
-    
+
     // not there
     case ({}, _, _) then (listReverse(inPrefix), false);
-    
+
     // there
     case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _, _)
       equation
@@ -3730,7 +3730,7 @@ algorithm
         all = listAppend(listReverse(inPrefix), rest);
       then
         (all, true);
-    
+
     // middleground
     case ((e as Connect.CONNECTOR_ELEMENT(name = name))::rest, _, _)
       equation
@@ -3845,7 +3845,7 @@ algorithm
 
   end match;
 end printElementStr;
-  
+
 public function printFaceStr
   "Prints the Face to a String."
   input Face inFace;
@@ -3904,7 +3904,7 @@ algorithm
   (set1, set2) := inConnection;
   outString := "\t" +& intString(set1) +& " connected to " +& intString(set2) +& "\n";
 end printSetConnection;
-  
+
 protected function printSetStr
   "Prints a Set to a String."
   input Set inSet;
@@ -3921,7 +3921,7 @@ algorithm
         str = stringDelimitList(List.map(el, printElementStr), ", ");
       then
         str;
-        
+
     case Connect.SET_POINTER(index = index)
       equation
         str = "pointer to set " +& intString(index);

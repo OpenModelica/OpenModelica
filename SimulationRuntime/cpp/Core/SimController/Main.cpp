@@ -4,7 +4,7 @@
 #include "System/ISystemProperties.h"
 #include "LibrariesConfig.h"
 #include <boost/program_options.hpp>
- 
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace std;
@@ -17,10 +17,10 @@ int _tmain(int argc, _TCHAR* argv[])
 #else
 int main(int argc, const char* argv[])
 #endif
-{  
+{
 
-    try 
-    {  
+    try
+    {
         int opt;
         int portnum;
 
@@ -32,9 +32,9 @@ int main(int argc, const char* argv[])
             ("results-file,R", po::value<string>(),"name of results file")
             ("config-path,c", po::value< string >(),  "path to xml files")
             ;
-        po::variables_map vm;        
+        po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);    
+        po::notify(vm);
         if (vm.count("help")) {
             cout << desc << "\n";
             return 1;
@@ -108,7 +108,7 @@ int main(int argc, const char* argv[])
 
         Configuration config(libraries_path,config_path);
         IGlobalSettings* global_settings = config.getGlobalSettings();
-        global_settings->setRuntimeLibrarypath(runtime_lib_path);       
+        global_settings->setRuntimeLibrarypath(runtime_lib_path);
         global_settings->setResultsFileName(resultsfilename);
         //Load Modelica sytem library
 
@@ -145,7 +145,7 @@ int main(int argc, const char* argv[])
         std::map<std::string, factory<IMixedSystem,IGlobalSettings&> >::iterator iter;
         std::map<std::string, factory<IMixedSystem,IGlobalSettings&> >& factories(types.get());
         iter = factories.find("ModelicaSystem");
-        if (iter ==factories.end()) 
+        if (iter ==factories.end())
         {
             throw std::invalid_argument("No Modelica system found");
         }
@@ -161,7 +161,7 @@ int main(int argc, const char* argv[])
         if((properties->isODE()) && !(properties->isAlgebraic()) && (properties->isExplicit()))
         {
 
-            // Command for integration: Since integration is done "at once" the solver is only called once. Hence it is both, first and last 
+            // Command for integration: Since integration is done "at once" the solver is only called once. Hence it is both, first and last
             // call to the solver at the same time. Furthermore it is supposed to be a regular call (not a recall)
             IDAESolver::SOLVERCALL command = IDAESolver::SOLVERCALL(IDAESolver::FIRST_CALL|IDAESolver::LAST_CALL|IDAESolver::REGULAR_CALL|IDAESolver::RECORDCALL);
             // The simulation entity is supposed to set start and end time
@@ -173,7 +173,7 @@ int main(int argc, const char* argv[])
 
             solver->solve(command);
 
-            // Get the status of the solver (is the interation done sucessfully?) 
+            // Get the status of the solver (is the interation done sucessfully?)
             IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
             //Todo: use flags for simulation outputs
             //solver->writeSimulationInfo(std::cout);

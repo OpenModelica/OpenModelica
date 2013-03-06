@@ -7,7 +7,7 @@
 CC = @CC@
 CXX = @CXX@
 CFLAGS   := @CFLAGS@ -I../util
-CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux 
+CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux
 
 include Makefile.common
 

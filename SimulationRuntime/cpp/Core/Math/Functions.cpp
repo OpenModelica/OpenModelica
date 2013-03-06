@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include <Math/Functions.h>
 #include <stdexcept>
- 
+
 
 double division (const double &a,const double &b,std::string text)
 {
-  if(b != 0) 
+  if(b != 0)
     return a/b ;
     else
     {

@@ -3,7 +3,7 @@
 
 typedef double Time;
 /*! \brief This class represents a DEVS atomic model. */
-class SimulatorQSS  
+class SimulatorQSS
 {
 public:
        Time e;

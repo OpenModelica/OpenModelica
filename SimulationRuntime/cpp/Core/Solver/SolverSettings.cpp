@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
- 
+
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
 //#include "../Interfaces/API.h"
@@ -16,7 +16,7 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   ,_dRtol(1e-8)
   ,_dAtol(1e-8)
 
-{    
+{
     _globalSettings = globalSettings ;
 }
 double SolverSettings::gethInit()

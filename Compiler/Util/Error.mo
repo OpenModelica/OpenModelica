@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -39,21 +39,21 @@ encapsulated package Error
 
   This file contains the Error handling for the Compiler. The following steps
   are used to add a new error message:
-  
+
     1) Add a new ErrorID constant below with an unique id.
 
     2) Add a new entry in the errorTable. Each entry is a tuple consisting of
        the ErrorID, a MessageType, a Severity and a message string. See the
-       MessageType and Severity uniontypes below for more information about 
+       MessageType and Severity uniontypes below for more information about
        them.
 
-      The message string is the error message that should be displayed, which 
-      may contain directives to insert tokens given when the message is used. 
+      The message string is the error message that should be displayed, which
+      may contain directives to insert tokens given when the message is used.
       These directives are:
-      
+
         %s: Inserts the next token in the list.
         %n: Inserts token number n in the list, where n is a number from 1 to 9.
-       
+
       Note that these two directives do not affect each other. I.e. %s will move
       to the next token in the list regardless of any positional directives, and
       %1 will always point to the first token regardless of any %s before it.
@@ -539,7 +539,7 @@ public constant Message NOTIFY_NOT_LOADED = MESSAGE(223, SCRIPTING(), NOTIFICATI
 public constant Message REINIT_MUST_BE_REAL = MESSAGE(224, TRANSLATION(), ERROR(),
   Util.gettext("The first argument to reinit must be a subtype of Real, but %s has type %s."));
 public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR(),
-  Util.gettext("The first argument to reinit must be a variable, but %s is a %s.")); 
+  Util.gettext("The first argument to reinit must be a variable, but %s is a %s."));
 public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNING(),
   Util.gettext("Connecting two signal sources while connecting %s to %s."));
 public constant Message INNER_OUTER_FORMAL_PARAMETER = MESSAGE(227, TRANSLATION(), ERROR(),
@@ -587,7 +587,7 @@ public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(246, TRANSLATION(), E
 public constant Message ERRONEOUS_TYPE_ERROR = MESSAGE(247, TRANSLATION(), ERROR(),
   Util.gettext("Got type mismatch error, but matching types %s.\nThis is a ***COMPILER BUG***, please report it to https://trac.openmodelica.org/OpenModelica."));
 public constant Message REINIT_MUST_BE_VAR_OR_ARRAY = MESSAGE(225, TRANSLATION(), ERROR(),
-  Util.gettext("The first argument to reinit must be a variable of type Real or an array of such variables.")); 
+  Util.gettext("The first argument to reinit must be a variable of type Real or an array of such variables."));
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value"));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -639,9 +639,9 @@ public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(528, TRANSLATION(), ERR
 public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(529, GRAMMAR(), WARNING(),
   Util.gettext("The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.\nMissing names are:\n\t%s"));
 public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(530, TRANSLATION(), ERROR(),
-  Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));  
+  Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));
 public constant Message MISSING_INNER_CLASS = MESSAGE(531, TRANSLATION(), WARNING(),
-  Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));  
+  Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
@@ -729,7 +729,7 @@ public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(
 protected import ErrorExt;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
-This function takes a String and set the global var to 
+This function takes a String and set the global var to
 which the current variable the compiler is working with."
   input String component;
   input Absyn.Info info;
@@ -784,8 +784,8 @@ algorithm
       MessageTokens tokens;
       Boolean isReadOnly;
       Util.TranslatableContent msg;
-    case (MESSAGE(error_id, msg_type, severity, msg), tokens, 
-        Absyn.INFO(fileName = file,isReadOnly = isReadOnly, 
+    case (MESSAGE(error_id, msg_type, severity, msg), tokens,
+        Absyn.INFO(fileName = file,isReadOnly = isReadOnly,
           lineNumberStart = sline, columnNumberStart = scol,
           lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
@@ -846,13 +846,13 @@ algorithm
   _ := match (inErrorMsg, inMessageTokens, inInfoOpt)
     local
       Absyn.Info info;
-    
+
     // we DON'T have an info, add message
     case (_, _, NONE())
       equation
         addMessage(inErrorMsg, inMessageTokens);
       then ();
-    
+
     // we have an info, add source message
     case (_, _, SOME(info))
       equation
@@ -1025,14 +1025,14 @@ public function infoStr
   output String str;
 algorithm
   str := match(info)
-    local 
+    local
       String filename, info_str;
       Integer line_start, line_end, col_start, col_end;
-    case (Absyn.INFO(fileName = filename, lineNumberStart = line_start, 
+    case (Absyn.INFO(fileName = filename, lineNumberStart = line_start,
         columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
         equation
-          info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +& 
-                     intString(line_start) +& ":" +& intString(col_start) +& "-" +& 
+          info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +&
+                     intString(line_start) +& ":" +& intString(col_start) +& "-" +&
                      intString(line_end) +& ":" +& intString(col_end) +& "]";
       then info_str;
   end match;
@@ -1090,7 +1090,7 @@ algorithm
     case _
       equation
         addMessage(COMPILER_WARNING, {message});
-      then 
+      then
         ();
   end match;
 end addCompilerWarning;

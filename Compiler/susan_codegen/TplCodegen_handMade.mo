@@ -15,20 +15,20 @@ constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
 public function f_mmPackage
   input Tpl.Text inTxt;
   input TplAbsyn.MMPackage in_it;
- 
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
     //TA.MMPackage v_it;
-  case (txt, 
+  case (txt,
           TplAbsyn.MM_PACKAGE(
-            name = v_it_name, 
+            name = v_it_name,
             mmDeclarations = v_it_mmDeclarations
           )
-         )    
+         )
     local
       TplAbsyn.PathIdent v_it_name;
       list<TplAbsyn.MMDeclaration> v_it_mmDeclarations;
@@ -36,7 +36,7 @@ algorithm
       txt = Tpl.writeStr(txt, "package ");
       txt = f_pathIdent(txt, v_it_name);
       txt = Tpl.softNewLine(txt);
-      txt = Tpl.writeTok(txt, 
+      txt = Tpl.writeTok(txt,
         Tpl.ST_STRING_LIST({
           "\n",
           "protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});\n",
@@ -60,58 +60,58 @@ end f_mmPackage;
 public function f_mmPackage_lm0
   input Tpl.Text inTxt;
   input list<TplAbsyn.MMDeclaration> inItems;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
     TplAbsyn.MMDeclaration h;
     list<TplAbsyn.MMDeclaration> rest;
-  case (txt, {} )    
+  case (txt, {} )
     then txt;
-  
-  case (txt, h :: rest )    
+
+  case (txt, h :: rest )
     equation
       txt = f_mmDeclaration(txt, h);
       txt = Tpl.nextIter(txt);
       txt = f_mmPackage_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmPackage_lm0;
 
 public function f_mmDeclaration
   input Tpl.Text inTxt;
   input TplAbsyn.MMDeclaration in_it;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.MM_IMPORT(
             packageName = TplAbsyn.IDENT("Tpl")
         )
-       )    
+       )
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_IMPORT(
             packageName = TplAbsyn.IDENT("builtin")
         )
-       )    
+       )
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_IMPORT(
-            isPublic = v_it_isPublic, 
+            isPublic = v_it_isPublic,
             packageName = v_it_packageName
         )
-       )    
+       )
     local
       Boolean v_it_isPublic;
       TplAbsyn.PathIdent v_it_packageName;
@@ -122,14 +122,14 @@ algorithm
       txt = Tpl.writeStr(txt, ";");
       //txt = Tpl.newLine(txt);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_STR_TOKEN_DECL(
-            isPublic = v_isPublic, 
+            isPublic = v_isPublic,
             name = v_it_name,
             value = v_it_value
         )
-       )    
+       )
     local
       Boolean v_isPublic;
       String v_it_name;
@@ -144,15 +144,15 @@ algorithm
       txt = f_stringTokenConstant(txt, v_it_value);
       txt = Tpl.writeStr(txt, ";");
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_LITERAL_DECL(
-            isPublic = v_it_isPublic, 
+            isPublic = v_it_isPublic,
             name = v_it_name,
             value = v_it_value,
             litType = v_litType
         )
-       )    
+       )
     local
       Boolean v_it_isPublic;
       String v_it_name;
@@ -170,17 +170,17 @@ algorithm
       txt = Tpl.writeStr(txt, v_it_value);
       txt = Tpl.writeStr(txt, ";");
     then txt;
-      
-  case (txt, 
+
+  case (txt,
         v_mf as TplAbsyn.MM_FUN(
-            isPublic = v_it_isPublic, 
+            isPublic = v_it_isPublic,
             name = v_it_templName,
             inArgs = v_it_inArgs,
             outArgs = v_it_outArgs,
             locals = v_it_locals,
             statements = v_it_statements
         )
-       )    
+       )
     local
       TplAbsyn.MMDeclaration v_mf;
       Boolean v_it_isPublic;
@@ -212,10 +212,10 @@ public function f_mmDeclaration_mf0
   input TplAbsyn.TypedIdents in_mf_inArgs;
   input TplAbsyn.TypedIdents in_mf_outArgs;
   input TplAbsyn.TypedIdents in_mf_locals;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it_statements, in_mf_inArgs, in_mf_outArgs, in_mf_locals)
   local
     Tpl.Text txt;
@@ -223,8 +223,8 @@ algorithm
     TplAbsyn.TypedIdents v_mf_inArgs;
     TplAbsyn.TypedIdents v_mf_outArgs;
     TplAbsyn.TypedIdents v_mf_locals;
-  
-  case (txt, 
+
+  case (txt,
         { v_c as TplAbsyn.MM_MATCH( matchCases = v_c_matchCases ) },
         v_mf_inArgs, v_mf_outArgs, v_mf_locals
         )
@@ -239,7 +239,7 @@ algorithm
       txt = f_typedIdentsEx(txt, v_mf_outArgs, "output", "out_");
       txt = Tpl.softNewLine(txt);
       txt = Tpl.popBlock(txt);
-      
+
       txt = f_mmMatchFunBody(txt, v_mf_inArgs, v_mf_outArgs, v_mf_locals, v_c_matchCases);
     then txt;
 
@@ -254,7 +254,7 @@ algorithm
       txt = f_typedIdentsEx(txt, v_mf_outArgs, "output", "out_");
       txt = Tpl.softNewLine(txt);
       txt = Tpl.popBlock(txt);
-      
+
       txt = Tpl.newLine(txt);
       txt = Tpl.pushBlock(txt,Tpl.BT_INDENT(2));
       txt = f_typedIdents(txt, v_mf_locals);
@@ -273,26 +273,26 @@ end f_mmDeclaration_mf0;
 public function f_mmDeclaration_lm1
   input Tpl.Text inTxt;
   input list<TplAbsyn.MMExp> inItems;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
     TplAbsyn.MMExp v_it;
     list<TplAbsyn.MMExp> rest;
-  
+
   case (txt, {} )
     then txt;
-  
-  case (txt, v_it :: rest )    
+
+  case (txt, v_it :: rest )
     equation
       txt = f_mmExp(txt, v_it, ":=" );
       txt = Tpl.nextIter(txt);
       txt = f_mmDeclaration_lm1(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmDeclaration_lm1;
 
@@ -303,7 +303,7 @@ public function f_mmMatchFunBody
   input TplAbsyn.TypedIdents in_mf_outArgs;
   input TplAbsyn.TypedIdents in_mf_locals;
   input list<TplAbsyn.MMMatchCase> in_c_matchCases;
-    
+
   output Tpl.Text outtxt;
 algorithm
   outtxt := Tpl.writeTok(intxt, Tpl.ST_LINE("algorithm\n"));
@@ -341,14 +341,14 @@ public function f_mmMatchFunBody_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, (v_nm, _) :: rest )
     local
       TplAbsyn.Ident v_nm;
@@ -359,7 +359,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm0;
 
@@ -370,14 +370,14 @@ public function f_mmMatchFunBody_lm1
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, (v_nm, _) :: rest )
     local
       TplAbsyn.Ident v_nm;
@@ -388,7 +388,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm1(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm1;
 
@@ -400,14 +400,14 @@ public function f_mmMatchFunBody_lm2
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems, in_mf_outArgs)
   local
     Tpl.Text txt;
-  
+
   case (txt, {}, _)
     then txt;
-  
+
   case (txt, (v_mexps, v_locals, v_statements) :: rest, v_mf_outArgs)
     local
       list<TplAbsyn.MatchingExp> v_mexps;
@@ -445,7 +445,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm2(txt, rest, v_mf_outArgs);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm2;
 
@@ -456,14 +456,14 @@ public function f_mmMatchFunBody_cf0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_locals)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_locals)
     local
       TplAbsyn.TypedIdents v_locals;
@@ -474,7 +474,7 @@ algorithm
       txt = Tpl.softNewLine(txt);
       txt = Tpl.popBlock(txt);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_cf0;
 
@@ -485,14 +485,14 @@ public function f_mmMatchFunBody_lm3
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       TplAbsyn.MatchingExp v_it;
@@ -502,7 +502,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm3(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm3;
 
@@ -513,14 +513,14 @@ public function f_mmMatchFunBody_lm4
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       TplAbsyn.MMExp v_it;
@@ -530,7 +530,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm4(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm4;
 
@@ -542,14 +542,14 @@ public function f_mmMatchFunBody_lm5
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, (v_nm, _) :: rest )
     local
       TplAbsyn.Ident v_nm;
@@ -559,7 +559,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchFunBody_lm5(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchFunBody_lm5;
 
@@ -567,22 +567,22 @@ end f_mmMatchFunBody_lm5;
 public function f_pathIdent
   input Tpl.Text inTxt;
   input TplAbsyn.PathIdent in_it;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  
-  case (txt, TplAbsyn.IDENT( ident = v_it_ident ) )    
+
+  case (txt, TplAbsyn.IDENT( ident = v_it_ident ) )
     local
       TplAbsyn.Ident v_it_ident;
     equation
       txt = Tpl.writeStr(txt, v_it_ident);
     then txt;
-      
-  case (txt, TplAbsyn.PATH_IDENT( ident = v_it_ident, path = v_it_path ) )    
+
+  case (txt, TplAbsyn.PATH_IDENT( ident = v_it_ident, path = v_it_path ) )
     local
       TplAbsyn.Ident v_it_ident;
       TplAbsyn.PathIdent v_it_path;
@@ -598,18 +598,18 @@ end f_pathIdent;
 public function f_mmPublic
   input Tpl.Text inTxt;
   input Boolean in_isPublic;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_isPublic)
   local
     Tpl.Text txt;
-  case (txt, true) 
+  case (txt, true)
     equation
       txt = Tpl.writeStr(txt, "public");
     then txt;
-  case (txt, false) 
+  case (txt, false)
     equation
       txt = Tpl.writeStr(txt, "protected");
     then txt;
@@ -620,7 +620,7 @@ end f_mmPublic;
 public function f_typedIdents
   input Tpl.Text intxt;
   input TplAbsyn.TypedIdents in_decls;
-    
+
   output Tpl.Text outtxt;
 algorithm
   outtxt := Tpl.pushIter(intxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE() ));
@@ -631,17 +631,17 @@ end f_typedIdents;
 public function f_typedIdents_lm0
   input Tpl.Text inTxt;
   input list<tuple<TplAbsyn.Ident, TplAbsyn.TypeSignature>> inItems;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, (v_id,v_ty) :: rest )
     local
       TplAbsyn.Ident v_id;
@@ -655,7 +655,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_typedIdents_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_typedIdents_lm0;
 
@@ -665,11 +665,11 @@ public function f_typedIdentsEx
   input TplAbsyn.TypedIdents in_decls;
   input String in_prfx;
   input String in_nmPrfx;
-    
+
   output Tpl.Text outtxt;
 algorithm
   outtxt := Tpl.pushIter(intxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE() ));
-  outtxt := f_typedIdentsEx_lm0(outtxt, in_decls, in_prfx, in_nmPrfx); //decls of (id,ty): 
+  outtxt := f_typedIdentsEx_lm0(outtxt, in_decls, in_prfx, in_nmPrfx); //decls of (id,ty):
   outtxt := Tpl.popIter(outtxt);
 end f_typedIdentsEx;
 
@@ -678,17 +678,17 @@ public function f_typedIdentsEx_lm0
   input list<tuple<TplAbsyn.Ident, TplAbsyn.TypeSignature>> inItems;
   input String in_prfx;
   input String in_nmPrfx;
-  
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems, in_prfx, in_nmPrfx)
   local
     Tpl.Text txt;
-  
+
   case (txt, {}, _, _ )
     then txt;
-  
+
   case (txt, (v_id,v_ty) :: rest, v_prfx,  v_nmPrfx)
     local
       TplAbsyn.Ident v_id;
@@ -696,7 +696,7 @@ algorithm
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeSignature>> rest;
       String v_prfx;
       String v_nmPrfx;
-  
+
     equation
       txt = Tpl.writeParseNL(txt, v_prfx);
       txt = Tpl.writeStr(txt, " ");
@@ -708,7 +708,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_typedIdentsEx_lm0(txt, rest, v_prfx, v_nmPrfx);
     then txt;
-      
+
   end matchcontinue;
 end f_typedIdentsEx_lm0;
 
@@ -716,18 +716,18 @@ end f_typedIdentsEx_lm0;
 public function f_typeSig
   input Tpl.Text inTxt;
   input TplAbsyn.TypeSignature in_it;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.LIST_TYPE(
-            ofType = v_it_ofType 
+            ofType = v_it_ofType
         )
-       )    
+       )
     local
       TplAbsyn.TypeSignature v_it_ofType;
     equation
@@ -735,22 +735,22 @@ algorithm
       txt = f_typeSig(txt, v_it_ofType);
       txt = Tpl.writeStr(txt, ">");
     then txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.ARRAY_TYPE(
-            ofType = v_it_ofType 
+            ofType = v_it_ofType
         )
-       )    
+       )
     local
       TplAbsyn.TypeSignature v_it_ofType;
     equation
       txt = f_typeSig(txt, v_it_ofType);
       txt = Tpl.writeStr(txt, "[:]");
     then txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.OPTION_TYPE(
-            ofType = v_it_ofType 
+            ofType = v_it_ofType
         )
-       )    
+       )
     local
       TplAbsyn.TypeSignature v_it_ofType;
     equation
@@ -758,11 +758,11 @@ algorithm
       txt = f_typeSig(txt, v_it_ofType);
       txt = Tpl.writeStr(txt, ">");
     then txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.TUPLE_TYPE(
-            ofTypes = v_it_ofTypes 
+            ofTypes = v_it_ofTypes
         )
-       )    
+       )
     local
       list<TplAbsyn.TypeSignature> v_it_ofTypes;
     equation
@@ -772,52 +772,52 @@ algorithm
       txt = Tpl.popIter(txt);
       txt = Tpl.writeStr(txt, ">");
     then txt;
-  case (txt, 
+  case (txt,
         TplAbsyn.NAMED_TYPE(
-            name = v_it_name 
+            name = v_it_name
         )
-       )    
+       )
     local
       TplAbsyn.PathIdent v_it_name;
     equation
       txt = f_pathIdent(txt, v_it_name);
     then txt;
-  
-  case (txt, TplAbsyn.STRING_TYPE() )    
+
+  case (txt, TplAbsyn.STRING_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "String");
     then txt;
-  
-  case (txt, TplAbsyn.TEXT_TYPE() )    
+
+  case (txt, TplAbsyn.TEXT_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "Tpl.Text");
     then txt;
-      
-  case (txt, TplAbsyn.STRING_TOKEN_TYPE() )    
+
+  case (txt, TplAbsyn.STRING_TOKEN_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "Tpl.StringToken");
     then txt;
-      
-  case (txt, TplAbsyn.INTEGER_TYPE() )    
+
+  case (txt, TplAbsyn.INTEGER_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "Integer");
     then txt;
-      
-  case (txt, TplAbsyn.REAL_TYPE() )    
+
+  case (txt, TplAbsyn.REAL_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "Real");
     then txt;
-      
-  case (txt, TplAbsyn.BOOLEAN_TYPE() )    
+
+  case (txt, TplAbsyn.BOOLEAN_TYPE() )
     equation
       txt = Tpl.writeStr(txt, "Boolean");
     then txt;
-      
-  case (txt, 
+
+  case (txt,
         TplAbsyn.UNRESOLVED_TYPE(
-            reason = v_reason 
+            reason = v_reason
         )
-       )    
+       )
     local
       String v_reason;
     equation
@@ -825,9 +825,9 @@ algorithm
       txt = Tpl.writeStr(txt, v_reason);
       txt = Tpl.writeStr(txt, " ?#");
     then txt;
-  
-  
-  case (txt,_) // no fail behaviour ... when some the union has in fact more tags 
+
+
+  case (txt,_) // no fail behaviour ... when some the union has in fact more tags
     then txt;
   end matchcontinue;
 end f_typeSig;
@@ -839,14 +839,14 @@ public function f_typeSig_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       TplAbsyn.TypeSignature v_it;
@@ -856,7 +856,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_typeSig_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_typeSig_lm0;
 
@@ -865,19 +865,19 @@ end f_typeSig_lm0;
 public function f_stringTokenConstant
   input Tpl.Text inTxt;
   input TplAbsyn.StringToken in_it;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  case (txt, Tpl.ST_NEW_LINE() )    
+  case (txt, Tpl.ST_NEW_LINE() )
     equation
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_NEW_LINE()"));
     then txt;
-  
-  case (txt, Tpl.ST_STRING( value = v_value ) )    
+
+  case (txt, Tpl.ST_STRING( value = v_value ) )
     local
       String v_value;
     equation
@@ -885,8 +885,8 @@ algorithm
       txt = f_escapeStringConst(txt, stringListStringChar(v_value), true);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
     then txt;
-  
-  case (txt, Tpl.ST_LINE( line = v_line ) )    
+
+  case (txt, Tpl.ST_LINE( line = v_line ) )
     local
       String v_line;
     equation
@@ -894,8 +894,8 @@ algorithm
       txt = f_escapeStringConst(txt, stringListStringChar(v_line), true);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
     then txt;
-  
-  case (txt, Tpl.ST_STRING_LIST( strList = v_strList, lastHasNewLine = v_lastHasNewLine ) )    
+
+  case (txt, Tpl.ST_STRING_LIST( strList = v_strList, lastHasNewLine = v_lastHasNewLine ) )
     local
       list<String> v_strList;
       Boolean v_lastHasNewLine;
@@ -911,8 +911,8 @@ algorithm
       txt = Tpl.writeStr(txt, Tpl.booleanString(v_lastHasNewLine));
       txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
     then txt;
-  
-  case (txt, _)    
+
+  case (txt, _)
     then txt;
 
   end matchcontinue;
@@ -925,14 +925,14 @@ public function f_stringTokenConstant_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       String v_it;
@@ -944,7 +944,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_stringTokenConstant_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_stringTokenConstant_lm0;
 
@@ -952,19 +952,19 @@ end f_stringTokenConstant_lm0;
 public function f_stringLiteralConstant
   input Tpl.Text inTxt;
   input TplAbsyn.StringToken in_it;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  case (txt, Tpl.ST_NEW_LINE() )    
+  case (txt, Tpl.ST_NEW_LINE() )
     equation
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
     then txt;
-  
-  case (txt, Tpl.ST_STRING( value = _it_value ) )    
+
+  case (txt, Tpl.ST_STRING( value = _it_value ) )
     local
       String _value;
     equation
@@ -972,8 +972,8 @@ algorithm
       txt = f_escapeStringConst(txt, _value, false);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
     then txt;
-  
-  case (txt, Tpl.ST_LINE( line = _line ) )    
+
+  case (txt, Tpl.ST_LINE( line = _line ) )
     local
       String _line;
     equation
@@ -981,8 +981,8 @@ algorithm
       txt = f_escapeStringConst(txt, _line, true);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
     then txt;
-  
-  case (txt, Tpl.ST_STRING_LIST( strList = _strList ) )    
+
+  case (txt, Tpl.ST_STRING_LIST( strList = _strList ) )
     local
       list<String> _strList;
     equation
@@ -994,8 +994,8 @@ algorithm
       txt = Tpl.popBlock(txt);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
     then txt;
-  
-  case (txt, _)    
+
+  case (txt, _)
     then txt;
 
   end matchcontinue;
@@ -1008,14 +1008,14 @@ public function _stringLiteralConstant_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, _it :: rest )
     local
       String _it;
@@ -1025,7 +1025,7 @@ algorithm
       //txt = Tpl.nextIter(txt);
       txt = _stringTokenConstant_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end _stringLiteralConstant_lm0;
 */
@@ -1035,7 +1035,7 @@ public function f_escapeStringConst
   input Tpl.Text txt;
   input list<String> inItems;
   input Boolean in_escapeNewLine;
-    
+
   output Tpl.Text out_txt;
 algorithm
   (out_txt) := Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
@@ -1048,16 +1048,16 @@ public function f_escapeStringConst_
   input Tpl.Text inTxt;
   input list<String> inItems;
   input Boolean in_escapeNewLine;
-    
+
   output Tpl.Text outTxt;
 algorithm
   outTxt := matchcontinue(inTxt, inItems, in_escapeNewLine)
   local
     Tpl.Text txt;
-  
+
   case (txt, {}, _ )
     then txt;
-  
+
   case (txt, v_it :: rest, v_escapeNewLine )
     local
       String v_it;
@@ -1074,58 +1074,58 @@ protected function f_escapeStringConst_mf0
   input Tpl.Text inTxt;
   input String in_it;
   input Boolean in_escapeNewLine;
-    
+
   output Tpl.Text outTxt;
 algorithm
   outTxt := matchcontinue(inTxt, in_it, in_escapeNewLine)
   local
     Tpl.Text txt;
-  case (txt, "\\",_  )    
+  case (txt, "\\",_  )
     equation
       txt = Tpl.writeStr(txt, "\\\\");
     then txt;
-  case (txt, 
+  case (txt,
         "\'",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\\'");
     then txt;
-  case (txt, 
+  case (txt,
         "\"",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\\"");
     then txt;
   /*
   //TODO: Error in the .srz
-  case (txt, 
-        "\a",_ 
-       )    
+  case (txt,
+        "\a",_
+       )
     equation
       txt = Tpl.writeStr(txt, "\\a");
     then txt;
-  case (txt, 
+  case (txt,
         "\b",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\b");
     then txt;
-  case (txt, 
+  case (txt,
         "\f",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\f");
     then txt;
-  case (txt, 
+  case (txt,
         "\v",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\v");
     then txt;
  */
-  case (txt, 
+  case (txt,
         "\n",v_escapeNewLine
-       )    
+       )
     local
       Boolean v_escapeNewLine;
       String nl;
@@ -1135,21 +1135,21 @@ algorithm
     then txt;
   /*
   //TODO: Error - should be \r
-  case (txt, 
-        "\r",_ 
-       )    
+  case (txt,
+        "\r",_
+       )
     equation
       txt = Tpl.writeStr(txt, "\\r");
     then txt;
   */
-  case (txt, 
+  case (txt,
         "\t",_
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "\\t");
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         v_it,_
        )
     local
@@ -1165,22 +1165,22 @@ public function f_mmExp
   input Tpl.Text inTxt;
   input TplAbsyn.MMExp in_it;
   input String in_assignStr;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it, in_assignStr)
   local
     Tpl.Text txt;
     String v_assignStr;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_ASSIGN(
             lhsArgs = v_it_lhsArgs,
             rhs = v_it_rhs
         ),
         v_assignStr
-       )    
+       )
     local
       list<String> v_it_lhsArgs;
       TplAbsyn.MMExp v_it_rhs;
@@ -1196,14 +1196,14 @@ algorithm
       txt = f_mmExp(txt, v_it_rhs, v_assignStr);
       txt = Tpl.writeStr(txt, ";");
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_FN_CALL(
             fnName = v_it_fnName,
             args = v_it_args
         ),
         v_assignStr
-       )    
+       )
     local
       TplAbsyn.PathIdent v_it_fnName;
       list<TplAbsyn.MMExp> v_it_args;
@@ -1215,36 +1215,36 @@ algorithm
       txt = Tpl.popIter(txt);
       txt = Tpl.writeStr(txt, ")");
     then txt;
-  
-  
-  case (txt, 
+
+
+  case (txt,
         TplAbsyn.MM_IDENT(
             ident = v_it_ident
         ), _
-       )    
+       )
     local
       TplAbsyn.PathIdent v_it_ident;
     equation
       txt = f_pathIdent(txt, v_it_ident);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_STR_TOKEN(
             value = v_value
         ), _
-       )    
+       )
     local
       Tpl.StringToken v_value;
     equation
       txt = f_stringTokenConstant(txt, v_value);
     then txt;
-  
-  
-  case (txt, 
+
+
+  case (txt,
         TplAbsyn.MM_STRING(
             value = v_value
         ), _
-       )    
+       )
     local
       String v_value;
     equation
@@ -1254,21 +1254,21 @@ algorithm
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       (txt) = Tpl.popBlock(txt);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.MM_LITERAL(
             value = v_value
         ), _
-       )    
+       )
     local
       String v_value;
     equation
       txt = Tpl.writeStr(txt,v_value);
     then txt;
-      
-  case (txt,_, _)  
+
+  case (txt,_, _)
     then txt;
-  
+
   end matchcontinue;
 end f_mmExp;
 
@@ -1279,14 +1279,14 @@ public function f_mmExp_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       String v_it;
@@ -1296,7 +1296,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmExp_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmExp_lm0;
 
@@ -1309,14 +1309,14 @@ public function f_mmExp_lm1
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems, in_assignStr)
   local
     Tpl.Text txt;
-  
+
   case (txt, {}, _ )
     then txt;
-  
+
   case (txt, v_it :: rest, v_assignStr )
     local
       TplAbsyn.MMExp v_it;
@@ -1327,7 +1327,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmExp_lm1(txt, rest, v_assignStr);
     then txt;
-      
+
   end matchcontinue;
 end f_mmExp_lm1;
 
@@ -1335,20 +1335,20 @@ end f_mmExp_lm1;
 public function f_mmMatchingExp
   input Tpl.Text inTxt;
   input TplAbsyn.MatchingExp in_it;
-    
+
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, in_it)
   local
     Tpl.Text txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.BIND_AS_MATCH(
             bindIdent = v_bindIdent,
-            matchingExp = v_matchingExp            
+            matchingExp = v_matchingExp
         )
-       )    
+       )
     local
       String v_bindIdent;
       TplAbsyn.MatchingExp v_matchingExp;
@@ -1357,24 +1357,24 @@ algorithm
       txt = Tpl.writeStr(txt, " as ");
       txt = f_mmMatchingExp(txt, v_matchingExp);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.BIND_MATCH(
-            bindIdent = v_it_bindIdent            
+            bindIdent = v_it_bindIdent
         )
-       )    
+       )
     local
       String v_it_bindIdent;
     equation
       txt = Tpl.writeParseNL(txt, v_it_bindIdent);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.RECORD_MATCH(
             tagName = v_it_tagName,
             fieldMatchings = v_it_fieldMatchings
         )
-       )    
+       )
     local
       Option<TplAbsyn.Ident> v_it_bindIdent;
       TplAbsyn.PathIdent v_it_tagName;
@@ -1387,7 +1387,7 @@ algorithm
       txt = Tpl.popIter(txt);
       txt = Tpl.writeStr(txt, ")");
     then txt;
-  
+
   case (txt,  TplAbsyn.SOME_MATCH( value = v_it_value ))
     local
       TplAbsyn.MatchingExp v_it_value;
@@ -1396,19 +1396,19 @@ algorithm
       txt = f_mmMatchingExp(txt, v_it_value);
       txt = Tpl.writeStr(txt, ")");
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.NONE_MATCH()
-       )    
+       )
     equation
       txt = Tpl.writeStr(txt, "NONE");
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.TUPLE_MATCH(
-            tupleArgs = v_it_tupleArgs            
+            tupleArgs = v_it_tupleArgs
         )
-       )    
+       )
     local
       list<TplAbsyn.MatchingExp> v_it_tupleArgs;
     equation
@@ -1418,9 +1418,9 @@ algorithm
       txt = Tpl.popIter(txt);
       txt = Tpl.writeStr(txt, ")");
     then txt;
-  
-  case (txt, 
-        TplAbsyn.LIST_MATCH( listElts = v_listElts  ) )    
+
+  case (txt,
+        TplAbsyn.LIST_MATCH( listElts = v_listElts  ) )
     local
       list<TplAbsyn.MatchingExp> v_listElts;
     equation
@@ -1430,9 +1430,9 @@ algorithm
       txt = Tpl.popIter(txt);
       txt = Tpl.writeStr(txt, "}");
     then txt;
-  
-  case (txt, 
-        TplAbsyn.LIST_CONS_MATCH( head = v_head, rest = v_rest  ) )    
+
+  case (txt,
+        TplAbsyn.LIST_CONS_MATCH( head = v_head, rest = v_rest  ) )
     local
       TplAbsyn.MatchingExp v_head;
       TplAbsyn.MatchingExp v_rest;
@@ -1441,10 +1441,10 @@ algorithm
       txt = Tpl.writeStr(txt, " :: ");
       txt = f_mmMatchingExp(txt, v_rest);
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.STRING_MATCH( value = v_value )
-       )    
+       )
     local
       String v_value;
     equation
@@ -1452,24 +1452,24 @@ algorithm
       txt = f_escapeStringConst(txt, stringListStringChar(v_value), true);
       txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
     then txt;
-  
-  case (txt, 
+
+  case (txt,
         TplAbsyn.LITERAL_MATCH( value = v_it_value )
-       )    
+       )
     local
       String v_it_value;
     equation
       txt = Tpl.writeStr(txt, v_it_value);
     then txt;
-  
-  case (txt, TplAbsyn.REST_MATCH() )    
+
+  case (txt, TplAbsyn.REST_MATCH() )
     equation
       txt = Tpl.writeStr(txt, "_");
     then txt;
-  
-  case (txt,_)  
+
+  case (txt,_)
     then txt;
-       
+
   end matchcontinue;
 end f_mmMatchingExp;
 
@@ -1481,14 +1481,14 @@ public function f_mmMatchingExp_lm0
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, (v_field, v_mexp) :: rest )
     local
       TplAbsyn.Ident v_field;
@@ -1501,7 +1501,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchingExp_lm0(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchingExp_lm0;
 
@@ -1513,14 +1513,14 @@ public function f_mmMatchingExp_lm1
 
   output Tpl.Text outTxt;
 algorithm
-  outTxt := 
+  outTxt :=
   matchcontinue(inTxt, inItems)
   local
     Tpl.Text txt;
-  
+
   case (txt, {} )
     then txt;
-  
+
   case (txt, v_it :: rest )
     local
       TplAbsyn.MatchingExp v_it;
@@ -1530,7 +1530,7 @@ algorithm
       txt = Tpl.nextIter(txt);
       txt = f_mmMatchingExp_lm1(txt, rest);
     then txt;
-      
+
   end matchcontinue;
 end f_mmMatchingExp_lm1;
 

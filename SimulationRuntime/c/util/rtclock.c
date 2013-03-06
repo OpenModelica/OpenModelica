@@ -272,7 +272,7 @@ void rt_clear(int ix)
   rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
   max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
   rt_update_min_max_ncall(ix);
-  
+
   acc_tp[ix].tv_sec = 0;
   acc_tp[ix].tv_nsec = 0;
   rt_clock_ncall[ix] = 0;
@@ -283,7 +283,7 @@ void rt_clear_total(int ix)
   total_tp[ix].tv_sec = 0;
   total_tp[ix].tv_nsec = 0;
   rt_clock_ncall_total[ix] = 0;
-  
+
   acc_tp[ix].tv_sec = 0;
   acc_tp[ix].tv_nsec = 0;
   rt_clock_ncall[ix] = 0;

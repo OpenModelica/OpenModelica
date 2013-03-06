@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -20,25 +20,25 @@
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 // #include <boost/numeric/bindings/traits/std_vector.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 #include <cassert>
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // Eigendecomposition of a real symmetric matrix A = Q * D * Q'
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      * syev() computes the eigendecomposition of a N x N matrix
      * A = Q * D * Q',  where Q is a N x N orthogonal matrix and
      * D is a diagonal matrix. The diagonal elements D(i,i) is an
@@ -52,22 +52,22 @@ namespace boost { namespace numeric { namespace bindings {
      *           'N' : do not compute eigenvectors
      *    uplo : 'U' : only the upper triangular part of A is used on input.
      *           'L' : only the lower triangular part of A is used on input.
-     */ 
+     */
 
     namespace detail {
 
-      inline 
+      inline
       void syev (char const jobz, char const uplo, int const n,
                  float* a, int const lda,
-                 float* w, float* work, int const lwork, int& info) 
+                 float* w, float* work, int const lwork, int& info)
       {
         LAPACK_SSYEV (&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
       }
 
-      inline 
+      inline
       void syev (char const jobz, char const uplo, int const n,
                  double* a, int const lda,
-                 double* w, double* work, int const lwork, int& info) 
+                 double* w, double* work, int const lwork, int& info)
       {
         LAPACK_DSYEV (&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
       }
@@ -77,31 +77,31 @@ namespace boost { namespace numeric { namespace bindings {
       inline
       int syev (char jobz, char uplo, A& a, W& w, Work& work) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
         BOOST_STATIC_ASSERT((boost::is_same<
-          typename traits::matrix_traits<A>::matrix_structure, 
+          typename traits::matrix_traits<A>::matrix_structure,
           traits::general_t
-        >::value)); 
-#endif 
+        >::value));
+#endif
 
         int const n = traits::matrix_size1 (a);
         assert ( n>0 );
-        assert (traits::matrix_size2 (a)==n); 
-        assert (traits::leading_dimension (a)>=n); 
-        assert (traits::vector_size (w)==n); 
-        assert (3*n-1 <= traits::vector_size (work)); 
+        assert (traits::matrix_size2 (a)==n);
+        assert (traits::leading_dimension (a)>=n);
+        assert (traits::vector_size (w)==n);
+        assert (3*n-1 <= traits::vector_size (work));
         assert ( uplo=='U' || uplo=='L' );
         assert ( jobz=='N' || jobz=='V' );
 
-        int info; 
+        int info;
         detail::syev (jobz, uplo, n,
-                     traits::matrix_storage (a), 
+                     traits::matrix_storage (a),
                      traits::leading_dimension (a),
-                     traits::vector_storage (w),  
+                     traits::vector_storage (w),
                      traits::vector_storage (work),
                      traits::vector_size (work),
                      info);
-        return info; 
+        return info;
       }
     }  // namespace detail
 
@@ -158,7 +158,7 @@ namespace boost { namespace numeric { namespace bindings {
 
        int const n = traits::matrix_size1 (a);
        char uplo = traits::matrix_uplo_tag( a ) ;
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
        typedef typename traits::matrix_traits<A>::matrix_structure matrix_structure ;
        BOOST_STATIC_ASSERT( (boost::mpl::or_< boost::is_same< matrix_structure, traits::symmetric_t >
                                             , boost::is_same< matrix_structure, traits::hermitian_t >
@@ -179,7 +179,7 @@ namespace boost { namespace numeric { namespace bindings {
 
        int const n = traits::matrix_size1 (a);
        char uplo = traits::matrix_uplo_tag( a ) ;
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
        typedef typename traits::matrix_traits<A>::matrix_structure matrix_structure ;
        BOOST_STATIC_ASSERT( (boost::mpl::or_< boost::is_same< matrix_structure, traits::symmetric_t >
                                             , boost::is_same< matrix_structure, traits::hermitian_t >
@@ -197,7 +197,7 @@ namespace boost { namespace numeric { namespace bindings {
     int syev (char jobz, A& a, W& w, detail::workspace1<Work> workspace ) {
        typedef typename A::value_type value_type ;
        char uplo = traits::matrix_uplo_tag( a ) ;
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
        typedef typename traits::matrix_traits<A>::matrix_structure matrix_structure ;
        BOOST_STATIC_ASSERT( (boost::mpl::or_< boost::is_same< matrix_structure, traits::symmetric_t >
                                             , boost::is_same< matrix_structure, traits::hermitian_t >
@@ -212,7 +212,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline
     int syev (char jobz, A& a, W& w) {
        char uplo = traits::matrix_uplo_tag( a ) ;
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
        typedef typename traits::matrix_traits<A>::matrix_structure matrix_structure ;
        BOOST_STATIC_ASSERT( (boost::mpl::or_< boost::is_same< matrix_structure, traits::symmetric_t >
                                             , boost::is_same< matrix_structure, traits::hermitian_t >
@@ -228,4 +228,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 }}}
 
-#endif 
+#endif

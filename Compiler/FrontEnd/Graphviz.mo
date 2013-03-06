@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -33,14 +33,14 @@ encapsulated package Graphviz
 " file:        Graphviz.mo
   package:     Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
-               representation. This module generates the textual input 
-               to graphviz from a tree defined using the data structures 
-               defined here, e.g. Node for tree  nodes. 
-               See 
+               representation. This module generates the textual input
+               to graphviz from a tree defined using the data structures
+               defined here, e.g. Node for tree  nodes.
+               See
                   http://www.research.att.com/sw/tools/graphviz/.
-  
+
   RCS: $Id$
-  
+
   Input: The tree constructed from data structures in Graphviz
   Output: Textual input to graphviz, written to stdout."
 
@@ -113,7 +113,7 @@ algorithm
       Attributes newattr,attr;
       Children children;
       list<Label> lbl_1,lbl;
-    
+
     case (NODE(type_ = typ,attributes = attr,children = children))
       equation
         nm = nodename(typ);
@@ -124,7 +124,7 @@ algorithm
         dumpChildren(nm, children);
       then
         nm;
-    
+
     case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
       equation
         nm = nodename(typ);
@@ -160,16 +160,16 @@ algorithm
     local
       Label s,res,s1,s2,old;
       list<Label> rest;
-    
+
     case {s} then s;
-    
+
     case {s1,s2}
       equation
         s = stringAppend(s1, "\\n");
         res = stringAppend(s, s2);
       then
         res;
-    
+
     case (s1 :: rest)
       equation
         old = makeLabelReq(rest);
@@ -190,9 +190,9 @@ algorithm
       Label nm,parent;
       Node node;
       Children rest;
-    
+
     case (_,{}) then ();
-    
+
     case (parent,(node :: rest))
       equation
         nm = dumpNode(node);
@@ -275,14 +275,14 @@ algorithm
     local
       Label s,str,name,v,old,s_1,s_2;
       list<Attribute> rest;
-    
+
     case {ATTR(name = name,value = v)}
       equation
         s = stringAppend(name, "=");
         str = stringAppend(s, v);
       then
         str;
-    
+
     case ((ATTR(name = name,value = v) :: rest))
       equation
         old = makeAttrReq(rest);

@@ -114,7 +114,7 @@ report:
 ifeq ($(wildcard ../build/bin/omc),)
 simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
-else 
+else
 simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
 	$(MAKE) -C Template/

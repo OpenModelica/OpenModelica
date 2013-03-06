@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -36,7 +36,7 @@ encapsulated package SimCodeMain
 
   The entry points to this module are the translateModel function and the
   translateFunctions fuction.
-  
+
   RCS: $Id$"
 
 // public imports
@@ -118,7 +118,7 @@ public function generateModelCodeFMU
   output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
-protected 
+protected
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
   // DAE.DAElist dae2;
@@ -139,7 +139,7 @@ algorithm
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
-  
+
   System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
   callTargetTemplatesFMU(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_TEMPLATES);
@@ -161,7 +161,7 @@ public function generateModelCodeXML
   output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
-protected 
+protected
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
   // DAE.DAElist dae2;
@@ -182,7 +182,7 @@ algorithm
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
-  
+
   System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
   callTargetTemplatesXML(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_TEMPLATES);
@@ -191,7 +191,7 @@ end generateModelCodeXML;
 
 public function translateModelFMU
 "Entry point to translate a Modelica model for FMU export.
-    
+
  Called from other places in the compiler."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -235,9 +235,9 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
           generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
-        resultValues = 
+        resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
@@ -248,7 +248,7 @@ algorithm
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_, _)
-      equation        
+      equation
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
@@ -260,7 +260,7 @@ end translateModelFMU;
 
 public function translateModelXML
 "Entry point to translate a Modelica model for XML export.
-    
+
  Called from other places in the compiler."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -304,9 +304,9 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
           generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
-        resultValues = 
+        resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
@@ -317,7 +317,7 @@ algorithm
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_, _)
-      equation        
+      equation
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
@@ -331,7 +331,7 @@ end translateModelXML;
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
-   
+
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
   input DAE.DAElist dae;
@@ -345,8 +345,8 @@ public function generateModelCode
   output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
-protected 
-  
+protected
+
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
   // DAE.DAElist dae2;
@@ -365,12 +365,12 @@ algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE, 
+  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
-  
+
   System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_TEMPLATES);
@@ -394,7 +394,7 @@ algorithm
       BackendQSS.QSSinfo qssInfo;
       String str;
       SimCode.SimCode sc;
-      
+
     case (_,_,"CSharp")
       equation
         Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
@@ -418,7 +418,7 @@ algorithm
       equation
         Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
         Tpl.tplNoret(CodegenC.translateModel, simCode);
-      then ();        
+      then ();
     case (_,_,"Dump")
       equation
         // Yes, do this better later on...
@@ -450,15 +450,15 @@ algorithm
   _ := match (simCode,target)
     local
       String str;
-      
+
     case (_,"C")
       equation
         Tpl.tplNoret(CodegenFMU.translateModel, simCode);
-      then ();        
+      then ();
     case (_,"Cpp")
       equation
         Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
-      then (); 
+      then ();
     case (_,_)
       equation
         str = "Unknown template target: " +& target;
@@ -478,7 +478,7 @@ end callTargetTemplatesXML;
 
 public function translateModel
 "Entry point to translate a Modelica model for simulation.
-    
+
  Called from other places in the compiler."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -511,7 +511,7 @@ algorithm
 
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
       equation
-        // calculate stuff that we need to create SimCode data structure 
+        // calculate stuff that we need to create SimCode data structure
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
@@ -519,9 +519,9 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
           generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
-        resultValues = 
+        resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
@@ -530,7 +530,7 @@ algorithm
       then
         (cache,st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_,_,_)
-      equation        
+      equation
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
@@ -541,7 +541,7 @@ end translateModel;
 
 public function translateFunctions
 "Entry point to translate Modelica/MetaModelica functions to C functions.
-    
+
  Called from other places in the compiler."
   input Absyn.Program program;
   input String name;
@@ -561,7 +561,7 @@ algorithm
       list<SimCode.RecordDeclaration> extraRecordDecls;
       list<DAE.Exp> literals;
       list<DAE.Function> daeElements;
-      
+
     case (_, _, SOME(daeMainFunction), daeElements, _, includes)
       equation
         // Create SimCode.FunctionCode

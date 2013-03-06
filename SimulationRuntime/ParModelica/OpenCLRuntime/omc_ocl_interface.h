@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,22 +28,22 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 
 /*
 
  This file contains interfacing functions. Theses are the
  actuall functions that are available for calling by the
- code generated from Modelica source. 
- If a function is not called from the generated code please 
- don not add it here. 
- If the feature involves complex operations then define it 
+ code generated from Modelica source.
+ If a function is not called from the generated code please
+ don not add it here.
+ If the feature involves complex operations then define it
  somewhere else and and just create interface for it here
  (If it needs to be exported.)
- 
 
- Mahder.Gebremedhin@liu.se  2012-03-31 
-   
+
+ Mahder.Gebremedhin@liu.se  2012-03-31
+
 */
 
 
@@ -65,11 +65,11 @@ size_t device_array_nr_of_elements(device_array *a);
 
 
 // Just to stick to  OpenModelica's function naming pattern
-#define oclSetNumThreadsOnlyGlobal(...) ocl_set_num_threads( __VA_ARGS__ ) 
-#define oclSetNumThreadsGlobalLocal(...) ocl_set_num_threads( __VA_ARGS__ ) 
-#define oclSetNumThreadsGlobalLocal1D(...) ocl_set_num_threads( __VA_ARGS__ ) 
-#define oclSetNumThreadsGlobalLocal2D(...) ocl_set_num_threads( __VA_ARGS__ ) 
-#define oclSetNumThreadsGlobalLocal3D(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsOnlyGlobal(...) ocl_set_num_threads( __VA_ARGS__ )
+#define oclSetNumThreadsGlobalLocal(...) ocl_set_num_threads( __VA_ARGS__ )
+#define oclSetNumThreadsGlobalLocal1D(...) ocl_set_num_threads( __VA_ARGS__ )
+#define oclSetNumThreadsGlobalLocal2D(...) ocl_set_num_threads( __VA_ARGS__ )
+#define oclSetNumThreadsGlobalLocal3D(...) ocl_set_num_threads( __VA_ARGS__ )
 
 
 // sets the number of threads for subsequent parallel operations
@@ -77,28 +77,28 @@ size_t device_array_nr_of_elements(device_array *a);
 void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
 
 
-// sets the number of threads for subsequent parallel operations. 
+// sets the number of threads for subsequent parallel operations.
 // similar to the above function with arrays of size 1 only.
 void ocl_set_num_threads(modelica_integer global_threads_in, modelica_integer local_threads_in);
 
 //sets the number of threads for subsequent parallel operations.
 //This time only the total number of threads desired is given. OpenCL will
 //automatically distribute workitems/threads into work groups.
-//it ca also be used(by passing 0) to reset the number of total threads to the max value of one group (default). 
+//it ca also be used(by passing 0) to reset the number of total threads to the max value of one group (default).
 void ocl_set_num_threads(modelica_integer global_threads_in);
 
-//sets a single Kernel cl_mem (device pointer) argument. 
+//sets a single Kernel cl_mem (device pointer) argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, cl_mem in_arg);
-//sets a single Kernel Real argument. 
+//sets a single Kernel Real argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
-//sets a single Kernel Integer argument. 
+//sets a single Kernel Integer argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
 
 
 
 
 
-//overloaded functions from real/integer/boolean _array in the C_runtime library 
+//overloaded functions from real/integer/boolean _array in the C_runtime library
 //for allocating and copying arrays to openCL device
 
 void alloc_integer_array(device_integer_array *dest, int ndims, ...);
@@ -140,7 +140,7 @@ void copy_assignment_helper_real(device_real* i1, device_real* i2);
 //these functions are added to solve a problem with a memory leak when returning arrays
 //from functions. Arrays used to be assigned just like normal scalar variables. Which causes the
 //allocated memory on the lhs to be lost when the pointer is replaced with the new one.
-//this fixes the problem for parallel arrays. for serial arrays the memory is restored when the 
+//this fixes the problem for parallel arrays. for serial arrays the memory is restored when the
 //function returns(not dynamic allocation), So the only lose in serial case is visible just until
 //the function returns.
 void swap_and_release(device_array* lhs, device_array* rhs);

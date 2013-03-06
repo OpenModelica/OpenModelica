@@ -11,17 +11,17 @@ SET(META_SRC 	meta_modelica_builtin.c
 				gc/generational.c
 				gc/marksweep.c)
 
-SET(META_HFILES rml_compatibility.h 
-                meta_modelica_builtin.h 
-				meta_modelica_builtin_boxptr.h 
-				meta_modelica_real.h 
-				meta_modelica_string_lit.h 
-				meta_modelica.h 
-				gc/mmc_gc.h 
-				gc/common.h 
-				gc/generational.h 
-				gc/marksweep.h 
-				gc/roots.h) 
+SET(META_HFILES rml_compatibility.h
+                meta_modelica_builtin.h
+				meta_modelica_builtin_boxptr.h
+				meta_modelica_real.h
+				meta_modelica_string_lit.h
+				meta_modelica.h
+				gc/mmc_gc.h
+				gc/common.h
+				gc/generational.h
+				gc/marksweep.h
+				gc/roots.h)
 
 
 # Library meta
@@ -32,4 +32,4 @@ add_library(meta  ${META_SRC} ${META_HFILES})
 INSTALL(TARGETS meta
 		ARCHIVE DESTINATION lib/omc)
 #INSTALL(FILES ${META_HFILES} DESTINATION include/meta)
-		
+

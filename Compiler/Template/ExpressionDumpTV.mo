@@ -10,7 +10,7 @@ end builtin;
 
 package Tpl
   function addTemplateError
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 
@@ -30,7 +30,7 @@ package Absyn
       Ident name;
     end IDENT;
 
-    record FULLYQUALIFIED 
+    record FULLYQUALIFIED
       Path path;
     end FULLYQUALIFIED;
   end Path;
@@ -46,7 +46,7 @@ package ClassInf
     record UNKNOWN
       Absyn.Path path;
     end UNKNOWN;
-    
+
     record OPTIMIZATION
       Absyn.Path path;
     end OPTIMIZATION;
@@ -87,7 +87,7 @@ package ClassInf
     record HAS_RESTRICTIONS
       Absyn.Path path;
     end HAS_RESTRICTIONS;
-    
+
     record TYPE_INTEGER
       Absyn.Path path;
     end TYPE_INTEGER;
@@ -352,7 +352,7 @@ package DAE
       list<String> fieldNames;
       Integer index;
     end METARECORDCALL;
-    
+
     record MATCHEXPRESSION
       MatchType matchType;
       list<Exp> inputs;
@@ -360,7 +360,7 @@ package DAE
       list<MatchCase> cases;
       Type et;
     end MATCHEXPRESSION;
-    
+
     record BOX
       Exp exp;
     end BOX;
@@ -369,12 +369,12 @@ package DAE
       Exp exp;
       Type ty;
     end UNBOX;
-    
+
     record SHARED_LITERAL
       Integer index;
       Type ty;
     end SHARED_LITERAL;
-    
+
     record PATTERN
       Pattern pattern;
     end PATTERN;
@@ -490,11 +490,11 @@ package DAE
       Type ty;
     end AND;
 
-    record OR 
+    record OR
       Type ty;
     end OR;
 
-    record NOT 
+    record NOT
       Type ty;
     end NOT;
 
@@ -616,7 +616,7 @@ package DAE
     record INDEX
       Exp exp;
     end INDEX;
-    
+
     record WHOLE_NONEXP
       Exp exp;
     end WHOLE_NONEXP;
@@ -643,23 +643,23 @@ package DAE
       Absyn.Path path;
     end T_ENUMERATION;
 
-    record T_ARRAY 
+    record T_ARRAY
       Type ty;
       Dimensions dims;
     end T_ARRAY;
 
     record T_NORETCALL
-      TypeSource source; 
+      TypeSource source;
     end T_NORETCALL;
 
     record T_UNKNOWN
-      TypeSource source; 
+      TypeSource source;
     end T_UNKNOWN;
 
     record T_COMPLEX
       ClassInf.State complexClassType;
     end T_COMPLEX;
-    
+
     record T_SUBTYPE_BASIC
       ClassInf.State complexClassType;
       Type complexType;
@@ -669,16 +669,16 @@ package DAE
       list<FuncArg> funcArg;
       Type funcResultType;
     end T_FUNCTION;
-    
+
     record T_FUNCTION_REFERENCE_VAR
       Type functionType;
     end T_FUNCTION_REFERENCE_VAR;
-    
+
     record T_FUNCTION_REFERENCE_FUNC
       Boolean builtin;
       Type functionType;
     end T_FUNCTION_REFERENCE_FUNC;
-    
+
     record T_TUPLE
       list<Type> tupleType;
     end T_TUPLE;
@@ -728,7 +728,7 @@ package DAE
     record T_METAPOLYMORPHIC
       String name;
     end T_METAPOLYMORPHIC;
-    
+
     record T_METATYPE
       Type ty;
     end T_METATYPE;

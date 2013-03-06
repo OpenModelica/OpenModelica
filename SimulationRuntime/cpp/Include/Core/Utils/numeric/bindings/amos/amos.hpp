@@ -20,9 +20,9 @@ namespace boost { namespace numeric { namespace bindings { namespace amos {
   template < typename vector_type, typename value_type >
   int besi(const value_type&                                             z,   // std::complex< float > or std::complex< double >
            const typename traits::type_traits< value_type >::real_type   fnu, // float or double
-           int                                                           kode, 
-           vector_type&                                                  cy, 
-           int&                                                          nz) 
+           int                                                           kode,
+           vector_type&                                                  cy,
+           int&                                                          nz)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     BOOST_STATIC_ASSERT( ( boost::is_same< value_type, typename traits::vector_traits<vector_type>::value_type >::value ) ) ;
@@ -39,11 +39,11 @@ namespace boost { namespace numeric { namespace bindings { namespace amos {
   }
 
   template < typename vector_type, typename value_type >
-  int besj(const value_type&                                            z, 
-           const typename traits::type_traits< value_type >::real_type  fnu, 
-           int                                                          kode, 
-           vector_type&                                                 cy, 
-           int&                                                         nz) 
+  int besj(const value_type&                                            z,
+           const typename traits::type_traits< value_type >::real_type  fnu,
+           int                                                          kode,
+           vector_type&                                                 cy,
+           int&                                                         nz)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     BOOST_STATIC_ASSERT( ( boost::is_same< value_type, typename traits::vector_traits<vector_type>::value_type >::value ) ) ;
@@ -60,11 +60,11 @@ namespace boost { namespace numeric { namespace bindings { namespace amos {
   }
 
   template < typename vector_type, typename value_type >
-  int besy(const value_type&                                           z, 
-           const typename traits::type_traits< value_type >::real_type fnu, 
-           int                                                         kode, 
-           vector_type&                                                cy, 
-           int&                                                        nz) 
+  int besy(const value_type&                                           z,
+           const typename traits::type_traits< value_type >::real_type fnu,
+           int                                                         kode,
+           vector_type&                                                cy,
+           int&                                                        nz)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
     BOOST_STATIC_ASSERT( ( boost::is_same< value_type, typename traits::vector_traits<vector_type>::value_type >::value ) ) ;

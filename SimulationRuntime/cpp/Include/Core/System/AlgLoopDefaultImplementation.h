@@ -12,7 +12,7 @@ using std::ostream;
 /*****************************************************************************/
 /**
 
-Services for the implementation of an algebraic loop in open modelica. 
+Services for the implementation of an algebraic loop in open modelica.
 
 \date     October, 1st, 2008
 \author
@@ -33,18 +33,18 @@ public:
     int getDimVars() const;
    /// Provide number (dimension) of residuals according to data type
     int getDimRHS() const;
-    
+
     /// (Re-) initialize the system of equations
     void init()    ;
 
     /// Provide variables with given index to the system
-  
+
     void giveVars(double* lambda) ;
     void giveVars(int* lambda) ;
     void giveVars(bool* lambda);
 
     /// Set variables with given index to the system
-    
+
     void setVars(const double* lambda);
     void setVars(const int* lambda );
     void setVars(const bool* lambd );
@@ -68,22 +68,22 @@ public:
 protected:
     int
        _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
-      
 
-  std::vector<double> 
+
+  std::vector<double>
    _xd_init,    ///< Double values before update of loop
     __xd;     ///< Double values after update of loop
-  
 
-    std::vector<int> 
+
+    std::vector<int>
        _xi_init,            ///< Integer values before update of loop
     __xi;       ///< Integer values after update of loop
-                                    
-    
+
+
     std::vector<bool>
         _xb_init,            ///< Boolean values before update of loop
    __xb;       ///< Boolean values after update of loop
-   
+
     IAlgLoop::CONSTRTYPE
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
     ostream

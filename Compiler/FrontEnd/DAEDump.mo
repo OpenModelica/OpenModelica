@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -79,12 +79,12 @@ public uniontype splitElements
     list<DAE.Element> o;
     list<DAE.Element> ca;
   end SPLIT_ELEMENTS;
-end splitElements; 
+end splitElements;
 
 public uniontype compWithSplitElements
   record COMP_WITH_SPLIT
     String name;
-    splitElements spltElems;    
+    splitElements spltElems;
     Option<SCode.Comment> comment;
   end COMP_WITH_SPLIT;
 end compWithSplitElements;
@@ -93,7 +93,7 @@ public uniontype functionList
   record FUNCTION_LIST
     list<DAE.Function> funcs;
   end FUNCTION_LIST;
-end functionList; 
+end functionList;
 
 
 
@@ -106,7 +106,7 @@ algorithm
     local
       DAE.DAElist dae;
       String str;
-    
+
     case dae
       equation
         Print.clearBuf();
@@ -127,7 +127,7 @@ algorithm
   _ := match (dae,functionTree)
     local
       list<DAE.Element> daelist;
-    
+
     case (DAE.DAE(daelist),_)
       equation
         List.map_0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
@@ -158,7 +158,7 @@ algorithm
   res := matchcontinue (inElement)
     local
       Absyn.Path fpath;
-      
+
      case DAE.FUNCTION(path = fpath)
        equation
          res = Absyn.pathStringNoQual(fpath);
@@ -190,7 +190,7 @@ algorithm
     else true;
   end matchcontinue;
 end funcGreaterThan;
- 
+
 public function dumpOperatorString "
 Author bz  printOperator
 Dump operator to a string."
@@ -309,7 +309,7 @@ algorithm
       DAE.Dimensions dl;
       Absyn.Path path;
       list<DAE.Exp> explst;
-      
+
     case DAE.DAE((DAE.VAR(componentRef = cr,
                                binding = SOME(e),
                                dims = dims,
@@ -483,7 +483,7 @@ algorithm
       then
         ();
     case (DAE.DAE(elementLst = {})) then ();
-    
+
     case DAE.DAE((DAE.REINIT(componentRef = cr,exp = e2) :: xs))
       equation
         Print.printBuf("REINIT(");
@@ -494,7 +494,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-        
+
     case (DAE.DAE((DAE.TERMINATE(message=e1) :: xs)))
       equation
         Print.printBuf("TERMINATE(");
@@ -503,7 +503,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-        
+
     case (DAE.DAE((DAE.NORETCALL(functionName=path,functionArgs=explst) :: xs)))
       equation
         Print.printBuf("NORETCALL(");
@@ -514,7 +514,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    
+
     case (DAE.DAE((DAE.EXTOBJECTCLASS(path=path) :: xs)))
       equation
         Print.printBuf("EXTOBJECTCLASS(");
@@ -532,7 +532,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-        
+
     case (DAE.DAE((DAE.IF_EQUATION(condition1=e1::_) :: xs)))
       equation
         Print.printBuf("IF_EQUATION(");
@@ -541,7 +541,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    
+
     case (DAE.DAE((DAE.INITIAL_IF_EQUATION(condition1=e1::_) :: xs)))
       equation
         Print.printBuf("IF_EQUATION(");
@@ -550,7 +550,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    
+
     case (DAE.DAE((DAE.CONSTRAINT(constraints=_) :: xs)))
       equation
         Print.printBuf("CONSTRAINT(");
@@ -558,7 +558,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    
+
     case (DAE.DAE((DAE.CLASS_ATTRIBUTES(classAttrs=_) :: xs)))
       equation
         Print.printBuf("CLASS_ATTRIBUTES(");
@@ -566,8 +566,8 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    
-    //BZ Could be nice to know when this failes (when new elements are introduced) 
+
+    //BZ Could be nice to know when this failes (when new elements are introduced)
     case(DAE.DAE((_ :: xs)))
       equation
         Print.printBuf("\n\ndump2 failed to print element\n");
@@ -655,7 +655,7 @@ algorithm
       DAE.Type ty;
       DAE.Exp exp,dim;
       DAE.Attributes attr;
-      
+
     case DAE.NOEXTARG() then "";
     case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(connectorType =ct,variability = var,direction = dir),type_ = ty)
       equation
@@ -883,7 +883,7 @@ algorithm
       DAE.Exp params;
       DAE.Exp paramNames;
       String name_str,params_str, paramNames_str;
-      
+
     case DAE.DISTRIBUTION(name = name, params = params,paramNames=paramNames) equation
       name_str = ExpressionDump.printExpStr(name);
       params_str = ExpressionDump.printExpStr(params);
@@ -916,7 +916,7 @@ algorithm
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> dist;
-      
+
     case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
@@ -930,9 +930,9 @@ algorithm
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
         uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
         dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
-        
+
         startOriginStr = getStartOrigin(startOrigin);
-        
+
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str,startOriginStr}, ", ");
@@ -941,7 +941,7 @@ algorithm
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    
+
     case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
@@ -960,36 +960,36 @@ algorithm
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    
+
     case (SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        
+
         startOriginStr = getStartOrigin(startOrigin);
-                
+
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    
+
     case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        
-        startOriginStr = getStartOrigin(startOrigin);        
-        
+
+        startOriginStr = getStartOrigin(startOrigin);
+
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    
+
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,(min,max),initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
@@ -997,18 +997,18 @@ algorithm
         max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-         
+
         startOriginStr = getStartOrigin(startOrigin);
-            
+
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    
+
     case (NONE()) then "";
-    
+
     case (_) then "unknown VariableAttributes";
   end matchcontinue;
 end dumpVariableAttributesStr;
@@ -1156,7 +1156,7 @@ algorithm
       equation
         true = Config.showAnnotations();
         str = dumpCommentOptionStr(cmtopt);
-        ann_strl = List.map1(List.map(annl, dumpAnnotationStr), 
+        ann_strl = List.map1(List.map(annl, dumpAnnotationStr),
           stringAppend, ";");
         // If there is only one annotations, print it immediately after the
         // class name, otherwise print them in a list below the class name.
@@ -1190,7 +1190,7 @@ algorithm
     case _ then "";
   end matchcontinue;
 end dumpAnnotationOptionStr;
-  
+
 protected function dumpAnnotationStr
   input SCode.Annotation inAnnotation;
   output String outString;
@@ -1206,7 +1206,7 @@ algorithm
         s;
   end match;
 end dumpAnnotationStr;
-    
+
 protected function dumpCommentOption "function: dumpCommentOption_str
   Dump Comment option."
   input Option<SCode.Comment> comment;
@@ -1261,7 +1261,7 @@ algorithm
         Print.printBuf(" = ");
         ExpressionDump.printExp(e2);
         sourceStr = getSourceInformationStr(src);
-        Print.printBuf(sourceStr);        
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
@@ -1273,7 +1273,7 @@ algorithm
         Print.printBuf(" = ");
         ExpressionDump.printExp(e2);
         sourceStr = getSourceInformationStr(src);
-        Print.printBuf(sourceStr);        
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
@@ -1285,42 +1285,42 @@ algorithm
         Print.printBuf(" ::= ");
         ExpressionDump.printExp(e);
         sourceStr = getSourceInformationStr(src);
-        Print.printBuf(sourceStr);        
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.ASSERT(condition=e1, message=e2, source = src))
       equation
         Print.printBuf("assert(");
         ExpressionDump.printExp(e1);
         Print.printBuf(",");
-        ExpressionDump.printExp(e2);        
+        ExpressionDump.printExp(e2);
         Print.printBuf(") ");
         sourceStr = getSourceInformationStr(src);
         Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.NORETCALL(functionName = functionName, functionArgs = functionArgs, source = src))
       equation
         Print.printBuf(Absyn.pathString(functionName));
         Print.printBuf("(");
         Print.printBuf(ExpressionDump.printExpListStr(functionArgs));
-        Print.printBuf(") ");        
+        Print.printBuf(") ");
         sourceStr = getSourceInformationStr(src);
-        Print.printBuf(sourceStr);        
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
-    
+
     case _
       equation
          Print.printBuf("/* FIXME: UNHANDLED_EQUATION in DAEDump.dumpEquation */;\n");
-      then 
+      then
         ();
-    
+
   end matchcontinue;
 end dumpEquation;
 
@@ -1347,7 +1347,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.INITIALDEFINE(componentRef = c,exp = e))
       equation
         Print.printBuf("  ");
@@ -1357,7 +1357,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
       equation
         Print.printBuf("  ");
@@ -1367,7 +1367,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2))
       equation
         Print.printBuf("  ");
@@ -1377,7 +1377,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.INITIAL_IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::trueBranches),equations3 = xs2))
       equation
         Print.printBuf("  if ");
@@ -1392,7 +1392,7 @@ algorithm
         Print.printBuf("end if;\n");
       then
         ();
-    
+
     case _ then ();
   end matchcontinue;
 end dumpInitialEquation;
@@ -1432,24 +1432,24 @@ algorithm
       then
         str;
 
-    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src)) 
+    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src))
       equation
         cmt = DAEUtil.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         str = "  " +& s1 +& " = " +& s2 +& sourceStr +& ";\n";
-      then 
+      then
         str;
 
-    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src)) 
+    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
       equation
         cmt = DAEUtil.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         str = "  " +& s1 +& " = " +& s2 +& sourceStr +& ";\n";
-      then 
+      then
         str;
 
     case (DAE.DEFINE(componentRef = c,exp = e,source = src))
@@ -1535,7 +1535,7 @@ public function dumpFunctionNames "
   print function names"
   input list<DAE.Function> fs;
   output list<String> names;
-algorithm 
+algorithm
   names := matchcontinue(fs)
     local
       Absyn.Path p;
@@ -1590,16 +1590,16 @@ public function derivativeCondStr "
   Function for prinding conditions"
   input DAE.derivativeCond dc;
   output String str;
-algorithm 
+algorithm
   str := matchcontinue(dc)
     local DAE.Exp e;
-    
+
     case(DAE.NO_DERIVATIVE(e))
       equation
         str  = "noDerivative(" +& ExpressionDump.printExpStr(e) +& ")";
       then
         str;
-    
+
     case(DAE.ZERO_DERIVATIVE()) then "zeroDerivative";
   end matchcontinue;
 end derivativeCondStr;
@@ -1607,15 +1607,15 @@ end derivativeCondStr;
 public function dumpDerivativeCond "debug function "
   input list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
   output list<String> oStrings;
-algorithm 
+algorithm
   oStrings := matchcontinue( conditionRefs)
     local
       DAE.derivativeCond derCond;
       String s1;
       Integer name;
-    
+
     case({}) then {};
-    
+
     case((name,derCond)::conditionRefs)
       equation
         oStrings = dumpDerivativeCond(conditionRefs);
@@ -1641,7 +1641,7 @@ algorithm
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
-    
+
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                       type_ = t,isImpure = isImpure,comment = c)
       equation
@@ -1662,7 +1662,7 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
-      
+
     case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_))
       then
         ();
@@ -1687,7 +1687,7 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
-    
+
     case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=t)
       equation
         Print.printBuf("function ");
@@ -1701,7 +1701,7 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
-    
+
     case _ then ();
   end matchcontinue;
 end dumpFunction;
@@ -1747,33 +1747,33 @@ algorithm
     case(DAE.T_COMPLEX(varLst={})) then "";
 
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes = DAE.ATTR(visibility=SCode.PROTECTED()),ty=tp,binding=binding)::varLst,ec,lstPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes = DAE.ATTR(visibility=SCode.PROTECTED()),ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
         s1 ="  protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +&s2;
-      then 
+      then
         str;
 
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,ec,lstPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
         s1 ="  constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
-      then 
+      then
         str;
 
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,ec,lstPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
         s1 ="  input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
-      then 
+      then
         str;
 
     case(DAE.T_FUNCTION(funcResultType=tp)) then printRecordConstructorInputsStr(tp);
-    
+
   end matchcontinue;
 end printRecordConstructorInputsStr;
 
@@ -1829,7 +1829,7 @@ algorithm
       DAE.Type ty;
       Algorithm.Else else_;
       DAE.ElementSource source;
-    
+
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e,source = source),i)
       equation
         indent(i);
@@ -1840,7 +1840,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
       equation
         indent(i);
@@ -1850,7 +1850,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
       equation
         s1 = indentStr(i);
@@ -1861,7 +1861,7 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    
+
     case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),i)
       equation
         indent(i);
@@ -1875,7 +1875,7 @@ algorithm
         Print.printBuf("end if;\n");
       then
         ();
-    
+
     case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         indent(i);
@@ -1891,7 +1891,7 @@ algorithm
         Print.printBuf("end for;\n");
       then
         ();
-        
+
     case (DAE.STMT_PARFOR(iter = id,index=index,range = e,statementLst = stmts),i)
       equation
         indent(i);
@@ -1907,7 +1907,7 @@ algorithm
         Print.printBuf("end parfor;\n");
       then
         ();
-    
+
     case (DAE.STMT_WHILE(exp = e,statementLst = stmts),i)
       equation
         indent(i);
@@ -1920,7 +1920,7 @@ algorithm
         Print.printBuf("end while;\n");
       then
         ();
-    
+
     case (DAE.STMT_NORETCALL(exp = e1),i)
       equation
         indent(i);
@@ -1928,14 +1928,14 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    
+
     case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation
         indent(i);
         Print.printBuf(ppWhenStmtStr(stmt,1));
       then
         ();
-    
+
     case (DAE.STMT_ASSERT(cond = cond,msg = msg),i)
       equation
         indent(i);
@@ -1946,21 +1946,21 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    
+
     case (DAE.STMT_RETURN(source = _),i)
       equation
         indent(i);
         Print.printBuf("return;\n");
       then
         ();
-    
+
     case (DAE.STMT_BREAK(source = _),i)
       equation
         indent(i);
         Print.printBuf("break;\n");
       then
         ();
-    
+
     case (DAE.STMT_REINIT(var = e1, value = e2),i)
       equation
         indent(i);
@@ -1971,7 +1971,7 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    
+
     case (DAE.STMT_FAILURE(body = stmts),i)
       equation
         indent(i);
@@ -1980,7 +1980,7 @@ algorithm
         Print.printBuf("end try;\n");
       then
         ();
-    
+
     case (DAE.STMT_TRY(tryBody = stmts),i)
       equation
         indent(i);
@@ -1989,7 +1989,7 @@ algorithm
         Print.printBuf("end try;\n");
       then
         ();
-    
+
     case (DAE.STMT_CATCH(catchBody = stmts),i)
       equation
         indent(i);
@@ -1998,7 +1998,7 @@ algorithm
         Print.printBuf("end catch;\n");
       then
         ();
-    
+
     case (DAE.STMT_ARRAY_INIT(name = name, ty = ty),i)
       equation
         indent(i);
@@ -2079,7 +2079,7 @@ algorithm
       DAE.Statement stmt;
       Algorithm.Else else_;
       DAE.ElementSource source;
-    
+
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
         s1 = indentStr(i);
@@ -2097,7 +2097,7 @@ algorithm
         str = stringAppendList({s1,s2," := ",s3,";\n"});
       then
         str;
-    
+
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
       equation
         s1 = indentStr(i);
@@ -2107,7 +2107,7 @@ algorithm
         str = stringAppendList({s1,"(",s3,") := ",s2,";\n"});
       then
         str;
-    
+
     case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),i)
       equation
         s1 = indentStr(i);
@@ -2125,7 +2125,7 @@ algorithm
         str = stringAppend(s11, "end if;\n");
       then
         str;
-    
+
     case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
@@ -2137,7 +2137,7 @@ algorithm
         str = stringAppendList({s1,"for ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
-        
+
     case (DAE.STMT_PARFOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
@@ -2149,7 +2149,7 @@ algorithm
         str = stringAppendList({s1,"parfor ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
-    
+
     case (DAE.STMT_WHILE(exp = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
@@ -2165,7 +2165,7 @@ algorithm
         str = stringAppend(s9, "end while;\n");
       then
         str;
-    
+
     case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation
         s1 = indentStr(i);
@@ -2173,7 +2173,7 @@ algorithm
         str = stringAppend(s1,s2);
       then
         str;
-    
+
     case (DAE.STMT_ASSERT(cond = cond,msg = msg),i)
       equation
         s1 = indentStr(i);
@@ -2212,7 +2212,7 @@ algorithm
         str = stringAppend(s1, "break;\n");
       then
         str;
-    
+
     case (DAE.STMT_REINIT(var = e1, value = e2),i)
       equation
         s1 = indentStr(i);
@@ -2220,14 +2220,14 @@ algorithm
         e2_str = ExpressionDump.printExpStr(e2);
         str = stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
       then str;
-        
+
     case (DAE.STMT_FAILURE(body=stmts),i)
       equation
         s1 = indentStr(i);
         s2 = ppStmtListStr(stmts, i+2);
         str = stringAppendList({s1,"failure(\n",s2,s1,");\n"});
       then str;
-        
+
     case (DAE.STMT_ARRAY_INIT(name=s2),i)
       equation
         s1 = indentStr(i);
@@ -2254,7 +2254,7 @@ algorithm
         s2 = getSourceInformationStr(source);
         str = stringAppendList({s1,"throw(\n",s2,s1,");\n"});
       then str;
-        
+
     case (_,i)
       equation
         s1 = indentStr(i);
@@ -3029,28 +3029,28 @@ public function dumpStr "function: dumpStr
   output String outString;
 algorithm
   outString := matchcontinue (inDAElist,functionTree)
-    local      
+    local
       IOStream.IOStream myStream;
       String str;
       list<DAE.Element> daelist;
       list<DAE.Function> funcs;
-      splitElements splElems;  
-      list<compWithSplitElements> fixedDae;   
+      splitElements splElems;
+      list<compWithSplitElements> fixedDae;
       functionList funList;
     case (DAE.DAE(daelist), _)
       equation
-    
+
         true = Flags.isSet(Flags.DUMP_DAE);
-          
+
         funList = dumpFunctionList(functionTree);
-                 
+
         fixedDae = List.map(daelist, dumpDAEList);
-        
+
         str = Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
 
       then
         str;
-        
+
     case (_,_)
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
@@ -3067,7 +3067,7 @@ public function dumpElementsStr "function: dumpElementsStr
   output String outString;
 algorithm
   outString := match (els)
-    local      
+    local
       IOStream.IOStream myStream;
       String str;
 
@@ -3087,7 +3087,7 @@ public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
   output String outString;
 algorithm
   outString := match (algs)
-    local      
+    local
       IOStream.IOStream myStream;
       String str;
 
@@ -3108,7 +3108,7 @@ public function dumpConstraintsStr "function: dumpConstraintsStr
   output String outString;
 algorithm
   outString := match (constrs)
-    local      
+    local
       IOStream.IOStream myStream;
       String str;
 
@@ -3135,7 +3135,7 @@ public function dumpStream "function: dumpStream
   output IOStream.IOStream outStream;
 algorithm
   outStream := match (dae,functionTree,inStream)
-    local      
+    local
       list<DAE.Element> daelist;
       list<DAE.Function> funcs;
       IOStream.IOStream str;
@@ -3154,17 +3154,17 @@ end dumpStream;
 
 public function dumpDAEList "function: dumpDAEList
    returns split  DAE elements(Mainly important for template based DAE unparser) :
-   variables, initial equations, initial algorithms, 
+   variables, initial equations, initial algorithms,
    equations, algorithms, constraints and external objects"
   input DAE.Element inElement;
   output compWithSplitElements outCompWSplElem;
 algorithm
   (outCompWSplElem) := match (inElement)
-    local      
+    local
       String n;
       list<DAE.Element> l;
       Option<SCode.Comment> c;
-            
+
       list<DAE.Element> v;
       list<DAE.Element> ie;
       list<DAE.Element> ia;
@@ -3174,18 +3174,18 @@ algorithm
       list<DAE.Element> o;
       list<DAE.Element> ca;
       splitElements loc_splelem;
-      
+
       compWithSplitElements compWSplElem;
-      
+
 
     case (DAE.COMP(ident = n,dAElist = l,comment = c))
       equation
-        
+
        (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
-        
+
         loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o);
-          
-        compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);        
+
+        compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);
 
       then
         (compWSplElem);
@@ -3198,14 +3198,14 @@ public function dumpFunctionList " returns sorted functions and record construct
   output functionList funList;
 algorithm
   (funList) := match (functionTree)
-    local      
+    local
       list<DAE.Function> funcs;
     case _
       equation
         funcs = DAEUtil.getFunctionList(functionTree);
         funcs = sortFunctions(funcs);
         funList = FUNCTION_LIST(funcs) ;
-      
+
       then
         (funList);
   end match;
@@ -3250,13 +3250,13 @@ public function dumpElementsStream "function: dumpElementsStream
   output IOStream.IOStream outStream;
 algorithm
   outStream := match(l, inStream)
-    local  
+    local
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
-      
+
     case (_, str)
      equation
-       // classify DAE 
+       // classify DAE
        (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
 
        // dump variables
@@ -3264,7 +3264,7 @@ algorithm
 
        str = IOStream.append(str, Util.if_(List.isEmpty(ie), "", "initial equation\n"));
        str = dumpInitialEquationsStream(ie, str);
-       
+
        str = IOStream.append(str, Util.if_(List.isEmpty(ia), "", "initial algorithm\n"));
        str = dumpInitialAlgorithmsStream(ia, str);
 
@@ -3273,7 +3273,7 @@ algorithm
 
        str = IOStream.append(str, Util.if_(List.isEmpty(a), "", "algorithm\n"));
        str = dumpAlgorithmsStream(a, str);
-       
+
        str = IOStream.append(str, Util.if_(List.isEmpty(co), "", "constraint\n"));
        str = dumpConstraintStream(co, str);
      then
@@ -3358,9 +3358,9 @@ algorithm
       Absyn.Path path;
       DAE.Dimensions dims;
       DAE.ElementSource src;
-    
+
     case ({}, str) then str;
-    
+
     case ((DAE.EQUATION(exp = e1, scalar = e2, source = src) :: xs), str)
       equation
         sourceStr = getSourceInformationStr(src);
@@ -3370,13 +3370,13 @@ algorithm
         str = dumpEquationsStream(xs, str);
       then
         str;
-    
+
     case ((DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source = src) :: xs), str)
       equation
         sourceStr = getSourceInformationStr(src);
-        str = IOStream.append(str, "  " +& 
-          ComponentReference.printComponentRefStr(cr1) +& 
-          " = " +& 
+        str = IOStream.append(str, "  " +&
+          ComponentReference.printComponentRefStr(cr1) +&
+          " = " +&
           ComponentReference.printComponentRefStr(cr2) +&
           sourceStr +&
           ";\n");
@@ -3436,7 +3436,7 @@ algorithm
         str = dumpEquationsStream(xs, str);
       then
         str;
-        
+
     case (DAE.TERMINATE(message=e1, source = src) :: xs, str)
       equation
         sourceStr = getSourceInformationStr(src);
@@ -3445,14 +3445,14 @@ algorithm
         str = dumpEquationsStream(xs, str);
       then
         str;
-        
-    case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: xs), str) 
-      then 
+
+    case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: xs), str)
+      then
         str;
 
     case ((DAE.IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::tb),equations3 = {}, source = src) :: xs), str)
       equation
-        sourceStr = getSourceInformationStr(src);        
+        sourceStr = getSourceInformationStr(src);
         str = IOStream.append(str, "  if ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
@@ -3481,7 +3481,7 @@ algorithm
 
     case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = SOME(el), source = src) :: xs), str)
       equation
-        sourceStr = getSourceInformationStr(src);        
+        sourceStr = getSourceInformationStr(src);
         str = IOStream.append(str, "when ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
@@ -3537,7 +3537,7 @@ protected function dumpIfEquationsStream ""
   input list<list<DAE.Element>> itbs;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
-algorithm 
+algorithm
   outStream := match(iconds,itbs,inStream)
     local
       DAE.Exp c;
@@ -3575,7 +3575,7 @@ algorithm
       DAE.ComponentRef c;
       IOStream.IOStream str;
       list<DAE.Exp> conds;
-    
+
     case ({}, str) then str;
 
     case ((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs), str)
@@ -3654,10 +3654,10 @@ algorithm
       equation
         // initial indenttion.
         str = IOStream.append(str, "  ");
-          
+
         str = IOStream.append(str, stringDelimitList(List.map(exps, ExpressionDump.printExpStr),";\n  " ));
         //add the delimiter to the last element too. also if there is just 1 element in the 'exps' list.
-        str = IOStream.append(str, ";\n");  
+        str = IOStream.append(str, ";\n");
         str = dumpConstraintStream(xs, str);
       then
         str;
@@ -3675,12 +3675,12 @@ Author BZ
 print a DAE.DAEList to a string"
   input DAE.DAElist d;
   output String str;
-algorithm 
+algorithm
   str := match(d)
-    local 
+    local
       list<DAE.Element> l;
       IOStream.IOStream myStream;
-      
+
     case(DAE.DAE(elementLst=l))
       equation
         myStream = IOStream.create("", IOStream.LIST());
@@ -3804,7 +3804,7 @@ algorithm
     local
       IOStream.IOStream str;
       list<DAE.Statement> stmts;
-      
+
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)), str)
       equation
         str = IOStream.append(str, "algorithm\n");
@@ -3826,7 +3826,7 @@ algorithm
     local
       IOStream.IOStream str;
       list<DAE.Statement> stmts;
-      
+
     case (DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)), str)
       equation
         str = IOStream.append(str, "initial algorithm\n");
@@ -3922,7 +3922,7 @@ algorithm
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
-      
+
     case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                        type_ = t, isImpure = isImpure, comment = c), str)
       equation
@@ -4030,17 +4030,17 @@ algorithm
       list<DAE.SymbolicOperation> op;
       list<SCode.Comment> cmt;
       String str;
-    
+
     case (_)
       equation
         false = Flags.isSet(Flags.SHOW_EQUATION_SOURCE);
       then
         "";
-    
+
     case (DAE.SOURCE(i, po, iol, ceol, tl, op, cmt))
       equation
         str = cmtListToString(cmt);
-        str = str +& " /* models: {" +& stringDelimitList(List.map(po, withinString), ", ") +& "}" +& 
+        str = str +& " /* models: {" +& stringDelimitList(List.map(po, withinString), ", ") +& "}" +&
                      " connects: {" +& stringDelimitList(connectsStr(ceol), ", ") +& "} */";
       then
         str;
@@ -4057,34 +4057,34 @@ algorithm
       list<String> slst;
       String str;
       DAE.ComponentRef c1, c2;
-      
+
     case ({}) then {};
-    
+
     case ({NONE()}) then {};
-    
+
     case ({SOME((c1,c2))})
       equation
-        str = ComponentReference.printComponentRefStr(c1) +& "," +& 
+        str = ComponentReference.printComponentRefStr(c1) +& "," +&
               ComponentReference.printComponentRefStr(c2);
         str =  "connect(" +& str +& ")";
-      then 
+      then
         {str};
-    
+
     case (SOME((c1,c2))::rest)
       equation
-        str = ComponentReference.printComponentRefStr(c1) +& "," +& 
+        str = ComponentReference.printComponentRefStr(c1) +& "," +&
               ComponentReference.printComponentRefStr(c2);
         str =  "connect(" +& str +& ")";
-        slst = connectsStr(rest);   
-      then 
+        slst = connectsStr(rest);
+      then
         str::slst;
-    
+
     case (NONE()::rest)
       equation
-        slst = connectsStr(rest);   
-      then 
+        slst = connectsStr(rest);
+      then
         slst;
-  
+
   end matchcontinue;
 end connectsStr;
 
@@ -4105,28 +4105,28 @@ public function cmtListToString
   output String outStr;
 algorithm
   outStr := matchcontinue(inCmtLst)
-    local 
-      SCode.Comment c; 
+    local
+      SCode.Comment c;
       list<SCode.Comment> rest;
       String str;
-      
+
     case ({}) then "";
-    
+
     case ({c})
       equation
         str = dumpCommentOptionStr(SOME(c));
       then
         str;
-    
+
     case (c::rest)
       equation
         str = dumpCommentOptionStr(SOME(c));
         str = str +& " " +& cmtListToString(rest);
       then
         str;
-    
+
     case (_) then "";
-  
+
   end matchcontinue;
 end cmtListToString;
 

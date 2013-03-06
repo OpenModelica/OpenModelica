@@ -2,7 +2,7 @@
 
 IF(NOT IDL)
   FIND_PROGRAM(IDL idl DOC "Location of the idl executable"
-               PATHS ENV OMDEV 
+               PATHS ENV OMDEV
                PATH_SUFFIXES bin bin/mico)
   MESSAGE(STATUS "-- idl is " ${IDL})
 ENDIF(NOT IDL)
@@ -22,12 +22,12 @@ INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
 # custom command for idl
 SET(IDL_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.cc ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.h)
 ADD_CUSTOM_COMMAND(OUTPUT ${IDL_OUTPUT}
-                   COMMAND ${IDL} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl  												  
+                   COMMAND ${IDL} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                    COMMENT "Generate omc_communication")
 
 # target fuer OM_OUTPUT
-ADD_CUSTOM_TARGET(omc_communication ALL DEPENDS ${IDL_OUTPUT})	
+ADD_CUSTOM_TARGET(omc_communication ALL DEPENDS ${IDL_OUTPUT})
 
 # Quellen und Header
 SET(CORBASRC ${IDL_OUTPUT} omc_communication_impl.cpp corbaimpl.cpp)
@@ -39,9 +39,9 @@ SET(OBJ ${SRC} ${CPPSRC})
 IF(WIN32)
   SET(platform_libs optimized mico2313 debug mico2313d)
 ELSE(WIN32)
-  SET(platform_libs mico2.3.13) 
-ENDIF(WIN32)		
-link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)	
+  SET(platform_libs mico2.3.13)
+ENDIF(WIN32)
+link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
 
 # Library runtime
 ADD_LIBRARY(runtime ${OBJ})

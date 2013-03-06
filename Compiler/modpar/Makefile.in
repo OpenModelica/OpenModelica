@@ -30,7 +30,7 @@ endif
 all: libmodpar.a install
 
 install: libmodparomc.a
-	cp libmodparomc.a $(builddir_lib)/omc	
+	cp libmodparomc.a $(builddir_lib)/omc
 
 libmodpar.a: $(OBJECTS)
 	ar -sr $@ $(OBJECTS)

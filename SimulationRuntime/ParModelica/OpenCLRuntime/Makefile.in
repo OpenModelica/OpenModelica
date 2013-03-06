@@ -9,7 +9,7 @@ DLLEXT=.so
 OPENLC_LIB= lOpenCL
 
 all: transfer
-	 
+
 transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_interface.h $(OPENMODELICA_INC)
 	$(COPY) omc_ocl_common_header.h $(OPENMODELICA_INC)

@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Kresimir Fresl Toon Knapen 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -19,15 +19,15 @@
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.h>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/numeric/bindings/traits/detail/symm_herm_traits.hpp>
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits/is_same.hpp>
-#endif 
+#endif
 
 #include <cassert>
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
@@ -35,60 +35,60 @@ namespace boost { namespace numeric { namespace bindings {
     //
     // system of linear equations A * X = B
     // with A symmetric or Hermitian positive definite matrix
-    // stored in packed format 
+    // stored in packed format
     //
     /////////////////////////////////////////////////////////////////////
 
     /*
-     * ppsv() computes the solution to a system of linear equations 
-     * A * X = B, where A is an N-by-N symmetric or Hermitian positive 
-     * definite matrix stored in packed format and X and B are N-by-NRHS 
+     * ppsv() computes the solution to a system of linear equations
+     * A * X = B, where A is an N-by-N symmetric or Hermitian positive
+     * definite matrix stored in packed format and X and B are N-by-NRHS
      * matrices.
      *
      * The Cholesky decomposition is used to factor A as
-     *   A = U^T * U or A = U^H * U,  if UPLO = 'U', 
+     *   A = U^T * U or A = U^H * U,  if UPLO = 'U',
      *   A = L * L^T or A = L * L^H,  if UPLO = 'L',
      * where U is an upper triangular matrix and L is a lower triangular
      * matrix. The factored form of A is then used to solve the system of
      * equations A * X = B.
-     * 
-     * Only upper or lower triangle of the symmetric matrix A is stored,  
-     * packed columnwise in a linear array AP. 
+     *
+     * Only upper or lower triangle of the symmetric matrix A is stored,
+     * packed columnwise in a linear array AP.
      */
 
     namespace detail {
 
-      inline 
+      inline
       void ppsv (char const uplo, int const n, int const nrhs,
-                 float* ap, float* b, int const ldb, int* info) 
+                 float* ap, float* b, int const ldb, int* info)
       {
         LAPACK_SPPSV (&uplo, &n, &nrhs, ap, b, &ldb, info);
       }
 
-      inline 
+      inline
       void ppsv (char const uplo, int const n, int const nrhs,
-                 double* ap, double* b, int const ldb, int* info) 
+                 double* ap, double* b, int const ldb, int* info)
       {
         LAPACK_DPPSV (&uplo, &n, &nrhs, ap, b, &ldb, info);
       }
 
-      inline 
+      inline
       void ppsv (char const uplo, int const n, int const nrhs,
-                 traits::complex_f* ap, traits::complex_f* b, int const ldb, 
-                 int* info) 
+                 traits::complex_f* ap, traits::complex_f* b, int const ldb,
+                 int* info)
       {
-        LAPACK_CPPSV (&uplo, &n, &nrhs, 
-                      traits::complex_ptr (ap), 
+        LAPACK_CPPSV (&uplo, &n, &nrhs,
+                      traits::complex_ptr (ap),
                       traits::complex_ptr (b), &ldb, info);
       }
 
-      inline 
+      inline
       void ppsv (char const uplo, int const n, int const nrhs,
-                 traits::complex_d* ap, traits::complex_d* b, int const ldb, 
-                 int* info) 
+                 traits::complex_d* ap, traits::complex_d* b, int const ldb,
+                 int* info)
       {
-        LAPACK_ZPPSV (&uplo, &n, &nrhs, 
-                      traits::complex_ptr (ap), 
+        LAPACK_ZPPSV (&uplo, &n, &nrhs,
+                      traits::complex_ptr (ap),
                       traits::complex_ptr (b), &ldb, info);
       }
 
@@ -106,7 +106,7 @@ namespace boost { namespace numeric { namespace bindings {
         >::type
       >::value));
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrB>::matrix_structure, 
+        typename traits::matrix_traits<MatrB>::matrix_structure,
         traits::general_t
       >::value));
 #endif
@@ -116,47 +116,47 @@ namespace boost { namespace numeric { namespace bindings {
       assert (n == traits::matrix_size1 (b));
 
       char uplo = traits::matrix_uplo_tag (a);
-      int info; 
+      int info;
       detail::ppsv (uplo, n, traits::matrix_size2 (b),
-                    traits::matrix_storage (a), 
-                    traits::matrix_storage (b), 
-                    traits::leading_dimension (b), 
+                    traits::matrix_storage (a),
+                    traits::matrix_storage (b),
+                    traits::leading_dimension (b),
                     &info);
-      return info; 
+      return info;
     }
 
 
     /*
      * pptrf() computes the Cholesky factorization of a symmetric
-     * or Hermitian positive definite matrix A in packed storage. 
+     * or Hermitian positive definite matrix A in packed storage.
      * The factorization has the form
-     *   A = U^T * U or A = U^H * U,  if UPLO = 'U', 
+     *   A = U^T * U or A = U^H * U,  if UPLO = 'U',
      *   A = L * L^T or A = L * L^H,  if UPLO = 'L',
      * where U is an upper triangular matrix and L is lower triangular.
      */
 
     namespace detail {
 
-      inline 
+      inline
       void pptrf (char const uplo, int const n, float* ap, int* info) {
         LAPACK_SPPTRF (&uplo, &n, ap, info);
       }
 
-      inline 
+      inline
       void pptrf (char const uplo, int const n, double* ap, int* info) {
         LAPACK_DPPTRF (&uplo, &n, ap, info);
       }
 
-      inline 
-      void pptrf (char const uplo, int const n, 
-                  traits::complex_f* ap, int* info) 
+      inline
+      void pptrf (char const uplo, int const n,
+                  traits::complex_f* ap, int* info)
       {
         LAPACK_CPPTRF (&uplo, &n, traits::complex_ptr (ap), info);
       }
 
-      inline 
-      void pptrf (char const uplo, int const n, 
-                  traits::complex_d* ap, int* info) 
+      inline
+      void pptrf (char const uplo, int const n,
+                  traits::complex_d* ap, int* info)
       {
         LAPACK_ZPPTRF (&uplo, &n, traits::complex_ptr (ap), info);
       }
@@ -179,51 +179,51 @@ namespace boost { namespace numeric { namespace bindings {
       int const n = traits::matrix_size1 (a);
       assert (n == traits::matrix_size2 (a));
       char uplo = traits::matrix_uplo_tag (a);
-      int info; 
+      int info;
       detail::pptrf (uplo, n, traits::matrix_storage (a), &info);
-      return info; 
+      return info;
     }
 
 
     /*
-     * pptrs() solves a system of linear equations A*X = B with 
-     * a symmetric or Hermitian positive definite matrix A in packed 
+     * pptrs() solves a system of linear equations A*X = B with
+     * a symmetric or Hermitian positive definite matrix A in packed
      * storage using the Cholesky factorization computed by pptrf().
      */
 
     namespace detail {
 
-      inline 
+      inline
       void pptrs (char const uplo, int const n, int const nrhs,
-                  float const* ap, float* b, int const ldb, int* info) 
+                  float const* ap, float* b, int const ldb, int* info)
       {
         LAPACK_SPPTRS (&uplo, &n, &nrhs, ap, b, &ldb, info);
       }
 
-      inline 
+      inline
       void pptrs (char const uplo, int const n, int const nrhs,
-                  double const* ap, double* b, int const ldb, int* info) 
+                  double const* ap, double* b, int const ldb, int* info)
       {
         LAPACK_DPPTRS (&uplo, &n, &nrhs, ap, b, &ldb, info);
       }
 
-      inline 
+      inline
       void pptrs (char const uplo, int const n, int const nrhs,
-                  traits::complex_f const* ap, 
-                  traits::complex_f* b, int const ldb, int* info) 
+                  traits::complex_f const* ap,
+                  traits::complex_f* b, int const ldb, int* info)
       {
-        LAPACK_CPPTRS (&uplo, &n, &nrhs, 
-                       traits::complex_ptr (ap), 
+        LAPACK_CPPTRS (&uplo, &n, &nrhs,
+                       traits::complex_ptr (ap),
                        traits::complex_ptr (b), &ldb, info);
       }
 
-      inline 
+      inline
       void pptrs (char const uplo, int const n, int const nrhs,
-                  traits::complex_d const* ap, 
-                  traits::complex_d* b, int const ldb, int* info) 
+                  traits::complex_d const* ap,
+                  traits::complex_d* b, int const ldb, int* info)
       {
-        LAPACK_ZPPTRS (&uplo, &n, &nrhs, 
-                       traits::complex_ptr (ap), 
+        LAPACK_ZPPTRS (&uplo, &n, &nrhs,
+                       traits::complex_ptr (ap),
                        traits::complex_ptr (b), &ldb, info);
       }
 
@@ -241,7 +241,7 @@ namespace boost { namespace numeric { namespace bindings {
         >::type
       >::value));
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrB>::matrix_structure, 
+        typename traits::matrix_traits<MatrB>::matrix_structure,
         traits::general_t
       >::value));
 #endif
@@ -249,19 +249,19 @@ namespace boost { namespace numeric { namespace bindings {
       int const n = traits::matrix_size1 (a);
       assert (n == traits::matrix_size2 (a));
       assert (n == traits::matrix_size1 (b));
-      
+
       char uplo = traits::matrix_uplo_tag (a);
-      int info; 
+      int info;
       detail::pptrs (uplo, n, traits::matrix_size2 (b),
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
-                     traits::matrix_storage (a), 
+                     traits::matrix_storage (a),
 #else
-                     traits::matrix_storage_const (a), 
-#endif 
-                     traits::matrix_storage (b), 
-                     traits::leading_dimension (b), 
+                     traits::matrix_storage_const (a),
+#endif
+                     traits::matrix_storage (b),
+                     traits::leading_dimension (b),
                      &info);
-      return info; 
+      return info;
     }
 
 
@@ -270,29 +270,29 @@ namespace boost { namespace numeric { namespace bindings {
     *  matrix A using the Cholesky factorization A = U**T*U or A = L*L**T
     *  computed by pptrf().
     */
-    
+
     namespace detail {
 
-      inline 
+      inline
       void pptri (char const uplo, int const n, float* ap, int* info) {
         LAPACK_SPPTRI (&uplo, &n, ap, info);
       }
 
-      inline 
+      inline
       void pptri (char const uplo, int const n, double* ap, int* info) {
         LAPACK_DPPTRI (&uplo, &n, ap, info);
       }
 
-      inline 
-      void pptri (char const uplo, int const n, 
-                  traits::complex_f* ap, int* info) 
+      inline
+      void pptri (char const uplo, int const n,
+                  traits::complex_f* ap, int* info)
       {
         LAPACK_CPPTRI (&uplo, &n, traits::complex_ptr (ap), info);
       }
 
-      inline 
-      void pptri (char const uplo, int const n, 
-                  traits::complex_d* ap, int* info) 
+      inline
+      void pptri (char const uplo, int const n,
+                  traits::complex_d* ap, int* info)
       {
         LAPACK_ZPPTRI(&uplo, &n, traits::complex_ptr (ap), info);
       }
@@ -315,9 +315,9 @@ namespace boost { namespace numeric { namespace bindings {
       int const n = traits::matrix_size1 (a);
       assert (n == traits::matrix_size2 (a));
       char uplo = traits::matrix_uplo_tag (a);
-      int info; 
+      int info;
       detail::pptri (uplo, n, traits::matrix_storage (a), &info);
-      return info; 
+      return info;
     }
 
 
@@ -325,4 +325,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 }}}
 
-#endif 
+#endif

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -540,7 +540,7 @@ algorithm
       list<DAE.Exp> exps;
       Integer conNo,conNo_1;
       list<DAE.Constraint> constrs;
-      
+
     case({},_) then ();
     case(DAE.CONSTRAINT_EXPS(exps)::constrs,conNo)
       equation
@@ -571,9 +571,9 @@ algorithm
     case (_,_)
       equation
         (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
-        dumpBltInvolvedEquations1(elst,offset);        
+        dumpBltInvolvedEquations1(elst,offset);
       then
-        ();                
+        ();
   end match;
 end dumpBltInvolvedEquations;
 
@@ -997,7 +997,7 @@ algorithm
         dumpStrOpenTag(DAE_OPEN);
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)));
         //Bucket size info is no longer present.
-        
+
         vars = List.fold(systs,getOrderedVars,{});
         dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
@@ -1371,7 +1371,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-      then ();        
+      then ();
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -1397,7 +1397,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
-      then ();         
+      then ();
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,addMMLCode)
       equation
         s1 = printExpStr(e1);
@@ -1406,7 +1406,7 @@ algorithm
         dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
-      then ();        
+      then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1495,7 +1495,7 @@ algorithm
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
-      then ();        
+      then ();
     else
       equation
         res = "in XMLDump.dumpEquation - Unknown equation";
@@ -2147,8 +2147,8 @@ protected function dumpIncidenceMatrix2 "
 Help function to dumpMatrix
 "
   input list<Integer> row;
-  input tuple<Integer,Integer> inTpl; 
-  output tuple<Integer,Integer> outTpl; 
+  input tuple<Integer,Integer> inTpl;
+  output tuple<Integer,Integer> outTpl;
 protected
   Integer offset,c;
 algorithm
@@ -2193,7 +2193,7 @@ algorithm
   s := intString(e);
   dumpStrOpenTag(MathMLVariable);
   Print.printBuf(s);
-  dumpStrCloseTag(MathMLVariable); 
+  dumpStrCloseTag(MathMLVariable);
 end dumpMatrixIntegerRow;
 
 public function dumpKind "
@@ -3001,7 +3001,7 @@ algorithm
         str = stringAppend(s2, ")");
       then
         str;
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) 
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))
       then VARTYPE_EXTERNALOBJECT;
   end match;
 end dumpTypeStr;
@@ -3145,7 +3145,7 @@ algorithm
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
         // uncomment because it is not correct implemented,crefIdxLstArr and strIdxLstArr
-        // are used in a wrong way 
+        // are used in a wrong way
         //dumpVarsAdds2(vars,crefIdxLstArr,strIdxLstArr,1,addMMLCode);
         dumpVars2(vars,1,addMMLCode);
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
@@ -3553,7 +3553,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-      then ();        
+      then ();
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -3561,7 +3561,7 @@ algorithm
         res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         Print.printBuf(res);
-        dumpStrCloseTag(ARRAY_OF_EQUATIONS);        
+        dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),indexS,true)
       equation
@@ -3583,7 +3583,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
-      then ();         
+      then ();
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -3591,8 +3591,8 @@ algorithm
         res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
         Print.printBuf(res);
-        dumpStrCloseTag(COMPLEX_EQUATION);        
-      then ();        
+        dumpStrCloseTag(COMPLEX_EQUATION);
+      then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3689,7 +3689,7 @@ algorithm
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
-      then (); 
+      then ();
   end match;
 end dumpResidual;
 

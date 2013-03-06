@@ -11,12 +11,12 @@ public:
   ~Sampler();
   virtual void init(Time t, unsigned int i);
   virtual void makeStep(Time t);
-  virtual void update(Time t); 
+  virtual void update(Time t);
 
 private:
   double step;
   double *old_dX;
-  double *old_q; 
+  double *old_q;
   double *old_alg;
 };
 

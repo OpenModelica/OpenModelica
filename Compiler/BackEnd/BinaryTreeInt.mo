@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,10 +28,10 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-  
+
 encapsulated package BinaryTreeInt
 " file:        BinaryTreeInt.mo
-  package:     BinaryTreeInt 
+  package:     BinaryTreeInt
   description: BinaryTreeInt comprises functions for BinaryTrees.
 
   RCS: $Id: BinaryTreeInt.mo 12896 2012-09-12 15:18:26Z jfrenkel $
@@ -88,7 +88,7 @@ protected function keyCmp
   input Key keyb;
   output Integer cmp;
 algorithm
-  cmp := Util.intSign(keya-keyb); 
+  cmp := Util.intSign(keya-keyb);
 end keyCmp;
 
 public function treeGet "function: treeGet
@@ -117,7 +117,7 @@ algorithm
   compResult := match (inBinTree,ikey)
     local
       Key key;
-      
+
     // found it
     case (TREENODE(value = SOME(TREEVALUE(key=key))),_)
       then keyCmp(key, ikey);
@@ -136,7 +136,7 @@ algorithm
       Value rval;
       BinTree right, left;
       Integer compResult;
-      
+
     // found it
     case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,0) then rval;
     // search right
@@ -163,14 +163,14 @@ algorithm
       Key key;
       list<Key> res;
       BinTree bt,bt_1,bt_2;
-    
+
     case (bt,{}) then bt;
-    
+
     case (bt,key::res)
       equation
         bt_1 = treeAdd(bt,key,0);
         bt_2 = treeAddList(bt_1,res);
-      then 
+      then
         bt_2;
   end match;
 end treeAddList;
@@ -180,7 +180,7 @@ public function treeAdd "function: treeAdd
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
   to get a unique ordering.
-  
+
   Actually, hashing is still important in order to speed up comparison of strings... So it was re-added in a
   good way, see function keyCompareNinjaSecretHashTricks"
   input BinTree inBinTree;
@@ -195,45 +195,45 @@ algorithm
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
       Option<TreeValue> optVal;
-    
+
     case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
-      then 
+      then
         TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
-    
+
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),_,_)
       equation
         0 = keyCmp(rkey,inKey);
       then
         TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),_,_)
       equation
         1 = keyCmp(rkey,inKey);
         t_1 = treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,left,SOME(t_1));
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),_,_)
       equation
         1 = keyCmp(rkey,inKey);
         right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,left,SOME(right_1));
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),_,_)
       equation
         -1 = keyCmp(rkey,inKey);
         t_1 = treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,SOME(t_1),right);
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),_,_)
       equation
         -1 = keyCmp(rkey,inKey);
         left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,SOME(left_1),right);
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTreeInt.treeAdd failed\n"});
@@ -258,10 +258,10 @@ algorithm
       Value rval;
       Option<TreeValue> optVal;
       Integer rhash;
-      
-    case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_) 
+
+    case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_)
       then bt;
-    
+
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_)
       equation
         0 = keyCmp(rkey, inKey);
@@ -269,19 +269,19 @@ algorithm
         optRight = treePruneEmptyNodes(right);
       then
         TREENODE(SOME(rightmost),optLeft,optRight);
-    
+
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_)
       equation
         0 = keyCmp(rkey, inKey);
       then
         left;
-    
+
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_)
       equation
         0 = keyCmp(rkey, inKey);
       then
         TREENODE(NONE(),NONE(),NONE());
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_)
       equation
         1 = keyCmp(rkey, inKey);
@@ -289,7 +289,7 @@ algorithm
         optTree = treePruneEmptyNodes(t);
       then
         TREENODE(optVal,optLeft,optTree);
-    
+
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_)
       equation
         -1 = keyCmp(rkey, inKey);
@@ -297,7 +297,7 @@ algorithm
         optTree = treePruneEmptyNodes(t);
       then
         TREENODE(optVal,optTree,optRight);
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
@@ -325,27 +325,27 @@ algorithm
       BinTree left,right,bt;
       Option<BinTree> optRight, optLeft;
       Option<TreeValue> optTreeVal;
-    
-    case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE())) 
+
+    case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE()))
       then (treeVal,TREENODE(NONE(),NONE(),NONE()));
-    
-    case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE())) 
+
+    case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE()))
       then (treeVal,left);
-    
+
     case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
       equation
         (value,right) = treeDeleteRightmostValue(right);
         optRight = treePruneEmptyNodes(right);
       then
         (value,TREENODE(optTreeVal,optLeft,optRight));
-    
+
     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
         failure((_,_) = treeDeleteRightmostValue(right));
         print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
       then
         (treeVal,TREENODE(NONE(),NONE(),NONE()));
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
@@ -357,7 +357,7 @@ end treeDeleteRightmostValue;
 protected function treePruneEmptyNodes "function: treePruneEmtpyNodes
   author: PA
   This function is a helper function to tree_delete
-  It is used to delete empty nodes of the BinTree 
+  It is used to delete empty nodes of the BinTree
   representation, that might be introduced when deleting nodes."
   input BinTree inBinTree;
   output Option<BinTree> outBinTreeOption;
@@ -381,9 +381,9 @@ algorithm
     local
       Value ld,rd,res;
       BinTree left,right;
-    
+
     case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
-    
+
     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
       equation
         ld = bintreeDepth(left);
@@ -391,13 +391,13 @@ algorithm
         res = intMax(ld, rd);
       then
         res + 1;
-    
+
     case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
       equation
         ld = bintreeDepth(left);
       then
         ld;
-    
+
     case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
         rd = bintreeDepth(right);
@@ -452,17 +452,17 @@ algorithm
       Key key;
       Value value;
       Option<BinTree> left,right;
-    
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst) 
+
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst)
       then (klst,vlst);
-    
+
     case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(right, klst, vlst);
       then
         ((key :: klst),(value :: vlst));
-    
+
     case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
@@ -486,9 +486,9 @@ algorithm
       list<Key> klst;
       list<Value> vlst;
       BinTree bt;
-    
+
     case (NONE(),klst,vlst) then (klst,vlst);
-    
+
     case (SOME(bt),klst,vlst)
       equation
         (klst,vlst) = bintreeToList2(bt, klst, vlst);

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,8 +31,8 @@
 
 encapsulated package InlineSolver
 " file:        InlineSolver.mo
-  package:     InlineSolver 
-  description: InlineSolver.mo contains everything needed to set up the 
+  package:     InlineSolver
+  description: InlineSolver.mo contains everything needed to set up the
                BackendDAE for the inline solver
 
   RCS: $Id$"
@@ -72,23 +72,23 @@ algorithm
   (outDAE, outInlineVars) := matchcontinue(inDAE)
     local
       BackendDAE.BackendDAE dae;
-      
+
     case _ equation /*do nothing */
       false = Flags.isSet(Flags.INLINE_SOLVER);
     then (NONE(), NONE());
-    
+
     case dae equation
       true = Flags.isSet(Flags.INLINE_SOLVER);
 
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: raw system");
 
-      /* dae -> algebraic system */      
+      /* dae -> algebraic system */
       (dae,vars) = dae_to_algSystem(dae);
-      
+
       /* output: algebraic system */
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: algebraic system");
     then (SOME(dae), SOME(vars));
-    
+
     else equation /* don't work */
       Error.addCompilerWarning("./Compiler/BackEnd/InlineSolver.mo: function generateDAE failed");
       Error.addCompilerWarning("inline solver can not be used.");
@@ -102,21 +102,21 @@ protected function dae_to_algSystem "function dae_to_algSystem
   Transformation dae in algebraic system"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output BackendDAE.Variables outInlineVars; 
+  output BackendDAE.Variables outInlineVars;
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.EqSystem timesystem;
   BackendDAE.Shared shared;
-  
+
   BackendDAE.Variables orderedVars, vars;
   BackendDAE.EquationArray orderedEqs;
-  
+
   /*need for new matching */
   list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
   tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.BackendDAE dae;
-  
+
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   ((systs,vars)) := List.fold(systs, eliminatedStatesDerivations,({},BackendVariable.emptyVars()));
@@ -129,12 +129,12 @@ algorithm
   pastOptModules := BackendDAEUtil.getPastOptModules(SOME({"constantLinearSystem", "simplifyTimeIndepFuncCalls", "removeSimpleEquations", "tearingSystem", "removeConstants"}));
   matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
   daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
-  
+
   // solve system
   dae := BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
   // simplify system
   (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
-  
+
   outInlineVars := BackendVariable.emptyVars();
 end dae_to_algSystem;
 
@@ -156,7 +156,7 @@ protected
   BackendDAE.EventInfo eventInfo;
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;  
+  BackendDAE.SymbolicJacobians symjacs;
 algorithm
    BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs) := inShared;
    knownVars := BackendVariable.mergeVariables(invars, knownVars);
@@ -168,7 +168,7 @@ end addKnowInitialValueForState;
 protected function timeEquation "function timeEquation
   author: vitalij"
   output BackendDAE.EqSystem outEqSystem;
-protected 
+protected
   BackendDAE.EqSystem eqSystem;
   BackendDAE.Equation eqn;
   BackendDAE.EquationArray eqns;
@@ -183,7 +183,7 @@ algorithm
   vars := BackendVariable.emptyVars();
   ty := DAE.T_REAL_DEFAULT;
   cr := DAE.CREF_IDENT("time", ty, {});
-  
+
   (_,var):= stringCrVar("$t0", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
   (_,var):= stringCrVar("$t1", cr, ty, {});
@@ -194,34 +194,34 @@ algorithm
   vars := BackendVariable.addVar(var, vars);
   (_,var):= stringCrVar("$t4", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
-  
-  t := DAE.CREF(cr,ty); 
+
+  t := DAE.CREF(cr,ty);
   t0 := ComponentReference.crefPrefixString("$t0", cr);
   t1 := ComponentReference.crefPrefixString("$t1", cr);
   t2 := ComponentReference.crefPrefixString("$t2", cr);
   t3 := ComponentReference.crefPrefixString("$t3", cr);
   t4 := ComponentReference.crefPrefixString("$t4", cr);
   dt := DAE.CREF(DAE.CREF_IDENT("$dt", ty, {}), ty);
-   
+
   eqn := BackendDAE.SOLVED_EQUATION(t0, t, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.1726731646460114281008537718766),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t1, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.50),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t2, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.8273268353539885718991462281234),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t3, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   rhs := Expression.expAdd(dt,t);
   eqn := BackendDAE.SOLVED_EQUATION(t4, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
 end timeEquation;
@@ -234,7 +234,7 @@ protected function eliminatedStatesDerivations "function eliminatedStatesDerivat
   input BackendDAE.EqSystem inEqSystem;
   input tuple<BackendDAE.EqSystems, BackendDAE.Variables> inTupel ;
   output tuple<BackendDAE.EqSystems, BackendDAE.Variables> outTupel;
-protected  
+protected
   BackendDAE.Variables orderedVars;
   BackendDAE.Variables vars, invars, outvars,inlinevars,inInlinevars;
   BackendDAE.EquationArray orderedEqs;
@@ -259,7 +259,7 @@ algorithm
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4","$t4_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
-  // change kind: state in known variable 
+  // change kind: state in known variable
   ((vars, eqns, outvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
   (eqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
@@ -308,7 +308,7 @@ algorithm
       cr = Expression.expCref(e1);
       eqn = BackendDAE.SOLVED_EQUATION(cr, e2, source, differentiated);
       then eqn;
-    else 
+    else
       then inEqn;
     end matchcontinue;
 end EqSolvedEq;
@@ -322,9 +322,9 @@ input DAE.Exp e1;
 output Boolean b;
 algorithm
   b := matchcontinue(e1)
-    case  DAE.CALL(path = Absyn.IDENT(name = "der")) 
+    case  DAE.CALL(path = Absyn.IDENT(name = "der"))
       then true;
-    else 
+    else
       then false;
     end matchcontinue;
 end isDerEq;
@@ -363,7 +363,7 @@ algorithm
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), (vars, i,preState,preDer))) equation
       cr = crefPrefixStringWithpopCref(preDer,cr); //der(x) for timepoint t0
     then ((DAE.CREF(cr, ty), (vars, i+1,preState, preDer)));
-      
+
     case ((DAE.CREF(DAE.CREF_IDENT("time", ty, {}), _), (vars, i,preState,preDer))) equation
        cr = DAE.CREF_IDENT("time", ty, {});
        cr = crefPrefixStringWithpopCref(preState,cr);
@@ -372,13 +372,13 @@ algorithm
       true = BackendVariable.isState(cr, vars);
       cr = ComponentReference.crefPrefixString(preState, cr); //x for timepoint t0
     then ((DAE.CREF(cr, ty), (vars, i+1, preState, preDer)));
-    
+
     else
     then inExp;
   end matchcontinue;
 end replaceDerStateExp;
 
-protected function crefPrefixStringWithpopCref "function crefPrefixStringWithpopCref 
+protected function crefPrefixStringWithpopCref "function crefPrefixStringWithpopCref
   author: vitalij"
   input String name;
   input DAE.ComponentRef in_cr;
@@ -404,57 +404,57 @@ algorithm
       //BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqn;
       DAE.Exp dt;
- 
+
     // state
     case((var0 as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
       var = BackendVariable.setVarKind(var0, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
-    
+
       (x0,var) = stringCrVar("$t0", cr, ty, arryDim); // knownVars
       vars0 = BackendVariable.addVar(var, vars0);
-      
+
       (x1,var) = stringCrVar("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (x2,var) = stringCrVar("$t2",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (x3,var) = stringCrVar("$t3",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (x4,var) = stringCrVar("$t4",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (derx0,var) = stringCrVar("$t0_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (derx1,var) = stringCrVar("$t1_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (derx2,var) = stringCrVar("$t2_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (derx3,var) = stringCrVar("$t3_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       (derx4,var) = stringCrVar("$t4_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      
+
       var = BackendVariable.setVarKind(var0, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
-      
+
       dt = DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-      
+
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4, dt, ty);
       eqns = BackendEquation.mergeEquationArray(eqn, eqns);
       eqns = BackendEquation.equationAdd(BackendDAE.SOLVED_EQUATION(cr, DAE.CREF(x4, ty), DAE.emptyElementSource, false), eqns);
     then ((var, (vars, eqns,vars0)));
-    
+
     // else
     case((var, (vars, eqns,vars0))) equation
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, eqns,vars0)));
-    
+
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/InlineSolver.mo: function replaceStates1_vars failed"});
     then fail();
@@ -476,19 +476,19 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   eqns := BackendEquation.emptyEqns();
-  
+
   f0 := DAE.CREF(derx0_, ty);
   f1 := DAE.CREF(derx1_, ty);
   f2 := DAE.CREF(derx2_, ty);
   f3 := DAE.CREF(derx3_, ty);
   f4 := DAE.CREF(derx4_, ty);
-  
+
   x0 := DAE.CREF(x0_, ty);
   x1 := DAE.CREF(x1_, ty);
   x2 := DAE.CREF(x2_, ty);
   x3 := DAE.CREF(x3_, ty);
   x4 := DAE.CREF(x4_, ty);
-  
+
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
     DAE.RCONST(0.3922348462484228573781445426331),  //(0)
     DAE.RCONST(0.6934764274975466670326692885405),  //(1)
@@ -497,12 +497,12 @@ algorithm
     DAE.RCONST(0.02142857142857142857142857142857), //-(4)
     DAE.RCONST(5.791287847477920003294023596864),   // +0,-1
     f0, f1, f2, f3, f4, x0, x1);
-  
+
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k3}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(Expression.expAdd(k2, k4),dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
       DAE.RCONST(0.08125000000000000000000000000000),  //(0)
       DAE.RCONST(0.6934764274975466670326692885405),  //(1)
@@ -511,12 +511,12 @@ algorithm
       DAE.RCONST(0.018750), //(4)
       DAE.RCONST(2.0),   // +0,-1
       f0, f1, f2, f3, f4, x0, x2);
-  
+
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k4}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(k3,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
       DAE.RCONST(0.0649080108944342854789983145097),  //(0)
       DAE.RCONST(0.3161826581932177779607790887147),  //(1)
@@ -525,12 +525,12 @@ algorithm
       DAE.RCONST(0.02142857142857142857142857142857), //-(4)
       DAE.RCONST(1.208712152522079996705976403136),   // +0,-1
       f0, f1, f2, f3, f4, x0, x3);
-  
+
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(k4,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
     DAE.RCONST(0.05000000000000000000000000000000),  //(0)
     DAE.RCONST(0.2722222222222222222222222222222),  //(1)
@@ -539,12 +539,12 @@ algorithm
     DAE.RCONST(0.05000000000000000000000000000000), //(4)
     DAE.RCONST(1.0),   // +0,-1
     f0, f1, f2, f3, f4, x0, x4);
-  
+
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3,k4}),dt));
   rhs := z1;
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
-  
+
 end stepLobatt;
 
 protected function LobattoTerms
@@ -556,9 +556,9 @@ protected function LobattoTerms
    k1 := Expression.expMul(a1, f1);
    k2 := Expression.expMul(a2, f2);
    k3 := Expression.expMul(a3, f3);
-   k4 := Expression.expMul(a4, f4); 
+   k4 := Expression.expMul(a4, f4);
    z0 := Expression.expMul(aa, x0);
-   z1 := Expression.expMul(aa, x1); 
+   z1 := Expression.expMul(aa, x1);
 end LobattoTerms;
 
 protected function stringCrVar "function stringCrVar

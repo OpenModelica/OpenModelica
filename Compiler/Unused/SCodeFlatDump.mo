@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -48,7 +48,7 @@ protected import Dump;
 protected import SCodeDump;
 
 public function outputFlatProgram
-  "to standard out" 
+  "to standard out"
   input SCodeFlat.FlatProgram inFlatProgram;
 algorithm
   _ := matchcontinue(inFlatProgram)
@@ -56,7 +56,7 @@ algorithm
       IOStream.IOStream ios;
 
     // handle empty
-    case ({}) then (); 
+    case ({}) then ();
 
     case (inFlatProgram)
       equation
@@ -65,7 +65,7 @@ algorithm
         IOStream.print(ios, IOStream.stdOutput);
       then
         ();
-    
+
     case (_)
       equation
         print("SCodeFlatDump.outputFlatProgram: printing of flattened program failed!\n");
@@ -87,12 +87,12 @@ algorithm
       String str;
 
     // handle empty
-    case ({}, inIOStream) then inIOStream; 
+    case ({}, inIOStream) then inIOStream;
 
     case (cp::rest, inIOStream)
       equation
         oIOStream = printCompPathToStream(listReverse(cp), inIOStream);
-        oIOStream = printFlatProgramToStream(rest, oIOStream); 
+        oIOStream = printFlatProgramToStream(rest, oIOStream);
       then
         oIOStream;
   end matchcontinue;
@@ -113,14 +113,14 @@ algorithm
       SCode.Element origin "the element from which the component originates";
       SCodeFlat.Kind kind "what kind of component it is";
       SCodeFlat.TypePath ty "the full type path for this component";
-    
+
     case (inCompPath, oIOStream)
       equation
         ty = getComponentTypePath(List.last(inCompPath));
-        str = stringDelimitList(List.map(inCompPath, getComponentName), "/"); 
+        str = stringDelimitList(List.map(inCompPath, getComponentName), "/");
         oIOStream = IOStream.appendList(oIOStream, {str, "\n    "});
         oIOStream = printTypePathToStream(listReverse(ty), oIOStream);
-        oIOStream = IOStream.append(oIOStream, "\n");        
+        oIOStream = IOStream.append(oIOStream, "\n");
       then
         oIOStream;
   end matchcontinue;
@@ -142,18 +142,18 @@ algorithm
       SCodeFlat.Kind kind "what kind of component it is";
       SCodeFlat.TypePath ty "the full type path for this component";
       SCode.Mod mod;
-    
+
     // handle empty
-    case ({}, inIOStream) then inIOStream; 
-    
+    case ({}, inIOStream) then inIOStream;
+
     // handle last
     case ({SCodeFlat.T(name = name, origin = origin, mod = mod, kind = kind)}, inIOStream)
       equation
         str = printElementStr(name, origin, mod);
         oIOStream = IOStream.appendList(inIOStream, {name, "[", str, "]"});
       then
-        oIOStream;    
-    
+        oIOStream;
+
     // handle rest
     case (SCodeFlat.T(name = name, origin = origin, mod = mod, kind = kind)::rest, inIOStream)
       equation
@@ -229,9 +229,9 @@ algorithm
                              condition = cond), inMod)
       equation
         s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
-        s2 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);    
+        s2 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
         s3 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
-        s4 = Dump.unparseComponentCondition(cond);  
+        s4 = Dump.unparseComponentCondition(cond);
         res = stringAppendList({s1, "|", s2, "|", s3, s4});
       then
         res;
@@ -241,7 +241,7 @@ algorithm
       equation
         true = stringEq(inName, SCodeFlat.derivedName);
         s1 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
-        s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod); 
+        s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
         res = stringAppendList({s1, "|", s2});
       then
         res;
@@ -256,9 +256,9 @@ algorithm
         res;
 
     // normal class
-    case (_, SCode.CLASS(prefixes = SCode.PREFIXES(vis, red, fin, io, rep), 
-                         encapsulatedPrefix = ep, 
-                         partialPrefix = pp, 
+    case (_, SCode.CLASS(prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
+                         encapsulatedPrefix = ep,
+                         partialPrefix = pp,
                          restriction = r), inMod)
       equation
         s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
@@ -275,25 +275,25 @@ algorithm
         s1 = visibilityStr(vis);
         s2 = Dump.unparseImportStr(imp);
         res = stringAppendList({s1, "|imp:", s2});
-      then 
+      then
         res;
-        
+
     // other?
     case (_, SCode.DEFINEUNIT(n, vis, _, _), _)
       equation
         s1 = visibilityStr(vis);
         res = stringAppendList({s1, "|", n});
-      then 
+      then
         res;
-        
+
     // other?
     case (_, inElement, _)
       equation
         s1 = SCodeDump.printElementStr(inElement);
         res = stringAppendList({"FAILED|", s1});
-      then 
+      then
         res;
-    
+
   end matchcontinue;
 end printElementStr;
 
@@ -307,7 +307,7 @@ algorithm
   end match;
 end finalStr;
 
-public function ioStr 
+public function ioStr
   input Absyn.InnerOuter inInnerOuter;
   output String outString;
 algorithm

@@ -13,7 +13,7 @@ template programExternalHeader(SCode.Program program)
   #ifdef __cplusplus
   }
   #endif
-  
+
   >>
   /* adrpo: leave a newline at the end of file to get rid of the C warnings */
 end programExternalHeader;
@@ -60,11 +60,11 @@ match elt
       let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
       let ctor=intAdd(3,r.index)
       /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
-      let fieldsDescription = 
-           match nElts 
+      let fieldsDescription =
+           match nElts
            case "0" then
              'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[1] = {"no fileds"};'
-           case _ then 
+           case _ then
              'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
       <<
       #ifdef ADD_METARECORD_DEFINTIONS

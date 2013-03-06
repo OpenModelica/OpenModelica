@@ -5,7 +5,7 @@ public class $function.name$ extends ModelicaFunction {
   public $function.name$ (SmartProxy proxy) {
     super("$myFQName(var = function.name)$", proxy);
   }
-  
+
   $if(rest(function.output))$
   public $function.generics$ ModelicaTuple call ($function.input:{$it.TypeName$ input__$it.varName$}; separator = ", "$) throws ParseException,ConnectException
   {

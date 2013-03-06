@@ -1,8 +1,8 @@
 //
-//  Copyright (C) 2002, 2003 Si-Lab b.v.b.a., Toon Knapen and Kresimir Fresl 
+//  Copyright (C) 2002, 2003 Si-Lab b.v.b.a., Toon Knapen and Kresimir Fresl
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
@@ -26,7 +26,7 @@
 
 #endif
 
-// Next we define macro's to convert our symbols to 
+// Next we define macro's to convert our symbols to
 // the current convention
 #if defined(BIND_FORTRAN_LOWERCASE_UNDERSCORE)
 #define FORTRAN_ID( id ) id##_

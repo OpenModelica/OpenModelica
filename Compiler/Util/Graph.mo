@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -46,7 +46,7 @@ protected import Util;
 
 public replaceable type NodeType subtypeof Any;
 public replaceable type ArgType subtypeof Any;
-  
+
 public function buildGraph
   "This function will build a graph given a list of nodes, an edge function, and
   an extra argument to the edge function. The edge function should generate a
@@ -63,16 +63,16 @@ public function buildGraph
     output list<NodeType> outEdges;
   end EdgeFunc;
 algorithm
-  outGraph := List.threadTuple(inNodes, 
+  outGraph := List.threadTuple(inNodes,
     List.map1(inNodes, inEdgeFunc, inEdgeArg));
 end buildGraph;
-  
+
 public function topologicalSort
   "This function will sort a graph topologically. It takes a graph represented
   by an adjacency list and a node equality function, and returns a list of the
   nodes ordered by dependencies (a node x is dependent on y if there is an edge
   from x to y). This function assumes that all edges in the graph are unique.
-  
+
   It is of course only possible to sort an acyclic graph topologically. If the
   graph contains cycles this function will return the nodes that it could sort
   as the first return value, and the remaining graph that contains cycles as the
@@ -92,7 +92,7 @@ protected
   list<tuple<NodeType, list<NodeType>>> start_nodes, rest_nodes;
 algorithm
   (rest_nodes, start_nodes) := List.splitOnTrue(inGraph, hasOutgoingEdges);
-  (outNodes, outRemainingGraph) := 
+  (outNodes, outRemainingGraph) :=
     topologicalSort2(start_nodes, rest_nodes, {}, inEqualFunc);
 end topologicalSort;
 
@@ -114,7 +114,7 @@ protected function topologicalSort2
     output Boolean isEqual;
   end EqualFunc;
 algorithm
-  (outNodes, outRemainingGraph) := 
+  (outNodes, outRemainingGraph) :=
   match(inStartNodes, inRestNodes, inAccumNodes, inEqualFunc)
     local
       NodeType node1;
@@ -140,7 +140,7 @@ algorithm
         // Remove the first start node from the graph.
         rest_rest = List.map2(rest_rest, removeEdge, node1, inEqualFunc);
         // Fetch any new nodes that has no dependencies.
-        (rest_rest, new_start) = 
+        (rest_rest, new_start) =
           List.splitOnTrue(rest_rest, hasOutgoingEdges);
         // Append those nodes to the list of start nodes.
         rest_start = List.appendNoCopy(rest_start, new_start);
@@ -153,7 +153,7 @@ algorithm
 
   end match;
 end topologicalSort2;
-    
+
 protected function hasOutgoingEdges
   "Returns true if the given node has no outgoing edges, otherwise false."
   input tuple<NodeType, list<NodeType>> inNode;
@@ -164,7 +164,7 @@ algorithm
     else then true;
   end match;
 end hasOutgoingEdges;
-  
+
 protected function removeEdge
   "Takes a node with it's edges and a node that's been removed from the graph,
   and removes the edge if it exists in the edge list."
@@ -491,11 +491,11 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
       then fail();
-  end matchcontinue; 
+  end matchcontinue;
 end transposeGraph;
 
 protected function insertNodetoGraph
-" This function takes nodes and a vertex and inserts 
+" This function takes nodes and a vertex and inserts
   the vertex to list of nodes of the graph.
 "
   input NodeType inNode;
@@ -503,7 +503,7 @@ protected function insertNodetoGraph
   input EqualFunc inEqualFunc;
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   output list<tuple<NodeType, list<NodeType>>> outGraph;
- 
+
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -530,24 +530,24 @@ algorithm
       false = inEqualFunc(node, inNode);
       restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
     then (node,rest)::restGraph;
-  end matchcontinue; 
+  end matchcontinue;
 end insertNodetoGraph;
 
 public function allReachableNodes
 "This function searches for a starting node in M
- all reachabel nodes. Call with start node in M." 
+ all reachabel nodes. Call with start node in M."
   input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
   output list<NodeType> reachableNodes;
-  
+
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
     input NodeType inNode2;
     output Boolean isEqual;
-  end EqualFunc;  
-  
+  end EqualFunc;
+
 algorithm
   reachableNodes := matchcontinue(intmpstorage,inGraph,inEqualFunc)
     local
@@ -574,16 +574,16 @@ algorithm
         L = listAppend(L,{node});
         failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
         reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
-      then reachableNodes;        
+      then reachableNodes;
         else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
-      then fail();        
+      then fail();
   end matchcontinue;
 end allReachableNodes;
 
 
-public function partialDistance2color 
+public function partialDistance2color
 "A greedy partial distance-2 coloring algorithm.
 procedure G REEDY PARTIAL D2C OLORING(Gb = (V1 ,V2 , E))
 Let u1 , u2 , . . ., un be a given ordering of V2 , where n = |V2 |
@@ -603,14 +603,14 @@ color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
   input EqualFunc inEqualFunc;
   input PrintFunc inPrintFunc;
   output array<Integer> outColored;
-  
+
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
     input NodeType inNode2;
     output Boolean isEqual;
-  end EqualFunc;  
-  
+  end EqualFunc;
+
   partial function PrintFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input list<NodeType> inNode1;
@@ -624,7 +624,7 @@ algorithm
     array<Option<list<NodeType>>> forbiddenColor;
     array<Integer> colored;
     Integer color, index;
-    case ({},_,_,_,_,inColored, _, _) then inColored;          
+    case ({},_,_,_,_,inColored, _, _) then inColored;
     case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
       equation
         index = arrayLength(inColored) - listLength(rest);
@@ -650,7 +650,7 @@ protected function addForbiddenColors
   input EqualFunc inEqualFunc;
   input PrintFunc inPrintFunc;
   output array<Option<list<NodeType>>> outForbiddenColor;
-  
+
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -662,8 +662,8 @@ protected function addForbiddenColors
     "Given two nodes, returns true if they are equal, otherwise false."
     input list<NodeType> inNode1;
     input String inName;
-  end PrintFunc; 
-    
+  end PrintFunc;
+
 algorithm
   outForbiddenColor := matchcontinue(inNode, inNodes, inColored, inForbiddenColor, inGraph, inEqualFunc, inPrintFunc)
   local
@@ -688,7 +688,7 @@ algorithm
       else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
-      then fail();        
+      then fail();
   end matchcontinue;
 end addForbiddenColors;
 
@@ -717,7 +717,7 @@ protected function arrayUpdateListAppend
   input array<Option<list<NodeType>>> inArray;
   input NodeType inNode;
   replaceable type NodeType subtypeof Any;
-protected 
+protected
   list<NodeType> arrayElem;
 algorithm
   _ := matchcontinue(inIndex, inArray, inNode)
@@ -730,8 +730,8 @@ algorithm
       else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
-      then fail();     
-  end matchcontinue;      
+      then fail();
+  end matchcontinue;
 end arrayUpdateListAppend;
 
 protected function arrayElemetGtZero
@@ -750,7 +750,7 @@ protected function arrayFindMinColorIndex
   input EqualFunc inEqualFunc;
   input PrintFunc inPrintFunc;
   output Integer outColor;
-  
+
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -761,7 +761,7 @@ protected function arrayFindMinColorIndex
     "Given two nodes, returns true if they are equal, otherwise false."
     input list<NodeType> inNode1;
     input String inName;
-  end PrintFunc;   
+  end PrintFunc;
 algorithm
   outColor := matchcontinue(inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
   local
@@ -771,7 +771,7 @@ algorithm
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
         //print("Found color on index : " +& intString(inIndex) +& "\n");
-      then inIndex;        
+      then inIndex;
     case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
@@ -786,7 +786,7 @@ algorithm
         _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
         //print("Not found color on index : " +& intString(inIndex) +& "\n");
         index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
-      then index;        
+      then index;
   end matchcontinue;
 end arrayFindMinColorIndex;
 
@@ -794,7 +794,7 @@ public function printGraph
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input NodeToString inPrintFunc;
   output String outString;
-  
+
   partial function NodeToString
     input NodeType inNode;
     output String outString;
@@ -826,9 +826,9 @@ end printNode;
 
 /* Functions for Integer graphs */
 
-public function printGraphInt 
+public function printGraphInt
 "This function prints an Integer Graph.
- Useful for debuging." 
+ Useful for debuging."
   input list<tuple<Integer, list<Integer>>> inGraph;
 algorithm
  _ := match(inGraph)
@@ -850,9 +850,9 @@ algorithm
   end match;
 end printGraphInt;
 
-public function printNodesInt 
+public function printNodesInt
 "This function prints an Integer List Nodes.
- Useful for debuging." 
+ Useful for debuging."
   input list<Integer> inListNodes;
   input String inName;
 algorithm
@@ -877,7 +877,7 @@ end printNodesInt;
 public function allReachableNodesInt
 "This function searches for a starting node in M
  all reachabel nodes. Call with start nodes in M. The
- result is collected in L." 
+ result is collected in L."
   input tuple<list<Integer>,list<Integer>>  intmpstorage;//(M,L)
   input array<tuple<Integer, list<Integer>>> inGraph;
   input Integer inMaxGraphNode;
@@ -899,21 +899,21 @@ algorithm
         edges = List.filter1OnTrue(edges, List.notMember, L);
         M = List.union(M,edges);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
-      then reachableNodes;       
+      then reachableNodes;
     case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
       equation
         L = List.union(L,{node});
         true = intGe(node,inMaxGraphNode);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
-      then reachableNodes;             
+      then reachableNodes;
         else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
-      then fail();        
+      then fail();
   end matchcontinue;
 end allReachableNodesInt;
 
-public function partialDistance2colorInt 
+public function partialDistance2colorInt
 "A greedy partial distance-2 coloring algorithm.
 procedure GREEDY PARTIAL D2COLORING(Gb = (V1 ,V2 , E))
 Let u1 , u2 , . . ., un be a given ordering of V2 , where n = |V2 |
@@ -939,13 +939,13 @@ algorithm
     array<Integer> colored;
     Integer color;
     list<tuple<Integer, list<Integer>>> restGraph;
-    case ({},_,_,_,_) then inColored;          
+    case ({},_,_,_,_) then inColored;
     case (((node,nodes))::restGraph, _, _, _, _)
       equation
         forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
         color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
         colored = arrayUpdate(inColored, node, color);
-    then 
+    then
       partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
     else
       equation
@@ -960,7 +960,7 @@ protected function addForbiddenColorsInt
   input array<Integer> inColored;
   input array<Option<list<Integer>>> inForbiddenColor;
   input array<tuple<Integer, list<Integer>>> inGraph;
-  output array<Option<list<Integer>>> outForbiddenColor;   
+  output array<Option<list<Integer>>> outForbiddenColor;
 algorithm
   outForbiddenColor := matchcontinue(inNode, inNodes, inColored, inForbiddenColor, inGraph)
   local
@@ -971,8 +971,8 @@ algorithm
     case (_, node::rest, _, _, _)
       equation
         ((_,indexes)) = arrayGet(inGraph,node);
-        updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode); 
-      then 
+        updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode);
+      then
         addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
 /*    case (_, node::rest, _, _, _)
       equation
@@ -982,7 +982,7 @@ algorithm
 */    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
-      then fail();        
+      then fail();
   end matchcontinue;
 end addForbiddenColorsInt;
 
@@ -991,7 +991,7 @@ protected function updateForbiddenColorArrayInt
   input array<Integer> inColored;
   input array<Option<list<Integer>>> inForbiddenColor;
   input Integer inNode;
-algorithm 
+algorithm
   _ := matchcontinue(inIndexes, inColored, inForbiddenColor, inNode)
   local
     Integer index;
@@ -1015,15 +1015,15 @@ algorithm
       equation
         print("index : " +& intString(index) +& "\n");
         print("inColored : " +& intString(arrayLength(inColored)) +& "\n");
-      then fail();      
-*/  end matchcontinue;      
+      then fail();
+*/  end matchcontinue;
 end updateForbiddenColorArrayInt;
 
 protected function arrayFindMinColorIndexInt
   input array<Option<list<Integer>>> inForbiddenColor;
   input Integer inNode;
   input Integer inIndex;
-  output Integer outColor;   
+  output Integer outColor;
 algorithm
   outColor := matchcontinue(inForbiddenColor, inNode, inIndex)
   local
@@ -1033,7 +1033,7 @@ algorithm
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
         //print("Found color on index : " +& intString(inIndex) +& "\n");
-      then inIndex;        
+      then inIndex;
     case (_, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
@@ -1047,8 +1047,8 @@ algorithm
         //inPrintFunc(nodes,"FobiddenColors:" );
         _ = List.getMemberOnTrue(inNode, nodes, intEq);
         //print("Not found color on index : " +& intString(inIndex) +& "\n");
-      then 
-        arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);   
+      then
+        arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
   end matchcontinue;
 end arrayFindMinColorIndexInt;
 

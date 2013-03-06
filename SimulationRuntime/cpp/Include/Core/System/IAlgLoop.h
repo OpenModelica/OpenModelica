@@ -9,13 +9,13 @@
 Abstract interface class for algebraic loop in equations in open modelica.
 
 \date     October, 1st, 2008
-\author   
+\author
 
 */
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-class IAlgLoop 
+class IAlgLoop
 {
 public:
     /// Enumeration with modelica data types
@@ -28,7 +28,7 @@ public:
         ALL        =    0x00000007,
     };
 
-    
+
 
     virtual ~IAlgLoop()    {};
 
@@ -41,7 +41,7 @@ public:
     /// (Re-) initialize the system of equations
     virtual void init() = 0;
 
-    /// Provide variables of given data type 
+    /// Provide variables of given data type
     virtual void giveVars(double* lambda) = 0;
     /*
     virtual void giveVars(int* lambda) = 0;
@@ -69,7 +69,7 @@ public:
     void addAcrossEdge(IObject& new_obj);
 
     /// Fübt das übergebene Objekt als Through-Kante hinzu
-    void addThroughEdge(IObject& new_obj); 
+    void addThroughEdge(IObject& new_obj);
 
     /// Definiert die übergebene Größe als Schnittgröße
     void addConstraint(double& constr_value);

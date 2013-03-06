@@ -21,22 +21,22 @@
 
 // included to implicitly convert a vector to an nx1 matrix
 // so that it is compatible with lapack binding
-#include <boost/numeric/bindings/traits/ublas_vector2.hpp> 
+#include <boost/numeric/bindings/traits/ublas_vector2.hpp>
 
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
 #endif
 
 namespace boost { namespace numeric { namespace bindings {
-	
+
 	namespace lapack {
 
 		////////////////////////////////////////////////////////////////////////
 		//
 		// Linear Least Squares of an underdetermined or overdetermined matrix
-		// 
+		//
 		///////////////////////////////////////////////////////////////////////
 
 		/*	gels - uses the LQ or QR factorization to solve an overdetermined
@@ -44,8 +44,8 @@ namespace boost { namespace numeric { namespace bindings {
 		 *		   assumed.
 		 *
 		 *	The linear least squares system is defined by A*x=b.  A is the m-by-n
-		 *	coefficients matrix and b is the m-by-nrhs matrix.  Several 
-		 *	right hand side vectors b and solution vectors x can be handled in 
+		 *	coefficients matrix and b is the m-by-nrhs matrix.  Several
+		 *	right hand side vectors b and solution vectors x can be handled in
 		 *	a single call; they are stored as the columns of the m-by-nrhs right
 		 *	hand side matrix B and the n-by-nrh solution matrix x.
 		 *
@@ -94,9 +94,9 @@ namespace boost { namespace numeric { namespace bindings {
 							 traits::complex_f *b, const int ldb, traits::complex_f *work,
 							 const int lwork, int *info)
 			{
-				LAPACK_CGELS(&trans, &m, &n, &nrhs, 
-							 traits::complex_ptr(a), &lda, 
-							 traits::complex_ptr(b), &ldb, 
+				LAPACK_CGELS(&trans, &m, &n, &nrhs,
+							 traits::complex_ptr(a), &lda,
+							 traits::complex_ptr(b), &ldb,
 							 traits::complex_ptr(work), &lwork, info);
 			}
 
@@ -105,12 +105,12 @@ namespace boost { namespace numeric { namespace bindings {
 							 traits::complex_d *b, const int ldb, traits::complex_d *work,
 							 const int lwork, int *info)
 			{
-				LAPACK_ZGELS(&trans, &m, &n, &nrhs, 
-							 traits::complex_ptr(a), &lda, 
-							 traits::complex_ptr(b), &ldb, 
+				LAPACK_ZGELS(&trans, &m, &n, &nrhs,
+							 traits::complex_ptr(a), &lda,
+							 traits::complex_ptr(b), &ldb,
 							 traits::complex_ptr(work), &lwork, info);
 			}
-		
+
 			// generic function that calls more detailed lapack function
 			template <typename MatrA, typename VecB, typename Work>
 			int gels(const char trans, MatrA& A, VecB& b, Work& work)
@@ -138,7 +138,7 @@ namespace boost { namespace numeric { namespace bindings {
 							 traits::leading_dimension(b),
 							 traits::vector_storage(work),
 							 traits::vector_size(work),
-							 &info);	
+							 &info);
 
 				return info;
 			}

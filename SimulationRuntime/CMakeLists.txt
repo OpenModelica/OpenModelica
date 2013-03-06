@@ -1,5 +1,5 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
-# CMakefile for compilation of OMC 
+# CMakefile for compilation of OMC
 
 # Subdirectorys
 ADD_SUBDIRECTORY(c)

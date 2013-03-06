@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -21,13 +21,13 @@
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 // #include <boost/numeric/bindings/traits/std_vector.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
@@ -35,10 +35,10 @@ namespace boost { namespace numeric { namespace bindings {
     //
     // Apply the orthogonal transformation abtained by geqrf() to
     // a general matrix.
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      * ormqr() overwrites the general M by N matrix C with
      *
      *                         SIDE = 'L'     SIDE = 'R'
@@ -61,16 +61,16 @@ namespace boost { namespace numeric { namespace bindings {
      *                     as C.
      *                     We must have that vector_size( work ) >= matrix_size2( c )
      *                     if SIDE=='L' otherwise  vector_size( work ) >= matrix_size1( c )
-     */ 
+     */
 
     namespace detail {
 
-      inline 
+      inline
       void ormqr (char const side, char const trans, int const m, int const n,
 		 int const k, const float* a, int const lda,
 		 const float* tau, float* c,
 		 int const ldc, float* work, int const lwork,
-                 int& info) 
+                 int& info)
       {
         assert ( trans=='N' || trans=='T' );
         LAPACK_SORMQR (&side, &trans, &m, &n, &k,
@@ -81,12 +81,12 @@ namespace boost { namespace numeric { namespace bindings {
 		      &info);
       }
 
-      inline 
+      inline
       void ormqr (char const side, char const trans, int const m, int const n,
 		 int const k, const double* a, int const lda,
 		 const double* tau, double* c,
 		 int const ldc, double* work, int const lwork,
-                 int& info) 
+                 int& info)
       {
         assert ( trans=='N' || trans=='T' );
         LAPACK_DORMQR (&side, &trans, &m, &n, &k,
@@ -97,12 +97,12 @@ namespace boost { namespace numeric { namespace bindings {
 		      &info);
       }
 
-      inline 
+      inline
       void ormqr (char const side, char const trans, int const m, int const n,
 		 int const k, const traits::complex_f* a, int const lda,
 		 const traits::complex_f* tau, traits::complex_f* c,
 		 int const ldc, traits::complex_f* work, int const lwork,
-                 int& info) 
+                 int& info)
       {
         assert ( trans=='N' || trans=='C' );
         LAPACK_CUNMQR (&side, &trans, &m, &n, &k,
@@ -113,12 +113,12 @@ namespace boost { namespace numeric { namespace bindings {
 		      &info);
       }
 
-      inline 
+      inline
       void ormqr (char const side, char const trans, int const m, int const n,
 		 int const k, const traits::complex_d* a, int const lda,
 		 const traits::complex_d* tau, traits::complex_d* c,
 		 int const ldc, traits::complex_d* work, int const lwork,
-                 int& info) 
+                 int& info)
       {
         assert ( trans=='N' || trans=='C' );
         LAPACK_ZUNMQR (&side, &trans, &m, &n, &k,
@@ -135,16 +135,16 @@ namespace boost { namespace numeric { namespace bindings {
       int ormqr (char side, char trans, const A& a, const Tau& tau, C& c,
                  Work& work) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
         BOOST_STATIC_ASSERT((boost::is_same<
-          typename traits::matrix_traits<A>::matrix_structure, 
+          typename traits::matrix_traits<A>::matrix_structure,
           traits::general_t
-        >::value)); 
+        >::value));
         BOOST_STATIC_ASSERT((boost::is_same<
-          typename traits::matrix_traits<C>::matrix_structure, 
+          typename traits::matrix_traits<C>::matrix_structure,
           traits::general_t
-        >::value)); 
-#endif 
+        >::value));
+#endif
 
         int const m = traits::matrix_size1 (c);
         int const n = traits::matrix_size2 (c);
@@ -158,22 +158,22 @@ namespace boost { namespace numeric { namespace bindings {
         assert ( (side=='L' ?
                   m == traits::matrix_size1 (a) :
                   n == traits::matrix_size1 (a) ) );
-        assert (traits::matrix_size2 (a)==k); 
+        assert (traits::matrix_size2 (a)==k);
 
         assert ( (side=='L' ?
                   lwork >= n : lwork >= m ) );
 
-        int info; 
+        int info;
         ormqr (side, trans, m, n, k,
-                       traits::matrix_storage (a), 
+                       traits::matrix_storage (a),
                        traits::leading_dimension (a),
-                       traits::vector_storage (tau),  
-                       traits::matrix_storage (c), 
+                       traits::vector_storage (tau),
+                       traits::matrix_storage (c),
                        traits::leading_dimension (c),
                        traits::vector_storage (work),
                        lwork,
                        info);
-        return info; 
+        return info;
       }
     } // namespace detail
 
@@ -223,4 +223,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 }}}
 
-#endif 
+#endif

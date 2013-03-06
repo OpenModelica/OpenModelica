@@ -1,5 +1,5 @@
 //
-//  Copyright (C) 2002, 2003 Si-Lab b.v.b.a and Toon Knapen 
+//  Copyright (C) 2002, 2003 Si-Lab b.v.b.a and Toon Knapen
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -11,7 +11,7 @@
 
 /*
  * const-correct prototypes for BLAS functions
- * 
+ *
  */
 
 #include <boost/numeric/bindings/blas/blas_names.h>
@@ -36,8 +36,8 @@ extern "C"
   double BLAS_DDOT (const int *n, const double *x, const int *incx, const double *y, const int *incy);
 
   void   BLAS_CDOTU(fcomplex_t* ret, const int *n, const fcomplex_t *x, const int *incx, const fcomplex_t *y, const int *incy);
-  void   BLAS_ZDOTU(dcomplex_t* ret, const int *n, const dcomplex_t *x, const int *incx, const dcomplex_t *y, const int *incy); 
-  
+  void   BLAS_ZDOTU(dcomplex_t* ret, const int *n, const dcomplex_t *x, const int *incx, const dcomplex_t *y, const int *incy);
+
   void   BLAS_CDOTC(fcomplex_t* ret, const int *n, const fcomplex_t *x, const int *incx, const fcomplex_t *y, const int *incy);
   void   BLAS_ZDOTC(dcomplex_t* ret, const int *n, const dcomplex_t *x, const int *incx, const dcomplex_t *y, const int *incy);
 

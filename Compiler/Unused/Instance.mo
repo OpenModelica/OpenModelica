@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -55,10 +55,10 @@ uniontype TypeKind
     Integer ty "points to the reference node which should be resolved to the instance of derived type, class extends; for a local class points to itself";
     Integer cc "points to the reference node which should be resolved to the instance of the class constraint, if there is no constraint points to itself";
   end EXCD;
-  
+
   record ENCD "enumeration definition (enumeration class definition)"
   end ENCD;
-  
+
   record OVCD "overloaded"
   end OVCD;
 
@@ -66,7 +66,7 @@ uniontype TypeKind
   end PDCD;
 end TypeKind;
 
-uniontype Import "classification of imports, ed=element definition" 
+uniontype Import "classification of imports, ed=element definition"
   record UIM "unqualified package import"
     Integer iIDed "points to the reference node which should be resolved to a type or component definition";
   end UIM;
@@ -77,27 +77,27 @@ uniontype Import "classification of imports, ed=element definition"
 end Import;
 
 uniontype Kind
-  
+
   record TI "type instance, i.e. local class, class extends or derived"
     TypeKind tk "the type kind";
   end TI;
-  
+
   record CI "component instance"
     Integer iIDty "points to the reference node which should be resolved to the instance of the component type";
     Integer iIDcc "points to the reference node which should be resolved to the class constraint, if there is no constraint points to itself";
   end CI;
-      
+
   record EI "extends instance"
     Integer iIDty "points to the reference node which should be resolved to the instance of the extends type";
   end EI;
-  
+
   record II "import instance"
     Import ir;
   end II;
-  
+
   record UI "define unit instance"
   end UI;
-  
+
 end Kind;
 
 uniontype Status

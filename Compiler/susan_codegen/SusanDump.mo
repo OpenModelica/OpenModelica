@@ -1,8 +1,8 @@
 package SusanDump
-  
+
 public import Tpl;
 
-//public 
+//public
 function __templPackage
   input Tpl.Text inText;
   input Tpl.TemplPackage in__tp;
@@ -13,7 +13,7 @@ algorithm
       Text ts;
     case (ts,
       TplAbsyn.TEMPL_PACKAGE(
-         name = __name, 
+         name = __name,
          extendsList = __extendsList,
          imports = __imports,
          templateDefs = __templateDefs) )
@@ -45,7 +45,7 @@ function s0__templPackage
   output Tpl.Text outText;
 algorithm
   outText := matchcontinue (inText, in__it)
-    case (ts, __it) 
+    case (ts, __it)
       local
         Text ts;
         String __it;

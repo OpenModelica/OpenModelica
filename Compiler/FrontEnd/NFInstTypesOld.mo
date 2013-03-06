@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -92,7 +92,7 @@ public uniontype Class
 end Class;
 
 public uniontype Function
-  
+
   record FUNCTION
     "A function has inputs, output and locals without binding.
      These are resolved to statements in the algorithm section."
@@ -102,7 +102,7 @@ public uniontype Function
     list<Element> locals;
     list<Statement> algorithms "TODO: Add default bindings";
   end FUNCTION;
-  
+
   record RECORD_CONSTRUCTOR
     "A record constructor has inputs and locals (with bindings)?"
     Absyn.Path path;
@@ -111,7 +111,7 @@ public uniontype Function
     list<Element> locals "componets of the original record which CAN NOT be modified (protected, final, constant WITH binding)";
     list<Statement> algorithms "TODO: Add default bindings";
   end RECORD_CONSTRUCTOR;
-    
+
 end Function;
 
 public uniontype Binding
@@ -159,7 +159,7 @@ public uniontype Component
     Binding binding;
     Absyn.Info info;
   end TYPED_COMPONENT;
-    
+
   record CONDITIONAL_COMPONENT
     Absyn.Path name;
     DAE.Exp condition;
@@ -169,7 +169,7 @@ public uniontype Component
     NFSCodeEnv.Env env;
     Prefix prefix;
     Absyn.Info info;
-  end CONDITIONAL_COMPONENT; 
+  end CONDITIONAL_COMPONENT;
 
   record DELETED_COMPONENT
     Absyn.Path name;

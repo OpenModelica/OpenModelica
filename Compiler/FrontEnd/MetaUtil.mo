@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -134,17 +134,17 @@ algorithm
       list<SCode.Element> rest;
       list<String> slst;
       String n;
-    
+
     case({}) then {};
-    
+
     case(SCode.CLASS(name = n)::rest)
       equation
         slst = getListOfStrings(rest);
-      then 
+      then
         n::slst;
-    
+
     case(_) then fail();
-    
+
   end match;
 end getListOfStrings;
 
@@ -171,12 +171,12 @@ algorithm
   outBoolean := matchcontinue(cl,re)
     local
       SCode.Restriction re1,re2;
-    
+
     case(SCode.CLASS(restriction = re1),re2)
       equation
         equality(re1 = re2);
       then true;
-    
+
     case(_,_) then false;
   end matchcontinue;
 end classHasRestriction;
@@ -193,19 +193,19 @@ algorithm
       list<list<Absyn.Class>> metaClasses;
       Absyn.Within w;
       Absyn.TimeStamp ts;
-    
+
     case _
       equation
         false = Config.acceptMetaModelicaGrammar();
       then program;
-    
+
     case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
       equation
         metaClasses = List.map(classes, createMetaClasses);
         metaClassesFlat = List.flatten(metaClasses);
         classes = List.map(classes, createMetaClassesFromPackage);
         classes = listAppend(classes, metaClassesFlat);
-      then 
+      then
         Absyn.PROGRAM(classes,w,ts);
   end matchcontinue;
 end createMetaClassesInProgram;
@@ -228,13 +228,13 @@ algorithm
       Option<String>  comment;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
-    
+
     case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
         classParts = List.map(classParts,createMetaClassesFromClassParts);
         body = Absyn.PARTS(typeVars,classAttrs,classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
-    
+
     case _ then cl;
   end matchcontinue;
 end createMetaClassesFromPackage;
@@ -247,19 +247,19 @@ algorithm
     local
       list<Absyn.ElementItem> els;
       list<list<Absyn.ElementItem>> lels;
-    
+
     case (Absyn.PUBLIC(els))
       equation
         lels = List.map(els, createMetaClassesFromElementItem);
         els = List.flatten(lels);
       then Absyn.PUBLIC(els);
-    
+
     case (Absyn.PROTECTED(els))
       equation
         lels = List.map(els, createMetaClassesFromElementItem);
         els = List.flatten(lels);
       then Absyn.PROTECTED(els);
-    
+
     case _ then classPart;
   end matchcontinue;
 end createMetaClassesFromClassParts;
@@ -324,7 +324,7 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef d;
       Absyn.Info file_info;
-    
+
     case(c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
          body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
       equation
@@ -348,13 +348,13 @@ algorithm
       list<Absyn.ElementItem> rest;
       Absyn.Class c;
       list<Absyn.Class> clst;
-    
+
     case({}) then {};
-    
+
     case(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))::rest)
       equation
         clst = convertElementsToClasses(rest);
-      then 
+      then
         c::clst;
 
     /* Strip annotation, comment */
@@ -546,13 +546,13 @@ algorithm
       list<DAE.Type> types;
       list<DAE.FuncArg> fargs;
       list<DAE.Var> fields;
-    
+
     case (DAE.T_METARECORD(fields = fields))
       equation
         names = List.map(fields, Types.getVarName);
         types = List.map(fields, Types.getVarType);
       then (names,types);
-    
+
     case (DAE.T_FUNCTION(funcArg = fargs,funcResultType = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))
       equation
         names = List.map(fargs, Util.tuple41);
@@ -575,7 +575,7 @@ algorithm
       Absyn.Path p;
       Boolean b;
       DAE.TypeSource ts;
-    
+
     case (ClassInf.META_UNIONTYPE(p),_,SCode.PARTS(elementLst = els))
       equation
         p = Absyn.FULLYQUALIFIED(p);
@@ -583,9 +583,9 @@ algorithm
         paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
         b = listLength(paths)==1;
         ts = Types.mkTypeSource(SOME(p));
-      then 
+      then
         SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
-    
+
     case (_,_,_) then t;
   end matchcontinue;
 end fixUniontype;

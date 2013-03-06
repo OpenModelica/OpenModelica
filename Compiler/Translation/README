@@ -23,5 +23,5 @@ make
 omc +locale=sv_SE.UTF-8 ???.{mo,mos}
 Or omit +locale if your environment is already set
 
-Note: The files are not yet installed automatically because they do not 
+Note: The files are not yet installed automatically because they do not
 contain translations.

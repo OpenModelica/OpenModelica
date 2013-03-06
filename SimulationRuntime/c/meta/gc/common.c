@@ -37,7 +37,7 @@
 /***************************** SETTINGS ********************************/
 /***********************************************************************/
 /***********************************************************************/
-mmc_GC_settings_type mmc_GC_settings_default = 
+mmc_GC_settings_type mmc_GC_settings_default =
 {
   MMC_GC_GENERATIONAL,
   MMC_YOUNG_SIZE,
@@ -45,7 +45,7 @@ mmc_GC_settings_type mmc_GC_settings_default =
   MMC_GC_PAGES_SIZE_INITIAL,
   MMC_GC_PAGE_SIZE,
   MMC_GC_FREE_SLOTS_SIZE_INITIAL,
-  MMC_GC_NUMBER_OF_MARK_THREADS, 
+  MMC_GC_NUMBER_OF_MARK_THREADS,
   MMC_GC_NUMBER_OF_SWEEP_THREADS,
   MMC_GC_ROOTS_SIZE_INITIAL,
   MMC_GC_ROOTS_MARKS_SIZE_INITIAL,
@@ -64,7 +64,7 @@ mmc_GC_settings_type settings_create(
   size_t    number_of_sweep_threads)
 {
   mmc_GC_settings_type settings = {0};
-  
+
   settings.number_of_pages = number_of_pages;
   settings.pages_size = pages_size;
   settings.page_size = page_size;
@@ -101,16 +101,16 @@ mmc_GC_free_list_type* list_create(size_t default_free_slots_size)
 {
   mmc_GC_free_list_type* list = (mmc_GC_free_list_type*)malloc(sizeof(mmc_GC_free_list_type));
   size_t i = 0;
-  
+
   if (!list)
   {
     fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_page_type));
     fflush(NULL);
     assert(list != 0);
-  }  
-  
+  }
+
   list->szLarge.start = (mmc_GC_free_slot_type*)malloc(sizeof(mmc_GC_free_slot_type)*default_free_slots_size);
-  
+
   if (!list->szLarge.start)
   {
     fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_free_slot_type)*default_free_slots_size);
@@ -128,7 +128,7 @@ mmc_GC_free_list_type* list_create(size_t default_free_slots_size)
   for (i = 0; i < MMC_GC_FREE_SIZES; i++)
   {
     list->szSmall[i].start = (modelica_metatype*)malloc(sizeof(modelica_metatype)*default_free_slots_size);
-  
+
     if (!list->szSmall[i].start)
     {
       fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(modelica_metatype)*default_free_slots_size);
@@ -191,7 +191,7 @@ mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p
     slot->start[ slot->current++ ].size = size;
 
     assert(slot->current < slot->limit);
-    
+
     MMC_TAG_AS_FREE_OBJECT(p, size - 1);
   }
 
@@ -209,7 +209,7 @@ size_t list_length(mmc_GC_free_list_type* free)
   }
   /* add the large size list */
   sz += free->szLarge.current;
-  
+
   return sz;
 }
 
@@ -228,7 +228,7 @@ size_t list_size(mmc_GC_free_list_type* free)
   {
     sz += (free->szLarge.start[i].size) * MMC_SIZE_META;
   }
-  
+
   return sz;
 }
 
@@ -268,7 +268,7 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
     }
     */
   }
-  
+
   /* if size is large or we had no free slots above, add it to the large list! */
   {
     size_t i = 0;
@@ -417,7 +417,7 @@ mmc_GC_pages_type pages_create(size_t default_pages_size, size_t default_page_si
         (long unsigned int)sz);
     fflush(NULL);
     assert(pages.start != 0);
-  }  
+  }
   /* the current index points to the start at the begining! */
   pages.current = 0;
   /* the limit points to the end of the pages array */
@@ -434,9 +434,9 @@ mmc_GC_pages_type pages_create(size_t default_pages_size, size_t default_page_si
 mmc_GC_page_type page_create(size_t default_page_size, size_t default_free_slots_size)
 {
   mmc_GC_page_type page = {0, 0, 0, 0};
-  
+
   page.start = (modelica_metatype)malloc(default_page_size);
-  
+
   if (!page.start)
   {
     fprintf(stderr, "not enough memory (%lu) to allocate the pages!\n",
@@ -444,12 +444,12 @@ mmc_GC_page_type page_create(size_t default_page_size, size_t default_free_slots
     fflush(NULL);
     assert(page.start != 0);
   }
-  
+
   page.size = default_page_size;
   page.free = list_create(default_free_slots_size);
   page = list_populate(page);
   page.maxFree = default_page_size;
-  
+
   /* update the total sizes! */
   mmc_GC_state->mas.totalPageSize += default_page_size;
   mmc_GC_state->mas.totalFreeSize += default_page_size;
@@ -468,7 +468,7 @@ mmc_GC_pages_type pages_add(mmc_GC_pages_type pages, mmc_GC_page_type page)
     pages = pages_increase(pages, mmc_GC_state->settings.pages_size);
   }
   pages.start [ pages.current++ ] = page;
-  
+
   return pages;
 }
 
@@ -518,10 +518,10 @@ mmc_GC_pages_type pages_decrease(mmc_GC_pages_type pages, size_t default_pages_s
   {
     return pages;
   }
-  
+
   /* reallocate! */
   pages.start = (mmc_GC_page_type*)realloc(pages.start, sz * sizeof(mmc_GC_page_type));
-  
+
   if (!pages.start)
   {
     fprintf(stderr, "not enough memory (%lu) to re-allocate the pages array!\n",
@@ -547,13 +547,13 @@ mmc_GC_page_type list_populate(mmc_GC_page_type page)
     page.free = list_add(page.free, p, page.size/MMC_SIZE_META);
     return page;
   }
-  
-  /* 
+
+  /*
    * if page size is bigger than the max object size
    * we need to generate several free slots!
    */
   while (sz < page.size)
-  {    
+  {
     page.free = list_add(page.free, p, MMC_MAX_SLOTS);
     p = (void*)(((char*)p) + MMC_MAX_OBJECT_SIZE_BYTES);
     sz = sz + MMC_MAX_OBJECT_SIZE_BYTES;
@@ -569,13 +569,13 @@ size_t pages_list_length(mmc_GC_pages_type pages)
 {
   size_t i = 0, sz = 0;
   mmc_GC_page_type page = {0};
-  
+
   for (i = 0; i < mmc_GC_state->mas.pages.current; i++)
   {
     page = mmc_GC_state->mas.pages.start[i];
     sz += list_length(page.free);
   }
-  
+
   return sz;
 }
 
@@ -583,13 +583,13 @@ size_t pages_list_size(mmc_GC_pages_type pages)
 {
   size_t i = 0, sz = 0;
   mmc_GC_page_type page = {0};
-  
+
   for (i = 0; i < mmc_GC_state->mas.pages.current; i++)
   {
     page = mmc_GC_state->mas.pages.start[i];
     sz += list_size(page.free);
   }
-  
+
   return sz;
 }
 
@@ -597,11 +597,11 @@ int is_in_free(modelica_metatype p)
 {
   size_t i = 0, j = 0, k = 0;
   mmc_GC_page_type page = {0};
-  
+
   for (k = 0; k < mmc_GC_state->mas.pages.current; k++)
   {
     page = mmc_GC_state->mas.pages.start[k];
-    
+
     /* search in small */
     for (i = 0; i < MMC_GC_FREE_SIZES; i++)
     {
@@ -613,7 +613,7 @@ int is_in_free(modelica_metatype p)
         }
       }
     }
-    
+
     /* search in big */
     for (i = 0; i < page.free->szLarge.current; i++)
     {
@@ -623,7 +623,7 @@ int is_in_free(modelica_metatype p)
       }
     }
   }
-  
+
   return 0;
 }
 
@@ -640,7 +640,7 @@ int is_inside_page(modelica_metatype p)
       return 1;
     }
   }
-  
+
   return 0;
 }
 

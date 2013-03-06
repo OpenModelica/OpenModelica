@@ -261,7 +261,7 @@ package Absyn
       Ident name;
     end IDENT;
 
-    record FULLYQUALIFIED 
+    record FULLYQUALIFIED
       Path path;
     end FULLYQUALIFIED;
   end Path;
@@ -285,11 +285,11 @@ package Absyn
     end NAMEDARG;
   end NamedArg;
 
-  uniontype InnerOuter 
+  uniontype InnerOuter
     record INNER end INNER;
     record OUTER end OUTER;
     record INNER_OUTER end INNER_OUTER;
-    record NOT_INNER_OUTER end NOT_INNER_OUTER;    
+    record NOT_INNER_OUTER end NOT_INNER_OUTER;
   end InnerOuter;
 
   uniontype Direction
@@ -321,7 +321,7 @@ end Dump;
 
 package Tpl
   function addTemplateError
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 

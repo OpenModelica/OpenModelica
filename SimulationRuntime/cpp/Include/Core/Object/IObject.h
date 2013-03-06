@@ -1,7 +1,7 @@
 // ObjectBase.h: Schnittstelle für die Klasse IObject.
 //
 //////////////////////////////////////////////////////////////////////
- 
+
 #pragma once
 
 
@@ -42,7 +42,7 @@ public:
     /// (Re-)Initialisiert das Objekt und schließt den Aufbau ab
     virtual void init()    = 0;
 
-    
+
 };
 
 

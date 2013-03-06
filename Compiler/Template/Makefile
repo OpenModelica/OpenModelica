@@ -1,4 +1,4 @@
-.PHONY : all 
+.PHONY : all
 
 OMC = OPENMODELICAHOME=`pwd`/../../build/ ../../build/bin/omc +d=failtrace
 
@@ -7,7 +7,7 @@ all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 CodegenAdevs.mo : CodegenAdevs.tpl SimCodeTV.mo
 	@echo " ** CodegenAdevs template compilation ** "
@@ -17,8 +17,8 @@ CodegenAdevs.mo : CodegenAdevs.tpl SimCodeTV.mo
 CodegenUtil.mo : CodegenUtil.tpl SimCodeTV.mo
 	@echo " ** CodegenUtil template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
-	
+	@echo " "
+
 CodegenC.mo : CodegenC.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** CodegenC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
@@ -28,7 +28,7 @@ CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 	@echo " ** CodegenCSharp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-		
+
 CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
@@ -38,7 +38,7 @@ DAEDumpTpl.mo : DAEDumpTpl.tpl DAEDumpTV.mo
 	@echo " ** DAEDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-		
+
 NFInstDumpTpl.mo : NFInstDumpTpl.tpl NFInstDumpTV.mo
 	@echo " ** NFInstDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
@@ -47,44 +47,44 @@ NFInstDumpTpl.mo : NFInstDumpTpl.tpl NFInstDumpTV.mo
 Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	@echo " ** Unparsing template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
-CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl 
+CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo
 	@echo " ** CodegenCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-	
+
 ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	@echo " ** ExpressionDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 SCodeDumpTpl.mo : SCodeDumpTpl.tpl SCodeTV.mo AbsynDumpTpl.tpl
 	@echo " ** SCodeDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "
 
 CodegenXML.mo : CodegenXML.tpl SimCodeTV.mo
 	@echo " ** CodegenXML template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
-	
+	@echo " "
+
 CodegenJava.mo : CodegenJava.tpl SimCodeTV.mo
 	@echo " ** CodegenJava template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "	
+	@echo " "

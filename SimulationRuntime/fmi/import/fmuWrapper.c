@@ -792,7 +792,7 @@ void printIntVariables(const int * var, int n, const char* varName){
  */
 #ifdef _TEST_FMI
 int main(int argc, char *argv[])
-{   
+{
   void* fmi = instantiateFMIFun(FMU_BINARIES_Win32_DLL);
   double dt = 0.02;
   double preTimer, endTime = 0.08;

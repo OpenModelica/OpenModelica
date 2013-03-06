@@ -43,7 +43,7 @@ template <class Interface, class Info = std::string,
           class TypeInfo = default_type_info>
 class adaptable_factory {
 public:
-  /** \brief Default constructor. 
+  /** \brief Default constructor.
     * On creation, this adaptable_factory is empty.
     */
   adaptable_factory() : functor_func_(0), func_(0), check_func_(0) {}
@@ -119,8 +119,8 @@ public:
     * to the constructor for type D.
     * It takes as arguments Info about each parameter
     * in the constructor.
-    * Example: 
-    * \code 
+    * Example:
+    * \code
     * adaptable_factory<Base, int, int> f;
     * f.set<Derived>();
     * \endcode

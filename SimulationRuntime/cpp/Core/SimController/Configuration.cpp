@@ -16,14 +16,14 @@ Configuration::Configuration(fs::path libraries_path,fs::path config_path)
   std::map<std::string, factory<ISettingsFactory> >& factories(types.get());
 
   iter = factories.find("SettingsFactory");
-  if (iter ==factories.end()) 
+  if (iter ==factories.end())
   {
     throw std::invalid_argument("No such settings library");
   }
   _settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create());
   tie(_global_settings,_solver_settings) =_settings_factory->create(libraries_path,config_path);
   _simcontroller_settings = boost::shared_ptr<ISimControllerSettings>(new ISimControllerSettings(_global_settings.get()) );
- 
+
 }
 IGlobalSettings* Configuration::getGlobalSettings()
 {
@@ -48,7 +48,7 @@ Configuration::~Configuration(void)
 boost::shared_ptr<IDAESolver> Configuration::createSolver(IMixedSystem* system)
 {
   type_map types;
-  
+
   string solver_dll;
   string solver = _global_settings->getSelectedSolver().append("Solver");
   if(_global_settings->getSelectedSolver().compare("Euler")==0)
@@ -61,7 +61,7 @@ boost::shared_ptr<IDAESolver> Configuration::createSolver(IMixedSystem* system)
     solver_dll.assign(CVODE_LIB);
   else
     throw std::invalid_argument("Selected Solver is not available");
-  
+
   fs::path solver_name(solver_dll);
   fs::path solver_path = _libraries_path;
   solver_path/=solver_name;
@@ -71,7 +71,7 @@ boost::shared_ptr<IDAESolver> Configuration::createSolver(IMixedSystem* system)
   std::map<std::string, factory<IDAESolver,IMixedSystem*, ISolverSettings*> >::iterator iter;
   std::map<std::string, factory<IDAESolver,IMixedSystem*, ISolverSettings*> >& factories(types.get());
   iter = factories.find(solver);
-  if (iter ==factories.end()) 
+  if (iter ==factories.end())
   {
     throw std::invalid_argument("No such Solver");
   }

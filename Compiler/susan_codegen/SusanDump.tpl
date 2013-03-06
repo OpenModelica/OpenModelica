@@ -1,11 +1,11 @@
 
-pathIdent(PathIdent path) <>= 
+pathIdent(PathIdent path) <>=
   case IDENT      then ident
   case PATH_IDENT then ident & '.' & pathIdent(path) //"<ident>.<pathIdent(path)>"
 
 
-templPackage(TemplPackage) <>= 
-    case TEMPL_PACKAGE then 
+templPackage(TemplPackage) <>=
+    case TEMPL_PACKAGE then
     <<
 spackage <pathIdent(name)>
 <astDefs of AST_DEF : <<
@@ -19,7 +19,7 @@ end <pathIdent(name)>;
     >>
 
 
-astDefType(Ident id, TypeInfo info) <>=    
+astDefType(Ident id, TypeInfo info) <>=
   match info
     case TI_UNION_TYPE then
     <<
@@ -39,9 +39,9 @@ end <id>;
     case TI_CONST_TYPE then "constant <typeSig(constType)> <id>;"
 
 
-recordTypeDef(Ident id, TypedIdents fields) <>= 
+recordTypeDef(Ident id, TypedIdents fields) <>=
 <<
-record <id> <if fields then 
+record <id> <if fields then
   <<<\n>
   <fields of (fid, ts) : "<typeSig(ts)> <fid>;<\n>">
   >>
@@ -51,13 +51,13 @@ record <id> <if fields then
 
 
 
-templateDef(TemplateDef, Ident templId) <>= 
+templateDef(TemplateDef, Ident templId) <>=
     case STR_TOKEN_DEF then
-case TEMPLATE_DEF then 
+case TEMPLATE_DEF then
 {
-<name>(<signature : 
+<name>(<signature :
         case (tsign, arg) then "<typeSignature(tsign)> <arg>"
-        ', ' 
+        ', '
        > <lesc><resc>= <expression(exp, lesc, resc)>
 }
 case CONST_DEF then "<name> = <constant(value)>"
@@ -75,24 +75,24 @@ $>>
 
 pathIdent(PathIdent) <>= "<path : {<it>.}><ident>"
 
-constant(Constant) <>= 
+constant(Constant) <>=
 {<
   case STRING_CONST then escapeStringConst(value)
-  case QUOTED_CONST then 
+  case QUOTED_CONST then
 {
 %<lesc>
 <it : it \n; empty=''; noindent /* noindent only to ensure semantics of % */>
 <resc>%"
 }
 case INTEGER_CONST then value  // auto intString(value)
-case BOOL_CONST(value = true)  then 'true' 
+case BOOL_CONST(value = true)  then 'true'
 case BOOL_CONST(value = false) then 'false'
-case EMPTY_LIST    then '[]' 
+case EMPTY_LIST    then '[]'
 >
 }
 
 
-escapeStringConst(String internalValue) <>= 
+escapeStringConst(String internalValue) <>=
 {<
 stringListStringChar(internalValue) :
   case \\  then %(\\)%
@@ -119,19 +119,19 @@ case FN_CALL     then functionCall(fnCall, lesc, resc)
 templItem(TemplItem, String lesc, String resc, String templQuote) <>=
 {<
 case NEW_LINE    then \n
-case STRING      then escapeTemplString(string, lesc, resc, templQuote)    
+case STRING      then escapeTemplString(string, lesc, resc, templQuote)
 case INDENTATION then strIndent
 case LIST_MAP    then
 {
 <lesc><listMapExp(listMapExp)
-      > <match separator 
+      > <match separator
          case SOME(sep) then expression(sep, lesc, resc)
         ><escapedExpOptions(options, lesc, resc)><resc>
 }
 case ESCAPED_EXP     then "<lesc><templateExp(exp)> <escapedExpOptions(options, lesc, resc)><resc>"
 case NON_TEMPL_CALL  then "<lesc><functionCall(fnCall, lesc, resc)><resc>"
-case STREAM_CREATE   then "<lesc># <name> = <expression(exp, lesc, resc)> #<resc>" 
-case STREAM_ADD      then "<lesc># <name> += <expression(exp, lesc, resc)> #<resc>" 
+case STREAM_CREATE   then "<lesc># <name> = <expression(exp, lesc, resc)> #<resc>"
+case STREAM_ADD      then "<lesc># <name> += <expression(exp, lesc, resc)> #<resc>"
 >}
 
 // we cannot test equality against a parameter --> strict(er) model-view separation
@@ -143,26 +143,26 @@ escapeTemplString(String string, String lesc, String resc, String templQuote) <>
 stringListStringChar(string) :
   case \\   then %(\\)%
   case '<'  then {<if lesc = '<' then %(\<)% else it>}
-  case '>'  then {<if lesc = '<' then %(\>)% else it>} 
-  case '$'  then {<if lesc = '$' then %(\$)% else it>} 
-  case '}'  then {<if templQuote = '{' then %(\})% else it>} 
-  case '"'  then {<if templQuote = '"' then %(\")% else it>} 
+  case '>'  then {<if lesc = '<' then %(\>)% else it>}
+  case '$'  then {<if lesc = '$' then %(\$)% else it>}
+  case '}'  then {<if templQuote = '{' then %(\})% else it>}
+  case '"'  then {<if templQuote = '"' then %(\")% else it>}
   case _    then it
 >}
 
 escapedExpOptions(list<tuple<String, Expression>> options, String lesc, String resc) <>=
-{< 
+{<
 options :
   case (optName, value) then "; <optName> = <expression(value, lesc, resc)>"
->} 
+>}
 
-functionCall(FunctionCall, String lesc, String resc) <>= // quite redundant, could be made only a record ... for future ? 
+functionCall(FunctionCall, String lesc, String resc) <>= // quite redundant, could be made only a record ... for future ?
 {<
 case FUNCTION_CALL then "<pathIdent(name)>(<args of exp: expression(exp, lesc, resc)', '>)"
 >}
 
 
-listMapExp(ListMapExp, String lesc, String resc) <>= 
+listMapExp(ListMapExp, String lesc, String resc) <>=
 {<
 case LIST_MAP_EXP then
 {
@@ -185,18 +185,18 @@ case LIST_MAP_VALUE   then listMapExp(listMapExp)
 case LIST_CONSTR      then "[ <scalars : expression(it, lesc, resc)' ,'> ]"
 case LIST_CONCAT      then "[ <lists   : listValue(it, lesc, resc)' ,'> ]"
 >}
- 
+
 
 templateExp(TemplateExp, String lesc, String resc) <>=
 {<
-case EXPRESSION then expression(exp, lesc, resc) 
+case EXPRESSION then expression(exp, lesc, resc)
 case cond as CONDITION then
 {
 if <match rhsValue
     case NONE then "<if cond.isNot then 'not '><expression(lhsExp, lesc, resc)>"
     case SOME(const) then {<expression(lhsExp, lesc, resc)
-                           > <if cond.isNot 
-                              then '<>' 
+                           > <if cond.isNot
+                              then '<>'
                               else '=='
                              > <expression(rhsExp, lesc, resc)>}
    >
@@ -210,14 +210,14 @@ case MATCH then
 <match matchExp
  case BOUND_VALUE(boundValue = PATH_IDENT(ident = 'it', path = [])) then ''
  case exp then "match <expression(exp, lesc, resc)><\n>"
-><matchCases : 
+><matchCases :
   case (me, exp) then "case <matchingExp(me)> then <expression(exp, lesc, resc)>"
   \n
  >
 }
 >}
 
- 
+
 matchingExp(MatchingExp) <>=
 {<
 case RECORD_MATCH then

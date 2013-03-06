@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -54,7 +54,7 @@ public import Util;
 public import Values;
 
 type Ident = String;
-  
+
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
 protected import ComponentReference;
@@ -95,7 +95,7 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree functionTree;
       Env.Cache cache;
-      Env.Env env;      
+      Env.Env env;
     case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
       equation
         tpl = (SOME(functionTree),itlst);
@@ -105,7 +105,7 @@ algorithm
         (initialEqs,_) = inlineEquationArray(initialEqs,tpl);
         (removedEqs,_) = inlineEquationArray(removedEqs,tpl);
         eventInfo = inlineEventInfo(eventInfo,tpl);
-      then  
+      then
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs));
     case(_,_)
       equation
@@ -131,9 +131,9 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets),_)
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
-        (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);       
+        (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);
         syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets),syst);
-      then 
+      then
         syst;
   end match;
 end inlineEquationSystem;
@@ -184,14 +184,14 @@ algorithm
         eqn = inEqnArray[Index];
         (eqn,b) = inlineEqOpt(eqn,fns);
         updateArrayCond(b,inEqnArray,Index,eqn);
-      then 
+      then
         inlineEquationOptArray(Index+1,inEqnArray,arraysize,fns,b or iInlined);
     case(_,_,_,_,_)
       equation
         false = intLe(Index,arraysize);
-      then 
+      then
         iInlined;
-  end matchcontinue;  
+  end matchcontinue;
 end inlineEquationOptArray;
 
 protected function inlineEqOpt "
@@ -233,10 +233,10 @@ algorithm
       DAE.ElementSource source;
       list<Integer> dimSize;
       DAE.Algorithm alg;
-      list<DAE.Statement> stmts,stmts1;   
+      list<DAE.Statement> stmts,stmts1;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
-      Boolean b1,b2,b3,d;   
+      Boolean b1,b2,b3,d;
 
     case(BackendDAE.EQUATION(e1,e2,source,d),_)
       equation
@@ -278,14 +278,14 @@ algorithm
         (weq_1,source,true) = inlineWhenEq(weq,fns,source);
       then
         (BackendDAE.WHEN_EQUATION(size,weq_1,source),true);
-  
+
     case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,d),_)
       equation
         (e1_1,source,b1) = inlineExp(e1,fns,source);
         (e2_1,source,b2) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);  
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);
 
     case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),_)
       equation
@@ -294,7 +294,7 @@ algorithm
         (eqns,b3) = inlineEqs(eqns,fns,{},false);
         true = b1 or b2 or b3;
       then
-        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),true);         
+        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),true);
     else
       then
         (inEquation,false);
@@ -364,7 +364,7 @@ algorithm
       BackendDAE.WhenEquation weq,weq_1;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
-      
+
     case (BackendDAE.WHEN_EQ(cond,cref,e,NONE()),_,_)
       equation
         (e_1,source,b1) = inlineExp(e,fns,inSource);
@@ -450,14 +450,14 @@ algorithm
         var = inVarArray[Index];
         (var,b) = inlineVarOpt(var,fns);
         updateArrayCond(b,inVarArray,Index,var);
-      then 
+      then
         inlineVarOptArray(Index+1,inVarArray,arraysize,fns,b or iInlined);
     case(_,_,_,_,_)
       equation
         false = intLe(Index,arraysize);
-      then 
+      then
         iInlined;
-  end matchcontinue;  
+  end matchcontinue;
 end inlineVarOptArray;
 
 protected function inlineVarOpt
@@ -535,31 +535,31 @@ algorithm
       Option<DAE.Uncertainty> uncertainOption;
       Option<DAE.Distribution> distributionOption;
       Option<DAE.Exp> equationBound;
-      Option<Boolean> isProtected,finalPrefix;      
+      Option<Boolean> isProtected,finalPrefix;
     case (NONE(),_,_) then (NONE(),isource,false);
     case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,initial_ = SOME(r),
           fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
           distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
           startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);        
+        (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,SOME(r),fixed,nominal,
           stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,initial_ = SOME(r),
           fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
           isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);        
+        (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,initial_ = SOME(r),
           fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);        
+        (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,initial_ = SOME(r),
           equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);        
+        (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,start = SOME(r),
           fixed=fixed,equationBound=equationBound,
@@ -619,7 +619,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> rest,stmts;
       DAE.ElementSource source;
       Boolean b;
-      
+
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (zc::rest,_,_,_)
       equation
@@ -670,7 +670,7 @@ algorithm
       list<BackendDAE.WhenClause> rest,stmts;
       DAE.ElementSource source;
       Boolean b;
-      
+
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (wc::rest,_,_,_)
       equation
@@ -725,7 +725,7 @@ algorithm
       list<BackendDAE.WhenOperator> rest,stmts;
       DAE.ElementSource source;
       Boolean b;
-      
+
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (re::rest,_,_,_)
       equation
@@ -784,7 +784,7 @@ algorithm
       Option<SCode.Comment> cmt;
 
     case({},_,_) then listReverse(iAcc);
-    
+
     case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
         (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
@@ -1153,7 +1153,7 @@ algorithm
       equation
         (e_1,source,b1) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        true = b1 or b2;        
+        true = b1 or b2;
       then
         (DAE.STMT_WHILE(e_1,stmts_1,source),true);
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source),fns)
@@ -1233,7 +1233,7 @@ algorithm
       list<Algorithm.Statement> stmts,stmts_1;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
-      
+
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       equation
         (e_1,source,b1) = inlineExp(e,fns,source);
@@ -1292,7 +1292,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
       Boolean b;
       DAE.ElementSource source;
-      
+
     case (e,fns,source)
       equation
         ((e_1,(fns,true))) = Expression.traverseExp(e,inlineCall,(fns,false));
@@ -1320,7 +1320,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
       Boolean b,b1;
       DAE.ElementSource source;
-      
+
     case (e,fns,source)
       equation
         ((e_1,(fns,true))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
@@ -1363,7 +1363,7 @@ algorithm
       list<DAE.Exp> exps;
       DAE.ElementSource source;
       Boolean b;
-      
+
     case ({},_,_,_,_) then (listReverse(iAcc),inSource,iInlined);
     case (e::exps,_,_,_,_)
       equation
@@ -1397,9 +1397,9 @@ algorithm
         ty2 = Expression.typeof(inExp2);
         ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
         b = Types.equivtypes(ty1,ty2);
-      then 
+      then
         b;
-  end matchcontinue;  
+  end matchcontinue;
 end checkExpsTypeEquiv;
 
 public function inlineCall
@@ -1421,10 +1421,10 @@ algorithm
       DAE.InlineType inlineType;
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
-      VarTransform.VariableReplacements repl;      
+      VarTransform.VariableReplacements repl;
       Boolean generateEvents;
       Option<SCode.Comment> comment;
-    
+
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -1446,8 +1446,8 @@ algorithm
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
-        ((newExp1,(fns,true)));    
-    
+        ((newExp1,(fns,true)));
+
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1472,7 +1472,7 @@ algorithm
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
         ((newExp1,(fns,true)));
-    
+
     else inTuple;
   end matchcontinue;
 end inlineCall;
@@ -1489,7 +1489,7 @@ algorithm
       then
         SCode.hasBooleanNamedAnnotation({anno},"GenerateEvents");
     case(SOME(SCode.CLASS_COMMENT(annotations=annos)))
-      then 
+      then
         SCode.hasBooleanNamedAnnotation(annos,"GenerateEvents");
     else then false;
   end match;
@@ -1534,7 +1534,7 @@ algorithm
         (fn,comment) = getFunctionBody(p,fns);
         // get inputs, body and output
         (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line 
+        // merge statements to one line
         repl = mergeFunctionBody(stmts,repl);
         newExp = VarTransform.getReplacement(repl,cr);
         argmap = List.threadTuple(crefs,args);
@@ -1635,26 +1635,26 @@ algorithm
     case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
          (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
-      then 
+      then
         (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_,_)
       equation
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
-      then 
+      then
         (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
       equation
         false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);        
+        false = Expression.isRecordType(tp);
         repl = addOptBindingReplacements(cr,binding,iRepl);
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
-      then 
+      then
         (oInputs,oOutput,oBody,repl);
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_,_)
       equation
         st = listAppend(iBody,st);
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
-      then 
+      then
         (oInputs,oOutput,oBody,repl);
   end match;
 end getFunctionInputsOutputBody;
@@ -1716,7 +1716,7 @@ protected function extendCrefRecords
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
   input HashTableCG.HashTable inCheckCr;
   output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
-  output HashTableCG.HashTable outCheckCr;  
+  output HashTableCG.HashTable outCheckCr;
 algorithm
   (outArgmap,outCheckCr) := matchcontinue(inArgmap,inCheckCr)
     local
@@ -1742,7 +1742,7 @@ algorithm
         res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
     /* cause of an error somewhere the type of the expression CREF is not equal to the componentreference type
-       this case is needed. */    
+       this case is needed. */
     case((c,e as (DAE.CREF(componentRef = cref)))::res,ht)
       equation
         DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
@@ -1765,9 +1765,9 @@ algorithm
         crlst = List.map1(varLst,extendCrefRecords2,c);
         creftpllst = List.map1(crlst,Util.makeTuple,c);
         ht1 = List.fold(creftpllst,BaseHashTable.add,ht);
-        ht2 = getCheckCref(crlst,ht1);        
+        ht2 = getCheckCref(crlst,ht1);
         (res1,ht3) = extendCrefRecords(res,ht2);
-      then ((c,e)::res1,ht3);        
+      then ((c,e)::res1,ht3);
     case((c,e)::res,ht)
       equation
         (res1,ht1) = extendCrefRecords(res,ht);
@@ -1787,7 +1787,7 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.Var> varLst;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
-      case ({},ht) 
+      case ({},ht)
         then ht;
     case (cr::rest,ht)
       equation
@@ -1797,12 +1797,12 @@ algorithm
         creftpllst = List.map1(crlst,Util.makeTuple,cr);
         ht2 = List.fold(creftpllst,BaseHashTable.add,ht1);
         ht3 = getCheckCref(rest,ht2);
-      then 
-        ht3;          
+      then
+        ht3;
     case (cr::rest,ht)
       equation
         ht1 = getCheckCref(rest,ht);
-      then 
+      then
         ht1;
    end matchcontinue;
 end getCheckCref;
@@ -1821,8 +1821,8 @@ algorithm
       String name;
       DAE.ComponentRef c1,e1;
       DAE.Exp exp;
-    
-    case(DAE.TYPES_VAR(name=name,ty=tp),_,_) 
+
+    case(DAE.TYPES_VAR(name=name,ty=tp),_,_)
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
         e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
@@ -1848,8 +1848,8 @@ algorithm
       DAE.Type tp;
       String name;
       DAE.ComponentRef c1;
-      
-    case(DAE.TYPES_VAR(name=name,ty=tp),_) 
+
+    case(DAE.TYPES_VAR(name=name,ty=tp),_)
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
@@ -1943,7 +1943,7 @@ algorithm
       equation
         _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));        
+        ((e,(argmap,checkcr,false)));
     case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
@@ -1957,10 +1957,10 @@ algorithm
         ((e,(argmap,checkcr,true)));
     case ((e as DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,_,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
-        cref = ComponentReference.pathToCref(path);        
+        cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));        
+        ((e,(argmap,checkcr,false)));
         /* TODO: Use the inlineType of the function reference! */
     case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
       equation
@@ -1977,9 +1977,9 @@ algorithm
     case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
-        _ = BaseHashTable.get(cref,checkcr);        
+        _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));         
+        ((e,(argmap,checkcr,false)));
     case((e,(argmap,checkcr,replacedfailed))) then ((e,(argmap,checkcr,replacedfailed)));
   end matchcontinue;
 end replaceArgs;
@@ -2083,7 +2083,7 @@ algorithm
   end matchcontinue;
 end removeWilds;
 
-public function printInlineTypeStr 
+public function printInlineTypeStr
 "Print what kind of inline we have"
   input DAE.InlineType it;
   output String str;
@@ -2138,7 +2138,7 @@ public function inlineEquationExp "
   partial function Func
     input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
     output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
-  end Func;  
+  end Func;
 algorithm
   (outExp,source) := match (inExp,fn,infns,inSource)
     local

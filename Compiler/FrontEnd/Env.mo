@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -220,7 +220,7 @@ uniontype Frame
     list<SCode.Element> defineUnits        "List of units defined in the frame";
     ExtendsTable        extendsTable       "The Extends table containing all extends with their redeclares";
     ImportTable         importTable        "The Import table";
-    Option<Util.StatefulBoolean> isUsed    "Used by FDependency.";    
+    Option<Util.StatefulBoolean> isUsed    "Used by FDependency.";
   end FRAME;
 end Frame;
 
@@ -268,7 +268,7 @@ uniontype Item
     list<DAE.Type> tys "list since several types with the same name can exist in the same scope (overloading)" ;
   end TYPE;
 
-  record ALIAS 
+  record ALIAS
     "An alias for another Item, see comment in SCodeFlattenRedeclare package."
     String name;
     Option<Absyn.Path> path;
@@ -311,14 +311,14 @@ algorithm
   outEnv := {new_frame};
 end newEnvironment;
 
-public function newFrame 
+public function newFrame
 "function: newFrame
-  This function creates a new frame, which 
-  includes setting up the hashtable for the 
+  This function creates a new frame, which
+  includes setting up the hashtable for the
   frame."
   input Option<Ident> inName;
   input Option<ScopeType> inScopeType;
-  input FrameType inFrameType;  
+  input FrameType inFrameType;
   output Frame outFrame;
 protected
   AvlTree tys;
@@ -331,7 +331,7 @@ algorithm
   tys        := avlTreeNew();
   exts       := newExtendsTable();
   imps       := newImportTable();
-  is_used    := Util.makeStatefulBoolean(false);  
+  is_used    := Util.makeStatefulBoolean(false);
   outFrame   := FRAME(inName,inScopeType,inFrameType,clsAndVars,tys,{},{},exts,imps,SOME(is_used));
 end newFrame;
 
@@ -349,20 +349,20 @@ algorithm
   outExtends := emptyExtendsTable;
 end newExtendsTable;
 
-public function isTyped 
+public function isTyped
 "author BZ 2008-06
   This function checks wheter an InstStatus is typed or not.
   Currently used by Inst.updateComponentsInEnv."
   input InstStatus is;
   output Boolean b;
-algorithm 
+algorithm
   b := matchcontinue(is)
     case(VAR_UNTYPED()) then false;
     case(_) then true;
   end matchcontinue;
 end isTyped;
 
-public function openScope 
+public function openScope
 "function: openScope
   Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
@@ -377,7 +377,7 @@ protected
   Frame f;
   FrameType frameType;
 algorithm
-  frameType := getFrameType(encapsulatedPrefix); 
+  frameType := getFrameType(encapsulatedPrefix);
   f := newFrame(inIdent, inScopeType, frameType);
   outEnv := f :: inEnv;
 end openScope;
@@ -399,14 +399,14 @@ public function inForLoopScope "returns true if environment has a frame that is 
 algorithm
   res := matchcontinue(env)
     local String name;
-    
-    case(FRAME(name = SOME(name))::_) 
+
+    case(FRAME(name = SOME(name))::_)
       equation
         true = stringEq(name, forScopeName);
       then true;
-    
+
     case(_) then false;
-  
+
   end matchcontinue;
 end inForLoopScope;
 
@@ -416,17 +416,17 @@ public function inForOrParforIterLoopScope "returns true if environment has a fr
 algorithm
   res := matchcontinue(env)
     local String name;
-    
-    case(FRAME(name = SOME(name))::_) 
+
+    case(FRAME(name = SOME(name))::_)
       equation
         true = stringEq(name, forIterScopeName);
       then true;
-        
-    case(FRAME(name = SOME(name))::_) 
+
+    case(FRAME(name = SOME(name))::_)
       equation
         true = stringEq(name, parForIterScopeName);
       then true;
-    
+
     case(_) then false;
   end matchcontinue;
 end inForOrParforIterLoopScope;
@@ -437,7 +437,7 @@ public function stripForLoopScope "strips for loop scopes"
 algorithm
   outEnv := matchcontinue(inEnv)
     local String name; Env env;
-    case(FRAME(name = SOME(name))::env) 
+    case(FRAME(name = SOME(name))::env)
       equation
         true = stringEq(name, forScopeName);
         env = stripForLoopScope(env);
@@ -460,11 +460,11 @@ public function getScopeNames "function: getScopeName
  Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output list<Ident> names;
-algorithm 
+algorithm
   names := matchcontinue (inEnv)
     local String name;
-    
-    // empty list 
+
+    // empty list
     case ({}) then {};
     // frame with a name
     case ((FRAME(name = SOME(name))::inEnv))
@@ -481,15 +481,15 @@ algorithm
   end matchcontinue;
 end getScopeNames;
 
-public function updateEnvClasses 
-"updates the classes of the top frame on the env passed 
+public function updateEnvClasses
+"updates the classes of the top frame on the env passed
  as argument to the environment passed as second argument"
   input Env inEnv;
   input Env inClassEnv;
   output Env outEnv;
 algorithm
   outEnv := match(inEnv, inClassEnv)
-    local 
+    local
       Option<Ident> id;
       Option<ScopeType> st;
       FrameType ft;
@@ -504,13 +504,13 @@ algorithm
     case(FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, _)
       equation
         clsAndVars = updateEnvClassesInTree(clsAndVars, inClassEnv);
-      then 
+      then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
-  
+
   end match;
 end updateEnvClasses;
 
-protected function updateEnvClassesInTree 
+protected function updateEnvClassesInTree
 "Help function to updateEnvClasses"
   input AvlTree tree;
   input Env classEnv;
@@ -525,31 +525,31 @@ algorithm
       Item item;
       Integer h;
       ClassType ct;
-   
+
    // Classes
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env,ct))),h,l,r),_) 
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env,ct))),h,l,r),_)
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-     then 
+     then
        AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv,ct))),h,l,r);
 
    // Other items
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),_) 
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),_)
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-     then 
+     then
        AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
 
    // nothing
-   case(AVLTREENODE(NONE(),h,l,r),_) 
+   case(AVLTREENODE(NONE(),h,l,r),_)
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-     then 
+     then
        AVLTREENODE(NONE(),h,l,r);
-     
+
   end matchcontinue;
 end updateEnvClassesInTree;
 
@@ -561,15 +561,15 @@ algorithm
   outTree := match(tree,classEnv)
     local AvlTree t;
     case(NONE(),_) then NONE();
-    case(SOME(t),_) 
+    case(SOME(t),_)
       equation
         t = updateEnvClassesInTree(t,classEnv);
-      then 
+      then
         SOME(t);
   end match;
 end updateEnvClassesInTreeOpt;
 
-public function extendFrameC 
+public function extendFrameC
 "function: extendFrameC
   This function adds a class definition to the environment."
   input Env inEnv;
@@ -591,7 +591,7 @@ algorithm
       SCode.Element c;
       Ident n;
       ClassType ct;
-      SCode.ClassDef cdef;      
+      SCode.ClassDef cdef;
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n))
       equation
@@ -643,7 +643,7 @@ algorithm
       SCode.Element c;
       Ident n;
       ClassType ct;
-      SCode.ClassDef cdef;      
+      SCode.ClassDef cdef;
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n), _)
       equation
@@ -690,43 +690,43 @@ algorithm
     /*
     case (env, e, classEnv)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv)); 
-      then 
+        // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv));
+      then
         fail();*/
 
     // empty case
-    
+
     case ({}, _, _) then {};
-    
+
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,
           e as SCode.CLASS(name = n), classEnv)
       equation
         cdef = SCode.getClassDef(e);
         clsTy = getClassType(cdef);
-        
+
         CLASS(oldE,oldCE,oldCT) = avlTreeGet(clsAndVars, n);
-        
+
         clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
-    
+
     // Also check frames above, e.g. when variable is in base class
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, e, classEnv) 
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, e, classEnv)
       equation
         frames = updateFrameC(fs, e, classEnv);
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::frames;
-    
+
     case (_, e, classEnv)
       equation
         print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e) +& "\n");
       then
         fail();
-  
+
   end matchcontinue;
 end updateFrameC;
 
-public function extendFrameClasses 
+public function extendFrameClasses
 "function: extendFrameClasses
   Adds all builtin clases in a Program to the environment."
   input Env inEnv;
@@ -747,7 +747,7 @@ algorithm
         env = extendFrameClasses(env, cs);
       then
         env;
-  
+
   end match;
 end extendFrameClasses;
 
@@ -759,14 +759,14 @@ algorithm
   outType := match(inClassDef)
     // A builtin class.
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-        lang = SOME("builtin"))))) 
+        lang = SOME("builtin")))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
   end match;
 end getClassType;
 
-public function removeComponentsFromFrameV 
+public function removeComponentsFromFrameV
 "function: removeComponentsFromFrameV
   This function removes all components from frame."
   input Env inEnv;
@@ -791,7 +791,7 @@ algorithm
         clsAndVars = avlTreeNew();
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
-  
+
   end match;
 end removeComponentsFromFrameV;
 
@@ -870,7 +870,7 @@ algorithm
 
     // fully instantiated env of component
     case ({},_,i,_) then {};
-    
+
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
         (var as VAR(_,c,m,_,_,iu)) = avlTreeGet(clsAndVars, n);
@@ -879,17 +879,17 @@ algorithm
         clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs;
-    
+
     // Also check frames above, e.g. when variable is in base class
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs,v as DAE.TYPES_VAR(name = n), i, coenv) 
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs,v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
         frames = updateFrameV(fs, v, i, coenv);
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::frames;
-    
+
     case (_,v as DAE.TYPES_VAR(name = n),_,_)
       equation
-        print("- Env.updateFrameV failed on variable: " +& 
+        print("- Env.updateFrameV failed on variable: " +&
               n +& "\n" +& Types.printVarStr(v) +& "\n");
       then
         fail();
@@ -918,7 +918,7 @@ algorithm
       ExtendsTable et;
       ImportTable it;
       Option<Util.StatefulBoolean> iu;
-      Env fs;      
+      Env fs;
       list<DAE.Type> tps;
       Ident n;
       DAE.Type t;
@@ -930,7 +930,7 @@ algorithm
         tys = avlTreeReplace(tys, n, TYPE(t::tps));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
-    
+
     // No other types exists
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,n,t)
       equation
@@ -941,7 +941,7 @@ algorithm
   end matchcontinue;
 end extendFrameT;
 
-public function extendFrameI 
+public function extendFrameI
 "function: extendFrameI
   Adds an import statement to the environment."
   input Env inEnv;
@@ -953,12 +953,12 @@ algorithm
     case (_, _)
       equation
         env = FEnv.extendEnvWithImport(inImport, inEnv);
-      then 
+      then
         env;
   end matchcontinue;
 end extendFrameI;
 
-public function extendFrameDefunit 
+public function extendFrameDefunit
 "Adds a defineunit to the environment."
   input Env inEnv;
   input SCode.Element defunit;
@@ -995,7 +995,7 @@ algorithm
   outEnv := match(env, name, ty, binding, variability, constOfForIteratorRange)
     local
       Env new_env;
-    
+
     case (_, _, _, _,_,_)
       equation
         new_env = extendFrameV(
@@ -1007,16 +1007,16 @@ algorithm
             binding,
             constOfForIteratorRange),
           SCode.COMPONENT(
-            name, 
+            name,
             SCode.defaultPrefixes,
             SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
             NONE(), NONE(), Absyn.dummyInfo),
           DAE.NOMOD(),
-          VAR_UNTYPED(), 
+          VAR_UNTYPED(),
           {});
       then new_env;
-  
+
   end match;
 end extendFrameForIterator;
 
@@ -1059,7 +1059,7 @@ algorithm
   FRAME(name = SOME(id)) :: rest := inEnv;
   outPath := getEnvName2(rest, Absyn.IDENT(id));
 end getEnvName;
-   
+
 public function getEnvName2
   input Env inEnv;
   input Absyn.Path inPath;
@@ -1097,7 +1097,7 @@ algorithm
 
     else NONE();
   end matchcontinue;
-end getEnvPath;  
+end getEnvPath;
 
 public function getEnvPathNoImplicitScope "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path
@@ -1248,14 +1248,14 @@ algorithm
     local
       list<DAE.ComponentRef> crs;
       CSetsType clst;
-    
-    case(env as (FRAME(connectionSet = clst)::_)) 
+
+    case(env as (FRAME(connectionSet = clst)::_))
       equation
         crs = List.flatten(List.map(clst, Util.tuple21));
         print(printEnvPathStr(env));print(" :   ");
         print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
         print("\n");
-      then 
+      then
         ();
   end matchcontinue;
 end printEnvConnectionCrefs;
@@ -1287,7 +1287,7 @@ algorithm
         frmTyStr = printFrameTypeStr(frameType);
         res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: frmTyStr ::
-          ") \nClasses and Vars:\n=============\n" :: 
+          ") \nClasses and Vars:\n=============\n" ::
           s1 :: "\nTypes:\n======\n" :: s2 :: "\n" :: {});
       then
         res;
@@ -1315,7 +1315,7 @@ algorithm
                types = httypes,
                connectionSet = crs)
       equation
-        sid = Util.stringOption(optName); 
+        sid = Util.stringOption(optName);
         s1 = printAvlTreeStr(ht);
         frmTyStr = printFrameTypeStr(frameType);
         res = stringAppendList({"FRAME: ",sid," (frmTy=",frmTyStr,
@@ -1323,9 +1323,9 @@ algorithm
                                 s1,"\n\n\n"});
       then
         res;
-    
+
     case _ then "";
-    
+
   end matchcontinue;
 end printFrameVarsStr;
 
@@ -1418,7 +1418,7 @@ algorithm
         res = stringAppendList({"c:",n,"\n"});
       then
         res;
-        
+
     case ((n,TYPE(tys = lst)))
       equation
         len = listLength(lst);
@@ -1505,7 +1505,7 @@ algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
     array<EnvCache> arr;
-    
+
     case (_,CACHE(envCache=NONE()),_) then inCache;
 
     case (_,CACHE(envCache=SOME(arr)),_)
@@ -1537,14 +1537,14 @@ algorithm
   outCache := matchcontinue(inCache,id,env)
     local
       Absyn.Path path;
-    
+
     // +d=noCache
     case (_,_,_)
       equation
         true = Flags.isSet(Flags.NO_CACHE);
-      then 
+      then
         inCache;
-    
+
     case (CACHE(envCache=NONE()),_,_) then inCache;
 
     case (_,_,_)
@@ -1597,22 +1597,22 @@ algorithm
       Ident id1,id2;
       list<CacheTree> children,children2;
       Absyn.Path path2;
-    
+
     //  Simple name found in children, search for model from this scope.
     case (Absyn.IDENT(id1),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
         true = stringEq(id1, id2);
         //print("found (1) ");print(id); print("\n");
         env = cacheGetEnv3(path,children2);
-      then 
+      then
         env;
-    
+
     //  Simple name. try next.
     case (Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
       equation
         //print("try next ");print(id);print("\n");
         env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
-      then 
+      then
         env;
 
     // for qualified name, found first matching identifier in child
@@ -1622,7 +1622,7 @@ algorithm
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
-     
+
    // for qualified name, try next.
    /*
    case (Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, _ :: children))
@@ -1643,11 +1643,11 @@ algorithm
       Absyn.Path path1,path2,path;
       list<CacheTree> children1,children2,children;
       Boolean b;
-    
+
     // found matching simple name
     case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::children)
       then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, inPath, children, env);
-    
+
     // found matching qualified name
     case (path2 as Absyn.QUALIFIED(id1,path1),CACHETREE(id2,_,children1)::children2)
       equation
@@ -1742,7 +1742,7 @@ algorithm
         //print("try next\n");
         children = cacheAddEnv2(path,children,env);
       then child::children;
-    
+
     // qualified name no child found, create one.
     case (Absyn.QUALIFIED(id1,path),{},_)
       equation
@@ -1750,14 +1750,14 @@ algorithm
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
         //print("qualified name no child found, create one.\n");
       then {CACHETREE(id1,emptyEnv,children)};
-    
+
     // simple name no child found, create one.
     case (Absyn.IDENT(id1),{},_)
       equation
         // print("simple name no child found, create one.\n");
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then {CACHETREE(id1,env,{})};
-    
+
     case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
   end matchcontinue;
 end cacheAddEnv2;
@@ -1767,12 +1767,12 @@ public function printCacheStr
   output String str;
 algorithm
   str := matchcontinue(cache)
-    local 
+    local
       CacheTree tree;
       array<EnvCache> arr;
       array<DAE.FunctionTree> ef;
       String s,s2;
-    
+
     // some cache present
     case CACHE(envCache=SOME(arr),functions=ef)
       equation
@@ -1793,11 +1793,11 @@ protected function printCacheTreeStr
   output String str;
 algorithm
   str:= matchcontinue(tree,indent)
-    local 
+    local
       Ident id;
       list<CacheTree> children;
       String s,s1;
-    
+
     case (CACHETREE(id,_,children),indent)
       equation
         s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
@@ -1812,7 +1812,7 @@ protected function dummyDump "
   Debug function, print subscripts."
   input list<DAE.Subscript> subs;
   output String str;
-algorithm 
+algorithm
   str := matchcontinue(subs)
     local DAE.Subscript s;
     case(subs)
@@ -1850,7 +1850,7 @@ protected function printElement
 algorithm
   str := match(el)
     case (_) then "[el:" +& SCodeDump.unparseElementStr(el) +& "], ";
-  end match; 
+  end match;
 end printElement;
 
 protected function printInstStatus
@@ -1861,7 +1861,7 @@ algorithm
     case (VAR_UNTYPED()) then "inst: var untyped";
     case (VAR_TYPED())   then "inst: var typed";
     case (VAR_DAE())     then "inst: var dae";
-  end match; 
+  end match;
 end printInstStatus;
 
 public function valueStr "prints a Value to a string"
@@ -1869,7 +1869,7 @@ public function valueStr "prints a Value to a string"
   output String str;
 algorithm
   str := match(v)
-    local 
+    local
       String name; DAE.Type tp; Absyn.Import imp;
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism;
@@ -1882,37 +1882,37 @@ algorithm
       DAE.Binding binding;
       SCode.Element e;
       Env env;
-      
-      
+
+
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(ct, parallelism, variability, direction, innerOuter, _),ty=tp,binding=binding),
-             var = el, instStatus=instStatus, env = env)) 
+             var = el, instStatus=instStatus, env = env))
       equation
         s1 = SCodeDump.connectorTypeStr(ct);
         s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
-        s2 = SCodeDump.parallelismString(parallelism); 
+        s2 = SCodeDump.parallelismString(parallelism);
         s2 = Util.if_(stringEq(s2, ""), "", s2 +& ", ");
-        s3 = SCodeDump.variabilityString(variability); 
+        s3 = SCodeDump.variabilityString(variability);
         s3 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
         s4 = Dump.unparseDirectionSymbolStr(direction);
         s4 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
         s5 = SCodeDump.innerouterString(innerOuter);
         s5 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
-                
+
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
-        printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env); 
+        printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env);
       then str;
-    
-    case(CLASS(cls = e as SCode.CLASS(name=name), env = env)) 
+
+    case(CLASS(cls = e as SCode.CLASS(name=name), env = env))
       equation
         str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
       then str;
-    
-    case(TYPE(tp::_)) 
+
+    case(TYPE(tp::_))
       equation
         str = "type:   " +& Types.unparseType(tp);
       then str;
-    
+
   end match;
 end valueStr;
 
@@ -1956,14 +1956,14 @@ algorithm
     local
       AvlKey key,rkey;
       AvlValue value;
-    
+
     // empty tree
     case (AVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
       then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
-    
+
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey))),key,value)
       then balance(avlTreeAdd2(inAvlTree,stringCompare(key,rkey),key,value));
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
@@ -1988,7 +1988,7 @@ algorithm
       AvlTree t_1,t;
       Option<AvlTreeValue> oval;
       Absyn.Info info;
-    
+
     /*/ Don't allow replacing of nodes.
     case (_, 0, key, _)
       equation
@@ -1997,37 +1997,37 @@ algorithm
           {inKey}, info);
       then
         fail();*/
-    
+
     // replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,key,value)
       equation
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);
-      then 
+      then
         AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right);
-     
+
     // insert to right
     case (AVLTREENODE(value = oval,height=h,left = left,right = right),1,key,value)
       equation
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
-      then 
+      then
         AVLTREENODE(oval,h,left,SOME(t_1));
-        
+
     // insert to left subtree
     case (AVLTREENODE(value = oval,height=h,left = left ,right = right),-1,key,value)
       equation
         t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
-      then 
+      then
         AVLTREENODE(oval,h,SOME(t_1),right);
-  
+
   end match;
 end avlTreeAdd2;
 
 protected function checkValueReplacementCompatible
 "@author: adrpo 2010-10-07
-  This function checks if what we replace in the environment 
+  This function checks if what we replace in the environment
   is compatible with the value we want to replace with.
   VAR<->VAR OK
   CLASS<->CLASS OK
@@ -2052,7 +2052,7 @@ algorithm
       equation
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
-      then 
+      then
         ();
   end match;
 end checkValueReplacementCompatible;
@@ -2069,30 +2069,30 @@ algorithm
       Absyn.Info aInfo;
       String n1, n2, n;
       Env env;
-    
+
     // var should not be replaced by class!
-    case (VAR(var = SCode.COMPONENT(name = n1, info = aInfo)), 
+    case (VAR(var = SCode.COMPONENT(name = n1, info = aInfo)),
           CLASS(cls = SCode.CLASS(name = n2, info = _), env = env))
       equation
          n = printEnvPathStr(env);
          n2 = n +& "." +& n2;
-      then 
+      then
         (n1, n2, aInfo);
-    
+
     // class should not be replaced by var!
     case (CLASS(cls = _), VAR(instantiated = _))
       equation
         // call ourselfs reversed
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);
-      then 
+      then
         (n1, n2, aInfo);
-    
+
     // anything else that might happen??
     case (val1, val2)
       equation
         n1 = valueStr(val1);
         n2 = valueStr(val2);
-      then 
+      then
         (n1, n2, Absyn.dummyInfo);
   end matchcontinue;
 end getNamesAndInfoFromVal;
@@ -2135,7 +2135,7 @@ protected function doBalance "perform balance if difference is > 1 or < -1"
   input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match (difference,inBt) 
+  outBt := match (difference,inBt)
     local AvlTree bt;
     case(-1,bt) then computeHeight(bt);
     case(0,bt) then computeHeight(bt);
@@ -2347,11 +2347,11 @@ algorithm
       AvlKey key;
       AvlValue rval;
       AvlTree left,right;
-    
+
     // hash func Search to the right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(value=rval))),0,key)
       then rval;
-    
+
     // search to the right
     case (AVLTREENODE(right = SOME(right)),1,key)
       then avlTreeGet(right, key);
@@ -2458,7 +2458,7 @@ algorithm
   end matchcontinue;
 end isTopScope;
 
-public function getVariablesFromEnv 
+public function getVariablesFromEnv
 "@author: adrpo
   returns the a list with all the variables in the given environment"
   input Env inEnv;
@@ -2483,7 +2483,7 @@ algorithm
   end match;
 end getVariablesFromEnv;
 
-protected function getVariablesFromFrame 
+protected function getVariablesFromFrame
 "@author: adrpo
   returns all variables in the frame as a list of strings."
   input Frame inFrame;
@@ -2502,7 +2502,7 @@ algorithm
   end match;
 end getVariablesFromFrame;
 
-protected function getVariablesFromAvlTree 
+protected function getVariablesFromAvlTree
 "@author: adrpo
   returns variables from the avl tree as a list of strings"
   input AvlTree inAvlTree;
@@ -2525,7 +2525,7 @@ algorithm
         lst = listAppend(lst0, lst);
       then
         lst;
-        
+
     case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         lst1 = getVariablesFromOptionAvlTree(l);
@@ -2553,14 +2553,14 @@ algorithm
   end match;
 end getVariablesFromOptionAvlTree;
 
-public function getVariablesFromAvlValue 
+public function getVariablesFromAvlValue
 "@author:adrpo
   returns a list with one variable or an empty list"
   input AvlValue v;
   output list<String> variables;
 algorithm
   variables := matchcontinue(v)
-    local 
+    local
       String name;
     case(VAR(instantiated=DAE.TYPES_VAR(name=name))) then {name};
     case(_) then {};
@@ -2824,7 +2824,7 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
       then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
- 
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
@@ -2861,7 +2861,7 @@ algorithm
       equation
         t = createEmptyAvlIfNone(right);
         t = avlTreeReplace(t, key, value);
-      then  
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.

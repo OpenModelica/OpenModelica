@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
 #include <System/EventHandling.h>
-#include <System/IContinuous.h>                
+#include <System/IContinuous.h>
 #include <boost/math/tools/real_cast.hpp>
 #include <Math/Functions.h>
 #include <sstream>
- 
+
 /**
-Constructor 
+Constructor
 \param system Modelica system object
 \param dim Dimenson of help variables
 */
@@ -24,22 +24,22 @@ EventHandling::~EventHandling(void)
 Inits the event variables
 */
 void EventHandling::init(IMixedSystem* system,int dim)
-{   
+{
     _dimH=dim;
     _system=system;
     if(_dimH > 0)
     {
         // Initialize help vars vector
-        if(_h) delete [] _h ; 
+        if(_h) delete [] _h ;
         _h = new double[_dimH];
         memset(_h,0,(_dimH)*sizeof(double));
     }
 }
 /**
-Returns the help vector 
+Returns the help vector
 */
 void EventHandling::giveHelpVars(double* h)
-{        
+{
     for(int i=0; i<_dimH; ++i)
     {
         h[i] = _h[i];
@@ -76,7 +76,7 @@ int EventHandling::getDimHelpVars() const
 }
 void EventHandling::setHelpVar(unsigned int i,double var)
 {
-    
+
   assert(i >= 0 && i < _dimH);
   _h[i]=var;
 }
@@ -161,24 +161,24 @@ bool EventHandling::IterateEventQueue(bool* events)
 }
 
 
-        
+
 void EventHandling::addTimeEvent(long index,double time)
 {
    _time_events.insert(make_pair(time,index));
 }
 void  EventHandling::addTimeEvents( event_times_type times)
 {
-  
+
    event_times_type::iterator iter,iter2;
- 
+
    for( iter=times.begin();iter!=times.end();++iter)
-   { 
+   {
        //check if time event already exists
       iter2 = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(iter->first, 1e-10) );
        if(iter2==_time_events.end())
         _time_events.insert(*iter);
    }
-  
+
 }
 /**
 Checks if the discete variables are changed during the continous system is solved.
@@ -193,13 +193,13 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
     found = (std::equal (next_values, next_values+size,pre_values));
     if(!found)
     {
-        //Calculate start index for iteration 
+        //Calculate start index for iteration
         int offset = cur_index * size;
-        
+
         if((num_values - offset) < 0 )
             return false;
-        
-        // calculate end index i_max  for iteration 
+
+        // calculate end index i_max  for iteration
         int i_max;
         if((offset+size) > num_values)
         {
@@ -209,7 +209,7 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
         {
             i_max = size;
         }
-        //modify discrete variables with new values 
+        //modify discrete variables with new values
         for (int i = 0; i < i_max; i++)
         {
             *cur_values[i] = values[offset + i];
@@ -223,10 +223,10 @@ event_times_type EventHandling::makePeriodeEvents(double ts,double te,double int
     using namespace boost::math::tools;
     event_times_type periode;
     if((te < ts)||(interval==0.0))
-       throw std::runtime_error("wrong make sample parameters");    
+       throw std::runtime_error("wrong make sample parameters");
      double val = ts;
      while(val < te)
-     {         
+     {
          periode.insert(make_pair(real_cast<double>(val),index));
          val += interval;
      }

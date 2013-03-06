@@ -32,7 +32,7 @@ sig_file="`basename "$FNAME" ".mo"`.sig"
 if [ ! -f $sig_file ]; then
   TMPMSG="Sig file: $sig_file does not exist...";
   ${RML} -fdump-interface $FNAME > $sig_file;
-else 
+else
   #echo "Generates tmp sig."
   ${RML} -fdump-interface $FNAME > $tmp_file
   #echo "Diffing"
@@ -46,4 +46,4 @@ else
   fi
 fi
 TMPEND=`date +"%s"`
-echo [`expr $TMPEND - $TMPSTART` second\(s\) \-\> $TMPMSG] 
+echo [`expr $TMPEND - $TMPSTART` second\(s\) \-\> $TMPMSG]

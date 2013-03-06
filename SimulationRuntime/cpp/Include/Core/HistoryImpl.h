@@ -11,8 +11,8 @@ using std::map;
 template< template <unsigned long,unsigned long,unsigned long>  class ResultsPolicy,unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
 class HistoryImpl: public IHistory,
     public ResultsPolicy<dim_1,dim_2,dim_3>
-{ 
-public: 
+{
+public:
 
   HistoryImpl(IGlobalSettings& globalSettings)
   :ResultsPolicy<dim_1,dim_2,dim_3>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
@@ -23,14 +23,14 @@ public:
     void setOutputs(map<unsigned int,string> var_outputs)
     {
         _var_outputs=var_outputs;
-        
-    
+
+
     }
     virtual void getOutputNames(vector<string>& output_names)
     {
-        
+
         boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
-        
+
     }
 
     void getSimResults(const double time,ublas::vector<double>& v,ublas::vector<double>& dv)
@@ -46,14 +46,14 @@ public:
         ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR);
 
     }
-    
+
     void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re)
     {
 
         ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR,Re);
 
     }
-    
+
     virtual void getOutputResults(ublas::matrix<double>& Ro)
     {
         vector<unsigned int> ids;
@@ -66,13 +66,13 @@ public:
         return  ResultsPolicy<dim_1,dim_2,dim_3>::size();
     }
 
-    
+
     unsigned long getDimRe()
     {
         return dim_3;
     }
-    
-    
+
+
     unsigned long getDimdR()
     {
         return  dim_2;
@@ -98,8 +98,8 @@ public:
        ResultsPolicy<dim_1,dim_2,dim_3>::eraseAll();
     };
 private:
-    //map of indices of all output variables 
+    //map of indices of all output variables
     map<unsigned int,string> _var_outputs;
-    
+
 
 };

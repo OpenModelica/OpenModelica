@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -48,7 +48,7 @@ public import DAE;
 
 public type Item = Env.Item;
 public type AvlTree = .Env.AvlTree;
-public type AvlTreeValue = .Env.AvlTreeValue; 
+public type AvlTreeValue = .Env.AvlTreeValue;
 public type ImportTable = .Env.ImportTable;
 public type ExtendsTable = .Env.ExtendsTable;
 public type Frame = .Env.Frame;
@@ -222,7 +222,7 @@ public function newClassItem
 algorithm
   outClassItem := Env.CLASS(inClass, inEnv, inClassType);
 end newClassItem;
-  
+
 public function newVarItem
   "Creates a new variable environment item."
   input SCode.Element inVar;
@@ -263,7 +263,7 @@ algorithm
   outType := match(inClassDef)
     // A builtin class.
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-        lang = SOME("builtin"))))) 
+        lang = SOME("builtin")))))
       then Env.BUILTIN();
     // A user-defined class (i.e. not builtin).
     else then Env.USERDEFINED();
@@ -294,7 +294,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -304,7 +304,7 @@ algorithm
   exts := Env.newExtendsTable();
   outEnv := Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, is_used) :: rest;
 end removeExtendsFromLocalScope;
-  
+
 public function removeExtendFromLocalScope
   "Removes a given extends clause from the local scope."
   input Absyn.Path inExtend;
@@ -317,7 +317,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> iu;
@@ -327,7 +327,7 @@ protected
   Option<SCode.Element> cei;
 algorithm
   Env.FRAME(name, st, ty, cv, tys, cs, du,
-    Env.EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei), 
+    Env.EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei),
     imps, iu) :: rest := inEnv;
   (bcl, _) := List.deleteMemberOnTrue(inExtend, bcl, isExtendNamed);
   outEnv := Env.FRAME(name, st, ty, cv, tys, cs, du, Env.EXTENDS_TABLE(bcl, re, cei), imps, iu) :: rest;
@@ -343,7 +343,7 @@ algorithm
   Env.EXTENDS(baseClass = bc) := inExtends;
   outIsNamed := Absyn.pathEqual(inName, bc);
 end isExtendNamed;
-  
+
 public function removeRedeclaresFromLocalScope
   input Env.Env inEnv;
   output Env.Env outEnv;
@@ -354,7 +354,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -362,8 +362,8 @@ protected
   list<Extends> bc;
   Option<SCode.Element> cei;
 algorithm
-  Env.FRAME(name, st, ty, cv, tys, cs, du, 
-    Env.EXTENDS_TABLE(baseClasses = bc, classExtendsInfo = cei), 
+  Env.FRAME(name, st, ty, cv, tys, cs, du,
+    Env.EXTENDS_TABLE(baseClasses = bc, classExtendsInfo = cei),
     imps, is_used) :: rest := inEnv;
   bc := List.map(bc, removeRedeclaresFromExtend);
   exts := Env.EXTENDS_TABLE(bc, {}, cei);
@@ -394,13 +394,13 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
 algorithm
   Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, is_used) := inFrame;
-  outClsAndVars := cv;  
+  outClsAndVars := cv;
   cv := Env.avlTreeNew();
   outFrame := Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, is_used);
 end removeClsAndVarsFromFrame;
@@ -418,7 +418,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -430,7 +430,7 @@ algorithm
             is_used) :: rest := inEnv;
   outEnv := Env.FRAME(
               name, st, ty, cv, tys, cs, du, exts,
-              Env.IMPORT_TABLE(inHidden, qi, uqi), 
+              Env.IMPORT_TABLE(inHidden, qi, uqi),
               is_used) :: rest;
 end setImportTableHidden;
 
@@ -495,7 +495,7 @@ algorithm
       AvlTree cv;
       AvlTree tys;
       CSetsType cs;
-      list<SCode.Element> du;  
+      list<SCode.Element> du;
       ExtendsTable exts;
       ImportTable imps;
       Option<Util.StatefulBoolean> is_used;
@@ -508,16 +508,16 @@ algorithm
     case (Env.VAR(isUsed = is_used), Env.VAR(var = elem))
       equation
         daeVar = DAEUtil.mkEmptyVar(SCode.elementName(elem));
-      then 
+      then
         Env.VAR(daeVar, elem, DAE.NOMOD(), Env.VAR_UNTYPED(), {}, is_used);
 
     case (Env.CLASS(env = {Env.FRAME(isUsed = is_used)}),
-        Env.CLASS(cls = elem, classType = cls_ty, env = 
+        Env.CLASS(cls = elem, classType = cls_ty, env =
           {Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, _)}))
-      then 
+      then
         Env.CLASS(
-          elem, 
-          {Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, is_used)}, 
+          elem,
+          {Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, is_used)},
           cls_ty);
 
     case (_, Env.REDECLARED_ITEM(item, env))
@@ -606,7 +606,7 @@ algorithm
         class_env = makeClassEnvironment(inClassDefElement, false);
         cls_type = getClassType(cdef);
         // Add the class with it's environment to the environment.
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type), 
+        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, cls_name);
       then
         env;
@@ -639,18 +639,18 @@ protected
   String var_name;
   Util.StatefulBoolean is_used;
   DAE.Var daeVar;
-algorithm  
+algorithm
   SCode.COMPONENT(name = var_name) := inVar;
   daeVar := DAEUtil.mkEmptyVar(var_name);
   is_used := Util.makeStatefulBoolean(false);
   outEnv := extendEnvWithItem(
     Env.VAR(
       daeVar,
-      inVar, 
-      DAE.NOMOD(), 
+      inVar,
+      DAE.NOMOD(),
       Env.VAR_UNTYPED(),
       {},
-      SOME(is_used)), 
+      SOME(is_used)),
     inEnv, var_name);
 end extendEnvWithVar;
 
@@ -662,12 +662,12 @@ public function extendEnvWithItem
   output Env.Env outEnv;
 protected
   Option<String> name;
-  Option<ScopeType> st;  
+  Option<ScopeType> st;
   FrameType ty;
   AvlTree clsAndVars;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -686,12 +686,12 @@ public function updateItemInEnv
   output Env.Env outEnv;
 protected
   Option<String> name;
-  Option<ScopeType> st;  
+  Option<ScopeType> st;
   FrameType ty;
   AvlTree clsAndVars;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -726,9 +726,9 @@ algorithm
       Boolean hidden;
 
     // Unqualified imports
-    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
-          Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et, 
-            Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps), 
+    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
+          Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,
+            Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps),
             iu) :: rest)
       equation
         unqual_imps = imp :: unqual_imps;
@@ -737,16 +737,16 @@ algorithm
           Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps), iu) :: rest;
 
     // Qualified imports
-    case (SCode.IMPORT(imp = imp, info = info), 
+    case (SCode.IMPORT(imp = imp, info = info),
           Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,
-            Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps), 
+            Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps),
             iu) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et, 
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,
           Env.IMPORT_TABLE(hidden, qual_imps, unqual_imps), iu) :: rest;
   end match;
 end extendEnvWithImport;
@@ -786,7 +786,7 @@ protected
   Env.Env env;
   Integer index;
 algorithm
-  SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) := 
+  SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) :=
     inExtends;
   redecls := FFlattenRedeclare.extractRedeclaresFromModifier(mods);
   index := System.tmpTickIndex(Env.extendsTickIndex);
@@ -851,7 +851,7 @@ algorithm
       equation
         FSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
           inEnclosingScope, inInfo);
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods, 
+        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
           NONE(), inInfo), inEnv);
       then
         env;
@@ -881,7 +881,7 @@ algorithm
     // redeclare-as-element component
     case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);        
+        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithVar(inElement, env);
       then
         env;
@@ -964,7 +964,7 @@ algorithm
   outEqual := matchcontinue(inImport1, inImport2)
     local
       Absyn.Ident name1, name2;
-    
+
     case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
       equation
         true = stringEqual(name1, name2);
@@ -998,7 +998,7 @@ algorithm
 
   end match;
 end extendEnvWithEnumLiterals;
-      
+
 protected function extendEnvWithEnum
   "Extends the environment with an enumeration."
   input SCode.Enum inEnum;
@@ -1065,7 +1065,7 @@ protected
 algorithm
   frame := Env.newFrame(SOME("$match$"), NONE(), Env.IMPLICIT_SCOPE(iterIndex));
   Absyn.MATCHEXP(localDecls = local_decls) := inMatchExp;
-  outEnv := List.fold(local_decls, extendEnvWithElementItem, 
+  outEnv := List.fold(local_decls, extendEnvWithElementItem,
     frame :: inEnv);
 end extendEnvWithMatch;
 
@@ -1086,7 +1086,7 @@ algorithm
         // Translate the element item to a SCode element.
         el = SCodeUtil.translateElement(element, SCode.PROTECTED());
         env = List.fold(el, extendEnvWithElement, inEnv);
-      then 
+      then
         env;
 
     else then inEnv;
@@ -1130,7 +1130,7 @@ algorithm
     case ({Env.FRAME(name = SOME(name))})
       then Absyn.IDENT(name);
 
-    case ({Env.FRAME(name = SOME(name)), Env.FRAME(name = NONE())}) 
+    case ({Env.FRAME(name = SOME(name)), Env.FRAME(name = NONE())})
       then Absyn.IDENT(name);
 
     case (Env.FRAME(name = SOME(name)) :: rest)
@@ -1187,7 +1187,7 @@ algorithm
         true = stringEqual(n1, n2);
       then
         envPrefixOf2(rest1, rest2);
-   
+
     else false;
   end matchcontinue;
 end envPrefixOf2;
@@ -1281,15 +1281,15 @@ public function itemStr
   output String outName;
 algorithm
   outName := matchcontinue(inItem)
-    local 
+    local
       String name, alias_str;
       SCode.Element el;
       Absyn.Path path;
       Item item;
 
-    case Env.VAR(var = el) 
+    case Env.VAR(var = el)
       then SCodeDump.unparseElementStr(el);
-    case Env.CLASS(cls = el) 
+    case Env.CLASS(cls = el)
       then SCodeDump.unparseElementStr(el);
     case Env.ALIAS(name = name, path = SOME(path))
       equation
@@ -1303,10 +1303,10 @@ algorithm
         name = itemStr(item);
       then
         "redeclared " +& name;
-    
+
     else "UNHANDLED ITEM";
-      
-      
+
+
   end matchcontinue;
 end itemStr;
 
@@ -1324,7 +1324,7 @@ algorithm
     case Env.CLASS(cls = SCode.CLASS(name = name)) then name;
     case Env.ALIAS(name = name) then name;
     case Env.REDECLARED_ITEM(item = item) then getItemName(item);
-  
+
   end match;
 end getItemName;
 
@@ -1340,7 +1340,7 @@ algorithm
 
     case Env.CLASS(env = env) then env;
     case Env.REDECLARED_ITEM(item = item) then getItemEnv(item);
-  
+
   end match;
 end getItemEnv;
 
@@ -1363,7 +1363,7 @@ algorithm
         str = "NO ENV FOR ITEM: " +& getItemName(inItem);
         f = Env.newFrame(SOME(str), NONE(), Env.ENCAPSULATED_SCOPE());
         env = {f};
-      then 
+      then
         env;
 
   end matchcontinue;
@@ -1382,9 +1382,9 @@ algorithm
       SCode.Element cls;
       ClassType ct;
 
-    case (Env.CLASS(cls, env, ct), _) 
+    case (Env.CLASS(cls, env, ct), _)
       then Env.CLASS(cls, inNewEnv, ct);
-    case (Env.REDECLARED_ITEM(item = item), _) 
+    case (Env.REDECLARED_ITEM(item = item), _)
       then setItemEnv(item, inNewEnv);
   end match;
 end setItemEnv;
@@ -1418,7 +1418,7 @@ algorithm
     case Env.CLASS(cls = SCode.CLASS(prefixes = pf)) then pf;
     case Env.VAR(var = SCode.COMPONENT(prefixes = pf)) then pf;
     case Env.REDECLARED_ITEM(item = item) then getItemPrefixes(item);
-  
+
   end match;
 end getItemPrefixes;
 
@@ -1435,9 +1435,9 @@ algorithm
       Env.Env env;
 
     case (Env.REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env, {(inItem, inEnv)});
-    
+
     else (inItem, inEnv, {});
-    
+
   end match;
 end resolveRedeclaredItem;
 
@@ -1465,20 +1465,20 @@ public function getDerivedClassRedeclares
  output list<Redeclaration> outRedeclarations;
 algorithm
   outRedeclarations := matchcontinue(inDerivedName, inTypeSpec, inEnv)
-    local 
+    local
       Absyn.Path bc, path;
       list<Redeclaration> rm;
       Absyn.Info i;
-    
-    // only one extends! 
+
+    // only one extends!
     case (_, Absyn.TPATH(path, _), _)
       equation
-        {Env.EXTENDS(baseClass = bc, redeclareModifiers = rm)} = 
+        {Env.EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
           getEnvExtendsFromTable(inEnv);
-        true = Absyn.pathSuffixOf(path, bc);        
+        true = Absyn.pathSuffixOf(path, bc);
       then
         rm;
-    
+
     case (_, Absyn.TPATH(path, _), _)
       equation
         {Env.EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
@@ -1487,11 +1487,11 @@ algorithm
         print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
       then
         rm;
-        
-    // else nothing 
+
+    // else nothing
     else then {};
 
-  end matchcontinue; 
+  end matchcontinue;
 end getDerivedClassRedeclares;
 
 public function setEnvExtendsTable
@@ -1500,12 +1500,12 @@ public function setEnvExtendsTable
   output Env.Env outEnv;
 protected
   Option<String> name;
-  Option<ScopeType> st;  
+  Option<ScopeType> st;
   FrameType ty;
   AvlTree clsAndVars;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -1521,12 +1521,12 @@ public function setEnvClsAndVars
   output Env.Env outEnv;
 protected
   Option<String> name;
-  Option<ScopeType> st;  
+  Option<ScopeType> st;
   FrameType ty;
   AvlTree clsAndVars;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -1584,7 +1584,7 @@ algorithm
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
     else then inTS;
-    
+
   end matchcontinue;
 end mergeTypeSpecWithEnvPath;
 
@@ -1622,7 +1622,7 @@ algorithm
     case Env.PROCESSED_MODIFIER(modifier = Env.VAR(var = e)) then e;
     case Env.PROCESSED_MODIFIER(modifier = Env.REDECLARED_ITEM(item = item))
       then getRedeclarationElement(Env.PROCESSED_MODIFIER(item));
-  
+
   end match;
 end getRedeclarationElement;
 
@@ -1646,7 +1646,7 @@ algorithm
         (name, info) = SCode.elementNameInfo(el);
       then
         (name, info);
-        
+
   end match;
 end getRedeclarationNameInfo;
 
@@ -1672,12 +1672,12 @@ algorithm
       AvlTree cv;
       AvlTree tys;
       CSetsType cs;
-      list<SCode.Element> du;  
+      list<SCode.Element> du;
       ExtendsTable exts;
       ImportTable imps;
       Option<Util.StatefulBoolean> is_used;
       String name_str, ty_str, tree_str, ext_str, imp_str, out;
-    
+
     case (Env.FRAME(name, st, ty, cv, tys, cs, du, exts, imps, _))
       equation
         name_str = printFrameNameStr(name);
@@ -1686,13 +1686,13 @@ algorithm
         ext_str = printExtendsTableStr(exts);
         imp_str = printImportTableStr(imps);
         name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
-        out = name_str +& 
+        out = name_str +&
               "\tImports:\n" +& imp_str +&
               "\n\tExtends:\n" +& ext_str +&
               "\n\tComponents:\n" +& tree_str +& "\n";
       then
         out;
-  
+
   end match;
 end printFrameStr;
 
@@ -1779,14 +1779,14 @@ public function printExtendsTableStr
 protected
   list<Extends> bcl;
   list<SCode.Element> re;
-  Option<SCode.Element> cei;  
+  Option<SCode.Element> cei;
 algorithm
   Env.EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
-  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
+  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +&
     "\n\t\tRedeclare elements:\n\t\t\t" +&
     stringDelimitList(List.map(re, SCodeDump.unparseElementStr), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
-    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr)); 
+    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr));
 end printExtendsTableStr;
 
 public function printExtendsStr
@@ -1809,9 +1809,9 @@ public function printRedeclarationStr
 algorithm
   outString := matchcontinue(inRedeclare)
     local String name; Absyn.Path p;
-    case (Env.PROCESSED_MODIFIER(modifier = Env.ALIAS(name = name, path = SOME(p)))) 
+    case (Env.PROCESSED_MODIFIER(modifier = Env.ALIAS(name = name, path = SOME(p))))
       then "ALIAS(" +& Absyn.pathString(p) +& "." +& name +& ")";
-    case (Env.PROCESSED_MODIFIER(modifier = Env.ALIAS(name = name))) 
+    case (Env.PROCESSED_MODIFIER(modifier = Env.ALIAS(name = name)))
       then "ALIAS(" +& name +& ")";
     case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare));
   end matchcontinue;
@@ -1824,7 +1824,7 @@ protected
   list<Import> qual_imps, unqual_imps;
   String qual_str, unqual_str;
 algorithm
-  Env.IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps) 
+  Env.IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps)
     := inImports;
   qual_str := stringDelimitList(
     List.map(qual_imps, Absyn.printImportString), "\n\t\t");

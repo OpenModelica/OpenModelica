@@ -4,22 +4,22 @@
 #include <Solver/ISolverSettings.h>
 #include <LibrariesConfig.h>
 #define BOOST_NO_WCHAR
- 
+
 SettingsFactory::SettingsFactory(void)
 {
-    
-    
+
+
 }
 
 SettingsFactory::~SettingsFactory(void)
 {
 
- 
+
 }
 tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > SettingsFactory::create(fs::path libraries_path,fs::path config_path)
 {
-  
- 
+
+
   fs::path settingsfile_name("GlobalSettings.xml");
   fs::path settingsfile_path = config_path;
   fs::path settingsfolder_name("config");
@@ -40,23 +40,23 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
     solver_dll.assign(CVODE_LIB);
   else
     throw std::invalid_argument("Selected Solver is not available");
-  
-  
-  
+
+
+
 
 
   string settings = _global_settings->getSelectedSolver().append("Settings");
   string settings_file;
   settings_file.append(
       _global_settings->getSelectedSolver().append("Settings.xml"));
-  
+
   fs::path solversettingsfile_name(settings_file);
   fs::path solversettingsfile_path = config_path;
   solversettingsfile_path/=settingsfolder_name;
   solversettingsfile_path/=solversettingsfile_name;
 
   type_map types;
-  
+
   fs::path solver_name(solver_dll);
   fs::path solver_path = libraries_path;
   solver_path/=solver_name;
@@ -72,17 +72,17 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter;
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >& factories(types.get());
   iter = factories.find(settings);
-  if (iter ==factories.end()) 
+  if (iter ==factories.end())
   {
     throw std::invalid_argument("No such Solver "+_global_settings->getSelectedSolver());
   }
   //create with solver factory selected solver settings
-  _solver_settings = boost::shared_ptr<ISolverSettings>(iter->second.create(_global_settings.get())); 
+  _solver_settings = boost::shared_ptr<ISolverSettings>(iter->second.create(_global_settings.get()));
   //cout<<"Read Settings from "<< solversettingsfile_path << std::endl;
- 
+
  _solver_settings->load( solversettingsfile_path.string());
-  
-  //return global and solver settings 
+
+  //return global and solver settings
   tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > settings_pair(_global_settings,_solver_settings);
   return settings_pair;
 

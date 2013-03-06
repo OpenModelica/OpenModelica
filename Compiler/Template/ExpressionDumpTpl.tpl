@@ -9,7 +9,7 @@ template dumpExp(DAE.Exp exp, String stringDelimiter)
 match exp
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then 
+  case SCONST(__) then
     let str = escapedString(string,false)
     '<%stringDelimiter%><%str%><%stringDelimiter%>'
   case BCONST(__) then bool
@@ -67,7 +67,7 @@ match exp
     let step_str = match step case SOME(step) then '<%dumpOperand(step, e, false)%>:'
     let stop_str = dumpOperand(stop, e, false)
     '<%start_str%>:<%step_str%><%stop_str%>'
-  case TUPLE(__) then 
+  case TUPLE(__) then
     let tuple_str = dumpExpList(PR, stringDelimiter, ", ")
     '(<%tuple_str%>)'
   case CAST(__) then
@@ -193,7 +193,7 @@ match subscript
   case INDEX(__) then dumpExp(exp, "\"")
   case WHOLE_NONEXP(__) then dumpExp(exp, "\"")
 end dumpSubscript;
- 
+
 template dumpReductionIterator(DAE.ReductionIterator iterator, String stringDelimiter)
 ::=
 match iterator
@@ -268,7 +268,7 @@ match op
   case DIV_ARRAY_SCALAR(__) then '/'
   else errorMsg("ExpressionDumpTpl.dumpBinOp: Unknown operator.")
 end dumpBinOp;
-  
+
 template dumpUnaryOp(DAE.Operator op)
 ::=
 match op

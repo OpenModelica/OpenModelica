@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -41,7 +41,7 @@ encapsulated package SimCode
 
   Except for the entry points, the only other public functions are those that
   can be imported and called from templates.
-  
+
   The number of imported functions should be kept as low as possible. Today
   some of them are needed to generate target code from templates. More careful
   design of data structures passed to templates should reduce the number of
@@ -69,7 +69,7 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
                             list<list<DAE.ComponentRef>>,                 // colored cols
                             Integer>;                                     // max color used
 
-  
+
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 
 // Root data structure containing information required for templates to
@@ -106,7 +106,7 @@ uniontype SimCode
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix;
-    
+
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
   end SIMCODE;
@@ -149,15 +149,15 @@ end ModelInfo;
 
 type Files = list<FileInfo>;
 
-uniontype FileInfo 
-  "contains all the .mo files present in all Absyn.Info and DAE.ElementSource.info 
+uniontype FileInfo
+  "contains all the .mo files present in all Absyn.Info and DAE.ElementSource.info
    of all the variables, functions, etc from SimCode that have origin info.
    it is used to generate the file information in one place and use an index
    whenever we need to refer to one file from a var or function.
    this is done so that we don't repeat long filenames everywhere."
   record FILEINFO
     String fileName "fileName where the class/component is defined in";
-    Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";    
+    Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
   end FILEINFO;
 end FileInfo;
 
@@ -258,10 +258,10 @@ end SimVar;
 
 uniontype AliasVariable
   record NOALIAS end NOALIAS;
-  record ALIAS 
+  record ALIAS
     DAE.ComponentRef varName;
   end ALIAS;
-  record NEGATEDALIAS 
+  record NEGATEDALIAS
     DAE.ComponentRef varName;
   end NEGATEDALIAS;
 end AliasVariable;
@@ -285,7 +285,7 @@ uniontype Function
     list<Statement> body;
     Absyn.Info info;
   end FUNCTION;
-  
+
   record PARALLEL_FUNCTION
     Absyn.Path name;
     list<Variable> outVars;
@@ -294,7 +294,7 @@ uniontype Function
     list<Statement> body;
     Absyn.Info info;
   end PARALLEL_FUNCTION;
-  
+
   record KERNEL_FUNCTION
     Absyn.Path name;
     list<Variable> outVars;
@@ -303,7 +303,7 @@ uniontype Function
     list<Statement> body;
     Absyn.Info info;
   end KERNEL_FUNCTION;
-  
+
   record EXTERNAL_FUNCTION
     Absyn.Path name;
     String extName;
@@ -318,7 +318,7 @@ uniontype Function
     Absyn.Info info;
     Boolean dynamicLoad;
   end EXTERNAL_FUNCTION;
-  
+
   record RECORD_CONSTRUCTOR
     Absyn.Path name;
     list<Variable> funArgs;
@@ -372,7 +372,7 @@ uniontype Variable
     list<DAE.Exp> instDims;
     DAE.VarParallelism parallelism;
   end VARIABLE;
-  
+
   record FUNCTION_PTR
     String name;
     list<DAE.Type> tys;
@@ -395,33 +395,33 @@ uniontype SimEqSystem
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_RESIDUAL;
-  
+
   record SES_SIMPLE_ASSIGN
     Integer index;
     DAE.ComponentRef cref;
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_SIMPLE_ASSIGN;
-  
+
   record SES_ARRAY_CALL_ASSIGN
     Integer index;
     DAE.ComponentRef componentRef;
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_ARRAY_CALL_ASSIGN;
-  
+
   record SES_IFEQUATION
     Integer index;
     list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
     list<SimEqSystem> elsebranch;
     DAE.ElementSource source;
   end SES_IFEQUATION;
-  
+
   record SES_ALGORITHM
     Integer index;
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
-  
+
   record SES_LINEAR
     Integer index;
     Boolean partOfMixed;
@@ -430,7 +430,7 @@ uniontype SimEqSystem
     list<tuple<Integer, Integer, SimEqSystem>> simJac;
     Integer indexLinearSystem;
   end SES_LINEAR;
-  
+
   record SES_NONLINEAR
     Integer index;
     list<SimEqSystem> eqs;
@@ -439,7 +439,7 @@ uniontype SimEqSystem
     Option<JacobianMatrix> jacobianMatrix;
     Boolean linearTearing;
   end SES_NONLINEAR;
-  
+
   record SES_MIXED
     Integer index;
     SimEqSystem cont;
@@ -447,7 +447,7 @@ uniontype SimEqSystem
     list<SimEqSystem> discEqs;
     Integer indexMixedSystem;
   end SES_MIXED;
-  
+
   record SES_WHEN
     Integer index;
     list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
@@ -473,7 +473,7 @@ end StateSet;
 
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
-    list<DAE.ComponentRef> conditionVars; // is no longer needed 
+    list<DAE.ComponentRef> conditionVars; // is no longer needed
     list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
     Boolean initialCall;                  // true, if top-level branch with initial()
     list<BackendDAE.WhenOperator> reinits;
@@ -507,7 +507,7 @@ uniontype MakefileParams
 end MakefileParams;
 
 
-uniontype SimulationSettings 
+uniontype SimulationSettings
   "Settings for simulation init file header."
   record SIMULATION_SETTINGS
     Real startTime;
@@ -540,7 +540,7 @@ uniontype Context
   end INLINE_CONTEXT;
   record PARALLEL_FUNCTION_CONTEXT
   end PARALLEL_FUNCTION_CONTEXT;
-  record ZEROCROSSINGS_CONTEXT 
+  record ZEROCROSSINGS_CONTEXT
   end ZEROCROSSINGS_CONTEXT;
 end Context;
 
@@ -556,7 +556,7 @@ public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 
 
 /****** HashTable ComponentRef -> SimCode.SimVar ******/
-/* a workaround to enable "cross public import" */ 
+/* a workaround to enable "cross public import" */
 
 
 /* HashTable instance specific code */

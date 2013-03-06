@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (c) Karl Meerbergen 2008
  *
  * Distributed under the Boost Software License, Version 1.0.
@@ -15,13 +15,13 @@
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.h>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
-#endif 
+#endif
 
 #include <cassert>
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
@@ -43,32 +43,32 @@ namespace boost { namespace numeric { namespace bindings {
 
     namespace detail {
 
-      inline 
+      inline
       void ptsv ( int const n, int const nrhs,
-                 float* d, float* e, float* b, int const ldb, int* info) 
+                 float* d, float* e, float* b, int const ldb, int* info)
       {
         LAPACK_SPTSV (&n, &nrhs, d, e, b, &ldb, info);
       }
 
-      inline 
+      inline
       void ptsv ( int const n, int const nrhs,
-                 double* d, double* e, double* b, int const ldb, int* info) 
+                 double* d, double* e, double* b, int const ldb, int* info)
       {
         LAPACK_DPTSV (&n, &nrhs, d, e, b, &ldb, info);
       }
 
-      inline 
+      inline
       void ptsv ( int const n, int const nrhs,
-                 float* d, traits::complex_f* e, traits::complex_f* b, int const ldb, 
-                 int* info) 
+                 float* d, traits::complex_f* e, traits::complex_f* b, int const ldb,
+                 int* info)
       {
         LAPACK_CPTSV (&n, &nrhs, d, traits::complex_ptr(e), traits::complex_ptr(b), &ldb, info);
       }
 
-      inline 
+      inline
       void ptsv ( int const n, int const nrhs,
-                 double* d, traits::complex_d* e, traits::complex_d* b, int const ldb, 
-                 int* info) 
+                 double* d, traits::complex_d* e, traits::complex_d* b, int const ldb,
+                 int* info)
       {
         LAPACK_ZPTSV (&n, &nrhs, d, traits::complex_ptr(e), traits::complex_ptr(b), &ldb, info);
       }
@@ -101,24 +101,24 @@ namespace boost { namespace numeric { namespace bindings {
 
     namespace detail {
 
-      inline 
+      inline
       void pttrf ( int const n, float* d, float* e, int* info) {
         LAPACK_SPTTRF ( &n, d, e, info) ;
       }
 
-      inline 
+      inline
       void pttrf ( int const n, double* d, double* e, int* info) {
         LAPACK_DPTTRF ( &n, d, e, info);
       }
 
-      inline 
-      void pttrf ( int const n, float* d, traits::complex_f* e, int* info) 
+      inline
+      void pttrf ( int const n, float* d, traits::complex_f* e, int* info)
       {
         LAPACK_CPTTRF ( &n, d, traits::complex_ptr(e), info);
       }
 
-      inline 
-      void pttrf ( int const n, double* d, traits::complex_d* e, int* info) 
+      inline
+      void pttrf ( int const n, double* d, traits::complex_d* e, int* info)
       {
         LAPACK_ZPTTRF ( &n, d, traits::complex_ptr(e), info);
       }
@@ -130,9 +130,9 @@ namespace boost { namespace numeric { namespace bindings {
     int pttrf (D& d, E& e) {
       int const n = traits::vector_size (d);
       assert (n == traits::vector_size (e) + 1);
-      int info; 
+      int info;
       detail::pttrf ( n, traits::vector_storage(d), traits::vector_storage(e), &info);
-      return info; 
+      return info;
     }
 
 
@@ -147,39 +147,39 @@ namespace boost { namespace numeric { namespace bindings {
 
     namespace detail {
 
-      inline 
+      inline
       void pttrs (char const uplo, int const n, int const nrhs,
-                  float const* d, float const* e, float* b, int const ldb, int* info) 
+                  float const* d, float const* e, float* b, int const ldb, int* info)
       {
         LAPACK_SPTTRS (&n, &nrhs, d, e, b, &ldb, info);
       }
 
-      inline 
+      inline
       void pttrs (char const uplo, int const n, int const nrhs,
-                  double const* d, double const* e, double* b, int const ldb, int* info) 
+                  double const* d, double const* e, double* b, int const ldb, int* info)
       {
         LAPACK_DPTTRS (&n, &nrhs, d, e, b, &ldb, info);
       }
 
-      inline 
+      inline
       void pttrs (char const uplo, int const n, int const nrhs,
-                  float const* d, 
-                  traits::complex_f const* e, 
-                  traits::complex_f* b, int const ldb, int* info) 
+                  float const* d,
+                  traits::complex_f const* e,
+                  traits::complex_f* b, int const ldb, int* info)
       {
-        LAPACK_CPTTRS (&uplo, &n, &nrhs, d, 
-                       traits::complex_ptr (e), 
+        LAPACK_CPTTRS (&uplo, &n, &nrhs, d,
+                       traits::complex_ptr (e),
                        traits::complex_ptr (b), &ldb, info);
       }
 
-      inline 
+      inline
       void pttrs (char const uplo, int const n, int const nrhs,
-                  double const* d, 
-                  traits::complex_d const* e, 
-                  traits::complex_d* b, int const ldb, int* info) 
+                  double const* d,
+                  traits::complex_d const* e,
+                  traits::complex_d* b, int const ldb, int* info)
       {
-        LAPACK_ZPTTRS (&uplo, &n, &nrhs, d, 
-                       traits::complex_ptr (e), 
+        LAPACK_ZPTTRS (&uplo, &n, &nrhs, d,
+                       traits::complex_ptr (e),
                        traits::complex_ptr (b), &ldb, info);
       }
 
@@ -191,19 +191,19 @@ namespace boost { namespace numeric { namespace bindings {
       int const n = traits::vector_size (d);
       assert (n == traits::vector_size (e) + 1);
       assert (n == traits::matrix_num_rows (b));
-      
-      int info; 
+
+      int info;
       detail::pttrs (uplo, n, traits::matrix_num_columns (b),
-                     traits::vector_storage (d), 
-                     traits::vector_storage (e), 
-                     traits::matrix_storage (b), 
-                     traits::leading_dimension (b), 
+                     traits::vector_storage (d),
+                     traits::vector_storage (e),
+                     traits::matrix_storage (b),
+                     traits::leading_dimension (b),
                      &info);
-      return info; 
+      return info;
     } // pttrs()
 
   }
 
 }}}
 
-#endif 
+#endif

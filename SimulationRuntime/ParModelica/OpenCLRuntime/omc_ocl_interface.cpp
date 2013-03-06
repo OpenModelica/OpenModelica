@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,23 +28,23 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 
 /*
 
  This file contains interfacing functions. Theses are the
  actuall functions that are available for calling by the
- code generated from Modelica source. 
- If a function is not called from the generated code please 
- don not add it here. 
- If the feature involves complex operations then define it 
+ code generated from Modelica source.
+ If a function is not called from the generated code please
+ don not add it here.
+ If the feature involves complex operations then define it
  somewhere else and and just create interface for it here
  (If it needs to be exported.)
- 
+
  See the header file for more comments.
 
- Mahder.Gebremedhin@liu.se  2012-03-31 
-   
+ Mahder.Gebremedhin@liu.se  2012-03-31
+
 */
 
 
@@ -83,7 +83,7 @@ static inline modelica_integer *integer_ptrget(integer_array_t *a, size_t i){
 
 //the original one of tis function defined in basearray.h was giving linkage errors
 //(for a reason i don't know) so i copied it here with a new name (ocl_)
-//it is needed in real/int_array_element_addr_c99_1/2/3 
+//it is needed in real/int_array_element_addr_c99_1/2/3
 
 /* One based index*/
 size_t ocl_calc_base_index_va(base_array_t *source, int ndims, va_list ap){
@@ -112,7 +112,7 @@ size_t alloc_device_base_array(device_array *dest, int ndims, va_list ap){
 
     dest->info = (modelica_integer*)malloc((ndims + 1)*sizeof(modelica_integer));
     dest->info[0] = ndims;
-    
+
     for (i = 1; i < ndims + 1; i++) {
         dest->info[i] = va_arg(ap, modelica_integer);
     }
@@ -128,11 +128,11 @@ void alloc_integer_array(device_integer_array *dest, int ndims, ...){
     va_list ap;
     va_start(ap, ndims);
     elements = alloc_device_base_array(dest,ndims,ap);
-    va_end(ap);    
+    va_end(ap);
     dest->data = ocl_device_alloc(elements*sizeof(modelica_integer));
     dest->info_dev = ocl_device_alloc_init(dest->info,
         (ndims+1)*sizeof(modelica_integer));
-    
+
 }
 
 //entry point for allocating real array on device
@@ -146,7 +146,7 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
     dest->data = ocl_device_alloc(elements*sizeof(modelica_real));
     dest->info_dev = ocl_device_alloc_init(dest->info,
         (ndims+1)*sizeof(modelica_integer));
-    
+
 }
 
 
@@ -166,7 +166,7 @@ void free_device_array(base_array_t* dest){
 
 void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later) 
+    //Assert size of device array (dev array should be changed to struct later)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_back_to_host_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
 
@@ -174,7 +174,7 @@ void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_a
 
 void copy_real_array_data(real_array_t* host_array_ptr, device_real_array* dev_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later) 
+    //Assert size of device array (dev array should be changed to struct later)
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_to_device_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
@@ -183,7 +183,7 @@ void copy_real_array_data(real_array_t* host_array_ptr, device_real_array* dev_a
 
 void copy_real_array_data(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2){
 
-    //Assert size of device array (dev array should be changed to struct later) 
+    //Assert size of device array (dev array should be changed to struct later)
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
     ocl_copy_device_to_device_real(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);
@@ -192,7 +192,7 @@ void copy_real_array_data(device_real_array* dev_array_ptr1, device_real_array* 
 
 void copy_integer_array_data(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later) 
+    //Assert size of device array (dev array should be changed to struct later)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_back_to_host_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
 
@@ -200,7 +200,7 @@ void copy_integer_array_data(device_integer_array* dev_array_ptr, integer_array_
 
 void copy_integer_array_data(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr){
 
-    //Assert size of device array 
+    //Assert size of device array
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_to_device_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
@@ -210,7 +210,7 @@ void copy_integer_array_data(integer_array_t* host_array_ptr, device_integer_arr
 
 void copy_integer_array_data(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2){
 
-    //Assert size of device array (dev array should be changed to struct later) 
+    //Assert size of device array (dev array should be changed to struct later)
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
     ocl_copy_device_to_device_integer(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);
@@ -222,7 +222,7 @@ void copy_integer_array_data(device_integer_array* dev_array_ptr1, device_intege
 //functions used for copying scalars. Scalars in the normal(serial C) code genertation
 //of modelica are copied by assignment (a = b). However to be able to copy them b'n
 //GPU and host CPU we need to change the assignments to copy functions.
-void copy_assignment_helper_integer(modelica_integer* v1, modelica_integer* v2){    
+void copy_assignment_helper_integer(modelica_integer* v1, modelica_integer* v2){
     *v1 = *v2;
 }
 
@@ -238,7 +238,7 @@ void copy_assignment_helper_integer(device_integer* v1, device_integer* v2){
     ocl_copy_device_to_device_integer(*v2, *v1, 1);
 }
 
-void copy_assignment_helper_real(modelica_real* v1, modelica_real* v2){    
+void copy_assignment_helper_real(modelica_real* v1, modelica_real* v2){
     *v1 = *v2;
 }
 
@@ -259,7 +259,7 @@ void copy_assignment_helper_real(device_real* v1, device_real* v2){
 //this function is added to solve a problem with a memory leak when returning arrays
 //from functions. Arrays used to be assigned just like normal scalar variables. Which causes the
 //allocated memory on the lhs to be lost when the pointer is replaced with the new one.
-//this fixes the problem for parallel arrays. for serial arrays the memory is restored when the 
+//this fixes the problem for parallel arrays. for serial arrays the memory is restored when the
 //function returns(not dynamic allocation), So the only lose in serial case is visible just until
 //the function returns.
 void swap_and_release(device_array* lhs, device_array* rhs){
@@ -364,7 +364,7 @@ modelica_integer size_of_dimension_integer_array(device_integer_array dev_arr, m
 void print_array_info(device_real_array* arr){
 
     printf("nr of dims = %ld \n", arr->info[0]);
-    
+
     for (int i = 1; i <= arr->info[0]; i++){
         printf("size of dim %d = %ld \n", i,arr->info[i]);
     }

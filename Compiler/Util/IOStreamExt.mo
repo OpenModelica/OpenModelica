@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -36,12 +36,12 @@ encapsulated package IOStreamExt
  description: External Stream Utilities
  @author:     Adrian Pop [adrpo@ida.liu.se]
  @date:       2010-05-19
- 
+
  RCS: $Id$
 
  This package describes an external interface for streams.
  The external C implementation is in TOP/Compiler/runtime/IOStreamExt.c"
-  
+
 function createFile
   input String fileName;
   output Integer fileID;
@@ -49,19 +49,19 @@ function createFile
   external "C" fileID=IOStreamExt_createFile(fileName) annotation(Library = "omcruntime");
 end createFile;
 
-function closeFile  
+function closeFile
   input Integer fileID;
 
   external "C" IOStreamExt_closeFile(fileID) annotation(Library = "omcruntime");
 end closeFile;
 
-function deleteFile  
+function deleteFile
   input Integer fileID;
 
   external "C" IOStreamExt_deleteFile(fileID) annotation(Library = "omcruntime");
 end deleteFile;
 
-function clearFile  
+function clearFile
   input Integer fileID;
 
   external "C" IOStreamExt_clearFile(fileID) annotation(Library = "omcruntime");
@@ -90,7 +90,7 @@ end printFile;
 
 function createBuffer
   output Integer bufferID;
-  
+
   external "C" bufferID = IOStreamExt_createBuffer() annotation(Library = "omcruntime");
 end createBuffer;
 
@@ -101,13 +101,13 @@ function appendBuffer
   external "C" IOStreamExt_appendBuffer(bufferID,inString) annotation(Library = "omcruntime");
 end appendBuffer;
 
-function deleteBuffer  
+function deleteBuffer
   input Integer bufferID;
 
   external "C" IOStreamExt_deleteBuffer(bufferID) annotation(Library = "omcruntime");
 end deleteBuffer;
 
-function clearBuffer  
+function clearBuffer
   input Integer bufferID;
 
   external "C" IOStreamExt_clearBuffer(bufferID) annotation(Library = "omcruntime");
@@ -130,14 +130,14 @@ end printBuffer;
 function appendReversedList
   input list<String> inStringLst;
   output String outString;
-  
+
   external "C" outString = IOStreamExt_appendReversedList(inStringLst) annotation(Library = "omcruntime");
 end appendReversedList;
 
 function printReversedList
   input list<String> inStringLst;
   input Integer whereToPrint "stdout:1, stderr:2";
-  
+
   external "C" IOStreamExt_printReversedList(inStringLst, whereToPrint) annotation(Library = "omcruntime");
 end printReversedList;
 

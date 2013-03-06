@@ -49,7 +49,7 @@ struct type_info_handler<default_type_info, ClassType>
 
 
 
-#if defined(__MINGW32__) || defined(__GNUC__) 
+#if defined(__MINGW32__) || defined(__GNUC__)
 #include <cstring>
 namespace boost { namespace extensions {
 inline bool operator<(const default_type_info& first,

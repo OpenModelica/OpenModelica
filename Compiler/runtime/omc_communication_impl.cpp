@@ -59,7 +59,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   EnterCriticalSection(&clientlock); // Lock so no other tread can talk to omc.
   char* retval;
 
-  // Signal to omc that message has arrived. 
+  // Signal to omc that message has arrived.
 
   omc_cmd_message = (char*)expr;
   SetEvent(omc_client_request_event);
@@ -69,14 +69,14 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
   LeaveCriticalSection(&clientlock);
   return retval;//CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
-} 
+}
 
 char* OmcCommunication_impl::sendClass( const char* expr )
 {
   EnterCriticalSection(&clientlock);// Lock so no other tread can talk to omc.
   char* retval;
 
-  // Signal to omc that message has arrived. 
+  // Signal to omc that message has arrived.
   omc_cmd_message = (char*)expr;
   SetEvent(omc_client_request_event);
 
@@ -84,7 +84,7 @@ char* OmcCommunication_impl::sendClass( const char* expr )
   while(WAIT_OBJECT_0 != WaitForSingleObject(omc_return_value_ready, INFINITE));
   retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
   LeaveCriticalSection(&clientlock);
-  return retval; // Has already been string_dup (prepared for CORBA) 
+  return retval; // Has already been string_dup (prepared for CORBA)
 }
 
 #else /* linux stuff here! */
@@ -118,7 +118,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
 {
   pthread_mutex_lock(&clientlock);
   char* result;
-  // Signal to omc that message has arrived. 
+  // Signal to omc that message has arrived.
   pthread_mutex_lock(&omc_waitlock);
   omc_waiting = true;
   omc_cmd_message = (char*)expr;
@@ -135,11 +135,11 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   pthread_mutex_unlock(&corba_waitlock);
   pthread_mutex_unlock(&clientlock);
   return result; // Has already been string_dup (prepared for CORBA)
-} 
+}
 
 char* OmcCommunication_impl::sendClass( const char* expr )
 {
-  // Signal to omc that message has arrived. 
+  // Signal to omc that message has arrived.
   pthread_mutex_lock(&omc_waitlock);
   omc_waiting = true;
   omc_cmd_message = (char*)expr;
@@ -148,13 +148,13 @@ char* OmcCommunication_impl::sendClass( const char* expr )
 
   // Wait for omc to process message
   pthread_mutex_lock(&corba_waitlock);
-  
+
   while (!omc_waiting) {
     pthread_cond_wait(&corba_waitformsg,&corba_waitlock);
   }
   corba_waiting = false;
   pthread_mutex_unlock(&corba_waitlock);
-  
+
   return CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
 
 }

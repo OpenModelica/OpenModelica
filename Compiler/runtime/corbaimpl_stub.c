@@ -4,7 +4,7 @@
 char* corbaSessionName;
 
 void Corba_5finit(void)
-{  
+{
 }
 
 static void errmsg() {

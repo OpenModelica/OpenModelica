@@ -15,13 +15,13 @@
 /*****************************************************************************/
 /**
 
-Services, which can be used by systems. 
-Implementation of standart functions (e.g. giveRHS(...), etc.). 
+Services, which can be used by systems.
+Implementation of standart functions (e.g. giveRHS(...), etc.).
 Provision of member variables used by all systems.
 
-Note: 
-The order of variables in the extended state vector perserved (see: "Sorting 
-variables by using the index" in "Design proposal for a general solver interface 
+Note:
+The order of variables in the extended state vector perserved (see: "Sorting
+variables by using the index" in "Design proposal for a general solver interface
 for Open Modelica", September, 10 th, 2008
 
 
@@ -41,7 +41,7 @@ public:
     SystemDefaultImplementation(IGlobalSettings& globalSettings);
 
     ~SystemDefaultImplementation();
-    
+
     /// Provide number (dimension) of variables according to the index
      int getDimVars() const    ;
 
@@ -61,15 +61,15 @@ public:
 
     /// Set variables with given index to the system
     void setVars(const double* z);
-    
+
     /// Provide the right hand side (according to the index)
     void giveRHS(double* f);
     // Member variables
-  
+
 protected:
      void Assert(bool cond,string msg);
-     void Terminate(string msg); 
-    template<class T> 
+     void Terminate(string msg);
+    template<class T>
     T getStartValue(T variable,string key)
     {
         try
@@ -82,27 +82,27 @@ protected:
         }
     };
     double
-        time;                ///< current simulation time (given by the solver) 
+        time;                ///< current simulation time (given by the solver)
 
     double
         *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-    bool   
+    bool
         * _conditions;        ///< External conditions changed by the solver
-    int 
+    int
         _dimFunc,                        ///< Dimension der rechten Seite
         _dimVars,                        ///< Dimesion des Zustandsvektors
         _dimZeroFunc,                    ///< Dimension (=Anzahl) Nullstellenfunktion
         _dimTimeEvent,                    ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
        _dimAE;                ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
-    
+
     ostream
         *_outputStream;        ///< Output stream for results
 
-   
-      
 
-    bool _initial;        
+
+
+    bool _initial;
     SValuesMap _start_values;
     EventHandling _event_handling;
 private:

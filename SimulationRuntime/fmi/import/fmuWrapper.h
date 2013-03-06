@@ -18,7 +18,7 @@
 #define LoadLibraryFromDLL(X) dlopen(X, RTLD_LOCAL | RTLD_NOW)
 #define getFunctionPointerFromDLL dlsym
 #define FreeLibraryFromHandle dlclose
-#define GetLastError(X) 
+#define GetLastError(X)
 
 #endif
 
@@ -41,7 +41,7 @@ typedef fmiStatus (*fSetReal)   (fmiComponent c, const fmiValueReference vr[], s
 typedef fmiStatus (*fSetInteger)(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[]);
 typedef fmiStatus (*fSetBoolean)(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]);
 typedef fmiStatus (*fSetString) (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString  value[]);
-typedef fmiStatus (*fInitialize)(fmiComponent c, fmiBoolean toleranceControlled, 
+typedef fmiStatus (*fInitialize)(fmiComponent c, fmiBoolean toleranceControlled,
                                fmiReal relativeTolerance, fmiEventInfo* eventInfo);
 typedef fmiStatus (*fGetDerivatives)    (fmiComponent c, fmiReal derivatives[]    , size_t nx);
 typedef fmiStatus (*fGetEventIndicators)(fmiComponent c, fmiReal eventIndicators[], size_t ni);
@@ -150,7 +150,7 @@ void freefmuBooleanInst(void* in_bool);
 
 void fmiFreeModelInst(void* in_fmufun, void* in_fmu);
 //void fmiFreeModelInst(void* in_fmu);
- 
+
 void* fmiCallbackFuns();
 void fmiFreeCallbackFuns(void * functions);
 

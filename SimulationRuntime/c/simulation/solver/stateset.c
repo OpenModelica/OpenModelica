@@ -46,7 +46,7 @@ void initializeStateSetJacobians(DATA *data)
 {
   long i = 0;
   STATE_SET_DATA *set = NULL;
-  
+
   /* go troug all state sets*/
   for(i=0; i<data->modelData.nStateSets; i++)
   {
@@ -74,23 +74,23 @@ void initializeStateSetPivoting(DATA *data)
   STATE_SET_DATA *set = NULL;
   unsigned int aid = 0;
   modelica_integer *A = NULL;
-  
+
   /* go troug all state sets */
   for(i=0; i<data->modelData.nStateSets; i++)
   {
     set = &(data->simulationInfo.stateSetData[i]);
     aid = set->A->id - data->modelData.integerVarsData[0].info.id;
     A = &(data->localData[0]->integerVars[aid]);
-    
+
     memset(A, 0, set->nCandidates*set->nStates*sizeof(modelica_integer));
-    
+
     /* initialize row and col indizes */
     for(n=0; n<set->nDummyStates; n++)
       set->rowPivot[n] = n;
-    
+
     for(n=0; n<set->nCandidates; n++)
       set->colPivot[n] = set->nCandidates-n-1;
-    
+
     for(n=0; n<set->nStates; n++)
       A[n + n *set->nStates] = 1;  /* set A[row, col] */
   }
@@ -107,7 +107,7 @@ void initializeStateSetPivoting(DATA *data)
 void freeStateSetData(DATA *data)
 {
   long i=0;
-  
+
   /* go troug all state sets */
   for(i=0; i<data->modelData.nStateSets; i++)
   {
@@ -163,9 +163,9 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j-1];
-        
+
         INFO2(LOG_DSS_JAC, "take for %d -> %d\n", j, ii);
-        
+
         while(ii < data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.index[ii];
@@ -180,11 +180,11 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       if(data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[jacIndex].seedVars[ii] = 0;
   }
-  
+
   if(ACTIVE_STREAM(LOG_DSS))
   {
     char buffer[4096];
-    
+
     DEBUG3(LOG_DSS, "jacobian %dx%d [id: %d]", data->simulationInfo.analyticJacobians[jacIndex].sizeRows, data->simulationInfo.analyticJacobians[jacIndex].sizeCols, jacIndex);
     INDENT(LOG_DSS);
     for(i=0; i<data->simulationInfo.analyticJacobians[jacIndex].sizeRows; i++)
@@ -302,7 +302,7 @@ int stateSelection(DATA *data, char reportError)
   long i=0;
   long j=0;
   int globalres=0;
-  
+
   /* go troug all state sets*/
   for (i=0; i<data->modelData.nStateSets; i++)
   {
@@ -317,7 +317,7 @@ int stateSelection(DATA *data, char reportError)
     {
       /* error, report the matrix and the time */
       char buffer[4096];
-      
+
       WARNING3(LOG_DSS, "jacobian %dx%d [id: %ld]", data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
       INDENT(LOG_DSS);
       for(i=0; i < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows; i++)
@@ -327,11 +327,11 @@ int stateSelection(DATA *data, char reportError)
           sprintf(buffer, "%s%.5e ", buffer, set->J[i*data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols+j]);
         WARNING1(LOG_DSS, "%s", buffer);
       }
-      
+
       for (i=0; i<set->nCandidates; i++)
         WARNING1(LOG_DSS, "%s", set->statescandidates[i]->name);
       RELEASE(LOG_DSS);
-        
+
       THROW1("Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
     /* if we have a new set throw event for reinitialization
@@ -339,7 +339,7 @@ int stateSelection(DATA *data, char reportError)
     res = comparePivot(oldColPivot, set->colPivot, set->nCandidates, set->nDummyStates, set->nStates, set->A, set->states, set->statescandidates, data);
     if(res)
       globalres = 1;
-      
+
     free(oldColPivot);
   }
   return globalres;

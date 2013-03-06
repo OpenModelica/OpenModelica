@@ -22,10 +22,10 @@
 
 // included to implicitly convert a vector to an nx1 matrix
 // so that it is compatible with lapack binding
-#include <boost/numeric/bindings/traits/ublas_vector2.hpp> 
+#include <boost/numeric/bindings/traits/ublas_vector2.hpp>
 
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
 #endif
@@ -36,45 +36,45 @@ namespace boost { namespace numeric { namespace bindings {
 
 		namespace detail {
 
-			inline void gelsd(const int m, const int n, const int nrhs, 
-							  float *a, const int lda, float *b, const int ldb, 
+			inline void gelsd(const int m, const int n, const int nrhs,
+							  float *a, const int lda, float *b, const int ldb,
 							  float *s, const float rcond, int *rank, float *work,
 							  const int lwork, int *iwork, int *info)
 			{
-				LAPACK_SGELSD(&m, &n, &nrhs, a, &lda, b, &ldb, s, 
+				LAPACK_SGELSD(&m, &n, &nrhs, a, &lda, b, &ldb, s,
 							  &rcond, rank, work, &lwork, iwork, info);
 			}
 
-			inline void gelsd(const int m, const int n, const int nrhs, 
-							  double *a, const int lda, double *b, const int ldb, 
+			inline void gelsd(const int m, const int n, const int nrhs,
+							  double *a, const int lda, double *b, const int ldb,
 							  double *s, const double rcond, int *rank, double *work,
 							  const int lwork, int *iwork, int *info)
 			{
-				LAPACK_DGELSD(&m, &n, &nrhs, a, &lda, b, &ldb, s, 
+				LAPACK_DGELSD(&m, &n, &nrhs, a, &lda, b, &ldb, s,
 							  &rcond, rank, work, &lwork, iwork, info);
 			}
 
-			inline void gelsd(const int m, const int n, const int nrhs, 
-							  traits::complex_f *a, const int lda, traits::complex_f *b, 
-							  const int ldb, float *s, const float rcond, int *rank, 
-							  traits::complex_f *work, const int lwork, float *rwork, 
+			inline void gelsd(const int m, const int n, const int nrhs,
+							  traits::complex_f *a, const int lda, traits::complex_f *b,
+							  const int ldb, float *s, const float rcond, int *rank,
+							  traits::complex_f *work, const int lwork, float *rwork,
 							  int *iwork, int *info)
 			{
-				LAPACK_CGELSD(&m, &n, &nrhs, traits::complex_ptr(a), 
-							  &lda, traits::complex_ptr(b), &ldb, s, 
-							  &rcond, rank, traits::complex_ptr(work), 
+				LAPACK_CGELSD(&m, &n, &nrhs, traits::complex_ptr(a),
+							  &lda, traits::complex_ptr(b), &ldb, s,
+							  &rcond, rank, traits::complex_ptr(work),
 							  &lwork, rwork, iwork, info);
 			}
 
-			inline void gelsd(const int m, const int n, const int nrhs, 
-							  traits::complex_d *a, const int lda, traits::complex_d *b, 
-							  const int ldb, double *s, const double rcond, int *rank, 
-							  traits::complex_d *work, const int lwork, double *rwork, 
+			inline void gelsd(const int m, const int n, const int nrhs,
+							  traits::complex_d *a, const int lda, traits::complex_d *b,
+							  const int ldb, double *s, const double rcond, int *rank,
+							  traits::complex_d *work, const int lwork, double *rwork,
 							  int *iwork, int *info)
 			{
-				LAPACK_ZGELSD(&m, &n, &nrhs, traits::complex_ptr(a), 
-							  &lda, traits::complex_ptr(b), &ldb, s, 
-							  &rcond, rank, traits::complex_ptr(work), 
+				LAPACK_ZGELSD(&m, &n, &nrhs, traits::complex_ptr(a),
+							  &lda, traits::complex_ptr(b), &ldb, s,
+							  &rcond, rank, traits::complex_ptr(work),
 							  &lwork, rwork, iwork, info);
 			}
 
@@ -128,7 +128,7 @@ namespace boost { namespace numeric { namespace bindings {
 			}
 
 			// gelsd for complex type
-			template <typename MatrA, typename MatrB, typename VecS, 
+			template <typename MatrA, typename MatrB, typename VecS,
 						typename Work, typename RWork>
 			inline int gelsd(MatrA& A, MatrB& B, VecS& s, Work& work, RWork& rwork)
 			{
@@ -202,7 +202,7 @@ namespace boost { namespace numeric { namespace bindings {
 					const int smlsiz = ilaenv(9, "GELSD", "");
 					const int nlvl = static_cast<int>(((std::log(static_cast<float>(minmn))/std::log(2.f))/ (smlsiz+1)) + 1);
 
-					const int lwork = 12*minmn + 2*minmn*smlsiz + 8*minmn*nlvl + 
+					const int lwork = 12*minmn + 2*minmn*smlsiz + 8*minmn*nlvl +
 							     	  minmn*nrhs + (smlsiz+1)*(smlsiz+1);
 
 					traits::detail::array<val_t> work(lwork);
@@ -295,7 +295,7 @@ namespace boost { namespace numeric { namespace bindings {
 
 					traits::detail::array<val_t> work(2*minmn + minmn*nrhs);
 
-					const int rwork_size = 10*minmn + 2*minmn*smlsiz + 8*minmn*nlvl + 
+					const int rwork_size = 10*minmn + 2*minmn*smlsiz + 8*minmn*nlvl +
 										   3*smlsiz*nrhs + (smlsiz+1)*(smlsiz+1);
 
 					traits::detail::array<real_t> rwork(std::max(1, rwork_size));
@@ -352,7 +352,7 @@ namespace boost { namespace numeric { namespace bindings {
 					const int smlsiz = ilaenv(9, "GELSD", "");
 					const int nlvl = static_cast<int>(((std::log(static_cast<float>(minmn))/std::log(2.f))/ (smlsiz+1)) + 1);
 
-					const int rwork_size = 10*minmn + 2*minmn*smlsiz + 8*minmn*nlvl + 
+					const int rwork_size = 10*minmn + 2*minmn*smlsiz + 8*minmn*nlvl +
 											3*smlsiz*nrhs + (smlsiz+1)*(smlsiz+1);
 
 					traits::detail::array<real_t> rwork(std::max(1, rwork_size));

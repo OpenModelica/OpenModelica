@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -130,7 +130,7 @@ protected function partEvalExp
 algorithm
   outTpl :=
   matchcontinue inTpl
-    local  
+    local
       DAE.Exp exp,exp1;
       list<DAE.Function> dae;
     case ((exp,dae))
@@ -415,7 +415,7 @@ algorithm
 
     case(DAE.EQUEQUATION(cr1=_),dae)
      then
-       (iel,dae);        
+       (iel,dae);
 
     case(el,dae) then (el,dae);
 
@@ -440,7 +440,7 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
-      
+
     case ({},dae) then ({},dae);
     case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,isImpure,inlineType,source,cmt) :: cdr,dae)
       equation
@@ -523,7 +523,7 @@ algorithm
       DAE.ElementSource source;
       Integer ix;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
-      
+
     case({},dae) then ({},dae);
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation
@@ -880,7 +880,7 @@ algorithm
       DAE.Type retType;
       DAE.TypeSource ts;
       DAE.FunctionAttributes functionAttributes;
-      
+
     case(DAE.T_FUNCTION(args,retType,functionAttributes,ts),vars)
       equation
         new_args = Types.makeFargsList(vars);
@@ -984,7 +984,7 @@ algorithm
       equation
         i = ComponentReference.printComponentRefStr(cref);
         // TODO: FIXME: binding?
-        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),ty,DAE.UNBOUND(),NONE()); 
+        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),ty,DAE.UNBOUND(),NONE());
       then
         res;
     case(_)
@@ -1267,7 +1267,7 @@ algorithm
       DAE.ElementSource source;
       Integer ix;
       list<tuple<DAE.ComponentRef, Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
-      
+
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
@@ -1512,17 +1512,17 @@ algorithm
     local
       list<DAE.Exp> newArgs,cdr,cdr_1;
       DAE.Exp e;
-    
+
     case({},_) then fail();
-    
-    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)) :: cdr,newArgs) 
-      then 
+
+    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)) :: cdr,newArgs)
+      then
         listAppend(newArgs,cdr);
-    
-    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) 
-      then 
+
+    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs)
+      then
         listAppend(newArgs,cdr);
-    
+
     case(e :: cdr,newArgs)
       equation
         cdr_1 = replaceFnRef(cdr,newArgs);

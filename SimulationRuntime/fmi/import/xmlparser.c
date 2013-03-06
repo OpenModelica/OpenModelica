@@ -1,4 +1,4 @@
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * xmlParser.c
  * A parser for file modelVariables.xml of an FMU.
  * The parser creates an AST (abstract syntax tree) for a given XML file.
@@ -9,12 +9,12 @@
  * - check for each element that it has the expected parent element
  * - check for correct sequence of elements
  * Validation to be performed by this parser
- * - check for each attribute value that it is of the expected type 
- * - check that required attributes are present  
+ * - check for each attribute value that it is of the expected type
+ * - check that required attributes are present
  * - check that all decalaredType values reference an existing Type
  * - check that dependencies are only declared for outputs and
  *   refer only to inputs
- * Copyright 2010 QTronic GmbH. All rights reserved. 
+ * Copyright 2010 QTronic GmbH. All rights reserved.
  * Modified for OpenModelica Project.
  * -------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ char *strdup(const char *s); /* not part of C89 */
 #include "xmlparser.h"
 /* define XML_STATIC before including expat.h
  * to prevent error when linking with libexpatMT.lib */
-#define XML_STATIC 
+#define XML_STATIC
 #include <expat.h>
 #include "stack.h"
 
@@ -38,11 +38,11 @@ char *strdup(const char *s); /* not part of C89 */
 #define ERRORPRINT       fprintf(stderr, WHERESTR, WHEREARG)
 /* end */
 
-const char *elmNames[SIZEOF_ELM] = { 
+const char *elmNames[SIZEOF_ELM] = {
     "fmiModelDescription","UnitDefinitions","BaseUnit","DisplayUnitDefinition","TypeDefinitions",
     "Type","RealType","IntegerType","BooleanType","StringType",
   "EnumerationType","Item", "DefaultExperiment","VendorAnnotations","Tool",
-  "Annotation", "ModelVariables","ArrayVariable","ScalarVariable", "DirectDependency", 
+  "Annotation", "ModelVariables","ArrayVariable","ScalarVariable", "DirectDependency",
   "Name", "Real","Integer","Boolean","String","Enumeration"
 };
 
@@ -69,7 +69,7 @@ int skipData=0;              /* 1 to ignore element content, 0 when recordig con
 
 /* #define DEBUG_PARSER 1 */
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * Low-level functions for inspecting the model description */
 
 const char* getString(void* element, Att a){
@@ -86,7 +86,7 @@ double getDouble(void* element, Att a, ValueStatus* vs){
     const char* value = getString(element, a);
     if (!value) { *vs=valueMissing; return d; }
     *vs = (1==sscanf(value, "%lf", &d)) ? valueDefined : valueIllegal;
-    return d;    
+    return d;
 }
 
 /* getInt() is also used to retrieve Enumeration values from XML,
@@ -96,7 +96,7 @@ int getInt(void* element, Att a, ValueStatus* vs){
     const char* value = getString(element, a);
     if (!value) { *vs=valueMissing; return n; }
     *vs = (1==sscanf(value, "%d", &n)) ? valueDefined : valueIllegal;
-    return n;    
+    return n;
 }
 
 unsigned int getUInt(void* element, Att a, ValueStatus* vs){
@@ -104,7 +104,7 @@ unsigned int getUInt(void* element, Att a, ValueStatus* vs){
     const char* value = getString(element, a);
     if (!value) { *vs=valueMissing; return u; }
     *vs = (1==sscanf(value, "%u", &u)) ? valueDefined : valueIllegal;
-    return u;    
+    return u;
 }
 
 char getBoolean(void* element, Att a, ValueStatus* vs){
@@ -113,7 +113,7 @@ char getBoolean(void* element, Att a, ValueStatus* vs){
     *vs = valueDefined;
     if (!strcmp(value, "true")) return 1;
     if (!strcmp(value, "false")) return 0;
-    *vs = valueIllegal;    
+    *vs = valueIllegal;
     return 0;
 }
 
@@ -128,7 +128,7 @@ Enu getEnumValue(void* element, Att a, ValueStatus* vs) {
     Enu id;
     const char* value = getString(element, a);
     *vs = valueDefined;
-    if (!value) { 
+    if (!value) {
         *vs = valueMissing;
         switch (a) {
             case att_variableNamingConvention: return enu_flat;
@@ -139,12 +139,12 @@ Enu getEnumValue(void* element, Att a, ValueStatus* vs) {
         }
     }
     id = checkEnumValue(value);
-    if (id==-1) *vs = valueIllegal; 
+    if (id==-1) *vs = valueIllegal;
     return id;
 }
 
-/* ------------------------------------------------------------------------- 
- * Convenience methods for accessing the model description. 
+/* -------------------------------------------------------------------------
+ * Convenience methods for accessing the model description.
  * Use is only safe after the ast has been successfuly validated. */
 const char* getFmiVersion(ModelDescription* md){
   const char* fmiVer = getString(md,att_fmiVersion);
@@ -179,7 +179,7 @@ int getNumberOfEventIndicators(ModelDescription* md) {
 }
 
 /* name is a required attribute of ScalarVariable, Type, Item, Annotation, and Tool */
-const char* getName(void* element) { 
+const char* getName(void* element) {
     const char* name = getString(element, att_name);
     assert(name); /* this is a required attribute */
     return name;
@@ -202,7 +202,7 @@ Enu getVariability(void* scalarVariable) {
 }
 
 /* returns one of noAlias, alias, negatedAlias
- * if value is missing, the default noAlias is returned 
+ * if value is missing, the default noAlias is returned
  */
 Enu getAlias(void* scalarVariable) {
     ValueStatus vs;
@@ -232,12 +232,12 @@ ScalarVariable* getVariableByName(ModelDescription* md, const char* name) {
     return NULL;
 }
 
-/* Enumeration and Integer have the same base type while 
+/* Enumeration and Integer have the same base type while
  * Real, String, Boolean define own base types.
  */
 int sameBaseType(Elm t1, Elm t2){
-    return (t1==t2) || 
-           (t1==elm_Enumeration && t2==elm_Integer) || 
+    return (t1==t2) ||
+           (t1==elm_Enumeration && t2==elm_Integer) ||
            (t2==elm_Enumeration && t1==elm_Integer);
 }
 
@@ -247,7 +247,7 @@ ScalarVariable* getVariable(ModelDescription* md, fmiValueReference vr, Elm type
     if (md->modelVariables && vr!=fmiUndefinedValueReference)
     for (i=0; md->modelVariables[i]; i++){
         ScalarVariable* sv = (ScalarVariable*)md->modelVariables[i];
-        if (sameBaseType(type, sv->typeSpec->type) && getValueReference(sv) == vr) 
+        if (sameBaseType(type, sv->typeSpec->type) && getValueReference(sv) == vr)
             return sv;
     }
     return NULL;
@@ -275,20 +275,20 @@ const char* getString2(ModelDescription* md, void* tp, Att a) {
 /* Get description from variable or from declared type, or NULL. */
 const char * getDescription(ModelDescription* md, ScalarVariable* sv) {
     const char* value = getString(sv, att_description);
-    Type* type; 
+    Type* type;
     if (value) return value; /* found */
     /* search declared type, if any */
     type = getDeclaredType(md, getString(sv->typeSpec, att_declaredType));
     return type ? getString(type, att_description) : NULL;
 }
 
-/* Get attribute value from scalar variable given by vr and type, 
+/* Get attribute value from scalar variable given by vr and type,
  * incl. default value provided by declared type, if any.
  */
-const char * getVariableAttributeString(ModelDescription* md, 
+const char * getVariableAttributeString(ModelDescription* md,
         fmiValueReference vr, Elm type, Att a){
     const char* value;
-    Type* tp; 
+    Type* tp;
     ScalarVariable* sv = getVariable(md, vr, type);
     if (!sv) return NULL;
     value = getString(sv->typeSpec, a);
@@ -298,16 +298,16 @@ const char * getVariableAttributeString(ModelDescription* md,
     return tp ? getString(tp->typeSpec, a) : NULL;
 }
 
-/* Get attribute value from scalar variable given by vr and type, 
+/* Get attribute value from scalar variable given by vr and type,
  * incl. default value provided by declared type, if any.
  */
-double getVariableAttributeDouble(ModelDescription* md, 
+double getVariableAttributeDouble(ModelDescription* md,
         fmiValueReference vr, Elm type, Att a, ValueStatus* vs){
     double d = 0;
     const char* value = getVariableAttributeString(md, vr, type, a);
     if (!value) { *vs = valueMissing; return d; }
     *vs = (1==sscanf(value, "%lf", &d)) ? valueDefined : valueIllegal;
-    return d;    
+    return d;
 }
 
 /* Get nominal value from real variable or its declared type.
@@ -319,8 +319,8 @@ double getNominal(ModelDescription* md, fmiValueReference vr){
     return vs==valueDefined ? nominal : 1.0;
 }
 
-/* ------------------------------------------------------------------------- 
- * Various checks that log an error and stop the parser 
+/* -------------------------------------------------------------------------
+ * Various checks that log an error and stop the parser
  */
 
 /* Returns 0 to indicate error */
@@ -359,7 +359,7 @@ static int checkEnumValue(const char* enu){
 }
 
 static void logFatalTypeError(const char* expected, Elm found) {
-    ERRORPRINT; fprintf(stderr," Wrong element type, expected %s, found %s\n", 
+    ERRORPRINT; fprintf(stderr," Wrong element type, expected %s, found %s\n",
             expected, elmNames[found]);
     XML_StopParser(parser, XML_FALSE);
 }
@@ -369,11 +369,11 @@ static void logFatalTypeError(const char* expected, Elm found) {
  */
 static int checkElementType(void* element, Elm e) {
     Element* elm = (Element* )element;
-  
+
   #ifdef DEBUG_PARSER
   printf("-------- checkElementType elmNames[elm->type]: %s,Elm e: %s\n\n",elmNames[elm->type],elmNames[e]);
   #endif
-  
+
     if (elm->type == e) return 1; /* success */
     logFatalTypeError(elmNames[e], elm->type);
     return 0; /* error */
@@ -382,7 +382,7 @@ static int checkElementType(void* element, Elm e) {
 /* Returns 0 to indicate error
  * Verify that the next stack element exists and is of the given type
  * If e==ANY_TYPE, the type check is ommited
- */ 
+ */
 static int checkPeek(Elm e) {
     if (stackIsEmpty(stack)){
         ERRORPRINT; fprintf(stderr," Illegal document structure, expected %s\n", elmNames[e]);
@@ -394,18 +394,18 @@ static int checkPeek(Elm e) {
 
 /* Returns NULL to indicate error
  * Get the next stack element, it is of the given type.
- * If e==ANY_TYPE, the type check is ommited 
+ * If e==ANY_TYPE, the type check is ommited
  */
 static void* checkPop(Elm e){
     return checkPeek(e) ? stackPop(stack) : NULL;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * Helper */
 
 AstNodeType getAstNodeType(Elm e){
     switch (e) {
-    case elm_fmiModelDescription: 
+    case elm_fmiModelDescription:
         return astModelDescription;
     case elm_Type:
         return astType;
@@ -422,7 +422,7 @@ AstNodeType getAstNodeType(Elm e){
     case elm_DirectDependency:
         return astListElement;
     default:
-        return astElement; 
+        return astElement;
     }
 }
 
@@ -438,7 +438,7 @@ int addAttributes(Element* el, const char** attr) {
     if (n>0) {
         att = calloc(n, sizeof(char*));
         if (!checkPointer(att)) return 0;
-    } 
+    }
     for (n=0; attr[n]; n+=2) {
         char* value = strdup(attr[n+1]);
         if (!checkPointer(value)) return 0;
@@ -455,7 +455,7 @@ int addAttributes(Element* el, const char** attr) {
 /* Returns NULL to indicate error */
 Element* newElement(Elm type, int size, const char** attr) {
     Element* e = (Element*)calloc(1, size);
-    if (!checkPointer(e)) return NULL; 
+    if (!checkPointer(e)) return NULL;
     e->type = type;
     e->attributes = NULL;
     e->n=0;
@@ -463,7 +463,7 @@ Element* newElement(Elm type, int size, const char** attr) {
     return e;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * callback functions called by the XML parser
  */
 
@@ -473,11 +473,11 @@ static void XMLCALL startElement(void *context, const char *elm, const char **at
     void* e;
     int size;
     el = checkElement(elm);
-  
+
   #ifdef DEBUG_PARSER
   printf("#### startElement name: %s\n",elmNames[el]);
   #endif
-  
+
     if (el==-1) return; /* error */
     skipData = (el != elm_Name); /* skip element content for all elements but Name */
     switch(getAstNodeType(el)){
@@ -486,16 +486,16 @@ static void XMLCALL startElement(void *context, const char *elm, const char **at
         case astType:             size = sizeof(Type); break;
     /* case astModelVariables:   size = sizeof(ModelVariables); break; */
     /* case astArrayVariable:   size = sizeof(ArrayVariable); break;  */
-        case astScalarVariable:   size = sizeof(ScalarVariable); break;     
+        case astScalarVariable:   size = sizeof(ScalarVariable); break;
         case astModelDescription: size = sizeof(ModelDescription); break;
     default: assert(0);
     }
     e = newElement(el, size, attr);
-    checkPointer(e); 
+    checkPointer(e);
     stackPush(stack, e);
 }
 
-/* Pop all elements of the given type from stack and 
+/* Pop all elements of the given type from stack and
  * add it to the ListElement that follows.
  * The ListElement remains on the stack.
  */
@@ -520,13 +520,13 @@ static void popList(Elm e) {
 static void XMLCALL endElement(void *context, const char *elm) {
     Elm el;
     el = checkElement(elm);
-  
+
   #ifdef DEBUG_PARSER
   printf("#### endElement name: %s\n",elmNames[el]);
   #endif
-  
-    switch(el) {        
-        case elm_fmiModelDescription: 
+
+    switch(el) {
+        case elm_fmiModelDescription:
             {
                  ModelDescription* md;
                  ListElement** ud = NULL;     /* NULL or list of BaseUnits */
@@ -610,10 +610,10 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     // child = checkPop(ANY_TYPE);
                     // if (!child) return;
         // }
-        
+
         // if(child->type == elm_ArrayVariable){
         // }
-        
+
         // if(!checkPeek(elm_ModelVariables)) return;
         // mvs = (ModelVariables*)stackPeek(stack);
         // mvs->scalarVariables = sv;
@@ -712,9 +712,9 @@ void XMLCALL handleData(void *context, const XML_Char *s, int len) {
     return;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * printing */
- 
+
 static void printList(int indent, void** list);
 
 void printElement(int indent, void* element){
@@ -725,7 +725,7 @@ void printElement(int indent, void* element){
     /* print attributes */
     for (i=0; i<indent; i++) printf(" ");
     printf("%s", elmNames[e->type]);
-    for (i=0; i<e->n; i+=2) 
+    for (i=0; i<e->n; i+=2)
         printf(" %s=%s", e->attributes[i], e->attributes[i+1]);
     printf("\n");
     /* print child nodes */
@@ -752,17 +752,17 @@ void printElement(int indent, void* element){
     default:
       /* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
       exit(EXIT_FAILURE);
-    
+
     }
 }
 
 static void printList(int indent, void** list){
     int i;
-    if (list) for (i=0; list[i]; i++) 
+    if (list) for (i=0; list[i]; i++)
        printElement(indent, list[i]);
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * free memory of the AST
  */
 
@@ -774,7 +774,7 @@ void freeElement(void* element){
     ModelDescription* md;
     if (!e) return;
     /* free attributes */
-    for (i=0; i<e->n; i+=2) 
+    for (i=0; i<e->n; i+=2)
         free((void*)e->attributes[i+1]);
     free(e->attributes);
     /* free child nodes */
@@ -808,13 +808,13 @@ void freeElement(void* element){
 static void freeList(void** list){
     int i;
     if (!list) return;
-    for (i=0; list[i]; i++) 
+    for (i=0; list[i]; i++)
         freeElement(list[i]);
     free(list);
 }
 
-/* ------------------------------------------------------------------------- 
- * Entry function parse() of the XML parser 
+/* -------------------------------------------------------------------------
+ * Entry function parse() of the XML parser
  */
 
 static void cleanup(FILE *file) {
@@ -849,7 +849,7 @@ ModelDescription* parse(const char* xmlPath) {
         int n = fread(text, sizeof(char), XMLBUFSIZE, file);
       if (n != XMLBUFSIZE) done = 1;
         if (!XML_Parse(parser, text, n, done)){
-             ERRORPRINT; fprintf(stderr," Parse error in file %s at line %lu:\n%s\n", 
+             ERRORPRINT; fprintf(stderr," Parse error in file %s at line %lu:\n%s\n",
                      xmlPath,
                    XML_GetCurrentLineNumber(parser),
                    XML_ErrorString(XML_GetErrorCode(parser)));
@@ -871,7 +871,7 @@ ModelDescription* parse(const char* xmlPath) {
   // ModelDescription * md;
   // md = parse(argv[1]);
   // printf("#### memory address of root element: %x\n",md);
-  
+
   // return 1;
 // }
 */

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -35,9 +35,9 @@ encapsulated package AvlTree
   description: A MetaModelica AvlTree implementation
 
   RCS: $Id: Tree.mo 9152 2011-05-28 08:08:28Z adrpo $
-  
+
   @author: adrpo
-  
+
   A generic AvlTree with type variables for Key and Val."
 
 public
@@ -72,8 +72,8 @@ uniontype Tree "a tree is a node and two optional printing functions"
     FuncTypeKeyCompare keyCompareFunc "function to compare keys, should return -1, 0, 1 ONLY!";
     Option<FuncTypeKeyToStr> keyStrFuncOpt "optional function for printing Key";
     Option<FuncTypeValToStr> valStrFuncOpt "optional function for printing Val";
-    Option<FuncTypeItemUpdateCheck> updateCheckFuncOpt 
-      "optional function for reporting error on an update of the same item 
+    Option<FuncTypeItemUpdateCheck> updateCheckFuncOpt
+      "optional function for reporting error on an update of the same item
        if this function is NONE() then updates of items with the same key is allowed!
        this function gets the new item and the old item for easy reporting,
        and should return:
@@ -81,7 +81,7 @@ uniontype Tree "a tree is a node and two optional printing functions"
        - false if update should not be done
        - should print an error message and fail if it wants to fail the update";
     String name "a name for this tree so you know which one it is if you have more";
-  end TREE;  
+  end TREE;
 end Tree;
 
 uniontype Node
@@ -92,18 +92,18 @@ uniontype Node
     Node<Key,Val> left "left subtree";
     Node<Key,Val> right "right subtree";
   end NODE;
-  
+
   record NO_NODE "no node, empty tree"
   end NO_NODE;
 end Node;
 
-public uniontype Item 
+public uniontype Item
   "Each node in the binary tree can have an item associated with it."
   record ITEM
     Key key "Key";
     Val val "Val";
   end ITEM;
-  
+
   record NO_ITEM "no item"
   end NO_ITEM;
 end Item;
@@ -117,10 +117,10 @@ public function name
   input Tree<Key,Val> tree;
   output String name;
 algorithm
-  TREE(name = name) := tree;   
+  TREE(name = name) := tree;
 end name;
 
-public function create 
+public function create
 "Return an empty tree with the given printing functions attached"
   input String name "a name for this tree so you know which one it is if you have more";
   input FuncTypeKeyCompare inKeyCompareFunc;
@@ -217,14 +217,14 @@ algorithm
     case (TREE(node, cf, kf, vf, uf, n), key, val)
       equation
         node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
-      then 
+      then
         TREE(node, cf, kf, vf, uf, n);
 
     else
       equation
         str = "AvlTree.add name: " +& name(inTree) +& " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then 
+      then
         fail();
 
   end matchcontinue;
@@ -254,21 +254,21 @@ algorithm
        n = newLeafNode(ITEM(inKey, inVal), 1);
      then
        n;
-        
+
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
       equation
         n = newLeafNode(ITEM(key, val), 1);
-      then 
+      then
         n;
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
       equation
         order = keyCompareFunc(key, rkey);
         n = balance(addNode_dispatch(inTree,inNode,order,key, val));
-      then 
+      then
         n;
- 
+
     else
       equation
         str = "AvlTree.addNode name: " +& name(inTree) +& " failed!";
@@ -303,25 +303,25 @@ algorithm
       then
         NODE(ITEM(key,val), h, l, r);
 
-    // replacements of nodes maybe allowed! 
+    // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, h, l, r), 0, key, val)
       equation
         true = hasUpdateCheckFunction(inTree);
         updateCheckFunc = getUpdateCheckFunc(inTree);
         // update is allowed
-        true = updateCheckFunc(i, ITEM(key, val));        
+        true = updateCheckFunc(i, ITEM(key, val));
       then
         NODE(ITEM(key,val), h, l, r);
 
-    // replacements of nodes maybe allowed! 
+    // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, h, l, r), 0, key, val)
       equation
         true = hasUpdateCheckFunction(inTree);
         updateCheckFunc = getUpdateCheckFunc(inTree);
         // update is NOT allowed
-        false = updateCheckFunc(i, ITEM(key, val));        
+        false = updateCheckFunc(i, ITEM(key, val));
       then
         inNode; // return the same node, no update!
 
@@ -330,7 +330,7 @@ algorithm
       equation
         n = emptyNodeIfNoNode(r);
         n = addNode(inTree, n, key, val);
-      then  
+      then
         NODE(i, h, l, n);
 
     // Insert into left subtree.
@@ -397,7 +397,7 @@ algorithm
     // search to the left.
     case (_, NODE(left = l), -1, key)
       then getNode(inTree, l, key);
-    
+
   end match;
 end getNode_dispatch;
 
@@ -416,7 +416,7 @@ algorithm
       FuncTypeKeyCompare keyCompareFunc;
       Option<FuncTypeKeyToStr> kf;
       Option<FuncTypeValToStr> vf;
-      Option<FuncTypeItemUpdateCheck> uf;       
+      Option<FuncTypeItemUpdateCheck> uf;
       Node<Key,Val> node;
       Integer order;
       String n, str;
@@ -424,9 +424,9 @@ algorithm
     case (TREE(node, keyCompareFunc, kf, vf, uf, n), key, val)
       equation
         node = replaceNode(inTree, node, key, val);
-      then 
-        TREE(node, keyCompareFunc, kf, vf, uf, n); 
-    
+      then
+        TREE(node, keyCompareFunc, kf, vf, uf, n);
+
     else
       equation
         str = "AvlTree.replace name: " +& name(inTree) +& " failed!";
@@ -452,15 +452,15 @@ algorithm
       Node<Key, Val> n;
       Integer order;
 
-    case (TREE(keyCompareFunc = keyCompareFunc), 
-          NODE(item = ITEM(key = rkey)), 
+    case (TREE(keyCompareFunc = keyCompareFunc),
+          NODE(item = ITEM(key = rkey)),
           key, val)
       equation
         order = keyCompareFunc(key, rkey);
-        n = replaceNode_dispatch(inTree, inNode, order, key, val); 
+        n = replaceNode_dispatch(inTree, inNode, order, key, val);
       then
         n;
-  
+
   end match;
 end replaceNode;
 
@@ -483,7 +483,7 @@ algorithm
 
     // replace this node.
     case (_, NODE(item = ITEM(key = _), height = h, left = l, right = r), 0, key, val)
-      then 
+      then
         NODE(ITEM(key, val), h, l, r);
 
     // insert into right subtree.
@@ -491,7 +491,7 @@ algorithm
       equation
         n = emptyNodeIfNoNode(r);
         n = replaceNode(inTree, n, key, val);
-      then  
+      then
         NODE(i, h, l, n);
 
     // insert into left subtree.
@@ -515,7 +515,7 @@ algorithm
   end match;
 end emptyNodeIfNoNode;
 
-protected function balance 
+protected function balance
 "Balances an Node<Key,Val>"
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
@@ -526,7 +526,7 @@ algorithm
   outNode := doBalance(d, inNode);
 end balance;
 
-protected function doBalance 
+protected function doBalance
 "Performs balance if difference is > 1 or < -1"
   input Integer difference;
   input Node<Key,Val> inNode;
@@ -541,7 +541,7 @@ algorithm
   end match;
 end doBalance;
 
-protected function doBalance2 
+protected function doBalance2
 "Help function to doBalance"
   input Boolean inDiffIsNegative;
   input Node<Key,Val> inNode;
@@ -550,14 +550,14 @@ algorithm
   outNode := match(inDiffIsNegative, inNode)
     local
       Node<Key,Val> n;
-    
-    case(true, n) 
+
+    case(true, n)
       equation
         n = doBalance3(n);
         n = rotateLeft(n);
       then n;
-    
-    case(false,n) 
+
+    case(false,n)
       equation
         n = doBalance4(n);
         n = rotateRight(n);
@@ -565,7 +565,7 @@ algorithm
   end match;
 end doBalance2;
 
-protected function doBalance3 
+protected function doBalance3
 "help function to doBalance2"
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
@@ -573,7 +573,7 @@ algorithm
   outNode := matchcontinue(inNode)
     local
       Node<Key,Val> n, rr, rN;
-      
+
     case(n)
       equation
         rN = rightNode(n);
@@ -581,12 +581,12 @@ algorithm
         rr = rotateRight(rN);
         n = setRight(n, rr);
       then n;
-    
+
     else inNode;
   end matchcontinue;
 end doBalance3;
 
-protected function doBalance4 
+protected function doBalance4
 "Help function to doBalance2"
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
@@ -594,7 +594,7 @@ algorithm
   outNode := matchcontinue(inNode)
     local
       Node<Key,Val> rl, n, lN;
-      
+
     case (n)
       equation
         lN = leftNode(n);
@@ -602,12 +602,12 @@ algorithm
         rl = rotateLeft(lN);
         n = setLeft(n, rl);
       then n;
-    
+
     else inNode;
   end matchcontinue;
 end doBalance4;
 
-protected function setRight 
+protected function setRight
 "set right treenode"
   input Node<Key,Val> node;
   input Node<Key,Val> right;
@@ -621,7 +621,7 @@ algorithm
   outNode := NODE(item, height, l, right);
 end setRight;
 
-protected function setLeft 
+protected function setLeft
 "set left node"
   input Node<Key,Val> node;
   input Node<Key,Val> left;
@@ -635,7 +635,7 @@ algorithm
   outNode := NODE(item, height, left, r);
 end setLeft;
 
-protected function leftNode 
+protected function leftNode
 "Retrieve the left subnode"
   input Node<Key,Val> node;
   output  Node<Key,Val> subNode;
@@ -643,7 +643,7 @@ algorithm
   NODE(left = subNode) := node;
 end leftNode;
 
-protected function rightNode 
+protected function rightNode
 "Retrieve the right subnode"
   input Node<Key,Val> node;
   output Node<Key,Val> subNode;
@@ -651,7 +651,7 @@ algorithm
   NODE(right = subNode) := node;
 end rightNode;
 
-protected function exchangeLeft 
+protected function exchangeLeft
   "help function to balance"
   input Node<Key,Val> inNode;
   input Node<Key,Val> inParent;
@@ -665,7 +665,7 @@ algorithm
   outParent := balance(node);
 end exchangeLeft;
 
-protected function exchangeRight 
+protected function exchangeRight
   "help function to balance"
   input Node<Key,Val> inNode;
   input Node<Key,Val> inParent;
@@ -679,7 +679,7 @@ algorithm
   outParent := balance(node);
 end exchangeRight;
 
-protected function rotateLeft 
+protected function rotateLeft
 "help function to balance"
   input Node<Key,Val> node;
   output Node<Key,Val> outNode "updated node";
@@ -687,7 +687,7 @@ algorithm
   outNode := exchangeLeft(rightNode(node), node);
 end rotateLeft;
 
-protected function rotateRight 
+protected function rotateRight
   "help function to balance"
   input Node<Key,Val> node;
   output Node<Key,Val> outNode "updated node";
@@ -695,7 +695,7 @@ algorithm
   outNode := exchangeRight(leftNode(node), node);
 end rotateRight;
 
-protected function differenceInHeight 
+protected function differenceInHeight
   "help function to balance, calculates the difference in height between left
   and right child"
   input Node<Key,Val> node;
@@ -707,7 +707,7 @@ algorithm
   diff := getHeight(l) - getHeight(r);
 end differenceInHeight;
 
-protected function computeHeight 
+protected function computeHeight
   "compute the heigth of the Tree and store in the node info"
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
@@ -724,7 +724,7 @@ algorithm
   outNode := NODE(i, height, l, r);
 end computeHeight;
 
-protected function getHeight 
+protected function getHeight
   "Retrieve the height of a node"
   input Node<Key,Val> bt;
   output Integer height;
@@ -757,13 +757,13 @@ algorithm
         false = hasPrintingFunctions(inTree);
       then
        "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED> name[" +& name(inTree) +& "]";
-    
+
     case (TREE(root = node), _)
       equation
         res = prettyPrintNodeStr(inTree, node, inIndent);
       then
         res;
-    
+
   end matchcontinue;
 end prettyPrintTreeStr_dispatch;
 
@@ -824,7 +824,7 @@ algorithm
         str = printNodeStr(inTree, node);
       then
         str;
-        
+
   end matchcontinue;
 end printTreeStr;
 
@@ -864,7 +864,7 @@ algorithm
       FuncTypeKeyToStr key2Str;
       FuncTypeValToStr val2Str;
       Key key;
-      Val val;      
+      Val val;
 
     case (_, NO_ITEM()) then "[]";
     case (_, ITEM(key = key, val = val))
@@ -874,14 +874,14 @@ algorithm
         keyStr = key2Str(key);
         valStr = val2Str(val);
         str = "[" +& keyStr +& ", " +& valStr +& "]";
-      then 
+      then
         str;
   end match;
 end printItemStr;
 
 public function getKeyOfVal
 "search for a key that has val as value, fails if it cannot find it;
- if there are multiple keys pointing to the same value only the first 
+ if there are multiple keys pointing to the same value only the first
  one encountered is returned"
   input Tree<Key,Val> inTree;
   input Val inVal;
@@ -897,7 +897,7 @@ algorithm
         key = getKeyOfValNode(inTree, node, inVal);
       then
         key;
-        
+
   end match;
 end getKeyOfVal;
 
@@ -923,7 +923,7 @@ algorithm
         true = valueEq(v, inVal);
       then
         k;
-    
+
     // search left
     case (_, NODE(item = item as ITEM(k,v), left = left, right = right), inVal)
       equation
@@ -939,12 +939,12 @@ algorithm
         k = getKeyOfValNode(inTree, right, inVal);
       then
         k;
-        
+
   end matchcontinue;
 end getKeyOfValNode;
 
 public function addUnique
-"inserts a new item into the tree if is not there 
+"inserts a new item into the tree if is not there
  and returns the new item.
  if the key is there then it returns the already
  exiting item and doe not update the tree."
@@ -970,14 +970,14 @@ algorithm
     case (TREE(node, cf, kf, vf, uf, n), key, val)
       equation
         (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
-      then 
+      then
         (TREE(node, cf, kf, vf, uf, n), item);
 
     else
       equation
         str = "AvlTree.addUnique name: " +& name(inTree) +& " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then 
+      then
         fail();
 
   end matchcontinue;
@@ -1010,13 +1010,13 @@ algorithm
        n = newLeafNode(item, 1);
      then
        (n, item);
-        
+
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
       equation
         item = ITEM(key, val);
         n = newLeafNode(item, 1);
-      then 
+      then
         (n, item);
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
@@ -1024,14 +1024,14 @@ algorithm
         order = keyCompareFunc(key, rkey);
         (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
         n = balance(n);
-      then 
+      then
         (n, item);
- 
+
     else
       equation
         str = "AvlTree.addNodeUnique name: " +& name(inTree) +& " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then 
+      then
         fail();
   end match;
 end addNodeUnique;
@@ -1056,7 +1056,7 @@ algorithm
       FuncTypeItemUpdateCheck updateCheckFunc;
 
     // replacements of nodes are not allowed in addUnique
-    // we don't care about update check functions here 
+    // we don't care about update check functions here
     case (_, NODE(i, h, l, r), 0, key, val)
       then
         (inNode, i); // return the same node, no update for addUnique!
@@ -1066,7 +1066,7 @@ algorithm
       equation
         n = emptyNodeIfNoNode(r);
         (n, it) = addNodeUnique(inTree, n, key, val);
-      then  
+      then
         (NODE(i, h, l, n), it);
 
     // Insert into left subtree.

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -29,14 +29,14 @@
  *
  */
 
-encapsulated package BaseHashSet 
-" 
+encapsulated package BaseHashSet
+"
   file:        BaseHashSet.mo
   package:     BaseHashSet
   author:      Peter Aronsson (MathCore), Jens Frenkek (TU Dresden)
   description: BaseHashSet is a generic implementation of hashsets.
                See HashSet*.mo to see how to use it.
-  
+
   RCS: $Id: BaseHashSet.mo 12193 2012-06-23 08:33:08Z Frenkel TUD $
 
   This file is an extension to OpenModelica.
@@ -58,15 +58,15 @@ protected import Util;
 
 // adrpo: use a prime here (pick your poison):
 //        3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
-//       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157 
-//      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257 
-//      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367 
-//      373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463 467 
-//      479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593 599 
-//      601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701 709 
-//      719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829 
-//      839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967 
-//      971 977 983 991 997 1013 2053 3023 4013 4999 5051 5087 24971 
+//       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157
+//      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257
+//      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367
+//      373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463 467
+//      479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593 599
+//      601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701 709
+//      719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829
+//      839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967
+//      971 977 983 991 997 1013 2053 3023 4013 4999 5051 5087 24971
 //
 // You can also use Util.nextPrime if you know exactly how large the hash set
 // should be.
@@ -93,7 +93,7 @@ public function bucketToValuesSize
   input Integer szBucket;
   output Integer szArr;
 algorithm
-  szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10); 
+  szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10);
 end bucketToValuesSize;
 
 
@@ -134,7 +134,7 @@ algorithm
       FuncHash hashFunc;
       FuncKeyString keystrFunc;
       String s;
-    
+
     // Adding when not existing previously
     case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
       equation
@@ -155,7 +155,7 @@ algorithm
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, key);
       then ((hashvec,varr_1,bsize,n,fntpl));
-    
+
     case (key,((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc))))
       equation
         print("- BaseHashSet.add failed: ");
@@ -190,7 +190,7 @@ algorithm
       Key key;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-    
+
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_)))
       equation
@@ -201,7 +201,7 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
-    
+
     case (_,_)
       equation
         print("- BaseHashSet.addNoUpdCheck failed\n");
@@ -224,9 +224,9 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-    
+
     // Adding when not existing previously
-    case (_, 
+    case (_,
         ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
       equation
         failure(_ = get(key, hashSet));
@@ -285,7 +285,7 @@ algorithm
     // empty set containg nothing
     case (_,(_,(0,_,_),_,_,_))
       then
-        false;  
+        false;
     case(_,_)
       equation
         _ = get(key,hashSet);
@@ -320,7 +320,7 @@ algorithm
       Key k;
       FuncEq keyEqual;
       FuncHash hashFunc;
-      
+
     case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_)))
       equation
         hashindx = hashFunc(key, bsize);
@@ -329,7 +329,7 @@ algorithm
         k = valueArrayNth(varr, indx);
       then
         (k,indx);
-        
+
   end match;
 end get1;
 
@@ -344,14 +344,14 @@ algorithm
     local
       Key key2;
       list<tuple<Key,Integer>> xs;
-        
+
     // search for the key, found the good one
     case (_,((key2,index) :: _),_)
       equation
         true = keyEqual(key, key2);
       then
         index;
-    
+
     // search more
     case (_,(_ :: xs),_)
       equation
@@ -395,7 +395,7 @@ algorithm
       array<Option<Key>> arr;
       Key elt;
       Integer lastpos,n,size;
-    
+
     case ((0,_,arr)) then {};
     case ((1,_,arr))
       equation
@@ -423,18 +423,18 @@ algorithm
       array<Option<Key>> arr;
       Integer pos,lastpos,pos_1;
       list<Key>  acc;
-    
+
     case (arr,true,pos,lastpos,acc)
       equation
         acc = List.consOption(arr[pos + 1],acc);
       then listReverse(acc);
-    
+
     case (arr,false,pos,lastpos,acc)
       equation
         pos_1 = pos + 1;
         acc = List.consOption(arr[pos + 1],acc);
       then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
-    
+
   end match;
 end valueArrayList2;
 

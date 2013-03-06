@@ -13,4 +13,4 @@ private:
     ISystemInitialization* _system;
 
 };
- 
+

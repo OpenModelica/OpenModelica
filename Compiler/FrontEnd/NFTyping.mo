@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -157,7 +157,7 @@ algorithm
     case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name), cls),
         _, _, _, st)
       equation
-        comp = NFInstSymbolTable.lookupName(name, st); 
+        comp = NFInstSymbolTable.lookupName(name, st);
         (comp, st) = typeComponent(comp, inParent, inContext, st, inFunctionTable);
         (cls, st) = typeClass2(cls, SOME(comp), inContext, st, inFunctionTable);
         (comp, st) = updateComplexComponentType(comp, cls, st);
@@ -212,9 +212,9 @@ algorithm
         st = NFInstSymbolTable.updateComponent(comp, st);
       then
         (comp, st);
-    
+
     case (NFInstTypes.TYPED_COMPONENT(name = _), _, _, st, _) then (inComponent, st);
-        
+
     case (NFInstTypes.PACKAGE(parent = NONE()), SOME(_), _, st, _)
       equation
         comp = NFInstUtil.setComponentParent(inComponent, inParent);
@@ -274,9 +274,9 @@ algorithm
         (typed_dims, st) = typeDimensions(dims, name, inContext, st, inFunctionTable);
       then
         (DAE.T_ARRAY(ty, typed_dims, DAE.emptyTypeSource), st);
-        
+
     case (NFInstTypes.TYPED_COMPONENT(ty = ty), _, st, _) then (ty, st);
-    
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -321,7 +321,7 @@ algorithm
 
   end match;
 end typeComponentDim;
-        
+
 protected function typeDimensions
   input array<Dimension> inDimensions;
   input Absyn.Path inComponentName;
@@ -334,7 +334,7 @@ protected
   Integer len;
 algorithm
   len := arrayLength(inDimensions);
-  (outDimensions, outSymbolTable) := 
+  (outDimensions, outSymbolTable) :=
     typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, inFunctionTable, 1, len, {});
 end typeDimensions;
 
@@ -367,7 +367,7 @@ algorithm
     else
       equation
         dim = arrayGet(inDimensions, inIndex);
-        (typed_dim, st) = 
+        (typed_dim, st) =
           typeDimension(dim, inComponentName, inContext, inSymbolTable, inFunctionTable, inDimensions, inIndex);
         (dims, st) = typeDimensions2(inDimensions, inComponentName, inContext, st, inFunctionTable, inIndex + 1,
           inLength, typed_dim :: inAccDims);
@@ -388,7 +388,7 @@ protected function typeDimension
   output DAE.Dimension outDimension;
   output SymbolTable outSymbolTable;
 algorithm
-  (outDimension, outSymbolTable) := 
+  (outDimension, outSymbolTable) :=
   match(inDimension, inComponentName, inContext, inSymbolTable, inFunctionTable, inDimensions, inIndex)
     local
       SymbolTable st;
@@ -436,7 +436,7 @@ algorithm
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim), _, _, st, _, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
-      then 
+      then
         (dim, st);
 
     case (NFInstTypes.TYPED_DIMENSION(dimension = dim), _, _, st, _, _, _) then (dim, st);
@@ -449,7 +449,7 @@ algorithm
 
   end match;
 end typeDimension;
-   
+
 protected function typeComponentBinding
   input Component inComponent;
   input Option<DAE.Type> inType;
@@ -511,12 +511,12 @@ algorithm
       ParamType pty;
       array<Dimension> dims;
       Absyn.Info info;
-     
+
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info),
         _, SOME(ty), _)
       equation
         dpf = NFInstUtil.translatePrefixes(pf);
-      then 
+      then
         NFInstTypes.TYPED_COMPONENT(name, ty, inParent, dpf, inBinding, info);
 
     case (NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, _, info), _, NONE(), _)
@@ -567,7 +567,7 @@ algorithm
 
   end matchcontinue;
 end markComponentBindingAsProcessing;
-      
+
 protected function typeBinding
   input Binding inBinding;
   input EvalPolicy inEvalPolicy;
@@ -620,13 +620,13 @@ algorithm
       DAE.Exp e;
       Absyn.Info info;
       String str;
-      
+
     case (t1, t2, e, info)
       equation
         (_, _) = Types.matchType(e, t2, t1, true);
       then
         ();
-      
+
     case (t1, t2, e, info)
       equation
         str = ExpressionDump.printExpStr(e);
@@ -763,7 +763,7 @@ public function typeExpEmptyFunctionTable
   output DAE.Type outType;
   output DAE.Const outConst;
   output SymbolTable outSymbolTable;
-protected 
+protected
   FunctionHashTable functionTable;
 algorithm
   functionTable := HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
@@ -814,7 +814,7 @@ algorithm
         (e1, ty, const, st) = typeCref(cref, ep, c, st, inFunctionTable);
       then
         (e1, ty, const, st);
-        
+
     case (DAE.ARRAY(array = expl), ep, c, st, ft)
       equation
         (expl, ty::_ , constList, st) = typeExpList(expl, ep, c, st, ft);
@@ -828,7 +828,7 @@ algorithm
       equation
         (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
         (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
-         
+
          // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkBinaryOperation(e1,ty1,op,e2,ty2);
 
@@ -840,10 +840,10 @@ algorithm
       equation
         (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
         (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
-        
+
         // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkLogicalBinaryOperation(e1,ty1,op,e2,ty2);
-        
+
         const = Types.constAnd(const1, const2);
       then
         (DAE.LBINARY(e1, op, e2), ty, const, st);
@@ -855,12 +855,12 @@ algorithm
         ty = selectType(tyOp, ty);
       then
         (DAE.LUNARY(op, e1), ty, const, st);
-    
+
     case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), ep, c, st, ft)
       equation
         (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
         (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
-         
+
          // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkRelationOperation(e1,ty1,op,e2,ty2);
 
@@ -897,12 +897,12 @@ algorithm
           {"NFTyping.typeExp got obsolete MATRIX expression."});
       then
         fail();
-        
+
     case (DAE.CALL(path = fnName, expLst = args, attr = attrs), ep, c, st, ft)
       equation
         // Make sure that the func is there before typing the arguments
         func = lookupFunction(fnName, inFunctionTable);
-        
+
         (args, tyList, constList, st) = typeExpList(args, ep, c, st, ft);
         (e1,ty) = typeCall(func, args, tyList, attrs, st);
         const = List.fold(constList, Types.constAnd, DAE.C_CONST());
@@ -923,7 +923,7 @@ end typeExp;
 
 protected function typeCall
 "@mahge:
-  Handles typing of calls. 
+  Handles typing of calls.
   Extracts the input and output types of a function. Matches the given
   call arguments againest the function inputs. constructs the return type
   for the function. Vectorizes if necessary."
@@ -949,69 +949,69 @@ algorithm
       DAE.Dimensions forEachDim;
       Absyn.Path fnName;
       Component rec;
-      
+
       case(NFInstTypes.FUNCTION(fnName, inputs, outputs, _, _), _, _, _, _)
         equation
-          
+
           // Match the args of the call exp againest the input/formal types of the function.
           // We get matched args and a 'foreachdim' if vectorization is done
           inputTypes = List.map(inputs, NFInstUtil.getElementComponentType);
-          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/); 
-          
+          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/);
+
           // Create the return type for the function
           outputTypes = List.map(outputs, NFInstUtil.getElementComponentType);
           (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
-          
+
           // create the call attributes. retType + isTuple
           DAE.CALL_ATTR( _, _, isBuiltin, isImpure, inlineType, tailCall) = inAttrs;
           attrs = DAE.CALL_ATTR(retType, isTuple, isBuiltin, isImpure, inlineType, tailCall);
-          
+
           // See if we need to vectorize the call i.e. if we have 'forEachDim' then
           // we return an array exp other wise a call exp.
           (outexp,outtype) = NFTypeCheck.vectorizeCall(fnName, fixedArgs, attrs, retType, forEachDim);
-          
+
         then
           (outexp,outtype);
-          
+
       case(NFInstTypes.RECORD_CONSTRUCTOR(fnName, retType, inputs, _, _), _, _, _, _)
         equation
-          
+
           // Match the args of the call exp againest the input/formal types of the function.
           // We get matched args and a 'foreachdim' if vectorization is done
           inputTypes = List.map(inputs, NFInstUtil.getElementComponentType);
-          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/); 
-          
+          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/);
+
           // retType = DAE.T_COMPLEX(ClassInf.RECORD(fnName), inputs, NONE(), DAE.emptyTypeSource);
           // Create the return type for the record constructor
           // rec = NFInstSymbolTable.lookupName(fnName, inSymbolTable);
           // retType = NFInstUtil.getComponentType(rec);
-          
+
           // Create the return type for the function
           // outputTypes = List.map(outputs, NFInstUtil.getElementComponentType);
           // (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
-          
+
           // create the call attributes. retType + isTuple
           DAE.CALL_ATTR( _, _, isBuiltin, isImpure, inlineType, tailCall) = inAttrs;
           attrs = DAE.CALL_ATTR(retType, false, isBuiltin, isImpure, inlineType, tailCall);
-          
+
           // See if we need to vectorize the call i.e. if we have 'forEachDim' then
           // we return an array exp other wise a call exp.
           (outexp,outtype) = NFTypeCheck.vectorizeCall(fnName, fixedArgs, attrs, retType, forEachDim);
-          
+
         then
           (outexp,outtype);
-          
+
       else
         equation
           Error.addMessage(Error.INTERNAL_ERROR,
             {"NFTyping.typeCall Failed."});
         then
           fail();
-          
-  end matchcontinue;    
+
+  end matchcontinue;
 end typeCall;
 
-    
+
 protected function dimensionExp
   input DAE.Dimension inDimension;
   input DAE.Exp inCref;
@@ -1031,7 +1031,7 @@ algorithm
 
   end match;
 end dimensionExp;
-  
+
 protected function typeCref
   input DAE.ComponentRef inCref;
   input EvalPolicy inEvalPolicy;
@@ -1083,7 +1083,7 @@ algorithm
 
   end matchcontinue;
 end typeCref;
-       
+
 protected function shouldEvaluate
   input SCode.Variability inVarKind;
   input EvalPolicy inEvalPolicy;
@@ -1134,7 +1134,7 @@ algorithm
         // TODO: Apply cref subscripts to the expression.
         /* ------------------------------------------------------------------*/
         // type the actual expression as the cref might have WRONG TYPE!
-        (exp, ty, _, st) = typeExp(exp, ep, c, st, inFunctionTable); 
+        (exp, ty, _, st) = typeExp(exp, ep, c, st, inFunctionTable);
       then
         (exp, ty, st);
 
@@ -1206,10 +1206,10 @@ algorithm
   outDimension := match(inDimension, inCref)
     local
       DAE.Exp exp;
-      
+
     case (DAE.DIM_EXP(exp = exp), _)
       equation
-        ((exp, _)) = Expression.traverseExp(exp, 
+        ((exp, _)) = Expression.traverseExp(exp,
           propagateCrefSubsToExpTraverser, inCref);
       then
         DAE.DIM_EXP(exp);
@@ -1217,7 +1217,7 @@ algorithm
     else inDimension;
   end match;
 end propagateCrefSubsToDimension;
-  
+
 protected function propagateCrefSubsToExpTraverser
   input tuple<DAE.Exp, DAE.ComponentRef> inTuple;
   output tuple<DAE.Exp, DAE.ComponentRef> outTuple;
@@ -1250,7 +1250,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cref1, cref2;
 
-    case (DAE.CREF_QUAL(id1, ty, {}, cref1), 
+    case (DAE.CREF_QUAL(id1, ty, {}, cref1),
           DAE.CREF_QUAL(id2, _, subs, cref2))
       equation
         true = stringEq(id1, id2);
@@ -1319,7 +1319,7 @@ algorithm
   (outElements, outConnections) := List.map2Fold(inElements,
     typeSectionsInElement, inSymbolTable, inFunctionTable, inConnections);
 end typeSectionsInElements;
-    
+
 protected function typeSectionsInElement
   input Element inElement;
   input SymbolTable inSymbolTable;
@@ -1381,7 +1381,7 @@ algorithm
       list<Equation> rest_eq, acc_eq;
       SymbolTable st;
       Connections conn;
-      
+
     case (eq :: rest_eq, st, _, acc_eq, _)
       equation
         (acc_eq, conn) = typeEquation(eq, st, inFunctionTable, acc_eq, inConnections);
@@ -1427,10 +1427,10 @@ algorithm
       equation
         (lhs, ty1, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         (rhs, ty2, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
-        
+
         (lhs, tty1, rhs, tty2) = NFTypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
-        
-        eq = NFInstTypes.EQUALITY_EQUATION(lhs, rhs, info); 
+
+        eq = NFInstTypes.EQUALITY_EQUATION(lhs, rhs, info);
       then
         (eq :: acc_el, inConnections);
 
@@ -1519,7 +1519,7 @@ algorithm
         eq = NFInstTypes.NORETCALL_EQUATION(exp1, info);
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
-        
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -1701,7 +1701,7 @@ algorithm
         (cref, face, is_deleted) = typeConnectorCref2(cref, inCref, comp, pre_comp, inInfo);
       then
         (cref, face, comp, is_deleted);
-  
+
   end match;
 end typeConnectorCref;
 
@@ -1776,7 +1776,7 @@ algorithm
     local
       DAE.ComponentRef cref;
       Option<Component> comp, pre_comp;
-      String cref_str; 
+      String cref_str;
 
     case (_, _, _, _)
       equation
@@ -1812,7 +1812,7 @@ algorithm
       Component comp;
       DAE.ComponentRef cref;
       Option<Component> opt_comp, opt_pre_comp;
-      
+
     case (_, _)
       equation
         comp = NFInstSymbolTable.lookupCref(inCref, inSymbolTable);
@@ -1869,7 +1869,7 @@ protected function rangeToIteratorType
   input Absyn.Info inInfo;
   output DAE.Type outIteratorType;
 algorithm
-  outIteratorType := matchcontinue(inRangeType, inRangeExp, inInfo) 
+  outIteratorType := matchcontinue(inRangeType, inRangeExp, inInfo)
     local
       String ty_str, exp_str;
 
@@ -1896,7 +1896,7 @@ protected function typeBranches
   output Connections outConnections;
 algorithm
   (outBranches, outConnections) := List.map2Fold(inBranches, typeBranch,
-    inSymbolTable, inFunctionTable, NFConnect2.emptyConnections); 
+    inSymbolTable, inFunctionTable, NFConnect2.emptyConnections);
 end typeBranches;
 
 protected function typeBranch
@@ -2056,7 +2056,7 @@ algorithm
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE); 
+        true = Flags.isSet(Flags.FAILTRACE);
         func_str = Absyn.pathString(inPath);
         Debug.traceln("- NFTyping.lookupFunction could not find the function " +& func_str);
       then
@@ -2064,7 +2064,7 @@ algorithm
 
   end matchcontinue;
 end lookupFunction;
-        
+
 public function typeFunction
   input Absyn.Path inPath;
   input tuple<HashTablePathToFunction.HashTable, SymbolTable> inTpl;
@@ -2078,7 +2078,7 @@ algorithm
   func := lookupFunction(inPath, ht);
   outTpl := typeFunction2(func, inPath, ht, st);
 end typeFunction;
-  
+
 public function typeFunction2
   input Function inFunction;
   input Absyn.Path inPath;
@@ -2128,7 +2128,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFTyping.typeFunction2 failed on function " +&
           Absyn.pathString(inPath));
-      then 
+      then
         fail();
 
   end matchcontinue;

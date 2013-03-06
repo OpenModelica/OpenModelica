@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -83,12 +83,12 @@ algorithm
   _ := match(inNode, inFuncName, isFirst, inInfo)
     local
       DAE.Type ty1, ty2;
-     
+
     /*-----------------------------------------------------------------------*/
     // TODO: This is actually not working as it should, since the cref will have
     // been prefixed already. Need to check this before prefixing somehow.
     /*-----------------------------------------------------------------------*/
-    case (DAE.CREF_QUAL(identType = ty1, 
+    case (DAE.CREF_QUAL(identType = ty1,
         componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
       equation
         crefIsValidNode2(ty1, ty2, inFuncName, isFirst, inInfo);
@@ -184,7 +184,7 @@ algorithm
   info := (lhs_name, rhs_name, inInfo);
   compatibleConnectors2(lhs_conn, rhs_conn, info);
 end compatibleConnectors;
-  
+
 protected function makeConnectorTuple
   input Connector inConnector;
   output ConnectorTuple outTuple;
@@ -381,7 +381,7 @@ algorithm
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
       then
         fail();
-        
+
   end matchcontinue;
 end compatibleDirection;
 
@@ -523,7 +523,7 @@ algorithm
     local
       list<DAE.Var> vars1, vars2;
       list<Connector> connl1, connl2;
-      
+
     // Two complex connectors, check their components.
     case (DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2), _)
       equation

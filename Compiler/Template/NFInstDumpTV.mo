@@ -127,7 +127,7 @@ package NFInstTypes
     end COMPLEX_CLASS;
 
     record BASIC_TYPE
-      Absyn.Path name; 
+      Absyn.Path name;
     end BASIC_TYPE;
   end Class;
 
@@ -196,7 +196,7 @@ package NFInstTypes
       Binding binding;
       Absyn.Info info;
     end TYPED_COMPONENT;
-      
+
     record CONDITIONAL_COMPONENT
       Absyn.Path name;
       DAE.Exp condition;
@@ -206,7 +206,7 @@ package NFInstTypes
       NFSCodeEnv.Env env;
       Prefix prefix;
       Absyn.Info info;
-    end CONDITIONAL_COMPONENT; 
+    end CONDITIONAL_COMPONENT;
 
     record DELETED_COMPONENT
       Absyn.Path name;
@@ -420,7 +420,7 @@ end NFInstTypes;
 
 package Tpl
   function addTemplateError
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 

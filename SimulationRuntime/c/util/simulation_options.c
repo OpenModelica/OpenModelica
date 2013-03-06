@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -32,7 +32,7 @@
 
 const char *FLAG_NAME[FLAG_MAX+1] = {
   "FLAG_UNKNOWN",
-  
+
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_F */                     "f",
@@ -56,13 +56,13 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                     "r",
   /* FLAG_S */                     "s",
   /* FLAG_W */                     "w",
-  
+
   "FLAG_MAX"
 };
 
 const char *FLAG_DESC[FLAG_MAX+1] = {
   "unknown",
-  
+
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
@@ -86,7 +86,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_S */                     "value specifies the solver",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
-  
+
   "FLAG_MAX"
 };
 
@@ -116,13 +116,13 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_S */                     "value specifies the solver\n  dassl\n  euler\n  rungekutta\n  inline-euler\n  inline-rungekutta\n  dasslwort\n  dasslSymJac\n  dasslNumJac\n  dasslColorSymJac\n  dasslInternalNumJac\n  qss",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
-  
+
   "FLAG_MAX"
 };
 
 const int FLAG_TYPE[FLAG_MAX] = {
   FLAG_TYPE_UNKNOWN,
-  
+
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,

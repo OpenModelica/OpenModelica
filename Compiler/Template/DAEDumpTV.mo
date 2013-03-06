@@ -18,145 +18,145 @@ package ClassInf
     record UNKNOWN
       Absyn.Path path;
     end UNKNOWN;
-    
+
      record OPTIMIZATION
       Absyn.Path path;
      end OPTIMIZATION;
-  
+
     record MODEL
       Absyn.Path path;
     end MODEL;
-  
+
     record RECORD
       Absyn.Path path;
     end RECORD;
-  
+
     record BLOCK
       Absyn.Path path;
     end BLOCK;
-  
+
     record CONNECTOR
       Absyn.Path path;
       Boolean isExpandable;
     end CONNECTOR;
-  
+
     record TYPE
       Absyn.Path path;
     end TYPE;
-  
+
     record PACKAGE
       Absyn.Path path;
     end PACKAGE;
-  
+
     record FUNCTION
       Absyn.Path path;
       Boolean isImpure;
     end FUNCTION;
-  
+
     record ENUMERATION
       Absyn.Path path;
     end ENUMERATION;
-  
+
     record HAS_RESTRICTIONS
       Absyn.Path path;
       Boolean hasEquations;
       Boolean hasAlgorithms;
       Boolean hasConstraints;
     end HAS_RESTRICTIONS;
-    
+
     record TYPE_INTEGER
       Absyn.Path path;
     end TYPE_INTEGER;
-  
+
     record TYPE_REAL
       Absyn.Path path;
     end TYPE_REAL;
-  
+
     record TYPE_STRING
       Absyn.Path path;
     end TYPE_STRING;
-  
+
     record TYPE_BOOL
       Absyn.Path path;
     end TYPE_BOOL;
-  
+
     record TYPE_ENUM
       Absyn.Path path;
     end TYPE_ENUM;
-  
+
     record EXTERNAL_OBJ
       Absyn.Path path;
     end EXTERNAL_OBJ;
-  
+
     /* MetaModelica extension */
     record META_TUPLE
       Absyn.Path path;
     end META_TUPLE;
-  
+
     record META_LIST
       Absyn.Path path;
     end META_LIST;
-  
+
     record META_OPTION
       Absyn.Path path;
     end META_OPTION;
-  
+
     record META_RECORD
       Absyn.Path path;
     end META_RECORD;
-  
+
     record META_UNIONTYPE
       Absyn.Path path;
     end META_UNIONTYPE;
-  
+
     record META_ARRAY
       Absyn.Path path;
     end META_ARRAY;
-  
+
     record META_POLYMORPHIC
       Absyn.Path path;
     end META_POLYMORPHIC;
     /*---------------------*/
   end State;
-  
+
 end ClassInf;
 
 
 package Absyn
-  
+
   type Ident = String;
-  
+
   uniontype Path
       record QUALIFIED
         Ident name;
         Path path;
       end QUALIFIED;
-  
+
       record IDENT
         Ident name;
       end IDENT;
-  
-      record FULLYQUALIFIED 
+
+      record FULLYQUALIFIED
         Path path;
       end FULLYQUALIFIED;
     end Path;
-  
+
 end Absyn;
 
 package SCode
-  
+
    uniontype Visibility
      record PUBLIC end PUBLIC;
      record PROTECTED end PROTECTED;
   end Visibility;
-  
+
    uniontype Variability
      record VAR      end VAR;
      record DISCRETE end DISCRETE;
      record PARAM    end PARAM;
      record CONST    end CONST;
   end Variability;
-  
+
   uniontype Comment
     record COMMENT
       Option<Annotation> annotation_;
@@ -174,16 +174,16 @@ package SCode
       Mod modification;
     end ANNOTATION;
   end Annotation;
-   
-end SCode; 
+
+end SCode;
 
 
 package DAEDump
-  
+
 uniontype compWithSplitElements
   record COMP_WITH_SPLIT
     String name;
-    splitElements spltElems;    
+    splitElements spltElems;
     Option<SCode.Comment> comment;
   end COMP_WITH_SPLIT;
 end compWithSplitElements;
@@ -199,32 +199,32 @@ uniontype splitElements
     list<DAE.Element> o;
     list<DAE.Element> ca;
   end SPLIT_ELEMENTS;
-end splitElements; 
- 
+end splitElements;
+
 uniontype functionList
   record FUNCTION_LIST
     list<DAE.Function> funcs;
   end FUNCTION_LIST;
-end functionList; 
-  
-  
+end functionList;
+
+
 end DAEDump;
-  
-  
-  
+
+
+
 package DAE
 
     type Ident = String;
-   
+
     type InstDims = list<Subscript>;
     type Dimensions = list<Dimension>;
-    
-  uniontype DAElist 
+
+  uniontype DAElist
     record DAE
       list<Element> elementLst;
     end DAE;
   end DAElist;
-  
+
   /* AVLTree for functions */
   type AvlKey = Absyn.Path;
 
@@ -239,7 +239,7 @@ package DAE
       Option<AvlTree> left "left subtree" ;
       Option<AvlTree> right "right subtree" ;
     end AVLTREENODE;
-  
+
   end AvlTree;
 
   uniontype AvlTreeValue "Each node in the binary tree can have a value associated with it."
@@ -247,9 +247,9 @@ package DAE
       AvlKey key "Key" ;
       AvlValue value "Value" ;
     end AVLTREEVALUE;
-  
+
   end AvlTreeValue;
-    
+
   uniontype ElementSource "gives information about the origin of the element"
     record SOURCE
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
@@ -261,7 +261,7 @@ package DAE
       list<SCode.Comment> comment;
     end SOURCE;
   end ElementSource;
-    
+
   uniontype Element
     record VAR
       ComponentRef componentRef " The variable name";
@@ -279,123 +279,123 @@ package DAE
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     end VAR;
-  
+
     record DEFINE "A solved equation"
       ComponentRef componentRef;
       Exp exp;
       ElementSource source "the origin of the component/equation/algorithm";
     end DEFINE;
-  
+
     record INITIALDEFINE " A solved initial equation"
       ComponentRef componentRef;
       Exp exp;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIALDEFINE;
-  
+
     record EQUATION "Scalar equation"
       Exp exp;
       Exp scalar;
       ElementSource source "the origin of the component/equation/algorithm";
     end EQUATION;
-  
+
     record EQUEQUATION "effort variable equality"
       ComponentRef cr1;
       ComponentRef cr2;
       ElementSource source "the origin of the component/equation/algorithm";
     end EQUEQUATION;
-  
+
     record ARRAY_EQUATION " an array equation"
       Dimensions dimension "dimension sizes" ;
       Exp exp;
       Exp array;
       ElementSource source "the origin of the component/equation/algorithm";
     end ARRAY_EQUATION;
-  
+
     record INITIAL_ARRAY_EQUATION "An initial array equation"
       Dimensions dimension "dimension sizes";
       Exp exp;
       Exp array;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIAL_ARRAY_EQUATION;
-  
+
     record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
       Exp lhs;
       Exp rhs;
       ElementSource source "the origin of the component/equation/algorithm";
     end COMPLEX_EQUATION;
-  
+
     record INITIAL_COMPLEX_EQUATION "an initial equation of complex type, e.g. record = func(..)"
       Exp lhs;
       Exp rhs;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIAL_COMPLEX_EQUATION;
-  
+
     record WHEN_EQUATION " a when equation"
       Exp condition "Condition" ;
       list<Element> equations "Equations" ;
       Option<Element> elsewhen_ "Elsewhen should be of type WHEN_EQUATION" ;
       ElementSource source "the origin of the component/equation/algorithm";
     end WHEN_EQUATION;
-  
+
     record IF_EQUATION " an if-equation"
       list<Exp> condition1 "Condition" ;
       list<list<Element>> equations2 "Equations of true branch" ;
       list<Element> equations3 "Equations of false branch" ;
       ElementSource source "the origin of the component/equation/algorithm";
     end IF_EQUATION;
-  
+
     record INITIAL_IF_EQUATION "An initial if-equation"
       list<Exp> condition1 "Condition" ;
       list<list<Element>> equations2 "Equations of true branch" ;
       list<Element> equations3 "Equations of false branch" ;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIAL_IF_EQUATION;
-  
+
     record INITIALEQUATION " An initial equaton"
       Exp exp1;
       Exp exp2;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIALEQUATION;
-  
+
     record ALGORITHM " An algorithm section"
       Algorithm algorithm_;
       ElementSource source "the origin of the component/equation/algorithm";
     end ALGORITHM;
-  
+
     record INITIALALGORITHM " An initial algorithm section"
       Algorithm algorithm_;
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIALALGORITHM;
-  
+
     record COMP
       Ident ident;
       list<Element> dAElist "a component with subelements, normally only used at top level.";
       ElementSource source "the origin of the component/equation/algorithm"; // we might not this here.
       Option<SCode.Comment> comment;
     end COMP;
-  
+
     record EXTOBJECTCLASS "The 'class' of an external object"
       Absyn.Path path "className of external object";
       ElementSource source "the origin of the component/equation/algorithm";
     end EXTOBJECTCLASS;
-  
+
     record ASSERT " The Modelica builtin assert"
       Exp condition;
       Exp message;
       ElementSource source "the origin of the component/equation/algorithm";
     end ASSERT;
-  
+
     record TERMINATE " The Modelica builtin terminate(msg)"
       Exp message;
       ElementSource source "the origin of the component/equation/algorithm";
     end TERMINATE;
-  
+
     record REINIT " reinit operator for reinitialization of states"
       ComponentRef componentRef;
       Exp exp;
       ElementSource source "the origin of the component/equation/algorithm";
     end REINIT;
-  
+
     record NORETCALL "call with no return value, i.e. no equation.
       Typically sideeffect call of external function but also
       Connections.* i.e. Connections.root(...) functions."
@@ -403,22 +403,22 @@ package DAE
       list<Exp> functionArgs;
       ElementSource source "the origin of the component/equation/algorithm";
     end NORETCALL;
-    
+
     record CONSTRAINT " constraint section"
       Constraint constraints;
       ElementSource source "the origin of the component/equation/algorithm";
-    end CONSTRAINT;  
-    
+    end CONSTRAINT;
+
   end Element;
-  
+
   uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
     It is simple a list of algorithm statements."
     record ALGORITHM_STMTS
       list<Statement> statementLst;
     end ALGORITHM_STMTS;
-  
+
   end Algorithm;
-    
+
   uniontype Statement
     record STMT_ASSIGN
       Exp exp1;
@@ -503,23 +503,23 @@ package DAE
       ElementSource source;
     end STMT_THROW;
   end Statement;
-  
+
   uniontype Else "An if statements can one or more `elseif\' branches and an
         optional `else\' branch."
     record NOELSE end NOELSE;
-    
+
     record ELSEIF
       Exp exp;
       list<Statement> statementLst;
       Else else_;
     end ELSEIF;
-    
+
     record ELSE
       list<Statement> statementLst;
     end ELSE;
-    
+
   end Else;
-  
+
   uniontype Operator "Operators which are overloaded in the abstract syntax are here
     made type-specific.  The integer addition operator (`ADD(INT)\')
     and the real addition operator (`ADD(REAL)\') are two distinct
@@ -527,133 +527,133 @@ package DAE
     record ADD
       Type ty;
     end ADD;
-  
+
     record SUB
       Type ty;
     end SUB;
-  
+
     record MUL
       Type ty;
     end MUL;
-  
+
     record DIV
       Type ty;
     end DIV;
-  
+
     record POW
       Type ty;
     end POW;
-  
+
     record UMINUS
       Type ty;
     end UMINUS;
-  
+
     record UMINUS_ARR
       Type ty;
     end UMINUS_ARR;
-  
+
     record ADD_ARR
       Type ty;
     end ADD_ARR;
-  
+
     record SUB_ARR
       Type ty;
     end SUB_ARR;
-  
+
     record MUL_ARR
       Type ty;
     end MUL_ARR;
-  
+
     record DIV_ARR
       Type ty;
     end DIV_ARR;
-  
+
     record MUL_ARRAY_SCALAR " {a,b,c} * s"
       Type ty "type of the array" ;
     end MUL_ARRAY_SCALAR;
-  
+
     record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
       Type ty "type of the array";
     end ADD_ARRAY_SCALAR;
-  
+
     record SUB_SCALAR_ARRAY "s .- {a,b,c}"
       Type ty "type of the array" ;
     end SUB_SCALAR_ARRAY;
-  
+
     record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
       Type ty "type of the array" ;
     end MUL_SCALAR_PRODUCT;
-  
+
     record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
       Type ty "{{..},..}  {{..},{..}}" ;
     end MUL_MATRIX_PRODUCT;
-  
+
     record DIV_ARRAY_SCALAR "{a, b} / c"
       Type ty  "type of the array";
     end DIV_ARRAY_SCALAR;
-  
+
     record DIV_SCALAR_ARRAY "c / {a,b}"
       Type ty "type of the array" ;
     end DIV_SCALAR_ARRAY;
-  
+
     record POW_ARRAY_SCALAR
       Type ty "type of the array" ;
     end POW_ARRAY_SCALAR;
-  
+
     record POW_SCALAR_ARRAY
       Type ty "type of the array" ;
     end POW_SCALAR_ARRAY;
-  
+
     record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
       Type ty "type of the array";
     end POW_ARR;
-  
+
     record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
       Type ty "type of the array";
     end POW_ARR2;
-  
+
     record AND
       Type ty;
     end AND;
-  
-    record OR 
+
+    record OR
       Type ty;
     end OR;
-  
-    record NOT 
+
+    record NOT
       Type ty;
     end NOT;
-  
+
     record LESS
       Type ty;
     end LESS;
-  
+
     record LESSEQ
       Type ty;
     end LESSEQ;
-  
+
     record GREATER
       Type ty;
     end GREATER;
-  
+
     record GREATEREQ
       Type ty;
     end GREATEREQ;
-  
+
     record EQUAL
       Type ty;
     end EQUAL;
-  
+
     record NEQUAL
       Type ty;
     end NEQUAL;
-  
+
     record USERDEFINED
       Absyn.Path fqName "The FQ name of the overloaded operator function" ;
     end USERDEFINED;
 
   end Operator;
-  
+
   uniontype ExternalDecl
     record EXTERNALDECL
       String name;
@@ -670,22 +670,22 @@ package DAE
       Attributes attributes;
       Type type_;
     end EXTARG;
-  
+
     record EXTARGEXP
       Exp exp;
       Type type_;
     end EXTARGEXP;
-  
+
     record EXTARGSIZE
       ComponentRef componentRef;
       Attributes attributes;
       Type type_;
       Exp exp;
     end EXTARGSIZE;
-  
+
     record NOEXTARG end NOEXTARG;
   end ExtArg;
-    
+
   uniontype Var "- Variables"
     record TYPES_VAR
       Ident name "name";
@@ -707,52 +707,52 @@ package DAE
       SCode.Visibility    visibility "public, protected";
     end ATTR;
   end Attributes;
-    
+
   uniontype ComponentRef "- Component references
       CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
       CREF_IDENT(..) is used for non-qualifed component names, e.g. x"
-    
+
     record CREF_QUAL
       Ident ident;
       Type identType "type of the identifier, without considering the subscripts";
       list<Subscript> subscriptLst;
       ComponentRef componentRef;
     end CREF_QUAL;
-  
+
     record CREF_IDENT
       Ident ident;
       Type identType "type of the identifier, without considering the subscripts";
       list<Subscript> subscriptLst;
     end CREF_IDENT;
-  
+
     record WILD end WILD;
-  
+
   end ComponentRef;
-  
+
   uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
     translations of the corresponding types in the `Absyn\' module."
     record WHOLEDIM "a{:,1}" end WHOLEDIM;
-  
+
     record SLICE
       Exp exp "a{1:3,1}, a{1:2:10,2}" ;
     end SLICE;
-  
+
     record INDEX
       Exp exp "a[i+1]" ;
     end INDEX;
-    
+
     record WHOLE_NONEXP "Used for non-expanded arrays. Should probably be combined with WHOLEDIM
       into one case with Option<Exp> argument."
       Exp exp;
     end WHOLE_NONEXP;
-  
+
   end Subscript;
-  
+
   uniontype VarKind
     record VARIABLE "variable" end VARIABLE;
     record DISCRETE "discrete" end DISCRETE;
     record PARAM "parameter"   end PARAM;
-    record CONST "constant"    end CONST;  
+    record CONST "constant"    end CONST;
   end VarKind;
 
   uniontype VarDirection
@@ -769,21 +769,21 @@ package DAE
 
   uniontype StateSelect
     record NEVER end NEVER;
-  
+
     record AVOID end AVOID;
-  
+
     record DEFAULT end DEFAULT;
-  
+
     record PREFER end PREFER;
-  
+
     record ALWAYS end ALWAYS;
   end StateSelect;
 
   uniontype Uncertainty
     record GIVEN end GIVEN;
-  
+
     record SOUGHT end SOUGHT;
-  
+
     record REFINE end REFINE;
   end Uncertainty;
 
@@ -803,7 +803,7 @@ package DAE
       Option<Boolean> finalPrefix;
       Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
     end VAR_ATTR_REAL;
-  
+
     record VAR_ATTR_INT
       Option<Exp> quantity "quantity";
       tuple<Option<Exp>, Option<Exp>> min "min, max";
@@ -815,7 +815,7 @@ package DAE
       Option<Boolean> finalPrefix;
       Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
     end VAR_ATTR_INT;
-  
+
     record VAR_ATTR_BOOL
       Option<Exp> quantity "quantity";
       Option<Exp> initial_ "Initial value";
@@ -825,7 +825,7 @@ package DAE
       Option<Boolean> finalPrefix;
       Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
     end VAR_ATTR_BOOL;
-  
+
     record VAR_ATTR_STRING
       Option<Exp> quantity "quantity";
       Option<Exp> initial_ "Initial value";
@@ -834,7 +834,7 @@ package DAE
       Option<Boolean> finalPrefix;
       Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
     end VAR_ATTR_STRING;
-  
+
     record VAR_ATTR_ENUMERATION
       Option<Exp> quantity "quantity";
       tuple<Option<Exp>, Option<Exp>> min "min, max";
@@ -845,9 +845,9 @@ package DAE
       Option<Boolean> finalPrefix;
       Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
     end VAR_ATTR_ENUMERATION;
-  
+
   end VariableAttributes;
-  
+
   uniontype VarVisibility
     record PUBLIC "public variables"       end PUBLIC;
     record PROTECTED "protected variables" end PROTECTED;
@@ -864,25 +864,25 @@ package DAE
       ElementSource source "the origin of the component/equation/algorithm";
       Option<SCode.Comment> comment;
     end FUNCTION;
-  
+
     record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
       Absyn.Path path;
       Type type_;
       ElementSource source "the origin of the component/equation/algorithm";
     end RECORD_CONSTRUCTOR;
   end Function;
-  
+
   uniontype FunctionDefinition
-  
+
      record FUNCTION_DEF "Normal function body"
        list<Element> body;
      end FUNCTION_DEF;
-  
+
      record FUNCTION_EXT "Normal external function declaration"
       list<Element> body;
       ExternalDecl externalDecl;
      end FUNCTION_EXT;
-  
+
     record FUNCTION_DER_MAPPER "Contains derivatives for function"
       Absyn.Path derivedFunction "Function that is derived";
       Absyn.Path derivativeFunction "Path to derivative function";
@@ -892,36 +892,36 @@ package DAE
       list<Absyn.Path> lowerOrderDerivatives;
     end FUNCTION_DER_MAPPER;
   end FunctionDefinition;
-  
+
   uniontype derivativeCond "Different conditions on derivatives"
     record ZERO_DERIVATIVE end ZERO_DERIVATIVE;
-    record NO_DERIVATIVE 
-      Exp binding; 
+    record NO_DERIVATIVE
+      Exp binding;
     end NO_DERIVATIVE;
   end derivativeCond;
 
   uniontype Type "models the different front-end and back-end types"
-    
+
     record T_INTEGER
       list<Var> varLst;
-      TypeSource source;  
+      TypeSource source;
     end T_INTEGER;
-  
+
     record T_REAL
       list<Var> varLst;
       TypeSource source;
     end T_REAL;
-  
+
     record T_STRING
       list<Var> varLst;
       TypeSource source;
     end T_STRING;
-  
+
     record T_BOOL
       list<Var> varLst;
       TypeSource source;
     end T_BOOL;
-  
+
     record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
       Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
       Absyn.Path path "enumeration path" ;
@@ -930,32 +930,32 @@ package DAE
       list<Var> attributeLst;
       TypeSource source;
     end T_ENUMERATION;
-  
-    record T_ARRAY 
-      "an array can be represented in two equivalent ways: 
-         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+
+    record T_ARRAY
+      "an array can be represented in two equivalent ways:
+         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
          2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
          In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
       TypeSource source;
     end T_ARRAY;
-  
+
     record T_NORETCALL "For functions not returning any values."
-      TypeSource source; 
+      TypeSource source;
     end T_NORETCALL;
-  
+
     record T_UNKNOWN "Used when type is not yet determined"
-      TypeSource source; 
+      TypeSource source;
     end T_UNKNOWN;
-  
+
     record T_COMPLEX
       ClassInf.State complexClassType "complexClassType ; The type of a class" ;
       list<Var> varLst "complexVarLst ; The variables of a complex type" ;
       EqualityConstraint equalityConstraint;
       TypeSource source;
     end T_COMPLEX;
-    
+
     record T_SUBTYPE_BASIC
       ClassInf.State complexClassType "complexClassType ; The type of a class" ;
       list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
@@ -963,62 +963,62 @@ package DAE
       EqualityConstraint equalityConstraint;
       TypeSource source;
     end T_SUBTYPE_BASIC;
-  
+
     record T_FUNCTION
       list<FuncArg> funcArg "funcArg" ;
       Type funcResultType "funcResultType ; Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;
     end T_FUNCTION;
-    
+
     record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
       Type functionType "the type of the function";
       TypeSource source;
     end T_FUNCTION_REFERENCE_VAR;
-    
+
     record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
       Boolean builtin;
       Type functionType "type of the non-boxptr function";
       TypeSource source;
     end T_FUNCTION_REFERENCE_FUNC;
-    
+
     record T_TUPLE
       list<Type> tupleType "tupleType ; For functions returning multiple values.";
       TypeSource source;
     end T_TUPLE;
-  
+
     record T_CODE
       CodeType ty;
       TypeSource source;
     end T_CODE;
-  
+
     record T_ANYTYPE
       Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
       TypeSource source;
     end T_ANYTYPE;
-  
+
     // MetaModelica extensions
     record T_METALIST "MetaModelica list type"
       Type listType "listType";
       TypeSource source;
     end T_METALIST;
-  
+
     record T_METATUPLE "MetaModelica tuple type"
       list<Type> types;
       TypeSource source;
     end T_METATUPLE;
-  
+
     record T_METAOPTION "MetaModelica option type"
       Type optionType;
       TypeSource source;
     end T_METAOPTION;
-  
+
     record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
       TypeSource source;
     end T_METAUNIONTYPE;
-  
+
     record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
       Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
       // If the metarecord constructor was added to the FunctionTree, this would
@@ -1028,83 +1028,83 @@ package DAE
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
       TypeSource source;
     end T_METARECORD;
-  
+
     record T_METAARRAY
       Type ty;
       TypeSource source;
     end T_METAARRAY;
-  
+
     record T_METABOXED "Used for MetaModelica generic types"
       Type ty;
       TypeSource source;
     end T_METABOXED;
-  
+
     record T_METAPOLYMORPHIC
       String name;
       TypeSource source;
     end T_METAPOLYMORPHIC;
-    
+
     record T_METATYPE "this type contains all the meta types"
       Type ty;
       TypeSource source;
     end T_METATYPE;
-    
+
   end Type;
-  
+
   uniontype InlineType
     record NORM_INLINE "Normal inline, inline as soon as possible"
     end NORM_INLINE;
-  
+
     record EARLY_INLINE "Inline even earlier than NORM_INLINE. This will display the inlined code in the flattened model and also works for functions calling other functions that should be inlined."
     end EARLY_INLINE;
-    
+
     record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
     end NO_INLINE;
-  
+
     record AFTER_INDEX_RED_INLINE "Try to inline after index reduction"
     end AFTER_INDEX_RED_INLINE;
   end InlineType;
-  
+
   uniontype Binding "- Binding"
     record UNBOUND end UNBOUND;
-  
+
     record EQBOUND
       Exp exp "exp";
       Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp";
       Const constant_ "constant";
       BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead.";
     end EQBOUND;
-  
+
     record VALBOUND
       Values.Value valBound "valBound";
       BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead";
     end VALBOUND;
-  
+
   end Binding;
-    
+
   uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
      it is not a connector variable at all."
     record FLOW end FLOW;
     record NON_FLOW end NON_FLOW;
     record NON_CONNECTOR end NON_CONNECTOR;
   end Flow;
-  
-  
+
+
   uniontype Dimension
     record DIM_INTEGER "Dimension given by an integer."
       Integer integer;
     end DIM_INTEGER;
-  
+
     record DIM_ENUM "Dimension given by an enumeration."
       Absyn.Path enumTypeName "The enumeration type name.";
       list<String> literals "A list of the literals in the enumeration.";
       Integer size "The size of the enumeration.";
     end DIM_ENUM;
-  
+
     record DIM_EXP "Dimension given by an expression."
       Exp exp;
     end DIM_EXP;
-  
+
     record DIM_UNKNOWN "Dimension with unknown size."
       //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound";
     end DIM_UNKNOWN;
@@ -1117,7 +1117,7 @@ package DAE
       operators. It also contains expression indexing with the `ASUB\'
       constructor.  Indexing arbitrary array expressions is currently
       not supported in Modelica, but it is needed here.
-      
+
       When making additions, update at least the following functions:
       * Expression.traverseExp
       * Expression.traverseExpTopDown
@@ -1127,54 +1127,54 @@ package DAE
     record ICONST
       Integer integer "Integer constants" ;
     end ICONST;
-  
+
     record RCONST
       Real real "Real constants" ;
     end RCONST;
-  
+
     record SCONST
       String string "String constants" ;
     end SCONST;
-  
+
     record BCONST
       Boolean bool "Bool constants" ;
     end BCONST;
-  
+
     record ENUM_LITERAL "Enumeration literal"
       Absyn.Path name;
       Integer index;
     end ENUM_LITERAL;
-  
+
     record CREF "component references, e.g. a.b{2}.c{1}"
       ComponentRef componentRef;
       Type ty;
     end CREF;
-  
+
     record BINARY "Binary operations, e.g. a+4"
       Exp exp1;
       Operator operator;
       Exp exp2;
     end BINARY;
-  
+
     record UNARY "Unary operations, -(4x)"
       Operator operator;
       Exp exp;
     end UNARY;
-  
+
     record LBINARY "Logical binary operations: and, or"
       Exp exp1;
       Operator operator;
       Exp exp2;
     end LBINARY;
-  
+
     record LUNARY "Logical unary operations: not"
       Operator operator;
       Exp exp;
     end LUNARY;
-  
+
     record RELATION "Relation, e.g. a <= 0
       Index contains normal an Integer for every ZeroCrossing
-      but if Relation is in algorithm with for loop the iterator and the range 
+      but if Relation is in algorithm with for loop the iterator and the range
       of static iterator is needed for codegen"
       Exp exp1;
       Operator operator;
@@ -1182,78 +1182,78 @@ package DAE
       Integer index;
       Option<tuple<Exp,Integer,Integer>> optionExpisASUB;
     end RELATION;
-  
+
     record IFEXP "If expressions"
       Exp expCond;
       Exp expThen;
       Exp expElse;
     end IFEXP;
-  
+
     record CALL
       Absyn.Path path;
       list<Exp> expLst;
       CallAttributes attr;
     end CALL;
-  
+
     record PARTEVALFUNCTION
       Absyn.Path path;
       list<Exp> expList;
       Type ty;
     end PARTEVALFUNCTION;
-  
+
     record ARRAY
       Type ty;
       Boolean scalar "scalar for codegen" ;
       list<Exp> array "Array constructor, e.g. {1,3,4}" ;
     end ARRAY;
-  
+
     record MATRIX
       Type ty;
       Integer integer;
       list<list<Exp>> matrix;
     end MATRIX;
-  
+
     record RANGE
       Type ty;
       Exp start "start value";
       Option<Exp> step "step value";
       Exp stop "stop value" ;
     end RANGE;
-  
+
     record TUPLE
       list<Exp> PR "PR. Tuples, used in func calls returning several
                     arguments" ;
     end TUPLE;
-  
+
     record CAST "Cast operator"
       Type ty "This is the full type of this expression, i.e. ET_ARRAY(...) for arrays and matrices";
       Exp exp;
     end CAST;
-  
+
     record ASUB "Array subscripts"
       Exp exp;
       list<Exp> sub;
     end ASUB;
-  
+
     record TSUB "Tuple 'subscript' (accessing only single values in calls)"
       Exp exp;
       Integer ix;
       Type ty;
     end TSUB;
-  
+
     record SIZE "The size operator"
       Exp exp;
       Option<Exp> sz;
     end SIZE;
-  
+
     record CODE "Modelica AST constructor"
       Absyn.CodeNode code;
       Type ty;
     end CODE;
-  
-    record EMPTY 
-      "an empty expression, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are 
-       constants with no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate 
+
+    record EMPTY
+      "an empty expression, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are
+       constants with no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate
        the model.
        From Modelica specification: a package may we look inside should not be partial in a simulation model!"
       String scope "the scope where we could not find the binding";
@@ -1261,31 +1261,31 @@ package DAE
       Type ty "the type of the variable";
       String tyStr;
     end EMPTY;
-  
+
     record REDUCTION "e.g. sum(i*i+1 for i in 1:4)"
       ReductionInfo reductionInfo;
       Exp expr "expr, e.g i*i+1" ;
       ReductionIterators iterators;
     end REDUCTION;
-  
+
     /* Part of MetaModelica extension. KS */
     record LIST "MetaModelica list"
       list<Exp> valList;
     end LIST;
-  
+
     record CONS "MetaModelica list cons"
       Exp car;
       Exp cdr;
     end CONS;
-  
+
     record META_TUPLE
       list<Exp> listExp;
     end META_TUPLE;
-  
+
     record META_OPTION
       Option<Exp> exp;
     end META_OPTION;
-  
+
     /*
       Holds a metarecord call
        <metarecord>(<args>)
@@ -1296,7 +1296,7 @@ package DAE
       list<String> fieldNames;
       Integer index; //Index in the uniontype
     end METARECORDCALL;
-    
+
     record MATCHEXPRESSION
       MatchType matchType;
       list<Exp> inputs;
@@ -1304,16 +1304,16 @@ package DAE
       list<MatchCase> cases;
       Type et;
     end MATCHEXPRESSION;
-    
+
     record BOX "MetaModelica boxed value"
       Exp exp;
     end BOX;
-  
+
     record UNBOX "MetaModelica value unboxing (similar to a cast)"
       Exp exp;
       Type ty;
     end UNBOX;
-    
+
     record SHARED_LITERAL
       "Before code generation, we make a pass that replaces constant literals
       with a SHARED_LITERAL expression. Any immutable type can be shared:
@@ -1322,24 +1322,24 @@ package DAE
       Integer index;
       Type ty "The type is required for code generation to work properly";
     end SHARED_LITERAL;
-    
+
     record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
       Pattern pattern;
     end PATTERN;
-  
+
     /* --- */
-  
+
   end Exp;
-  
-  
-  
-  
+
+
+
+
 end DAE;
 
 
 package Tpl
   function addTemplateError
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 

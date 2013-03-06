@@ -38,20 +38,20 @@ public constant Text emptyTxt = MEM_TEXT({}, {});
 public
 uniontype StringToken
   record ST_NEW_LINE "Always outputs the new-line char." end ST_NEW_LINE;
-  
+
   record ST_STRING "A string without new-lines in it."
     String value;
   end ST_STRING;
-  
+
   record ST_LINE "A (non-empty) string with new-line at the end."
     String line;
   end ST_LINE;
-  
+
   record ST_STRING_LIST "Every string in the list can have a new-line at its end (but does not have to)."
     list<String> strList;
     Boolean lastHasNewLine "True when the last string in the list has new-line at the end.";
   end ST_STRING_LIST;
-  
+
   record ST_BLOCK
     Tokens tokens;
     BlockType blockType;
@@ -61,24 +61,24 @@ end StringToken;
 public
 uniontype BlockType
   record BT_TEXT  end BT_TEXT;
-  
-  record BT_INDENT  
+
+  record BT_INDENT
     Integer width;
   end BT_INDENT;
-  
+
   record BT_ABS_INDENT
     Integer width;
   end BT_ABS_INDENT;
-  
+
   record BT_REL_INDENT
     Integer offset;
   end BT_REL_INDENT;
-  
+
   record BT_ANCHOR
     Integer offset;
   end BT_ANCHOR;
-  
-  record BT_ITER "Iteration items block, every token in the block is an item. 
+
+  record BT_ITER "Iteration items block, every token in the block is an item.
                 index0 is the active index during the build phase, then it is the last one + 1."
     IterOptions options;
     Integer index0;
@@ -91,11 +91,11 @@ uniontype IterOptions
     Integer startIndex0;
     Option<StringToken> empty;
     Option<StringToken> separator;
-    
+
     Integer alignNum "Number of items to be aligned by. When 0, no alignment.";
     Integer alignOfset;
     StringToken alignSeparator;
-    
+
     Integer wrapWidth "Number of chars on a line, after that the wrapping can occur. When 0, no wrapping.";
     StringToken wrapSeparator;
   end ITER_OPTIONS;
@@ -109,7 +109,7 @@ replaceable type ArgType3 subtypeof Any;
 public function writeStr
   input Text inText;
   input String inStr;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inStr)
@@ -118,25 +118,25 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       String str;
       Text txt;
-    
+
     //empty string means nothing
     //to ensure invariant being able to check emptiness only through the tokens (list) emtiness
     case (txt, "")
-      then 
+      then
         txt;
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
             ), str)
       equation
         -1 = System.stringFind(str, "\n");
-      then 
+      then
         MEM_TEXT(ST_STRING(str) :: toks, blstack);
-    
+
     // a new-line is inside
     case (txt, str )
-      then 
+      then
         writeChars(txt, stringListStringChar(str));
   end matchcontinue;
 end writeStr;
@@ -145,7 +145,7 @@ end writeStr;
 public function writeTok
   input Text inText;
   input StringToken inToken;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inToken)
@@ -154,25 +154,25 @@ algorithm
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
-    
+
     //to ensure invariant being able to check emptiness only through the tokens (list) emtiness
-    //should not happen, tokens must have at least one element   
+    //should not happen, tokens must have at least one element
     case (txt, ST_BLOCK( tokens = {} ))
-      then 
+      then
         txt;
-    
+
     //same as above - compiler should not generate this value in any case
     case (txt, ST_STRING( value = "" ))
-      then 
+      then
         txt;
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
             ), tok)
-      then 
+      then
         MEM_TEXT(tok :: toks, blstack);
-    
+
   end matchcontinue;
 end writeTok;
 
@@ -180,7 +180,7 @@ end writeTok;
 public function writeText
   input Text inText;
   input Text inTextToWrite;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inTextToWrite)
@@ -188,29 +188,29 @@ algorithm
       Tokens toks, txttoks;
       list<tuple<Tokens,BlockType>> blstack;
       Text txt;
-    
-    //to ensure invariant being able to check emptiness only through the tokens (list) emtiness    
+
+    //to ensure invariant being able to check emptiness only through the tokens (list) emtiness
     case (txt, MEM_TEXT( tokens = {} ) )
-      then 
+      then
         txt;
-        
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
-            ), 
+            ),
           MEM_TEXT(
             tokens = txttoks,
-            blocksStack = {} 
+            blocksStack = {}
             ))
-      then 
+      then
         MEM_TEXT(ST_BLOCK(txttoks, BT_TEXT()) :: toks, blstack);
-    
-    //should not ever happen 
+
+    //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ , _)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end writeText;
@@ -221,7 +221,7 @@ end writeText;
 public function writeParseNL "parses inStr for new lines"
   input Text inText;
   input String inStr;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inStr)
@@ -231,32 +231,32 @@ algorithm
       Text txt;
       String str;
       list<String> chars;
-    
+
     case (txt, str)
       equation
         -1 = System.stringFind(str, "\n");
-      then 
+      then
         writeStr(txt, str);
-    
+
     // a new-len is inside
     case (txt, str )
-      then 
+      then
         writeChars(txt, stringListStringChar(str));
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ , _)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeParseNL failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end writeParseNL;
 
 
-public function writeChars 
+public function writeChars
   input Text inText;
   input list<String> inChars;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inChars)
@@ -265,32 +265,32 @@ algorithm
       String c;
       list<String> chars, lschars;
       Boolean isline;
-      
+
     case (txt, {} )
-      then 
+      then
         txt;
-    
+
     //leading new-lines
     case (txt, "\n" :: chars )
       equation
         txt = newLine(txt);
-      then 
+      then
         writeChars(txt, chars);
-    
+
     //non-new-line at the start of the string, so a string or line only follows
     case (txt, c :: chars )
       equation
         (lschars, chars, isline) = takeLineOrString(chars);
         txt = writeLineOrStr(txt, stringCharListString( c :: lschars), isline);
         //Error txt = writeLineOrStr(txt, stringCharListString( str :: lschars), isline);
-      then 
+      then
         writeChars(txt, chars);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ , _)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeChars failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end writeChars;
@@ -300,7 +300,7 @@ public function writeLineOrStr
   input Text inText;
   input String inStr;
   input Boolean inIsLine;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inStr, inIsLine)
@@ -309,26 +309,26 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       String str;
       Text txt;
-    
+
     //empty string means nothing
     //to ensure invariant being able to check emptiness only through the tokens (list) emtiness
     //should not happen
     case (txt, "", _)
-      then 
+      then
         txt;
-        
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
             ), str, false)
-      then 
+      then
         MEM_TEXT(ST_STRING(str) :: toks, blstack);
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
             ), str, true)
-      then 
+      then
         MEM_TEXT(ST_LINE(str) :: toks, blstack);
   end matchcontinue;
 end writeLineOrStr;
@@ -336,7 +336,7 @@ end writeLineOrStr;
 
 public function takeLineOrString
   input list<String> inChars;
-  
+
   output list<String> outTillNewLineChars;
   output list<String> outRestChars;
   output Boolean outIsLine;
@@ -346,26 +346,26 @@ algorithm
       String  char;
       list<String> tnlchars, restchars, chars;
       Boolean isline;
-    
+
     case ({})
-      then 
+      then
         ({}, {}, false);
-    
+
     case ("\n" :: chars)
-      then 
+      then
         ({"\n"}, chars, true);
-    
+
     case (char :: chars)
       equation
         (tnlchars, restchars, isline) = takeLineOrString(chars);
-      then 
+      then
         (char ::  tnlchars, restchars, isline);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.takeLineOrString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end takeLineOrString;
@@ -381,13 +381,13 @@ algorithm
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
-    
+
     //empty - nothing
     case (txt as MEM_TEXT(
                    tokens = {} ))
       then
         txt;
-    
+
     //at start of line - nothing
     case (txt as MEM_TEXT(
                    tokens = (tok :: _) ))
@@ -395,22 +395,22 @@ algorithm
         isAtStartOfLine(tok);
       then
         txt;
-    
+
     //otherwise put normal new-line
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack))
-      then 
+      then
         MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
-    
-    
-    //should not ever happen 
+
+
+    //should not ever happen
     case (_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.softNL failed. \n");
-      then 
+      then
         fail();
-        
+
   end matchcontinue;
 end softNewLine;
 
@@ -421,22 +421,22 @@ algorithm
   _ := match (inTok)
     local
       StringToken tok;
-    
+
     //a new-line at the end
     case ( ST_NEW_LINE() )
       then
         ();
-    
+
     //a new-line at the end
     case ( ST_LINE(_) )
       then
         ();
-    
+
     //a new-line at the end
     case ( ST_STRING_LIST(lastHasNewLine = true) )
       then
         ();
-    
+
     //recursively in the last block
     case ( ST_BLOCK(
              tokens = (tok :: _) ))
@@ -447,12 +447,12 @@ algorithm
 
     //this should not ever happen - tokens should have at least one element, ... but for sure and completness
     case ( ST_BLOCK(
-             tokens = {} ))      
+             tokens = {} ))
       then
         ();
-   
-  // otherwise fail - not at the start           
-            
+
+  // otherwise fail - not at the start
+
   end match;
 end isAtStartOfLine;
 
@@ -465,7 +465,7 @@ algorithm
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
-    
+
     case (MEM_TEXT(tokens = toks,blocksStack = blstack))
       then MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
   end match;
@@ -475,7 +475,7 @@ end newLine;
 public function pushBlock
   input Text inText;
   input BlockType inBlockType;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inBlockType)
@@ -483,25 +483,25 @@ algorithm
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType blType;
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
             ), blType)
-      then 
+      then
         MEM_TEXT(
           {},
           (toks, blType) :: blstack
         );
-    
-    
-    //should not ever happen 
+
+
+    //should not ever happen
     case (_, _)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushBlock failed \n");
-      then 
+      then
         fail();
-    
+
   end matchcontinue;
 end pushBlock;
 
@@ -515,15 +515,15 @@ algorithm
       Tokens toks, stacktoks;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType blType;
-    
+
     //when nothig was put, just pop tokens from the stack and no block output
     case (MEM_TEXT(
             tokens = {},
             blocksStack = ( (stacktoks,_) :: blstack )
             ))
-      then 
+      then
           MEM_TEXT( stacktoks, blstack);
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = ( (stacktoks, blType) :: blstack)
@@ -532,13 +532,13 @@ algorithm
         MEM_TEXT(
           ST_BLOCK(toks, blType) :: stacktoks,
           blstack);
-          
-    //should not ever happen 
+
+    //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
-      then 
+      then
        fail();
   end matchcontinue;
 end popBlock;
@@ -547,7 +547,7 @@ end popBlock;
 public function pushIter
   input Text inText;
   input IterOptions inIterOptions;
-  
+
   output Text outText;
 algorithm
   outText := matchcontinue (inText, inIterOptions)
@@ -556,23 +556,23 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       IterOptions iopts;
       Integer i0;
-    
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = blstack
-            ), 
+            ),
           iopts as ITER_OPTIONS(
             startIndex0 = i0))
-      then //let the existing tokens on stack in the text block and start iterating       
+      then //let the existing tokens on stack in the text block and start iterating
         MEM_TEXT(
           {},
           ({}, BT_ITER(iopts, i0)) :: (toks, BT_TEXT()) :: blstack);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ , _)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushIter failed \n");
-      then 
+      then
         fail();
   end matchcontinue;
 end pushIter;
@@ -587,30 +587,30 @@ algorithm
       Tokens  stacktoks, itertoks;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType blType;
-    
+
     //nothing was iterated, pop only the stacked tokens
     case (MEM_TEXT(
             tokens = {},
             blocksStack = ( ({},_) :: (stacktoks,_) :: blstack )
             ))
-      then 
+      then
           MEM_TEXT(stacktoks, blstack);
-    
+
     case (MEM_TEXT(
             tokens = {},
             blocksStack = ( (itertoks,blType) :: (stacktoks,_) :: blstack )
             ))
-      then 
-          MEM_TEXT( 
+      then
+          MEM_TEXT(
             ST_BLOCK(itertoks, blType) :: stacktoks,
             blstack);
-          
-    //should not ever happen 
+
+    //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
-      then 
+      then
        fail();
   end matchcontinue;
 end popIter;
@@ -628,7 +628,7 @@ algorithm
       IterOptions iopts;
       Integer i0;
       Text txt;
-          
+
     //empty iteration segment and 'empty' option is NONE(), so do nothing
     case (txt as MEM_TEXT(
             tokens = {},
@@ -636,7 +636,7 @@ algorithm
             ))
       then
         txt;
-    
+
     //empty iteration segment, but 'empty' option is specified, so put the value
     case (MEM_TEXT(
             tokens = {},
@@ -647,13 +647,13 @@ algorithm
             ))
       equation
         i0 = i0 + 1;
-      then 
+      then
         MEM_TEXT(
           {},
           (emptok :: itertoks, BT_ITER(iopts, i0)) :: blstack
         );
-    
-    
+
+
     //one token, put it as it is
     case (MEM_TEXT(
             tokens = {tok},
@@ -663,12 +663,12 @@ algorithm
             ))
       equation
         i0 = i0 + 1;
-      then 
+      then
         MEM_TEXT(
           {},
           (tok :: itertoks, BT_ITER(iopts, i0)) :: blstack
         );
-    
+
     //more tokens, put them as a text block
     case (MEM_TEXT(
             tokens = toks /* as (_::_) */,
@@ -678,18 +678,18 @@ algorithm
             ))
       equation
         i0 = i0 + 1;
-      then 
+      then
         MEM_TEXT(
           {},
           (ST_BLOCK(toks,BT_TEXT()) :: itertoks, BT_ITER(iopts, i0)) :: blstack
         );
-    
-    
-    //should not ever happen 
+
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
-      then 
+      then
         fail();
   end matchcontinue;
 end nextIter;
@@ -702,18 +702,18 @@ algorithm
   outI0 := matchcontinue (inText)
     local
       Integer i0;
-          
+
     case (MEM_TEXT(
             blocksStack = (_, BT_ITER(index0 = i0)) :: _
             ))
       then
         i0;
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
-      then 
+      then
         fail();
   end matchcontinue;
 end getIteri_i0;
@@ -726,18 +726,18 @@ algorithm
   outI1 := matchcontinue (inText)
     local
       Integer i0;
-          
+
     case (MEM_TEXT(
             blocksStack = (_, BT_ITER(index0 = i0)) :: _
             ))
       then
         i0 + 1;
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
-      then 
+      then
         fail();
   end matchcontinue;
 end getIteri_i1;
@@ -761,12 +761,12 @@ algorithm
         Print.restoreBuf(handle);
       then
         str;
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end textString;
@@ -778,7 +778,7 @@ algorithm
   _ := matchcontinue (inText)
     local
       Tokens toks;
-          
+
     case (MEM_TEXT(
             tokens = toks,
             blocksStack = {}
@@ -787,30 +787,30 @@ algorithm
         (_,_) = tokensString(listReverse(toks), 0, true, 0);
       then
         ();
-    
+
     case (MEM_TEXT(
             blocksStack = _::_
             ))
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed - a non-comlete text was given.\n");
-      then 
+      then
         fail();
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end textStringBuf;
 
-public function tokensString 
+public function tokensString
   input Tokens inTokens;
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
 algorithm
@@ -821,34 +821,34 @@ algorithm
       StringToken tok;
       Integer pos, aind;
       Boolean isstart;
-    
+
     case ({}, pos, isstart, _)
-      then 
+      then
         (pos, isstart);
-    
+
     case (tok :: toks, pos, isstart, aind)
       equation
         (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
         (pos, isstart) = tokensString(toks, pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokensString failed.\n");
-      then 
+      then
         fail();
   end match;
 end tokensString;
 
 
-public function tokString 
+public function tokString
   input StringToken inStringToken;
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
   output Integer outAfterNewLineIndent;
@@ -862,13 +862,13 @@ algorithm
       list<String>  strLst;
       Integer nchars,   aind, blen;
       Boolean isstart;
-    
+
     case (ST_NEW_LINE(), _, _, aind)
       equation
         Print.printBufNewLine();
-      then 
+      then
         (aind, true, aind);
-    
+
     case (ST_STRING(value = str), nchars, true, aind)
       equation
         blen = Print.getBufLength();
@@ -876,63 +876,63 @@ algorithm
         Print.printBuf(str);
         blen = Print.getBufLength() - blen;
         //str = spaceStr(nchars) +& str; //indent is actually stored in nchars when on start of the line
-      then 
+      then
         (blen, false, aind);
-    
+
     case (ST_STRING(value = str), nchars, false, aind)
       equation
         blen = Print.getBufLength();
         Print.printBuf(str);
         blen = Print.getBufLength() - blen;
-      then 
+      then
         (nchars + blen, false, aind);
-    
+
     case (ST_LINE(line = str), nchars, true, aind)
       equation
         Print.printBufSpace(nchars);
         Print.printBuf(str);
-        //str = spaceStr(nchars) +& str; //indent is actually stored in nchars when on start of the line        
-      then 
+        //str = spaceStr(nchars) +& str; //indent is actually stored in nchars when on start of the line
+      then
         (aind, true, aind);
-    
+
     case (ST_LINE(line = str), nchars, false, aind)
       equation
         Print.printBuf(str);
-      then 
+      then
         (aind, true, aind);
-    
+
     case (ST_STRING_LIST( strList = strLst ), nchars, isstart, aind)
       equation
-        (nchars, isstart, aind) 
+        (nchars, isstart, aind)
           = stringListString(strLst, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     case (ST_BLOCK(
            tokens = toks,
            blockType = bt), nchars, isstart, aind)
       equation
-        (nchars, isstart, aind) 
+        (nchars, isstart, aind)
           = blockString(bt, listReverse(toks), nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-        
-    //should not ever happen 
+
+    //should not ever happen
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
-      then 
+      then
         fail();
   end match;
 end tokString;
 
 
-public function stringListString 
+public function stringListString
   input list<String> inStringList;
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
   output Integer outAfterNewLineIndent;
@@ -944,21 +944,21 @@ algorithm
       list<String> strLst;
       Integer nchars, aind, blen;
       Boolean isstart, hasNL;
-    
-    
+
+
     case ({}, nchars, isstart, aind)
-      then 
+      then
         (aind, isstart, aind);
-    
+
     //empty string ... for sure -> it can be a special case when allowed; when let for the case at start of a line, it would output an indent
     case ("" :: strLst, nchars, isstart, aind)
       equation
         (nchars, isstart, aind)
          = stringListString(strLst, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-        
-    
+
+
     //at start, new line or no new line
     case (str :: strLst, nchars, true, aind)
       equation
@@ -969,15 +969,15 @@ algorithm
         hasNL = Print.hasBufNewLineAtEnd();
         nchars = Util.if_(hasNL, aind, blen);
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
-        
+
         //"\n" = stringGetStringChar(str, stringLength(str));
         //accstr = accstr +& (spaceStr(nchars) +& str); //indent is actually stored in nchars when on start of the line
         //(str, nchars, isstart, aind)
         // = stringListString(strLst, aind, true, aind, accstr);
-      then 
+      then
         (nchars, isstart, aind);
-        
-    
+
+
     //at start, no new line
     //case (str :: strLst, nchars, true, aind, accstr)
     //  equation
@@ -986,10 +986,10 @@ algorithm
     //    nchars = nchars + stringLength(str);
     //    (str, nchars, isstart, aind)
     //     = stringListString(strLst, nchars, false, aind, accstr);
-    //  then 
+    //  then
     //    (str, nchars, isstart, aind);
-        
-    
+
+
     //not at start, new line or no new line
     case (str :: strLst, nchars, false, aind)
       equation
@@ -999,14 +999,14 @@ algorithm
         hasNL = Print.hasBufNewLineAtEnd();
         nchars = Util.if_(hasNL, aind, nchars+blen);
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
-        
+
         //"\n" = stringGetStringChar(str, stringLength(str));
         //accstr = accstr +& str;
         //(str, nchars, isstart, aind)
         // = stringListString(strLst, aind, true, aind, accstr);
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     //not at start, no new line
     //case (str :: strLst, nchars, true, aind, accstr)
     //  equation
@@ -1015,14 +1015,14 @@ algorithm
     //    nchars = nchars + stringLength(str);
     //    (str, nchars, isstart, aind)
     //     = stringListString(strLst, nchars, false, aind, accstr);
-    // then 
+    // then
     //    (str, nchars, isstart, aind);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.stringListString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end stringListString;
@@ -1033,14 +1033,14 @@ end stringListString;
 // O(n.log n) ... could be done O(n) through listFill and stringCharListString (is this function O(n)?)... but not that funny:)
 // will be implemented in C with O(n) ...
 // how can we create a read-only reusable table of space strings up to a length e.g. 128 ?
-public function spaceStr 
+public function spaceStr
   input Integer inWidth;
   output String outString;
-algorithm  
+algorithm
   outString := matchcontinue inWidth
     local
       Integer w;
-    case 0  then ""; //also for bad user and to give a (better) chance to the C/MM compiler to optimize the cases 
+    case 0  then ""; //also for bad user and to give a (better) chance to the C/MM compiler to optimize the cases
     case 1  then " "; // will this be optimized by MM to a simple switch ?
     case 2  then "  ";
     case 3  then "   ";
@@ -1056,33 +1056,33 @@ algorithm
     case 13 then "             ";
     case 14 then "              ";
     case 15 then "               ";
-    
+
     //a bad user!
-    case w 
+    case w
       equation
         true = w < 0;
       then "";
-    
-    case w 
+
+    case w
       then spaceStr(w/2 + intMod(w,2)) +& spaceStr(w/2);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.spaceStr failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end spaceStr;
 */
 
-public function blockString 
+public function blockString
   input BlockType inBlockType;
   input Tokens inTokens;
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
   output Integer outAfterNewLineIndent;
@@ -1094,49 +1094,49 @@ algorithm
       StringToken septok, tok, asep, wsep;
       Integer nchars, tsnchars,   aind, w, aoffset, anum, wwidth, blen;
       Boolean isstart;
-    
+
     case (BT_TEXT(), toks, nchars, isstart, aind)
       equation
         (nchars, isstart)
           = tokensString(toks, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_INDENT(width = w), toks, nchars, true, aind)
       equation
         (tsnchars, isstart)
           = tokensString(toks, w + nchars, true, w + aind);
-        nchars = Util.if_(isstart, nchars, tsnchars); //pop indent when at the start of a line 
-      then 
+        nchars = Util.if_(isstart, nchars, tsnchars); //pop indent when at the start of a line
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_INDENT(width = w), toks, nchars, false, aind)
       equation
         Print.printBufSpace(w);
         (tsnchars, isstart)
           = tokensString(toks, w + nchars, false, w + aind);
         nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_ABS_INDENT(width = w), toks, nchars, true, aind)
       equation
         blen = Print.getBufLength();
         (tsnchars, isstart)
           = tokensString(toks, 0, true, w); //discard an indent when at the start of a line
         blen = Print.getBufLength() - blen;
-        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position    
-      then 
+        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_ABS_INDENT(width = w), toks, nchars, false, aind)
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, w);
-        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind 
-      then 
+        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_REL_INDENT(offset = w), toks, nchars, true, aind)
       equation
         blen = Print.getBufLength();
@@ -1144,41 +1144,41 @@ algorithm
           = tokensString(toks, nchars, true, aind + w);
         blen = Print.getBufLength() - blen;
         nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_REL_INDENT(offset = w), toks, nchars, false, aind)
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, aind + w);
         nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_ANCHOR(offset = w), toks, nchars, true, aind)
       equation
         blen = Print.getBufLength();
         (tsnchars, isstart)
           = tokensString(toks, nchars, true, nchars + w);
         blen = Print.getBufLength() - blen;
-        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position 
-      then 
+        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+      then
         (nchars, isstart, aind);
-    
+
     case (BT_ANCHOR(offset = w), toks, nchars, false, aind)
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, nchars + w);
         nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
-      then 
+      then
         (nchars, isstart, aind);
-    
-    
+
+
     //iter block, no tokens ... should be impossible, but ...
     case (BT_ITER(_,_), {}, nchars, isstart, aind)
-      then 
+      then
         (nchars, isstart, aind);
-    
+
     //concat ... i.e. text
     case (BT_ITER(options = ITER_OPTIONS(
                               separator = NONE(),
@@ -1187,11 +1187,11 @@ algorithm
       equation
         (nchars, isstart)
           = tokensString(toks, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
-    
-    //separator only ... 
+
+
+    //separator only ...
     case (BT_ITER(options = ITER_OPTIONS(
                               separator = SOME(septok),
                               alignNum = 0,
@@ -1201,10 +1201,10 @@ algorithm
         (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
           = iterSeparatorString(toks, septok, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
-    //separator and alignment and/or wrapping 
+
+    //separator and alignment and/or wrapping
     case (BT_ITER(options = ITER_OPTIONS(
                               separator = SOME(septok),
                               alignNum = anum,
@@ -1217,10 +1217,10 @@ algorithm
         (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
           = iterSeparatorAlignWrapString(toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
-    //no separator and alignment and/or wrapping 
+
+    //no separator and alignment and/or wrapping
     case (BT_ITER(options = ITER_OPTIONS(
                               separator = NONE(),
                               alignNum = anum,
@@ -1231,27 +1231,27 @@ algorithm
       equation
         (nchars, isstart)
           = iterAlignWrapString(toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
-      then 
+      then
         (nchars, isstart, aind);
-    
-        
-    //should not ever happen 
+
+
+    //should not ever happen
     case (_,_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end blockString;
 
 
-public function iterSeparatorString 
+public function iterSeparatorString
   input Tokens inTokens;
   input StringToken inSeparator;
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
 algorithm
@@ -1261,24 +1261,24 @@ algorithm
       StringToken tok, septok;
       Integer pos, aind;
       Boolean isstart;
-      
+
     case ({}, _, pos, isstart, _)
-      then 
+      then
         (pos, isstart);
-    
+
     case (tok :: toks, septok, pos, isstart, aind)
       equation
         (pos, isstart, aind) = tokString(septok, pos, isstart, aind);
         (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
         (pos, isstart)
          = iterSeparatorString(toks, septok, pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
   end match;
 end iterSeparatorString;
 
 
-public function iterSeparatorAlignWrapString 
+public function iterSeparatorAlignWrapString
   input Tokens inTokens;
   input StringToken inSeparator;
   input Integer inActualIndex;
@@ -1289,7 +1289,7 @@ public function iterSeparatorAlignWrapString
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
 algorithm
@@ -1300,14 +1300,14 @@ algorithm
       StringToken tok, septok, asep, wsep;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
-      
+
     case ({}, _,_,_,_,_,_, pos, isstart, _)
-      then 
+      then
         (pos, isstart);
-    
+
     //align and try wrap
     //align separator includes the separator (by default - otherwise can be provided by user)
-    //--> only align separator is written here    
+    //--> only align separator is written here
     case (tok :: toks, septok, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       equation
         true = (idx > 0) and (intMod(idx,anum) == 0);
@@ -1317,9 +1317,9 @@ algorithm
         (pos, isstart)
          = iterSeparatorAlignWrapString(toks, septok, idx + 1, anum, asep, wwidth, wsep,
               pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-    
+
     //separator + try wrap - no align
     case (tok :: toks, septok, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       equation
@@ -1329,21 +1329,21 @@ algorithm
         (pos, isstart)
          = iterSeparatorAlignWrapString(toks, septok, idx + 1, anum, asep, wwidth, wsep,
                pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-        
-        
-    //should not ever happen 
+
+
+    //should not ever happen
     case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end iterSeparatorAlignWrapString;
 
 
-public function iterAlignWrapString 
+public function iterAlignWrapString
   input Tokens inTokens;
   input Integer inActualIndex;
   input Integer inAlignNum;
@@ -1353,7 +1353,7 @@ public function iterAlignWrapString
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
 algorithm
@@ -1364,11 +1364,11 @@ algorithm
       StringToken tok,  asep, wsep;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
-      
+
     case ({}, _,_,_,_,_, pos, isstart, _)
-      then 
+      then
         (pos, isstart);
-    
+
     //align and try wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       equation
@@ -1379,9 +1379,9 @@ algorithm
         (pos, isstart)
          = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-    //wrap 
+    //wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       equation
         //false = (idx > 0) and (intMod(idx,anum) == 0);
@@ -1391,10 +1391,10 @@ algorithm
         (pos, isstart)
           = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-    
-    //item only 
+
+    //item only
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       equation
         //false = (idx > 0) and (intMod(idx,anum) == 0);
@@ -1403,14 +1403,14 @@ algorithm
         (pos, isstart)
          = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
               pos, isstart, aind);
-      then 
+      then
         (pos, isstart);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterAlignWrapString failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end iterAlignWrapString;
@@ -1422,7 +1422,7 @@ public function tryWrapString
   input Integer inActualPositionOnLine;
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
-  
+
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
   output Integer outAfterNewLineIndent;
@@ -1433,24 +1433,24 @@ algorithm
       Integer pos, aind, wwidth;
       Boolean isstart;
       StringToken wsep;
-      
+
     //wrap
     case (wwidth, wsep, pos, isstart, aind)
       equation
         true = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
         (pos, isstart, aind) = tokString(wsep, pos, isstart, aind);
-      then 
+      then
         (pos, isstart, aind);
-    
+
     case (_, _, pos, isstart, aind)
-      then 
+      then
         (pos, isstart, aind);
-    
-    //should not ever happen 
+
+    //should not ever happen
     case (_,_,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tryWrap failed.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end tryWrapString;
@@ -1482,24 +1482,24 @@ algorithm
   outStringToken := matchcontinue inText
     local
       Tokens toks, txttoks;
-    
+
     case ( MEM_TEXT( tokens = {} ) )
-      then 
+      then
         ST_STRING("");
-        
+
     case ( MEM_TEXT(
              tokens = txttoks,
-             blocksStack = {} 
+             blocksStack = {}
            ))
-      then 
+      then
         ST_BLOCK(txttoks, BT_TEXT());
-    
-    //should not ever happen 
+
+    //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ )
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end textStrTok;
@@ -1533,7 +1533,7 @@ protected function tplCallWithFailError
   input Tpl_Fun inFun;
   input ArgType1 inArg;
   output Text outTxt;
- 
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1544,7 +1544,7 @@ protected
   Text txt;
 algorithm
   outTxt := matchcontinue(inFun, inArg)
-    case(_, arg)      
+    case(_, arg)
       equation
         txt = inFun(emptyTxt, arg);
       then txt;
@@ -1560,7 +1560,7 @@ protected function tplCallWithFailError2
   input ArgType1 inArgA;
   input ArgType2 inArgB;
   output Text outTxt;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1573,7 +1573,7 @@ protected
   Text txt;
 algorithm
  outTxt := matchcontinue(inFun, inArgA, inArgB)
-    case(_, argA, argB)      
+    case(_, argA, argB)
       equation
         txt = inFun(emptyTxt, argA, argB);
       then txt;
@@ -1590,7 +1590,7 @@ protected function tplCallWithFailError3
   input ArgType2 inArgB;
   input ArgType3 inArgC;
   output Text outTxt;
-  
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1605,7 +1605,7 @@ protected
   Text txt;
 algorithm
   outTxt := matchcontinue(inFun, inArgA, inArgB, inArgC)
-    case(_, argA, argB, argC)      
+    case(_, argA, argB, argC)
       equation
         txt = inFun(emptyTxt, argA, argB, argC);
       then txt;
@@ -1620,7 +1620,7 @@ public function tplString
   input Tpl_Fun inFun;
   input ArgType1 inArg;
   output String outString;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1641,7 +1641,7 @@ public function tplString2
   input ArgType1 inArgA;
   input ArgType2 inArgB;
   output String outString;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1664,7 +1664,7 @@ public function tplString3
   input ArgType2 inArgB;
   input ArgType3 inArgC;
   output String outString;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1685,7 +1685,7 @@ end tplString3;
 public function tplPrint
   input Tpl_Fun inFun;
   input ArgType1 inArg;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1705,7 +1705,7 @@ public function tplPrint2
   input Tpl_Fun inFun;
   input ArgType1 inArgA;
   input ArgType2 inArgB;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1749,7 +1749,7 @@ public function tplNoret2
   input Tpl_Fun inFun;
   input ArgType1 inArg;
   input ArgType2 inArg2;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1767,7 +1767,7 @@ end tplNoret2;
 public function tplNoret
   input Tpl_Fun inFun;
   input ArgType1 inArg;
-    
+
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
@@ -1803,30 +1803,30 @@ algorithm
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
         Print.clearBuf();
         Debug.fprintln(Flags.PERF_TIMES,
-                "textFile " +& file 
-           +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt)) 
+                "textFile " +& file
+           +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
            +& "\n   write:" +& realString(realSub(System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
       then
         ();
-    
+
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     case (_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed - a system error ?\n");
-      then 
+      then
         ();
-    
+
   end matchcontinue;
 end textFile;
-  
- 
+
+
 public function sourceInfo
 "Magic sourceInfo() function implementation"
   input String  inFileName;
   input Integer inLineNum;
   input Integer inColumnNum;
-  
+
   output Absyn.Info outSourceInfo;
 algorithm
   outSourceInfo  := Absyn.INFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, Absyn.dummyTimeStamp);

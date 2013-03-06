@@ -1,6 +1,6 @@
 
 #pragma once
- 
+
 #include <System/IAlgLoop.h>       // Interface to AlgLoop
 #include <System/IAlgLoopSolver.h>   // Export function from dll
 #include <Solver/INonLinSolverSettings.h>
@@ -27,14 +27,14 @@ public:
 
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
-  
+
 
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
 
   /// Encapsulation of determination of Jacobian
-  void calcJacobian(); 
+  void calcJacobian();
   int check_flag(void *flagvalue, char *funcname, int opt);
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 
@@ -47,10 +47,10 @@ private:
   IAlgLoop
     *_algLoop;          ///< Algebraic loop to be solved
 
-  ITERATIONSTATUS   
+  ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
-  long int      
+  long int
     _dimSys;          ///< Temp   - Number of unknowns (=dimension of system of equations)
 
   bool
@@ -63,7 +63,7 @@ private:
     *_fHelp,          ///< Temp   - Auxillary variables
     *_jac;            ///< Temp   - Jacobian
 
-  N_Vector 
+  N_Vector
     _Kin_y,           ///< Temp     - Initial values in the Sundials Format
     _Kin_yScale,
     _Kin_fScale;

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 //#define BOOST_EXTENSION_EULERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "EulerSettings.h"
- 
+
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
 : SolverSettings        (globalSettings)
 , _method                (EULERFORWARD)
@@ -9,7 +9,7 @@ EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
 , _denseOutput            (true)
 , _useSturmSequence        (false)
 , _useNewtonIteration    (false)
-, _iterTol                (1e-8)    
+, _iterTol                (1e-8)
 {
 }
 
@@ -30,7 +30,7 @@ unsigned int EulerSettings::getZeroSearchMethod()
 void EulerSettings::setZeroSearchMethod(unsigned int method )
 {
     _zeroSearchMethod= method;
-}        
+}
 
 bool EulerSettings::getUseSturmSequence()
 {
@@ -48,7 +48,7 @@ bool EulerSettings::getUseNewtonIteration()
 void EulerSettings::setUseNewtonIteration(bool use)
 {
     _useNewtonIteration= use;
-}    
+}
 
 bool EulerSettings::getDenseOutput()
 {
@@ -57,7 +57,7 @@ bool EulerSettings::getDenseOutput()
 void EulerSettings::setDenseOutput(bool dense)
 {
     _denseOutput = dense;
-}    
+}
 
 double EulerSettings::getIterTol()
 {
@@ -82,7 +82,7 @@ void EulerSettings::load(std::string xml_file)
         else
         {
             boost::archive::xml_iarchive xml(ifs);
-            xml >>boost::serialization::make_nvp("EulerSettings", *this); 
+            xml >>boost::serialization::make_nvp("EulerSettings", *this);
             ifs.close();
         }
     }
@@ -98,5 +98,5 @@ void EulerSettings::load(std::string xml_file)
  /* std::fstream ofs;
     ofs.open("C:\\Temp\\EulerSettings.xml", ios::out);
     boost::archive::xml_oarchive xml(ofs);
-    xml << boost::serialization::make_nvp("EulerSettings", *this); 
+    xml << boost::serialization::make_nvp("EulerSettings", *this);
     ofs.close();*/

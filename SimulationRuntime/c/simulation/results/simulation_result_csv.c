@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -59,11 +59,11 @@ void csv_emit(simulation_result *self, DATA *data)
   modelica_real value = 0;
   double cpuTimeValue = 0;
   rt_tick(SIM_TIMER_OUTPUT);
-  
+
   rt_accumulate(SIM_TIMER_TOTAL);
   cpuTimeValue = rt_accumulated(SIM_TIMER_TOTAL);
   rt_tick(SIM_TIMER_TOTAL);
-  
+
   fprintf(fout, format, data->localData[0]->timeValue);
   if (self->cpuTime)
     fprintf(fout, format, cpuTimeValue);

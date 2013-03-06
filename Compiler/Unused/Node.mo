@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -39,7 +39,7 @@ encapsulated package Node
 
   The Node has a pool of nodes"
 
-public 
+public
 import Pool;
 import Name;
 import Scope;
@@ -50,7 +50,7 @@ import Element;
 type Name      = .Name.Name;
 type Scope     = .Scope.Scope;
 type Instance  = .Instance.Instance;
-type Reference = .Reference.Reference;  
+type Reference = .Reference.Reference;
 type Element   = .Element.Element;
 
 constant Integer v = 0;
@@ -66,7 +66,7 @@ uniontype Content "the content of the node"
 end Content;
 
 uniontype Node
-"the nodes in the graph" 
+"the nodes in the graph"
   record N "a node has an unique id and a scope id"
     Integer id;
     Integer scopeId;
@@ -125,7 +125,7 @@ public function updateId
   input Node inNode;
   input Integer updateNodeId;
   output Node outNode;
-protected 
+protected
   Integer id "the id of this node";
   Integer scopeId "the default scope, points into Scopes. the last entry in the Scope gives the element name!";
   Content content;

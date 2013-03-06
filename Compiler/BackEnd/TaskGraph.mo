@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -341,7 +341,7 @@ algorithm
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
-        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp)) "print \"Solving nonlinear \\n\" &"; 
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp)) "print \"Solving nonlinear \\n\" &";
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
       then
         ();
@@ -600,7 +600,7 @@ end addEdgesFromVars;
 
 protected function buildSystem "Build task graph for a system of equations"
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponent inComp;  
+  input BackendDAE.StrongComponent inComp;
 algorithm
   _:=
   match (inBackendDAE,inComp)
@@ -620,7 +620,7 @@ algorithm
         predtaskids = List.map(predtasks, TaskGraphExt.getTask);
         addPredecessors(tid, predtaskids, predtasks, 0);
       then
-        ();      
+        ();
     else
       equation
         print("build_system failed\n");
@@ -632,7 +632,7 @@ end buildSystem;
 protected function buildSystem2
   input BackendDAE.BackendDAE inBackendDAE;
   input list<Integer> inEqns;
-  input list<Integer> inVars;  
+  input list<Integer> inVars;
   input Integer inInteger5;
   output list<String> outStringLst;
 algorithm

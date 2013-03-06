@@ -19,9 +19,9 @@ extern "C" {
 int ModelicaTables_CombiTimeTable_init(const char* tableName, const char* fileName,
                                         double const *table, int nRow, int nColumn,
                                         double startTime, int smoothness,
-                                        int extrapolation) 
+                                        int extrapolation)
 {
-  return omcTableTimeIni(startTime, startTime, smoothness, extrapolation, 
+  return omcTableTimeIni(startTime, startTime, smoothness, extrapolation,
                          tableName, fileName, table, nRow, nColumn, 0);
 }
 
@@ -35,12 +35,12 @@ double ModelicaTables_CombiTimeTable_interpolate(int tableID, int icol, double u
   return omcTableTimeIpo(tableID,icol,u);
 }
 
-double ModelicaTables_CombiTimeTable_minimumTime(int tableID) 
+double ModelicaTables_CombiTimeTable_minimumTime(int tableID)
 {
   return omcTableTimeTmin(tableID);
 }
 
-double ModelicaTables_CombiTimeTable_maximumTime(int tableID) 
+double ModelicaTables_CombiTimeTable_maximumTime(int tableID)
 {
   return omcTableTimeTmax(tableID);
 }
@@ -57,7 +57,7 @@ int ModelicaTables_CombiTable1D_init(const char* tableName, const char* fileName
   return omcTableTimeIni(*table, *table, smoothness, 2 /* extrapolate based on two first/last values */, tableName, fileName, table, nRow, nColumn, 0);
 }
 
-void ModelicaTables_CombiTable1D_close(int tableID) 
+void ModelicaTables_CombiTable1D_close(int tableID)
 {
    omcTableTimeIpoClose(tableID);
 };

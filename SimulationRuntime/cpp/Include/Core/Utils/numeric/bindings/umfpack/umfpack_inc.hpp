@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * Author acknowledges the support of the Faculty of Civil Engineering, 
+ * Author acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -46,14 +46,14 @@
  */
 
 
-/* Used by permission. */ 
+/* Used by permission. */
 
 
 #ifndef BOOST_NUMERIC_BINDINGS_UMFPACK_INC_H
 #define BOOST_NUMERIC_BINDINGS_UMFPACK_INC_H
 
 extern "C" {
-#include <umfpack.h> 
+#include <umfpack.h>
 }
 
-#endif 
+#endif

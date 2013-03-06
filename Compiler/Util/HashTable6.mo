@@ -12,7 +12,7 @@ encapsulated package HashTable6 "
   RCS: $Id$
 
   "
-  
+
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key       - The key used to uniquely define elements in a hashtable

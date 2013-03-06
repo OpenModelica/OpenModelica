@@ -148,7 +148,7 @@ algorithm
       true = Flags.getConfigBool(Flags.UNIT_CHECKING);
       ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
     then ();
-      
+
     case(prg) equation
       false = Flags.getConfigBool(Flags.UNIT_CHECKING);
     then ();
@@ -225,10 +225,10 @@ protected function registerDefineunits2 "help function to registerUnitInClass"
   input list<Absyn.Element> elts;
 algorithm
    _ := matchcontinue(elts)
-     local 
+     local
        String name; list<Absyn.NamedArg> args; Absyn.Element du;
        String exp; Real weight;
-     
+
      case({}) then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
@@ -245,7 +245,7 @@ algorithm
      then ();
 
        /* base unit does not not have weight*/
-     case((du as Absyn.DEFINEUNIT(name=_))::elts) 
+     case((du as Absyn.DEFINEUNIT(name=_))::elts)
        equation
        {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
        UnitParserExt.addBase(name);
@@ -255,7 +255,7 @@ algorithm
      case(_) equation
        print("registerDefineunits failed\n");
      then fail();
-     
+
   end matchcontinue;
 end registerDefineunits2;
 
@@ -266,7 +266,7 @@ public function add "Adds a unit to the UnitAbsyn.Store"
   output Integer index;
 algorithm
   (outSt,index) := matchcontinue(unit,ist)
-    local array<Option<UnitAbsyn.Unit>> vector; Integer newIndx,numElts; UnitAbsyn.Store st; 
+    local array<Option<UnitAbsyn.Unit>> vector; Integer newIndx,numElts; UnitAbsyn.Store st;
     case(_,st as UnitAbsyn.STORE(storeVector=vector,numElts = numElts)) equation
       true = numElts == arrayLength(vector);
       st = expandStore(st);
@@ -813,8 +813,8 @@ protected function createTypeParameterLocations2 "help function"
   output Integer outNextElt;
 algorithm
   (outStore,outHt,outNextElt) := matchcontinue(istore,iht,i,inextElt)
-    local 
-      Integer numElts; 
+    local
+      Integer numElts;
       array<Option<UnitAbsyn.Unit>> vect;
       UnitAbsyn.Unit unit;
       UnitAbsyn.Store store;
@@ -847,12 +847,12 @@ protected function createTypeParameterLocations3 "help function to createTypePar
   output Integer outNextElt;
 algorithm
   (outUnit,outHt,outNextElt) := match(unit,iht,inextElt)
-    local 
+    local
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
       list<MMath.Rational> units;
       HashTable.HashTable ht;
       Integer nextElt;
-      
+
     // Only succeeds for units with type parameters
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params as _::_,units)),ht,nextElt) equation
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
@@ -869,7 +869,7 @@ protected function createTypeParameterLocations4 "help function to createTypePar
   output Integer outNextElt;
 algorithm
   (outParams,outHt,outNextElt) := matchcontinue(iparams,iht,inextElt)
-    local 
+    local
       Integer indx; String name; MMath.Rational r;
       tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
       DAE.ComponentRef cref_;
@@ -918,16 +918,16 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,outStore) := matchcontinue(env,dae,ht,istore)
-    local 
+    local
       DAE.Exp e1,e2,crefExp1,crefExp2;
       UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
-    
+
     case (_,DAE.DAE(elementLst={}),_,store) then ({},store);
-    
+
     case(_,DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts),_,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
@@ -942,7 +942,7 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,crefExp2,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then 
+    then
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),crefExp2))::terms,store);
 
       /* Only consider variables with binding from this instance level, not furhter down */
@@ -952,7 +952,7 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  
+    then
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
     case(_,DAE.DAE(elementLst=DAE.DEFINE(cr1,e1,_)::elts),_,store) equation
@@ -961,7 +961,7 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  
+    then
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
     case(_,DAE.DAE(elementLst=_::elts),_,store) equation
@@ -998,7 +998,7 @@ algorithm
       UnitAbsyn.Unit u;
       HashTable.HashTable ht;
       UnitAbsyn.Store store;
-      Boolean divOrMul; 
+      Boolean divOrMul;
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
@@ -1118,12 +1118,12 @@ and EQN to make the constraint that they must have the same unit"
   output list<UnitAbsyn.UnitTerm> outUts;
 algorithm
   outUts := match(iuts,iexpl)
-    local 
-      UnitAbsyn.UnitTerm ut1,ut2; 
-      DAE.Type ty; DAE.Exp e1,e2; 
+    local
+      UnitAbsyn.UnitTerm ut1,ut2;
+      DAE.Type ty; DAE.Exp e1,e2;
       list<UnitAbsyn.UnitTerm> uts;
       list<DAE.Exp> expl;
-      
+
     case({},_) then  {};
     case(uts as {_},_) then uts;
     case(ut1::ut2::uts,e1::e2::expl) equation
@@ -1153,7 +1153,7 @@ algorithm
       list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2;
       DAE.Type functp;
       UnitAbsyn.Store store;
-      
+
     case(_,_,_,_,_,_,store) equation
        (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,NONE());
        funcInstId=tick();
@@ -1177,7 +1177,7 @@ new locations"
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,extraTerms,outStore) := matchcontinue(ifunctp,funcInstId,funcCallExp,istore)
-    local 
+    local
       String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
       list<DAE.Type> typeLst;
       DAE.Type functp;
@@ -1214,9 +1214,9 @@ protected function buildTupleResultTerms "help function to buildResultTerms"
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,extraTerms,outStore) := match(ifunctps,funcInstId,funcCallExp,istore)
-    local 
+    local
       list<UnitAbsyn.UnitTerm> terms1,terms2,extraTerms1,extraTerms2; DAE.Type tp;
-      list<DAE.Type> functps; 
+      list<DAE.Type> functps;
       UnitAbsyn.Store store;
     case({},_,_,store) then ({},{},store);
     case(tp::functps,_,_,store) equation
@@ -1238,13 +1238,13 @@ protected function buildTermExpList "build terms from list of expressions"
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,extraTerms,outStore) := matchcontinue(env,iexpl,ht,istore)
-    local 
+    local
       DAE.Exp e;
-      list<UnitAbsyn.UnitTerm> eterms1,eterms2; 
+      list<UnitAbsyn.UnitTerm> eterms1,eterms2;
       UnitAbsyn.UnitTerm ut;
       list<DAE.Exp> expl;
       UnitAbsyn.Store store;
-      
+
     case (_,{},_,store) then ({},{},store);
     case(_,e::expl,_,store) equation
       (ut,eterms1,store) =  buildTermExp(env,e,false,ht,store);
@@ -1284,14 +1284,14 @@ protected function buildFuncTypeStores2 "help function to buildFuncTypeStores"
   output list<Integer> indxs;
 algorithm
   (outStore,indxs) := match(ifargs,funcInstId,istore)
-    local 
-      String unitStr; 
-      Integer indx; 
-      DAE.Type tp; 
+    local
+      String unitStr;
+      Integer indx;
+      DAE.Type tp;
       UnitAbsyn.Unit unit;
       list<DAE.FuncArg> fargs;
       UnitAbsyn.Store store;
-      
+
     case({},_,store) then (store,{});
     case((_,tp,_,_)::fargs,_,store) equation
       unitStr = getUnitStr(tp);
@@ -1310,11 +1310,11 @@ from a Type (must be T_REAL)"
   output String str;
 algorithm
   str := matchcontinue(itp)
-    local 
+    local
       list<DAE.Var> varLst;
       DAE.TypeSource ts;
       DAE.Type tp;
-      
+
     case(DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str)))::_))
       then str;
     case(DAE.T_REAL(_::varLst,ts)) then getUnitStr(DAE.T_REAL(varLst,ts));
@@ -1331,11 +1331,11 @@ protected function buildFormal2ActualParamTerms " help function to buildTermCall
   output UnitAbsyn.UnitTerms terms;
 algorithm
   terms := matchcontinue(iformalParamIndxs,iactualParamIndxs)
-    local 
+    local
       Integer loc1; UnitAbsyn.UnitTerm ut; DAE.Exp e;
       list<Integer> formalParamIndxs;
       list<UnitAbsyn.UnitTerm> actualParamIndxs;
-    
+
     case({},{}) then {};
     case(loc1::formalParamIndxs,ut::actualParamIndxs) equation
       terms = buildFormal2ActualParamTerms(formalParamIndxs,actualParamIndxs);

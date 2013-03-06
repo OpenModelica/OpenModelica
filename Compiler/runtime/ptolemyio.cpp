@@ -59,7 +59,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
   char buf[255];
   void *lst,*olst,*dimLst,*odimLst;
   ifstream stream(filename);
-    
+
   if (!stream) {
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Error opening result file %s.", &filename, 1);
     return NULL;
@@ -71,7 +71,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
   int equalPos=intervalText.find("=");
   int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
   // exit if intervals not compatible...
-  if (datasize == 0) { 
+  if (datasize == 0) {
     datasize = readIntervalSize;
   } else {
     if( readIntervalSize == 0) {
@@ -90,7 +90,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
     const char *cvar = RML_STRINGDATA(RML_CAR(vars));
     string var(string("DataSet: ")+cvar);
     vars = RML_CDR(vars);
-      
+
     stream.seekg(0); //Reset stream
     // Search to the correct position.
     stream.getline(buf,255);
@@ -107,16 +107,16 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
     while(j<datasize) {
       const char* buf1;
       char* buf2;
-      
+
       stream.getline(buf,255);
-    
+
       if (string(buf).find("DataSet:") == 1) {
         j = datasize;
         break;
       }
       string values(buf);
       int commapos=values.find(",");
-      
+
       buf1 = values.substr(commapos+1).c_str();
       val = strtod(buf1,&buf2); // Second value after comma
 
@@ -146,7 +146,7 @@ void* read_ptolemy_variables(const char* filename)
   string intervalText;
   void *res;
   char var[256];
-  ifstream stream(filename);  
+  ifstream stream(filename);
   if (!stream) return mk_nil();
   res = mk_nil();
   while (getline(stream,intervalText)) {
@@ -160,7 +160,7 @@ int read_ptolemy_dataset_size(const char*filename)
 {
   char buf[255];
   ifstream stream(filename);
-    
+
   if (!stream) return -1;
 
   string intervalText;

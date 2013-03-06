@@ -7,7 +7,7 @@ double minposroot(double *coeff, int order) {
          mpr=INF;
        break;
   case 1:
-    if (coeff[1]==0) { 
+    if (coeff[1]==0) {
       mpr=INF;
     } else {
       mpr=-coeff[0]/coeff[1];
@@ -16,7 +16,7 @@ double minposroot(double *coeff, int order) {
     break;
   case 2:
   if (coeff[2]==0 || (1000*fabs(coeff[2]))<fabs(coeff[1])){
-       if (coeff[1]==0) { 
+       if (coeff[1]==0) {
          mpr=INF;
        } else {
          mpr=-coeff[0]/coeff[1];
@@ -56,16 +56,16 @@ double minposroot(double *coeff, int order) {
        //only one real root
        double sd,s,t,r1;
        sd=sqrt(disc);
-       if (r+sd>0) {  
+       if (r+sd>0) {
          s=pow(r+sd,1.0/3);
        } else {
          s=-pow(fabs(r+sd),1.0/3);
-       };  
-       if (r-sd>0) {  
+       };
+       if (r-sd>0) {
          t=pow(r-sd,1.0/3);
        } else {
          t=-pow(fabs(r-sd),1.0/3);
-       };  
+       };
        r1=s+t-coeff[2]/3/coeff[3];
        if (r1>0) mpr=r1;
       }  else {
@@ -85,7 +85,7 @@ double minposroot(double *coeff, int order) {
        r1=r1-2*smti32;
        if ((r1>0)&&(r1<mpr)) mpr=r1;
       };
-  
+
     };
 
     break;
@@ -119,7 +119,7 @@ double minposroot(double *coeff, int order) {
       co[1]=-b1+db1;
       r1=minposroot(&co[0],2);
       if ((r1>0)&&(r1<mpr))mpr=r1;
- 
+
     };
     break;
 

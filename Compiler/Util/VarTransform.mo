@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -45,7 +45,7 @@ public import HashTable3;
 public import SCode;
 
 public
-uniontype VariableReplacements 
+uniontype VariableReplacements
 "VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
  To eliminate a variable from an equation system a replacement rule varname->expression is added to this
  datatype.
@@ -406,14 +406,14 @@ algorithm
        Absyn.Path path;
        DAE.ExternalDecl extdecl;
        Option<SCode.Comment> cmt;
-       
+
     case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
         DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
-    
+
     case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
@@ -434,7 +434,7 @@ protected function applyReplacementsVarAttr "Help function to applyReplacementsD
   end FuncTypeExp_ExpToBoolean;
 algorithm
   outAttr := matchcontinue(attr,repl,condExpFunc)
-    local 
+    local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,startOrigin;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> unc;
@@ -451,8 +451,8 @@ algorithm
         (max) = replaceExpOpt(max,repl,condExpFunc);
         (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-        (nominal) = replaceExpOpt(nominal,repl,condExpFunc); 
-        //TODO: replace expressions also in uncertainty attributes (unc and dist)       
+        (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
+        //TODO: replace expressions also in uncertainty attributes (unc and dist)
       then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin));
 
     case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin)),repl,condExpFunc)
@@ -652,7 +652,7 @@ algorithm
       Boolean initialCall;
       Algorithm.Else el,el_1;
       Integer ix;
-      
+
     case ({},_,_) then ({},false);
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
@@ -743,7 +743,7 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_TERMINATE(e_1,source) :: xs_1, true);
-        
+
     case (((x as DAE.STMT_REINIT(var = e,value=e2,source = source)) :: xs),repl,condExpFunc)
       equation
         (e_1,b1) = replaceExp(e, repl, condExpFunc);
@@ -753,7 +753,7 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1, true);
-        
+
     case ((x as DAE.STMT_NORETCALL(exp = e,source = source)) :: xs,repl,condExpFunc)
       equation
         (e_1,true) = replaceExp(e, repl, condExpFunc);
@@ -761,7 +761,7 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_NORETCALL(e_1,source) :: xs_1, true);
-        
+
     case ((x :: xs),repl,condExpFunc)
       equation
         (xs_1, b1) = replaceEquationsStmts(xs, repl,condExpFunc);
@@ -939,7 +939,7 @@ algorithm
       equation
         targets = BaseHashTable.hashTableValueList(ht);
         targets2 = List.flatten(List.map(targets,Expression.extractCrefsFromExp));
-      then 
+      then
         targets2;
   end matchcontinue;
 end replacementTargets;
@@ -970,9 +970,9 @@ algorithm
      //   olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail" ;
      // then
      //   fail();
-     
+
     case ((REPLACEMENTS(ht,invHt)),src,dst)
-      equation        
+      equation
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
         /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = ExpressionDump.printExpStr(dst);
@@ -1097,18 +1097,18 @@ algorithm
 end addReplacementInv2;
 
 public function addReplacementIfNot "function: addReplacementIf
-  Calls addReplacement() if condition (first argument) is true, 
+  Calls addReplacement() if condition (first argument) is true,
   otherwise does nothing.
-  
-  Author: asodja, 2010-03-03  
+
+  Author: asodja, 2010-03-03
 "
   input Boolean condition;
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
   input DAE.Exp inDst;
   output VariableReplacements outRepl;
-algorithm 
-  outRepl:=  matchcontinue (condition,repl,inSrc,inDst)    
+algorithm
+  outRepl:=  matchcontinue (condition,repl,inSrc,inDst)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
@@ -1148,7 +1148,7 @@ algorithm
       VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
-      
+
     case (_,_,_)
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
@@ -1420,10 +1420,10 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
-      
+
       // Note: Most of these functions check if a subexpression did a replacement.
-      // If it did not, we do not create a new copy of the expression (to save some memory). 
-            
+      // If it did not, we do not create a new copy of the expression (to save some memory).
+
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -1585,7 +1585,7 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Exp> acc1;
       Boolean acc2;
-      
+
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (exp::expl,_,_,acc1,acc2)
       equation
@@ -1618,7 +1618,7 @@ algorithm
       list<DAE.ReductionIterator> iters;
       list<DAE.ReductionIterator> acc1;
       Boolean acc2;
-      
+
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_,_,acc1,_)
       equation
@@ -1691,7 +1691,7 @@ algorithm
       list<list<DAE.Exp>> es;
       list<list<DAE.Exp>> acc1;
       Boolean acc2;
-      
+
     case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
@@ -1737,7 +1737,7 @@ algorithm
       DAE.ComponentRef key;
       DAE.Exp value,crefExp;
       Option<BinTree> left,right;
-    
+
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
       equation
@@ -1746,7 +1746,7 @@ algorithm
         crefExp = Expression.crefExp(key);
       then
         ((crefExp :: klst),(value :: vlst));
-    
+
     case (TREENODE(value = NONE(),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);

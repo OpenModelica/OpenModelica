@@ -979,7 +979,7 @@ openmodelica.protogt.removeedge = function (gt, edge) {
     # echo(edge.attr.label);
     if (edge.attr.label == 'branch')
     {
-      s = concat('You are not allowed to break a branch edge: ', 
+      s = concat('You are not allowed to break a branch edge: ',
           hnode.name, '--', tnode.name,' (the blue ones)!',
           'You can only break a connect edge (the green ones)');
       echo(s);
@@ -989,7 +989,7 @@ openmodelica.protogt.removeedge = function (gt, edge) {
       if (~gt.noundo)
           gt.startadd2undo (gt);
       # adrpo: 2010-09-29, deleting edges to break them
-      s = concat('Breaking connect edge connecting nodes: ', 
+      s = concat('Breaking connect edge connecting nodes: ',
             hnode.name, '--', tnode.name,' from the overconstrained graph.',
            'RightClick and Quit to return to OpenModelica and pass the ',
            'broken edge to guide the breaking algorithm.');
@@ -997,7 +997,7 @@ openmodelica.protogt.removeedge = function (gt, edge) {
       s = concat (hnode.name, '|', tnode.name, '#');
       # write to stdout
       writeline (1, s);
-    
+
       gt.undrawedge (gt, gt.views, edge);
       remove (edge.eid, edge.head.edges);
       remove (edge.eid, edge.tail.edges);
@@ -1986,7 +1986,7 @@ openmodelica.protovt.normal.uifuncs = [
         }
         else
         {
-            openmodelica.showhelp(); 
+            openmodelica.showhelp();
         }
     };
     'leftmove' = function (data) {
@@ -2017,9 +2017,9 @@ openmodelica.protovt.normal.uifuncs = [
                 gt.doaction (data, menu[i]);
             openmodelica.edge2break = 0;
         }
-        else 
+        else
         {
-            
+
         }
     };
     'middledown' = function (data) {
@@ -2495,7 +2495,7 @@ openmodelica.protogt.createview = function (gt, protovt) {
 };
 openmodelica.protogt.destroyview = function (gt, vt) {
     local menu;
-     
+
     # exit the damn thing!
     menu = vt.menus.general;
     gt.doaction (data, menu[0]); # exit
@@ -2559,7 +2559,7 @@ openmodelica.protogt.setattr = function (gt, obj) {
     if ((s[0] == '<') & (s[n-1] == '>')) {
         s[0] = '>';
         s[n-1] = '<';
-        value = s[0]; 
+        value = s[0];
         for (i = 1; i < n; i = i + 1)
             value = concat (value, s[i]);
     }
@@ -2817,6 +2817,6 @@ openmodelica.showhelp = function () {
                'To break an edge (green/red ones) click on it and select "Break Connect Edge".',
                'When you Quit (RightClick+Quit or X) the broken edge is passed to OpenModelica to guide the overconstrained breaking algorithm.',
                'OpenModelica will run the overconstrained connection breaking algorithm again and display the result graph again.',
-               'To quit this interactive loop, do not delete any connct edges, just Quit the graph viewer.');   
+               'To quit this interactive loop, do not delete any connct edges, just Quit the graph viewer.');
     echo(s);
 };

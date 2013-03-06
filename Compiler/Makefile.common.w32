@@ -78,7 +78,7 @@ SRCMO= Absyn.mo \
 	TplMain.mo \
 	Dependency.mo \
 	InstExtends.mo \
-	IOStream.mo 
+	IOStream.mo
 
 ALLMO = $(SRCMO) \
 	BackendDAEEXT.mo \

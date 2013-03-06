@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -139,7 +139,7 @@ algorithm
 end helpRequest;
 
 public function acceptedGrammar
-"returns: the flag number representing the accepted grammer. Instead of using 
+"returns: the flag number representing the accepted grammer. Instead of using
  booleans. This way more extensions can be added easily.
  usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Integer outGrammer;
@@ -497,7 +497,7 @@ algorithm
     else true;
   end matchcontinue;
 end hasLanguageStandardChanged;
-    
+
 protected function versionStringToStd
   input String inVersion;
   output LanguageStandard outStandard;

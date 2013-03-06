@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -196,10 +196,10 @@ public function qualify
    to avoid some cases where the lookup might exhibit exponential complexity
    with regards to the nesting depth of classes. One such case is the pattern
    used in the MSL, where every class extends from a class in Modelica.Icons:
-    
+
      package Modelica
        package Icons end Icons;
-       
+
        package A
          extends Modelica.Icons.foo;
          package B
@@ -209,7 +209,7 @@ public function qualify
            end C;
         end B;
       end A;
-     
+
    To look a name up in C that references a name in the top scope we need to
    first look in C. When the name is not found there we look in B, which extends
    Modelica.Icons.bar. We then need to look for Modelica in B, and then Modelica
@@ -248,7 +248,7 @@ protected function qualify2
   input ExtendsTableArray inExtendsTable;
   output Env outEnv;
 protected
-  list<Extends> exts; 
+  list<Extends> exts;
   list<SCode.Element> re;
   Option<SCode.Element> cei;
   Env env;
@@ -256,10 +256,10 @@ protected
 algorithm
   // Qualify the extends in this scope.
   env := qualifyLocalScope(inEnv, inClassType, inExtendsTable);
-  
+
   // Recurse down the tree.
   Env.FRAME(clsAndVars = tree) :: _ := env;
-  SOME(tree) := qualify3(SOME(tree), env, inExtendsTable); 
+  SOME(tree) := qualify3(SOME(tree), env, inExtendsTable);
   outEnv := FEnv.setEnvClsAndVars(tree, env);
 end qualify2;
 
@@ -415,7 +415,7 @@ algorithm
         // TODO: Convert this check to the delayed error system.
         /*********************************************************************/
         List.map2_0(rl, FSCodeCheck.checkRedeclareModifier, bc, inEnv);
-        ext = Env.EXTENDS(bc, rl, index, info); 
+        ext = Env.EXTENDS(bc, rl, index, info);
         updateQualifiedInTable(ext, index, inExtendsTable);
       then
         SOME(ext);
@@ -549,7 +549,7 @@ algorithm
       then
         (env, ep);
 
-    else (Env.emptyEnv, 
+    else (Env.emptyEnv,
           makeExtendsError(inFullPath, inPartName, BASECLASS_NOT_FOUND_ERROR));
   end match;
 end qualifyExtendsPart2;
@@ -633,7 +633,7 @@ algorithm
         SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _, _, _)
       equation
         part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
-      then 
+      then
         makeExtendsError(inBaseClass, part, BASECLASS_REPLACEABLE_ERROR);
 
     // The base class part is actually not a class but a component, which is not
@@ -925,13 +925,13 @@ algorithm
         env = FEnv.setImportTableHidden(inEnv, false);
         opt_ext = qualifyExtends2(ext, env, inExtendsTable);
         (opt_item, opt_env) =
-          lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable); 
+          lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable);
       then
         (opt_item, opt_env);
 
     case (_, _ :: rest_ext, _, _)
       equation
-        (opt_item, opt_env) = 
+        (opt_item, opt_env) =
           lookupInBaseClasses(inName, rest_ext, inEnv, inExtendsTable);
       then
         (opt_item, opt_env);
@@ -1068,7 +1068,7 @@ algorithm
   env := FEnv.getEnvTopScope(inEnv);
   (outItem, outEnv) := lookupFullyQualified2(inName, env, inExtendsTable);
 end lookupFullyQualified;
-  
+
 protected function lookupFullyQualified2
   input Absyn.Path inName;
   input Env inEnv;
@@ -1137,7 +1137,7 @@ algorithm
 
   end match;
 end lookupQualifiedExtends2;
-  
+
 protected function addUnqualifiedToTable
   input Extends inExtends;
   input Integer inIndex;
@@ -1153,7 +1153,7 @@ protected function updateQualifiedInTable
 algorithm
   _ := arrayUpdate(inExtendsTable, inIndex, QUALIFIED_EXTENDS(inExtends));
 end updateQualifiedInTable;
-  
+
 protected function update2
   input Env inEnv;
   output Env outEnv;
@@ -1164,7 +1164,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> iu;
@@ -1242,7 +1242,7 @@ algorithm
       Absyn.Info info;
       SCode.Element cls, ext;
 
-    case (_, Env.FRAME(name = SOME(name), 
+    case (_, Env.FRAME(name = SOME(name),
         extendsTable = Env.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
         Env.CLASS_EXTENDS())
       equation
@@ -1326,7 +1326,7 @@ algorithm
         path = Absyn.IDENT(inName);
       then
         (path, item);
-        
+
     // If the class doesn't even exist, show an error.
     else
       equation
@@ -1372,7 +1372,7 @@ algorithm
         partialPrefix = pp,
         restriction = res,
         classDef = SCode.CLASS_EXTENDS(
-          baseClassName = bc, 
+          baseClassName = bc,
           modifications = mods,
           composition = cdef),
         info = info), _)
@@ -1395,7 +1395,7 @@ algorithm
         info = SCode.elementInfo(inClassExtends);
         el_str = SCodeDump.printElementStr(inClassExtends);
         env_str = FEnv.getEnvName(inEnv);
-        err_msg = "FFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +& 
+        err_msg = "FFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +&
           el_str +& " in " +& env_str;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
@@ -1403,7 +1403,7 @@ algorithm
 
   end match;
 end extendEnvWithClassExtends;
-  
+
 protected function addClassExtendsInfoToEnv
   "Adds a class extends to the environment."
   input SCode.Element inClassExtends;
@@ -1419,7 +1419,7 @@ algorithm
 
     case (_, _)
       equation
-        Env.EXTENDS_TABLE(bcl, re, NONE()) = 
+        Env.EXTENDS_TABLE(bcl, re, NONE()) =
           FEnv.getEnvExtendsTable(inEnv);
         ext = Env.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
       then
@@ -1427,7 +1427,7 @@ algorithm
 
     else
       equation
-        estr = "- FEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +& 
+        estr = "- FEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +&
                "existing class extends information, this should not happen!.";
         Error.addMessage(Error.INTERNAL_ERROR, {estr});
       then

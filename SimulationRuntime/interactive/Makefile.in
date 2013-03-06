@@ -12,7 +12,7 @@ SHELL	= /bin/sh
 CC = @CC@
 CXX = @CXX@
 CFLAGS	+= @CFLAGS@
-CXXFLAGS = $(CFLAGS) 
+CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/ $(LIBF2CINC)
 
 LIBF2C=@LIBF2C@

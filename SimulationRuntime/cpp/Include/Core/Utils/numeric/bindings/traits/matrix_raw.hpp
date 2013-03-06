@@ -2,25 +2,25 @@
 //  Copyright (c) 2002-2003
 //  Toon Knapen, Kresimir Fresl, Joerg Walter
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_MATRIX_RAW_HPP
 #define BOOST_NUMERIC_BINDINGS_TRAITS_MATRIX_RAW_HPP
 
-#include <cstddef> 
-#include <boost/numeric/ublas/config.hpp> 
+#include <cstddef>
+#include <boost/numeric/ublas/config.hpp>
 #ifndef BOOST_UBLAS_HAVE_BINDINGS
-#  include <boost/numeric/ublas/matrix.hpp> 
-#endif 
+#  include <boost/numeric/ublas/matrix.hpp>
+#endif
 
 namespace boost { namespace numeric { namespace bindings { namespace traits {
 
-  namespace ublas = boost::numeric::ublas; 
+  namespace ublas = boost::numeric::ublas;
 
-  // size: 
+  // size:
 
   template <typename M>
   BOOST_UBLAS_INLINE
@@ -34,7 +34,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   }
 
 #if 0
-  // MSVC seems to dislike overloads if there is 'generic' template 
+  // MSVC seems to dislike overloads if there is 'generic' template
   template <typename M>
   BOOST_UBLAS_INLINE
   int matrix_size1 (const ublas::matrix_reference<M> &m) {
@@ -52,7 +52,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   BOOST_UBLAS_INLINE
   int matrix_storage_size (const ublas::matrix<T,F,A>& m) {
     return (int) (m.size1() * m.size2());
-  } 
+  }
   template <typename T, std::size_t M, std::size_t N>
   BOOST_UBLAS_INLINE
   int matrix_storage_size (const ublas::c_matrix<T, M, N> &m) {
@@ -73,7 +73,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   template <typename T, typename F, typename A>
   BOOST_UBLAS_INLINE
   int leading_dimension (const ublas::matrix<T,F,A> &m) {
-    typedef ublas::matrix<T,F,A> matrix_t; 
+    typedef ublas::matrix<T,F,A> matrix_t;
     return bindings::traits::leading_dimension
       (m, BOOST_UBLAS_TYPENAME matrix_t::orientation_category());
   }
@@ -94,10 +94,10 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   }
 
 
-  // stride: 
+  // stride:
 
 #if 0
-  // MSVC seems to dislike overloads if there is 'generic' template 
+  // MSVC seems to dislike overloads if there is 'generic' template
   template <typename M>
   BOOST_UBLAS_INLINE
   int matrix_stride1 (const M &m) {
@@ -170,12 +170,12 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   }
 
 
-  // storage: 
+  // storage:
 
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename T, typename F, typename A>
   BOOST_UBLAS_INLINE
-  typename ublas::matrix<T,F,A>::const_pointer 
+  typename ublas::matrix<T,F,A>::const_pointer
   matrix_storage (const ublas::matrix<T,F,A> &m) {
     return &m.data().begin()[0];
   }
@@ -184,19 +184,19 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   // But how shall we write portable code otherwise?
   template <typename T, typename F, typename A>
   BOOST_UBLAS_INLINE
-  typename ublas::matrix<T,F,A>::const_pointer 
+  typename ublas::matrix<T,F,A>::const_pointer
   matrix_storage_const (const ublas::matrix<T,F,A> &m) {
     return &m.data().begin()[0];
   }
   template <typename T, typename F, typename A>
   BOOST_UBLAS_INLINE
-  typename ublas::matrix<T,F,A>::pointer 
+  typename ublas::matrix<T,F,A>::pointer
   matrix_storage (ublas::matrix<T,F,A> &m) {
     return &m.data().begin()[0];
   }
 
 #if 0
-  // MSVC seems to dislike overloads if there is 'generic' template 
+  // MSVC seems to dislike overloads if there is 'generic' template
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename M>
   BOOST_UBLAS_INLINE
@@ -216,12 +216,12 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   typename M::pointer matrix_storage (M &m) {
     return &m.data().begin()[0];
   }
-#endif // 0 
+#endif // 0
 
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage (const ublas::matrix_reference<M> &m) {
     return matrix_storage (m.expression ());
   }
@@ -230,7 +230,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   // But how shall we write portable code otherwise?
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage_const (const ublas::matrix_reference<M> &m) {
     return matrix_storage_const (m.expression ());
   }
@@ -243,7 +243,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename T, std::size_t M, std::size_t N>
   BOOST_UBLAS_INLINE
-  typename ublas::c_matrix<T, M, N>::const_pointer 
+  typename ublas::c_matrix<T, M, N>::const_pointer
   matrix_storage (const ublas::c_matrix<T, M, N> &m) {
     return m.data();
   }
@@ -253,13 +253,13 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   // But how shall we write portable code otherwise?
   template <typename T, std::size_t M, std::size_t N>
   BOOST_UBLAS_INLINE
-  typename ublas::c_matrix<T, M, N>::const_pointer 
+  typename ublas::c_matrix<T, M, N>::const_pointer
   matrix_storage_const (const ublas::c_matrix<T, M, N> &m) {
     return m.data();
   }
   template <typename T, std::size_t M, std::size_t N>
   BOOST_UBLAS_INLINE
-  typename ublas::c_matrix<T, M, N>::pointer 
+  typename ublas::c_matrix<T, M, N>::pointer
   matrix_storage (ublas::c_matrix<T, M, N> &m) {
     return m.data();
   }
@@ -268,18 +268,18 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage (const ublas::matrix_range<M> &m) {
-    return matrix_storage (m.data()) 
-      + m.start1() * matrix_stride1 (m.data()) 
+    return matrix_storage (m.data())
+      + m.start1() * matrix_stride1 (m.data())
       + m.start2() * matrix_stride2 (m.data());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage (const ublas::matrix_slice<M> &m) {
-    return matrix_storage (m.data()) 
-      + m.start1() * matrix_stride1 (m.data ()) 
+    return matrix_storage (m.data())
+      + m.start1() * matrix_stride1 (m.data ())
       + m.start2() * matrix_stride2 (m.data ());
   }
 #endif
@@ -287,48 +287,48 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   // But how shall we write portable code otherwise?
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage_const (const ublas::matrix_range<M> &m) {
-    return matrix_storage_const (m.data()) 
-      + m.start1() * matrix_stride1 (m.data ()) 
+    return matrix_storage_const (m.data())
+      + m.start1() * matrix_stride1 (m.data ())
       + m.start2() * matrix_stride2 (m.data ());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   matrix_storage_const (const ublas::matrix_slice<M> &m) {
-    return matrix_storage_const (m.data()) 
-      + m.start1() * matrix_stride1 (m.data ()) 
+    return matrix_storage_const (m.data())
+      + m.start1() * matrix_stride1 (m.data ())
       + m.start2() * matrix_stride2 (m.data ());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
   typename M::pointer matrix_storage (ublas::matrix_range<M> &m) {
-    return matrix_storage (m.data()) 
-      + m.start1() * matrix_stride1 (m.data ()) 
+    return matrix_storage (m.data())
+      + m.start1() * matrix_stride1 (m.data ())
       + m.start2() * matrix_stride2 (m.data ());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
   typename M::pointer matrix_storage (ublas::matrix_slice<M> &m) {
-    return matrix_storage (m.data()) 
-      + m.start1() * matrix_stride1 (m.data ()) 
+    return matrix_storage (m.data())
+      + m.start1() * matrix_stride1 (m.data ())
       + m.start2() * matrix_stride2 (m.data ());
   }
 
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   vector_storage (const ublas::matrix_row<M> &v) {
-    return matrix_storage (v.data()) 
+    return matrix_storage (v.data())
       + v.index() * matrix_stride1 (v.data());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   vector_storage (const ublas::matrix_column<M> &v) {
-    return matrix_storage (v.data()) 
+    return matrix_storage (v.data())
       + v.index() * matrix_stride2 (v.data());
   }
 #endif
@@ -336,37 +336,37 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   // But how shall we write portable code otherwise?
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   vector_storage_const (const ublas::matrix_row<M> &v) {
-    return matrix_storage_const (v.data()) 
+    return matrix_storage_const (v.data())
       + v.index() * matrix_stride1 (v.data());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
-  typename M::const_pointer 
+  typename M::const_pointer
   vector_storage_const (const ublas::matrix_column<M> &v) {
-    return matrix_storage_const (v.data()) 
+    return matrix_storage_const (v.data())
       + v.index() * matrix_stride2 (v.data());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
   typename M::pointer vector_storage (ublas::matrix_row<M> &v) {
-    return matrix_storage (v.data()) 
+    return matrix_storage (v.data())
       + v.index() * matrix_stride1 (v.data());
   }
   template <typename M>
   BOOST_UBLAS_INLINE
   typename M::pointer vector_storage (ublas::matrix_column<M> &v) {
-    return matrix_storage (v.data()) 
+    return matrix_storage (v.data())
       + v.index() * matrix_stride2 (v.data());
   }
 
 }}}}
 
-#ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_NO_SYMMETRIC_TRAITS 
+#ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_NO_SYMMETRIC_TRAITS
 
-#include <boost/numeric/bindings/traits/symm_herm_raw.hpp> 
+#include <boost/numeric/bindings/traits/symm_herm_raw.hpp>
 
-#endif // BOOST_NUMERIC_BINDINGS_POOR_MANS_NO_SYMMETRIC_TRAITS 
+#endif // BOOST_NUMERIC_BINDINGS_POOR_MANS_NO_SYMMETRIC_TRAITS
 
 #endif // BOOST_NUMERIC_BINDINGS_TRAITS_MATRIX_RAW_HPP

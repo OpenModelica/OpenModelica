@@ -9,7 +9,7 @@ INCLUDES = $(INCP) /I. /I $(OMDEV)\tools\rml\include\plain /I..\..\SimulationRun
 
 CFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TC
 CXXFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP
-	 
+
 CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
 CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
 
@@ -33,11 +33,11 @@ runtimevc.lib: $(OBJ)
 
 .c.obj:
 	$(CC) $(CFLAGS) $<
-	
+
 .cc.obj:
 	$(CC) $(CXXFLAGS) $<
 
-	
+
 
 omc_communication.cc omc_communication.h : omc_communication.idl
 	$(IDL) omc_communication.idl

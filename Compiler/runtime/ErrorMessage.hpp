@@ -55,13 +55,13 @@ public:
          long startColumnNo,
          long endLineNo,
          long endColumnNo,
-         bool isReadOnly,         
+         bool isReadOnly,
          const std::string &filename);
 
   long getID() const { return errorID_; };
-  
+
   ErrorType getType() const { return messageType_; };
-  
+
   ErrorLevel getSeverity() const { return severity_; };
 
   // Returns the expanded message with inserted tokens.
@@ -92,7 +92,7 @@ private:
   std::string shortMessage;
   std::string veryshort_msg;
   std::string fullMessage;
-  
+
   /* adrpo 2006-02-05 changed the ones below */
   long startLineNo_;
   long startColumnNo_;

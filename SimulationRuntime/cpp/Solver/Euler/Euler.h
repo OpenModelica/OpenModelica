@@ -1,6 +1,6 @@
 #pragma once
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_IMPORT_DECL
- 
+
 #include <Solver/SolverDefaultImplementation.h>
 
 class IEulerSettings;
@@ -8,16 +8,16 @@ class IEulerSettings;
 /*****************************************************************************/
 /**
 
-Euler method for the solution of a non-stiff initial value problem of a system 
-of ordinary differantial equations of the form 
+Euler method for the solution of a non-stiff initial value problem of a system
+of ordinary differantial equations of the form
 
-z' = f(t,z). 
+z' = f(t,z).
 
 Dense output may be used. Zero crossing are detected by bisection or linear
 interpolation.
 
 \date     01.09.2008
-\author   
+\author
 
 
 */
@@ -61,15 +61,15 @@ public:
 private:
     /// (Explizites) Euler-Verfahren 1. Ordnung
     /*
-    Euler: 
+    Euler:
     y_n+1 = y_n + h * f(t_n, y_n)
     */
-    void doEulerForward(); 
+    void doEulerForward();
 
 
     /// Explizite Verfahren 1. und 2. Ordnung
     /*
-    Euler-Cauchy (wie impliziter Euler, aber explizit durch Präd. Korr., 1. Ordnung): 
+    Euler-Cauchy (wie impliziter Euler, aber explizit durch Präd. Korr., 1. Ordnung):
     y_n+1^P = y_n + h * f(t_n, y_n)
     y_n+1 = y_n + h * f((t_n+1, y_n+1^P)
 
@@ -77,7 +77,7 @@ private:
     y_n+1^P = y_n + h * f(t_n, y_n)
     y_n+1 = y_n + h * 1/2(f(t_n, y_n) + f(t_n+1, y_n+1^P))
 
-    Mod. Heun (siehe Heun): 
+    Mod. Heun (siehe Heun):
     y_n+1^P = y_n + 2/3 * h * f(t_n, y_n)
     y_n+1 = y_n + h * (1/4*f(t_n, y_n) + 3/4*f((t_n+2/3h), y_n+1^P))
 
@@ -91,7 +91,7 @@ private:
     y_n+1 = y_n + h * f(t_n+1, y_n+1)
 
     */
-    void doEulerBackward(); 
+    void doEulerBackward();
 
 
     /// Implizite Mittelpunkts- oder Trapezregel 2. Ordnung (A-stabil)
@@ -100,17 +100,17 @@ private:
     y_n+1 = y_n + h * 1/2(f(t_n, y_n) + f(t_n+1, y_n+1))
 
     */
-    void doMidpoint(); 
+    void doMidpoint();
 
 
     /// Encapsulation of determination of right hand side
     void calcFunction(const double& t, const double* z, double* zDot);
 
-    /// Output routine called after every sucessfull solver step (calls setZeroState() and writeToFile() in SolverDefaultImpl.) 
+    /// Output routine called after every sucessfull solver step (calls setZeroState() and writeToFile() in SolverDefaultImpl.)
     void solverOutput(const int& stp, const double& t, double* z, const double& h);
 
-    
-    
+
+
     void doTimeEvents();
 
 
@@ -123,8 +123,8 @@ private:
     void interp1(double time, double* value);
 
     /// Kapselung der Nullstellensuche
-    void doMyZeroSearch(); 
-    void doZeroSearch(); 
+    void doMyZeroSearch();
+    void doZeroSearch();
 
     // gibt den Wert der Nullstellenfunktion für die Zeit t und den Zustand y wieder
     void giveZeroVal(const double &t,const double *y,double *zeroValue);
@@ -132,19 +132,19 @@ private:
     // gibt die Indizes der Nullstellenfunktion mit Vorzeichenwechsel zurück
     void giveZeroIdx(double *vL,double *vR,int *zeroIdx, int &zeroExist);
 
-    
-    
+
+
 
     ///// Output routine for dense output (Encapsulates interpolation, calls solverOutput() for output)
-    //void denseout(double* pK1); 
+    //void denseout(double* pK1);
 
-    ///// Ausgaberoutine zur dichten Ausgabe für alle Verfahren mit Ordnung > 1 
-    ///// (Kapselt die Interpolation, ruft solverOut zur Ausgabe, ruft numberOfRootsBySturm() zur Bestimmung der Anzahl der Nullstellen 
+    ///// Ausgaberoutine zur dichten Ausgabe für alle Verfahren mit Ordnung > 1
+    ///// (Kapselt die Interpolation, ruft solverOut zur Ausgabe, ruft numberOfRootsBySturm() zur Bestimmung der Anzahl der Nullstellen
     ///// im aktuellen Ausgabeintervall)
-    //void denseout(double* pK1, double* pK2, double b, double* w1, double* w2, double* w3); 
+    //void denseout(double* pK1, double* pK2, double b, double* w1, double* w2, double* w3);
 
     /// Bildung der Sturmsequenz, Ermittlung der Anzahl der Nullstellen, die aufgrund der Schrittweite ev. übersehen wurden, mit Hilfe der Sturm-Sequenz
-    void numberOfZerosBySturm(double& tHelp, double* Y0_ZeroF, double* Y12_ZeroF, double* Y1_ZeroF); 
+    void numberOfZerosBySturm(double& tHelp, double* Y0_ZeroF, double* Y12_ZeroF, double* Y1_ZeroF);
 
 
 
@@ -175,7 +175,7 @@ private:
         *_z0,                                        ///< Temp            - (Old) state vector at left border of intervall (last step)
         *_z1,                                        ///< Temp            - (New) state vector at right border of intervall (last step)
         *_zInit,                                    ///< Temp            - Initial state vector
-        *_zLastSucess,                                ///< Temp            - State vector of last successfull step 
+        *_zLastSucess,                                ///< Temp            - State vector of last successfull step
         *_zLargeStep,                                ///< Temp            - State vector of "large step" (used by "coupling step size controller" of SimManger)
         *_denseOutPolynominal,                        ///< Temp            - Stores the coeffitions for the dense output polynominal
         *_zWrite,                                    ///< Temp            - Zustand den das System rausschreibt
@@ -194,7 +194,7 @@ private:
                                 _h11;
 
 
-    double 
+    double
         _tOut,                                        ///< Output            - Time for dense output
         _tLastZero,                                 ///< Temp            - Stores the time of the last zero (not last zero crossing!)
         _tRealInitZero,                                ///< Temp            - Time of the very first zero in all zero functions

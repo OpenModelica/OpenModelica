@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -121,7 +121,7 @@ end emptyIndexTableSized;
 
 public function emptySets
   "Creates a new disjoint-sets structure."
-  input Integer inConnectionCount; 
+  input Integer inConnectionCount;
   output DisjointSets outSets;
 protected
   array<Node> nodes;
@@ -133,7 +133,7 @@ algorithm
   indices := emptyIndexTableSized(Util.nextPrime(sz));
   outSets := DISJOINT_SETS(nodes, indices, 0);
 end emptySets;
-  
+
 public function add
   "Adds a connector as a node in the disjoint-sets forest. This function assumes
    that the node does not already exist. If the node might exist already, use
@@ -163,12 +163,12 @@ algorithm
   nodes := arrayUpdate(nodes, index, node);
   outSets := DISJOINT_SETS(nodes, indices, nc);
 end update;
-  
+
 protected function find
   "This function finds and returns the node associated with a given connector.
    If the connector does not a have a node in the forest, then a new node will
    be added and returned.
-   
+
    The reason why this function also returns the sets is because it does path
    compression, and the disjoint-set structure may therefore be changed during
    look up."
@@ -223,7 +223,7 @@ public function findSet
    The set is represented by the root-node of the tree. If the connector does
    not have a corresponding node in the forest, then a new set with the
    connector as the only element will be added to the forest and returned.
-   
+
    The reason why this function also returns the sets is because it does path
    compression, and the disjoint-set structure may therefore be changed during
    look up."
@@ -252,7 +252,7 @@ algorithm
     local
       Node set1, set2;
       DisjointSets sets;
-      
+
     case (_, _, sets)
       equation
         (set1, sets) = findSet(inConnector1, sets);
@@ -262,7 +262,7 @@ algorithm
 
   end match;
 end merge;
-        
+
 public function expandAddConnection
   input Connection inConnection;
   input DisjointSets inSets;
@@ -409,7 +409,7 @@ algorithm
         _ = arrayUpdate(inNodes, index, node);
       then
         (node, next_index, true);
-        
+
   end matchcontinue;
 end assignSetIndex;
 
@@ -521,7 +521,7 @@ algorithm
 
   end matchcontinue;
 end findRoot;
-        
+
 protected function union
   "Merges two sets into one."
   input Node inSet1;
@@ -598,12 +598,12 @@ algorithm
         nodes = arrayUpdate(nodes, index2, set2);
       then
         nodes;
-        
+
   end match;
 end union2;
 
 public function printSets
-  "Print out the sets for debugging." 
+  "Print out the sets for debugging."
   input DisjointSets inSets;
 protected
   array<Node> nodes;

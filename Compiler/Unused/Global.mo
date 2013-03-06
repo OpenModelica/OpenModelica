@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -59,7 +59,7 @@ type Scopes      = Scope.Scopes;
 type InstInfo    = InstInfo.Info;
 type SymbolTable = Interactive.SymbolTable;
 type Id          = Integer;
-  
+
 constant Name.Name    rootName        = "$/";
 constant Id           rootScopeId     = 1;
 constant Scope.Scope  rootScope       = {Scope.S(rootScopeId, virtualId, 1, Scope.TY())};
@@ -86,7 +86,7 @@ protected
   Names       na "names";
   Scopes      sc "scopes";
   InstInfo    ii "inst info";
-  SymbolTable st "symbol table";  
+  SymbolTable st "symbol table";
 algorithm
   na := Name.pool();
   sc := Scope.pool();
@@ -104,7 +104,7 @@ end get;
 
 public function set
 "sets the Global structure in the global variable and returns it also
- so that is easier to write it in expressions such as then setGlobal(global) 
+ so that is easier to write it in expressions such as then setGlobal(global)
  so you can both set it an return it"
   input Global inGlobal;
   output Global outGlobal;
@@ -126,7 +126,7 @@ protected
   Names       na "names";
   Scopes      sc "scopes";
   InstInfo    ii "inst info";
-  SymbolTable st "symbol table";  
+  SymbolTable st "symbol table";
 algorithm
   G(na, sc, ii, st) := get();
   G(na = outNames) := set(G(inNames, sc, ii, st));
@@ -145,7 +145,7 @@ protected
   Names       na "scopes";
   Scopes      sc "scopes";
   InstInfo    ii "inst info";
-  SymbolTable st "symbol table";  
+  SymbolTable st "symbol table";
 algorithm
   G(na, sc, ii, st) := get();
   G(sc = outScopes) := set(G(na, inScopes, ii, st));
@@ -164,7 +164,7 @@ protected
   Names       na "instInfo";
   Scopes      sc "instInfo";
   InstInfo    ii "inst info";
-  SymbolTable st "symbol table";  
+  SymbolTable st "symbol table";
 algorithm
   G(na, sc, ii, st) := get();
   G(ii = outInstInfo) := set(G(na, sc, inInstInfo, st));
@@ -173,7 +173,7 @@ end setInstInfo;
 public function getSymbolTable
   output SymbolTable symbolTable;
 algorithm
-  G(st = symbolTable) := get();  
+  G(st = symbolTable) := get();
 end getSymbolTable;
 
 public function setSymbolTable
@@ -183,7 +183,7 @@ protected
   Names       na "symbolTable";
   Scopes      sc "symbolTable";
   InstInfo    ii "inst info";
-  SymbolTable st "symbol table";  
+  SymbolTable st "symbol table";
 algorithm
   G(na, sc, ii, st) := get();
   G(st = outSymbolTable) := set(G(na, sc, ii, inSymbolTable));

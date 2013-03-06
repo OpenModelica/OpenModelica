@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "AlgLoopSolverFactory.h"
 #include <LibrariesConfig.h>
- 
+
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings& global_settings)
 :_libraries_path(global_settings.getRuntimeLibrarypath())
 ,_global_settings(global_settings)
@@ -38,14 +38,14 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
    std::map<std::string, factory<INonLinSolverSettings> >::iterator iter2;
    std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(types.get());
    iter2 = nonLinSolversettingsfactory.find(nonlinsolversettings);
-      if (iter2 ==nonLinSolversettingsfactory.end()) 
+      if (iter2 ==nonLinSolversettingsfactory.end())
         {
             throw std::invalid_argument("No such nonlinear solver Settings");
         }
     boost::shared_ptr<INonLinSolverSettings> algsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter2->second.create());
     _algsolversettings.push_back(algsolversetting);
     iter = nonlinSolverFactory.find(nonlinsolver);
-    if (iter ==nonlinSolverFactory.end()) 
+    if (iter ==nonlinSolverFactory.end())
     {
        throw std::invalid_argument("No such non linear Solver");
    }

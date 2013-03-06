@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -98,7 +98,7 @@ algorithm
       DAE.Exp rhs,lhs,res,e1,e2,e3,crexp;
       DAE.ComponentRef cr,cr1;
       list<DAE.Statement> asserts,asserts1,asserts2;
-/*    
+/*
     case(_,_,_,_) // FOR DEBBUGING...
       equation
         print("Try to solve: rhs: " +&
@@ -107,7 +107,7 @@ algorithm
           ExpressionDump.printExpStr(inExp3) +& "\n");
       then
         fail();
-*/    
+*/
     // try simple cases
     case (_,_,_,_)
       equation
@@ -132,8 +132,8 @@ algorithm
         (res,asserts) = solve2(lhs, rhs, crexp, linearExps);
         (res,_) = ExpressionSimplify.simplify1(res);
       then
-        (res,asserts);        
-    
+        (res,asserts);
+
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
         (lhs,asserts) = solve_work(inExp1,e2,inExp3,linearExps);
@@ -142,7 +142,7 @@ algorithm
         asserts2 = listAppend(asserts,asserts1);
       then
         (res,asserts2);
-    
+
     case (DAE.IFEXP(e1,e2,e3),_,_,_)
       equation
         (lhs,asserts) = solve_work(e2,inExp2,inExp3,linearExps);
@@ -157,7 +157,7 @@ algorithm
         print("solve " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& " for " +& ExpressionDump.printExpStr(inExp3) +& " failed\n");
       then
         fail();
-*/        
+*/
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
@@ -170,7 +170,7 @@ end solve_work;
 
 protected function solveSimple
 "function: solveSimple
-  Solves simple equations like 
+  Solves simple equations like
   a = f(..)
   der(a) = f(..)
   -a = f(..)
@@ -199,7 +199,7 @@ algorithm
         true = ComponentReference.crefEqual(cr, cr1);
       then
         (inExp2,{});
-    
+
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
       equation
@@ -227,7 +227,7 @@ algorithm
         false = Expression.expHasDerCref(inExp2, cr);
       then
         (inExp1,{});
-    // -cr = exp    
+    // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
@@ -255,7 +255,7 @@ algorithm
         // cr not in e2
         false = Expression.expHasDerCref(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});        
+        (Expression.negate(inExp2),{});
 
     // exp = -cr
     case (_,DAE.LUNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
@@ -287,7 +287,7 @@ algorithm
       then
         (Expression.negate(inExp1),{});
 
-    // !cr = exp    
+    // !cr = exp
     case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
@@ -295,7 +295,7 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
         (Expression.negate(inExp2),{});
-    // exp = !cr    
+    // exp = !cr
     case (_,DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
@@ -338,8 +338,8 @@ algorithm
       list<DAE.Statement> asserts;
       Real r;
       Integer i;
-    
-     // cr = (e1(0)-e2(0))/(der(e1-e2,cr)) 
+
+     // cr = (e1(0)-e2(0))/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         false = hasOnlyFactors(inExp1,inExp2);
@@ -374,7 +374,7 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
 
-    // 0 = a*(b-c)  solve for b    
+    // 0 = a*(b-c)  solve for b
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.isZero(inExp1);
@@ -385,8 +385,8 @@ algorithm
         asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
         (rhs,asserts);
-       
-    // swapped args: a*(b-c) = 0  solve for b     
+
+    // swapped args: a*(b-c) = 0  solve for b
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.isZero(inExp2);
@@ -397,7 +397,7 @@ algorithm
         asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
         (rhs,asserts);
-        
+
     // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
     // does not work because not all have pre in code generation
 /*    case (_,_,DAE.CREF(componentRef = cr),_)
@@ -415,13 +415,13 @@ algorithm
         (rhs,asserts) = solve(e,z,inExp3);
         a = Expression.expDiv(DAE.RCONST(1.0),a);
         rhs = DAE.BINARY(rhs,DAE.POW(tp1),a);
-        tp = Expression.typeof(inExp3);                   
+        tp = Expression.typeof(inExp3);
         dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
         dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
         dere = DAE.IFEXP(DAE.RELATION(dere,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),dere);
         rhs = Expression.expMul(dere,rhs);
       then
-        (rhs,asserts);        
+        (rhs,asserts);
 *//*
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
@@ -441,7 +441,7 @@ algorithm
         print("\n");
       then
         fail();
-*/    
+*/
     /*
     case (_,_,DAE.CREF(componentRef = cr), _)
       equation
@@ -469,7 +469,7 @@ protected function traversingVarOnlyinPow "
 Returns true if in the exp the componentRef is only in pow"
   input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean,Option<DAE.Exp>>> inExp;
   output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean,Option<DAE.Exp>>> outExp;
-algorithm 
+algorithm
   outExp := matchcontinue(inExp)
     local
       Boolean b;
@@ -483,21 +483,21 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(e2, cr);
       then
         ((e1,false,(cr,false,SOME(e))));
-   
+
     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
         ((e,not b,(cr,b,oe)));
-    
+
     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
       equation
         b = ComponentReference.crefPrefixOf(cr1,cr);
       then
-        ((e,not b,(cr,b,oe)));    
-    
+        ((e,not b,(cr,b,oe)));
+
     case (((e,(cr,b,oe)))) then ((e,not b,(cr,b,oe)));
-    
+
   end matchcontinue;
 end traversingVarOnlyinPow;
 
@@ -522,7 +522,7 @@ algorithm
       then
         inAsserts;
     else
-      equation    
+      equation
         tp = Expression.typeof(a);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         se1 = ExpressionDump.printExpStr(inExp2);
@@ -586,7 +586,7 @@ algorithm
       DAE.Exp crexp,e1,e2;
       DAE.ComponentRef cr;
       DAE.Operator op;
-    
+
     case (DAE.BINARY(e1,op,e2),DAE.CREF(componentRef = cr))
       equation
         true = solve4(op);
@@ -594,7 +594,7 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(e1, cr);
       then
         (e2,e1);
-    // swapped arguments   
+    // swapped arguments
     case (DAE.BINARY(e1,op,e2),DAE.CREF(componentRef = cr))
       equation
         true = solve4(op);
@@ -627,27 +627,27 @@ factors, e.g. a*b*c = 0. In this case we can not solve the equation"
   output Boolean res;
 algorithm
   res := matchcontinue(e1,e2)
-    
+
     // try normal
-    case(_,_) 
+    case(_,_)
       equation
         true = Expression.isZero(e1);
         // More than two factors
         _::_::_ = Expression.factors(e2);
         //.. and more than two crefs
         _::_::_ = Expression.extractCrefsFromExp(e2);
-      then 
+      then
         true;
-      
+
     // swapped args
-    case(_,_) 
+    case(_,_)
       equation
         true = Expression.isZero(e1);
         _::_::_ = Expression.factors(e2);
         _::_::_ = Expression.extractCrefsFromExp(e2);
-      then 
+      then
         true;
-    
+
     else then false;
 
   end matchcontinue;
@@ -660,28 +660,28 @@ protected function isInverseCref " Returns true if expression is 1/cr for a Comp
 algorithm
   res := matchcontinue(e,cr)
     local DAE.ComponentRef cr2; DAE.Exp e1;
-    
+
     case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),_)
       equation
         true = Expression.isConstOne(e1);
         true = ComponentReference.crefEqual(cr,cr2);
-      then 
+      then
         true;
 
     case(DAE.BINARY(e1,DAE.DIV_ARR(_),DAE.CREF(componentRef = cr2)),_)
       equation
         true = Expression.isConstOne(e1);
         true = ComponentReference.crefEqual(cr,cr2);
-      then 
+      then
         true;
 
     case(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),DAE.CREF(componentRef = cr2)),_)
       equation
         true = Expression.isConstOne(e1);
         true = ComponentReference.crefEqual(cr,cr2);
-      then 
+      then
         true;
-    
+
     else then false;
 
   end matchcontinue;

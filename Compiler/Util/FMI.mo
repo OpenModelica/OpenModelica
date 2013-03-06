@@ -27,7 +27,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
  encapsulated package FMI
 " file:         FMI.mo
   package:     FMI
@@ -74,7 +74,7 @@ public uniontype ModelVariables
     Integer y1Placement;
     Integer y2Placement;
   end REALVARIABLE;
-  
+
   record INTEGERVARIABLE
     Integer instance;
     String name;
@@ -91,7 +91,7 @@ public uniontype ModelVariables
     Integer y1Placement;
     Integer y2Placement;
   end INTEGERVARIABLE;
-  
+
   record BOOLEANVARIABLE
     Integer instance;
     String name;
@@ -108,7 +108,7 @@ public uniontype ModelVariables
     Integer y1Placement;
     Integer y2Placement;
   end BOOLEANVARIABLE;
-  
+
   record STRINGVARIABLE
     Integer instance;
     String name;
@@ -125,7 +125,7 @@ public uniontype ModelVariables
     Integer y1Placement;
     Integer y2Placement;
   end STRINGVARIABLE;
-  
+
   record ENUMERATIONVARIABLE
     Integer instance;
     String name;

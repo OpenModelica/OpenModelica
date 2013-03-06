@@ -266,7 +266,7 @@ void read_input_xml(int argc, char **argv,
   /* first, check the modelGUID!
      TODO! FIXME! THIS SEEMS TO FAIL!
      ARE WE READING THE OLD XML FILE?? */
-  if (mi.md.find("guid") == mi.md.end()) 
+  if (mi.md.find("guid") == mi.md.end())
   {
      WARNING2(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
@@ -370,7 +370,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.rSta[i]["name"], &(modelData->realVarsData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file", modelData->realVarsData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.rSta[i]["valueReference"], &(modelData->realVarsData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.id);
@@ -400,7 +400,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max));
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->realVarsData[i].info.name[0] == '$')
       modelData->realVarsData[i].filterOutput = 1;
@@ -419,7 +419,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.rDer[i]["name"], &(modelData->realVarsData[modelData->nStates + i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.rDer[i]["valueReference"], &(modelData->realVarsData[modelData->nStates+i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.id);
@@ -438,7 +438,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rDer[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.rDer[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.useStart));
     read_value(mi.rDer[i]["start"], &(modelData->realVarsData[modelData->nStates+i].attribute.start));
@@ -449,7 +449,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max));
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->realVarsData[modelData->nStates+i].info.name[0] == '$')
       modelData->realVarsData[modelData->nStates+i].filterOutput = 1;
@@ -470,7 +470,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.rAlg[i]["name"], &(modelData->realVarsData[j].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[j].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.rAlg[i]["valueReference"], &(modelData->realVarsData[j].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.id);
@@ -489,7 +489,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAlg[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[j].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.rAlg[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.useStart));
     read_value(mi.rAlg[i]["start"], &(modelData->realVarsData[j].attribute.start));
@@ -500,7 +500,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max));
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->realVarsData[j].info.name[0] == '$')
       modelData->realVarsData[j].filterOutput = 1;
@@ -519,7 +519,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.iAlg[i]["name"], &(modelData->integerVarsData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerVarsData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.iAlg[i]["valueReference"], &(modelData->integerVarsData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.id);
@@ -538,7 +538,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iAlg[i]["fileWritable"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.iAlg[i]["useStart"], &(modelData->integerVarsData[i].attribute.useStart));
     read_value(mi.iAlg[i]["start"], &(modelData->integerVarsData[i].attribute.start));
@@ -547,7 +547,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iAlg[i]["max"], &(modelData->integerVarsData[i].attribute.max));
 
     INFO7(LOG_DEBUG, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->integerVarsData[i].info.name[0] == '$')
       modelData->integerVarsData[i].filterOutput = 1;
@@ -566,7 +566,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.bAlg[i]["name"], &(modelData->booleanVarsData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->booleanVarsData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.bAlg[i]["valueReference"], &(modelData->booleanVarsData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.id);
@@ -585,14 +585,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bAlg[i]["fileWritable"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.bAlg[i]["useStart"], &(modelData->booleanVarsData[i].attribute.useStart));
     read_value(mi.bAlg[i]["start"], &(modelData->booleanVarsData[i].attribute.start));
     read_value(mi.bAlg[i]["fixed"], &(modelData->booleanVarsData[i].attribute.fixed));
 
     INFO5(LOG_DEBUG, "Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
-  
+
     /* filter internal variables */
     if(modelData->booleanVarsData[i].info.name[0] == '$')
       modelData->booleanVarsData[i].filterOutput = 1;
@@ -611,7 +611,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.sAlg[i]["name"], &(modelData->stringVarsData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringVarsData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.sAlg[i]["valueReference"], &(modelData->stringVarsData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.id);
@@ -630,13 +630,13 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.sAlg[i]["fileWritable"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.sAlg[i]["useStart"], &(modelData->stringVarsData[i].attribute.useStart));
     read_value(mi.sAlg[i]["start"], &(modelData->stringVarsData[i].attribute.start));
 
     INFO4(LOG_DEBUG, "String %s(%sstart=%s%s)", modelData->stringVarsData[i].info.name, (modelData->stringVarsData[i].attribute.useStart)?"":"{", modelData->stringVarsData[i].attribute.start, (modelData->stringVarsData[i].attribute.useStart)?"":"}");
-    
+
     /* filter internal variables */
     if(modelData->stringVarsData[i].info.name[0] == '$')
       modelData->stringVarsData[i].filterOutput = 1;
@@ -658,7 +658,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.rPar[i]["name"], &(modelData->realParameterData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realParameterData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.rPar[i]["valueReference"], &(modelData->realParameterData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.id);
@@ -677,7 +677,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rPar[i]["fileWritable"], (modelica_integer*) &(modelData->realParameterData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.rPar[i]["useStart"], &(modelData->realParameterData[i].attribute.useStart));
     read_value(mi.rPar[i]["start"], &(modelData->realParameterData[i].attribute.start));
@@ -688,7 +688,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max));
 
     INFO10(LOG_DEBUG, "parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->realParameterData[i].info.name[0] == '$')
       modelData->realParameterData[i].filterOutput = 1;
@@ -707,7 +707,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.iPar[i]["name"], &(modelData->integerParameterData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerParameterData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.iPar[i]["valueReference"], &(modelData->integerParameterData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.id);
@@ -726,7 +726,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iPar[i]["fileWritable"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.iPar[i]["useStart"], (modelica_boolean*)&(modelData->integerParameterData[i].attribute.useStart));
     read_value(mi.iPar[i]["start"], &(modelData->integerParameterData[i].attribute.start));
@@ -735,7 +735,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iPar[i]["max"], &(modelData->integerParameterData[i].attribute.max));
 
     INFO7(LOG_DEBUG, "parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
-    
+
     /* filter internal variables */
     if(modelData->integerParameterData[i].info.name[0] == '$')
       modelData->integerParameterData[i].filterOutput = 1;
@@ -753,7 +753,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.bPar[i]["name"], &(modelData->booleanParameterData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file", modelData->booleanParameterData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.bPar[i]["valueReference"], &(modelData->booleanParameterData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.id);
@@ -772,14 +772,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bPar[i]["fileWritable"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.bPar[i]["useStart"], &(modelData->booleanParameterData[i].attribute.useStart));
     read_value(mi.bPar[i]["start"], &(modelData->booleanParameterData[i].attribute.start));
     read_value(mi.bPar[i]["fixed"], &(modelData->booleanParameterData[i].attribute.fixed));
 
     INFO5(LOG_DEBUG, "parameter Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].attribute.useStart?"":"{", modelData->booleanParameterData[i].attribute.start?"true":"false", modelData->booleanParameterData[i].attribute.useStart?"":"}", modelData->booleanParameterData[i].attribute.fixed?"true":"false");
-    
+
     /* filter internal variables */
     if(modelData->booleanParameterData[i].info.name[0] == '$')
       modelData->booleanParameterData[i].filterOutput = 1;
@@ -797,7 +797,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.sPar[i]["name"], &(modelData->stringParameterData[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringParameterData[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.sPar[i]["valueReference"], &(modelData->stringParameterData[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.id);
@@ -816,13 +816,13 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.sPar[i]["fileWritable"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     /* read var attribute */
     read_value(mi.sPar[i]["useStart"], &(modelData->stringParameterData[i].attribute.useStart));
     read_value(mi.sPar[i]["start"], &(modelData->stringParameterData[i].attribute.start));
 
     INFO4(LOG_DEBUG, "parameter String %s(%sstart=%s%s)", modelData->stringParameterData[i].info.name, modelData->stringParameterData[i].attribute.useStart?"":"{", modelData->stringParameterData[i].attribute.start, modelData->stringParameterData[i].attribute.useStart?"":"}");
-    
+
     /* filter internal variables */
     if(modelData->stringParameterData[i].info.name[0] == '$')
       modelData->stringParameterData[i].filterOutput = 1;
@@ -842,7 +842,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.rAli[i]["name"], &(modelData->realAlias[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realAlias[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.rAli[i]["valueReference"], &(modelData->realAlias[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",(modelData->realAlias[i].info.name),modelData->realAlias[i].info.id);
@@ -861,7 +861,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAli[i]["fileWritable"], (modelica_integer*) &(modelData->realAlias[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     string aliasTmp;
     read_value(mi.rAli[i]["alias"], &aliasTmp);
     if(aliasTmp.compare("negatedAlias") == 0)
@@ -870,7 +870,7 @@ void read_input_xml(int argc, char **argv,
       modelData->realAlias[i].negate = 0;
 
     INFO2(LOG_DEBUG, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
-    
+
     /* filter internal variables */
     if(modelData->realAlias[i].info.name[0] == '$')
       modelData->realAlias[i].filterOutput = 1;
@@ -914,7 +914,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.iAli[i]["name"], &(modelData->integerAlias[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerAlias[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.iAli[i]["valueReference"], &(modelData->integerAlias[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.id);
@@ -933,7 +933,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iAli[i]["fileWritable"], (modelica_integer*) &(modelData->integerAlias[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     string aliasTmp;
     read_value(mi.iAli[i]["alias"], &aliasTmp);
     if(aliasTmp.compare("negatedAlias") == 0)
@@ -946,7 +946,7 @@ void read_input_xml(int argc, char **argv,
     /* filter internal variables */
     if(modelData->integerAlias[i].info.name[0] == '$')
       modelData->integerAlias[i].filterOutput = 1;
-      
+
     read_value(mi.iAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
@@ -984,7 +984,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.bAli[i]["name"], &(modelData->booleanAlias[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->booleanAlias[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.bAli[i]["valueReference"], &(modelData->booleanAlias[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.id);
@@ -1003,7 +1003,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bAli[i]["fileWritable"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     std::string aliasTmp;
     read_value(mi.bAli[i]["alias"], &aliasTmp);
     if(aliasTmp.compare("negatedAlias") == 0)
@@ -1016,7 +1016,7 @@ void read_input_xml(int argc, char **argv,
     /* filter internal variables */
     if(modelData->booleanAlias[i].info.name[0] == '$')
       modelData->booleanAlias[i].filterOutput = 1;
-      
+
     read_value(mi.bAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
@@ -1054,7 +1054,7 @@ void read_input_xml(int argc, char **argv,
     /* read var info */
     read_value(mi.sAli[i]["name"], &(modelData->stringAlias[i].info.name));
     DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringAlias[i].info.name);
-    
+
     INDENT(LOG_DEBUG);
     read_value(mi.sAli[i]["valueReference"], &(modelData->stringAlias[i].info.id));
     DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.id);
@@ -1073,7 +1073,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.sAli[i]["fileWritable"], (modelica_string*) &(modelData->stringAlias[i].info.info.readonly));
     DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
-    
+
     std::string aliasTmp;
     read_value(mi.sAli[i]["alias"], &aliasTmp);
     if(aliasTmp.compare("negatedAlias") == 0)
@@ -1082,7 +1082,7 @@ void read_input_xml(int argc, char **argv,
       modelData->stringAlias[i].negate = 0;
 
     INFO2(LOG_DEBUG, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
-    
+
     /* filter internal variables */
     if(modelData->stringAlias[i].info.name[0] == '$')
       modelData->stringAlias[i].filterOutput = 1;

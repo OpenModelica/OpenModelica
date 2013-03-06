@@ -17,7 +17,7 @@ SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/util/
 ifndef OMDEV
 	configUnix = config.unix.h
 else
-	configUnix = 
+	configUnix =
 endif
 RML_COMPAT=$(top_builddir)/SimulationRuntime/c/meta/rml_compatibility.h
 

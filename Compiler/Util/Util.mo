@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -239,10 +239,10 @@ algorithm
 end applyAndCons;
 
 public function arrayMapNoCopy "Takes an array and a function over the elements of the array, which is applied for each element.
-Since it will update the array values the returned array must have the same type, and thus the applied function must also return 
-the same type. 
+Since it will update the array values the returned array must have the same type, and thus the applied function must also return
+the same type.
 
-See also listMap, arrayMap 
+See also listMap, arrayMap
   "
   input array<Type_a> array;
   input FuncType func;
@@ -269,13 +269,13 @@ protected function arrayMapNoCopyHelp1 "help function to arrayMap"
   end FuncType;
 algorithm
   outArray := matchcontinue(array,func,pos,len)
-    local 
+    local
       Type_a newElt;
-    
-    case(array,func,pos,len) equation 
+
+    case(array,func,pos,len) equation
       true = pos > len;
     then array;
-    
+
     case(array,func,pos,len) equation
       newElt = func(array[pos]);
       array = arrayUpdate(array,pos,newElt);
@@ -285,9 +285,9 @@ algorithm
 end arrayMapNoCopyHelp1;
 
 public function arrayMapNoCopy_1 "
-same as arrayMapcopy but with additional argument 
+same as arrayMapcopy but with additional argument
 
-See also listMap, arrayMap 
+See also listMap, arrayMap
   "
   input array<Type_a> array;
   input FuncType func;
@@ -320,15 +320,15 @@ protected function arrayMapNoCopyHelp1_1 "help function to arrayMap"
   end FuncType;
 algorithm
   (outArray,outArg) := matchcontinue(inArray,func,pos,len,inArg)
-    local 
+    local
       array<Type_a> a,a1;
       Type_a newElt;
       Type_b extarg,extarg1;
-    
-    case(inArray,func,pos,len,inArg) equation 
+
+    case(inArray,func,pos,len,inArg) equation
       true = pos > len;
     then (inArray,inArg);
-    
+
     case(inArray,func,pos,len,inArg) equation
       ((newElt,extarg)) = func((inArray[pos],inArg));
       a = arrayUpdate(inArray,pos,newElt);
@@ -345,13 +345,13 @@ public function arrayFindFirstOnTrue "finds the first element in the array that 
     input Type_a elt;
     output Boolean res;
   end ArrayPredFunc;
-  
+
   output Option<Type_a> elt;
 algorithm
   elt :=arrayFindFirstOnTrue2(array,func,1);
 end arrayFindFirstOnTrue;
 
-protected function arrayFindFirstOnTrue2 "help function"  
+protected function arrayFindFirstOnTrue2 "help function"
   input array<Type_a> array;
   input ArrayPredFunc func;
   input Integer pos;
@@ -360,13 +360,13 @@ protected function arrayFindFirstOnTrue2 "help function"
     input Type_a elt;
     output Boolean res;
   end ArrayPredFunc;
-  
+
   output Option<Type_a> elt;
 algorithm
   elt := matchcontinue(array,func,pos)
-  local 
+  local
     Type_a e;
-     
+
     case(_,_,_) equation
       true = pos > arrayLength(array);
     then NONE();
@@ -376,11 +376,11 @@ algorithm
     then SOME(e);
     case (_,_,_) then  arrayFindFirstOnTrue2(array,func,pos+1);
   end matchcontinue;
-end arrayFindFirstOnTrue2; 
+end arrayFindFirstOnTrue2;
 
-public function arraySelect 
-"Takes an array and a list with index and output a new array with the indexed elements. 
- Since it will update the array values the returned array must not have the same type, 
+public function arraySelect
+"Takes an array and a list with index and output a new array with the indexed elements.
+ Since it will update the array values the returned array must not have the same type,
  the array will first be initialized with the result of the first call.
  assume the Indecies are in range 1,arrayLength(array)."
   input array<Type_a> array;
@@ -401,12 +401,12 @@ protected function arraySelectHelp "help function to arrayMap"
   replaceable type Type_a subtypeof Any;
 algorithm
   outArray := matchcontinue(array,posistions,inArray,lstpos)
-    local 
+    local
     Integer pos,i;
     list<Integer> rest;
     Type_a elmt;
     case(_,{},_,_) then inArray;
-    case(_,pos::rest,_,i) equation 
+    case(_,pos::rest,_,i) equation
       elmt = array[pos];
       outArray = arrayUpdate(inArray,i,elmt);
       outArray = arraySelectHelp(array,rest,inArray,i+1);
@@ -417,12 +417,12 @@ algorithm
   end matchcontinue;
 end arraySelectHelp;
 
-public function arrayMap 
+public function arrayMap
 "@author: unkwnown, adrpo
   Takes an array and a function over the elements of the array, which is applied for each element.
-  Since it will update the array values the returned array must not have the same type, the array 
-  will first be initialized with the result of the first call if it exists. 
-  If the input array is empty use listArray->listMap->arrayList way. 
+  Since it will update the array values the returned array must not have the same type, the array
+  will first be initialized with the result of the first call if it exists.
+  If the input array is empty use listArray->listMap->arrayList way.
   See also listMap, arrayMapNoCopy"
   input array<Type_a> array;
   input FuncType func;
@@ -433,9 +433,9 @@ public function arrayMap
     input Type_a x;
     output Type_b y;
   end FuncType;
-protected 
+protected
   Type_b initElt;
-algorithm    
+algorithm
   outArray := matchcontinue(array, func)
     // if the array is empty, use list transformations to fix the types!
     case (_, _)
@@ -452,7 +452,7 @@ algorithm
         outArray = arrayMapHelp(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
       then
         outArray;
-        
+
   end matchcontinue;
 end arrayMap;
 
@@ -471,14 +471,14 @@ protected function arrayMapHelp "help function to arrayMap"
   end FuncType;
 algorithm
   outArray := matchcontinue(array,inNewArray,func,pos,len)
-    local 
+    local
       Type_b newElt;
       array<Type_b> newArray;
-    
-    case(_,newArray,_,_,_) equation 
+
+    case(_,newArray,_,_,_) equation
       true = pos > len;
     then newArray;
-    
+
     case(_,newArray,_,_,_) equation
       newElt = func(array[pos]);
       newArray = arrayUpdate(newArray,pos,newElt);
@@ -490,12 +490,12 @@ algorithm
   end matchcontinue;
 end arrayMapHelp;
 
-public function arrayMap1 
+public function arrayMap1
 "@author: Frenkel TUD
   Takes an array and a function and an extra argument over the elements of the array, which is applied for each element.
-  Since it will update the array values the returned array must not have the same type, the array 
-  will first be initialized with the result of the first call if it exists. 
-  If the input array is empty use listArray->listMap->arrayList way. 
+  Since it will update the array values the returned array must not have the same type, the array
+  will first be initialized with the result of the first call if it exists.
+  If the input array is empty use listArray->listMap->arrayList way.
   See also listMap, arrayMapNoCopy"
   input array<Type_a> array;
   input FuncType func;
@@ -509,7 +509,7 @@ public function arrayMap1
     input Type_arg1 arg1;
     output Type_b y;
   end FuncType;
-algorithm    
+algorithm
   outArray := matchcontinue(array, func, arg1)
     local
       Type_b initElt;
@@ -549,14 +549,14 @@ protected function arrayMapHelp1 "help function to arrayMap"
   end FuncType;
 algorithm
   outArray := matchcontinue(array,inNewArray,func,pos,len,arg1)
-    local 
+    local
       Type_b newElt;
       array<Type_b> newArray;
-    
-    case(_,newArray,_,_,_,_) equation 
+
+    case(_,newArray,_,_,_,_) equation
       true = pos > len;
     then newArray;
-    
+
     case(_,newArray,_,_,_,_) equation
       newElt = func(array[pos],arg1);
       newArray = arrayUpdate(newArray,pos,newElt);
@@ -568,27 +568,27 @@ algorithm
   end matchcontinue;
 end arrayMapHelp1;
 
-public function arrayMap0 
+public function arrayMap0
   input array<Type_a> array;
   input FuncType func;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
   end FuncType;
-algorithm    
+algorithm
   arrayMap0work(arrayLength(array),array,func);
 end arrayMap0;
 
 public function arrayMap0work
   ""
-  input Integer ix; 
+  input Integer ix;
   input array<Type_a> array;
   input FuncType func;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
   end FuncType;
-algorithm    
+algorithm
   _ := match (ix,array,func)
     local
       Integer i;
@@ -665,32 +665,32 @@ algorithm
 end arrayFold_impl;
 
 public function arrayUpdateIndexFirst
-" author: wbraun 
+" author: wbraun
 Perfoms an array update with arrayUpdate,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input Integer inIndex;
   input ElementType value;
   input array<ElementType> inArrayA;
   //output array<ElementType> outArrayA;
   replaceable type ElementType subtypeof Any;
-  
+
 algorithm
   _ := arrayUpdate(inArrayA, inIndex, value);
 end arrayUpdateIndexFirst;
 
 public function arrayUpdatewithArrayIndexFirst
-" author: wbraun 
+" author: wbraun
 Perfoms an array update with arrayUpdate,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input Integer inIndex;
   input array<ElementType> inArrayA;
   input array<ElementType> inArrayB;
   //output array<ElementType> outArrayA;
   replaceable type ElementType subtypeof Any;
-  
-protected 
+
+protected
   ElementType value;
 algorithm
   value := arrayGet(inArrayA, inIndex);
@@ -698,9 +698,9 @@ algorithm
 end arrayUpdatewithArrayIndexFirst;
 
 public function arrayUpdatewithListIndexFirst
-" author: wbraun 
+" author: wbraun
 Perfoms an array update with arrayUpdate,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input list<Integer> inListA;
   input Integer inStartListLength;
@@ -708,7 +708,7 @@ usable with List.map..."
   input array<ElementType> inArrayB;
   //output array<ElementType> outArrayA;
   replaceable type ElementType subtypeof Any;
-  
+
 algorithm
   _ := match(inListA, inStartListLength, inArrayA, inArrayB)
   local
@@ -724,17 +724,17 @@ algorithm
 end arrayUpdatewithListIndexFirst;
 
 public function arrayUpdateElementListUnion
-" author: wbraun 
+" author: wbraun
 Perfoms an array update with arrayUpdate,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input Integer inIndex;
   input list<ElementType> inValue;
   input array<list<ElementType>> inArrayA;
   //output array<ElementType> outArrayA;
   replaceable type ElementType subtypeof Any;
-  
-protected 
+
+protected
  list<ElementType> value;
 algorithm
   value := arrayGet(inArrayA, inIndex);
@@ -743,17 +743,17 @@ algorithm
 end arrayUpdateElementListUnion;
 
 public function arrayUpdateElementListAppend
-" author: wbraun 
+" author: wbraun
 Perfoms an array update with arrayUpdate,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input Integer inIndex;
   input list<ElementType> inValue;
   input array<list<ElementType>> inArrayA;
   //output array<ElementType> outArrayA;
   replaceable type ElementType subtypeof Any;
-  
-protected 
+
+protected
  list<ElementType> value;
 algorithm
   value := arrayGet(inArrayA, inIndex);
@@ -762,14 +762,14 @@ algorithm
 end arrayUpdateElementListAppend;
 
 public function arrayGetIndexFirst
-" author: wbraun 
+" author: wbraun
 Perfoms an array get with arrayGet,
-but index is the first argument so it's 
+but index is the first argument so it's
 usable with List.map..."
   input Integer inIndex;
   input array<ElementType> inArrayA;
   output ElementType outElement;
-  
+
   replaceable type ElementType subtypeof Any;
 algorithm
   outElement := arrayGet(inArrayA, inIndex);
@@ -891,7 +891,7 @@ algorithm
         print("OldSize: " +& intString(arrayLength(arr)) +& " additional elements: " +& intString(n) +& "\n");
       then
         fail();
-  end matchcontinue; 
+  end matchcontinue;
 end arrayExpand;
 
 public function arrayExpandOnDemand
@@ -901,7 +901,7 @@ public function arrayExpandOnDemand
   input Real inExpansionFactor "The factor to resize the array with.";
   input ElementType inFillValue "The value to fill the new part of the array.";
   output array<ElementType> outArray "The resulting array.";
-  
+
   replaceable type ElementType subtypeof Any;
 algorithm
   outArray :=
@@ -909,14 +909,14 @@ algorithm
     local
       Integer new_size;
       array<ElementType> new_arr;
-      
+
     // Space left in the array, do nothing.
     case (_, _, _, _)
       equation
         true = inNewSize <= arrayLength(inArray);
       then
         inArray;
-    
+
     // Otherwise, resize the array.
     else
       equation
@@ -928,7 +928,7 @@ algorithm
 
   end matchcontinue;
 end arrayExpandOnDemand;
-        
+
 public function arrayNCopy "function arrayNCopy
   Copeis n elements in src array into dest array
   The function fails if all elements can not be fit into dest array."
@@ -1075,7 +1075,7 @@ algorithm
         print("Size: " +& intString(arrayLength(arr)) +& " start: " +& intString(start) +& " end: " +& intString(end_) +& "\n");
       then
         fail();
-  end matchcontinue; 
+  end matchcontinue;
 end arraySet;
 
 public function compareTuple2IntGt
@@ -1087,7 +1087,7 @@ public function compareTuple2IntGt
   input tuple<Type_a,Integer> inTplB;
   output Boolean res;
   replaceable type Type_a subtypeof Any;
-protected 
+protected
   Integer a,b;
 algorithm
   (_, a) := inTplA;
@@ -1104,7 +1104,7 @@ public function compareTuple2IntLt
   input tuple<Type_a,Integer> inTplB;
   output Boolean res;
   replaceable type Type_a subtypeof Any;
-protected 
+protected
   Integer a,b;
 algorithm
   (_, a) := inTplA;
@@ -1288,7 +1288,7 @@ algorithm
   end match;
 end splitTuple2List;
 
-public function splitTuple211List 
+public function splitTuple211List
 "function: splitTuple211List
   Takes a list of two-tuples and outputs the first one."
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
@@ -1344,7 +1344,7 @@ we are supposed to remove. The final position is the offset, where to start from
   input Integer pos;
   output list<Type_a> outList;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   outList := matchcontinue(lst,positions,pos)
     local
       list<Type_a> tail,res;
@@ -1549,7 +1549,7 @@ algorithm
     local
       list<String> res,rest,strList, charList2;
       String firstChar,fromChar,toChar;
-    
+
     case ({},_,_) then {};
     case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
       equation
@@ -1557,7 +1557,7 @@ algorithm
         res = stringReplaceChar2(rest, fromChar, "");
       then
         (res);
-    
+
     case ((firstChar :: rest),fromChar,toChar)
       equation
         true = stringEq(firstChar, fromChar);
@@ -1573,7 +1573,7 @@ algorithm
         res = stringReplaceChar2(rest, fromChar, toChar);
       then
         (firstChar :: res);
-    
+
     case (strList,_,_)
       equation
         print("- Util.stringReplaceChar2 failed\n");
@@ -1615,14 +1615,14 @@ algorithm
     local
       list<String> chr_rest_1,chr_rest,chrList,rest,res;
       String firstChar,chr,str;
-    
+
     case ({},_,chr_rest)
       equation
         chr_rest_1 = listReverse(chr_rest);
         str = stringCharListString(chr_rest_1);
       then
         {str};
-    
+
     case ((firstChar :: rest),chr,chr_rest)
       equation
         true = stringEq(firstChar, chr);
@@ -1649,7 +1649,7 @@ public function modelicaStringToCStr "function modelicaStringToCStr
  this replaces symbols that are illegal in C to legal symbols
  see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")
   author: x02lucpo
-  
+
   NOTE: This function should not be used in OMC, since the OMC backend no longer
     uses stringified components. It is still used by MathCore though."
   input String str;
@@ -1879,7 +1879,7 @@ algorithm
       Type_a value;
       Type_b res;
 
-    case (SOME(value), _, _) 
+    case (SOME(value), _, _)
       equation
         res = inFunc(value);
       then
@@ -1915,7 +1915,7 @@ algorithm
       Type_a value;
       Type_b res;
 
-    case (SOME(value), _, _, _) 
+    case (SOME(value), _, _, _)
       equation
         res = inFunc(value, inArg);
       then
@@ -2273,8 +2273,8 @@ algorithm
   xmlString := System.stringReplace(xmlString, "<", "&lt;");
   xmlString := System.stringReplace(xmlString, ">", "&gt;");
   // TODO! FIXME!, we have issues with accented chars in comments
-  // that end up in the Model_init.xml file and makes it not well 
-  // formed but the line below does not work if the xmlString is 
+  // that end up in the Model_init.xml file and makes it not well
+  // formed but the line below does not work if the xmlString is
   // already UTF-8. We should somehow detect the encoding.
   // xmlString := System.iconv(xmlString, "", "UTF-8");
 end escapeModelicaStringToXmlString;
@@ -2355,7 +2355,7 @@ Takes two options and a function to compare the type."
   input Option<Type_a> inOpt2;
   input CompareFunc inFunc;
   output Boolean outBool;
-  
+
   replaceable type Type_a subtypeof Any;
   partial function CompareFunc
     input Type_a inType_a1;
@@ -2364,11 +2364,11 @@ Takes two options and a function to compare the type."
   end CompareFunc;
 algorithm
   outBool := matchcontinue(inOpt1,inOpt2,inFunc)
-  local 
+  local
     Type_a a1,a2;
     Boolean b;
     CompareFunc fn;
-    
+
     case (NONE(),NONE(),_) then true;
     case (SOME(a1),SOME(a2),fn)
       equation
@@ -2378,7 +2378,7 @@ algorithm
     case (_,_,_) then false;
   end matchcontinue;
 end optionEqual;
-  
+
 public function makeValueOrDefault
 "Returns the value if the function call succeeds, otherwise the default"
   input FuncAToB inFunc;
@@ -2460,7 +2460,7 @@ algorithm
       Type_a x,head;
       list<Boolean> bools;
       list<Type_a> lst;
-      
+
     case({},{},x) then x;
     case (true::_,head::_,_) then head;
     case (false::bools,_::lst,x)
@@ -2531,14 +2531,14 @@ protected
   Type_b elB;
   Type_a elA;
   Integer sizeOfArr;
-algorithm  
+algorithm
   // get the size
   sizeOfArr := arrayLength(inTypeAArr);
   // get the first elment of the input array
   elA := arrayGet(inTypeAArr, 1);
   // apply the function and transform it to Type_b
   elB := inFuncTypeTypeAToTypeB(elA);
-  // create an array populated with the first element trasformed 
+  // create an array populated with the first element trasformed
   outTypeBArr := arrayCreate(sizeOfArr, elA);
   // set all the other elements on the array!
   outTypeBArr := arrayMapDispatch(inTypeAArr,inFuncTypeTypeAToTypeB,1,sizeOfArr,outTypeBArr);
@@ -2568,15 +2568,15 @@ algorithm
       Integer i,n;
       Type_a elA;
       Type_b elB;
-    
+
     // i = n (we reach the end)
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
         false = intLt(i, n);
-      then 
+      then
         bArr;
-    
-    // i < n 
+
+    // i < n
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
         true = intLt(i, n);
@@ -2589,7 +2589,7 @@ algorithm
         iArr = arrayMapDispatch(iArr, inFuncTypeAToTypeB, i + 1, n, bArr);
       then
         iArr;
-    
+
     // failure!
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
@@ -2613,15 +2613,15 @@ algorithm
     local
       list<String> ra,rb;
       String fa,fb, md, ed, str;
-    
+
     case ({},{}, md, ed) then "";
-    
+
     case ({fa},{fb}, md, ed)
       equation
         str = stringAppendList({fa, md, fb});
       then
         str;
-    
+
     case (fa :: ra,fb :: rb, md, ed)
       equation
         str = buildMapStr(ra, rb, md, ed);
@@ -2674,8 +2674,8 @@ algorithm
       TypeA a1,a2;
       list<TypeA> rest, uniqueAcc, duplicateAcc;
       Boolean b;
-      
-      
+
+
     case ({},_,uniqueAcc,duplicateAcc)
       equation
         uniqueAcc = listReverse(uniqueAcc);
@@ -2710,7 +2710,7 @@ algorithm
       Key k1,k2;
       Val v;
       list<tuple<Key,Val>> rest;
-      
+
     case (k1,(k2,v)::rest) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, rest, v);
   end match;
 end assoc;
@@ -2747,7 +2747,7 @@ end assoc;
 public function allCombinations
   "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
   The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
-  
+
   This function screams WARNING I USE COMBINATORIAL EXPLOSION.
   So there are flags that limit the size of the set it works on."
   input list<list<Type_a>> lst;
@@ -2777,7 +2777,7 @@ end allCombinations;
 protected function allCombinations2
   "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
   The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
-  
+
   This function screams WARNING I USE COMBINATORIAL EXPLOSION."
   input list<list<Type_a>> ilst;
   output list<list<Type_a>> out;
@@ -2787,7 +2787,7 @@ algorithm
     local
       list<Type_a> x;
       list<list<Type_a>> lst;
-      
+
     case {} then {};
     case (x::lst)
       equation
@@ -2811,7 +2811,7 @@ algorithm
       list<list<Type_a>> lst2;
       list<list<Type_a>> acc;
 
-      
+
     case ({},_,acc) then listReverse(acc);
     case (x::lst1,lst2,acc)
       equation
@@ -2832,8 +2832,8 @@ algorithm
     local
       list<Type_a> l;
       list<list<Type_a>> lst;
-      list<list<Type_a>> acc;      
-    
+      list<list<Type_a>> acc;
+
     case (_,{},acc) then {x}::acc;
     case (_,{l},acc) then (x::l)::acc;
     case (_,l::lst,acc)
@@ -2857,14 +2857,14 @@ algorithm
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
-    
+
     // array is empty
     case (arr, inFilledSize, inElement)
       equation
         true = intEq(0, inFilledSize);
       then
         0;
-    
+
     // array is not empty
     case (arr, inFilledSize, inElement)
       equation
@@ -2890,14 +2890,14 @@ algorithm
       array<Option<Type_a>> arr;
       Integer i, len, pos;
       Option<Type_a> e;
-    
+
     // we're at the end
     case (arr, inElement, i, len)
       equation
         true = intEq(i, len);
       then
         0;
-    
+
     // not at the end, see if we find it
     case (arr, inElement, i, len)
       equation
@@ -2905,7 +2905,7 @@ algorithm
         true = valueEq(e, inElement);
       then
         i;
-        
+
     // not at the end, see if we find it
     case (arr, inElement, i, len)
       equation
@@ -2923,7 +2923,7 @@ public function arrayFind
   input array<Option<Type_a>> inArr;
   input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
   input FuncType inFunc;
-  input Type_b inExtra;  
+  input Type_b inExtra;
   output Integer index;
 protected
   replaceable type Type_a subtypeof Any;
@@ -2932,20 +2932,20 @@ protected
     input Type_a inElement;
     input Type_b inExtra;
     output Boolean isMatch;
-  end FuncType;  
+  end FuncType;
 algorithm
   index := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
-    
+
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
         true = intEq(0, inFilledSize);
       then
         0;
-    
+
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
@@ -2978,14 +2978,14 @@ algorithm
       array<Option<Type_a>> arr;
       Integer i, len, pos;
       Type_a e;
-    
+
     // we're at the end
     case (arr, _, _, i, len)
       equation
         true = intEq(i, len);
       then
         0;
-    
+
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
@@ -2993,7 +2993,7 @@ algorithm
         true = inFunc(e, inExtra);
       then
         i;
-        
+
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
@@ -3002,7 +3002,7 @@ algorithm
         i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
       then
         i;
-    
+
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
@@ -3026,20 +3026,20 @@ protected
   partial function FuncType
     input Option<Type_a> inElement;
     input Type_b inExtra;
-  end FuncType;  
+  end FuncType;
 algorithm
   outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
-    
+
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
         true = intEq(0, inFilledSize);
       then
         arr;
-    
+
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
@@ -3071,14 +3071,14 @@ algorithm
       array<Option<Type_a>> arr;
       Integer i, len, pos;
       Option<Type_a> e;
-    
+
     // we're at the end
     case (arr, _, _, i, len)
       equation
         true = intEq(i, len);
       then
         arr;
-    
+
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
@@ -3104,20 +3104,20 @@ protected
   partial function FuncType
     input Type_b inExtra;
     input Option<Type_a> inElement;
-  end FuncType;  
+  end FuncType;
 algorithm
   outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
-    
+
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
         true = intEq(0, inFilledSize);
       then
         arr;
-    
+
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
@@ -3149,14 +3149,14 @@ algorithm
       array<Option<Type_a>> arr;
       Integer i, len, pos;
       Option<Type_a> e;
-    
+
     // we're at the end
     case (arr, _, _, i, len)
       equation
         true = intEq(i, len);
       then
         arr;
-    
+
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
@@ -3183,20 +3183,20 @@ protected
     input Option<Type_a> inElOld;
     input Option<Type_a> inElNew;
     output Boolean isEqual;
-  end FuncTypeEquality;  
+  end FuncTypeEquality;
 algorithm
   index := matchcontinue(inArr, inFilledSize, inElement, inEqualityCheckFunction)
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
-    
+
     // array is empty
     case (arr, inFilledSize, inElement, _)
       equation
         true = intEq(0, inFilledSize);
       then
         0;
-    
+
     // array is not empty
     case (arr, inFilledSize, inElement, inEqualityCheckFunction)
       equation
@@ -3221,21 +3221,21 @@ protected
     input Option<Type_a> inElOld;
     input Option<Type_a> inElNew;
     output Boolean isEqual;
-  end FuncTypeEquality;  
+  end FuncTypeEquality;
 algorithm
   index := matchcontinue(inArr, inElement, inEqualityCheckFunction, currentIndex, length)
     local
       array<Option<Type_a>> arr;
       Integer i, len, pos;
       Option<Type_a> e;
-    
+
     // we're at the end
     case (arr, inElement, _, i, len)
       equation
         true = intEq(i, len);
       then
         0;
-    
+
     // not at the end, see if we find it
     case (arr, inElement, inEqualityCheckFunction, i, len)
       equation
@@ -3243,7 +3243,7 @@ algorithm
         true = inEqualityCheckFunction(e, inElement);
       then
         i;
-        
+
     // not at the end, see if we find it
     case (arr, inElement, inEqualityCheckFunction, i, len)
       equation
@@ -3310,7 +3310,7 @@ algorithm
     case NONE() then {};
   end match;
 end optionList;
-  
+
 public function stringPadRight
   "Pads a string with the given padding so that the resulting string is as long
    as the given width. If the string is already longer nothing is done to it.
@@ -3336,7 +3336,7 @@ algorithm
     else inString;
   end matchcontinue;
 end stringPadRight;
-  
+
 public function stringPadLeft
   "Pads a string with the given padding so that the resulting string is as long
    as the given width. If the string is already longer nothing is done to it.
@@ -3674,24 +3674,24 @@ algorithm
       Integer i;
       list<String> strs;
       String newName;
-    
+
     case (true,_)
       equation
         true = "Windows_NT" ==& System.os();
         // replace \\ with / for Windows.
-        newName = System.stringReplace(name, "\\", "/"); 
+        newName = System.stringReplace(name, "\\", "/");
         (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then
         friendly;
-    
+
     case (true,_)
       equation
         false = "Windows_NT" ==& System.os();
         (i,strs) = System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then friendly;
-    
+
     else name;
   end matchcontinue;
 end testsuiteFriendly2;

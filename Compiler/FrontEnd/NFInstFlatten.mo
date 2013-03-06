@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -36,7 +36,7 @@ encapsulated package NFInstFlatten
 
   RCS: $Id: NFInstFlatten.mo 13687 2012-10-29 12:52:19Z perost $
 
-  
+
 "
 
 public import Absyn;
@@ -108,7 +108,7 @@ algorithm
   (comp, _) := inValue;
   outString := NFInstDump.componentStr(comp);
 end valueStr;
-  
+
 protected function newSymbolTable
   input Integer inSize;
   output SymbolTable outSymbolTable;
@@ -230,7 +230,7 @@ algorithm
         (flat_el, _) = flattenElements2(inElements, st, {}, inClassPath, {});
       then
         flat_el;
-     
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -257,7 +257,7 @@ algorithm
       Element el;
       list<Element> rest_el, accum_el;
       SymbolTable st;
-      
+
     case (el :: rest_el, st, _, _, accum_el)
       equation
         (accum_el, st) = flattenElement(el, st, inExtendPath, inClassPath, accum_el);
@@ -302,20 +302,20 @@ algorithm
       then (inElement :: accum_el, st);
 
     case (NFInstTypes.EXTENDED_ELEMENTS(baseClass = bc,
-        cls = NFInstTypes.COMPLEX_CLASS(components = ext_el), 
+        cls = NFInstTypes.COMPLEX_CLASS(components = ext_el),
         ty = DAE.T_COMPLEX(varLst = vars)), st, _, _, accum_el)
       equation
         // For extended elements we can use the names from the type, which are
         // already the last identifiers.
-        var_names = List.mapReverse(vars, Types.getVarName); 
+        var_names = List.mapReverse(vars, Types.getVarName);
         (accum_el, st) = flattenExtendedElements(ext_el, var_names,
           bc :: inExtendPath, inClassPath, st, accum_el);
       then
         (accum_el, st);
-  
+
     case (NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _)),
         st, _, _, accum_el)
-      then 
+      then
         (inElement :: accum_el, st);
 
     case (el, st, _, _, accum_el)
@@ -352,7 +352,7 @@ algorithm
     // Try to add the component to the symbol table.
     case (_, _, _, _, st, accum_el)
       equation
-        st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st); 
+        st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st);
       then
         (true, st);
 
@@ -367,7 +367,7 @@ algorithm
         /**********************************************************************/
       then
         (false, st);
-        
+
   end matchcontinue;
 end flattenElement2;
 

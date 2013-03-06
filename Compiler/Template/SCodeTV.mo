@@ -1,4 +1,4 @@
-interface package SCodeTV 
+interface package SCodeTV
 
 package builtin
   function boolNot
@@ -266,7 +266,7 @@ package Absyn
       Ident name;
     end IDENT;
 
-    record FULLYQUALIFIED 
+    record FULLYQUALIFIED
       Path path;
     end FULLYQUALIFIED;
   end Path;
@@ -290,11 +290,11 @@ package Absyn
     end NAMEDARG;
   end NamedArg;
 
-  uniontype InnerOuter 
+  uniontype InnerOuter
     record INNER end INNER;
     record OUTER end OUTER;
     record INNER_OUTER end INNER_OUTER;
-    record NOT_INNER_OUTER end NOT_INNER_OUTER;    
+    record NOT_INNER_OUTER end NOT_INNER_OUTER;
   end InnerOuter;
 
   uniontype Direction
@@ -343,7 +343,7 @@ package SCode
     record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
     record R_TYPE end R_TYPE;
     record R_PACKAGE end R_PACKAGE;
-    record R_FUNCTION 
+    record R_FUNCTION
       FunctionRestriction functionRestriction;
     end R_FUNCTION;
     record R_EXT_FUNCTION end R_EXT_FUNCTION;
@@ -363,15 +363,15 @@ package SCode
     record R_UNIONTYPE
     end R_UNIONTYPE;
   end Restriction;
-  
+
   uniontype FunctionRestriction
     record FR_NORMAL_FUNCTION "a normal function"
       Boolean isImpure;
     end FR_NORMAL_FUNCTION;
     record FR_EXTERNAL_FUNCTION "an external function"
       Boolean isImpure;
-    end FR_EXTERNAL_FUNCTION;  
-    
+    end FR_EXTERNAL_FUNCTION;
+
     record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
     record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
   end FunctionRestriction;
@@ -703,7 +703,7 @@ package SCode
       Final finalPrefix;
       Absyn.InnerOuter innerOuter;
       Replaceable replaceablePrefix;
-    end PREFIXES;      
+    end PREFIXES;
   end Prefixes;
 
   uniontype Element
@@ -711,7 +711,7 @@ package SCode
       Absyn.Import imp;
       Visibility   visibility;
       Absyn.Info   info;
-    end IMPORT;  
+    end IMPORT;
 
     record EXTENDS
       Path baseClassPath;
@@ -761,7 +761,7 @@ package SCode
     end ATTR;
   end Attributes;
 
-  uniontype Parallelism 
+  uniontype Parallelism
     record PARGLOBAL      end PARGLOBAL;
     record PARLOCAL       end PARLOCAL;
     record NON_PARALLEL   end NON_PARALLEL;
@@ -782,7 +782,7 @@ end SCode;
 
 package Tpl
   function addTemplateError
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 

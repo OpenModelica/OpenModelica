@@ -1,4 +1,4 @@
-// This file defines templates for transforming Modelica/MetaModelica code to FMU 
+// This file defines templates for transforming Modelica/MetaModelica code to FMU
 // code. They are used in the code generator phase of the compiler to write
 // target code.
 //
@@ -47,10 +47,10 @@ package CodegenFMU
 
 import interface SimCodeTV;
 import CodegenUtil.*;
-import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding) 
+import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
 
-template translateModel(SimCode simCode) 
+template translateModel(SimCode simCode)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -79,7 +79,7 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%fmiModelDescription(simCode,guid)%>
-  
+
   >>
 end fmuModelDescriptionFile;
 
@@ -105,30 +105,30 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
-  let fmiVersion = '1.0' 
+  let fmiVersion = '1.0'
   let modelName = dotPath(modelInfo.name)
   let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
   let description = ''
   let author = ''
-  let version= '' 
+  let version= ''
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else  vi.numStateVars
-  let numberOfEventIndicators = vi.numZeroCrossings 
-//  description="<%description%>" 
-//    author="<%author%>" 
-//    version="<%version%>" 
-  << 
-  fmiVersion="<%fmiVersion%>" 
+  let numberOfEventIndicators = vi.numZeroCrossings
+//  description="<%description%>"
+//    author="<%author%>"
+//    version="<%version%>"
+  <<
+  fmiVersion="<%fmiVersion%>"
   modelName="<%modelName%>"
-  modelIdentifier="<%modelIdentifier%>" 
-  guid="{<%guid%>}" 
-  generationTool="<%generationTool%>" 
+  modelIdentifier="<%modelIdentifier%>"
+  guid="{<%guid%>}"
+  generationTool="<%generationTool%>"
   generationDateAndTime="<%generationDateAndTime%>"
-  variableNamingConvention="<%variableNamingConvention%>" 
-  numberOfContinuousStates="<%numberOfContinuousStates%>" 
-  numberOfEventIndicators="<%numberOfEventIndicators%>" 
+  variableNamingConvention="<%variableNamingConvention%>"
+  numberOfContinuousStates="<%numberOfContinuousStates%>"
+  numberOfEventIndicators="<%numberOfEventIndicators%>"
   >>
 end fmiModelDescriptionAttributes;
 
@@ -163,7 +163,7 @@ match simCode
 case SIMCODE(__) then
   <<
   <TypeDefinitions>
-  </TypeDefinitions>  
+  </TypeDefinitions>
   >>
 end TypeDefinitions;
 
@@ -171,7 +171,7 @@ template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
  "Generates code for DefaultExperiment file for FMU target."
 ::=
 match simulationSettingsOpt
-  case SOME(v) then 
+  case SOME(v) then
     <<
     <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
     >>
@@ -181,7 +181,7 @@ template DefaultExperimentAttribute(SimulationSettings simulationSettings)
  "Generates code for DefaultExperiment Attribute file for FMU target."
 ::=
 match simulationSettings
-  case SIMULATION_SETTINGS(__) then 
+  case SIMULATION_SETTINGS(__) then
     <<
     startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
       >>
@@ -194,7 +194,7 @@ match simCode
 case SIMCODE(__) then
   <<
   <VendorAnnotations>
-  </VendorAnnotations>  
+  </VendorAnnotations>
   >>
 end VendorAnnotations;
 
@@ -208,7 +208,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
     ScalarVariable(var)
-  ;separator="\n"%>  
+  ;separator="\n"%>
   <%vars.derivativeVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>
@@ -237,23 +237,23 @@ case MODELINFO(vars=SIMVARS(__)) then
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
     ScalarVariable(var)
-  ;separator="\n"%>  
+  ;separator="\n"%>
   <%vars.boolAliasVars |> var =>
     ScalarVariable(var)
-  ;separator="\n"%>  
+  ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
     ScalarVariable(var)
-  ;separator="\n"%> 
+  ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
     ScalarVariable(var)
-  ;separator="\n"%> 
+  ;separator="\n"%>
   <%System.tmpTickReset(0)%>
-  <%externalFunctions(modelInfo)%>    
-  </ModelVariables>  
+  <%externalFunctions(modelInfo)%>
+  </ModelVariables>
   >>
 end ModelVariables;
 
@@ -262,16 +262,16 @@ template ScalarVariable(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(__) then
-  if stringEq(crefStr(name),"$dummy") then 
+  if stringEq(crefStr(name),"$dummy") then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else
   <<
-  <ScalarVariable 
+  <ScalarVariable
     <%ScalarVariableAttribute(simVar)%>>
     <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
-  </ScalarVariable>  
+  </ScalarVariable>
   >>
 end ScalarVariable;
 
@@ -282,7 +282,7 @@ match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let variability = getVariablity(varKind)
-  let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"' 
+  let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
   <<
@@ -292,7 +292,7 @@ match simVar
   variability="<%variability%>"
   causality="<%caus%>"
   alias="<%alias%>"
-  >>  
+  >>
 end ScalarVariableAttribute;
 
 template getCausality(Causality c)
@@ -320,7 +320,7 @@ template getAliasVar(AliasVariable aliasvar)
 ::=
 match aliasvar
   case NOALIAS(__) then "noAlias"
-  /* We don't handle the alias and negatedAlias properly. If a variable is alias it must get the valueReference of the aliased variable. */ 
+  /* We don't handle the alias and negatedAlias properly. If a variable is alias it must get the valueReference of the aliased variable. */
   /*case ALIAS(__) then "alias"
   case NEGATEDALIAS(__) then "negatedAlias"
   */
@@ -350,8 +350,8 @@ end ScalarVariableTypeCommonAttribute;
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
  "Generates code for ScalarVariable Type Real file for FMU target."
 ::=
-  let unit_ = if unit then 'unit="<%unit%>"'   
-  let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'   
+  let unit_ = if unit then 'unit="<%unit%>"'
+  let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'
   <<
   <%unit_%> <%displayUnit_%>
   >>
@@ -359,7 +359,7 @@ end ScalarVariableTypeRealAttribute;
 
 template externalFunctions(ModelInfo modelInfo)
  "Generates external function definitions."
-::=  
+::=
 match modelInfo
 case MODELINFO(__) then
   (functions |> fn => externalFunction(fn) ; separator="\n")
@@ -374,8 +374,8 @@ template externalFunction(Function fn)
       <<
       <ExternalFunction
         name="<%fname%>"
-        valueReference="<%System.tmpTick()%>"/> 
-      >> 
+        valueReference="<%System.tmpTick()%>"/>
+      >>
 end externalFunction;
 
 
@@ -385,7 +385,7 @@ template fmumodel_identifierFile(SimCode simCode, String guid)
 match simCode
 case SIMCODE(__) then
   <<
-  
+
   // define class name and unique id
   #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>
   #define MODEL_GUID "{<%guid%>}"
@@ -393,17 +393,17 @@ case SIMCODE(__) then
   // include fmu header files, typedefs and macros
   #include <stdio.h>
   #include <string.h>
-  #include <assert.h>  
+  #include <assert.h>
   #include "openmodelica.h"
   #include "openmodelica_func.h"
-  #include "simulation_data.h"  
+  #include "simulation_data.h"
   #include "omc_error.h"
   #include "fmiModelTypes.h"
   #include "fmiModelFunctions.h"
   #include "<%fileNamePrefix%>_functions.h"
   #include "initialization.h"
   #include "events.h"
-  #include "fmu_model_interface.h"  
+  #include "fmu_model_interface.h"
 
   #ifdef __cplusplus
   extern "C" {
@@ -412,20 +412,20 @@ case SIMCODE(__) then
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
-  fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
-  fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
-  fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr);  
-  fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value);  
-  fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr);  
-  fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);  
-  fmiString getString(ModelInstance* comp, const fmiValueReference vr);    
+  fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);
+  fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);
+  fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr);
+  fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value);
+  fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr);
+  fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);
+  fmiString getString(ModelInstance* comp, const fmiValueReference vr);
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
-  
+
   <%ModelDefineData(modelInfo)%>
-  
+
   // implementation of the Model Exchange functions
   #include "fmu_model_interface.c"
- 
+
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
   <%eventUpdateFunction(simCode)%>
@@ -436,12 +436,12 @@ case SIMCODE(__) then
   <%getBooleanFunction(modelInfo)%>
   <%setBooleanFunction(modelInfo)%>
   <%getStringFunction(modelInfo)%>
-  <%setExternalFunction(modelInfo)%>  
-  
+  <%setExternalFunction(modelInfo)%>
+
   #ifdef __cplusplus
   }
-  #endif  
-  
+  #endif
+
   >>
 end fmumodel_identifierFile;
 
@@ -463,7 +463,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
-  
+
   // define variable data for model
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
@@ -483,12 +483,12 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.stringAliasVars |> var => DefineVariables(var) ;separator="\n"%>
-  
-  
+
+
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%cref(name)%>_'  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%cref(name)%>_'  ;separator=", "%> }  
-  
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%cref(name)%>_'  ;separator=", "%> }
+
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
   >>
@@ -507,7 +507,7 @@ template DefineVariables(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then 
+  if stringEq(crefStr(name),"$dummy") then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
@@ -525,25 +525,25 @@ template defineExternalFunction(Function fn)
       let fname = extFunctionName(extName, language)
       <<
       #define $P<%fname%> <%System.tmpTick()%>
-      >> 
+      >>
 end defineExternalFunction;
 
 
 template setDefaultStartValues(ModelInfo modelInfo)
- "Generates code in c file for function setStartValues() which will set start values for all variables." 
+ "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setDefaultStartValues(ModelInstance *comp) {
-  
+
   <%vars.stateVars |> var => initValsDefault(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initValsDefault(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initValsDefault(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initValsDefault(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initValsDefault(var,"booleanVars",0) ;separator="\n"%>
-  <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars",0) ;separator="\n"%>  
+  <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars",0) ;separator="\n"%>
   <%vars.paramVars |> var => initParamsDefault(var,"realParameter") ;separator="\n"%>
   <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
   <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
@@ -553,20 +553,20 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
 end setDefaultStartValues;
 
 template setStartValues(ModelInfo modelInfo)
- "Generates code in c file for function setStartValues() which will set start values for all variables." 
+ "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
-  
+
   <%vars.stateVars |> var => initVals(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initVals(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initVals(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initVals(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initVals(var,"booleanVars",0) ;separator="\n"%>
-  <%vars.stringAlgVars |> var => initVals(var,"stringVars",0) ;separator="\n"%>  
+  <%vars.stringAlgVars |> var => initVals(var,"stringVars",0) ;separator="\n"%>
   <%vars.paramVars |> var => initParams(var,"realParameter") ;separator="\n"%>
   <%vars.intParamVars |> var => initParams(var,"integerParameter") ;separator="\n"%>
   <%vars.boolParamVars |> var => initParams(var,"booleanParameter") ;separator="\n"%>
@@ -587,12 +587,12 @@ template initializeFunction(list<SimEqSystem> allEquations)
   void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
 
     <%varDecls%>
-  
+
     <%eqPart%>
     <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
       'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
     ;separator="\n"%>
-  
+
   }
   >>
 end initializeFunction;
@@ -601,7 +601,7 @@ end initializeFunction;
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
-    if stringEq(crefStr(name),"$dummy") then 
+    if stringEq(crefStr(name),"$dummy") then
     <<>>
     else if stringEq(crefStr(name),"der($dummy)") then
     <<>>
@@ -624,14 +624,14 @@ template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(index=index, type_=type_) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
-    match initialValue 
-      case SOME(v) then 
+    match initialValue
+      case SOME(v) then
       '<%str%> = <%initVal(v)%>;'
       case NONE() then
         match type_
           case T_INTEGER(__)
           case T_REAL(__)
-          case T_ENUMERATION(__) 
+          case T_ENUMERATION(__)
           case T_BOOL(__) then '<%str%> = 0;'
           case T_STRING(__) then '<%str%> = "";'
           else 'UNKOWN_TYPE'
@@ -641,14 +641,14 @@ template initParamsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(__) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue 
-      case SOME(v) then 
+    match initialValue
+      case SOME(v) then
       '<%str%> = <%initVal(v)%>;'
 end initParamsDefault;
 
-template initVal(Exp initialValue) 
+template initVal(Exp initialValue)
 ::=
-  match initialValue 
+  match initialValue
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
@@ -666,7 +666,7 @@ case SIMCODE(__) then
   // Used to set the next time event, if any.
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo) {
   }
-  
+
   >>
 end eventUpdateFunction;
 
@@ -683,12 +683,12 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.algVars |> var => SwitchVars(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
-        default: 
+        default:
             return fmiError;
     }
   }
-  
-  >>        
+
+  >>
 end getRealFunction;
 
 template setRealFunction(ModelInfo modelInfo)
@@ -704,12 +704,12 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.algVars |> var => SwitchVarsSet(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParametersSet(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVarsSet(var, "Real", "-") ;separator="\n"%>
-        default: 
+        default:
             return fmiError;
     }
     return fmiOK;
   }
-  
+
   >>
 end setRealFunction;
 
@@ -724,7 +724,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.intAlgVars |> var => SwitchVars(var, "integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParameters(var, "integerParameter") ;separator="\n"%>
         <%vars.intAliasVars |> var => SwitchAliasVars(var, "Integer", "-") ;separator="\n"%>
-        default: 
+        default:
             return 0;
     }
   }
@@ -741,13 +741,13 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.intAlgVars |> var => SwitchVarsSet(var, "integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParametersSet(var, "integerParameter") ;separator="\n"%>
-        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>        
-        default: 
+        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>
+        default:
             return fmiError;
     }
     return fmiOK;
   }
-  >>  
+  >>
 end setIntegerFunction;
 
 template getBooleanFunction(ModelInfo modelInfo)
@@ -760,12 +760,12 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVars(var, "booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>        
-        default: 
+        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>
+        default:
             return 0;
     }
   }
-  
+
   >>
 end getBooleanFunction;
 
@@ -779,14 +779,14 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVarsSet(var, "booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParametersSet(var, "booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%> 
-        default: 
+        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%>
+        default:
             return fmiError;
     }
     return fmiOK;
   }
-  
-  >>       
+
+  >>
 end setBooleanFunction;
 
 template getStringFunction(ModelInfo modelInfo)
@@ -800,11 +800,11 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
-        default: 
+        default:
             return 0;
     }
   }
-  
+
   >>
 end getStringFunction;
 
@@ -818,12 +818,12 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>    
-        default: 
+        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>
+        default:
             return 0;
     }
   }
-  
+
   >>
 end setStringFunction;
 
@@ -832,23 +832,23 @@ template setExternalFunction(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
-  let externalFuncs = setExternalFunctionsSwitch(functions) 
+  let externalFuncs = setExternalFunctionsSwitch(functions)
   <<
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
     switch (vr) {
         <%externalFuncs%>
-        default: 
+        default:
             return fmiError;
     }
     return fmiOK;
   }
-  
+
   >>
 end setExternalFunction;
 
 template setExternalFunctionsSwitch(list<Function> functions)
  "Generates external function definitions."
-::=  
+::=
   (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
 end setExternalFunctionsSwitch;
 
@@ -860,7 +860,7 @@ template setExternalFunctionSwitch(Function fn)
       let fname = extFunctionName(extName, language)
       <<
       case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
-      >> 
+      >>
 end setExternalFunctionSwitch;
 
 template SwitchVars(SimVar simVar, String arrayName, Integer offset)
@@ -869,7 +869,7 @@ template SwitchVars(SimVar simVar, String arrayName, Integer offset)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then 
+  if stringEq(crefStr(name),"$dummy") then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
@@ -897,9 +897,9 @@ template SwitchAliasVars(SimVar simVar, String arrayName, String negate)
 match simVar
   case SIMVAR(__) then
     let description = if comment then '// "<%comment%>"'
-    let crefName = '<%cref(name)%>_'   
+    let crefName = '<%cref(name)%>_'
       match aliasvar
-        case ALIAS(__) then 
+        case ALIAS(__) then
         if stringEq(crefStr(varName),"time") then
         <<
         case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
@@ -917,7 +917,7 @@ match simVar
         <<
         case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%cref(varName)%>_)); break;
         >>
-     end match 
+     end match
 end SwitchAliasVars;
 
 
@@ -927,11 +927,11 @@ template SwitchVarsSet(SimVar simVar, String arrayName, Integer offset)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then 
+  if stringEq(crefStr(name),"$dummy") then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
-  else 
+  else
   <<
   case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]=value; break;
   >>
@@ -961,7 +961,7 @@ match simVar
         if stringEq(crefStr(varName),"time") then
         <<
         >>
-        else 
+        else
         <<
         case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, value); break;
         >>
@@ -973,7 +973,7 @@ match simVar
         <<
         case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, (<%negate%> value)); break;
         >>
-     end match 
+     end match
 end SwitchAliasVarsSet;
 
 
@@ -982,10 +982,10 @@ template getPlatformString2(String platform, String fileNamePrefix, String dirEx
 ::=
 match platform
   case "win32" then
-  << 
+  <<
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
   <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
-        
+
   <%\t%> cp <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
@@ -999,17 +999,17 @@ match platform
   <%\t%> cd <%fileNamePrefix%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%> rm -rf <%fileNamePrefix%>
   <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
-  
+
   <%fileNamePrefix%>.dll: clean <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
-  
+
   <%\t%> "mkdir.exe" -p <%fileNamePrefix%>
   <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries
   <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries/<%platform%>
   <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/sources
-  >>    
+  >>
   else
-  << 
+  <<
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
 
@@ -1026,14 +1026,14 @@ match platform
   <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
-  <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c 
+  <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
   <%\t%> cp modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%> rm -rf <%fileNamePrefix%>
   <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
-  
+
   >>
-end getPlatformString2; 
+end getPlatformString2;
 
 template fmuMakefile(String target, SimCode simCode)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
@@ -1073,7 +1073,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /TP - Use C++ Compiler
   CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
 
-  # /ZI enable Edit and Continue debug info 
+  # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
   # /MD - link with MSVCRT.LIB
@@ -1089,11 +1089,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE=$(FILEPREFIX).c
   MAINOBJ=$(FILEPREFIX).obj
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
-  
+
   $(FILEPREFIX)$(FMUEXT): $(FILEPREFIX)$(DLLEXT) modelDescription.xml
       if not exist <%fileNamePrefix%>\binaries\$(PLATWIN32) mkdir <%fileNamePrefix%>\binaries\$(PLATWIN32)
       if not exist <%fileNamePrefix%>\sources mkdir <%fileNamePrefix%>\sources
-    
+
       copy <%fileNamePrefix%>.dll <%fileNamePrefix%>\binaries\$(PLATWIN32)
       copy <%fileNamePrefix%>.lib <%fileNamePrefix%>\binaries\$(PLATWIN32)
       copy <%fileNamePrefix%>.pdb <%fileNamePrefix%>\binaries\$(PLATWIN32)
@@ -1109,12 +1109,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       "$(MINGW)\bin\zip.exe" -r ../<%fileNamePrefix%>.fmu *
       cd ..
       rmdir /S /Q <%fileNamePrefix%>
-    
+
   $(FILEPREFIX)$(DLLEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
       $(CXX) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(FILEPREFIX)_FMU.c $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)
   >>
 end match
-case "gcc" then 
+case "gcc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
@@ -1128,8 +1128,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let compilecmds = getPlatformString2(makefileParams.platform, fileNamePrefix, dirExtra, libsPos1, libsPos2, makefileParams.omhome)
   <<
   # Makefile generated by OpenModelica
- 
-  # Simulation of the fmu with dymola does not work 
+
+  # Simulation of the fmu with dymola does not work
   # with inline-small-functions
   SIM_OR_DYNLOAD_OPT_LEVEL=-O #-O2  -fno-inline-small-functions
   CC=<%makefileParams.ccompiler%>
@@ -1145,20 +1145,20 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
-  MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  
-  
+  MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o
+
   PHONY: <%fileNamePrefix%>_FMU
   <%compilecmds%>
-  
+
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
   $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
   clean:
-  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o 
+  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o
   >>
 end match
-else 
+else
   error(sourceInfo(), 'target <%target%> is not handled!')
 end fmuMakefile;
 
@@ -1341,18 +1341,18 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           textString="V1.0")}));
   protected
     <%dumpFMI1CommonObjects(platform)%>
-    
+
     class fmi1EventInfo
       extends ExternalObject;
         function constructor
         end constructor;
-        
+
         function destructor
           input fmi1EventInfo eventInfo;
           external "C" fmi1FreeEventInfo_OMC(eventInfo) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmi1EventInfo;
-    
+
     package fmiFunctions
       function fmi1InstantiateModel
         input fmi1ImportInstance fmi;
@@ -1361,21 +1361,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real outFlowInstantiate;
         external "C" outFlowInstantiate = fmi1InstantiateModel_OMC(fmi, instanceName, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1InstantiateModel;
-      
+
       function fmi1Initialize
         input fmi1ImportInstance fmi;
         input fmi1EventInfo inEventInfo;
         output fmi1EventInfo outEventInfo;
         external "C" outEventInfo = fmi1Initialize_OMC(fmi, inEventInfo) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1Initialize;
-      
+
       function fmi1SetTime
         input fmi1ImportInstance fmi;
         input Real inTime;
         output Real status;
         external "C" status = fmi1SetTime_OMC(fmi, inTime) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetTime;
-      
+
       function fmi1GetContinuousStates
         input fmi1ImportInstance fmi;
         input Integer numberOfContinuousStates;
@@ -1383,7 +1383,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_x[numberOfContinuousStates];
         external "C" fmi1GetContinuousStates_OMC(fmi, numberOfContinuousStates, inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetContinuousStates;
-      
+
       function fmi1SetContinuousStates
         input fmi1ImportInstance fmi;
         input Real fmi_x[:];
@@ -1391,7 +1391,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real outFlowStates;
         external "C" outFlowStates = fmi1SetContinuousStates_OMC(fmi, size(fmi_x, 1), inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetContinuousStates;
-      
+
       function fmi1GetDerivatives
         input fmi1ImportInstance fmi;
         input Integer numberOfContinuousStates;
@@ -1399,7 +1399,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_x[numberOfContinuousStates];
         external "C" fmi1GetDerivatives_OMC(fmi, numberOfContinuousStates, inFlowStates, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetDerivatives;
-      
+
       function fmi1GetEventIndicators
         input fmi1ImportInstance fmi;
         input Integer numberOfEventIndicators;
@@ -1407,9 +1407,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_z[numberOfEventIndicators];
         external "C" fmi1GetEventIndicators_OMC(fmi, numberOfEventIndicators, inFlowStates, fmi_z) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetEventIndicators;
-      
+
       <%dumpFMI1CommonFunctions(platform)%>
-      
+
       function fmi1EventUpdate
         input fmi1ImportInstance fmi;
         input Boolean intermediateResults;
@@ -1418,21 +1418,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean outNewStatesAvailable;
         external "C" outNewStatesAvailable = fmi1EventUpdate_OMC(fmi, intermediateResults, inEventInfo, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1EventUpdate;
-      
+
       function fmi1CompletedIntegratorStep
         input fmi1ImportInstance fmi;
         input Real inFlowStates;
         output Boolean outCallEventUpdate;
         external "C" outCallEventUpdate = fmi1CompletedIntegratorStep_OMC(fmi, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1CompletedIntegratorStep;
-      
+
       function fmi1Terminate
         input fmi1ImportInstance fmi;
         output Integer status;
         external "C" status = fmi1Terminate_OMC(fmi) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1Terminate;
     end fmiFunctions;
-    
+
     package fmiStatus
       constant Integer fmiOK=0;
       constant Integer fmiWarning=1;
@@ -1566,18 +1566,18 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           textString="V2.0")}));
   protected
     <%dumpFMI2CommonObjects(platform)%>
-    
+
     class fmi2EventInfo
       extends ExternalObject;
         function constructor
         end constructor;
-        
+
         function destructor
           input fmi2EventInfo eventInfo;
           external "C" fmi2FreeEventInfo_OMC(eventInfo) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmi2EventInfo;
-    
+
     package fmiFunctions
       function fmi2InstantiateModel
         input fmi2ImportInstance fmi;
@@ -1586,21 +1586,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real outFlowInstantiate;
         external "C" outFlowInstantiate = fmi2InstantiateModel_OMC(fmi, instanceName, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2InstantiateModel;
-      
+
       function fmi2Initialize
         input fmi2ImportInstance fmi;
         input fmi2EventInfo inEventInfo;
         output fmi2EventInfo outEventInfo;
         external "C" outEventInfo = fmi2Initialize_OMC(fmi, inEventInfo) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2Initialize;
-      
+
       function fmi2SetTime
         input fmi2ImportInstance fmi;
         input Real inTime;
         output Real status;
         external "C" status = fmi2SetTime_OMC(fmi, inTime) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2SetTime;
-      
+
       function fmi2GetContinuousStates
         input fmi2ImportInstance fmi;
         input Integer numberOfContinuousStates;
@@ -1608,7 +1608,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_x[numberOfContinuousStates];
         external "C" fmi2GetContinuousStates_OMC(fmi, numberOfContinuousStates, inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetContinuousStates;
-      
+
       function fmi2SetContinuousStates
         input fmi2ImportInstance fmi;
         input Real fmi_x[:];
@@ -1616,7 +1616,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real outFlowStates;
         external "C" outFlowStates = fmi2SetContinuousStates_OMC(fmi, size(fmi_x, 1), inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2SetContinuousStates;
-      
+
       function fmi2GetDerivatives
         input fmi2ImportInstance fmi;
         input Integer numberOfContinuousStates;
@@ -1624,7 +1624,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_x[numberOfContinuousStates];
         external "C" fmi2GetDerivatives_OMC(fmi, numberOfContinuousStates, inFlowStates, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetDerivatives;
-      
+
       function fmi2GetEventIndicators
         input fmi2ImportInstance fmi;
         input Integer numberOfEventIndicators;
@@ -1632,9 +1632,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real fmi_z[numberOfEventIndicators];
         external "C" fmi2GetEventIndicators_OMC(fmi, numberOfEventIndicators, inFlowStates, fmi_z) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetEventIndicators;
-      
+
       <%dumpFMI2CommonFunctions(platform)%>
-      
+
       function fmi2EventUpdate
         input fmi2ImportInstance fmi;
         input Boolean intermediateResults;
@@ -1643,21 +1643,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean outNewStatesAvailable;
         external "C" outNewStatesAvailable = fmi2EventUpdate_OMC(fmi, intermediateResults, inEventInfo, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2EventUpdate;
-      
+
       function fmi2CompletedIntegratorStep
         input fmi2ImportInstance fmi;
         input Real inFlowStates;
         output Boolean outCallEventUpdate;
         external "C" outCallEventUpdate = fmi2CompletedIntegratorStep_OMC(fmi, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2CompletedIntegratorStep;
-      
+
       function fmi2Terminate
         input fmi2ImportInstance fmi;
         output Integer status;
         external "C" status = fmi2Terminate_OMC(fmi) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2Terminate;
     end fmiFunctions;
-    
+
     package fmiStatus
       constant Integer fmiOK=0;
       constant Integer fmiWarning=1;
@@ -1764,7 +1764,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           textString="V1.0")}));
   protected
     <%dumpFMI1CommonObjects(platform)%>
-    
+
     package fmiFunctions
       function fmi1InstantiateSlave
         input fmi1ImportInstance fmi;
@@ -1777,7 +1777,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Boolean debugLogging;
         external "C" fmi1InstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1InstantiateSlave;
-      
+
       function fmi1InitializeSlave
         input fmi1ImportInstance fmi;
         input Real tStart;
@@ -1785,7 +1785,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real tStop;
         external "C" fmi1InitializeSlave_OMC(fmi, tStart, stopTimeDefined, tStop) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1InitializeSlave;
-      
+
       function fmi1DoStep
         input fmi1ImportInstance fmi;
         input Real currentCommunicationPoint;
@@ -1794,16 +1794,16 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real outFlowControl;
         external "C" outFlowControl = fmi1DoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1DoStep;
-      
+
       <%dumpFMI1CommonFunctions(platform)%>
-      
+
       function fmi1TerminateSlave
         input fmi1ImportInstance fmi;
         output Integer status;
         external "C" status = fmi1TerminateSlave_OMC(fmi) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1TerminateSlave;
     end fmiFunctions;
-    
+
     package fmiStatus
       constant Integer fmiOK=0;
       constant Integer fmiWarning=1;
@@ -1834,13 +1834,13 @@ template dumpFMI1CommonObjects(String platform)
         output fmi1ImportContext context;
         external "C" context = fmi1ImportContext_OMC(fmiLogLevel) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end constructor;
-      
+
       function destructor
         input fmi1ImportContext context;
         external "C" fmi1ImportFreeContext_OMC(context) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end destructor;
   end fmi1ImportContext;
-  
+
   class fmi1ImportInstance
     extends ExternalObject;
       function constructor
@@ -1849,7 +1849,7 @@ template dumpFMI1CommonObjects(String platform)
         output fmi1ImportInstance fmi;
         external "C" fmi = fmi1ImportInstance_OMC(context, tempPath) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end constructor;
-      
+
       function destructor
         input fmi1ImportInstance fmi;
         external "C" fmi1ImportFreeInstance_OMC(fmi) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
@@ -1869,13 +1869,13 @@ template dumpFMI2CommonObjects(String platform)
         output fmi2ImportContext context;
         external "C" context = fmi2ImportContext_OMC(fmiLogLevel) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end constructor;
-      
+
       function destructor
         input fmi2ImportContext context;
         external "C" fmi2ImportFreeContext_OMC(context) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end destructor;
   end fmi2ImportContext;
-  
+
   class fmi2ImportInstance
     extends ExternalObject;
       function constructor
@@ -1884,7 +1884,7 @@ template dumpFMI2CommonObjects(String platform)
         output fmi2ImportInstance fmi;
         external "C" fmi = fmi2ImportInstance_OMC(context, tempPath) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end constructor;
-      
+
       function destructor
         input fmi2ImportInstance fmi;
         external "C" fmi2ImportFreeInstance_OMC(fmi) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});

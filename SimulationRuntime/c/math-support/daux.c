@@ -41,8 +41,8 @@ L10:
 /* ----------------------- END OF FUNCTION D1MACH ------------------------ */
 } /* d1mach_ */
 
-/* Subroutine */ int xerrwv_(char *msg, integer *nmes, integer *nerr, integer 
-  *level, integer *ni, integer *i1, integer *i2, integer *nr, 
+/* Subroutine */ int xerrwv_(char *msg, integer *nmes, integer *nerr, integer
+  *level, integer *ni, integer *i1, integer *i2, integer *nr,
   doublereal *r1, doublereal *r2, ftnlen msg_len)
 {
     /* Format strings */

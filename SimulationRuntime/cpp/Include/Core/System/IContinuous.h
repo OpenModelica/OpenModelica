@@ -8,16 +8,16 @@
 Abstract interface class for continous systems in open modelica.
 
 \date     October, 1st, 2008
-\author   
+\author
 
 */
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-class IContinuous 
+class IContinuous
 {
 public:
-    
+
 
     /// Enumeration to control the evaluation of equations within the system
     enum UPDATE
@@ -30,7 +30,7 @@ public:
         THROUGH            =    0x00000008,
         ALL                =    0x0000000F,            ///< [DISCRETE|CONTINOUS]
         RANKING            =    0x00000010            ///< Ranking Method
-        
+
     };
 
 
@@ -45,7 +45,7 @@ public:
     /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS() const = 0;
 
-    
+
 
     /// Set current integration time
     virtual void setTime(const double& time) = 0;
@@ -70,7 +70,7 @@ public:
     /// (see: Simeon, B.: "Numerische Integration mechanischer Mehrkörpersysteme", PhD-Thesis, Düsseldorf, 1994)
     enum INDEX
     {
-        UNDEF_INDEX            =    0x00000,    
+        UNDEF_INDEX            =    0x00000,
         VAR_INDEX0            =    0x00001,    ///< Variable Index 0 (States of systems of 1st order)
         VAR_INDEX1            =    0x00002,    ///< Variable Index 1 (1st order States of systems of 2nd order, e.g. positions)
         VAR_INDEX2            =    0x00004,    ///< Variable Index 2 (2nd order States of systems of 2nd order, e.g. velocities)

@@ -66,15 +66,15 @@ class QssSignal
       res.setCoeff(i,coeff(i)-qs.coeff(i));
     return res;
   }
-  double minPosRoot() 
+  double minPosRoot()
   {
     return minposroot(_coeff,_order);
   }
   unsigned int order() const { return _order; };
   void setOrder(unsigned int ord) { _order = ord; };
-  QssSignal & operator =(const QssSignal &other) 
+  QssSignal & operator =(const QssSignal &other)
   {
-    if (this != &other) 
+    if (this != &other)
       for (unsigned int i=0;i<=_order;++i)
         _coeff[i] = other.coeff(i);
     return *this;
@@ -89,15 +89,15 @@ class QssSignal
   }
   double valueAt(double t)
   {
-    const double dt=t-_sampledAt;  
+    const double dt=t-_sampledAt;
     if (_order<=1)
       return _coeff[0];
     if (_order==2)
       return _coeff[0] + _coeff[1]*dt;
     if (_order==3)
-      return _coeff[0] + _coeff[1]*dt + _coeff[2]*dt*dt ;  
+      return _coeff[0] + _coeff[1]*dt + _coeff[2]*dt*dt ;
     if (_order==4)
-      return _coeff[0] + _coeff[1]*dt + _coeff[2]*dt*dt + _coeff[3]*dt*dt*dt;  
+      return _coeff[0] + _coeff[1]*dt + _coeff[2]*dt*dt + _coeff[3]*dt*dt*dt;
   }
   /*
   void dump()

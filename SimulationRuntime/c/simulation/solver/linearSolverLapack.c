@@ -73,7 +73,7 @@ int allocateLapackData(int size, void** voiddata)
 int freeLapackData(void **voiddata)
 {
   DATA_LAPACK* data = (DATA_LAPACK*) *voiddata;
-  
+
   free(data->ipiv);
 
   return 0;
@@ -104,13 +104,13 @@ int solveLapack(DATA *data, int sysNumber)
   /* update vector b (rhs) */
   systemData->setb(data, systemData);
 
-  dgesv_((integer*) &systemData->size, 
-         (integer*) &solverData->nrhs, 
-         systemData->A, 
-         (integer*) &systemData->size, 
-         solverData->ipiv, 
-         systemData->b, 
-         (integer*) &systemData->size, 
+  dgesv_((integer*) &systemData->size,
+         (integer*) &solverData->nrhs,
+         systemData->A,
+         (integer*) &systemData->size,
+         solverData->ipiv,
+         systemData->b,
+         (integer*) &systemData->size,
          &solverData->info);
 
   if(solverData->info < 0)
@@ -120,8 +120,8 @@ int solveLapack(DATA *data, int sysNumber)
   }
   else if(solverData->info > 0)
   {
-    WARNING4(LOG_STDOUT, 
-        "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].", 
+    WARNING4(LOG_STDOUT,
+        "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
         (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info+1, solverData->info+1);
 
     /* debug output */

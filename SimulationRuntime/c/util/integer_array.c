@@ -1646,7 +1646,7 @@ void unpack_integer_array(integer_array_t *a)
 
   for(i = n - 1; i >= 0; --i) {
     integer_set(a, i, int_data[i]);
-  } 
+  }
 }
 
 void convert_alloc_integer_array_to_f77(const integer_array_t * a,

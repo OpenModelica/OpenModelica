@@ -367,7 +367,7 @@ typedef struct MODEL_DATA
   modelica_string_t modelFilePrefix;
   modelica_string_t modelDir;
   modelica_string_t modelGUID;
-  
+
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
 
@@ -431,7 +431,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
 
   void** extObjs;                      /* External objects */
-  
+
   double nextSampleEvent;              /* point in time of next sample-call */
   double *nextSampleTimes;             /* array of next sample time */
   modelica_boolean *samples;           /* array of the current value for all sample-calls */
@@ -488,7 +488,7 @@ typedef struct SIMULATION_DATA
   modelica_integer* integerVars;
   modelica_boolean* booleanVars;
   modelica_string* stringVars;
-  
+
   modelica_real* inlineVars;           /* needed for the inline solver */
 
 }SIMULATION_DATA;

@@ -1,6 +1,6 @@
 
 #pragma once
- 
+
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_EXPORT_DECL
 
 #include <Solver/SolverDefaultImplementation.h>
@@ -20,7 +20,7 @@ Copyright (c) 2004, Bosch Rexroth AG, All rights reserved
 *****************************************************************************/
 class ICVodeSettings;
 
-class Cvode 
+class Cvode
   : public IDAESolver,  public SolverDefaultImplementation
 {
 public:
@@ -117,15 +117,15 @@ public:
   virtual void giveScaledError(const double& h, double& error);
 
   /// Approximation höherer Ordnung des Zustandes berechnen und in System kopieren
- 
+
   virtual void refineCurrentState(const double& r);
   virtual const int reportErrorMessage(ostream& messageStream);
 private:
 
   // Solveraufruf
-  void CVodeCore(); 
+  void CVodeCore();
 
-  /// Kapselung der Berechnung der rechten Seite 
+  /// Kapselung der Berechnung der rechten Seite
   int calcFunction(const double& time, const double* y, double* yd);
 
   // Callback für die rechte Seite
@@ -165,7 +165,7 @@ private:
     *_z0,                    ///< Temp      - (Old) state vector at left border of intervall (last step)
     *_z1,                    ///< Temp      - (New) state vector at right border of intervall (last step)
     *_zInit,                  ///< Temp      - Initial state vector
-    *_zLastSucess,                ///< Temp      - State vector of last successfull step 
+    *_zLastSucess,                ///< Temp      - State vector of last successfull step
     *_zLargeStep,                ///< Temp      - State vector of "large step" (used by "coupling step size controller" of SimManger)
     *_zWrite,                  ///< Temp      - Zustand den das System rausschreibt
     *_f0,
@@ -180,7 +180,7 @@ private:
 
 
 
-  double 
+  double
     _tOut,                    ///< Output      - Time for dense output
     _tHelp,                    ///< Temp      - Help variable
     _tLastZero,                 ///< Temp      - Stores the time of the last zero (not last zero crossing!)
@@ -196,9 +196,9 @@ private:
     *_Cond,
     *_zeroInit;
 
-  N_Vector 
+  N_Vector
     _CV_y0,                  ///< Temp      - Initial values in the Cvode Format
-    _CV_y,                  ///< Temp      - State in Cvode Format 
+    _CV_y,                  ///< Temp      - State in Cvode Format
       _CV_yWrite;                ///< Temp      - Vector for dense out
   bool _cvode_initialized;
 };

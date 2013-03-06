@@ -1,6 +1,6 @@
 #pragma once
 
- 
+
 #include <SimulationSettings/ISettingsFactory.h>
 
 class  SettingsFactory : public ISettingsFactory
@@ -12,5 +12,5 @@ public:
 private:
     boost::shared_ptr<IGlobalSettings> _global_settings;
     boost::shared_ptr<ISolverSettings> _solver_settings;
-    
+
 };

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -378,13 +378,13 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
 end ElementSpec;
 
 public
-uniontype InnerOuter 
-  "One of the keyword inner and outer CAN be given to reference an 
+uniontype InnerOuter
+  "One of the keyword inner and outer CAN be given to reference an
    inner or outer element. Thus there are three disjoint possibilities."
   record INNER           "an inner prefix"       end INNER;
   record OUTER           "an outer prefix"       end OUTER;
   record INNER_OUTER     "an inner outer prefix" end INNER_OUTER;
-  record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;    
+  record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;
 end InnerOuter;
 
 public
@@ -460,7 +460,7 @@ uniontype EquationItem "Several component declarations can be grouped together i
   record EQUATIONITEMANN
     Annotation annotation_ "annotation" ;
   end EQUATIONITEMANN;
-  
+
   record EQUATIONITEMCOMMENT
     String comment;
   end EQUATIONITEMCOMMENT;
@@ -548,7 +548,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
     ForIterators iterators;
     list<AlgorithmItem> forBody "forBody" ;
   end ALG_FOR;
-  
+
   record ALG_PARFOR
     ForIterators iterators;
     list<AlgorithmItem> parforBody "parallel for loop Body" ;
@@ -1046,7 +1046,7 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_EXP_CONNECTOR "expandable connector class" end R_EXP_CONNECTOR;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
-  record R_FUNCTION 
+  record R_FUNCTION
     FunctionRestriction functionRestriction;
   end R_FUNCTION;
   record R_OPERATOR "an operator" end R_OPERATOR;
@@ -1075,7 +1075,7 @@ uniontype FunctionPurity "function purity"
   record NO_PURITY end NO_PURITY;
 end FunctionPurity;
 
-public 
+public
 uniontype FunctionRestriction
   record FR_NORMAL_FUNCTION "a normal function"
     FunctionPurity purity "function purity";
@@ -1105,7 +1105,7 @@ end Comment;
 
 public
 uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
-  
+
   record EXTERNALDECL
     Option<Ident>        funcName "The name of the external function" ;
     Option<String>       lang     "Language of the external function" ;
@@ -1129,9 +1129,9 @@ protected import Error;
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 
 public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
-public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0); 
+public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
 
-public function getNewTimeStamp 
+public function getNewTimeStamp
 "function: getNewTimeStamp
 generate a new timestamp with edittime>buildtime."
 output TimeStamp ts;
@@ -1145,7 +1145,7 @@ public function setTimeStampBool ""
   input Boolean which "true for edit time, false for build time";
   output TimeStamp ots;
 algorithm ots := match(its,which)
-  local Real timer; TimeStamp ts; 
+  local Real timer; TimeStamp ts;
   case(_,true)
     equation
       timer = System.getCurrentTime();
@@ -1850,7 +1850,7 @@ protected
 algorithm
   (enterFunc, exitFunc, arg) := inTuple;
   ((e, arg)) := enterFunc((inExp, arg));
-  (e, (_, _, arg)) := traverseExpBidirSubExps(e, 
+  (e, (_, _, arg)) := traverseExpBidirSubExps(e,
     (enterFunc, exitFunc, arg));
   ((outExp, arg)) := exitFunc((e, arg));
   outTuple := (enterFunc, exitFunc, arg);
@@ -1964,7 +1964,7 @@ algorithm
       then
         (RELATION(e1, op, e2), tup);
 
-    case (IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3, 
+    case (IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3,
         elseIfBranch = else_ifs), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
@@ -2159,7 +2159,7 @@ algorithm
   (e2, outTuple) := traverseExpBidir(e2, tup);
   outElseIf := (e1, e2);
 end traverseExpBidirElseIf;
-  
+
 public function traverseExpBidirFunctionArgs
   "Helper function to traverseExpBidirSubExps. Traverses the expressions in a
   list of function argument."
@@ -2200,7 +2200,7 @@ algorithm
         (FOR_ITER_FARG(e, iters), tup);
   end match;
 end traverseExpBidirFunctionArgs;
-  
+
 public function traverseExpBidirNamedArg
   "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
   a named function argument."
@@ -2336,9 +2336,9 @@ algorithm
       then
         (EQUATIONITEM(eq, cmt, info), tup);
 
-    case (EQUATIONITEMANN(annotation_ = _), _) 
+    case (EQUATIONITEMANN(annotation_ = _), _)
       then (inEquationItem, inTuple);
-  
+
   end match;
 end traverseEquationItemBidir;
 
@@ -2366,7 +2366,7 @@ algorithm
       FunctionArgs func_args;
       EquationItem eq;
 
-    case (EQ_IF(ifExp = e1, equationTrueItems = eqil1, 
+    case (EQ_IF(ifExp = e1, equationTrueItems = eqil1,
         elseIfBranches = else_branch, equationElseItems = eqil2), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
@@ -2393,13 +2393,13 @@ algorithm
 
     case (EQ_FOR(iterators = iters, forEquations = eqil1), tup)
       equation
-        (iters, tup) = List.mapFold(iters, 
+        (iters, tup) = List.mapFold(iters,
           traverseExpBidirIterator, tup);
         (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
       then
         (EQ_FOR(iters, eqil1), tup);
 
-    case (EQ_WHEN_E(whenExp = e1, whenEquations = eqil1, 
+    case (EQ_WHEN_E(whenExp = e1, whenEquations = eqil1,
         elseWhenEquations = else_branch), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
@@ -2588,7 +2588,7 @@ end expComponentRefStr;
 public function printComponentRefStr ""
   input ComponentRef cr;
   output String ostring;
-algorithm 
+algorithm
   ostring := match(cr)
     local
       String s1,s2;
@@ -2626,10 +2626,10 @@ algorithm
     case (FULLYQUALIFIED(path1),path2) then pathEqual(path1,path2);
     // path vs. fully qual
     case (path1,FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
-    // ident vs. ident 
+    // ident vs. ident
     case (IDENT(id1),IDENT(id2))
       then stringEq(id1, id2);
-    // qual ident vs. qual ident 
+    // qual ident vs. qual ident
     case (QUALIFIED(id1, path1),QUALIFIED(id2, path2))
       equation
         res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
@@ -2644,7 +2644,7 @@ Author BZ 2009-01
 Check whether two type specs are equal or not."
   input TypeSpec a,b;
   output Boolean ob;
-algorithm 
+algorithm
   ob := matchcontinue(a,b)
     local
       Path p1,p2;
@@ -2927,7 +2927,7 @@ algorithm
     case QUALIFIED(path = IDENT(name = _)) then inPath;
     case QUALIFIED(path = p) then pathTwoLastIdents(p);
     case FULLYQUALIFIED(path = p) then pathTwoLastIdents(p);
-  end match; 
+  end match;
 end pathTwoLastIdents;
 
 public function pathLastIdent
@@ -3018,7 +3018,7 @@ algorithm
       Ident name;
       Path path;
 
-    case (IDENT(name), _) 
+    case (IDENT(name), _)
       then QUALIFIED(name, IDENT(inSuffix));
 
     case (QUALIFIED(name, path), _)
@@ -3057,7 +3057,7 @@ end pathSuffixOf;
 
 public function pathSuffixOfr "returns true if suffix_path is a suffix of path"
   input Path path;
-  input Path suffix_path;  
+  input Path suffix_path;
   output Boolean res;
 algorithm
   res := pathSuffixOf(suffix_path, path);
@@ -3071,7 +3071,7 @@ algorithm outPaths := match(path)
       String n;
       Path p;
       list<String> strings;
-      
+
     case (IDENT(name = n)) then {n};
     case (FULLYQUALIFIED(path = p)) then pathToStringList(p);
     case (QUALIFIED(name = n,path = p))
@@ -3194,7 +3194,7 @@ public function crefPrefixOf
   output Boolean out;
 algorithm
   out := matchcontinue(prefixCr, cr)
-    case(prefixCr, cr) 
+    case(prefixCr, cr)
       equation
         true = crefEqualNoSubs(prefixCr, cr);
       then true;
@@ -3214,13 +3214,13 @@ algorithm
     // fullyqual path
     case (p,FULLYQUALIFIED(p2)) then removePrefix(p,p2);
     // qual
-    case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) 
+    case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2))
       equation
         true = stringEq(id1, id2);
-      then 
+      then
         removePrefix(p,p2);
     // ids
-    case(IDENT(id1),QUALIFIED(name=id2,path=p2)) 
+    case(IDENT(id1),QUALIFIED(name=id2,path=p2))
       equation
         true = stringEq(id1, id2);
       then p2;
@@ -3281,22 +3281,22 @@ algorithm
       Ident prefixIdent, ident;
       ComponentRef prefixRestCr, restCr;
     // fqual
-    case(CREF_FULLYQUALIFIED(componentRef = prefixRestCr), CREF_FULLYQUALIFIED(componentRef = restCr)) 
-      then 
+    case(CREF_FULLYQUALIFIED(componentRef = prefixRestCr), CREF_FULLYQUALIFIED(componentRef = restCr))
+      then
         crefRemovePrefix(prefixRestCr, restCr);
     // qual
-    case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr)) 
+    case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr))
       equation
         true = stringEq(prefixIdent, ident);
-      then 
+      then
         crefRemovePrefix(prefixRestCr, restCr);
     // id vs. qual
-    case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr)) 
+    case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr))
       equation
         true = stringEq(prefixIdent, ident);
       then restCr;
     // id vs. id
-    case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident)) 
+    case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident))
       equation
         true = stringEq(prefixIdent, ident);
       then CREF_IDENT("", {});
@@ -3315,9 +3315,9 @@ algorithm
       String str1,str2;
       Path qp;
       Boolean b1,b2;
-    
+
     case(IDENT(str1),IDENT(str2)) then stringEq(str1,str2);
-    
+
     case(QUALIFIED(str1,qp),IDENT(str2))
       equation
         b1 = stringEq(str1,str2);
@@ -3325,7 +3325,7 @@ algorithm
         b1 = boolOr(b1,b2);
       then
         b1;
-    
+
     case(FULLYQUALIFIED(qp),_) then pathContains(qp,pathId);
   end match;
 end pathContains;
@@ -3336,18 +3336,18 @@ checks if Path contains the given string."
   input Path p1;
   input String str;
   output Boolean b;
-algorithm 
+algorithm
   b := matchcontinue(p1,str)
     local
       String str1,searchStr;
       Path qp;
       Boolean b1,b2,b3;
-  
+
     case(IDENT(str1),searchStr)
       equation
         b1 = System.stringFind(str1,searchStr) <> -1;
       then b1;
-  
+
     case(QUALIFIED(str1,qp),searchStr)
       equation
         b1 = System.stringFind(str1, searchStr) <> -1;
@@ -3355,8 +3355,8 @@ algorithm
         b3 = boolOr(b1, b2);
       then
         b3;
-  
-    case(FULLYQUALIFIED(qp), searchStr) 
+
+    case(FULLYQUALIFIED(qp), searchStr)
     then pathContainsString(qp, searchStr);
   end matchcontinue;
 end pathContainsString;
@@ -3443,7 +3443,7 @@ algorithm
       list<Subscript> subs;
       list<list<ComponentRef>> lstres1;
       list<list<ComponentRef>> crefll;
-    
+
     case (INTEGER(value = _),_) then {};
     case (REAL(value = _),_) then {};
     case (STRING(value = _),_) then {};
@@ -3792,7 +3792,7 @@ algorithm
       Ident str;
       ComponentRef c_1, c;
       list<Subscript> subs;
-    
+
     case (CREF_IDENT(name = _)) then fail();
     case (CREF_QUAL(name = str,subscripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
     case (CREF_QUAL(name = str,subscripts = subs,componentRef = c))
@@ -3821,13 +3821,13 @@ algorithm (outPath1,outPath2) := match(inPath)
     Path qPath,curPath,identPath;
     String s1,s2;
 
-  case (QUALIFIED(name = s1, path = IDENT(name = s2))) 
+  case (QUALIFIED(name = s1, path = IDENT(name = s2)))
     then (IDENT(s1), IDENT(s2));
 
-  case (QUALIFIED(name = s1, path = qPath)) 
+  case (QUALIFIED(name = s1, path = qPath))
     equation
       (curPath, identPath) = splitQualAndIdentPath(qPath);
-    then 
+    then
       (QUALIFIED(s1, curPath), identPath);
 
   case (FULLYQUALIFIED(qPath))
@@ -4047,15 +4047,15 @@ algorithm
       Ident i;
       Boolean b;
       ComponentRef c;
-    
+
     case CREF_IDENT(name = i,subscripts = {}) then false;
-    
+
     case CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
         b = crefHasSubscripts(c);
       then
         b;
-    
+
     case CREF_FULLYQUALIFIED(componentRef = c)
       equation
         b = crefHasSubscripts(c);
@@ -4343,7 +4343,7 @@ algorithm
       Ident id,id2;
       list<Subscript> ss1,ss2;
       ComponentRef cr1,cr2;
-      
+
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
       equation
         true = stringEq(id, id2);
@@ -4364,7 +4364,7 @@ algorithm
   end matchcontinue;
 end crefEqual;
 
-public function crefFirstEqual 
+public function crefFirstEqual
 "@author: adrpo
  a.b, a -> true
  b.c, a -> false"
@@ -4383,10 +4383,10 @@ See also crefEqual."
   output Boolean equal;
 algorithm
   equal := matchcontinue(inSs1,inSs2)
-    local 
+    local
       Exp e1,e2;
       list<Subscript> ss1,ss2;
-     
+
     case({},{}) then true;
     case(NOSUB()::ss1, NOSUB()::ss2) then subscriptsEqual(ss1,ss2);
     case(SUBSCRIPT(e1)::ss1,SUBSCRIPT(e2)::ss2) equation
@@ -4397,7 +4397,7 @@ algorithm
 end subscriptsEqual;
 
 public function crefEqualNoSubs "
- Checks if the name of a ComponentRef is equal to the name 
+ Checks if the name of a ComponentRef is equal to the name
  of another ComponentRef without checking subscripts.
  See also crefEqual."
   input ComponentRef cr1;
@@ -4466,23 +4466,23 @@ public function expEqual "Returns true if two expressions are equal"
   output Boolean equal;
 algorithm
   equal := matchcontinue(exp1,exp2)
-    local 
+    local
       Exp x, y;
       Integer   i; Real   r;
-    
+
     // real vs. integer
     case (INTEGER(i), REAL(r))
       equation
         true = realEq(intReal(i), r);
       then
         true;
-    
+
     case (REAL(r), INTEGER(i))
       equation
         true = realEq(intReal(i), r);
       then
         true;
-    
+
     // anything else, exact match!
     case (x, y) equation equality(x = y);          then true;
     case (x, y) equation failure(equality(x = y)); then false;
@@ -4516,7 +4516,7 @@ algorithm
       equation
         // fails if not all are true
         List.threadMapAllValue(expl1,expl2,expEqual,true);
-      then 
+      then
         true;
     case(_,_) then false;
   end matchcontinue;
@@ -5224,7 +5224,7 @@ algorithm
     local
       Exp cond,tb,eb,ei_cond,ei_tb,e;
       list<tuple<Exp,Exp>> eib;
-      
+
     case IFEXP(elseIfBranch={}) then inExp;
     case IFEXP(ifExp=cond,trueBranch=tb,elseBranch=eb,elseIfBranch=(ei_cond,ei_tb)::eib)
       equation
@@ -5246,15 +5246,15 @@ algorithm
       Boolean b1, b2, b3, b;
 
     case ({}) then true;
-    
+
     // skip "interaction" annotation!
-    case (MODIFICATION(componentRef = CREF_IDENT(name = "interaction")) :: rest)    
+    case (MODIFICATION(componentRef = CREF_IDENT(name = "interaction")) :: rest)
       equation
         b = onlyLiteralsInAnnotationMod(rest);
-      then 
+      then
         b;
 
-    
+
     // search inside, some(exp)
     case (MODIFICATION(modification = SOME(CLASSMOD(dive, eqMod))) :: rest)
       equation
@@ -5262,22 +5262,22 @@ algorithm
         b2 = onlyLiteralsInAnnotationMod(dive);
         b3 = onlyLiteralsInAnnotationMod(rest);
         b = boolAnd(b1, boolAnd(b2, b3));
-      then 
+      then
         b;
-        
+
     case (_ :: rest)
       equation
         b = onlyLiteralsInAnnotationMod(rest);
-      then 
+      then
         b;
-    
+
     // failed above, return false
     case (_) then false;
 
   end matchcontinue;
 end onlyLiteralsInAnnotationMod;
-  
-protected function onlyLiteralsInEqMod  
+
+protected function onlyLiteralsInEqMod
 "@author: adrpo
   This function checks if an optional expression only contains literal expressions"
   input EqMod eqMod;
@@ -5290,10 +5290,10 @@ algorithm
       Boolean b;
 
     case (NOMOD()) then true;
-    
-    // DynamicSelect returns true! 
+
+    // DynamicSelect returns true!
     case (EQMOD(exp=CALL(function_ = CREF_IDENT(name = "DynamicSelect")))) then true;
-    
+
     // search inside, some(exp)
     case (EQMOD(exp=exp))
       equation
@@ -5307,22 +5307,22 @@ algorithm
   end match;
 end onlyLiteralsInEqMod;
 
-protected function onlyLiteralsInExp 
-"@author: adrpo 
+protected function onlyLiteralsInExp
+"@author: adrpo
  Visitor function for checking if Absyn.Exp contains only literals, NO CREFS!
  It returns an empty list if it doesn't contain any crefs!"
   input tuple<Exp, list<Exp>> tpl;
   output tuple<Exp, list<Exp>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
-    local 
+    local
       Exp e;
       ComponentRef cr;
       list<Exp> lst, lstArgs;
       String name;
       FunctionArgs fargs;
 
-    // first handle DynamicSelect 
+    // first handle DynamicSelect
     case ((e as CALL(function_ = CREF_IDENT(name = "DynamicSelect"), functionArgs = fargs), lst))
       equation
         ((_, lstArgs)) = traverseExpFunctionArgs(fargs, onlyLiteralsInExp, {});
@@ -5331,7 +5331,7 @@ algorithm
       then
         ((e, {}));
 
-    // first handle all graphic enumerations! 
+    // first handle all graphic enumerations!
     // FillPattern.*, Smooth.*, TextAlignment.*, etc!
     case ((e as CREF(cr as CREF_QUAL(name=name)), lst))
       equation
@@ -5340,10 +5340,10 @@ algorithm
                           "Arrow",
                           "FillPattern",
                           "BorderPattern",
-                          "TextStyle", 
-                          "Smooth", 
+                          "TextStyle",
+                          "Smooth",
                           "TextAlignment"});
-      then 
+      then
         ((e, lst));
 
     // crefs, add to list
@@ -5458,14 +5458,14 @@ public function subscriptExpOpt
   output Option<Exp> outExpOpt;
 algorithm
   outExpOpt := match(inSub)
-    local 
+    local
       Exp e;
       case SUBSCRIPT(subscript = e)
         then SOME(e);
       case NOSUB()
         then NONE();
   end match;
-end subscriptExpOpt;              
+end subscriptExpOpt;
 
 public function crefInsertSubscriptLstLst
   input tuple<Exp,list<list<Subscript>>> inTpl;
@@ -5500,12 +5500,12 @@ algorithm
       case (cref,{})
         then cref;
       case (CREF_IDENT(name = n), {s})
-        then CREF_IDENT(n,s);    
+        then CREF_IDENT(n,s);
       case (CREF_QUAL(name = n, componentRef = cref), s::subs)
         equation
           cref2 = crefInsertSubscriptLstLst2(cref, subs);
         then
-          CREF_QUAL(n,s,cref2);          
+          CREF_QUAL(n,s,cref2);
       case (CREF_FULLYQUALIFIED(componentRef = cref), subs)
         equation
           cref2 = crefInsertSubscriptLstLst2(cref, subs);
@@ -5528,7 +5528,7 @@ algorithm
     else false;
   end match;
 end isCref;
-          
+
 public function isDerCref
   input Exp exp;
   output Boolean b;
@@ -5572,17 +5572,17 @@ algorithm
       Exp e;
       list<Exp> exps, acc;
       Boolean b;
-    
+
     // handle empty list
     case ({}, acc) then (false, listReverse(acc));
-    
+
     // handle SUBSCRIPT
     case (SUBSCRIPT(e)::rest, acc)
       equation
         (b, exps) = getExpsFromArrayDim_tail(rest, e::acc);
        then
          (b, exps);
-    
+
     // handle NOSUB
     case (NOSUB()::rest, acc)
       equation
@@ -5748,7 +5748,7 @@ algorithm
    local
      ClassPart cp;
      list<ClassPart> classParts;
-     
+
    case (CLASS(body = PARTS(classParts = classParts)))
      equation
        cp = getExternalFromClassParts(classParts);
@@ -5765,10 +5765,10 @@ algorithm
    local
      ClassPart cp;
      list<ClassPart> rest;
-     
+
    case ((cp as EXTERNAL(externalDecl = _))::rest) then cp;
 
-   case (_::rest) 
+   case (_::rest)
      equation
        cp = getExternalFromClassParts(rest);
      then
@@ -5816,19 +5816,19 @@ algorithm
       String n;
 
     case (IDENT(_), _) then inLastIdent;
-    
+
     case (QUALIFIED(n, p), _)
       equation
         p = pathSetLastIdent(p, inLastIdent);
       then
         QUALIFIED(n, p);
-    
+
     case (FULLYQUALIFIED(p), _)
       equation
         p = pathSetLastIdent(p, inLastIdent);
       then
         FULLYQUALIFIED(p);
-          
+
   end matchcontinue;
 end pathSetLastIdent;
 
@@ -5845,7 +5845,7 @@ algorithm
         ((_, b)) = traverseExp(inExp, isInitialTraverseHelper, false);
       then
         b;
-    else then false; 
+    else then false;
   end matchcontinue;
 end expContainsInitial;
 
@@ -5857,11 +5857,11 @@ protected function isInitialTraverseHelper
 algorithm
   outExpBooleanTpl := match(inExpBooleanTpl)
     local Exp e; Boolean b;
-    
-    // make sure we don't have not initial()    
+
+    // make sure we don't have not initial()
     case ((UNARY(NOT(), e) , b)) then inExpBooleanTpl;
     // we have initial
-    case ((e , b)) 
+    case ((e , b))
       equation
         b = isInitial(e);
       then ((e, b));

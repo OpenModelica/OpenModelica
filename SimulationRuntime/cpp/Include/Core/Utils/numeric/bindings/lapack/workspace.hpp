@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Karl Meerbergen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -20,7 +20,7 @@
 #include <boost/numeric/bindings/traits/vector_traits.hpp>
 #include <memory>
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   /*
    * Organization of workspace in Lapack.

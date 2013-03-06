@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -39,26 +39,26 @@ encapsulated package Name
 
   The Name is a string in an unique relation to an integer. "
 
-public 
+public
 import AvlTree;
- 
+
 type Name  = String;
 
 type NameInteger = AvlTree.Tree<Name, Integer>;
-type IntegerName = AvlTree.Tree<Integer, Name>; 
+type IntegerName = AvlTree.Tree<Integer, Name>;
 
 uniontype Names "an dictionary of shared names"
   record NAMES
      NameInteger name2integer;
      IntegerName integer2name;
-     Integer sequenceNo "starts at 0 and increments before each addUnique. 
+     Integer sequenceNo "starts at 0 and increments before each addUnique.
                          if the returned value from addUnique is the same
                          smaller than before the increment then the name
                          is already in there!";
   end NAMES;
 end Names;
 
-protected 
+protected
 import Relation; // for intCompare!
 
 public function new
@@ -72,7 +72,7 @@ algorithm
       NameInteger n2i;
       IntegerName i2n;
       Integer seqOld, seqNew, id;
-      Names names; 
+      Names names;
 
     // was not there, add it to both
     case (NAMES(n2i, i2n, seqOld), inName)
@@ -106,7 +106,7 @@ protected
   NameInteger n2i;
   IntegerName i2n;
 algorithm
-  n2i := AvlTree.create("name2integer", stringCompare, SOME(strIdentity), SOME(intString), NONE()); 
+  n2i := AvlTree.create("name2integer", stringCompare, SOME(strIdentity), SOME(intString), NONE());
   i2n := AvlTree.create("integer2name", Relation.intCompare, SOME(intString), SOME(strIdentity), NONE());
   outNames := NAMES(n2i, i2n, 0);
 end pool;

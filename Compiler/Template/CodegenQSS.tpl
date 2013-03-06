@@ -54,7 +54,7 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenC.*;
 
-template translateModel(SimCode simCode,QSSinfo qssInfo) 
+template translateModel(SimCode simCode,QSSinfo qssInfo)
  "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model."
 ::=
@@ -87,10 +87,10 @@ case SIMCODE(__) then
   <% generateAnnotation(simulationSettingsOpt) %>
 
   /* Equations */
-  equation 
+  equation
   <% eqs %>
   algorithm
-  /* Discontinuities(<% listLength(zeroCrossings) %>) */ 
+  /* Discontinuities(<% listLength(zeroCrossings) %>) */
   <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
                      whenClauses,BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
   end <% getName(modelInfo) %>;
@@ -102,12 +102,12 @@ template getName(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(__) then
-  << 
+  <<
   <%System.stringReplace(dotPath(name),".","_") %>
   >>
 end getName;
 
-template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states, 
+template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states,
                       list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
                       list<SimEqSystem> parameterEquations)
  "Generates the first part a QSM model for simulation ."
@@ -115,11 +115,11 @@ template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states,
 match modelInfo
 case MODELINFO(varInfo=varInfo as  VARINFO(__)) then
   <<
-  model <% getName(modelInfo) %> 
+  model <% getName(modelInfo) %>
 
     <% generateInitFunction(modelInfo,states,disc,algs) %>
 
-    /* Parameters */ 
+    /* Parameters */
     <% generateParameters(modelInfo,parameterEquations) %>
 
   >>
@@ -131,7 +131,7 @@ template OptionInitial(Option<DAE.Exp> initialValue)
 match initialValue
   case SOME(DAE.BCONST(bool=true)) then '1.0'
   case SOME(DAE.BCONST(bool=false)) then '0.0'
-  case SOME(exp) then '<%initValXml(exp)%>' 
+  case SOME(exp) then '<%initValXml(exp)%>'
   case NONE() then '0.0'
 end OptionInitial;
 
@@ -141,7 +141,7 @@ template InitStateVariable(SimVar simVar, list<DAE.ComponentRef> vars)
   match simVar
   case SIMVAR(__) then
   <<
-  Real <% crefStr(name) %> (start = <% OptionInitial(initialValue) %>); 
+  Real <% crefStr(name) %> (start = <% OptionInitial(initialValue) %>);
   >>
 
 end InitStateVariable;
@@ -203,7 +203,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <% vars.algVars |> var hasindex i0 => InitAlgVariable(var,algs);separator="\n"%>
 
   /* Discretes */
-  discrete Real d[<% listLength(disc) %>](start=dinit()); 
+  discrete Real d[<% listLength(disc) %>](start=dinit());
 
   function boolToReal
     input Boolean b;
@@ -242,18 +242,18 @@ template generateOdeEq(SimEqSystem odeEquation, list<DAE.ComponentRef> states, l
  "Generates one  ODE equation of the model"
 ::=
 match odeEquation
-case SES_SIMPLE_ASSIGN(__) then 
+case SES_SIMPLE_ASSIGN(__) then
 <<
   <%System.stringReplace(crefStr(cref),".", "_")%> = <%  ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %>;
 >>
-case e as SES_LINEAR(vars=vars,index=index) then 
+case e as SES_LINEAR(vars=vars,index=index) then
   let out_vars = (vars |> v => match v case SIMVAR(name=name) then BackendQSS.replaceCref(name,states,disc,algs);separator=",")
   let in_vars =  (BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> cref =>
-       BackendQSS.replaceCref(cref,states,disc,algs);separator="," ) 
+       BackendQSS.replaceCref(cref,states,disc,algs);separator="," )
   let &externalFuncs += generateLinear(e,states,disc,algs)
-  let &funDecls += 
+  let &funDecls +=
 <<
-  
+
   function fsolve<%index%>
     <% BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'input Real i<%i0%>;' ;separator="\n" %>
     <% vars |> v hasindex i0 => 'output Real o<%i0%>;' ;separator="\n" %>
@@ -265,27 +265,27 @@ case e as SES_LINEAR(vars=vars,index=index) then
   (<% out_vars %>)=fsolve<%index%>(<% in_vars %>);
 >>
 
-case SES_RESIDUAL(__) then 
+case SES_RESIDUAL(__) then
 <<
   /* Residual */
 >>
-case SES_ARRAY_CALL_ASSIGN(__) then 
+case SES_ARRAY_CALL_ASSIGN(__) then
 <<
   /* Array */
 >>
-case SES_NONLINEAR(__) then 
+case SES_NONLINEAR(__) then
 <<
   /* Non linear */
 >>
-case SES_MIXED(__) then 
+case SES_MIXED(__) then
 <<
   /* Mixed */
 >>
-case SES_WHEN(__) then 
+case SES_WHEN(__) then
 <<
   /* When */
 >>
-case SES_ALGORITHM(__) then 
+case SES_ALGORITHM(__) then
 <<
 >>
 else
@@ -293,8 +293,8 @@ else
 >>
 end generateOdeEq;
 
-template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states, 
-                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, 
+template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states,
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
                     BackendDAE.EquationArray eqs,list<DAE.Exp> zc_exps, Integer offset)
  "Generates one zc equation of the model"
 ::=
@@ -320,7 +320,7 @@ template generateOneZC(BackendDAE.ZeroCrossing zc,list<DAE.ComponentRef> states,
   case BackendDAE.ZERO_CROSSING(__) then
 <<
   when <% ExpressionDump.printExpStr(BackendQSS.replaceVars(relation_,states,disc,algs)) %> then
-     <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,true,zc_exps,offset) %> 
+     <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,true,zc_exps,offset) %>
   elsewhen <% ExpressionDump.printExpStr(BackendQSS.replaceVars(BackendQSS.negate(relation_),states,disc,algs)) %>  then
      <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,false,zc_exps,offset) %>
   end when;
@@ -338,7 +338,7 @@ case SIM_WHEN_CLAUSE(conditions=conditions, initialCall=initialCall, whenEq=SOME
 let &extraCode = buffer "" /*BUFD*/
 <<
   /* When <% index %> */
-  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then 
+  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then
    <% BackendQSS.replaceCref(left,states,disc,algs) %> := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
    <% extraCode %>
   end when;
@@ -347,7 +347,7 @@ case SIM_WHEN_CLAUSE(conditions=conditions, initialCall=initialCall, whenEq=SOME
 let &extraCode = buffer "" /*BUFD*/
 <<
   /* When <% index %> */
-  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then 
+  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then
     <% BackendQSS.replaceCref(left,states,disc,algs) %> := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
     <% extraCode %>
   end when;
@@ -368,7 +368,7 @@ else
   >>
 end generateWhen;
 
-template generateCond(list<DAE.ComponentRef> conds, list<DAE.ComponentRef> states, 
+template generateCond(list<DAE.ComponentRef> conds, list<DAE.ComponentRef> states,
                       list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
 ::=
   match (conds)
@@ -385,7 +385,7 @@ template generateDiscont(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRe
   <<
   <% generateZC(zcs,states,disc,algs,eqs,zc_exps,offset) %>
   <% BackendQSS.simpleWhens(whens) |> w hasindex i0 => generateWhen(w,states,disc,algs,0);separator="\n" %>
-  <% BackendQSS.sampleWhens(whens) |> w hasindex i0 => 
+  <% BackendQSS.sampleWhens(whens) |> w hasindex i0 =>
     generateWhen(w,states,disc,algs,intAdd(i0,intSub(listLength(disc),nSamples)));separator="\n" %>
   >>
 end generateDiscont;
@@ -402,12 +402,12 @@ gsl_matrix *A<%index%>,*invA<%index%>;
 gsl_vector *b<%index%>,*x<%index%>;
 gsl_permutation *p<%index%>;
 int init<%index%> = 0;
-<% (BackendQSS.getDiscRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 
+<% (BackendQSS.getDiscRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 =>
   let i=List.position(v,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs))
   'double old_i<%i%>_<%index%>=-1;';separator="\n") %>
 
 void fsolve<%index%>(<%
-(BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",") 
+(BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",")
 %>,<%vars |> SIMVAR(__) hasindex i0 => 'double *o<%i0%>' ;separator=","%>)
 {
   const int DIM = <% listLength(beqs) %>;
@@ -415,8 +415,8 @@ void fsolve<%index%>(<%
   int signum;
 
   invert_matrix = 0;
-  
-  <% 
+
+  <%
   (BackendQSS.getDiscRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 =>
   let i=List.position(v,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs))
   'if (old_i<%i%>_<%index%>!=i<%i%>) {
@@ -434,16 +434,16 @@ void fsolve<%index%>(<%
     init<%index%>=1;
     invert_matrix=1;
   }
-  
+
   /* Fill B */
-  <%beqs |> exp hasindex i0 => 
-    'gsl_vector_set(b<%index%>,<%i0%>,<% 
+  <%beqs |> exp hasindex i0 =>
+    'gsl_vector_set(b<%index%>,<%i0%>,<%
       System.stringReplace(CodegenC.daeExp(
         BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
 
   /* Invert matrix if necesary */
-  if (invert_matrix) 
+  if (invert_matrix)
   {
     /* Fill A */
     gsl_matrix_set_zero(A<%index%>);
@@ -455,8 +455,8 @@ void fsolve<%index%>(<%
     gsl_linalg_LU_decomp(A<%index%>, p<%index%>, &signum);
     gsl_linalg_LU_invert(A<%index%>, p<%index%> ,invA<%index%>);
   }
-  
-  /* Copmute x=inv(A)*b */ 
+
+  /* Copmute x=inv(A)*b */
   gsl_blas_dgemv(CblasNoTrans,1.0,invA<%index%>,b<%index%>,0.0,x<%index%>);
   /* Get x values out */
   <%vars |> v hasindex i0 => '*o<%i0%> = gsl_vector_get(x<%index%>, <%i0%>);' ;separator="\n"%>
@@ -486,8 +486,8 @@ template generateMakefile(String name)
 all: <%name%>.mo <%name%>_parameters.h <%name%>_external_functions.c
 <%\t%>mo2qsm ./<%name%>.mo
 <%\t%>qssmg  ./<%name%>.qsm $(QSSPATH)
-<%\t%>make 
-<%\t%>./<%name%> 
+<%\t%>make
+<%\t%>./<%name%>
 <%\t%>echo "set terminal wxt persist; set grid; plot \"<%name%>_x0.dat\" with lines " | gnuplot
 >>
 end generateMakefile;

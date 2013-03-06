@@ -1,8 +1,8 @@
 //
 // Copyright Karl Meerbergen 2008
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
@@ -46,103 +46,103 @@ namespace boost { namespace numeric { namespace bindings { namespace mumps {
     template <class T>
     struct mumps_type {
     } ;
-  
+
     template <class T>
     struct mumps_call {
     } ;
-  
+
     template <class T>
     struct mumps_internal_value_type {
       typedef T type ;
     } ;
-  
+
     //
     // Specialization for float
     //
-  
+
     template <>
     struct mumps_type< float > {
       typedef SMUMPS_STRUC_C type ;
     } ;
-  
+
     template <>
     struct mumps_call< float > {
       void operator() ( SMUMPS_STRUC_C& struc ) const {
         smumps_c( &struc ) ;
       }
     } ;
-  
+
     //
     // Specialization for double
     //
-  
+
     template <>
     struct mumps_type< double > {
       typedef DMUMPS_STRUC_C type ;
     } ;
-  
+
     template <>
     struct mumps_call< double > {
       void operator() ( DMUMPS_STRUC_C& struc ) const {
         dmumps_c( &struc ) ;
       }
     } ;
-  
+
     //
     // Specialization for complex<float>
     //
-  
+
     template <>
     struct mumps_type< std::complex< float > > {
       typedef CMUMPS_STRUC_C type ;
     } ;
-  
+
     template <>
     struct mumps_call< std::complex< float > > {
       void operator() ( CMUMPS_STRUC_C& struc ) const {
         cmumps_c( &struc ) ;
       }
     } ;
-  
+
     template <>
     struct mumps_internal_value_type< std::complex<float> > {
       typedef mumps_complex type ;
     } ;
-  
+
     //
     // Specialization for complex<double>
     //
-  
+
     template <>
     struct mumps_type< std::complex< double > > {
       typedef ZMUMPS_STRUC_C type ;
     } ;
-  
+
     template <>
     struct mumps_call< std::complex< double > > {
       void operator() ( ZMUMPS_STRUC_C& struc ) const {
         zmumps_c( &struc ) ;
       }
     } ;
-  
+
     template <>
     struct mumps_internal_value_type< std::complex<double> > {
       typedef mumps_double_complex type ;
     } ;
-  
+
     //
     // Symmetry map
     //
-  
+
     template <class T>
     struct mumps_sym {
     } ;
-  
+
     template <>
     struct mumps_sym< boost::numeric::bindings::traits::symmetric_t > {
       static int const value = 2 ;
     } ;
-  
+
     template <>
     struct mumps_sym< boost::numeric::bindings::traits::general_t > {
       static int const value = 0 ;
@@ -156,20 +156,20 @@ namespace boost { namespace numeric { namespace bindings { namespace mumps {
       rows = const_cast<int*>( boost::numeric::bindings::traits::spmatrix_index1_storage( m ) ) ;
       cols = const_cast<int*>( boost::numeric::bindings::traits::spmatrix_index2_storage( m ) ) ;
     }
-  
+
     template <typename M>
     void indices( boost::numeric::bindings::traits::column_major_t, int*& rows, int*& cols, M const& m ) {
       cols = const_cast<int*>( boost::numeric::bindings::traits::spmatrix_index1_storage( m ) ) ;
       rows = const_cast<int*>( boost::numeric::bindings::traits::spmatrix_index2_storage( m ) ) ;
     }
-  
+
     // Pointer Cast
     float* cast_2_mumps( float* p ) { return p ; }
     double* cast_2_mumps( double* p ) { return p ; }
     mumps_double_complex* cast_2_mumps( std::complex<double>* p ) { return reinterpret_cast<mumps_double_complex*>( p ) ; }
     mumps_complex* cast_2_mumps( std::complex<float>* p ) { return reinterpret_cast<mumps_complex*>( p ) ; }
   } // namespace detail
-  
+
 
 
   //

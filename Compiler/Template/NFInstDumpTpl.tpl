@@ -88,7 +88,7 @@ match cls
     >>
     '<%comp_seq_str%><%ieq_seq_str%><%eq_seq_str%>'
 end dumpClass;
-      
+
 template dumpExp(DAE.Exp exp)
 ::= ExpressionDumpTpl.dumpExp(exp, "\"")
 end dumpExp;
@@ -110,7 +110,7 @@ match equation
     'connect(<%lhs_str%> <<%lhs_face_str%>>, <%rhs_str%> <<%rhs_face_str%>>);'
   case FOR_EQUATION(__) then
     let ty_str = ExpressionDumpTpl.dumpType(indexType)
-    let range_str = match range case SOME(range_exp) then 
+    let range_str = match range case SOME(range_exp) then
       ' in <%dumpExp(range_exp)%>'
     let eql_str = (body |> eq => dumpEquation(eq) ;separator="\n")
     <<

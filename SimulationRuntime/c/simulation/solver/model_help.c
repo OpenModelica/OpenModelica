@@ -1,8 +1,8 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University, 
- * Department of Computer and Information Science, 
+ * Copyright (c) 1998-2010, Linköpings University,
+ * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address, 
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -327,7 +327,7 @@ void printParameters(DATA *data, int stream)
   for(i=0; i<mData->nParametersString; ++i)
     INFO3(stream, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
   RELEASE(stream);
-  
+
   RELEASE(stream);
 }
 
@@ -628,7 +628,7 @@ double getNextSampleTimeFMU(DATA *data)
 {
   if(0 < data->modelData.nSamples)
     return data->simulationInfo.nextSampleEvent;
-  
+
   return -1;
 }
 
@@ -685,7 +685,7 @@ void initializeDataStruc(DATA *data)
   data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(DATA_INTEGER_ALIAS));
   data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(DATA_BOOLEAN_ALIAS));
   data->modelData.stringAlias = (DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(DATA_STRING_ALIAS));
-  
+
   data->modelData.samplesInfo = (SAMPLE_INFO*) calloc(data->modelData.nSamples, sizeof(SAMPLE_INFO));
   data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
@@ -844,7 +844,7 @@ void deInitializeDataStruc(DATA *data)
   for(i=0; i < data->modelData.nAliasString;i++)
     freeVarInfo(&((data->modelData.stringAlias[i]).info));
   free(data->modelData.stringAlias);
-  
+
   free(data->modelData.samplesInfo);
   free(data->simulationInfo.nextSampleTimes);
   free(data->simulationInfo.samples);

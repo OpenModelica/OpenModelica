@@ -11,10 +11,10 @@ class fmuModelInst
     end constructor;
     function destructor
       input fmuModelInst in_inst;
-      external "C" fmiFreeDummy(in_inst)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" fmiFreeDummy(in_inst)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuModelInst;
-  
+
   class fmuLoadDll "load dll from FMU"
     extends ExternalObject;
     function constructor
@@ -24,10 +24,10 @@ class fmuModelInst
       external "C" dummy = loadFMUDll(in_fmufun,in_dllPath)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end constructor;
     function destructor
-      external "C" freeFMUDll()       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" freeFMUDll()       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuLoadDll;
-  
+
   class fmuFunctions "List of interface functions defined in FMI 1.0"
     extends ExternalObject;
     function constructor
@@ -38,10 +38,10 @@ class fmuModelInst
     end constructor;
     function destructor
       input fmuFunctions fmufun;
-      external "C" fmiFreeDummy(fmufun)        annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" fmiFreeDummy(fmufun)        annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuFunctions;
-  
+
   class fmuCallbackFuns "Construct for callbacks defined in FMU"
     extends ExternalObject;
     function constructor
@@ -50,29 +50,29 @@ class fmuModelInst
     end constructor;
     function destructor
       input fmuCallbackFuns functions;
-      external "C" fmiFreeDummy(functions)        annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" fmiFreeDummy(functions)        annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuCallbackFuns;
-  
+
   function fmuSetTime
     input fmuFunctions fmufun;
     input fmuModelInst inst;
     input Real in_time;
     input Real inFlowControl;
-    output Real outFlowControl;    
-    external "C" outFlowControl = fmiSetT(fmufun, inst, in_time, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetT(fmufun, inst, in_time, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetTime;
-  
+
   function fmuSetContStates "set values of continuous states"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer nx;
     input Real x[nx];
     input Real inFlowControl;
-    output Real outFlowControl;      
-    external "C" outFlowControl = fmiSetContStates(fmufun, in_inst, x, nx, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetContStates(fmufun, in_inst, x, nx, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetContStates;
-  
+
   function fmuSetRealVR "set values of real variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
@@ -80,10 +80,10 @@ class fmuModelInst
     input Integer in_vr[nr];
     input Real in_rv[nr];
     input Real inFlowControl;
-    output Real outFlowControl;      
-    external "C" outFlowControl = fmiSetRealVR(fmufun, in_inst, in_vr, in_rv, nr, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetRealVR(fmufun, in_inst, in_vr, in_rv, nr, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetRealVR;
-  
+
   function fmuSetIntegerVR "set values of integer variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
@@ -91,10 +91,10 @@ class fmuModelInst
     input Integer in_vr[ni];
     input Integer in_iv[ni];
     input Real inFlowControl;
-    output Real outFlowControl;       
-    external "C" outFlowControl = fmiSetIntegerVR(fmufun, in_inst, in_vr, in_iv, ni, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetIntegerVR(fmufun, in_inst, in_vr, in_iv, ni, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetIntegerVR;
-  
+
   function fmuSetStringVR "set values of string variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
@@ -102,10 +102,10 @@ class fmuModelInst
     input Integer in_vr[ns];
     input String in_sv[ns];
     input Real inFlowControl;
-    output Real outFlowControl;       
-    external "C" outFlowControl = fmiSetStringVR(fmufun, in_inst, in_vr, in_sv, ns, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetStringVR(fmufun, in_inst, in_vr, in_sv, ns, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetStringVR;
-  
+
   function fmuSetBooleanVR "set values of boolean variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
@@ -113,58 +113,58 @@ class fmuModelInst
     input Integer in_vr[nb];
     input Boolean in_bv[nb];
     input Real inFlowControl;
-    output Real outFlowControl;     
-    external "C" outFlowControl = fmiSetBooleanVR(fmufun, in_inst, in_vr, in_bv, nb, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    output Real outFlowControl;
+    external "C" outFlowControl = fmiSetBooleanVR(fmufun, in_inst, in_vr, in_bv, nb, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuSetBooleanVR;
-  
+
   function fmuGetContStates "get values of continuous states"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer nx;
     output Real in_x[nx];
-    external "C" fmiGetContStates(fmufun,in_inst,in_x,nx)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetContStates(fmufun,in_inst,in_x,nx)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetContStates;
-  
+
   function fmuGetRealVR "get values of real variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer nr;
     input Integer in_vr[nr];
-    input Real inFlowControl;    
+    input Real inFlowControl;
     output Real rv[nr];
-    external "C" fmiGetRealVR(fmufun, in_inst, in_vr, rv, nr, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetRealVR(fmufun, in_inst, in_vr, rv, nr, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetRealVR;
-  
+
   function fmuGetIntegerVR "get values of integer variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer ni;
     input Integer in_vr[ni];
-    input Real inFlowControl;    
+    input Real inFlowControl;
     output Integer iv[ni];
-    external "C" fmiGetIntegerVR(fmufun,in_inst,in_vr,iv,ni,inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetIntegerVR(fmufun,in_inst,in_vr,iv,ni,inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetIntegerVR;
-  
+
   function fmuGetStringVR "get values of string variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer ns;
     input Integer in_vr[ns];
-    input Real inFlowControl;    
+    input Real inFlowControl;
     output String sv[ns];
-    external "C" fmiGetStringVR(fmufun, in_inst, in_vr, sv, ns, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetStringVR(fmufun, in_inst, in_vr, sv, ns, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetStringVR;
-  
+
   function fmuGetBooleanVR "get values of boolean variables via value references"
     input fmuFunctions fmufun;
     input fmuModelInst in_inst;
     input Integer nb;
     input Integer in_vr[nb];
-    input Real inFlowControl;    
+    input Real inFlowControl;
     output Boolean bv[nb];
-    external "C" fmiGetBooleanVR(fmufun, in_inst, in_vr, bv, nb, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetBooleanVR(fmufun, in_inst, in_vr, bv, nb, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetBooleanVR;
-  
+
   function fmuGetDer "function to calculate the derivatives"
     input fmuFunctions fmufun;
     input fmuModelInst inst;
@@ -172,9 +172,9 @@ class fmuModelInst
     input Real x[nx];
     input Real inFlowControl;
     output Real der_x_out[nx];
-    external "C" fmiGetDer(fmufun, inst, der_x_out, nx, x, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetDer(fmufun, inst, der_x_out, nx, x, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetDer;
-  
+
   class fmuEventInfo
     extends ExternalObject;
     function constructor
@@ -183,10 +183,10 @@ class fmuModelInst
     end constructor;
     function destructor
       input fmuEventInfo evtInfo;
-      external "C" freefmiEvtInfo(evtInfo)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" freefmiEvtInfo(evtInfo)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuEventInfo;
-  
+
   class fmuBoolean
     extends ExternalObject;
     function constructor
@@ -196,53 +196,53 @@ class fmuModelInst
     end constructor;
     function destructor
       input fmuBoolean in_bool;
-      external "C" freefmuBooleanInst(in_bool)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+      external "C" freefmuBooleanInst(in_bool)       annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
     end destructor;
   end fmuBoolean;
-  
+
   function fmuInit
     input fmuFunctions fmufun;
     input fmuModelInst inst;
     input Boolean tolControl;
     input Real relTol;
     input fmuEventInfo evtInfo;
-    external "C" fmiInit(fmufun,inst,tolControl,relTol,evtInfo)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiInit(fmufun,inst,tolControl,relTol,evtInfo)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuInit;
-  
+
   function fmuCompIntStep
     input fmuFunctions fmufun;
     input fmuModelInst inst;
     input fmuBoolean stepEvt;
-    input Real inFlowControl;    
+    input Real inFlowControl;
     output Real outFlowControl;
-    external "C" outFlowControl = fmiCompIntStep(fmufun, inst, stepEvt, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" outFlowControl = fmiCompIntStep(fmufun, inst, stepEvt, inFlowControl)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuCompIntStep;
-  
+
   function fmuGetTimeEvt
     input fmuEventInfo in_evtInfo;
     input Real in_time;
     input Real in_pretime;
     input fmuBoolean in_timeEvt;
     output Real out_nextTime;
-    external "C" fmiGetTimeEvent(in_evtInfo,in_time,in_pretime,in_timeEvt,out_nextTime)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetTimeEvent(in_evtInfo,in_time,in_pretime,in_timeEvt,out_nextTime)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetTimeEvt;
-  
+
   function fmuGetEventInd
     input fmuFunctions fmufun;
     input fmuModelInst inst;
     input Integer nz;
     output Real z[nz];
-    external "C" fmiGetEventInd(fmufun,inst,z,nz)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmiGetEventInd(fmufun,inst,z,nz)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuGetEventInd;
-  
+
   function fmuStateEvtCheck
     input fmuBoolean stateEvt;
     input Integer nz;
     input Real z[nz];
     input Real prez[nz];
-    external "C" fmuStateEventCheck(stateEvt,nz,z,prez)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmuStateEventCheck(stateEvt,nz,z,prez)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuStateEvtCheck;
-  
+
   function fmuEvtUpdate
     input fmuFunctions in_fmufun;
     input fmuModelInst in_inst;
@@ -251,9 +251,9 @@ class fmuModelInst
     input fmuBoolean stepEvt;
     input fmuBoolean stateEvt;
     input fmuBoolean interMediateRes;
-    external "C" fmuEventUpdate(in_fmufun,in_inst,in_evtInfo,timeEvt,stepEvt,stateEvt,interMediateRes)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" fmuEventUpdate(in_fmufun,in_inst,in_evtInfo,timeEvt,stepEvt,stateEvt,interMediateRes)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end fmuEvtUpdate;
-  
+
   function fmuFreeAll
     input fmuFunctions in_fmufun;
     input fmuModelInst in_inst;
@@ -261,44 +261,44 @@ class fmuModelInst
     output fmuBoolean dummy;
     external "C" fmuFreeAll(in_fmufun,in_inst,functions,dummy) annotation(Include = "#include <fmuWrapper.h>", Library = {"fmuWrapper"});
   end fmuFreeAll;
-  
+
   function PrintState
     input fmuModelInst in_fmu;
     input Real in_time;
-    external "C" PrintModelStates(in_fmu,in_time)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"}); 
+    external "C" PrintModelStates(in_fmu,in_time)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end PrintState;
-  
+
   function printVariable
     input Real var[:];
     input Integer n;
     input String varName;
     external "C" printVariables(var,n,varName)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end printVariable;
-  
+
   function printIntVariable
     input Integer var[:];
     input Integer n;
     input String varName;
     external "C" printIntVariables(var,n,varName)     annotation(Include="#include <fmuWrapper.h>",Library = {"fmuWrapper"});
   end printIntVariable;
-  
+
   function Bool2Int
     input Integer dim;
     input Boolean in_bv[dim];
     output Integer out_iv[dim];
-  algorithm 
+  algorithm
     for i in 1:dim loop
           out_iv[i]:=if in_bv[i] then 1 else 0;
     end for;
   end Bool2Int;
-  
+
   function Int2Bool
     input Integer dim;
     input Integer in_iv[dim];
     output Boolean out_bv[dim];
-  algorithm 
+  algorithm
     for i in 1:dim loop
           out_bv[i]:=if in_iv[i] == 1 then true else false;
     end for;
   end Int2Bool;
-  
+

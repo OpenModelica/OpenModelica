@@ -1,11 +1,11 @@
 #pragma once
 #include <SimulationSettings/IGlobalSettings.h>
- 
+
 
 class  GlobalSettings : public IGlobalSettings
 {
 
-public:    
+public:
     GlobalSettings(void);
     ~GlobalSettings(void);
     ///< Start time of integration (default: 0.0)
@@ -31,8 +31,8 @@ public:
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
-    virtual string    getSelectedNonLinSolver();    
-    virtual void setSelectedNonLinSSolver(string);     
+    virtual string    getSelectedNonLinSolver();
+    virtual void setSelectedNonLinSSolver(string);
     virtual void setResultsFileName(string);
     virtual string getResultsFileName();
     //initializes the settings object by an xml file
@@ -49,7 +49,7 @@ private:
         _resultsOutput,   ///< Write out results ([false,true]; default: true)
         _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
         _endless_sim;
-    string 
+    string
         _output_path,
         _selected_solver,
         _selected_nonlin_solver,

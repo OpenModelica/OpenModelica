@@ -124,7 +124,7 @@ UnitAbsyn.mo \
 UnitAbsynBuilder.mo \
 UnitChecker.mo \
 Values.mo \
-ValuesUtil.mo 
+ValuesUtil.mo
 
 BACKEND = \
 BackendDAE.mo \
@@ -231,7 +231,7 @@ Refactor.mo \
 StaticScript.mo
 
 MAIN = \
-Main.mo 
+Main.mo
 
 EXTERNAL = \
 Corba.mo \

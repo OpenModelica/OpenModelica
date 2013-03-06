@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -76,7 +76,7 @@ algorithm
       Prefix.ComponentPrefix rest;
       Prefix.ClassPrefix cp;
       list<DAE.Subscript> ss;
-      
+
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";
     case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
@@ -111,7 +111,7 @@ public function printPrefixStr2 "function: printPrefixStr2
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
-  local 
+  local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
@@ -125,7 +125,7 @@ public function printPrefixStr3 "function: printPrefixStr2
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
-  local 
+  local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "<NO COMPONENT>";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
@@ -139,7 +139,7 @@ public function printPrefixStrIgnoreNoPre "function: printPrefixStrIgnoreNoPre
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
-  local 
+  local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
@@ -174,11 +174,11 @@ algorithm
       String i;
       list<DAE.Subscript> s;
       Prefix.ComponentPrefix p;
-      
-    case (i,s,Prefix.PREFIX(p,_),_,_) 
+
+    case (i,s,Prefix.PREFIX(p,_),_,_)
       then Prefix.PREFIX(Prefix.PRE(i,s,p,ci_state),Prefix.CLASSPRE(vt));
-    
-    case(i,s,Prefix.NOPRE(),_,_) 
+
+    case(i,s,Prefix.NOPRE(),_,_)
       then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
   end match;
 end prefixAdd;
@@ -194,7 +194,7 @@ algorithm
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c,ci_state=ci_state),cp)) 
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c,ci_state=ci_state),cp))
       then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE(),ci_state),cp);
   end match;
 end prefixFirst;
@@ -217,13 +217,13 @@ public function prefixLast "function: prefixLast
   output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inPrefix)
-    local 
+    local
       Prefix.ComponentPrefix p;
       Prefix.Prefix res;
       Prefix.ClassPrefix cp;
-    
+
     case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),cp))) then res;
-    
+
     case (Prefix.PREFIX(Prefix.PRE(next = p),cp))
       equation
         res = prefixLast(Prefix.PREFIX(p,cp));
@@ -270,7 +270,7 @@ algorithm
 end compPreStripLast;
 
 public function prefixPath "function: prefixPath
-  Prefix a Path variable by adding the supplied 
+  Prefix a Path variable by adding the supplied
   prefix to it and returning a new Path."
   input Absyn.Path inPath;
   input Prefix.Prefix inPrefix;
@@ -282,7 +282,7 @@ algorithm
       String s;
       Prefix.ComponentPrefix ss;
       Prefix.ClassPrefix cp;
-    
+
     case (p,Prefix.NOPRE()) then p;
     case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),cp))
       equation
@@ -308,7 +308,7 @@ algorithm
       Absyn.Path p;
       Prefix.ComponentPrefix ss;
       Prefix.ClassPrefix cp;
-    
+
     case Prefix.NOPRE()
       equation
         /*Print.printBuf("#-- Error: Cannot convert empty prefix to a path\n");*/
@@ -379,10 +379,10 @@ algorithm
       ClassInf.State ci_state;
       Env.Cache cache;
       Env.Env env;
-    
+
     case (_,_,_,Prefix.NOPRE(),NONE()) then fail();
     case (_,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
-      
+
     case (cache,_,_,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
@@ -411,7 +411,7 @@ end prefixToCrefOpt;
 
 public function prefixToCrefOpt2 "function: prefixToCrefOpt2
   Convert a prefix to a component reference. Converting Prefix.NOPRE with no
-  component reference gives a NONE" 
+  component reference gives a NONE"
   input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Option<DAE.ComponentRef> outComponentRefOpt;
@@ -453,19 +453,19 @@ algorithm
   cref := matchcontinue(pre)
     local
       DAE.ComponentRef c;
-    
+
     case(Prefix.NOPRE())
       equation
         c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
-        
+
     case(Prefix.PREFIX(Prefix.NOCOMPPRE(), _))
       equation
         c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
-    
+
     case _
       equation
         c = prefixToCref(pre);
@@ -484,15 +484,15 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
   output DAE.ComponentRef outCr;
 algorithm
   (outCache,outCr) := match (inCache,inEnv,inIH,pre,inCr)
-  local 
+  local
     DAE.Ident id;
     DAE.Type tp;
     list<DAE.Subscript> subs;
     Env.Cache cache;
     Env.Env env;
     DAE.ComponentRef cr;
-    
-    
+
+
     case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs)) equation
      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,ComponentReference.makeCrefIdent(id,tp,subs));
@@ -514,14 +514,14 @@ protected function prefixSubscripts "help function to prefixSubscriptsInCref, ad
   output list<DAE.Subscript> outSubs;
 algorithm
   (outCache,outSubs) := match(inCache,inEnv,inIH,pre,inSubs)
-    local 
+    local
       DAE.Subscript sub;
       Env.Cache cache;
       Env.Env env;
       list<DAE.Subscript> subs;
-  
+
     case (cache,_,_,_,{}) then (cache,{});
-  
+
     case (cache,env,_,_,sub::subs)
       equation
         (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
@@ -540,31 +540,31 @@ protected function prefixSubscript "help function to prefixSubscripts, adds pref
   output DAE.Subscript outSub;
 algorithm
   (outCache,outSub) := match(inCache,inEnv,inIH,pre,sub)
-    local 
+    local
       DAE.Exp exp;
       Env.Cache cache;
       Env.Env env;
-    
+
     case(cache,env,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
-    
+
     case(cache,env,_,_,DAE.SLICE(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.SLICE(exp));
-    
+
     case(cache,env,_,_,DAE.WHOLE_NONEXP(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.WHOLE_NONEXP(exp));
-    
+
     case(cache,env,_,_,DAE.INDEX(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
-    
+
   end match;
 end prefixSubscript;
 
 public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
-  Search for the prefix of the inner when the cref is 
-  an outer and add that instead of the given prefix! 
+  Search for the prefix of the inner when the cref is
+  an outer and add that instead of the given prefix!
   If the cref is an inner, prefix it normally."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -583,21 +583,21 @@ algorithm
       Prefix.Prefix innerPrefix, pre;
       DAE.ComponentRef lastCref, cref, newCref;
       String n;
-    
+
 
     case (cache,env,ih,cref,pre)
       equation
         newCref = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cref, pre);
       then
         (cache,newCref);
-     
+
     /*
     // adrpo: prefix normally if we have an inner outer variable!
     case (cache,env,ih,cref,pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
-        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
+        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
+        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +&
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
@@ -611,23 +611,23 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
-        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
+        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
+        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +&
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
         n = ComponentReference.crefLastIdent(cref);
         lastCref = Expression.crefIdent(cref);
         // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
-        InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) = 
+        InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) =
            InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
         // prefix the cref with the prefix of the INNER!
-        
+
         newCref = prefixCref(innerPrefix, lastCref);
-        
+
         // Debug.fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
-    
+
     // adrpo: we have a qualified cref, search for the prefix!
     // bar2/world.someCrap
     case (cache,env,ih,cref as DAE.CREF_QUAL(ident=_),pre)
@@ -677,11 +677,11 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
-      
+
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
-      
-    // handle literal constants       
+
+    // handle literal constants
     case (cache,_,_,(e as DAE.ICONST(integer = _)),_) then (cache,e);
     case (cache,_,_,(e as DAE.RCONST(real = _)),_) then (cache,e);
     case (cache,_,_,(e as DAE.SCONST(string = _)),_) then (cache,e);
@@ -699,7 +699,7 @@ algorithm
 
     case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
       equation
-        // adrpo: ask for NONE() here as if we have SOME(...) it means 
+        // adrpo: ask for NONE() here as if we have SOME(...) it means
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
         (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
         (cache,cr_1) = prefixCref(cache,env,ih,pre,cr);
@@ -715,28 +715,28 @@ algorithm
         (cache,e);
 
     case (cache,env,ih,e as DAE.CREF(componentRef = cr,ty = t),pre)
-      equation 
+      equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr));
         (cache, cr_1) = prefixSubscriptsInCref(cache, env, ih, pre, cr);
         crefExp = Expression.makeCrefExp(cr_1, t);
       then
         (cache,crefExp);
-    
-    case (cache,env,ih,(e as DAE.ASUB(exp = e1, sub = expl)),pre) 
+
+    case (cache,env,ih,(e as DAE.ASUB(exp = e1, sub = expl)),pre)
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, expl, pre);
         (cache,e1) = prefixExp(cache, env, ih, e1,pre);
         e2 = Expression.makeASUB(e1,es_1);
-      then 
+      then
         (cache,e2);
-        
-    case (cache,env,ih,(e as DAE.TSUB(e1, index_, t)),pre) 
+
+    case (cache,env,ih,(e as DAE.TSUB(e1, index_, t)),pre)
       equation
         (cache,e1) = prefixExp(cache, env, ih, e1, pre);
         e2 = DAE.TSUB(e1, index_, t);
-      then 
+      then
         (cache,e2);
-    
+
     case (cache,env,ih,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
@@ -997,7 +997,7 @@ algorithm
       list<DAE.Element> rest,temp;
       DAE.Element elem;
       DAE.Exp e1,e2;
-    
+
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
     // variables
     case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,
@@ -1186,7 +1186,7 @@ algorithm
       DAE.Exp e;
       list<DAE.Statement> lStmt;
       DAE.Else el,stmt;
-      
+
     case (localCache,localEnv,ih,DAE.NOELSE(),pre)
       then (localCache,DAE.NOELSE());
 
@@ -1209,7 +1209,7 @@ end prefixElse;
 public function makePrefixString "helper function for Mod.verifySingleMod, pretty output"
   input Prefix.Prefix pre;
   output String str;
-algorithm 
+algorithm
   str := matchcontinue(pre)
     case(Prefix.NOPRE()) then "from top scope";
     case _

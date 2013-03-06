@@ -1,11 +1,11 @@
 #pragma once
- 
+
 
 #include <SimulationSettings/IGlobalSettings.h>
 #include <Math/Constants.h>
 
 /**
-Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings. 
+Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings.
 */
 
 class ISimControllerSettings
@@ -30,10 +30,10 @@ public:
         _globalSettings = globalSettings;
     };
 
-    double            
+    double
         dHcpl,                    ///< Koppelschrittweite (=Intervalllänge nach der Daten zwischen gekoppelten System ausgetauscht werden, default: 100 Schritte [1/s])
         dErrTol,                ///< Gibt an, wieviel größer als 1.0 der Fehler sein darf, damit der Schritt akzeptiert wird (vorteilhaft, wenn sich wenig ändert) (default: 0.0)
-        dK,                        ///< Faktor für Schrittweitensteuerung (k-ten Wurzel des Fehlers) (dK <= 0, default: -0.25, kleinerer Wert = größere Schrittweite) 
+        dK,                        ///< Faktor für Schrittweitensteuerung (k-ten Wurzel des Fehlers) (dK <= 0, default: -0.25, kleinerer Wert = größere Schrittweite)
         dC,                        ///< Savety Faktor für Schrittweitensteuerung (default: 1.0)
         dCmax,                    ///< Upscale Faktor für Schrittweitensteuerung (default: 1.5)
         dCmin,                    ///< Downscale Faktor für Schrittweitensteuerung (default: 0.5)
@@ -42,7 +42,7 @@ public:
         dSingleStepTol,            ///< Fehlertoleranz zur Aussetzung der Doppelschritt-Technik (default: 1e-5)
         dTendTol;                ///< Toleranz mit der Endzeit erreicht werden soll (default: 1e-6)
 
-    int    
+    int
         iMaxRejSteps,            ///< Max. Anzahl nacheinander verworfener Schritte (default: 50)
         iSingleSteps;            ///< Anzahl Schritte ohne Doppelschritt-Technik (ACHTUNG: nur bei genauer Kenntniss über Kopplungsgrad verwenden) (default: 0)
 
@@ -50,7 +50,7 @@ public:
         bDynCouplingStepSize,    ///< Aquidistante oder dynamische gesteuerte Koppelschrittweite ([false,true]; default: false)
         bCouplingOutput;        ///< SimManagerSettings-spezifische Ausgaben ([false,true]; default: false)
 
-    IGlobalSettings*    
+    IGlobalSettings*
         _globalSettings;        ///< Zeiger auf Globale Simulations Einstellungen
 
 };

@@ -48,7 +48,7 @@ extern "C" {
 #define MMC_GC_ROOTS_SIZE_INITIAL        8*1024  /* initial size of roots, reallocate on full */
 #define MMC_GC_ROOTS_MARKS_SIZE_INITIAL  8*1024  /* initial size of roots marks, reallocate on full */
 
-  
+
 /* mark-and-sweep settings */
 #define MMC_GC_NUMBER_OF_MARK_THREADS  6
 #define MMC_GC_NUMBER_OF_SWEEP_THREADS 6
@@ -86,7 +86,7 @@ struct mmc_GC_settings_type
   char      gc_type; /* one of the gc types above */
   /* generational settings */
   size_t    young_size; /* the size of the young generation */
-  
+
   /* mark-and-sweep settings */
   size_t    number_of_pages;  /* the initial number of pages */
   size_t    pages_size;       /* the default pages array size */
@@ -94,7 +94,7 @@ struct mmc_GC_settings_type
   size_t    free_slots_size;  /* the default free slots array size */
   size_t    number_of_mark_threads;  /* the initial number of mark threads */
   size_t    number_of_sweep_threads; /* the initial number of sweep threads */
-  
+
   /* general settings */
   size_t    roots_size;       /* the default size of the array of roots */
   size_t    roots_marks_size; /* the default size of marks in the array of roots */
@@ -143,7 +143,7 @@ mmc_GC_stats_type stats_create(void);
 /***********************************************************************/
 
 /*
- * 
+ *
  */
 struct mmc_GC_free_slot_type
 {
@@ -190,8 +190,8 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 /*
 //struct mmc_GC_local_state_type // the structure of local GC state that is saved on stack
 //{
-//  const char* functionName; // the function name 
-//  size_t rootsMark;         // the roots mark 
+//  const char* functionName; // the function name
+//  size_t rootsMark;         // the roots mark
 //  size_t rootsStackIndex;   // the index in the mark stack (basically the depth)
 //};
 //typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;

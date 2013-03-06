@@ -21,10 +21,10 @@ LDFLAGS = -L/c/mingw/lib -L/c/MinGW/lib \
 all: ${WRAPPER_NAME}.dll
 
 ${WRAPPER_NAME}.o: ${WRAPPER_NAME}.c
-	gcc -o ${WRAPPER_NAME}.o -c ${WRAPPER_NAME}.c $(DEFINES) $(CFLAGS) 
+	gcc -o ${WRAPPER_NAME}.o -c ${WRAPPER_NAME}.c $(DEFINES) $(CFLAGS)
 
-${WRAPPER_NAME}.dll: ${WRAPPER_NAME}.o 
+${WRAPPER_NAME}.dll: ${WRAPPER_NAME}.o
 	gcc $(DEFINES) -shared  ${WRAPPER_NAME}.o -o ${WRAPPER_NAME}.dll $(LDFLAGS)
 
-clean: 
+clean:
 	rm -f ${WRAPPER_NAME}.o ${WRAPPER_NAME}.dll ${WRAPPER_NAME}.dll.a

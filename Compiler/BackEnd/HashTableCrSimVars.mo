@@ -12,7 +12,7 @@ encapsulated package HashTableCrSimVars "
   RCS: $Id: HashTableCrSimVars.mo 8796 2011-05-03 19:43:08Z adrpo $
 
   "
-  
+
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key       - The key used to uniquely define elements in a hashtable

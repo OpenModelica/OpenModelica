@@ -5,12 +5,12 @@
 package paper
 
 import interface paperI;
-  
+
 template statement(Statement it) ::=
   match it
   case ASSIGN(__) then <<
   <%exp(lhs)%> = <%exp(rhs)%>;
-  >>    
+  >>
   case WHILE(__)  then <<
   while(<%exp(condition)%>) {
     <%statements |> it => statement(it) ;separator="\n"%>
@@ -40,10 +40,10 @@ end opt;
 template pok(list<String> names, Integer i0) ::= '<%i0%> <%names |> it => '<%it%> <%i0%>' ;separator=", "%>'
 end pok;
 
-template pok2(list<String> names, String sep) ::= (names |> "a" => i0 ;separator='o<%sep%>')     
+template pok2(list<String> names, String sep) ::= (names |> "a" => i0 ;separator='o<%sep%>')
 end pok2;
 
-template pok3(list<Exp> exps) ::= (exps |> ICONST(__) => value ;separator=", ")     
+template pok3(list<Exp> exps) ::= (exps |> ICONST(__) => value ;separator=", ")
 end pok3;
 
 template pok4(String s) ::= it
@@ -55,7 +55,7 @@ end pok5;
 template pok6(tuple<Integer,String> tup) ::= tup |> (i,s) => i + s
 end pok6;
 
-template pok7(list<tuple<String,Integer>> tuples) ::= (tuples |> (s,i) => 'o<%it |> (s,_)=>s%>')     
+template pok7(list<tuple<String,Integer>> tuples) ::= (tuples |> (s,i) => 'o<%it |> (s,_)=>s%>')
 end pok7;
 
 template pok8() ::= <<

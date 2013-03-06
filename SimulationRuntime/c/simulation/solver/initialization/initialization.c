@@ -259,10 +259,10 @@ void dumpInitialization(INIT_DATA *initData)
 void dumpInitialSolution(DATA *simData)
 {
   long i, j;
-  
+
   const MODEL_DATA      *mData = &(simData->modelData);
   const SIMULATION_INFO *sInfo = &(simData->simulationInfo);
-  
+
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
 
@@ -338,7 +338,7 @@ void dumpInitialSolution(DATA *simData)
                                                                 sInfo->stringVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
-  
+
   RELEASE(LOG_SOTI);
 }
 
@@ -982,7 +982,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   INFO(LOG_INIT, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
-  
+
   /* initialization is done */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
 

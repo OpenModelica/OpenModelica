@@ -4,18 +4,18 @@ Last update: 2010-12-17 Adrian Pop [adrpo@ida.liu.se]
 
 Documentation:
 --------------
-See Chapter 5 in OpenModelica User's Guide for 
+See Chapter 5 in OpenModelica User's Guide for
 more information on interactive simulation.
 
 Sample application:
 -------------------
 A complete application test is in:
-https://openmodelica.org/svn/OpenModelica/trunk/testsuite/openmodelica/interactive-simulation 
+https://openmodelica.org/svn/OpenModelica/trunk/testsuite/openmodelica/interactive-simulation
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
 An already build application test executable for Windows is in:
-https://openmodelica.org/svn/OpenModelica/trunk/SimulationRuntime/interactive/SampleClient 
+https://openmodelica.org/svn/OpenModelica/trunk/SimulationRuntime/interactive/SampleClient
 directory
 
 Code:
@@ -25,7 +25,7 @@ https://openmodelica.org/svn/OpenModelica/trunk/SimulationRuntime/interactive
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
-File 
+File
  client.cpp
  and all the other dependencies: thread.* socket.*
 

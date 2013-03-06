@@ -27,7 +27,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 #include <deque>
 #include <string>
 #include <iostream>
@@ -132,8 +132,8 @@ Holder<InterpolationTable2D> interpolationTables2D;
 class InterpolationTable {
 public:
   InterpolationTable(double time,double startTime, int ipoType, int expoType,
-         const char* tableName, const char* fileName, 
-         const double *table, 
+         const char* tableName, const char* fileName,
+         const double *table,
          int tableDim1, int tableDim2,int colWise);
   InterpolationTable(InterpolationTable& orig);
   ~InterpolationTable();
@@ -207,7 +207,7 @@ private:
 
 extern "C"
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
-        const char *tableName, const char* fileName, 
+        const char *tableName, const char* fileName,
         const double *table,int tableDim1, int tableDim2,int colWise)
 {
   // if table is already initialized, find it
@@ -216,9 +216,9 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
       return i;
   // otherwise initialize new table
   interpolationTables.push_back(new InterpolationTable(timeIn,startTime,
-                   ipoType,expoType, 
-                   tableName, fileName, 
-                   table, tableDim1, 
+                   ipoType,expoType,
+                   tableName, fileName,
+                   table, tableDim1,
                    tableDim2, colWise));
   return (interpolationTables.size()-1);
 }
@@ -251,7 +251,7 @@ double omcTableTimeTmin(int tableID)
 }
 
 extern "C"
-int omcTable2DIni(int ipoType, const char *tableName, const char* fileName, 
+int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
       const double *table,int tableDim1,int tableDim2,int colWise)
 {
   // if table is already initialized, find it
@@ -289,7 +289,7 @@ public:
 };
 
 // \brief Read data from text file.
-// 
+//
 //  Text file format:
 //   #1
 //  double A(2,2) # comment here
@@ -299,7 +299,7 @@ public:
 //    1 2 3
 //    3 4 5
 //    1 1 1
-// 
+//
 class TextFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
@@ -315,7 +315,7 @@ public:
     fp.close();
   }
 
-  virtual bool findTable(const char* tableName, 
+  virtual bool findTable(const char* tableName,
        size_t& cols, size_t& rows)
   {
     std::string strLn, tblName;
@@ -395,7 +395,7 @@ private:
     size_t hLen = hdrLen;
 
     trim(hdr,hLen);
-    
+
     if (strncmp("double",hdr,std::min((size_t)6,hLen)) != 0)
       return false;
     trim(hdr += 6, hLen -= 6);
@@ -422,7 +422,7 @@ private:
     hLen -= endptr-hdr;
     hdr = endptr;
     readChr(hdr,hLen,')');
-    
+
     if (hLen > 0 && *hdr != '#')
       throw ParsingError(filename,line,hdrLen-hLen);
 
@@ -447,7 +447,7 @@ private:
 class MatFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
-  { 
+  {
     return new MatFile(fileName);
   }
   MatFile(const std::string& fileName):filename(fileName)
@@ -498,7 +498,7 @@ public:
   buf[i*cols+j] = getElem(readbuf,P,isBigEndian);
       }
   }
-  void close() 
+  void close()
   {
     fp.close();
   }
@@ -581,7 +581,7 @@ private:
 class CSVFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
-  { 
+  {
     throw CustomError("Loading tables from CSV files not supported.");
     return NULL;
   }
@@ -589,7 +589,7 @@ public:
 
 FileWrapper *FileWrapper::openFile(const std::string& filename)
 {
-  static const std::pair<const char*,FileWrapper* (*)(const std::string&)> 
+  static const std::pair<const char*,FileWrapper* (*)(const std::string&)>
     fileFormats[3] = {
     std::make_pair(".txt",&TextFile::create),
     std::make_pair(".mat",&MatFile::create),
@@ -601,7 +601,7 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
   for (int i = 0; i < 3; ++i)
     if (fileExt == fileFormats[i].first) {
       fptr = fileFormats[i].second(filename);
-      if (!fptr) 
+      if (!fptr)
   throw CustomError("Could not allocate memory to read file `%s'",
         filename.c_str());
       return (fptr);
@@ -616,7 +616,7 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
 //
 InterpolationTable::InterpolationTable(double time, double startTime,
                int ipoType, int expoType,
-               const char* tableName, const char* fileName, 
+               const char* tableName, const char* fileName,
                const double* table, int tableDim1,
                int tableDim2, int colWise)
   :tablename(tableName?tableName:""),own_data(false),data(NULL),
@@ -625,14 +625,14 @@ InterpolationTable::InterpolationTable(double time, double startTime,
 {
   if (fileName && strncmp("NoName",fileName,6) != 0) {
     filename = fileName;
-    
+
     std::auto_ptr<FileWrapper> file(FileWrapper::openFile(filename));
-    
+
     if (file->findTable(tableName,cols,rows)) {
       data = new double[rows*cols];
       if (!data) throw AllocFailed("InterpolationTable","dobule",rows*cols);
       own_data = true;
-      
+
       file->readTable(data,rows,cols);
       file->close();
     } else {
@@ -661,7 +661,7 @@ double InterpolationTable::interpolate(double time, size_t col) const
 
   // substract time offset
   //fprintf(stderr, "time %g startTime %g\n", time, startTime);
-  
+
   if (time < minTime())
     return extrapolate(time,col,time <= minTime());
 
@@ -685,7 +685,7 @@ bool InterpolationTable::compare(const char* fname, const char* tname,
     return (filename == fname && tablename == tname);
   return false;
 }
-double InterpolationTable::extrapolate(double time, size_t col, 
+double InterpolationTable::extrapolate(double time, size_t col,
                bool beforeData) const
 {
   size_t lastIdx;
@@ -750,9 +750,9 @@ InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
 {
   if (fileName && strncmp("NoName",fileName,6) != 0) {
     filename = fileName;
-    
+
     std::auto_ptr<FileWrapper> file(FileWrapper::openFile(filename));
-    
+
     if (file->findTable(tableName,cols,rows)) {
       data = new double[rows*cols];
       if (!data) throw AllocFailed("InterpolationTable2D","double",rows*cols);
@@ -792,7 +792,7 @@ double InterpolationTable2D::interpolate(double x1, double x2)
     if (getElt(i,0) >= x1) break;
   for(j = 2; j < cols; ++j)
     if (getElt(0,j) >= x2) break;
-  
+
   // bilinear interpolation
   double f_1, f_2;
   f_1 = linInterpolate(x1,getElt(i-1,0),getElt(i,0),getElt(i-1,j-1),getElt(i,j-1));

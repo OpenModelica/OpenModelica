@@ -50,7 +50,7 @@ while( $line = <INP> ){
     }
   };
   if ($@) {
-    $dir = getcwd(); 
+    $dir = getcwd();
     $inStmtFile = $dir + "/" + $1;
   }
     $inStmtLine = $2;

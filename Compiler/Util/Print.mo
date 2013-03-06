@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -46,7 +46,7 @@ encapsulated package Print
   external "C" handle = Print_saveAndClearBuf() annotation(Library = "omcruntime");
 end saveAndClearBuf;
 
-public function restoreBuf 
+public function restoreBuf
   input Integer handle;
   external "C" Print_restoreBuf(handle) annotation(Library = "omcruntime");
 end restoreBuf;
@@ -117,15 +117,15 @@ public function printBufSpace
   external "C" Print_printBufSpace(inNumOfSpaces) annotation(Library = "omcruntime");
 end printBufSpace;
 
-public function printBufNewLine 
+public function printBufNewLine
 "Prints one new line character to the print buffer."
 
   external "C" Print_printBufNewLine() annotation(Library = "omcruntime");
 end printBufNewLine;
 
-public function hasBufNewLineAtEnd 
+public function hasBufNewLineAtEnd
 "Tests if the last outputted character in the print buffer is a new line.
- It is a (temporary) workaround to stringLength()'s O(n) cost." 
+ It is a (temporary) workaround to stringLength()'s O(n) cost."
   output Boolean outHasNewLineAtEnd ;
 
   external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd() annotation(Library = "omcruntime");

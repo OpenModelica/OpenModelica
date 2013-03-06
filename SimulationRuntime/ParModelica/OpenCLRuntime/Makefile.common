@@ -12,18 +12,18 @@ SRCS = \
 omc_ocl_memory_ops.c \
 omc_ocl_interface.c \
 omc_ocl_builtin_kernels.c \
-omc_ocl_util.c 
+omc_ocl_util.c
 
 OBJS = $(SRCS:.c=.o)
 
 .PHONY : ocloffc libOMOCLRuntime clean
 
 ocloffc: omc_ocl_util.h libOMOCLRuntime.a
-	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS) 
-	 
+	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS)
+
 libOMOCLRuntime.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)
-	
+
 clean :
 	rm -f *.o *.a

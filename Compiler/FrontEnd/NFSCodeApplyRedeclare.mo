@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -37,7 +37,7 @@ encapsulated package NFSCodeApplyRedeclare
   RCS: $Id: NFSCodeApplyRedeclare.mo 13614 2012-10-25 00:03:02Z perost $
 
   Prototype SCode transformation to SCode without:
-  - redeclares 
+  - redeclares
   - modifiers
   enable with +d=scodeInstShortcut.
 "
@@ -73,7 +73,7 @@ protected type IScopes = NFSCodeAnalyseRedeclare.IScopes;
 protected type IScope = NFSCodeAnalyseRedeclare.IScope;
 protected type Infos = NFSCodeAnalyseRedeclare.Infos;
 protected type Kind = NFSCodeAnalyseRedeclare.Kind;
- 
+
 protected constant Integer idx = 3;
 protected constant Integer idxNames = 4;
 
@@ -85,7 +85,7 @@ protected uniontype Change
     Changes changes;
     IScope s;
   end CLONE;
-    
+
   record REPLACE "replace element with the new one"
     Integer i;
     Absyn.Path originalName;
@@ -107,7 +107,7 @@ public function translate
   output Program outProg;
 algorithm
   outProg := matchcontinue(inClassPath, inEnv, inProgram)
-    local 
+    local
       Changes changes;
       String name;
       Program classes;
@@ -116,29 +116,29 @@ algorithm
     // no redeclares
     case (_, _, _)
       equation
-        {} = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);        
+        {} = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);
       then
         inProgram;
-    
+
     // some redeclares
     case (_, _, _)
       equation
-        (iscopes as _::_) = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);        
+        (iscopes as _::_) = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);
         changes = mkProgramChanges(iscopes, emptyChanges);
-        changes = listReverse(changes);        
+        changes = listReverse(changes);
         // print("Changes length: " +& intString(countChanges(changes)) +& "\n");
         // print("Cloned classes: " +& intString(countCloneChanges(changes)) +& " / Replaced elements: " +& intString(countReplChanges(changes)) +& "\n");
-        
-        printChanges(changes, 0);        
-        
+
+        printChanges(changes, 0);
+
         // print("Flattening changes ...\n");
-        changes = flattenChanges(changes, {});        
-        
+        changes = flattenChanges(changes, {});
+
         // printChanges(changes, 0);
-        
+
         // print("Starting the new apply phase ...\n");
         classes = applyChangesToProgram(inProgram, NFInstTypes.EMPTY_PREFIX(NONE()), Absyn.TOP(), inClassPath, changes);
-        // print("Done with the apply phase ...\n");          
+        // print("Done with the apply phase ...\n");
       then
         classes;
 
@@ -154,7 +154,7 @@ algorithm
 end translate;
 
 protected function mkProgramChanges
-"analyses the instantiation scopes IScopes and builds 
+"analyses the instantiation scopes IScopes and builds
  a list of changes to be applied to the full program"
   input IScopes inIScopes;
   input Changes inChangesAcc;
@@ -165,7 +165,7 @@ algorithm
       Changes changes;
       IScope is;
       IScopes rest;
-    
+
     // what we get here is just one scope
     case ({is}, _)
       equation
@@ -200,14 +200,14 @@ algorithm
       Infos infos;
       Prefix prefix;
       Absyn.Path name;
-    
+
     case (NFSCodeAnalyseRedeclare.IS(kind as NFSCodeAnalyseRedeclare.CL(name), infos, parts), _, _, _)
       equation
         parentScopes = inIScope::inParentIScopes;
         changes = mkClassChanges(kind, infos, parts, parentScopes, inNewName, inChangesAcc);
       then
         changes;
-    
+
     case (NFSCodeAnalyseRedeclare.IS(kind as NFSCodeAnalyseRedeclare.CO(prefix,_), infos, parts), _, _, _)
       equation
         parentScopes = inIScope::inParentIScopes;
@@ -248,7 +248,7 @@ algorithm
       IScope derivedTarget, is;
       Absyn.Path p;
       Option<Absyn.ArrayDim> ad;
-    
+
     // referenced class, clone it
     case (kind as NFSCodeAnalyseRedeclare.CL(n), infos, parts, _, _, _)
       equation
@@ -256,13 +256,13 @@ algorithm
         np = mkNewName(n, inParentIScopes, inNewName);
         is = List.first(inParentIScopes);
         i = System.tmpTickIndex(idx);
-        
+
         changes = List.fold2(parts, mkElementChanges, inParentIScopes, NONE(), {});
-        
+
         changes = CLONE(i, n, np, changes, is)::inChangesAcc;
       then
         changes;
-        
+
     // local class derived, clone the derived child
     case (kind as NFSCodeAnalyseRedeclare.CL(n), infos, {derivedTarget}, _, _, _)
       equation
@@ -291,9 +291,9 @@ algorithm
         e = mkNewElement(kind, infos, parts, inParentIScopes);
         is = List.first(inParentIScopes);
         i = System.tmpTickIndex(idx);
-        
+
         changes = List.fold2(parts, mkElementChanges, inParentIScopes, NONE(), {});
-        
+
         changes = REPLACE(i, n, e, changes, is)::inChangesAcc;
       then
         changes;
@@ -321,20 +321,20 @@ algorithm
       String nn, on;
       Option<Absyn.ArrayDim> ad;
       IScope is;
-    
+
     // component with no parts, no name changes!
     case (kind, infos, {}, _, _)
-      equation 
+      equation
         e = mkNewElement(kind, infos, {}, inParentIScopes);
         on = SCode.getElementName(e);
         is = List.first(inParentIScopes);
         i = System.tmpTickIndex(idx);
         changes = REPLACE(i, Absyn.IDENT(on), e, {}, is)::inChangesAcc;
       then
-        changes;    
-    
+        changes;
+
     case (kind, infos, parts, _, _)
-      equation 
+      equation
         e = mkNewElement(kind, infos, parts, inParentIScopes);
         on = SCode.getElementName(e);
         Absyn.TPATH(n, ad) = SCode.getComponentTypeSpec(e);
@@ -342,13 +342,13 @@ algorithm
         e = SCode.setComponentTypeSpec(e, Absyn.TPATH(np, ad));
         is = List.first(inParentIScopes);
         i = System.tmpTickIndex(idx);
-        
+
         changes = List.fold2(parts, mkElementChanges, inParentIScopes, SOME(np), {});
-        
+
         changes = REPLACE(i, Absyn.IDENT(on), e, changes, is)::inChangesAcc;
       then
         changes;
-    
+
   end matchcontinue;
 end mkComponentChanges;
 
@@ -371,7 +371,7 @@ algorithm
       Absyn.Path n, np;
       String nn;
       IScope is;
-        
+
     case (kind as NFSCodeAnalyseRedeclare.EX(n), infos, parts, _, _)
       equation
         e = mkNewElement(kind, infos, parts, inParentIScopes);
@@ -379,13 +379,13 @@ algorithm
         e = SCode.setBaseClassPath(e, np);
         is = List.first(inParentIScopes);
         i = System.tmpTickIndex(idx);
-        
+
         changes = List.fold2(parts, mkElementChanges, inParentIScopes, SOME(np), {});
-                
+
         changes = REPLACE(i, n, e, changes, is)::inChangesAcc;
       then
         changes;
-    
+
   end matchcontinue;
 end mkExtendsChanges;
 
@@ -399,14 +399,14 @@ algorithm
   outElement := matchcontinue(inKind, inInfos, inKids, inParentIScopes)
     local
       Element e;
-    
+
     case (_, _, _, _)
       equation
         e = NFSCodeAnalyseRedeclare.getElementFromInfos(inInfos);
         e = NFSCodeAnalyseRedeclare.removeRedeclareMods(e);
-      then 
+      then
         e;
-    
+
     else
       equation
         print("NFSCodeApplyRedeclare.mkNewElement failed on: " +& NFSCodeAnalyseRedeclare.infosStr(inInfos) +& "\n");
@@ -441,23 +441,23 @@ algorithm
       Absyn.Path nn;
       IScope s;
       SCode.Element n;
-    
+
     case ({}, _, _) then (inClonesAcc, inReplsAcc);
-    
+
     case (CLONE(i, on, nn, changes, s)::rest, _, _)
       equation
         (cl, rp) = splitChanges(changes, inClonesAcc, {});
-        (cl, rp) = splitChanges(rest, CLONE(i, on, nn, rp, s)::cl, inReplsAcc); 
+        (cl, rp) = splitChanges(rest, CLONE(i, on, nn, rp, s)::cl, inReplsAcc);
       then
         (cl, rp);
-    
+
     case (REPLACE(i, on, n, changes, s)::rest, _, _)
       equation
-        (cl, rp) = splitChanges(changes, inClonesAcc, {});       
-        (cl, rp) = splitChanges(rest, cl, REPLACE(i, on, n, rp, s)::inReplsAcc); 
+        (cl, rp) = splitChanges(changes, inClonesAcc, {});
+        (cl, rp) = splitChanges(rest, cl, REPLACE(i, on, n, rp, s)::inReplsAcc);
       then
         (cl, rp);
-    
+
   end matchcontinue;
 end splitChanges;
 
@@ -479,9 +479,9 @@ algorithm
       Absyn.Path nn;
       IScope s;
       SCode.Element n;
-    
+
     case (_, {}, _, _) then (listReverse(inMatchingAcc), listReverse(inRestAcc));
-    
+
     case (_, ch::rest, _, _)
       equation
         true = isClone(ch);
@@ -489,13 +489,13 @@ algorithm
         (macc, racc) = getClonesByScope(inScope, rest, ch::inMatchingAcc, inRestAcc);
       then
         (macc, racc);
-    
+
     case (_, ch::rest, _, _)
       equation
         (macc, racc) = getClonesByScope(inScope, rest, inMatchingAcc, ch::inRestAcc);
       then
         (macc, racc);
-    
+
   end matchcontinue;
 end getClonesByScope;
 
@@ -536,9 +536,9 @@ algorithm
       Absyn.Path nn;
       IScope s;
       SCode.Element n;
-    
+
     case (_, {}, _, _) then listReverse(inMatchingAcc);
-    
+
     case (_, ch::rest, _, true)
       equation
         true = isReplace(ch);
@@ -546,21 +546,21 @@ algorithm
         macc = getReplacementsByName(inName, rest, ch::inMatchingAcc, inExactMatch);
       then
         macc;
-    
+
     case (_, ch::rest, _, false)
       equation
         true = isReplace(ch);
         true = Absyn.pathSuffixOf(inName, getChangeName(ch));
         macc = getReplacementsByName(inName, rest, ch::inMatchingAcc, inExactMatch);
       then
-        macc;    
-    
+        macc;
+
     case (_, ch::rest, _, _)
       equation
         macc = getReplacementsByName(inName, rest, inMatchingAcc, inExactMatch);
       then
         macc;
-    
+
   end matchcontinue;
 end getReplacementsByName;
 
@@ -587,23 +587,23 @@ algorithm
       Absyn.Path on, nn;
       Element new;
       IScope s;
-    
+
     case (_, _)
       equation
-        false = Flags.isSet(Flags.SHOW_PROGRAM_CHANGES); 
-      then ();    
-    
+        false = Flags.isSet(Flags.SHOW_PROGRAM_CHANGES);
+      then ();
+
     case ({},_) then ();
-    
+
     case (CLONE(i, on, nn, changes, s)::rest, _)
       equation
         print(stringAppendList(List.fill(" ", inIndent)));
         {str, _} = NFSCodeAnalyseRedeclare.kindStr(NFSCodeAnalyseRedeclare.iScopeKind(s));
         str = "CLONE[" +& str +& "] ";
-        print(str +& Absyn.pathLastIdent(on) +& " -> " +& Absyn.pathString(nn) +& " [" +& intString(i) +& "]\n"); 
+        print(str +& Absyn.pathLastIdent(on) +& " -> " +& Absyn.pathString(nn) +& " [" +& intString(i) +& "]\n");
         printChanges(changes, inIndent + 1);
         printChanges(rest, inIndent);
-      then 
+      then
         ();
 
     case (REPLACE(i, on, new, changes, s)::rest, _)
@@ -611,10 +611,10 @@ algorithm
         print(stringAppendList(List.fill(" ", inIndent)));
         {str, n} = NFSCodeAnalyseRedeclare.kindStr(NFSCodeAnalyseRedeclare.iScopeKind(s));
         str = "REPL[" +& str +& "] ";
-        print(str +& n +& " -> " +& SCodeDump.shortElementStr(new) +& " [" +& intString(i) +& "]\n"); 
+        print(str +& n +& " -> " +& SCodeDump.shortElementStr(new) +& " [" +& intString(i) +& "]\n");
         printChanges(changes, inIndent + 1);
         printChanges(rest, inIndent);
-      then 
+      then
         ();
 
   end matchcontinue;
@@ -632,9 +632,9 @@ algorithm
     local
       Program rest, newp, newels;
       Element e, newe;
-    
+
     case ({}, _, _, _, _) then {};
-    
+
     case (e::rest, _, _, _, _)
       equation
         newels = applyChangesToElement(e, inPrefix, inScope, inClassPath, inChanges);
@@ -642,14 +642,14 @@ algorithm
         newp = listAppend(newels, newp);
       then
         newp;
-  
+
   end matchcontinue;
 end applyChangesToProgram;
 
 protected function applyChangesToElement
   input Element inElement;
   input Prefix inPrefix;
-  input Scope inScope;  
+  input Scope inScope;
   input Absyn.Path inClassPath;
   input Changes inChanges;
   output list<Element> outElements;
@@ -677,7 +677,7 @@ algorithm
       Changes clones, changes;
       Program classes;
       Boolean b;
-       
+
     // any other class
     case (SCode.CLASS(n, p, ep, pp, rp, cd, i), _, _, _, _)
       equation
@@ -691,31 +691,31 @@ algorithm
         classes = Util.if_(b, classes, e::classes);
       then
         classes;
-        
+
     case (SCode.COMPONENT(n, p, a, t, m, cmt, cnd, i), _, _, _, _)
       equation
         REPLACE(new = e)::changes = getReplacementsByName(Absyn.IDENT(n), inChanges, {}, true);
       then
         {e};
-    
+
     case (SCode.EXTENDS(bcp, v, m, ann, i), _, _, _, _)
       equation
         REPLACE(new = e)::changes = getReplacementsByName(bcp, inChanges, {}, false);
       then
         {e};
-        
+
     case (e, _, _, _, _)
       equation
-        //print("ignored: " +& SCodeDump.unparseElementStr(e) +& "\n"); 
+        //print("ignored: " +& SCodeDump.unparseElementStr(e) +& "\n");
       then
-        {e}; 
+        {e};
   end matchcontinue;
 end applyChangesToElement;
 
 protected function replaceClass
   input Element inElement;
   input Prefix inPrefix;
-  input Scope inScope;  
+  input Scope inScope;
   input Absyn.Path inClassPath;
   input Changes inChanges;
   output Element outElement;
@@ -726,15 +726,15 @@ algorithm
       String n;
       Changes changes;
       Change ch;
-       
+
     // any other class
     case (SCode.CLASS(name = n), _, _, _, _)
       equation
         REPLACE(new = e)::changes = getReplacementsByName(Absyn.IDENT(n), inChanges, {}, false);
       then
         e;
-    
-    else inElement; 
+
+    else inElement;
 
   end matchcontinue;
 end replaceClass;
@@ -742,7 +742,7 @@ end replaceClass;
 protected function cloneAndChange
   input Element inElement;
   input Prefix inPrefix;
-  input Scope inScope;  
+  input Scope inScope;
   input Absyn.Path inClassPath;
   input Changes inChanges;
   output list<Element> outElements;
@@ -778,9 +778,9 @@ algorithm
         classes = listAppend(els, classes);
       then
         (classes, b);
-    
+
   end matchcontinue;
-  
+
 end cloneAndChange;
 
 protected function applyChangesToClassDef
@@ -812,7 +812,7 @@ algorithm
       Boolean b;
       Changes changes;
       list<Program> els;
-      
+
     case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt), _, _, _, _)
       equation
         els = List.map4(el, applyChangesToElement, inPrefix, inScope, inClassPath, inChanges);
@@ -820,7 +820,7 @@ algorithm
         cd = SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt);
       then
         cd;
-        
+
     case (SCode.CLASS_EXTENDS(n, m, cd), _, _, _, _)
       equation
         cd = applyChangesToClassDef(cd, inPrefix, inScope, inClassPath, inChanges);
@@ -837,7 +837,7 @@ algorithm
     case (cd as SCode.ENUMERATION(enumLst = _), _, _, _, _)
       then
         cd;
-        
+
     case (cd as SCode.OVERLOAD(pathLst = _), _, _, _, _)
       then
         cd;
@@ -856,7 +856,7 @@ algorithm
   isSameScope := matchcontinue(inPath, inScope)
     local Absyn.Path p1, p2;
     case (p1, Absyn.WITHIN(p2)) then Absyn.pathEqual(p1, p2);
-    else false; 
+    else false;
   end matchcontinue;
 end sameScope;
 
@@ -890,11 +890,11 @@ algorithm
       Absyn.Path p;
       Scope w;
       String n;
-    
+
     // top scope, add name
     case (Absyn.TOP()) then "";
     case (Absyn.WITHIN(p)) then Absyn.pathString(p);
-    
+
   end matchcontinue;
 end scopeStr;
 
@@ -906,19 +906,19 @@ algorithm
     local
       Changes rest, changes;
       Integer n;
-    
+
     case ({}) then 0;
-    
+
     case (CLONE(changes = changes)::rest)
       equation
         n = 1 + countChanges(changes) + countChanges(rest);
-      then 
+      then
         n;
-    
+
     case (REPLACE(changes = changes)::rest)
       equation
         n = 1 + countChanges(changes) + countChanges(rest);
-      then 
+      then
         n;
   end matchcontinue;
 end countChanges;
@@ -931,19 +931,19 @@ algorithm
     local
       Changes rest, changes;
       Integer n;
-    
+
     case ({}) then 0;
-    
+
     case (CLONE(changes = changes)::rest)
       equation
         n = 1 + countCloneChanges(changes) + countCloneChanges(rest);
-      then 
+      then
         n;
-    
+
     case (REPLACE(changes = changes)::rest)
       equation
         n = countCloneChanges(changes) + countCloneChanges(rest);
-      then 
+      then
         n;
   end matchcontinue;
 end countCloneChanges;
@@ -956,19 +956,19 @@ algorithm
     local
       Changes rest, changes;
       Integer n;
-    
+
     case ({}) then 0;
-    
+
     case (CLONE(changes = changes)::rest)
       equation
         n = countReplChanges(changes) + countReplChanges(rest);
-      then 
+      then
         n;
-    
+
     case (REPLACE(changes = changes)::rest)
       equation
         n = 1 + countReplChanges(changes) + countReplChanges(rest);
-      then 
+      then
         n;
   end matchcontinue;
 end countReplChanges;
@@ -1003,34 +1003,34 @@ algorithm
       equation
         str = "'" +& Absyn.pathLastIdent(p) +& "/" +& inName +& "'";
         p = Absyn.pathSetLastIdent(p, Absyn.IDENT(str));
-      then 
+      then
         SCode.CLASS(n, pf, ep, pp, res, SCode.DERIVED(Absyn.TPATH(p, ad), mod, attr, cmt), i);
 
     case (SCode.CLASS(n, pf, ep, pp, res, cdef, i), _)
       equation
         n = "'" +& n +& "/" +& inName +& "'";
-      then 
+      then
         SCode.CLASS(n, pf, ep, pp, res, cdef, i);
 
     case (SCode.COMPONENT(n, pf, attr, ty, mod, cmt, cond, i), _)
       equation
         n = "'" +& n +& "/" +& inName +& "'";
-      then 
+      then
         SCode.COMPONENT(n, pf, attr, ty, mod, cmt, cond, i);
 
     case (SCode.EXTENDS(bcp, v, mod, ann, i), _)
       equation
         n = "'" +& Absyn.pathLastIdent(bcp) +& "/" +& inName +& "'";
         bcp = Absyn.pathSetLastIdent(bcp, Absyn.IDENT(n));
-      then 
+      then
         SCode.EXTENDS(bcp, v, mod, ann, i);
 
     case (e, _)
       equation
         print("NFSCodeApplyRedeclare.setElementName failed on applying name: " +&
-        inName +& " for element:\n" +& 
-        SCodeDump.unparseElementStr(e) +& "\n"); 
-      then 
+        inName +& " for element:\n" +&
+        SCodeDump.unparseElementStr(e) +& "\n");
+      then
         fail();
   end matchcontinue;
 end setElementName;
@@ -1048,11 +1048,11 @@ protected
 algorithm
   new := matchcontinue(p, parentScopes, served)
     case (_, _, SOME(new)) then new;
-    case (_, _, _) 
+    case (_, _, _)
       equation
-        i = System.tmpTickIndex(idxNames);  
+        i = System.tmpTickIndex(idxNames);
         nn = Absyn.pathLastIdent(p) +& "__OMC__" +& intString(i);
-        // nn = "'" +& Absyn.pathLastIdent(n) +& "_" +& NFSCodeAnalyseRedeclare.iScopesStrNoParts(listReverse(parentScopes)) +& "'"; 
+        // nn = "'" +& Absyn.pathLastIdent(n) +& "_" +& NFSCodeAnalyseRedeclare.iScopesStrNoParts(listReverse(parentScopes)) +& "'";
         new = Absyn.pathSetLastIdent(p, Absyn.IDENT(nn));
      then
        new;

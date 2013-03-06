@@ -1,8 +1,8 @@
 //
 // Copyright Karl Meerbergen 2007
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
@@ -17,10 +17,10 @@
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.h>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits/is_same.hpp>
-#endif 
+#endif
 
 
   /********************************************************************/
@@ -34,14 +34,14 @@ namespace boost { namespace numeric { namespace bindings { namespace lapack {
 
     namespace detail {
 
-      inline 
-      void steqr ( char compz, int n, float* d, float* e, float* z, int ldz, float* work, int& info ) 
+      inline
+      void steqr ( char compz, int n, float* d, float* e, float* z, int ldz, float* work, int& info )
       {
         LAPACK_SSTEQR( &compz, &n, d, e, z, &ldz, work, &info ) ;
       }
 
-      inline 
-      void steqr ( char compz, int n, double* d, double* e, double* z, int ldz, double* work, int& info ) 
+      inline
+      void steqr ( char compz, int n, double* d, double* e, double* z, int ldz, double* work, int& info )
       {
         LAPACK_DSTEQR( &compz, &n, d, e, z, &ldz, work, &info ) ;
       }
@@ -61,15 +61,15 @@ namespace boost { namespace numeric { namespace bindings { namespace lapack {
 
       int lwork = traits::vector_size( work ) ;
 
-      int info; 
+      int info;
       detail::steqr( compz, n,
-                     traits::vector_storage( d ), 
-                     traits::vector_storage( e ), 
-                     traits::matrix_storage( z ), 
-                     traits::leading_dimension( z ), 
-                     traits::vector_storage( work ),  
+                     traits::vector_storage( d ),
+                     traits::vector_storage( e ),
+                     traits::matrix_storage( z ),
+                     traits::leading_dimension( z ),
+                     traits::vector_storage( work ),
                      info ) ;
-      return info; 
+      return info;
     } // steqr()
 
 

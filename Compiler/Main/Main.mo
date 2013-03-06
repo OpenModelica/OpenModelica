@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -157,13 +157,13 @@ algorithm
       list<Interactive.InstantiatedClass> b;
       Interactive.Statements exp;
       list<Interactive.LoadedFile> lf;
-    
+
     case (str,isymb)
       equation
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
-    
+
     // Interactively evaluate an algorithm statement or expression
     case (str,isymb)
       equation
@@ -182,7 +182,7 @@ algorithm
         ErrorExt.delCheckpoint("parsestring");
       then
         (true,res,newisymb);
-    
+
     // Add a class or function to the interactive symbol table.
     // If it is a function, type check it.
     case (str,
@@ -211,7 +211,7 @@ algorithm
         isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf,lf);
       then
         (true,res,isymb);
-    
+
     case (_,isymb)
       equation
         Print.printBuf("Error occured building AST\n");
@@ -220,7 +220,7 @@ algorithm
         str = stringAppend(str, Error.printMessagesStr());
       then
         (true,str,isymb);
-    
+
     case (str,isymb)
       equation
         _ = setStackOverflowSignal(false);
@@ -230,30 +230,30 @@ algorithm
   end matchcontinue;
 end handleCommand;
 
-protected function makeClassDefResult 
+protected function makeClassDefResult
 "creates a list of classes of the program to be returned from evaluate"
   input Absyn.Program p;
   output String res;
 algorithm
   res := match(p)
-    local 
+    local
       list<Absyn.Path> names;
       Absyn.Path scope;
       list<Absyn.Class> cls;
-    
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))) 
+
+    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
       equation
         names = List.map(cls,Absyn.className);
         names = List.map1(names,Absyn.joinPaths,scope);
         res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
-    
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) 
+
+    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
         names = List.map(cls,Absyn.className);
         res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
-  
+
   end match;
 end makeClassDefResult;
 
@@ -266,7 +266,7 @@ algorithm
     local
       list<String> lst;
       String last,filename;
-    
+
     case (filename)
       equation
         lst = System.strtok(filename, ".");
@@ -274,7 +274,7 @@ algorithm
         true = stringEq(last, "mo");
       then
         ();
-    
+
     case (filename)
       equation
         lst = System.strtok(filename, ".");
@@ -282,7 +282,7 @@ algorithm
         true = stringEq(last, "mof");
       then
         ();
-  
+
   end matchcontinue;
 end isModelicaFile;
 
@@ -536,7 +536,7 @@ algorithm
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
-        
+
         str = Print.getString();
         silent = Config.silent();
         notsilent = boolNot(silent);
@@ -555,14 +555,14 @@ algorithm
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
         st = loadLibs(libs, Interactive.emptySymboltable);
-        
+
         //System.startTimer();
         //print("\nParseExp");
-        // parse our algorithm given in the script        
+        // parse our algorithm given in the script
         stmts = Parser.parseexp(f);
         //System.stopTimer();
         //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));
-        
+
         // are there any errors?
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
@@ -643,7 +643,7 @@ algorithm
         (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
         (c, e, d, class_path);
-    
+
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -791,10 +791,10 @@ algorithm
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
-     
+
      // If accepting parModelica create a slightly different default settings.
      // Temporary solution for now since Intel OpenCL dll calls hang.
-     // So use simple Models and call the needed functions.  
+     // So use simple Models and call the needed functions.
      case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
         true = Config.simulationCg();
@@ -806,8 +806,8 @@ algorithm
         (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
-        ();   
-     
+        ();
+
     /* If not generating simulation code: Succeed so no error messages are printed */
     else
       equation
@@ -993,15 +993,15 @@ public function setWindowsPaths
 "@author: adrpo
  set the windows paths for MinGW.
  do some checks on where needed things are present.
- BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW 
+ BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW
               changes you will need to change here!"
   input String inOMHome;
 algorithm
   _ := matchcontinue(inOMHome)
     local
       String oldPath,newPath,mingwPath,omHome,omdevPath;
-    
-    // check if we have OMDEV set 
+
+    // check if we have OMDEV set
     case (omHome)
       equation
         _ = System.setEnv("OPENMODELICAHOME",omHome,true);
@@ -1021,7 +1021,7 @@ algorithm
         _ = System.setEnv("PATH",newPath,true);
       then
         ();
-    
+
     case (omHome)
       equation
         _ = System.setEnv("OPENMODELICAHOME",omHome,true);
@@ -1036,17 +1036,17 @@ algorithm
                                     omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
                                     oldPath});
         _ = System.setEnv("PATH",newPath,true);
-      then 
+      then
         ();
-    
-    else 
+
+    else
       equation
         print("We could not find any of:\n");
         print("\t$OPENMODELICAHOME/MinGW/bin and $OPENMODELICAHOME/MinGW/libexec/gcc/mingw32/4.4.0\n");
         print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
       then
-        (); 
-  
+        ();
+
   end matchcontinue;
 end setWindowsPaths;
 
@@ -1086,7 +1086,7 @@ algorithm
       String errstr;
       String omhome;
       Interactive.SymbolTable symbolTable;
-      
+
     // Version requested using --version
     case _ // try first to see if we had a version request among flags.
       equation
@@ -1096,19 +1096,19 @@ algorithm
       then ();
 
     // Setup mingw path only once
-    // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT 
+    // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT
     //        without asking Adrian.Pop@liu.se
     case _
       equation
         true = "Windows_NT" ==& System.os();
         omhome = Settings.getInstallationDirectoryPath();
-        setWindowsPaths(omhome);        
-        
+        setWindowsPaths(omhome);
+
         // setup an file database (for in-memory use :memory: as name)
         //Database.open(0, "omc.db");
         //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
         //_ = Database.query(0, "begin transaction;");
-      then 
+      then
         fail();
 
     case _
@@ -1130,17 +1130,17 @@ algorithm
         symbolTable = readSettings(args);
         interactivemodeCorba(symbolTable);
       then ();
-    
+
     case _::_
       equation
         false = Flags.isSet(Flags.INTERACTIVE);
         false = Flags.isSet(Flags.INTERACTIVE_CORBA);
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
-        
+
         // debug_show_depth(2);
-        
-        // reset the timer used to calculate 
+
+        // reset the timer used to calculate
         // cummulative time of some functions
         // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
@@ -1159,7 +1159,7 @@ algorithm
         //dbResult = Database.query(0, "select * from Inst");
       then
         ();
-    
+
     case _
       equation
         true = System.userIsRoot();
@@ -1169,13 +1169,13 @@ algorithm
         print("* OpenModelica allows execution of arbitrary commands.\n");
         print("The good news is there is no reason to run OpenModelica as root.\n");
       then fail();
-    
+
     case {}
       equation
         false = System.userIsRoot();
         print(Debug.bcallret0(not Config.helpRequest() /* Already printed help */, Flags.printUsage, ""));
       then ();
-    
+
     case _
       equation
         true = not System.userIsRoot() or Config.getRunningTestsuite();
@@ -1196,7 +1196,7 @@ algorithm
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");
         print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
-        
+
         // Functions used by external code that needs to be included for linking
         _ = Absyn.isDerCref;
       then fail();

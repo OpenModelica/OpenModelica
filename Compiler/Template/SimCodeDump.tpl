@@ -71,7 +71,7 @@ template dumpVarsShort(list<SimVar> vars)
   ;separator="\n";empty)
   <<
   <%varsString%>
-  
+
   >>
 end dumpVarsShort;
 
@@ -159,7 +159,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
             <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
           </row>
           <matrix>
-            <%simJac |> (i1,i2,eq) => 
+            <%simJac |> (i1,i2,eq) =>
             <<
             <cell row="<%i1%>" col="<%i2%>">
               <%match eq case e as SES_RESIDUAL(__) then

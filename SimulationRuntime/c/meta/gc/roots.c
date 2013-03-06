@@ -57,7 +57,7 @@ mmc_GC_roots_type roots_create(size_t default_roots_size, size_t default_roots_m
   /* the limit points to the end of the roots array */
   roots.limit = default_roots_size;
 
-  roots.marks            = stack_create(default_roots_mark_size); 
+  roots.marks            = stack_create(default_roots_mark_size);
   roots.rootsStackIndex  = 0;  /* set the stack element index to 0 */
 
   return roots;
@@ -132,14 +132,14 @@ mmc_GC_roots_type roots_decrease(mmc_GC_roots_type roots, size_t default_roots_s
 void mmc_GC_add_roots_fallback(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
 {
   int i;
-  /* init GC if is not already done 
+  /* init GC if is not already done
   if (!mmc_GC_state)
   {
     mmc_GC_init(mmc_GC_settings_default);
   }
   assert(mmc_GC_state != NULL);
   */
-  
+
   while (mmc_GC_state->roots.current + 1 >=  mmc_GC_state->roots.limit)
   {
     /* roots are filled, realloc! */

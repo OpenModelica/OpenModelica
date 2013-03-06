@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -164,7 +164,7 @@ algorithm
   NFConnect2.CONNECTOR(_, ty, face, cty, attr) := inConnector;
   outConnector := NFConnect2.CONNECTOR(inName, ty, face, cty, attr);
 end renameConnector;
-  
+
 public function updateConnectorType
   input DAE.Type inType;
   input Connector inConnector;
@@ -178,7 +178,7 @@ algorithm
   NFConnect2.CONNECTOR(name, _, face, cty, attr) := inConnector;
   outConnector := NFConnect2.CONNECTOR(name, inType, face, cty, attr);
 end updateConnectorType;
-  
+
 public function connectorEqual
   input Connector inConnector1;
   input Connector inConnector2;
@@ -253,7 +253,7 @@ algorithm
   cty_str := connectorTypeStr(cty);
   outString := cty_str +& " " +& name_str +& "<" +& face_str +& ">";
 end connectorStr;
-  
+
 public function faceStr
   input Face inFace;
   output String outString;
@@ -634,7 +634,7 @@ algorithm
   attr := NFConnect2.CONN_ATTR(var, vis, dir);
   outConnector := makeConnector2(cref, ty, inFace, cty, attr);
 end varToConnector;
-  
+
 protected function expandConnector2
   input DAE.ComponentRef inCref;
   input DAE.Type inType;
@@ -705,7 +705,7 @@ algorithm
 
   end match;
 end getConnectorFace;
-        
+
 public function isConstOrComplexConnector
   input Connector inConnector;
   output Boolean outIsConstOrComplex;
@@ -720,7 +720,7 @@ algorithm
 
   end match;
 end isConstOrComplexConnector;
-    
+
 public function isExpandableConnector
   "Returns true if the connector is an expandable connector."
   input Connector inConnector;

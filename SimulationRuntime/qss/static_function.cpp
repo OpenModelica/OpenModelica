@@ -47,18 +47,18 @@ void StaticFunction::init(Time t, unsigned int i)
   outdt = new double[outVars];
   out_dt = new double[outVars];
   if (order>1) {
-    out_2dt = new double[outVars]; 
-    out2dt = new double[outVars]; 
+    out_2dt = new double[outVars];
+    out2dt = new double[outVars];
   }
 }
- 
+
 void StaticFunction::makeStep(Time t)
 {
   // Evaluate at t
   advanceInputs(t);
   function_staticBlocks(index,t,inp,out);
 
-  if (order>1) 
+  if (order>1)
   {
     // Evaluate at t-dt
     advanceInputs(t-dt);
@@ -75,7 +75,7 @@ void StaticFunction::makeStep(Time t)
   globalData->timeValue=t;
 }
 
-void StaticFunction::update(Time t) 
+void StaticFunction::update(Time t)
 {
   sigma=0;
 }
@@ -98,7 +98,7 @@ void StaticFunction::writeOutputs(Time t)
       //cout << "Block " << devsIndex << " writes der " << stateNumber(*it) << endl;
       //derX[stateNumber(*it)].sampledAt(t);
       //derX[stateNumber(*it)].setCoeff(0,out[i]);
-      //if (order>1) 
+      //if (order>1)
         //derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     } else {
       //cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
@@ -107,11 +107,11 @@ void StaticFunction::writeOutputs(Time t)
       //if (order>1)
         //alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     }
-    if (order==2) 
+    if (order==2)
     {
       const double ddf=(outdt[i]-2*out[i]+out_dt[i])/(dt*dt*2);
       const double tolerr=dQmin+dQrel*fabs(out[i]);
-      if (ddf!=0) 
+      if (ddf!=0)
       {
         const double s=.9*sqrt(fabs(ddf/tolerr));
         if (s<sigma) {
@@ -120,7 +120,7 @@ void StaticFunction::writeOutputs(Time t)
         }
       }
     }
-  } 
+  }
 }
 
 void StaticFunction::advanceInputs(Time t)

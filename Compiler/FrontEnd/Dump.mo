@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -39,9 +39,9 @@ encapsulated package Dump
   Printing routines for debugging of the AST.  These functions do
   nothing but print the data structures to the standard output.
 
-  The main entrypoint for this module is the function Dump.dump 
-  which takes an entire program as an argument, and prints it all 
-  in Modelica source form. The other interface functions can be 
+  The main entrypoint for this module is the function Dump.dump
+  which takes an entire program as an argument, and prints it all
+  in Modelica source form. The other interface functions can be
   used to print smaller portions of a program."
 
 // public imports
@@ -107,7 +107,7 @@ public function unparseStr
   input Boolean markup "
     Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica.
     Contact peter.aronsson@mathcore.com for an explanation.
-    
+
     Note: This will be used for a different purpose in OpenModelica once we redesign Dump to use templates
           ... by sending in DumpOptions (for example to add markup, etc)
     ";
@@ -231,7 +231,7 @@ algorithm
       tuple<String,String> re;
       list<Absyn.Path> paths;
       String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs, finalStr;
-      
+
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
     // if the order is not the one above the parser will give errors!
@@ -252,7 +252,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,tvs,s5,"\n",s4,is,"end ",n});
       then
         str;
-    
+
     case (_,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                              body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = cmt)),fi,re,io)
       equation
@@ -270,7 +270,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
       then
         str;
-    
+
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
@@ -286,7 +286,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
       then
         str;
-    
+
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
@@ -301,7 +301,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
       then
         str;
-    
+
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
@@ -319,7 +319,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
-    
+
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
           body = Absyn.PDER(functionName = fname,vars = vars,comment=cmt)),fi,re,io)
       equation
@@ -369,7 +369,7 @@ algorithm
       Ident s1,s2,s2_1,s3,str,n;
       Boolean p,f,e;
       Absyn.Restriction r;
-    
+
     case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = _))
       equation
         s1 = selectString(p, "partial ", "");
@@ -392,16 +392,16 @@ algorithm
     local
       Ident s1,str,cmt;
       Option<Absyn.Annotation> annopt;
-    
+
     case (NONE()) then "";
-    
+
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         s1 = unparseAnnotationOption(0, annopt);
         str = stringAppendList({" \"",cmt,"\"",s1});
       then
         str;
-    
+
     case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         str = unparseAnnotationOption(0, annopt);
@@ -418,13 +418,13 @@ public function unparseCommentOptionNoAnnotation
 algorithm
   outString := matchcontinue (inAbsynCommentOption)
     local Ident str,cmt;
-    
+
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
       equation
         str = stringAppendList({" \"",cmt,"\""});
       then
         str;
-    
+
     case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
@@ -438,13 +438,13 @@ algorithm
     local
       Ident str,cmt;
       Option<Absyn.Annotation> annopt;
-    
+
     case (NONE())
       equation
         Print.printBuf("NONE()");
       then
         ();
-    
+
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
@@ -453,7 +453,7 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    
+
     case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
@@ -471,13 +471,13 @@ protected function dumpAnnotationOption
 algorithm
   _ := match (inAbsynAnnotationOption)
     local list<Absyn.ElementArg> mod;
-    
+
     case (NONE())
       equation
         Print.printBuf("NONE()");
       then
         ();
-    
+
     case (SOME(Absyn.ANNOTATION(mod)))
       equation
         Print.printBuf("SOME(Absyn.ANNOTATION(");
@@ -500,9 +500,9 @@ algorithm
       Option<Absyn.Comment> optcmt;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
-    
+
     case ({}) then "";
-    
+
     case ((Absyn.ENUMLITERAL(literal = str,comment = optcmt) :: (a :: b)))
       equation
         s1 = unparseCommentOption(optcmt);
@@ -510,7 +510,7 @@ algorithm
         res = stringAppendList({str,s1,", ",s2});
       then
         res;
-    
+
     case ({Absyn.ENUMLITERAL(literal = str,comment = NONE())}) then str;
     case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt as SOME(_))})
       equation
@@ -544,9 +544,9 @@ algorithm
       Option<Absyn.Comment> optcmt,optcmt2;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
-    
+
     case ({}) then ();
-    
+
     case ((Absyn.ENUMLITERAL(literal = str,comment = optcmt) :: (a :: b)))
       equation
         Print.printBuf("Absyn.ENUMLITERAL(\"");
@@ -557,7 +557,7 @@ algorithm
         printEnumliterals2((a :: b));
       then
         ();
-    
+
     case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt),Absyn.ENUMLITERAL(literal = str2,comment = optcmt2)})
       equation
         Print.printBuf("Absyn.ENUMLITERAL(\"");
@@ -621,7 +621,7 @@ algorithm
       list<Interactive.Statement> l;
       Boolean sc;
       String str;
-      
+
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
       equation
         str = unparseAlgorithmStr(0, alg);
@@ -633,14 +633,14 @@ algorithm
         str = printExpStr(expr);
       then
         str;
-    
+
     case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
       equation
         str = unparseAlgorithmStr(0, alg);
         str = str +& "; " +& printIstmtStr(Interactive.ISTMTS(l,sc));
       then
         str;
-        
+
     case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IEXP(exp = expr) :: l),semicolon = sc))
       equation
         str = printExpStr(expr);
@@ -662,7 +662,7 @@ algorithm
       Absyn.Exp expr;
       list<Interactive.Statement> l;
       Boolean sc;
-    
+
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
       equation
         Print.printBuf("IALG(");
@@ -670,7 +670,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
-    
+
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IEXP(exp = expr)}))
       equation
         Print.printBuf("IEXP(");
@@ -678,7 +678,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
-    
+
     case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
       equation
         Print.printBuf("IALG(");
@@ -886,11 +886,11 @@ algorithm
     case Absyn.R_EXP_CONNECTOR() equation Print.printBuf("Absyn.R_EXP_CONNECTOR"); then ();
     case Absyn.R_TYPE() equation Print.printBuf("Absyn.R_TYPE"); then ();
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())) 
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))
       equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE))"); then ();
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE())) 
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE()))
       equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE))"); then ();
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())) 
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY()))
       equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY))"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION)"); then ();
@@ -1233,14 +1233,14 @@ algorithm
       Option<Absyn.Annotation> ann,ann2;
       list<Absyn.AlgorithmItem> als;
       list<Absyn.Exp> exps;
-    
+
     case (i,Absyn.PUBLIC(contents = {}),_) then "";
     case (i,Absyn.PROTECTED(contents = {}),_) then "";
     case (i,Absyn.EQUATIONS(contents = {}),_) then "";
     case (i,Absyn.INITIALEQUATIONS(contents = {}),_) then "";
     case (i,Absyn.ALGORITHMS(contents = {}),_) then "";
     case (i,Absyn.INITIALALGORITHMS(contents = {}),_) then "";
-    
+
     case (i,Absyn.PUBLIC(contents = el),true)
       equation
         s1 = unparseElementitemStrLst(i, el);
@@ -1248,7 +1248,7 @@ algorithm
         str = stringAppendList({s1});
       then
         str;
-    
+
     case (i,Absyn.PUBLIC(contents = el),false)
       equation
         s1 = unparseElementitemStrLst(i, el);
@@ -1257,7 +1257,7 @@ algorithm
         str = stringAppendList({is,"public\n",s1});
       then
         str;
-    
+
     case (i,Absyn.PROTECTED(contents = el),_)
       equation
         s1 = unparseElementitemStrLst(i, el);
@@ -1285,7 +1285,7 @@ algorithm
         str = stringAppendList({is,"equation\n",s1});
       then
         str;
-    
+
     case (i,Absyn.INITIALEQUATIONS(contents = eqs),_)
       equation
         s1 = unparseEquationitemStrLst(i, eqs, "\n");
@@ -1294,7 +1294,7 @@ algorithm
         str = stringAppendList({is,"initial equation\n",s1});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMS(contents = als),_)
       equation
         s1 = unparseAlgorithmStrLst(i, als, "\n");
@@ -1303,7 +1303,7 @@ algorithm
         str = stringAppendList({is,"algorithm\n",s1,"\n"});
       then
         str;
-    
+
     case (i,Absyn.INITIALALGORITHMS(contents = als),_)
       equation
         s1 = unparseAlgorithmStrLst(i, als, "\n");
@@ -1312,7 +1312,7 @@ algorithm
         str = stringAppendList({is,"initial algorithm\n",s1,"\n"});
       then
         str;
-    
+
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
                           funcName = SOME(ident),lang = lang,output_ = SOME(output_),
                           args = expl,annotation_ = ann),annotation_ = ann2),_)
@@ -1329,7 +1329,7 @@ algorithm
           expstr,") ",annstr,";",annstr2,"\n"});
       then
         str;
-    
+
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
                            funcName = SOME(ident),lang = lang,output_ = NONE(),
                            args = expl,annotation_ = ann),annotation_ = ann2),_)
@@ -1345,7 +1345,7 @@ algorithm
           annstr,"; ",annstr2,"\n"});
       then
         str;
-    
+
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
                            funcName = NONE(),lang = lang,output_ = NONE(),
                            annotation_ = ann),annotation_ = ann2),_)
@@ -1743,7 +1743,7 @@ algorithm
       list<Absyn.ElementArg> el;
       String path_str, el_str, cmt_str;
 
-    case (Absyn.CONSTRAINCLASS(elementSpec = 
+    case (Absyn.CONSTRAINCLASS(elementSpec =
         Absyn.EXTENDS(path = path, elementArg = el), comment = cmt))
       equation
         path_str = Absyn.pathString(path);
@@ -1928,7 +1928,7 @@ algorithm
         str = unparseClassStr(i, cl, f, r, io);
       then
         str;
-    
+
     case (i,Absyn.EXTENDS(path = p,elementArg = {},annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
@@ -1939,7 +1939,7 @@ algorithm
         str = stringAppendList({is,s2,s3});
       then
         str;
-    
+
     case (i,Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
@@ -1951,7 +1951,7 @@ algorithm
         str = stringAppendList({is,s2,"(",s3,")",s4});
       then
         str;
-    
+
     case (i,Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs),f,r,io)
       equation
         s1 = unparseTypeSpec(t);
@@ -1963,7 +1963,7 @@ algorithm
         str = stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
       then
         str;
-    
+
     case (i,Absyn.IMPORT(import_ = imp),f,r,io)
       equation
         s1 = unparseImportStr(imp);
@@ -1973,7 +1973,7 @@ algorithm
         str = stringAppendList({is,s2});
       then
         str;
-    
+
     case (_,_,_,_,_)
       equation
         Print.printBuf(" ##ERROR## ");
@@ -1992,7 +1992,7 @@ algorithm
       Ident i;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
-    
+
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
         Print.printBuf(i);
@@ -2000,13 +2000,13 @@ algorithm
         printPath(p);
       then
         ();
-    
+
     case (Absyn.QUAL_IMPORT(path = p))
       equation
         printPath(p);
       then
         ();
-    
+
     case (Absyn.UNQUAL_IMPORT(path = p))
       equation
         printPath(p);
@@ -2053,7 +2053,7 @@ algorithm
       Ident s1,s2,str,i;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
-    
+
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
         s1 = stringAppend(i, " = ");
@@ -2061,13 +2061,13 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str;
-    
+
     case (Absyn.QUAL_IMPORT(path = p))
       equation
         str = Absyn.pathString(p);
       then
         str;
-    
+
     case (Absyn.UNQUAL_IMPORT(path = p))
       equation
         s1 = Absyn.pathString(p);
@@ -2098,7 +2098,7 @@ algorithm
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    
+
     case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
@@ -2116,7 +2116,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (_)
       equation
         Print.printBuf(" ##ERROR## print_elementattr");
@@ -2238,7 +2238,7 @@ algorithm
   end match;
 end unparseDirectionSymbolStr;
 
-public function unparseParallelismSymbolStr 
+public function unparseParallelismSymbolStr
   input Absyn.Parallelism inParallelism;
   output String outString;
 algorithm
@@ -2662,7 +2662,7 @@ algorithm
       Absyn.ComponentRef cr;
       Absyn.FunctionArgs fargs;
       Absyn.ComponentRef cr1,cr2;
-    
+
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation
         Print.printBuf("IF (");
@@ -2674,7 +2674,7 @@ algorithm
         printListDebug("print_equation", fb, printEquationitem, ";");
       then
         ();
-    
+
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         Print.printBuf("EQ_EQUALS(");
@@ -2684,7 +2684,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.EQ_NORETCALL(functionName = cr,functionArgs = fargs)) /* EQ_NORETCALL */
       equation
         Print.printBuf("EQ_NORETCALL(");
@@ -2693,7 +2693,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.EQ_CONNECT(connector1 = cr1,connector2 = cr2))
       equation
         Print.printBuf("EQ_CONNECT(");
@@ -2703,7 +2703,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.EQ_FOR(iterators=iterators,forEquations = el)
       equation
         Print.printBuf("FOR ");
@@ -2713,7 +2713,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     case Absyn.EQ_FAILURE(equItem)
       equation
         Print.printBuf("FAILURE(");
@@ -2721,7 +2721,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN EQUATION ** ");
@@ -2735,9 +2735,9 @@ protected function printEquationitem "function: printEquationitem
   input Absyn.EquationItem inEquationItem;
 algorithm
   _ := match (inEquationItem)
-    local 
+    local
       Absyn.Equation eq;
-    
+
     case Absyn.EQUATIONITEM(equation_ = eq)
       equation
         Print.printBuf("EQUATIONITEM(");
@@ -2745,7 +2745,7 @@ algorithm
         Print.printBuf(", <comment>)\n");
       then
         ();
-    
+
     case Absyn.EQUATIONITEMANN(annotation_ = _)
       equation
         Print.printBuf("EQUATIONITEMANN(<annotation>)\n");
@@ -2772,7 +2772,7 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb,eqlelse;
       Absyn.FunctionArgs fargs;
       Absyn.EquationItem equItem;
-    
+
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = {}))
       equation
         s1 = printExpStr(e);
@@ -2782,7 +2782,7 @@ algorithm
         str = stringAppendList({is,"if ",s1," then\n",s2,is,"end if"});
       then
         str;
-    
+
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation
         s1 = printExpStr(e);
@@ -2795,7 +2795,7 @@ algorithm
           {is,"if ",s1," then\n",s2,s3,is,"else\n",s4,is, "end if"});
       then
         str;
-    
+
     case (i,Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         s1 = printExpStr(e1);
@@ -2804,7 +2804,7 @@ algorithm
         str = stringAppendList({is,s1," = ",s2});
       then
         str;
-    
+
     case (i,Absyn.EQ_CONNECT(connector1 = cr1,connector2 = cr2))
       equation
         s1 = printComponentRefStr(cr1);
@@ -2813,7 +2813,7 @@ algorithm
         str = stringAppendList({is,"connect(",s1,",",s2,")"});
       then
         str;
-    
+
     case (i,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
       equation
         s1 = printIteratorsStr(iterators);
@@ -2822,7 +2822,7 @@ algorithm
         str = stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
       then
         str;
-    
+
     case (i,Absyn.EQ_NORETCALL(functionName = cref,functionArgs = fargs))
       equation
         s2 = printFunctionArgsStr(fargs);
@@ -2831,7 +2831,7 @@ algorithm
         str = stringAppendList({is, id,"(",s2,")"});
       then
         str;
-    
+
     case (i,Absyn.EQ_WHEN_E(whenExp = exp,whenEquations = eql,elseWhenEquations = eqlelse))
       equation
         s1 = printExpStr(exp);
@@ -2842,7 +2842,7 @@ algorithm
         str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
       then
         str;
-    
+
     case (i,Absyn.EQ_FAILURE(equItem))
       equation
         s1 = unparseEquationitemStr(0, equItem);
@@ -2850,7 +2850,7 @@ algorithm
         str = stringAppendList({is,"failure(",s1,")"});
       then
         str;
-    
+
     case (_,_)
       equation
         Print.printBuf(" /** Dump.unparseEquationStr Failure! UNKNOWN EQUATION **/ ");
@@ -2872,9 +2872,9 @@ algorithm
       Integer i;
       Absyn.EquationItem x;
       list<Absyn.EquationItem> xs;
-    
+
     case (_,{},_) then "";  /* indent */
-    
+
     case (i,(x :: xs),sep)
       equation
         s1 = unparseEquationitemStr(i, x);
@@ -2898,7 +2898,7 @@ algorithm
       Absyn.Equation eq;
       Option<Absyn.Comment> optcmt;
       Absyn.Annotation ann;
-    
+
     case (i,Absyn.EQUATIONITEM(equation_ = eq,comment = optcmt))
       equation
         s1 = unparseEquationStr(i, eq);
@@ -2906,7 +2906,7 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str +& ";";
-    
+
     case (i,Absyn.EQUATIONITEMANN(annotation_ = ann))
       equation
         str = unparseAnnotationOption(i, SOME(ann));
@@ -2927,7 +2927,7 @@ algorithm
     local
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
-    
+
     case ((e,el))
       equation
         Print.printBuf(" ELSEIF ");
@@ -2952,15 +2952,15 @@ algorithm
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x1,x,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
-    
+
     case (_,{},_) then "";
-    
+
     case (i,{x1},sep)
       equation
         res = unparseEqElseifStr(i, x1);
       then
         res;
-    
+
     case (i,(x :: (xs as (_ :: _))),sep)
       equation
         s2 = unparseEqElseifStrLst(i, xs, sep);
@@ -2968,7 +2968,7 @@ algorithm
         res = stringAppendList({s1,s2});
       then
         res;
-    
+
     case (i,{x1,x2},sep)
       equation
         s1 = unparseEqElseifStr(i, x1);
@@ -2991,7 +2991,7 @@ algorithm
       Integer i_1,i;
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
-    
+
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
@@ -3013,7 +3013,7 @@ algorithm
     local
       Absyn.Algorithm alg;
       Absyn.Annotation ann;
-    
+
     case (Absyn.ALGORITHMITEM(algorithm_ = alg))
       equation
         Print.printBuf("ALGORITHMITEM(");
@@ -3021,7 +3021,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
-    
+
     case (Absyn.ALGORITHMITEMANN(annotation_ = ann))
       equation
         Print.printBuf("ALGORITHMITEMANN(<annotation>)\n");
@@ -3054,7 +3054,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)) /* ALG_NORETCALL */
       equation
         Print.printBuf("ALG_NORETCALL(");
@@ -3063,7 +3063,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb))
       equation
         Print.printBuf("IF (");
@@ -3075,7 +3075,7 @@ algorithm
         printListDebug("print_algorithm", fb, printAlgorithmitem, ";");
       then
         ();
-    
+
     case Absyn.ALG_FOR(iterators=iterators,forBody = el)
       equation
         Print.printBuf("FOR ");
@@ -3085,7 +3085,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     case Absyn.ALG_PARFOR(iterators=iterators,parforBody = el)
       equation
         Print.printBuf("PARFOR ");
@@ -3095,7 +3095,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     case Absyn.ALG_WHILE(boolExpr = e,whileBody = al)
       equation
         Print.printBuf("WHILE ");
@@ -3105,7 +3105,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = eb)
       /* rule  Print.print_buf \"WHEN_E \" & print_exp(e) &
          Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
@@ -3120,19 +3120,19 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     case Absyn.ALG_RETURN()
       equation
         Print.printBuf("RETURN()");
       then
         ();
-    
+
     case Absyn.ALG_BREAK()
       equation
         Print.printBuf("BREAK()");
       then
         ();
-        
+
     case Absyn.ALG_FAILURE({algItem})
       equation
         Print.printBuf("FAILURE(");
@@ -3140,13 +3140,13 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.ALG_FAILURE(_)
       equation
         Print.printBuf("FAILURE(...)");
       then
         ();
-    
+
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN ALGORITHM CLAUSE ** ");
@@ -3168,9 +3168,9 @@ algorithm
       Integer i;
       Absyn.AlgorithmItem x;
       list<Absyn.AlgorithmItem> xs;
-    
+
     case (_,{},_) then "";
-    
+
     case (i,{x},sep)
       then unparseAlgorithmStr(i, x);
 
@@ -3196,9 +3196,9 @@ algorithm
       Integer i;
       list<Absyn.AlgorithmItem> x;
       list<list<Absyn.AlgorithmItem>> xs;
-    
+
     case (_,{},_) then {};
-    
+
     case (i,(x :: xs),sep)
       equation
         s1 = unparseAlgorithmStrLst(i, x, sep);
@@ -3227,7 +3227,7 @@ algorithm
       Absyn.Annotation ann;
       Absyn.ForIterators iterators;
       Absyn.AlgorithmItem algItem;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */
       equation
         s1 = printExpStr(assignComp);
@@ -3237,7 +3237,7 @@ algorithm
         str = stringAppendList({is,s1,":=",s2,s3,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb),comment = optcmt)) /* ALG_IF */
       equation
         s1 = printExpStr(e);
@@ -3252,7 +3252,7 @@ algorithm
           "end if",s5,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators=iterators,forBody = el),comment = optcmt)) /* ALG_FOR */
       equation
         i_1 = i + 1;
@@ -3263,7 +3263,7 @@ algorithm
         str = stringAppendList({is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,";"});
       then
         str;
-        
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_PARFOR(iterators=iterators,parforBody = el),comment = optcmt)) /* ALG_PARFOR */
       equation
         i_1 = i + 1;
@@ -3274,7 +3274,7 @@ algorithm
         str = stringAppendList({is,"parfor ",s1," loop\n",is,s2,"\n",is,"end parfor",s3,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(boolExpr = e,whileBody = al),comment = optcmt)) /* ALG_WHILE */
       equation
         s1 = printExpStr(e);
@@ -3285,7 +3285,7 @@ algorithm
         str = stringAppendList({is,"while (",s1,") loop\n",is,s2,"\n",is,"end while",s3,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = al2),comment = optcmt)) /* ALG_WHEN_A */
       equation
         s1 = printExpStr(e);
@@ -3297,7 +3297,7 @@ algorithm
         str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when",s3,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs),comment = optcmt)) /* ALG_NORETCALL */
       equation
         s1 = printComponentRefStr(cr);
@@ -3307,14 +3307,14 @@ algorithm
         str = stringAppendList({is,s1,"(",s2,")",s3,";"});
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_RETURN(),comment = optcmt)) /* ALG_RETURN */
       equation
         s3 = unparseCommentOption(optcmt);
         str = "return" +& s3 +& ";";
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_BREAK(),comment = optcmt)) /* ALG_BREAK */
       equation
         s3 = unparseCommentOption(optcmt);
@@ -3322,7 +3322,7 @@ algorithm
         str = is +& "break" +& s3 +& ";";
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE({algItem}),comment = optcmt)) /* ALG_FAILURE */
       equation
         s1 = unparseAlgorithmStr(0, algItem);
@@ -3331,7 +3331,7 @@ algorithm
         str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(_),comment = optcmt)) /* ALG_FAILURE */
       equation
         s3 = unparseCommentOption(optcmt);
@@ -3339,7 +3339,7 @@ algorithm
         str = is +& "failure(...)" +& s3 +& ";";
       then
         str;
-    
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TRY(al),comment = optcmt)) /* ALG_TRY */
       equation
         i_1 = i + 1;
@@ -3373,7 +3373,7 @@ algorithm
         str_1 = stringAppend(str, ";");
       then
         str_1;
-    
+
     case (i,Absyn.ALGORITHMITEMCOMMENT(comment = str))
       then indentStr(i) +& System.trimWhitespace(str);
 
@@ -3396,15 +3396,15 @@ algorithm
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
-    
+
     case (_,{}) then "";
-    
+
     case (i,{x})
       equation
         res = unparseAlgElsewhenStr(i, x);
       then
         res;
-    
+
     case (i,{x1,x2})
       equation
         s1 = unparseAlgElsewhenStr(i, x1);
@@ -3412,7 +3412,7 @@ algorithm
         res = stringAppendList({s1,"\n",s2});
       then
         res;
-    
+
     case (i,(x :: (xs as (_ :: _))))
       equation
         s1 = unparseAlgElsewhenStr(i, x);
@@ -3435,7 +3435,7 @@ algorithm
       Integer i;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algl;
-    
+
     case (i,(exp,algl))
       equation
         is = indentStr(i);
@@ -3459,15 +3459,15 @@ algorithm
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
-    
+
     case (_,{}) then "";
-    
+
     case (i,{x})
       equation
         res = unparseEqElsewhenStr(i, x);
       then
         res;
-    
+
     case (i,{x1,x2})
       equation
         s1 = unparseEqElsewhenStr(i, x1);
@@ -3475,7 +3475,7 @@ algorithm
         res = stringAppendList({s1,"\n",s2});
       then
         res;
-    
+
     case (i,(x :: xs))
       equation
         s1 = unparseEqElsewhenStr(i, x);
@@ -3498,7 +3498,7 @@ algorithm
       Integer i;
       Absyn.Exp exp;
       list<Absyn.EquationItem> eql;
-    
+
     case (i,(exp,eql))
       equation
         is = indentStr(i);
@@ -3518,7 +3518,7 @@ algorithm
     local
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
-    
+
     case ((e,el))
       equation
         Print.printBuf(" ELSEIF ");
@@ -3543,9 +3543,9 @@ algorithm
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
-    
+
     case (_,{},_) then "";
-    
+
     case (i,{x},sep)
       then unparseAlgElseifStr(i, x);
 
@@ -3570,7 +3570,7 @@ algorithm
       Integer i_1,i;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
-    
+
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
@@ -3592,7 +3592,7 @@ algorithm
       Ident s;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
-    
+
     case Absyn.CREF_IDENT(name = s,subscripts = subs)
       equation
         Print.printBuf("Absyn.CREF_IDENT(\"");
@@ -3602,7 +3602,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.CREF_QUAL(name = s,subscripts = subs,componentRef = cr)
       equation
         Print.printBuf("Absyn.CREF_QUAL(\"");
@@ -3614,7 +3614,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     // MetaModelica wildcard
     case Absyn.WILD()
       equation
@@ -3642,15 +3642,15 @@ public function printSubscripts "function: printSubscripts
   input list<Absyn.Subscript> inAbsynSubscriptLst;
 algorithm
   _ := matchcontinue (inAbsynSubscriptLst)
-    local 
+    local
       list<Absyn.Subscript> l;
-    
+
     case {}
       equation
         Print.printBuf("[]");
       then
         ();
-    
+
     case l
       equation
         Print.printBuf("[");
@@ -3671,14 +3671,14 @@ algorithm
       Ident subsstr,s_1,s,crs,s_2,s_3;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
-    
+
     case Absyn.CREF_IDENT(name = s,subscripts = subs)
       equation
         subsstr = printSubscriptsStr(subs);
         s_1 = stringAppend(s, subsstr);
       then
         s_1;
-    
+
     case Absyn.CREF_QUAL(name = s,subscripts = subs,componentRef = cr)
       equation
         crs = printComponentRefStr(cr);
@@ -3688,14 +3688,14 @@ algorithm
         s_3 = stringAppend(s_2, crs);
       then
         s_3;
-    
+
     case Absyn.CREF_FULLYQUALIFIED(componentRef = cr)
       equation
         crs = printComponentRefStr(cr);
         s_3 = stringAppend(".", crs);
       then
         s_3;
-    
+
     case Absyn.ALLWILD() then "__";
 
     case Absyn.WILD() then "_";
@@ -3714,9 +3714,9 @@ algorithm
     local
       Ident s,s_1,s_2;
       list<Absyn.Subscript> l;
-    
+
     case {} then "";
-    
+
     case l
       equation
         s = printListStr(l, printSubscriptStr, ",");
@@ -3745,7 +3745,7 @@ algorithm
     local
       Ident str;
       Absyn.Path path;
-    
+
     case (Absyn.IDENT(name = str))
       equation
         Print.printBuf("Absyn.IDENT(\"");
@@ -3753,7 +3753,7 @@ algorithm
         Print.printBuf("\")");
       then
         ();
-    
+
     case (Absyn.QUALIFIED(name = str,path = path))
       equation
         Print.printBuf("Absyn.QUALIFIED(\"");
@@ -3795,7 +3795,7 @@ algorithm
       list<Absyn.Case> cases;
       Option<String> comment;
       list<list<Absyn.Exp>> esLst;
-    
+
     case (Absyn.INTEGER(value = i))
       equation
         s = intString(i);
@@ -3804,7 +3804,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.REAL(value = r))
       equation
         s = realString(r);
@@ -3813,7 +3813,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.CREF(componentRef = c))
       equation
         Print.printBuf("Absyn.CREF(");
@@ -3821,7 +3821,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.STRING(value = s))
       equation
         Print.printBuf("Absyn.STRING(\"");
@@ -3829,19 +3829,19 @@ algorithm
         Print.printBuf("\")");
       then
         ();
-    
+
     case (Absyn.BOOL(value = false))
       equation
         Print.printBuf("Absyn.BOOL(false)");
       then
         ();
-    
+
     case (Absyn.BOOL(value = true))
       equation
         Print.printBuf("Absyn.BOOL(true)");
       then
         ();
-    
+
     case (Absyn.BINARY(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3854,7 +3854,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.UNARY(op = op,exp = e))
       equation
         sym = dumpOpSymbol(op);
@@ -3865,7 +3865,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3878,7 +3878,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.LUNARY(op = op,exp = e))
       equation
         sym = dumpOpSymbol(op);
@@ -3889,7 +3889,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.RELATION(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3902,7 +3902,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = lst))
       equation
         Print.printBuf("Absyn.IFEXP(");
@@ -3914,7 +3914,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.CALL(function_ = fcn,functionArgs = args))
       equation
         Print.printBuf("Absyn.CALL(");
@@ -3924,7 +3924,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args))
       equation
         Print.printBuf("Absyn.PARTEVALFUNCTION(");
@@ -3934,7 +3934,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.ARRAY(arrayExp = es)
       equation
         Print.printBuf("Absyn.ARRAY([");
@@ -3942,7 +3942,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    
+
     case Absyn.TUPLE(expressions = es) /* PR. */
       equation
         Print.printBuf("Absyn.TUPLE([");
@@ -3951,7 +3951,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    
+
     case Absyn.MATRIX(matrix = esLst)
       equation
         Print.printBuf("Absyn.MATRIX([");
@@ -3959,7 +3959,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    
+
     case Absyn.RANGE(start = start,step = NONE(),stop = stop)
       equation
         Print.printBuf("Absyn.RANGE(");
@@ -3969,7 +3969,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.RANGE(start = start,step = SOME(step),stop = stop)
       equation
         Print.printBuf("Absyn.RANGE(");
@@ -3981,7 +3981,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.END()
       equation
         Print.printBuf("Absyn.END");
@@ -3996,7 +3996,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    
+
     case Absyn.CONS(head, rest)
       equation
         Print.printBuf("Absyn.CONS(");
@@ -4006,7 +4006,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.AS(s, rest)
       equation
         Print.printBuf("Absyn.AS(");
@@ -4016,7 +4016,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
       equation
         Print.printBuf("Absyn.MATCHEXP(MatchType(");
@@ -4033,7 +4033,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case (_)
       equation
         Print.printBuf("#UNKNOWN EXPRESSION#");
@@ -4404,37 +4404,37 @@ algorithm
       Option<String> comment;
       list<list<Absyn.Exp>> lstEs;
       Absyn.CodeNode cod;
-    
+
     case (Absyn.INTEGER(value = i))
       equation
         s = intString(i);
       then
         s;
-    
+
     case (Absyn.REAL(value = r))
       equation
         s = realString(r);
       then
         s;
-    
+
     case (Absyn.CREF(componentRef = c))
       equation
         s = printComponentRefStr(c);
       then
         s;
-    
+
     case (Absyn.STRING(value = s))
       equation
         s = stringAppendList({"\"", s, "\""});
       then
         s;
-    
+
     case (Absyn.BOOL(value = b))
       equation
         s = printBoolStr(b);
       then
         s;
-    
+
     case ((e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4449,7 +4449,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    
+
     case ((e as Absyn.UNARY(op = op,exp = e1)))
       equation
         sym = opSymbol(op);
@@ -4460,7 +4460,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-    
+
     case ((e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4475,7 +4475,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    
+
     case ((e as Absyn.LUNARY(op = op,exp = e1)))
       equation
         sym = opSymbol(op);
@@ -4486,7 +4486,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-    
+
     case ((e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4501,7 +4501,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    
+
     case ((e as Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = elseif_)))
       equation
         cs = printExpStr(cond);
@@ -4518,7 +4518,7 @@ algorithm
         str = stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
       then
         str;
-    
+
     case (Absyn.CALL(function_ = fcn,functionArgs = args))
       equation
         fs = printComponentRefStr(fcn);
@@ -4528,7 +4528,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    
+
     case (Absyn.PARTEVALFUNCTION(function_ = fcn,functionArgs = args))
       equation
         fs = printComponentRefStr(fcn);
@@ -4539,7 +4539,7 @@ algorithm
         s_3 = stringAppend(s_2, ")");
       then
         s_3;
-    
+
     case Absyn.ARRAY(arrayExp = es)
       equation
         s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;
@@ -4563,7 +4563,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    
+
     case Absyn.MATRIX(matrix = lstEs)
       equation
         s = printListStr(lstEs, printRowStr, ";") "Does not need parentheses" ;
@@ -4571,7 +4571,7 @@ algorithm
         s_2 = stringAppend(s_1, "]");
       then
         s_2;
-    
+
     case ((e as Absyn.RANGE(start = start,step = NONE(),stop = stop)))
       equation
         s1 = printExpStr(start);
@@ -4584,7 +4584,7 @@ algorithm
         s = stringAppendList({s1_1,":",s3_1});
       then
         s;
-    
+
     case ((e as Absyn.RANGE(start = start,step = SOME(step),stop = stop)))
       equation
         s1 = printExpStr(start);
@@ -4600,14 +4600,14 @@ algorithm
         s = stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    
+
     case (Absyn.CODE(code = cod))
       equation
         res = printCodeStr(cod);
         res_1 = stringAppendList({"$Code(",res,")"});
       then
         res_1;
-    
+
     case Absyn.END() then "end";
 
     // MetaModelica expressions
@@ -4618,14 +4618,14 @@ algorithm
         s = stringAppendList({s1, "::", s2});
       then
         s;
-    
+
     case Absyn.AS(s1, rest)
       equation
         s2 = printExpStr(rest);
         s = stringAppendList({s1, " as ", s2});
       then
         s;
-    
+
     case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
       equation
         s1 = printMatchType(matchType);
@@ -4636,7 +4636,7 @@ algorithm
         s = stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
-    
+
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;
@@ -4907,7 +4907,7 @@ public function opSymbolCompact
 "function: opSymbolCompact
   same as opSymbol but without spaces included
   used for operator overload resolving.
-  Some of them are not supported ?? but have them 
+  Some of them are not supported ?? but have them
   anyway"
   input Absyn.Operator inOperator;
   output String outString;
@@ -5743,8 +5743,8 @@ algorithm
     local
       Absyn.Path path;
       Integer i;
-      Absyn.FunctionRestriction functionRestriction; 
-    
+      Absyn.FunctionRestriction functionRestriction;
+
     case Absyn.R_CLASS()
       equation
         Print.printBuf("record Absyn.R_CLASS end Absyn.R_CLASS;");
@@ -5759,37 +5759,37 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_MODEL end Absyn.R_MODEL;");
       then ();
-    
+
     case Absyn.R_RECORD()
       equation
         Print.printBuf("record Absyn.R_RECORD end Absyn.R_RECORD;");
       then ();
-    
+
     case Absyn.R_BLOCK()
       equation
         Print.printBuf("record Absyn.R_BLOCK end Absyn.R_BLOCK;");
       then ();
-    
+
     case Absyn.R_CONNECTOR()
       equation
         Print.printBuf("record Absyn.R_CONNECTOR end Absyn.R_CONNECTOR;");
       then ();
-    
+
     case Absyn.R_EXP_CONNECTOR()
       equation
         Print.printBuf("record Absyn.R_EXP_CONNECTOR end Absyn.R_EXP_CONNECTOR;");
       then ();
-    
+
     case Absyn.R_TYPE()
       equation
         Print.printBuf("record Absyn.R_TYPE end Absyn.R_TYPE;");
       then ();
-    
+
     case Absyn.R_PACKAGE()
       equation
         Print.printBuf("record Absyn.R_PACKAGE end Absyn.R_PACKAGE;");
       then ();
-    
+
     case Absyn.R_FUNCTION(functionRestriction=functionRestriction)
       equation
         Print.printBuf("record Absyn.R_FUNCTION functionRestriction = ");
@@ -5801,42 +5801,42 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_OPERATOR end Absyn.R_OPERATOR;");
       then ();
-    
+
     case Absyn.R_ENUMERATION()
       equation
         Print.printBuf("record Absyn.R_ENUMERATION end Absyn.R_ENUMERATION;");
       then ();
-    
+
     case Absyn.R_PREDEFINED_INTEGER()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_INTEGER end Absyn.R_PREDEFINED_INTEGER;");
       then ();
-    
+
     case Absyn.R_PREDEFINED_REAL()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_REAL end Absyn.R_PREDEFINED_REAL;");
       then ();
-    
+
     case Absyn.R_PREDEFINED_STRING()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_STRING end Absyn.R_PREDEFINED_STRING;");
       then ();
-    
+
     case Absyn.R_PREDEFINED_BOOLEAN()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_BOOLEAN end Absyn.R_PREDEFINED_BOOLEAN;");
       then ();
-    
+
     case Absyn.R_PREDEFINED_ENUMERATION()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_ENUMERATION end Absyn.R_PREDEFINED_ENUMERATION;");
       then ();
-    
+
     case Absyn.R_UNIONTYPE()
       equation
         Print.printBuf("record Absyn.R_UNIONTYPE end Absyn.R_UNIONTYPE;");
       then ();
-    
+
     case Absyn.R_METARECORD(name=path,index=i)
       equation
         Print.printBuf("record Absyn.R_METARECORD name = ");
@@ -5845,12 +5845,12 @@ algorithm
         Print.printBuf(intString(i));
         Print.printBuf(" end Absyn.R_METARECORD;");
       then ();
-    
+
     case Absyn.R_UNKNOWN()
       equation
         Print.printBuf("record Absyn.R_UNKNOWN end Absyn.R_UNKNOWN;");
       then ();
-    
+
     else equation Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
   end match;
 end printRestrictionAsCorbaString;
@@ -5859,24 +5859,24 @@ protected function printFunctionRestrictionAsCorbaString
   input Absyn.FunctionRestriction functionRestriction;
 algorithm
   _ := match functionRestriction
-    local Absyn.FunctionPurity purity; 
+    local Absyn.FunctionPurity purity;
     case Absyn.FR_NORMAL_FUNCTION(purity)
       equation
         Print.printBuf("record Absyn.FR_NORMAL_FUNCTION purity = ");
         printFunctionPurityAsCorbaString(purity);
-        Print.printBuf(" end Absyn.FR_NORMAL_FUNCTION;"); 
+        Print.printBuf(" end Absyn.FR_NORMAL_FUNCTION;");
       then ();
     case Absyn.FR_OPERATOR_FUNCTION()
       equation
-        Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;"); 
+        Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;");
       then ();
     case Absyn.FR_PARALLEL_FUNCTION()
       equation
-        Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;"); 
+        Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;");
       then ();
     case Absyn.FR_KERNEL_FUNCTION()
       equation
-        Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;"); 
+        Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;");
       then ();
   end match;
 end printFunctionRestrictionAsCorbaString;
@@ -5884,18 +5884,18 @@ end printFunctionRestrictionAsCorbaString;
 protected function printFunctionPurityAsCorbaString
   input Absyn.FunctionPurity functionPurity;
 algorithm
-  _ := match functionPurity 
+  _ := match functionPurity
     case Absyn.PURE()
       equation
-        Print.printBuf("record Absyn.PURE end Absyn.PURE;"); 
+        Print.printBuf("record Absyn.PURE end Absyn.PURE;");
       then ();
     case Absyn.IMPURE()
       equation
-        Print.printBuf("record Absyn.IMPURE end Absyn.IMPURE;"); 
+        Print.printBuf("record Absyn.IMPURE end Absyn.IMPURE;");
       then ();
     case Absyn.NO_PURITY()
       equation
-        Print.printBuf("record Absyn.NO_PURITY end Absyn.NO_PURITY;"); 
+        Print.printBuf("record Absyn.NO_PURITY end Absyn.NO_PURITY;");
       then ();
   end match;
 end printFunctionPurityAsCorbaString;

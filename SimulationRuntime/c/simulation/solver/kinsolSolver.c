@@ -105,9 +105,9 @@
   int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   {
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
-    
+
     free(kinsolData->res);
-    
+
     free(kinsolData);
     nlsData->solverData = NULL;
     return 0;
@@ -134,7 +134,7 @@
 
     /* call residual function */
     kinsolData->nlsData->residualFunc(kinsolData->data, zdata,  kinsolData->res, 0);
-    
+
     for(i=0; i<kinsolData->nlsData->size; ++i)
     {
       fdata[i] = kinsolData->res[i];
@@ -144,7 +144,7 @@
 
     return 0;
   }
- 
+
   void nls_kinsol_errorHandler(int error_code, const char *module, const char *function, char *msg, void *user_data)
   {
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) user_data;

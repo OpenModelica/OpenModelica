@@ -93,9 +93,9 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   double lambda = *pLambda;
   long iteration = 0;
-  
+
   FILE *pFile = NULL;
-  
+
   if(ACTIVE_STREAM(LOG_INIT) && (lambda < 1.0))
   {
     char buffer[4096];
@@ -106,7 +106,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     for(i=0; i<initData->nVars; ++i)
       fprintf(pFile, "%s,", initData->name[i]);
     fprintf(pFile, "\n");
-    
+
     fprintf(pFile, "%ld,", iteration);
     fprintf(pFile, "%.16g,", lambda);
     for(i=0; i<initData->nVars; ++i)
@@ -342,7 +342,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   if(pIteration)
     *pIteration = iteration;
-    
+
   if(pFile)
   {
     fprintf(pFile, "%ld,", iteration);

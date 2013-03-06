@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -295,7 +295,7 @@ function homotopy
 algorithm
   outValue := actual;
 annotation(__OpenModelica_EarlyInline=true,version="Modelica 3.2",Documentation(info="<html>
-Full implementation not available in OpenModelica (trivial solution: simplified expression ignored). 
+Full implementation not available in OpenModelica (trivial solution: simplified expression ignored).
 </html>"));
 end homotopy;
 
@@ -545,11 +545,11 @@ function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
 <pre><b>rooted</b>(x)</pre>
 </blockquote>
 <h4>Description</h4>
-<p>The operator \"rooted\" was introduced to improve efficiency: 
-A tool that constructs the graph with the Connections.branch/.root etc. 
-built-in operators has to cut the graph in order to arrive at \"spanning trees\". 
-If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true, 
-if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned. 
+<p>The operator \"rooted\" was introduced to improve efficiency:
+A tool that constructs the graph with the Connections.branch/.root etc.
+built-in operators has to cut the graph in order to arrive at \"spanning trees\".
+If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true,
+if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned.
 For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
 </p>
 <h4>Known Bugs</h4>
@@ -572,7 +572,7 @@ function inStream
 end inStream;
 
 /* Extension for uncertainty computations */
-record Distribution 
+record Distribution
   String name "the name of the distibution, e.g \"normal\" ";
   Real params[:] "parameter values for the specified distribution, e.g {0,0.1} for a normal distribution";
   String paramNames[:/*should be size(params,1) but doesn't work, cb issue #1682*/] "the parameter names for the specified distribution, e.g {\"my\",\"sigma\"} for a normal distribution";
@@ -614,7 +614,7 @@ end Connections;
 
 encapsulated package Subtask
   type SamplingType = enumeration(Disabled, Continuous, Periodic);
-  
+
   function decouple
     external "builtin";
   end decouple;
@@ -712,10 +712,10 @@ type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a sin
 end $Code;
 
 package Internal "Contains internal implementations, e.g. overloaded builtin functions"
-  
+
   type BuiltinType "Integer,Real,String,enumeration or array of some kind"
   end BuiltinType;
-  
+
   function intAbs
     input Integer v;
     output Integer o;
@@ -850,7 +850,7 @@ annotation(preferredView="text");
 end Internal;
 
 package Scripting
-  
+
 import OpenModelica.$Code.Expression;
 import OpenModelica.$Code.TypeName;
 import OpenModelica.$Code.VariableName;
@@ -870,7 +870,7 @@ end CheckSettingsResult;
 package Internal
 
 package Time
-  
+
 /* From CevalScript */
 constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -895,7 +895,7 @@ algorithm
   min := div(integer(sec),60);
   hr := div(min,60);
   min := mod(min,60);
-  str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s"; 
+  str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s";
 end readableTime;
 
 function timerTick
@@ -948,13 +948,13 @@ function loadFile "load file (*.mo) and merge it with the loaded AST."
 external "builtin";
 annotation(preferredView="text");
 end loadFile;
- 
+
 function loadString "Parses the data and merges the resulting AST with ithe
   loaded AST.
   If a filename is given, it is used to provide error-messages as if the string
 was read in binary format from a file with the same name.
   The file is converted to UTF-8 from the given character set.
-  
+
   NOTE: Encoding is deprecated as *ALL* strings are now UTF-8 encoded.
   "
   input String data;
@@ -1196,7 +1196,7 @@ algorithm
   result := if setEnvironmentVar(var,getEnvironmentVar(var)+value) then getEnvironmentVar(var) else "error";
 annotation(preferredView="text");
 end appendEnvironmentVar;
-        
+
 function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar."
   input String installationDirectoryPath;
   output Boolean success;
@@ -1692,7 +1692,7 @@ function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
   output String outPythonScript;
   external "builtin";
 end buildOpenTURNSInterface;
- 
+
 function runOpenTURNSPythonScript "runs OpenTURNS with the given python script returning the log file"
   input String pythonScriptFile;
   output String logOutputFile;
@@ -2005,8 +2005,8 @@ end importFMU;
 /* Under Development */
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
- The only required argument is the className, while all others have some efault values. 
- simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], 
+ The only required argument is the className, while all others have some efault values.
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
            [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
   simulate(A);
@@ -2034,8 +2034,8 @@ end simulate;
 
 function linearize "creates a model with the symbolic linearization matrixes.
 At stopTime the linearization matrixes are evaluated and a modelica model is created.
- The only required argument is the className, while all others have some efault values. 
- linerize(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], 
+ The only required argument is the className, while all others have some efault values.
+ linerize(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
            [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
   linearize(A, stopTime=0.0);
@@ -2099,14 +2099,14 @@ function getClassNames "Returns the list of class names defined in the class."
   input Boolean sort := false;
   input Boolean builtin := false "List also builtin classes if true";
   input Boolean showProtected := false "List also protected classes if true";
-  output TypeName classNames[:]; 
+  output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
 end getClassNames;
 
 function getPackages "Returns the list of packages defined in the class."
   input TypeName class_ := $TypeName(AllLoadedClasses);
-  output TypeName classNames[:]; 
+  output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
 end getPackages;
@@ -2165,7 +2165,7 @@ function plot "Launches a plot window using OMPlot."
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Launches a plot window using OMPlot. Returns true on success.</p>
-  
+
 <p>Example command sequences:</p>
 <ul>
 <li>simulate(A);plot({x,y,z});</li>
@@ -2177,12 +2177,12 @@ end plot;
 
 function plotAll "Works in the same way as plot(), but does not accept any
   variable names as input. Instead, all variables are part of the plot window.
-  
+
   Example command sequences:
   simulate(A);plotAll();
   simulate(A);plotAll(externalWindow=true);
   simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
-  
+
   input Boolean externalWindow := false "Opens the plot in a new plot window";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
@@ -2204,7 +2204,7 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
   System Documentation for more details.
   Writes the visulizations objects into the file \"model_name.visualize\"
-  
+
   Example command sequence:
   simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,\"B.mat\");visualize(A,\"B.mat\", true);
   "
@@ -2217,7 +2217,7 @@ annotation(preferredView="text");
 end visualize;
 
 function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
-  
+
   Example command sequences:
   simulate(A);plotParametric2(x,y);
   simulate(A);plotParametric2(x,y, externalWindow=true);
@@ -2752,7 +2752,7 @@ This release includes a significantly improved OpenModelica Compiler (OMC):
 <li>Updated User's Guide including examples of hybrid simulation and external functions.</li>
 </ul>
 <h4>OpenModelica Shell (OMShell)</h4>
-An improved window-based interactive command shell, now including command completion and better editing and font size support. 
+An improved window-based interactive command shell, now including command completion and better editing and font size support.
 <h4>OpenModelica Notebook (OMNotebook)</h4>
 A free implementation of an OpenModelica notebook (OMNOtebook), for electronic books with course material, including the DrModelica interactive course material. It is possible to simulate and plot from this notebook.
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
@@ -2847,7 +2847,7 @@ This release includes a number of  improvements of the OpenModelica Compiler (OM
 <ul>
 <li>Significantly increased compilation speed, especially with large models and many packages.</li>
 <li>Now available also for Linux and Macintosh platforms.</li>
-<li>Support for when-equations in algorithm sections, including elsewhen.</li> 
+<li>Support for when-equations in algorithm sections, including elsewhen.</li>
 <li>Support for inner/outer prefixes of components (but without type error checking).</li>
 <li>Improved solution of nonlinear systems.</li>
 <li>Added ability to compile generated simulation code using Visual Studio compiler.</li>
@@ -2943,7 +2943,7 @@ A number of improvements, primarily in the plotting functionality and platform a
 Same as previously.
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
 Minor bug fixes.
-<h4>OpenModelica Development Environment (OMDev)</h4> 
+<h4>OpenModelica Development Environment (OMDev)</h4>
 Same as previously.
 </html>"));
 end '1.4.5';
@@ -2954,7 +2954,7 @@ This OpenModelica 1.5 release has major improvements in the OpenModelica compile
 This release includes major improvements of the flattening frontend part of the OpenModelica Compiler (OMC) and some improvements of the backend, including, but not restricted to:
 <ul>
 <li>Improved flattening speed of at least a factor of 10 or more compared to the 1.4.5 release, primarily for larger models with inner-outer, but also speedup for other models, e.g. the robot model flattens in approximately 2 seconds.</li>
-<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravityWithPointMasses.</li> 
+<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravityWithPointMasses.</li>
 <li>Progress in supporting the Media library, but simulation is not yet possible.</li>
 <li>Support for enumerations, both in the frontend and the backend.</li>
 <li>Support for expandable connectors.</li>
@@ -2991,7 +2991,7 @@ Improvements in platform availability.
 Same as previously.
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
 Minor bug fixes.
-<h4>OpenModelica Development Environment (OMDev)</h4> 
+<h4>OpenModelica Development Environment (OMDev)</h4>
 Minor bug fixes.
 </html>"));
 end '1.5.0';
@@ -3019,7 +3019,7 @@ A new DrControl electronic notebook for teaching control and modeling with Model
 Same as previously.
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
 Same as previously.
-<h4>OpenModelica Development Environment (OMDev)</h4> 
+<h4>OpenModelica Development Environment (OMDev)</h4>
 Several enhancements. Support for match-expressions in addition to matchcontinue. Support for real if-then-else. Support for if-then without else-branches. Modelica Development Tooling 0.7.7 with small improvements such as more settings, improved error detection in console, etc.
 <h4>New Graphic Editor OMEdit</h4>
 A new improved open source graphic model connection editor called OMEdit, supporting 3.1 graphical annotations, which makes it possible to move models back and forth to other tools without problems. The editor has been implemented by students at Linköping University and is based on the C++ Qt library.
@@ -3047,7 +3047,7 @@ Improved much faster and more stable 2D plotting through the new OMPlot module. 
 Same as previously, except the improved 2D plotting through OMPlot.
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
 Same as previously.
-<h4>OpenModelica Development Environment (OMDev)</h4> 
+<h4>OpenModelica Development Environment (OMDev)</h4>
 No changes.
 <h4>Graphic Editor OMEdit</h4>
 Several enhancements of OMEdit are included in this release. Support for Icon editing is now available. There is also an improved much faster 2D plotting through the new OMPlot module. Better integration between OMEdit and OMNotebook, with copy/paste between them. Interactive on-line simulation is available in an easy-to-use way.
@@ -3068,7 +3068,7 @@ A faster and more stable OMC model compiler. The 1.8.0 version flattens and simu
 <li>Functional Mockup Interface FMI 1.0 for model exchange, export and import, for the Windows platform.</li>
 <li>Bug fixes in the OpenModelica graphical model connection editor OMEdit, supporting easy-to-use graphical drag-and-drop modeling and MSL 3.1.</li>
 <li>Bug fixes in the OMOptim optimization subsystem.</li>
-<li>Beta version of compiler support for a new Eclipse-based very efficient algorithmic code debugger for functions in MetaModelica/Modelica, available in the development environment when using the bootstrapped OpenModelica compiler.</li> 
+<li>Beta version of compiler support for a new Eclipse-based very efficient algorithmic code debugger for functions in MetaModelica/Modelica, available in the development environment when using the bootstrapped OpenModelica compiler.</li>
 <li>Improvements in initialization of simulations.</li>
 <li>Improved index reduction with dynamic state selection, which improves simulation.</li>
 <li>Better error messages from several parts of the compiler, including a new API call for giving better error messages.</li>
@@ -3262,7 +3262,7 @@ label.disabled { color: #d7d7d7 }
 .buttons { margin: .5em .5em .5em 0 }
 .buttons form, .buttons form div { display: inline }
 .buttons input { margin: 1em .5em .1em 0 }
-.inlinebuttons input { 
+.inlinebuttons input {
  font-size: 70%;
  border-width: 1px;
  border-style: dotted;
@@ -3297,7 +3297,7 @@ label.disabled { color: #d7d7d7 }
 
 /* Navigation */
 .nav h2, .nav hr { display: none }
-.nav ul { 
+.nav ul {
  font-size: 10px;
  list-style: none;
  margin: 0;
@@ -3522,12 +3522,12 @@ pre.wiki, pre.literal-block {
  overflow: auto;
 }
 
-blockquote.citation { 
+blockquote.citation {
  margin: -0.6em 0;
- border-style: solid; 
- border-width: 0 0 0 2px; 
+ border-style: solid;
+ border-width: 0 0 0 2px;
  padding-left: .5em;
- border-color: #b44; 
+ border-color: #b44;
 }
 .citation blockquote.citation { border-color: #4b4; }
 .citation .citation blockquote.citation { border-color: #44b; }
@@ -3739,10 +3739,10 @@ div.system-message p.system-message-title { font-weight: bold; }
 #content .paging { margin: 0 0 2em; padding: .5em 0 0;
   font-size: 85%; line-height: 2em; text-align: center;
 }
-#content .paging .current { 
+#content .paging .current {
   padding: .1em .3em;
   border: 1px solid #333;
-  background: #999; color: #fff; 
+  background: #999; color: #fff;
 }
 
 #content .paging :link, #content .paging :visited {
@@ -3753,7 +3753,7 @@ div.system-message p.system-message-title { font-weight: bold; }
 #content .paging :link:hover, #content .paging :visited:hover {
   background: #999; color: #fff;  border-color: #333;
 }
-#content .paging .previous a, 
+#content .paging .previous a,
 #content .paging .next a {
   font-size: 150%; font-weight: bold; border: none;
 }

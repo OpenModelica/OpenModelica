@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -666,14 +666,14 @@ jobject NewJavaOption(JNIEnv* env, jobject value)
 
   jclass cls = (*env)->FindClass(env, className);
   CHECK_FOR_JAVA_EXCEPTION(env);
-  
+
   cid = (*env)->GetMethodID(env, cls, "<init>", sig);
   CHECK_FOR_JAVA_EXCEPTION(env);
-  
+
   res = (*env)->NewObject(env, cls, cid, value);
   CHECK_FOR_JAVA_EXCEPTION(env);
   (*env)->DeleteLocalRef(env, cls);
-  
+
   return res;
 }
 
@@ -694,7 +694,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   if(hdr == MMC_NILHDR) /* Empty list; Tested, but not in OMC. */ {
     return NewJavaArray(env);
   }
-  
+
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
 
@@ -710,7 +710,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
       jobject o = mmc_to_jobject(env, MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i+1)));
       AddObjectToJavaMap(env, rec_map, desc->fieldNames[i-1], o);
     }
-    
+
     return NewJavaRecord(env, desc->name, ctor-3, rec_map);
   }
 
@@ -739,7 +739,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
     }
     return arr;
   }
-  
+
   fprintf(stderr, "%s:%s: %d slots; ctor %d - FAILED to detect the type\n",
           __FILE__, __FUNCTION__, numslots, ctor);
   EXIT(EXIT_CODE_JAVA_ERROR);
@@ -793,9 +793,9 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
   void** values;
   void* res;
   static jint jobject_to_mmc_record_warning_shown = 0;
-  
+
   struct record_description *rec_desc = malloc(sizeof(struct record_description));
-  
+
   clsObj = (*env)->GetObjectClass(env, record);
   CHECK_FOR_JAVA_EXCEPTION(env);
   /* Copy record names to C strings */
@@ -886,7 +886,7 @@ void* jobject_to_mmc_tuple(JNIEnv* env, jobject obj)
   int i, length;
   void** values;
   void* res;
-  
+
   cls = (*env)->GetObjectClass(env, obj);
   CHECK_FOR_JAVA_EXCEPTION(env);
   mid = (*env)->GetMethodID(env, cls, "toArray", "()[Ljava/lang/Object;");
@@ -894,7 +894,7 @@ void* jobject_to_mmc_tuple(JNIEnv* env, jobject obj)
   jarr = (*env)->CallObjectMethod(env, obj, mid);
   CHECK_FOR_JAVA_EXCEPTION(env);
   length = (*env)->GetArrayLength(env, jarr);
-  
+
   values = malloc((length)*sizeof(void*));
   for(i=0; i<length; i++) {
     jobject fieldValue = (*env)->GetObjectArrayElement(env, jarr, i);
@@ -912,7 +912,7 @@ void* jobject_to_mmc_list(JNIEnv* env, jobject obj)
   jclass cls;
   int i, length;
   void* res;
-  
+
   cls = (*env)->GetObjectClass(env, obj);
   CHECK_FOR_JAVA_EXCEPTION(env);
   mid = (*env)->GetMethodID(env, cls, "toArray", "()[Ljava/lang/Object;");
@@ -920,7 +920,7 @@ void* jobject_to_mmc_list(JNIEnv* env, jobject obj)
   jarr = (*env)->CallObjectMethod(env, obj, mid);
   CHECK_FOR_JAVA_EXCEPTION(env);
   length = (*env)->GetArrayLength(env, jarr);
-  
+
   res = mmc_mk_nil();
   for(i=0; i<length; i++) {
     /* Copy in reverse order */
@@ -935,7 +935,7 @@ void* jobject_to_mmc_option(JNIEnv* env, jobject obj)
   jobject option;
   jfieldID fid;
   jclass cls;
-  
+
   cls = (*env)->GetObjectClass(env, obj);
   CHECK_FOR_JAVA_EXCEPTION(env);
   fid = (*env)->GetFieldID(env, cls, "o", "Lorg/openmodelica/ModelicaObject;");
@@ -965,7 +965,7 @@ void* jobject_to_mmc(JNIEnv* env, jobject o)
   CALL_IF_INSTANCEOF(env,jobject_to_mmc_tuple, o, JAVA_MODELICA_TUPLE);
   CALL_IF_INSTANCEOF(env,jobject_to_mmc_option, o, JAVA_MODELICA_OPTION);
   CALL_IF_INSTANCEOF(env,jobject_to_mmc_list, o, JAVA_MODELICA_ARRAY); /* LIST */
-  
+
   fprintf(stderr, "%s:%s: Failed to parse object: %s\n",
           __FILE__, __FUNCTION__, jobjectToString(env, o));
   EXIT(EXIT_CODE_JAVA_ERROR);
@@ -1086,7 +1086,7 @@ modelica_string GetStackTrace(JNIEnv* env, jobject t)
   CHECK_FOR_JAVA_EXCEPTION(env);
   msg = (*env)->CallStaticObjectMethod(env, cls, mid, t);
   res = copyJstring(env, msg);
-  
+
   (*env)->DeleteLocalRef(env, msg);
   (*env)->DeleteLocalRef(env, cls);
   return res;

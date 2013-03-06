@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -89,33 +89,33 @@ algorithm
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
 
         Absyn.PROGRAM(classes=initialClasses) = Builtin.getInitialFunctions();
-        
+
         // set the external flag that signals the presence of inner/outer components in the model
         System.setHasInnerOuterDefinitions(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
-        
+
         // translate builtin functions
         spInitial = List.fold(initialClasses, translate2, {});
         // call flatten program on the initial classes only
         spInitial = NFSCodeFlatten.flattenCompleteProgram(spInitial);
         spInitial = listReverse(spInitial);
-        
+
         // translate given absyn to scode.
         spAbsyn = List.fold(inClasses, translate2, {});
         spAbsyn = listReverse(spAbsyn);
-        
+
         // NOTE: we check duplicates separately for builtin
-        //       and for absyn to allow duplicates of 
+        //       and for absyn to allow duplicates of
         //       ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
-        
+
         // check duplicates in builtin (initial) functions
         NFSCodeCheck.checkDuplicateElements(spInitial);
         // check duplicates in absyn
         NFSCodeCheck.checkDuplicateElements(spAbsyn);
-         
+
         sp = listAppend(spInitial, spAbsyn);
       then
         sp;
@@ -173,7 +173,7 @@ algorithm
         sFin = SCode.boolFinal(f);
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(p);
-        scodeClass = 
+        scodeClass =
          SCode.CLASS(
            n,
            SCode.PREFIXES( // here we set only final as is a top level class!
@@ -203,7 +203,7 @@ algorithm
 end translateClass2;
 
 
-//mahge: FIX HERE. Check for proper input and output 
+//mahge: FIX HERE. Check for proper input and output
 //declarations in operators according to the specifications.
 public function translateOperatorDef
   input Absyn.ClassDef inClassDef;
@@ -219,10 +219,10 @@ algorithm
       list<Absyn.ClassPart> parts;
       Option<SCode.Comment> scodeCmt;
       SCode.Ident opName;
-      
+
   case (Absyn.PARTS(classParts = parts,comment = cmtString),opName,_)
       equation
-        els = translateClassdefElements(parts);    
+        els = translateClassdefElements(parts);
         anns = translateClassdefAnnotations(parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
@@ -234,13 +234,13 @@ public function getOperatorGivenName
   input SCode.Element inOperatorFunction;
   output Absyn.Path outName;
 algorithm
-  outName := match (inOperatorFunction)        
+  outName := match (inOperatorFunction)
     local
       SCode.Ident name;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))        
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))
     then Absyn.IDENT(name);
-      
-  end match;  
+
+  end match;
 end getOperatorGivenName;
 
 public function getOperatorQualName
@@ -248,13 +248,13 @@ public function getOperatorQualName
   input SCode.Ident operName;
   output SCode.Path outName;
 algorithm
-  outName := match (inOperatorFunction,operName)        
+  outName := match (inOperatorFunction,operName)
     local
       SCode.Ident name,opname;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_),opname)        
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_),opname)
     then Absyn.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
-      
-  end match;  
+
+  end match;
 end getOperatorQualName;
 
 
@@ -262,26 +262,26 @@ public function getListofQualOperatorFuncsfromOperator
   input SCode.Element inOperator;
   output list<SCode.Path> outNames;
 algorithm
-  outNames := match (inOperator) 
+  outNames := match (inOperator)
     local
       list<SCode.Element> els;
       SCode.Ident opername;
       list<SCode.Path> names;
-      
+
       //If operator get the list of functions in it.
     case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR() ,SCode.PARTS(elementLst = els),_))
       equation
         names = List.map1(els,getOperatorQualName,opername);
       then
         names;
-        
-      //If operator function return its name  
+
+      //If operator function return its name
     case (SCode.CLASS(opername,_,_,_, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))
       equation
         names = {Absyn.IDENT(opername)};
       then
         names;
-  end match;    
+  end match;
 end getListofQualOperatorFuncsfromOperator;
 
 public function translatePurity
@@ -291,7 +291,7 @@ algorithm
   outPurity := match(inPurity)
     case Absyn.IMPURE() then true;
     else false;
-  end match; 
+  end match;
 end translatePurity;
 
 // Changed to public! krsta
@@ -313,15 +313,15 @@ algorithm
     // ?? Only normal functions can have 'external'
     case (d,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(purity)))
       equation
-        isImpure = translatePurity(purity); 
+        isImpure = translatePurity(purity);
       then Util.if_(containsExternalFuncDecl(d),
              SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),
              SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)));
-        
+
     case (_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION());
     case (_,Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());
     case (_,Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION());
-    
+
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
     case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();
     case (_,Absyn.R_MODEL()) then SCode.R_MODEL();
@@ -402,7 +402,7 @@ algorithm
       SCode.ConnectorType ct;
       SCode.Parallelism sp;
       SCode.Variability sv;
-      
+
     case (Absyn.ATTR(f, s, p, v, dir, adim),extraADim)
       equation
         ct = translateConnectorType(f, s);
@@ -616,7 +616,7 @@ algorithm
       then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),ann);
     case (Absyn.PROTECTED(_::rest),_)
       then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),inMod);
-        
+
     else inMod;
   end match;
 end mergeSCodeAnnotationsFromParts;
@@ -659,7 +659,7 @@ algorithm
       list<Absyn.ClassPart> rest;
 
     case {} then {};
-    
+
     case(Absyn.PUBLIC(contents = es) :: rest)
       equation
         es_1 = translateEitemlist(es, SCode.PUBLIC());
@@ -667,7 +667,7 @@ algorithm
         els_1 = listAppend(es_1, els);
       then
         els_1;
-    
+
     case(Absyn.PROTECTED(contents = es) :: rest)
       equation
         es_1 = translateEitemlist(es, SCode.PROTECTED());
@@ -675,10 +675,10 @@ algorithm
         els_1 = listAppend(es_1, els);
       then
         els_1;
-    
+
     case (_ :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */
       then translateClassdefElements(rest);
-    
+
   end match;
 end translateClassdefElements;
 
@@ -946,11 +946,11 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
       list<Absyn.AlgorithmItem> body,elseBody;
-      
+
     case (Absyn.ALG_ASSIGN(assignComponent,value),_,_)
-      then 
+      then
         SCode.ALG_ASSIGN(assignComponent,value,comment,info);
-    
+
     case (Absyn.ALG_IF(boolExpr,body,branches,elseBody),_,_)
       equation
         stmts1 = translateClassdefAlgorithmitems(body);
@@ -958,14 +958,14 @@ algorithm
         sbranches = translateBranches(branches);
       then SCode.ALG_IF(boolExpr,stmts1,sbranches,stmts2,comment,info);
 
-    // multiple for iterators 
-    //  for (i in a, j in b, k in c) loop 
+    // multiple for iterators
+    //  for (i in a, j in b, k in c) loop
     //      stmts;
     //  end for;
     // are translated to equivalent:
-    //  for (i in a) loop 
-    //   for (j in b) loop 
-    //    for (k in c) loop 
+    //  for (i in a) loop
+    //   for (j in b) loop
+    //    for (k in c) loop
     //      stmts;
     //    end for;
     //   end for;
@@ -979,7 +979,7 @@ algorithm
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_FOR(i,range,stmts,comment,info);
-        
+
     case (Absyn.ALG_PARFOR(Absyn.ITERATOR(i,NONE(),range)::(iterators as _::_),body),_,_)
       equation
         stmt = translateClassdefAlgorithmItem(Absyn.ALG_FOR(iterators,body),comment,info);
@@ -989,12 +989,12 @@ algorithm
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_PARFOR(i,range,stmts,comment,info);
-  
+
     case (Absyn.ALG_WHILE(boolExpr,body),_,_)
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_WHILE(boolExpr,stmts,comment,info);
-        
+
     case (Absyn.ALG_WHEN_A(boolExpr,body,branches),_,_)
       equation
         branches = (boolExpr,body)::branches;
@@ -1003,31 +1003,31 @@ algorithm
 
     case (Absyn.ALG_NORETCALL(functionCall,functionArgs),_,_)
       then SCode.ALG_NORETCALL(Absyn.CALL(functionCall,functionArgs),comment,info);
-    
+
     case (Absyn.ALG_RETURN(),_,_)
     then SCode.ALG_RETURN(comment,info);
-    
+
     case (Absyn.ALG_BREAK(),_,_)
     then SCode.ALG_BREAK(comment,info);
-    
+
     case (Absyn.ALG_TRY(body),_,_)
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_TRY(stmts,comment,info);
-        
+
     case (Absyn.ALG_CATCH(body),_,_)
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_CATCH(stmts,comment,info);
-    
+
     case (Absyn.ALG_THROW(),_,_)
     then SCode.ALG_THROW(comment,info);
-    
+
     case (Absyn.ALG_FAILURE(body),_,_)
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_FAILURE(stmts,comment,info);
-    
+
     /*
     case (_,comment,info)
       equation
@@ -1048,7 +1048,7 @@ algorithm
       list<SCode.Statement> stmts;
       list<Absyn.AlgorithmItem> al;
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> rest;
-      
+
     case {} then {};
     case ((e,al)::rest)
       equation
@@ -1076,7 +1076,7 @@ algorithm
       Option<Absyn.Annotation> aann;
       Option<SCode.Annotation> sann;
 
-    case (Absyn.EXTERNAL(externalDecl = 
+    case (Absyn.EXTERNAL(externalDecl =
         Absyn.EXTERNALDECL(fn_name, lang, output_, args, aann)) :: _)
       equation
         sann = Util.applyOption(aann, translateAnnotation);
@@ -1106,7 +1106,7 @@ algorithm
       SCode.Visibility vis;
       Absyn.Element e;
       list<String> names;
-      
+
     case ({},_) then {};
     case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: es),vis)
       equation
@@ -1123,7 +1123,7 @@ algorithm
 
     case ((Absyn.LEXER_COMMENT(comment = _) :: es),vis)
       then translateEitemlist(es, vis);
-    
+
     case ((_ :: es),vis)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SCodeUtil.translateEitemlist failed"});
@@ -1315,10 +1315,10 @@ protected function translateDefineunitParam " help function to translateElement"
   output Option<String> expOpt;
 algorithm
   (expOpt) := matchcontinue(inArgs,inArg)
-    local 
+    local
       String str,name, arg;
       list<Absyn.NamedArg> args;
-      
+
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
       true = name ==& arg;
     then SOME(str);
@@ -1333,10 +1333,10 @@ protected function translateDefineunitParam2 " help function to translateElement
   output Option<Real> weightOpt;
 algorithm
   weightOpt := matchcontinue(inArgs,inArg)
-    local 
+    local
       String name, arg; Real r;
       list<Absyn.NamedArg> args;
-      
+
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;
     then SOME(r);
@@ -1409,14 +1409,14 @@ algorithm
         scc = translateConstrainClass(cc);
         sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
         sEnc = SCode.boolEncapsulated(e);
-        sPar = SCode.boolPartial(pa); 
+        sPar = SCode.boolPartial(pa);
         cls = SCode.CLASS(
-          n, 
-          SCode.PREFIXES(vis,sRed,sFin,io,sRep), 
+          n,
+          SCode.PREFIXES(vis,sRed,sFin,io,sRep),
           sEnc, sPar, SCode.R_OPERATOR(), de_1, i);
       then
         {cls};
-          
+
 
     case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
@@ -1429,10 +1429,10 @@ algorithm
         scc = translateConstrainClass(cc);
         sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
         sEnc = SCode.boolEncapsulated(e);
-        sPar = SCode.boolPartial(pa); 
+        sPar = SCode.boolPartial(pa);
         cls = SCode.CLASS(
-          n, 
-          SCode.PREFIXES(vis,sRed,sFin,io,sRep), 
+          n,
+          SCode.PREFIXES(vis,sRed,sFin,io,sRep),
           sEnc, sPar, re_1, de_1, i);
       then
         {cls};
@@ -1467,7 +1467,7 @@ algorithm
         mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         prl1 = translateParallelism(parallelism);
         var1 = translateVariability(variability);
-        // PR. This adds the arraydimension that may be specified together with the type of the component. 
+        // PR. This adds the arraydimension that may be specified together with the type of the component.
         tot_dim = listAppend(d, ad);
         (repl_1, redecl) = translateRedeclarekeywords(repl);
         comment_1 = translateComment(comment);
@@ -1503,7 +1503,7 @@ algorithm
       String name;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
-    
+
       /* Maybe these should give warnings? I don't know. See https://trac.modelica.org/Modelica/ticket/955 */
     case (Absyn.NAMED_IMPORT(name,Absyn.FULLYQUALIFIED(p)),_,_)
       then translateImports(Absyn.NAMED_IMPORT(name,p),visibility,info);
@@ -1530,7 +1530,7 @@ algorithm
       String name,rename;
       Absyn.Path path;
       SCode.Visibility vis;
-      
+
     case (Absyn.GROUP_IMPORT_NAME(name=name),_,vis,_)
       equation
         path = Absyn.joinPaths(prefix,Absyn.IDENT(name));
@@ -1605,7 +1605,7 @@ algorithm
       Absyn.Modification mod;
       SCode.Mod cc_mod;
 
-    case SOME(Absyn.CONSTRAINCLASS(elementSpec = 
+    case SOME(Absyn.CONSTRAINCLASS(elementSpec =
         Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
       equation
         mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
@@ -1613,7 +1613,7 @@ algorithm
         cc_cmt = translateComment(cmt);
       then
         SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
-  
+
     else NONE();
   end match;
 end translateConstrainClass;
@@ -1907,7 +1907,7 @@ algorithm
       SCode.Prefixes p;
 
     case(SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,_), nfo)
-      then 
+      then
         SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,nfo);
 
     else elem;
@@ -1935,9 +1935,9 @@ algorithm
     case (NONE(), SCode.FINAL(), _, _)
       then SCode.MOD(inFinalPrefix, inEachPrefix, {}, NONE(), inInfo);
     case (NONE(),_,_,_) then SCode.NOMOD();
-    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_) 
+    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_)
       then SCode.MOD(finalPrefix,eachPrefix,{},SOME((e,false)), inInfo);
-    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_) 
+    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_)
       then SCode.MOD(finalPrefix,eachPrefix,{},NONE(), inInfo);
     case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix,_)
       equation
@@ -2006,7 +2006,7 @@ algorithm
         sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
       then
         translateArgs_tail(rest_args, sub :: accum);
-        
+
     case ({}, _) then listReverse(inAccumSubs);
 
   end match;
@@ -2082,7 +2082,7 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> binding;
       Option<SCode.SubMod> opt_mod;
       Absyn.Info info;
-      
+
     case (SCode.MOD(fp, ep, submods, binding, info), _)
       equation
         (redecl, submods) = List.splitOnTrue(submods, SCode.isRedeclareSubMod);
@@ -2091,7 +2091,7 @@ algorithm
         (SCode.MOD(fp, ep, redecl, binding, info), opt_mod);
 
     else (inMod, NONE());
-    
+
   end match;
 end splitRedeclareMod;
 
@@ -2504,7 +2504,7 @@ algorithm
   outSEach := match(inAEach)
     case (Absyn.EACH()) then SCode.EACH();
     case (Absyn.NON_EACH()) then SCode.NOT_EACH();
-  end match;  
+  end match;
 end translateEach;
 
 public function getRedeclareAsElements
@@ -2516,7 +2516,7 @@ algorithm
     local
       SCode.Element el;
       list<SCode.Element> els,els1;
-    
+
     // empty
     case ({}) then {};
 
@@ -2524,28 +2524,28 @@ algorithm
     case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
       equation
         els1 = getRedeclareAsElements(els);
-      then 
+      then
         el::els1;
-    
+
     // redeclare-as-element class extends, ignore!
     case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()), classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::els)
       equation
         els1 = getRedeclareAsElements(els);
-      then 
+      then
         els1;
-        
+
     // redeclare-as-element class!
     case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
       equation
         els1 = getRedeclareAsElements(els);
       then
         el::els1;
-    
+
     // rest
     case (_::els)
       equation
         els1 = getRedeclareAsElements(els);
-      then 
+      then
         els1;
   end matchcontinue;
 end getRedeclareAsElements;
@@ -2567,7 +2567,7 @@ algorithm
       Absyn.Info info;
       SCode.Mod redeclareMod;
       list<SCode.SubMod> submods;
-    
+
     // empty, return the same
     case (_, {}) then inElements;
 
@@ -2581,24 +2581,24 @@ algorithm
         redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), Absyn.dummyInfo);
         mod = mergeSCodeMods(redeclareMod, mod);
         out = addRedeclareAsElementsToExtends(rest, redecls);
-      then 
+      then
         SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
-    
-    // failure 
+
+    // failure
     case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
       equation
-        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +& 
+        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +&
                  "\nredeclares:\n" +& stringDelimitList(List.map(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
       then
         fail();
-        
+
     // ignore non-extends
     case (el::rest, redecls)
       equation
         out = addRedeclareAsElementsToExtends(rest, redecls);
-      then 
+      then
         el::out;
-    
+
   end matchcontinue;
 end addRedeclareAsElementsToExtends;
 
@@ -2608,7 +2608,7 @@ protected function mergeSCodeMods
   output SCode.Mod outMod;
 algorithm
   outMod := matchcontinue(inModOuter, inModInner)
-    local 
+    local
       SCode.Final f1, f2;
       SCode.Each e1, e2;
       list<SCode.SubMod> subMods1, subMods2;
@@ -2616,15 +2616,15 @@ algorithm
       Absyn.Info info;
 
     // inner is NOMOD
-    case (SCode.REDECL(finalPrefix = _), SCode.NOMOD()) then inModOuter; 
-      
+    case (SCode.REDECL(finalPrefix = _), SCode.NOMOD()) then inModOuter;
+
     // both are redeclarations
     //case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
     //  equation
     //    els = listAppend(redecls, els);
     //  then
     //    SCode.REDECL(f2, e2, els);
-         
+
     // inner is mod
     //case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b, info))
     //  equation
@@ -2633,19 +2633,19 @@ algorithm
     //    newSubMods = listAppend(newSubMods, subMods);
     //  then
     //    SCode.MOD(f2, e2, newSubMods, b, info);
-    case (SCode.MOD(f1, e1, subMods1, b1, info), 
+    case (SCode.MOD(f1, e1, subMods1, b1, info),
           SCode.MOD(f2, e2, subMods2, b2, _))
       equation
         subMods1 = listAppend(subMods1, subMods2);
         b1 = Util.if_(Util.isSome(b1), b1, b2);
       then
         SCode.MOD(f1, e1, subMods1, b1, info);
-         
+
     // failure
     case (_, _)
       equation
-        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter) +& 
-               "\ninnerMod: " +& SCodeDump.printModStr(inModInner) +& "\n");  
+        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter) +&
+               "\ninnerMod: " +& SCodeDump.printModStr(inModInner) +& "\n");
       then
         fail();
 
@@ -2658,7 +2658,7 @@ protected function mergeSCodeOptAnn
   output Option<SCode.Annotation> outMod;
 algorithm
   outMod := match (inModOuter, inModInner)
-    local 
+    local
       SCode.Mod mod1, mod2, mod;
 
     case (NONE(),_) then inModInner;
@@ -2685,7 +2685,7 @@ algorithm
       SCode.Each e;
       SCode.Ident n;
       list<SCode.SubMod> newSubMods;
-    
+
     // empty
     case (f, e, {}) then {};
 
@@ -2694,9 +2694,9 @@ algorithm
       equation
         // print an error here
         print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el) +& "\n");
-        // recurse  
+        // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then 
+      then
         newSubMods;
 
     // component
@@ -2704,25 +2704,25 @@ algorithm
       equation
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then 
+      then
         SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
-        
+
     // class
     case (f, e, (el as SCode.CLASS(name = n))::rest)
       equation
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then 
+      then
         SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
-    
+
     // rest
     case (f, e, el::rest)
       equation
         // print an error here
         print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " +& SCodeDump.unparseElementStr(el) +& "\n");
-        // recurse  
+        // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then 
+      then
         newSubMods;
   end matchcontinue;
 end makeElementsIntoSubMods;

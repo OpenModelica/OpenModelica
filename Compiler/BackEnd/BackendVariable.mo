@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -34,7 +34,7 @@ encapsulated package BackendVariable
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
                BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
-  
+
   RCS: $Id$
 "
 
@@ -65,7 +65,7 @@ protected import Types;
 
 /* =======================================================
  *
- *  Section for functions that deals with Var 
+ *  Section for functions that deals with Var
  *
  * =======================================================
  */
@@ -168,13 +168,13 @@ algorithm
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    // params are by default fixed 
+    // params are by default fixed
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindExp=SOME(_))) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.CONST(),bindExp=SOME(_))) then true;
-/*  See Modelica Spec 3.2 page 88: 
+/*  See Modelica Spec 3.2 page 88:
     For constants and parameters, the attribute fixed is by default true. For other variables
-    fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
-  case (v) // states are by default fixed. 
+    fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".
+  case (v) // states are by default fixed.
       equation
         BackendDAE.STATE(index=_) = varKind(v);
         fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
@@ -241,7 +241,7 @@ algorithm
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-      
+
   end match;
 end setVarStartValue;
 
@@ -286,7 +286,7 @@ algorithm
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(values = NONE()),NONE()) then inVar;
-      
+
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
@@ -362,11 +362,11 @@ algorithm
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-      
+
   end match;
 end setVarStartOrigin;
 
-public function setVarAttributes 
+public function setVarAttributes
 "sets the variable attributes of a variable.
 author: Peter Aronsson (paronsson@wolfram.com)
 "
@@ -387,11 +387,11 @@ algorithm
       DAE.ElementSource source;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
-      
+
     case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct),_)
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);  
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);
   end match;
-end setVarAttributes; 
+end setVarAttributes;
 
 public function varStartValue
 "function varStartValue
@@ -409,7 +409,7 @@ end varStartValue;
 public function varStartValueFail
 "function varStartValueFail
   author: Frenkel TUD
-  Returns the DAE.StartValue of a variable if there is one. 
+  Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -452,14 +452,14 @@ algorithm
         DAE.SCONST("");
     else
       then
-        DAE.RCONST(0.0);        
+        DAE.RCONST(0.0);
    end matchcontinue;
 end varStartValueType;
 
 public function varStartValueOption
 "function varStartValueOption
   author: Frenkel TUD
-  Returns the DAE.StartValue of a variable if there is one. 
+  Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
   output Option<DAE.Exp> sv;
@@ -513,7 +513,7 @@ algorithm
     local DAE.Exp e;
     case (BackendDAE.VAR(bindExp = SOME(e))) then e;
     else
-      varStartValueFail(v);      
+      varStartValueFail(v);
    end match;
 end varBindExpStartValue;
 
@@ -972,7 +972,7 @@ algorithm
     case(cr,vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(cr, vars);
-      then 
+      then
         true;
     case(_,_) then false;
   end matchcontinue;
@@ -999,13 +999,13 @@ end isNonStateVar;
 "
   author: Daniel Hedberg, 2011-01
   modified by: Leonardo Laguna, 2012-01
-  
+
   Returns true if the specified variable has the attribute uncertain and the
   value of it is Uncertainty.refine, false otherwise.
 "
   input BackendDAE.Var var;
   output Boolean b;
-algorithm 
+algorithm
   b := matchcontinue (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(DAE.REFINE()))))) then true;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption = SOME(DAE.REFINE()))))) then true;
@@ -1016,12 +1016,12 @@ end varHasUncertainValueRefine;
 public function varDistribution
 "
   author: Peter Aronsson, 2012-05
-  
+
   Returns Distribution record of a variable.
 "
   input BackendDAE.Var var;
   output DAE.Distribution d;
-algorithm 
+algorithm
   d := match (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then d;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then d;
@@ -1031,13 +1031,13 @@ end varDistribution;
 public function varTryGetDistribution
 "
   author: Peter Aronsson, 2012-05
-  
+
   Returns Distribution record of a variable.
 "
   input BackendDAE.Var var;
   output Option<DAE.Distribution> dout;
   protected DAE.Distribution d;
-algorithm 
+algorithm
   dout := match (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then SOME(d);
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then SOME(d);
@@ -1048,12 +1048,12 @@ end varTryGetDistribution;
 public function varUncertainty
 "
   author: Peter Aronsson, 2012-05
-  
+
   Returns Uncertainty of a variable.
 "
   input BackendDAE.Var var;
   output DAE.Uncertainty u;
-algorithm 
+algorithm
   u := match (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(u))))) then u;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(u))))) then u;
@@ -1063,12 +1063,12 @@ end varUncertainty;
 public function varHasDistributionAttribute
 "
   author: Peter Aronsson, 2012-05
-  
+
   Returns true if the specified variable has the attribute distribution set.
 "
   input BackendDAE.Var var;
   output Boolean b;
-algorithm 
+algorithm
   b := matchcontinue (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(_))))) then true;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(_))))) then true;
@@ -1079,12 +1079,12 @@ end varHasDistributionAttribute;
 public function varHasUncertaintyAttribute
 "
   author: Peter Aronsson, 2012-05
-  
+
   Returns true if the specified variable has the attribute uncertain set.
 "
   input BackendDAE.Var var;
   output Boolean b;
-algorithm 
+algorithm
   b := matchcontinue (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(_))))) then true;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(_))))) then true;
@@ -1153,8 +1153,8 @@ public function isVarDiscrete
 " This functions checks if BackendDAE.Var is discrete"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
-algorithm 
-  outBoolean := 
+algorithm
+  outBoolean :=
   match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
     case (BackendDAE.VAR(varType = DAE.T_INTEGER(source = _))) then true;
@@ -1167,7 +1167,7 @@ end isVarDiscrete;
 public function isVarNonDiscrete
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean := not isVarDiscrete(inVar);
 end isVarNonDiscrete;
 
@@ -1200,8 +1200,8 @@ algorithm
       Boolean res;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;            
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ARRAY(ty=DAE.T_REAL(source = _))) :: _)) then true;            
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ARRAY(ty=DAE.T_REAL(source = _))) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
@@ -1464,12 +1464,12 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-    // int variable 
+    // int variable
     case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
         true = isParam(var);
       then true;
-    // enum is also mapped to long 
+    // enum is also mapped to long
     case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
         true = isParam(var);
@@ -1722,7 +1722,7 @@ algorithm
               comment = comment,
               connectorType = ct))
     then
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct);
   end match;
 end copyVarNewName;
 
@@ -1773,8 +1773,8 @@ algorithm
               connectorType = ct),new_kind)
     equation
       oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
-    then 
-      oVar; 
+    then
+      oVar;
   end match;
 end setVarKind;
 
@@ -1815,7 +1815,7 @@ algorithm
           _)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
-    then 
+    then
       oVar;
   end match;
 end setBindExp;
@@ -1857,7 +1857,7 @@ algorithm
               connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
-    then 
+    then
       oVar;
   end match;
 end setBindValue;
@@ -1866,12 +1866,12 @@ public function setVarDirectionTpl "function setVarDirectionTpl
   author: "
   input tuple<BackendDAE.Var, DAE.VarDirection> inTpl;
   output tuple<BackendDAE.Var, DAE.VarDirection> outTpl;
-algorithm 
+algorithm
   outTpl  := match(inTpl)
     local
       BackendDAE.Var var;
       DAE.VarDirection dir;
-      
+
     case((var, dir)) equation
       var = setVarDirection(var, dir);
     then ((var, dir));
@@ -1913,8 +1913,8 @@ algorithm
               connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
-    then 
-      oVar; 
+    then
+      oVar;
   end match;
 end setVarDirection;
 
@@ -1925,7 +1925,7 @@ public function getVarDirection "function getVarDirection
   output DAE.VarDirection varDirection;
 algorithm
   varDirection := match (inVar)
-    case (BackendDAE.VAR(varDirection = varDirection)) then  varDirection; 
+    case (BackendDAE.VAR(varDirection = varDirection)) then  varDirection;
   end match;
 end getVarDirection;
 
@@ -2063,10 +2063,10 @@ algorithm
       list<Option<DAE.Exp>> ominmax;
       String str, format;
       DAE.Type tp;
-    
+
     case(_,_,_,BackendDAE.CONST(),_,_) then iMinmax;
     case (_,_,_,_,_,_)
-      equation 
+      equation
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
         str = stringAppendList({"Variable ",str," out of [min, max] interval: "});
@@ -2078,14 +2078,14 @@ algorithm
         // if is real use %g otherwise use %d (ints and enums)
         format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
         msg = DAE.BINARY(
-              DAE.SCONST(str), 
+              DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
-              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
               );
         // do not add if const true
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
-      then 
+      then
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
     else then iMinmax;
   end matchcontinue;
@@ -2130,10 +2130,10 @@ algorithm
       list<Option<DAE.Exp>> ominmax;
       String str, format;
       DAE.Type tp;
-    
+
     case(_,_,_,BackendDAE.CONST(),_,_) then iNominal;
     case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_,_)
-      equation 
+      equation
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
         str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
@@ -2146,12 +2146,12 @@ algorithm
         // if is real use %g otherwise use %d (ints and enums)
         format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
         msg = DAE.BINARY(
-              DAE.SCONST(str), 
+              DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
-              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
               );
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
-      then 
+      then
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
     else then iNominal;
   end matchcontinue;
@@ -2175,7 +2175,7 @@ public function getAlias
   output DAE.ComponentRef outCr;
   output Boolean negated;
 protected
-  DAE.Exp e; 
+  DAE.Exp e;
 algorithm
   e := varBindExp(inVar);
   (outCr,negated) := getAlias1(e);
@@ -2191,7 +2191,7 @@ algorithm
     local
       DAE.ComponentRef name;
       Absyn.Path fname;
-    
+
     case DAE.CREF(componentRef=name) then (name,false);
     case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)) then (name,true);
     case DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)) then (name,true);
@@ -2213,7 +2213,7 @@ end getAlias1;
 
 /* =======================================================
  *
- *  Section for functions that deals with VariablesArray 
+ *  Section for functions that deals with VariablesArray
  *
  * =======================================================
  */
@@ -2289,7 +2289,7 @@ public function daenumVariables
   input BackendDAE.EqSystem syst;
   output Integer n;
 protected
- BackendDAE.Variables vars; 
+ BackendDAE.Variables vars;
 algorithm
   vars := daeVars(syst);
   n := numVariables(vars);
@@ -2433,7 +2433,7 @@ end vararrayNth;
  *
  * =======================================================
  */
- 
+
 public function emptyVars "function emptyVars
   author: PA
   Returns a Variable datastructure that is empty.
@@ -2462,7 +2462,7 @@ algorithm
     local
       list<BackendDAE.Var> varlst;
       BackendDAE.VariableArray vararr;
-    
+
     case (BackendDAE.VARIABLES(varArr = vararr)) equation
       varlst = vararrayList(vararr);
     then varlst;
@@ -2481,13 +2481,13 @@ algorithm
       BackendDAE.Variables res,vars;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
-    
+
     case ({})
       equation
         res = emptyVars();
       then
         res;
-    
+
     case ((v :: vs))
       equation
         vars = listVar(vs);
@@ -2697,7 +2697,7 @@ algorithm
         newvars;
     else
       then
-        inVariables; 
+        inVariables;
   end matchcontinue;
 end deleteVars;
 
@@ -2732,7 +2732,7 @@ algorithm
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       list<Integer> ilst;
-      
+
     case (cr,_) equation
       (_,ilst) = getVar(cr,inVariables);
       (vars,_) = removeVars(ilst,inVariables,{});
@@ -2806,10 +2806,10 @@ algorithm
       equation
         (vars,acc) = removeVars(ilst,inVariables,iAcc);
       then
-        (vars,acc);      
+        (vars,acc);
   end matchcontinue;
 end removeVars;
-  
+
 public function removeVarDAE
 "function: removeVarDAE
   author: Frenkel TUD 2012-11
@@ -2832,8 +2832,8 @@ algorithm
         (ordvars1,outVar) = removeVar(inVarPos,ordvars);
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets),outVar);
   end match;
-end removeVarDAE;  
-  
+end removeVarDAE;
+
 public function removeVar
 "function: removeVar
   author: Frenkel TUD 2011-04
@@ -2945,7 +2945,7 @@ algorithm
       equation
         print("compressVariables failed\n");
       then
-        fail();     
+        fail();
   end matchcontinue;
 end compressVariables;
 
@@ -2977,7 +2977,7 @@ algorithm
         indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
         indexes = crefIdxLstArr[indx + 1];
         i = insertindex-1;
-        _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));                
+        _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));
       then
         compressVariables1(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize);
     // found non element
@@ -3014,7 +3014,7 @@ algorithm
     local
       list<BackendDAE.Var> varlst;
     case (_,_,_)
-      equation 
+      equation
         (varlst,_) = getVar(inComponentRef,inVariables);
         varlst = Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
       then
@@ -3066,7 +3066,7 @@ algorithm
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
-      Env.Env env;      
+      Env.Env env;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
@@ -3095,7 +3095,7 @@ algorithm
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
-      Env.Env env;      
+      Env.Env env;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
@@ -3354,7 +3354,7 @@ algorithm
    case (_,BackendDAE.EQSYSTEM(orderedVars=vars))
       equation
         (varlst,indxlst) = getVar(inComponentRef,vars);
-      then 
+      then
         (varlst,indxlst);
   end match;
 end getVarDAE;
@@ -3376,7 +3376,7 @@ algorithm
    case (_,BackendDAE.SHARED(knownVars=vars))
       equation
         (varlst,indxlst) = getVar(inComponentRef,vars);
-      then 
+      then
         (varlst,indxlst);
   end match;
 end getVarShared;
@@ -3403,7 +3403,7 @@ algorithm
       list<Integer> indxs;
       list<BackendDAE.Var> vLst;
       list<DAE.ComponentRef> crlst;
-      DAE.ComponentRef cr1;    
+      DAE.ComponentRef cr1;
     case (_,_)
       equation
         (v,indx) = getVar2(cr, inVariables) "if scalar found, return it" ;
@@ -3423,7 +3423,7 @@ algorithm
         crlst = ComponentReference.expandCref(cr1,true);
         (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
-        (vLst,indxs);        
+        (vLst,indxs);
     /* failure
     case (cr,vars)
       equation
@@ -3466,7 +3466,7 @@ algorithm
     case (DAE.CREF_ITER(ident = _), _) then (inCref, iPerformed);
     case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = _), _) then (inCref, iPerformed);
     case (DAE.WILD(), _) then (inCref, iPerformed);
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.replaceVarWithWholeDim: Unknown cref"});
@@ -3522,9 +3522,9 @@ public function getVarLst
   input list<DAE.ComponentRef> inComponentRefLst;
   input BackendDAE.Variables inVariables;
   input list<BackendDAE.Var> iVarLst;
-  input list<Integer> iIntegerLst; 
+  input list<Integer> iIntegerLst;
   output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst; 
+  output list<Integer> outIntegerLst;
 algorithm
   (outVarLst,outIntegerLst) := matchcontinue(inComponentRefLst,inVariables,iVarLst,iIntegerLst)
     local
@@ -3540,12 +3540,12 @@ algorithm
         (v,indx) = getVar2(cr, inVariables);
         (varlst,ilst) = getVarLst(crlst,inVariables,v::iVarLst,indx::iIntegerLst);
       then
-        (varlst,ilst); 
+        (varlst,ilst);
     case (_::crlst,_,_,_)
       equation
         (varlst,ilst) = getVarLst(crlst,inVariables,iVarLst,iIntegerLst);
       then
-        (varlst,ilst); 
+        (varlst,ilst);
   end matchcontinue;
 end getVarLst;
 
@@ -3566,7 +3566,7 @@ algorithm
       DAE.ComponentRef cr2,cr;
       array<list<BackendDAE.CrefIndex>> hashvec;
       BackendDAE.VariableArray varr;
-    
+
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
@@ -3577,7 +3577,7 @@ algorithm
         indx_1 = indx + 1;
       then
         (v,indx_1);
-    
+
   end match;
 end getVar2;
 
@@ -3632,7 +3632,7 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> indxlst;
     case ((v,(vars,v_lst)))
-      equation   
+      equation
         cr = varCref(v);
        (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
@@ -3665,7 +3665,7 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> indxlst;
     case ((v,(vars,v_lst)))
-      equation   
+      equation
         cr = varCref(v);
        (vlst,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
@@ -4112,7 +4112,7 @@ algorithm
       Option<DAE.VariableAttributes> attr,attra;
     // legal cases one fixed the other one not fixed, use the fixed one
     case (v,true,_,_,_,false,_,_,_,_)
-      then v;    
+      then v;
     case (v,false,_,_,va,true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
@@ -4128,7 +4128,7 @@ algorithm
         v1 = setVarStartValueOption(v,NONE());
         v1 = setVarFixed(v,true);
       then v1;
-    // legal case both fixed=false           
+    // legal case both fixed=false
     case (v,false,NONE(),_,va,false,NONE(),_,_,_)
       then v;
     case (v,false,SOME(sa),_,va,false,NONE(),_,_,_)
@@ -4153,15 +4153,15 @@ algorithm
         sb = startValueType(sva,tya);
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         // according to MSL
-        // use the value from the variable that is closer to the top of the 
-        // hierarchy i.e. A.B value has priority over X.Y.Z value!        
+        // use the value from the variable that is closer to the top of the
+        // hierarchy i.e. A.B value has priority over X.Y.Z value!
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
         mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ");
     // legal case both fixed = true and start exp equal
     case (v,true,NONE(),_,va,true,NONE(),_,_,_)
-      then v;        
+      then v;
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),true,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),true,_,_,_,_)
       equation
         sa = startValueType(sv,ty);
@@ -4170,14 +4170,14 @@ algorithm
         (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
         v1 = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
-      then v1;  
+      then v1;
     // not legal case both fixed with unequal start values
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),true,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),true,_,_,_,_)
       equation
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        // overconstrained system report warning/error       
+        // overconstrained system report warning/error
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
@@ -4219,7 +4219,7 @@ algorithm
     else
       then
         DAE.RCONST(0.0);
-  end matchcontinue;   
+  end matchcontinue;
 end startValueType;
 
 protected function mergeStartFixed1 "function mergeStartFixed1
@@ -4251,8 +4251,8 @@ algorithm
         s6 = ExpressionDump.printExpStr(sva);
         s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
-      then 
-        inVar;     
+      then
+        inVar;
     case (true,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -4264,7 +4264,7 @@ algorithm
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v = setVarStartValue(inVar,sva);
         v = setVarStartOrigin(v,soa);
-      then 
+      then
         v;
   end matchcontinue;
 end mergeStartFixed1;
@@ -4293,7 +4293,7 @@ algorithm
     // true if crefs in expression
     case ((e as DAE.CREF(componentRef=cr), (vars,_,hs)))
       then
-        ((e, (vars,true,hs)));        
+        ((e, (vars,true,hs)));
     else then inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
@@ -4322,7 +4322,7 @@ algorithm
         // use highest origin
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
-        origin = Util.if_(intGt(ia,i),sao,so);        
+        origin = Util.if_(intGt(ia,i),sao,so);
       then (exp1,origin);
     case (false,_,_,_,_,_)
       equation
@@ -4331,7 +4331,7 @@ algorithm
         ia = startOriginToValue(sao);
         false = intEq(i,ia);
         ((exp1_1,origin)) = Util.if_(intGt(ia,i),(exp2,sao),(exp1,so));
-      then 
+      then
         (exp1_1,origin);
     case (_,_,_,_,_,_)
       equation
@@ -4346,7 +4346,7 @@ algorithm
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
         origin = Util.if_(intGt(ia,i),sao,so);
-      then 
+      then
         (exp1_1,origin);
   end matchcontinue;
 end getNonZeroStart;
@@ -4375,18 +4375,18 @@ algorithm
       BackendDAE.Var v,var,var1;
       DAE.Exp e,e_1,e1,esum,eaverage;
     case (v,var,_)
-      equation 
+      equation
         // nominal
         e = varNominalValue(v);
         e1 = varNominalValue(var);
         e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
         esum = Expression.makeSum({e_1,e1});
         eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
-        (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
+        (eaverage,_) = ExpressionSimplify.simplify(eaverage);
         var1 = setVarNominalValue(var,eaverage);
       then var1;
     case (v,var,_)
-      equation 
+      equation
         // nominal
         e = varNominalValue(v);
         e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
@@ -4411,7 +4411,7 @@ algorithm
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       DAE.ComponentRef cr,cr1;
     case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),_)
-      equation 
+      equation
         // minmax
         ominmax = DAEUtil.getMinMax(attr);
         ominmax1 = DAEUtil.getMinMax(attr1);
@@ -4452,21 +4452,21 @@ algorithm
         minMax = mergeMinMax1({SOME(max1),SOME(min1)},{omin2,omax2});
         checkMinMax(minMax,cr,cr1,negate);
       then
-        minMax;        
+        minMax;
     case (true,{NONE(),SOME(max)},{omin2,omax2},_,_)
       equation
         max1 = Expression.negate(max);
         minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
         checkMinMax(minMax,cr,cr1,negate);
       then
-        minMax;        
+        minMax;
     case (true,{SOME(min),NONE()},{omin2,omax2},_,_)
       equation
         min1 = Expression.negate(min);
         minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
         checkMinMax(minMax,cr,cr1,negate);
       then
-        minMax;        
+        minMax;
   end match;
 end mergeMinMax;
 
@@ -4493,7 +4493,7 @@ algorithm
         s4 = ExpressionDump.printExpStr(min);
         s5 = ExpressionDump.printExpStr(max);
         s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
-        Error.addMessage(Error.COMPILER_WARNING,{s});        
+        Error.addMessage(Error.COMPILER_WARNING,{s});
       then ();
     // no error
     else
@@ -4539,10 +4539,10 @@ algorithm
       then ((NONE(),SOME(smax)));
     // (min,),(,max)
     case ({SOME(min),NONE()},{NONE(),SOME(max1)})
-      then ((SOME(min),SOME(max1))); 
+      then ((SOME(min),SOME(max1)));
     // (,max),(min,)
     case ({NONE(),SOME(max)},{SOME(min1),NONE()})
-      then ((SOME(min1),SOME(max)));               
+      then ((SOME(min1),SOME(max)));
     // (,max),(min,max)
     case ({NONE(),SOME(max)},{SOME(min1),SOME(max1)})
       equation
@@ -4590,15 +4590,15 @@ algorithm
       Option<DAE.VariableAttributes> attr,attr1;
       DAE.Exp e,e1;
     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
-      equation 
+      equation
         var1 = setVarDirection(var,DAE.INPUT());
       then var1;
     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation 
+      equation
         var1 = setVarDirection(var,DAE.INPUT());
       then var1;
     case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation 
+      equation
         var1 = setVarDirection(var,DAE.OUTPUT());
       then var1;
     case(_,_) then inVar;
@@ -4612,7 +4612,7 @@ public function calcAliasKey "function calcAliasKey
   of the keeped var"
   input BackendDAE.Var var;
   output Integer i;
-protected 
+protected
   DAE.ComponentRef cr;
   Boolean b;
   Integer d;
@@ -4649,7 +4649,7 @@ algorithm
     case DAE.CREF_QUAL(ident = "$ZERO") then true;
     case DAE.CREF_QUAL(ident = "$pDER") then true;
     case DAE.CREF_QUAL(ident = "$DER",componentRef=DAE.CREF_QUAL(ident = "$DER")) then true;
-    // keep them a while untill we know which are needed  
+    // keep them a while untill we know which are needed
     //case DAE.CREF_QUAL(ident = "$DER") then true;
     case DAE.CREF_IDENT(ident = ident) then intEq(System.strncmp(ident,"$when",5),0);
     else then false;
@@ -4674,7 +4674,7 @@ end varStateSelectPrioAlias;
 
 public function stateSelectToInteger "function stateSelectToInteger
   helper function to stateSelectToInteger
-  return 
+  return
   Never: -1
   Avoid: 0
   Default: 1

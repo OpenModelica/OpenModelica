@@ -8,7 +8,7 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
-runtimeCpp: 
+runtimeCpp:
 	cd ./Build; echo "change to Build";	\
 	cmake -D  CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../; \
 	make

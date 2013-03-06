@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -268,7 +268,7 @@ algorithm
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        str = str +& printModStr(mod);        
+        str = str +& printModStr(mod);
         res = stringAppendList({"extends ",str,";"});
       then
         res;
@@ -279,36 +279,36 @@ algorithm
       then
         res;
 
-    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.DERIVED(typeSpec = _))
       equation
         res = unparseElementStr(inElement);
       then
         res;
 
-    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.CLASS_EXTENDS(baseClassName = str))
       equation
         ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
         res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
       then
         res;
-        
-    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.ENUMERATION(enumLst = _))
       equation
         ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
         res = stringAppendList({ioStr, "class ",n," enumeration;"});
       then
         res;
-    
+
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
       equation
         ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
         res = stringAppendList({ioStr, "class ",n,";"});
       then
-        res;    
-    
+        res;
+
     case (SCode.IMPORT(imp = imp))
       equation
          str = "import "+& Absyn.printImportString(imp) +& ";";
@@ -334,7 +334,7 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Replaceable rep;
       SCode.Prefixes pref;
-        
+
     case (SCode.CLASS(name = id,prefixes = pref as SCode.PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation
         s = printClassdefStr(def);
@@ -368,7 +368,7 @@ algorithm
       list<Absyn.Path> plst;
       Absyn.Path path;
       list<String> slst;
-      
+
     case (SCode.PARTS(elementLst = elts,
                 normalEquationLst = eqns,
                 initialEquationLst = ieqns,
@@ -603,7 +603,7 @@ algorithm
       String path_str, mod_str;
 
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
-        constrainingClass = path, modifier = mod)))) 
+        constrainingClass = path, modifier = mod))))
       equation
         path_str = Absyn.pathString(path);
         mod_str = printModStr(mod);
@@ -642,17 +642,17 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Replaceable rpl;
       String s;
-        
+
     case(SCode.PREFIXES(v,rd,f,io,rpl))
       equation
-        s = visibilityStr(v) +& 
-            redeclareStr(rd) +& 
-            finalStr(f) +& 
-            Absyn.innerOuterStr(io) +& 
+        s = visibilityStr(v) +&
+            redeclareStr(rd) +&
+            finalStr(f) +&
+            Absyn.innerOuterStr(io) +&
             replaceablePrefixStr(rpl);
-      then 
+      then
         s;
-    
+
   end match;
 end prefixesStr;
 

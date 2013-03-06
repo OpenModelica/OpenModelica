@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -29,14 +29,14 @@
  *
  */
 
-encapsulated package BaseHashTable 
-" 
+encapsulated package BaseHashTable
+"
   file:        BaseHashTable.mo
   package:     BaseHashTable
-  author:      Peter Aronsson (MathCore)  
+  author:      Peter Aronsson (MathCore)
   description: BaseHashTable is a generic implementation of hashtables.
                See HashTable*.mo to see how to use it.
-  
+
   RCS: $Id$
 
   This file is an extension to OpenModelica.
@@ -59,15 +59,15 @@ protected import Util;
 
 // adrpo: use a prime here (pick your poison):
 //        3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
-//       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157 
-//      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257 
-//      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367 
-//      373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463 467 
-//      479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593 599 
-//      601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701 709 
-//      719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829 
-//      839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967 
-//      971 977 983 991 997 1013 2053 3023 4013 4999 5051 5087 24971 
+//       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157
+//      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257
+//      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367
+//      373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463 467
+//      479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593 599
+//      601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701 709
+//      719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829
+//      839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967
+//      971 977 983 991 997 1013 2053 3023 4013 4999 5051 5087 24971
 //
 // You can also use Util.nextPrime if you know exactly how large the hash table
 // should be.
@@ -100,7 +100,7 @@ public function bucketToValuesSize
   input Integer szBucket;
   output Integer szArr;
 algorithm
-  szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10); 
+  szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10);
 end bucketToValuesSize;
 
 public function emptyHashTableWork
@@ -140,9 +140,9 @@ algorithm
       FuncHash hashFunc;
       FuncKeyString keystrFunc;
       String s;
-    
+
     // Adding when not existing previously.
-    case ((v as (key,value)), 
+    case ((v as (key,value)),
         ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
@@ -158,7 +158,7 @@ algorithm
     // Adding when already present => update value.
     case (_, _) then update(entry, hashTable);
 
-    case ((v as (key,value)), 
+    case ((v as (key,value)),
         ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
       equation
         print("- BaseHashTable.add failed: ");
@@ -210,7 +210,7 @@ algorithm
       Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-    
+
     // Adding when not existing previously
     case ((v as (key, value)),
        (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _)))
@@ -223,7 +223,7 @@ algorithm
         n = valueArrayLength(varr);
       then
         ((hashvec, varr, bsize, n, fntpl));
-    
+
     else
       equation
         print("- BaseHashTable.addNoUpdCheck failed\n");
@@ -250,9 +250,9 @@ algorithm
       Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-    
+
     // Adding when not existing previously
-    case ((v as (key, value)), 
+    case ((v as (key, value)),
         ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
       equation
         failure((_) = get(key, hashTable));
@@ -287,7 +287,7 @@ algorithm
   varr := valueArraySetnth(varr, index, inEntry);
   outHashTable := (hashvec, varr, bsize, n, functpl);
 end update;
-    
+
 public function delete
   "Deletes the Value associatied with Key from the HashTable.
    Note: This function does not delete from the index table, only from the
@@ -347,7 +347,7 @@ algorithm
       FuncEq keyEqual;
       FuncHash hashFunc;
       Boolean eq;
-      
+
     case (_, (hashvec, varr, bsize, n, (hashFunc, keyEqual, _, _)))
       equation
         hashindx = hashFunc(key, bsize);
@@ -357,7 +357,7 @@ algorithm
         (k, v) = valueArrayNth(varr, indx);
       then
         (v, indx);
-        
+
   end match;
 end get1;
 
@@ -381,7 +381,7 @@ algorithm
       equation
         eq = keyEqual(key, key2);
       then get2(eq, index, key, xs, keyEqual);
-    
+
   end match;
 end get2;
 
@@ -451,7 +451,7 @@ algorithm
   outEntries := Util.arrayFold(arr, List.consOption, {});
   outEntries := listReverse(outEntries);
 end valueArrayList;
- 
+
 public function hashTableCurrentSize
   "Returns the number of elements inserted into the table"
   input HashTable hashTable;

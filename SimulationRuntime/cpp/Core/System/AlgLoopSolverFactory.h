@@ -1,5 +1,5 @@
 #pragma once
- 
+
 #include <System/IAlgLoop.h>        // Interface for algebraic loops
 #include <System/IAlgLoopSolverFactory.h>
 #include <Solver/IAlgLoopSolver.h>        // Interface for algebraic loops
@@ -7,8 +7,8 @@
 #include <SimulationSettings/IGlobalSettings.h>
 /*****************************************************************************/
 /**
-Factory used by the system to create a solver for the solution of a (possibly 
-non-linear) system of the Form F(x)=0. 
+Factory used by the system to create a solver for the solution of a (possibly
+non-linear) system of the Form F(x)=0.
 */
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory
 {

@@ -1,10 +1,10 @@
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * xmlparser.h
  * A parser for file modelVariables.xml of an FMU.
- * Copyright 2010 QTronic GmbH. All rights reserved. 
+ * Copyright 2010 QTronic GmbH. All rights reserved.
  * Modified for OpenModelica Project.
  * -------------------------------------------------------------------------*/
- 
+
 
 #ifndef xmlparser_h
 #define xmlparser_h
@@ -30,7 +30,7 @@ typedef enum {
 } Elm;
 
 /* Attributes */
-typedef enum { 
+typedef enum {
   att_fmiVersion,att_displayUnit,att_gain,att_offset,att_unit,att_name,att_description,att_quantity,att_relativeQuantity,
   att_min,att_max,att_nominal,att_declaredType,att_start,att_fixed,att_startTime,att_stopTime,att_tolerance,att_value,
   att_valueReference,att_variability,att_causality,att_alias,att_modelName,att_modelIdentifier,att_guid,att_author,
@@ -41,10 +41,10 @@ typedef enum {
 /* Enumeration values */
 typedef enum {
     enu_flat,enu_structured,enu_constant,enu_parameter,enu_discrete,enu_continuous,
-    enu_input,enu_output,enu_internal,enu_none,enu_noAlias,enu_alias,enu_negatedAlias    
+    enu_input,enu_output,enu_internal,enu_none,enu_noAlias,enu_alias,enu_negatedAlias
 } Enu;
 
-/* AST node for element 
+/* AST node for element
  * DisplayUnitDefinition, RealType, IntegerType, BooleanType, StringType
  * DefaultExperiment, Item, Annotation, Name, Real, Integer, Boolean, String, Enumeration */
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
     int n;             /* size of attributes, even number */
 } Element;
 
-/* AST node for element that has a list of elements 
+/* AST node for element that has a list of elements
  * BaseUnit, EnumerationType, Tool, DirectDependency */
 typedef struct {
     Elm type;          /* element type */
@@ -103,8 +103,8 @@ typedef struct {
 } ModelDescription;
 
 /* types of AST nodes used to represent an element */
-typedef enum { 
-    astElement, 
+typedef enum {
+    astElement,
     astListElement,
     astType,
     astScalarVariable,
@@ -114,7 +114,7 @@ typedef enum {
 } AstNodeType;
 
 /* Possible results when retrieving an attribute value from an element */
-typedef enum { 
+typedef enum {
     valueMissing,
     valueDefined,
     valueIllegal

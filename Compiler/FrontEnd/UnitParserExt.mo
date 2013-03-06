@@ -1,6 +1,6 @@
 encapsulated package UnitParserExt "
   Copyright MathCore engineering AB 2008-2009
-  
+
   file:        UnitParserExt.mo
   package:     UnitParserExt
   description: Physical unit checking.

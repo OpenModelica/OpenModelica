@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
 
 /*
 
@@ -36,13 +36,13 @@
  by OpenCL code. This file is included in every OpenCL
  computation from modelica. It provides utilities when running
  computations on GPUs and also on CPUs in OpenCL mode.
- 
+
  It is the OpenCL counterpart of the C runtime for
  normal modelica execution.
 
- Mahder.Gebremedhin@liu.se  2012-03-31 
-   
-*/ 
+ Mahder.Gebremedhin@liu.se  2012-03-31
+
+*/
 
 
 
@@ -55,7 +55,7 @@
   #else
     #define MODELICA_ASSERT(s)
     #define printline()
-  #endif    
+  #endif
 #else
   #pragma OPENCL EXTENSION cl_khr_fp64 : enable
   #ifdef __CPU__
@@ -71,9 +71,9 @@
 
 #define sin(v,m) (sin(v))
 #define cos(v,m) (cos(v))
- 
- 
-typedef double modelica_real; 
+
+
+typedef double modelica_real;
 typedef long  modelica_integer;
 typedef bool modelica_boolean;
 typedef modelica_integer _index_t;
@@ -229,7 +229,7 @@ void initialize_global_buffer(__global void* exec_buffer, modelica_integer buffe
     size_t ndims = get_work_dim();
     for(int i = 0; i < ndims; i++)
         num_threads *= get_global_size(i);
-    
+
     size_t universalId;
     if(ndims == 1)
         universalId = get_global_id(0);
@@ -247,32 +247,32 @@ typedef __global void* global_void_ptr;
     size_t integer_buffer_per_thread;
     size_t boolean_buffer_per_thread;
     size_t size_buffer_per_thread;
-    
+
     buffer_per_thread = (buffer_size/num_threads);
     thread_buff_start = exec_buffer + universalId*buffer_per_thread;
-    
+
     global_void_ptr real_start = thread_buff_start;
     current_memory->data_buffer->global_real_buffer = (__global modelica_real*)real_start;
     real_buffer_per_thread = (buffer_per_thread*PRECENTAGE_REAL_BUFFER)/100;
-        
+
     global_void_ptr integer_start = real_start + real_buffer_per_thread;
     current_memory->data_buffer->global_integer_buffer = (__global modelica_integer*)integer_start;
     integer_buffer_per_thread = (buffer_per_thread*PRECENTAGE_INTEGER_BUFFER)/100;
-    
+
     global_void_ptr size_start = integer_start + integer_buffer_per_thread;
     current_memory->data_buffer->global_size_buffer = (__global modelica_integer*)size_start;
     size_buffer_per_thread = (buffer_per_thread*PRECENTAGE_SIZE_BUFFER)/100;
-    
+
     global_void_ptr boolean_start = size_start + size_buffer_per_thread;
     current_memory->data_buffer->global_boolean_buffer = (__global modelica_boolean*)boolean_start;
     boolean_buffer_per_thread = (buffer_per_thread*PRECENTAGE_BOOLEAN_BUFFER)/100;
-    
-    
+
+
     current_memory->current_global_state->global_real_buffer_ptr = current_memory->data_buffer->global_real_buffer;
     current_memory->current_global_state->global_integer_buffer_ptr = current_memory->data_buffer->global_integer_buffer;
     current_memory->current_global_state->global_size_buffer_ptr = current_memory->data_buffer->global_size_buffer;
     current_memory->current_global_state->global_boolean_buffer_ptr = current_memory->data_buffer->global_boolean_buffer;
-    
+
     /*
     if(get_global_id(0) == 0){
         printf("execution buffer starts from %d\n", exec_buffer);
@@ -291,9 +291,9 @@ typedef __global void* global_void_ptr;
         print_current_global_state(current_memory);
     }
     */
-    
-///////////////////////////////Global Memory initialized!////////////////////////////////////////////////////////////////////////        
-    
+
+///////////////////////////////Global Memory initialized!////////////////////////////////////////////////////////////////////////
+
 }
 
 // HELL ends here. You made it! yay!
@@ -315,11 +315,11 @@ void restore_memory_state(state s){
 */
 
 #define restore_memory_state(s) *(memory_state->current_global_state) = s.saved_global_state; *(memory_state->current_local_state) = s.saved_local_state; barrier(CLK_LOCAL_MEM_FENCE);
-    
+
 //memory_pool ends here.
 ///////////////////////////////////////////////////////////
-    
-    
+
+
 ///////////////////////////////////////////////////////////
 //utility + builtin functions
 
@@ -405,24 +405,24 @@ void alloc_integer_array_c99_1(integer_array* dest, int ndims, modelica_integer 
     size_t elements = 0;
     _index_t start;
     dest->ndims = 1;
-    
+
     //assert(n>=0);
     //assert(n + current_global_state.global_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_global_state->global_size_buffer_ptr + 2 >= memory_state->current_global_state->global_boolean_buffer_ptr){
         //printf("Size buffer pointer passed limit\n");
     }
-    
+
     dest->dim_size = memory_state->current_global_state->global_size_buffer_ptr;
     memory_state->current_global_state->global_size_buffer_ptr += 1;
     dest->dim_size[0] = size_1;
-    
+
     elements = integer_array_nr_of_elements(dest);
     //assert(n>=0);
     //assert(current_global_state.global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
     if( memory_state->current_global_state->global_integer_buffer_ptr + elements >= memory_state->current_global_state->global_size_buffer_ptr){
         //printf("Integer buffer pointer passed limit\n");
     }
-    
+
     dest->data = memory_state->current_global_state->global_integer_buffer_ptr;
     memory_state->current_global_state->global_integer_buffer_ptr += elements;
 }
@@ -432,7 +432,7 @@ void alloc_real_array_c99_1(real_array* dest, int ndims, modelica_integer size_1
     size_t elements = 0;
     _index_t start;
     dest->ndims = 1;
-    
+
     //assert(n>=0);
     //assert(n + current_global_state.global_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_global_state->global_size_buffer_ptr + 2 >= memory_state->current_global_state->global_boolean_buffer_ptr){
@@ -441,7 +441,7 @@ void alloc_real_array_c99_1(real_array* dest, int ndims, modelica_integer size_1
     dest->dim_size = memory_state->current_global_state->global_size_buffer_ptr;
     memory_state->current_global_state->global_size_buffer_ptr += 1;
     dest->dim_size[0] = size_1;
-    
+
     elements = real_array_nr_of_elements(dest);
     //assert(n>=0);
     //assert(current_global_state.global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
@@ -451,7 +451,7 @@ void alloc_real_array_c99_1(real_array* dest, int ndims, modelica_integer size_1
 
     dest->data = memory_state->current_global_state->global_real_buffer_ptr;
     memory_state->current_global_state->global_real_buffer_ptr += elements;
-    
+
 }
 
 
@@ -460,7 +460,7 @@ void alloc_integer_array_c99_2(integer_array* dest, int ndims, modelica_integer 
     size_t elements = 0;
     _index_t start;
     dest->ndims = 2;
-    
+
     //assert(n>=0);
     //assert(n + current_global_state->global_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_global_state->global_size_buffer_ptr + 2 >= memory_state->current_global_state->global_boolean_buffer_ptr){
@@ -470,11 +470,11 @@ void alloc_integer_array_c99_2(integer_array* dest, int ndims, modelica_integer 
     memory_state->current_global_state->global_size_buffer_ptr += 2;
     dest->dim_size[0] = size_1;
     dest->dim_size[1] = size_2;
-    
+
     elements = integer_array_nr_of_elements(dest);
     //assert(n>=0);
     //assert(current_global_state->global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
-    
+
     if( memory_state->current_global_state->global_integer_buffer_ptr + elements >= memory_state->current_global_state->global_size_buffer_ptr){
         //printf("Integer buffer pointer passed limit\n");
     }
@@ -487,7 +487,7 @@ void alloc_real_array_c99_2(real_array* dest, int ndims, modelica_integer size_1
     size_t elements = 0;
     _index_t start;
     dest->ndims = 2;
-    
+
     //assert(n>=0);
     //assert(n + current_global_state->global_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_global_state->global_size_buffer_ptr + 2 >= memory_state->current_global_state->global_boolean_buffer_ptr){
@@ -497,7 +497,7 @@ void alloc_real_array_c99_2(real_array* dest, int ndims, modelica_integer size_1
     memory_state->current_global_state->global_size_buffer_ptr += 2;
     dest->dim_size[0] = size_1;
     dest->dim_size[1] = size_2;
-    
+
     elements = real_array_nr_of_elements(dest);
     //assert(n>=0);
     //assert(current_global_state->global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
@@ -630,28 +630,28 @@ void alloc_local_integer_array_c99_1(local_integer_array* dest, int ndims, model
 {
     size_t elements = 0;
     dest->ndims = 1;
-    
+
     //assert(n>=0);
     //assert(n + current_state.local_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_local_state->size_count + 2 >= NR_SIZE_ELEMENTS){
         //printf("Size buffer pointer passed limit\n");
     }
-    
-    
+
+
     dest->dim_size = memory_state->current_local_state->local_size_buffer_ptr;
-    
+
     memory_state->current_local_state->local_size_buffer_ptr += 1;
     memory_state->current_local_state->size_count += 1;
     dest->dim_size[0] = size_1;
-    
+
     elements = local_integer_array_nr_of_elements(dest);
-    
+
     //assert(n>=0);
     //assert(current_state.global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
     if( memory_state->current_local_state->integer_count + elements >= NR_INTEGER_ELEMENTS){
         //printf("Integer buffer pointer passed limit\n");
     }
-    
+
     dest->data = memory_state->current_local_state->local_integer_buffer_ptr;
     memory_state->current_local_state->local_integer_buffer_ptr += elements;
     memory_state->current_local_state->integer_count += elements;
@@ -661,29 +661,29 @@ void alloc_local_integer_array_c99_2(local_integer_array* dest, int ndims, model
 {
     size_t elements = 0;
     dest->ndims = 2;
-    
+
     //assert(n>=0);
     //assert(n + current_state.local_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_local_state->size_count + 2 >= NR_SIZE_ELEMENTS){
         //printf("Size buffer pointer passed limit\n");
     }
-    
-    
+
+
     dest->dim_size = memory_state->current_local_state->local_size_buffer_ptr;
-    
+
     memory_state->current_local_state->local_size_buffer_ptr += 2;
     memory_state->current_local_state->size_count += 2;
     dest->dim_size[0] = size_1;
     dest->dim_size[1] = size_2;
-    
+
     elements = local_integer_array_nr_of_elements(dest);
-    
+
     //assert(n>=0);
     //assert(current_state.global_integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
     if( memory_state->current_local_state->integer_count + elements >= NR_INTEGER_ELEMENTS){
         //printf("Integer buffer pointer passed limit\n");
     }
-    
+
     dest->data = memory_state->current_local_state->local_integer_buffer_ptr;
     memory_state->current_local_state->local_integer_buffer_ptr += elements;
     memory_state->current_local_state->integer_count += elements;
@@ -694,28 +694,28 @@ void alloc_local_real_array_c99_1(local_real_array* dest, int ndims, modelica_in
 {
     size_t elements = 0;
     dest->ndims = 1;
-    
+
     //assert(n>=0);
     //assert(n + current_state.local_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_local_state->size_count + 2 >= NR_SIZE_ELEMENTS){
         //printf("Size buffer pointer passed limit\n");
     }
-    
-    
+
+
     dest->dim_size = memory_state->current_local_state->local_size_buffer_ptr;
-    
+
     memory_state->current_local_state->local_size_buffer_ptr += 1;
     memory_state->current_local_state->size_count += 1;
     dest->dim_size[0] = size_1;
-    
+
     elements = local_real_array_nr_of_elements(dest);
-    
+
     //assert(n>=0);
     //assert(current_state.global_real_buffer_ptr +n < NR_REAL_ELEMENTS);
     if( memory_state->current_local_state->real_count + elements >= NR_REAL_ELEMENTS){
         //printf("Integer buffer pointer passed limit\n");
     }
-    
+
     dest->data = memory_state->current_local_state->local_real_buffer_ptr;
     memory_state->current_local_state->local_real_buffer_ptr += elements;
     memory_state->current_local_state->integer_count += elements;
@@ -725,29 +725,29 @@ void alloc_local_real_array_c99_2(local_real_array* dest, int ndims, modelica_in
 {
     size_t elements = 0;
     dest->ndims = 2;
-    
+
     //assert(n>=0);
     //assert(n + current_state.local_size_buffer_ptr < NR_SIZE_ELEMENTS);
     if( memory_state->current_local_state->size_count + 2 >= NR_SIZE_ELEMENTS){
         //printf("Size buffer pointer passed limit\n");
     }
-    
-    
+
+
     dest->dim_size = memory_state->current_local_state->local_size_buffer_ptr;
-    
+
     memory_state->current_local_state->local_size_buffer_ptr += 2;
     memory_state->current_local_state->size_count += 2;
     dest->dim_size[0] = size_1;
     dest->dim_size[1] = size_2;
-    
+
     elements = local_real_array_nr_of_elements(dest);
-    
+
     //assert(n>=0);
     //assert(current_state.global_real_buffer_ptr +n < NR_REAL_ELEMENTS);
     if( memory_state->current_local_state->real_count + elements >= NR_REAL_ELEMENTS){
         //printf("Integer buffer pointer passed limit\n");
     }
-    
+
     dest->data = memory_state->current_local_state->local_real_buffer_ptr;
     memory_state->current_local_state->local_real_buffer_ptr += elements;
     memory_state->current_local_state->integer_count += elements;

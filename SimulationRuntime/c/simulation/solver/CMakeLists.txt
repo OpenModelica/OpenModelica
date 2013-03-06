@@ -1,5 +1,5 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
-# CMakefile for compilation of OMC 
+# CMakefile for compilation of OMC
 
 ADD_SUBDIRECTORY(initialization)
 
@@ -10,7 +10,7 @@ SET(solver_sources  dassl.c
                     model_help.c
                     mixedSystem.c
                     mixedSearchSolver.c
-                    kinsolSolver.c                    
+                    kinsolSolver.c
                     linearSystem.c
                     linearSolverLapack.c
                     nonlinearSystem.c
@@ -21,21 +21,21 @@ SET(solver_sources  dassl.c
                     stateset.c)
 
 SET(solver_headers  dassl.h
-                    delay.h 
+                    delay.h
                     events.h
                     mixedSystem.h
                     mixedSearchSolver.h
                     kinsolSolver.h
                     linearSystem.h
                     linearSolverLapack.h
-                    model_help.h 
+                    model_help.h
                     nonlinearSolverHybrd.h
                     nonlinearSolverNewton.h
                     nonlinearSystem.h
                     radau.h
                     solver_main.h
-                    stateset.h)				 
-						 
+                    stateset.h)
+
 # Library util
 ADD_LIBRARY(solver ${solver_sources} ${solver_headers})
 #TARGET_LINK_LIBRARIES(util)
@@ -43,6 +43,6 @@ ADD_LIBRARY(solver ${solver_sources} ${solver_headers})
 # Install
 INSTALL(TARGETS solver
 		ARCHIVE DESTINATION lib/omc)
-		
+
 #INSTALL(FILES ${solver_headers} DESTINATION include)
 

@@ -1,8 +1,8 @@
 //
 // Copyright Karl Meerbergen 2007
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
@@ -17,10 +17,10 @@
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.h>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits/is_same.hpp>
-#endif 
+#endif
 
 
   /********************************************************************/
@@ -34,14 +34,14 @@ namespace boost { namespace numeric { namespace bindings { namespace lapack {
 
     namespace detail {
 
-      inline 
-      void sytrd ( char uplo, int n, float* a, int lda, float* d, float* e, float* tau, float* work, int lwork, int& info ) 
+      inline
+      void sytrd ( char uplo, int n, float* a, int lda, float* d, float* e, float* tau, float* work, int lwork, int& info )
       {
         LAPACK_SSYTRD( &uplo, &n, a, &lda, d, e, tau, work, &lwork, &info ) ;
       }
 
-      inline 
-      void sytrd ( char uplo, int n, double* a, int lda, double* d, double* e, double* tau, double* work, int lwork, int& info ) 
+      inline
+      void sytrd ( char uplo, int n, double* a, int lda, double* d, double* e, double* tau, double* work, int lwork, int& info )
       {
         LAPACK_DSYTRD( &uplo, &n, a, &lda, d, e, tau, work, &lwork, &info ) ;
       }
@@ -63,29 +63,29 @@ namespace boost { namespace numeric { namespace bindings { namespace lapack {
       int lwork = traits::vector_size( work ) ;
       assert( lwork >= 1 );
 
-      int info; 
+      int info;
       detail::sytrd( uplo, n,
-                     traits::matrix_storage( a ), 
-                     traits::leading_dimension( a ), 
-                     traits::vector_storage( d ), 
-                     traits::vector_storage( e ), 
-                     traits::vector_storage( tau ), 
+                     traits::matrix_storage( a ),
+                     traits::leading_dimension( a ),
+                     traits::vector_storage( d ),
+                     traits::vector_storage( e ),
+                     traits::vector_storage( tau ),
                      traits::vector_storage( work ), lwork,
                      info ) ;
-      return info; 
+      return info;
     } // sytrd()
 
 
     template <typename A, typename D, typename E, typename Tau>
     inline
     int sytrd( char uplo, A& a, D& d, E& e, Tau& tau, optimal_workspace=optimal_workspace() ) {
-      int info; 
+      int info;
       detail::sytrd( uplo, traits::matrix_size1( a ),
-                     traits::matrix_storage( a ), 
-                     traits::leading_dimension( a ), 
-                     traits::vector_storage( d ), 
-                     traits::vector_storage( e ), 
-                     traits::vector_storage( tau ), 
+                     traits::matrix_storage( a ),
+                     traits::leading_dimension( a ),
+                     traits::vector_storage( d ),
+                     traits::vector_storage( e ),
+                     traits::vector_storage( tau ),
                      traits::vector_storage( tau ), -1,
                      info ) ;
       if (info) return info ;

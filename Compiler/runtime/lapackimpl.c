@@ -87,22 +87,22 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
-extern int dgeev_(const char *jobvl, const char *jobvr, integer *n, 
+extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
   doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
-  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work, 
+  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work,
   integer *lwork, integer *info);
 
-extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *a, 
-  integer *lda, doublereal *b, integer *ldb, doublereal *alphar, 
+extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *a,
+  integer *lda, doublereal *b, integer *ldb, doublereal *alphar,
   doublereal *alphai, doublereal *beta, doublereal *vl, integer *ldvl,
-  doublereal *vr, integer *ldvr, doublereal *work, integer *lwork, 
-  integer *info); 
+  doublereal *vr, integer *ldvr, doublereal *work, integer *lwork,
+  integer *info);
 
-extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs, 
+extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs,
   doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *work,
   integer *lwork, integer *info);
 
-extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a, 
+extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a,
   integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
   integer *rank, doublereal *work, integer *info);
 
@@ -143,8 +143,8 @@ double* alloc_real_matrix(int N, int M, void *data)
 {
   double *matrix;
   void *tmp = data;
-  int i, j; 
-  
+  int i, j;
+
   matrix = (double*)malloc(N * M * sizeof(double));
   assert(matrix != NULL);
 
@@ -176,7 +176,7 @@ double* alloc_real_vector(int N, void *data)
       vector[i] = rml_prim_get_real(RML_CAR(tmp));
       tmp = RML_CDR(tmp);
     }
-  } 
+  }
 
   return vector;
 }
@@ -307,7 +307,7 @@ void debug_int_array(const char *name, int N, int *data)
   printf("}\n");
 }
 
-void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, int LDA, 
+void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, int LDA,
     int LDVL, int LDVR, void *inWORK, int LWORK, void **outA, void **WR,
     void **WI, void **VL, void **VR, void **outWORK, int *INFO)
 {
@@ -347,8 +347,8 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
 }
 
 void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int LDA,
-    void *B, int LDB, int LDVL, int LDVR, void *inWORK, int LWORK, 
-    void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR, 
+    void *B, int LDB, int LDVL, int LDVR, void *inWORK, int LWORK,
+    void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR,
     void **outWORK, int *INFO)
 {
   integer n, lda, ldb, ldvl, ldvr, lwork, info = 0;
@@ -421,9 +421,9 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
   free(work);
 }
 
-void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA, 
+void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
     void *inB, int LDB, void *inJPVT, double rcond, void *WORK, int LWORK,
-    void **outA, void **outB, void **outJPVT, int *RANK, int *INFO) 
+    void **outA, void **outB, void **outJPVT, int *RANK, int *INFO)
 {
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
   double *a, *b, *work;
@@ -483,9 +483,9 @@ void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
   free(ipiv);
 }
 
-void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA, 
-    void *inB, int LDB, void *inC, void *inD, void *inWORK, int LWORK, 
-    void **outA, void **outB, void **outC, void **outD, void **outX, 
+void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
+    void *inB, int LDB, void *inC, void *inD, void *inWORK, int LWORK,
+    void **outA, void **outB, void **outC, void **outD, void **outX,
     void **outWORK, int *outINFO)
 {
   integer m, n, p, lda, ldb, lwork, info = 0;
@@ -553,7 +553,7 @@ void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
   free(b);
 }
 
-void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB, 
+void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
     int LDAB, void *inB, int LDB, void **outAB, void **IPIV, void **outB,
     int *INFO)
 {
@@ -598,7 +598,7 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
   ldvt = LDVT;
   lwork = LWORK;
   lds = (m < n ? m : n);
- 
+
   if(*jobu == 'A') ucol = m;
   else if(*jobu == 'S') ucol = lds;
 
@@ -608,8 +608,8 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
   vt = alloc_zeroed_real_matrix(ldvt, n);
   work = alloc_real_vector(lwork, inWORK);
 
-  dgesvd_(&*jobu, &*jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, 
-    &lwork, &info); 
+  dgesvd_(&*jobu, &*jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work,
+    &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *S = mk_rml_real_vector(lds, s);
@@ -702,7 +702,7 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
   free(ipiv);
 }
 
-void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT, 
+void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
     void *WORK, void **outA, void **outJPVT, void **TAU, int *INFO)
 {
   integer m, n, lda, lwork, ldtau, info = 0;
@@ -726,15 +726,15 @@ void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
   *outJPVT = mk_rml_int_vector(n, jpvt);
   *TAU = mk_rml_real_vector(ldtau, tau);
   *INFO = info;
-  
+
   free(a);
   free(jpvt);
   free(tau);
   free(work);
 }
 
-void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA, 
-    void *TAU, void *inWORK, int LWORK, void **outA, void **outWORK, 
+void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
+    void *TAU, void *inWORK, int LWORK, void **outA, void **outWORK,
     int *INFO)
 {
   integer m, n, k, lda, lwork, info = 0;

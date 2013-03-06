@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -165,7 +165,7 @@ algorithm
   dae := generateEquation_dispatch(inSet, cty);
   outEquations := DAEUtil.joinDaes(inAccumEql, dae);
 end generateEquation;
- 
+
 protected function getSetType
   input list<Connector> inSet;
   output ConnectorType outType;
@@ -272,7 +272,7 @@ algorithm
 
   end match;
 end makeFlowExp;
-  
+
 protected function generateStreamEquations
   "Generates the equations for a stream connection set."
   input list<Connector> inElements;
@@ -423,7 +423,7 @@ protected function sumMap
   input list<SetElement> inElements;
   input FuncType inFunc;
   output DAE.Exp outExp;
-  
+
   replaceable type SetElement subtypeof Any;
 
   partial function FuncType
@@ -477,7 +477,7 @@ algorithm
 end flowExp;
 
 protected function sumOutside1
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps) * inStream(stream_exp)
   given a stream set element."
   input Connector inElement;
@@ -491,7 +491,7 @@ algorithm
 end sumOutside1;
 
 protected function sumInside1
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps) * stream_exp
   given a stream set element."
   input Connector inElement;
@@ -505,7 +505,7 @@ algorithm
 end sumInside1;
 
 protected function sumOutside2
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps)
   given a stream set element."
   input Connector inElement;
@@ -518,7 +518,7 @@ algorithm
 end sumOutside2;
 
 protected function sumInside2
-  "Helper function to streamSumEquationExp. Returns the expression 
+  "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps)
   given a stream set element."
   input Connector inElement;
@@ -547,7 +547,7 @@ protected function makePositiveMaxCall
   output DAE.Exp outPositiveMaxCall;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
+  outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"),
     {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
@@ -559,7 +559,7 @@ protected function removeStreamSetElement
 algorithm
   (outElements, _) := List.deleteMemberOnTrue(inCref, inElements, compareCrefStreamSet);
 end removeStreamSetElement;
-        
+
 protected function compareCrefStreamSet
   "Helper function to removeStreamSetElement. Checks if the cref in a stream set
   element matches the given cref."
@@ -603,7 +603,7 @@ algorithm
         false = NFConnectUtil2.isConstOrComplexConnector(inRhsConnector);
       then
         (inEquations, false);
-              
+
     // One or both of the connectors are constant/parameter or complex,
     // generate assertion or error message.
     case (NFConnect2.CONNECTOR(name = lhs, ty = lhs_ty),
@@ -624,7 +624,7 @@ algorithm
 
   end matchcontinue;
 end generateAssertion;
- 
+
 protected function generateAssertion2
   input DAE.Exp inLhsExp;
   input DAE.Exp inRhsExp;
@@ -752,7 +752,7 @@ algorithm
         (eql, ioc);
 
     case ({}, {}, _ ,_, _, _, _) then (inEquations, inIsOnlyConst);
-        
+
   end match;
 end generateAssertion3;
 

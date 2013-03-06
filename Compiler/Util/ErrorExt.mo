@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -124,7 +124,7 @@ A unique identifier for this checkpoint must be provided. It is checked when doi
   external "C" ErrorImpl__setCheckpoint(id) annotation(Library = "omcruntime");
 end setCheckpoint;
 
-public function delCheckpoint "deletes the checkpoint at the top of the stack without 
+public function delCheckpoint "deletes the checkpoint at the top of the stack without
 removing the error messages issued since that checkpoint.
 If the checkpoint id doesn't match, the application exits with -1.
 "
@@ -138,14 +138,14 @@ public function printErrorsNoWarning
   external "C" outString=Error_printErrorsNoWarning() annotation(Library = "omcruntime");
 end printErrorsNoWarning;
 
-public function rollBack "rolls back error messages until the latest checkpoint, 
+public function rollBack "rolls back error messages until the latest checkpoint,
 deleting all error messages added since that point in time. A unique identifier for the checkpoint must be provided
 The application will exit with return code -1 if this identifier does not match."
   input String id "unique identifier";
   external "C" ErrorImpl__rollBack(id) annotation(Library = "omcruntime");
 end rollBack;
 
-public function isTopCheckpoint 
+public function isTopCheckpoint
 "@author: adrpo
   This function checks if the specified checkpoint exists AT THE TOP OF THE STACK!.
   You can use it to rollBack/delete a checkpoint, but you're
@@ -155,7 +155,7 @@ public function isTopCheckpoint
   external "C" isThere=ErrorImpl__isTopCheckpoint(id) annotation(Library = "omcruntime");
 end isTopCheckpoint;
 
-public function getLastDeletedCheckpoint 
+public function getLastDeletedCheckpoint
 "@author: adrpo
   This function returns the last deleted checkpoint id.
   Is needed to see if the previous phase generated some

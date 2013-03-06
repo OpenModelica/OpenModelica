@@ -1,5 +1,5 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
-# CMakefile for compilation of OMC 
+# CMakefile for compilation of OMC
 
 # CMAKE
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
@@ -44,31 +44,31 @@ IF(SUNDIALS_INCLUDE_DIR)
    SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
 
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
 
 ENDIF(SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
-   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
-   
+
   if(SUNDIALS_LIBRARY_CVODED AND
    SUNDIALS_LIBRARY_IDAD AND
    SUNDIALS_LIBRARY_NVECD AND
    SUNDIALS_KINSOLD)
 
-  SET(SUNDIALS_DEBUG_LIBRARIES ${SUNDIALS_LIBRARY_CVODED} ${SUNDIALS_LIBRARY_IDAD} ${SUNDIALS_LIBRARY_NVECD} ${SUNDIALS_KINSOLD}) 
+  SET(SUNDIALS_DEBUG_LIBRARIES ${SUNDIALS_LIBRARY_CVODED} ${SUNDIALS_LIBRARY_IDAD} ${SUNDIALS_LIBRARY_NVECD} ${SUNDIALS_KINSOLD})
 
 ENDIF(SUNDIALS_LIBRARY_CVODED AND
       SUNDIALS_LIBRARY_IDAD AND
-   SUNDIALS_LIBRARY_NVECD AND 
-   SUNDIALS_KINSOLD)   
-   
+   SUNDIALS_LIBRARY_NVECD AND
+   SUNDIALS_KINSOLD)
+
 ENDIF(SUNDIALS_INCLUDE_DIR)
 
 # Defines for Visual Studio
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
-endif(MSVC)	
+endif(MSVC)
 
 # includes
 INCLUDE_DIRECTORIES(${OMCTRUNCHOME})
@@ -98,7 +98,7 @@ ADD_SUBDIRECTORY(util)
 
 # Macros to hide/show cached variables.
 # These two macros can be used to "hide" or "show" in the
-# list of cached variables various variables and/or options 
+# list of cached variables various variables and/or options
 # that depend on other options.
 # Note that once a variable is modified, it will preserve its
 # value (hidding it merely makes it internal)
@@ -133,8 +133,8 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
-  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
@@ -143,7 +143,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/lapack-win32-msvc)
-  
+
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
@@ -155,7 +155,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
-                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${mo} Modelica ModelicaServices 												  
+                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${mo} Modelica ModelicaServices
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
 
@@ -167,7 +167,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
-  
+
   IF(MODELS_INSTALL)
     INSTALL(TARGETS ${model} RUNTIME DESTINATION ${MODELS_INSTALL_PATH})
     INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt DESTINATION ${MODELS_INSTALL_PATH})
@@ -191,12 +191,12 @@ IF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
 
 ENDIF(SUNDIALS_INCLUDE_DIR AND
       SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
-   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
 
   # includes
@@ -211,33 +211,33 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)   
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
 
-  INCLUDE_DIRECTORIES(${dir})    
-  
+  INCLUDE_DIRECTORIES(${dir})
+
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
   ENDIF(NOT OMDEV)
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
-  link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/lapack-win32-msvc)
-  
+
   # custom command to copy expat.dll file
   SET(expat_CODE   ${OMDEV}/lib/expat-win32-msvc/libexpat.dll)
   STRING(REGEX REPLACE "/" "\\\\" expat_CODE_NEU ${expat_CODE})
   SET(expat_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/libexpat.dll)
   STRING(REGEX REPLACE "/" "\\\\" expat_OUTPUT_NEU ${expat_OUTPUT})
 
-    ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT} 
+    ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT}
                      COMMAND ${COPY} ${expat_CODE_NEU} ${expat_OUTPUT_NEU}
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${expat_CODE_NEU} to ${expat_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(expat${model} ALL DEPENDS ${expat_OUTPUT})  
+  ADD_CUSTOM_TARGET(expat${model} ALL DEPENDS ${expat_OUTPUT})
 
-  
+
   SET(lapack_CODE   ${OMDEV}/lib/lapack-win32-msvc/lapack_win32_MT.dll)
   STRING(REGEX REPLACE "/" "\\\\" lapack_CODE_NEU ${lapack_CODE})
   SET(lapack_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/lapack_win32_MT.dll)
@@ -248,9 +248,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${lapack_CODE_NEU} to ${lapack_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(lapack${model} ALL DEPENDS ${lapack_OUTPUT})  
-  
-  
+  ADD_CUSTOM_TARGET(lapack${model} ALL DEPENDS ${lapack_OUTPUT})
+
+
   SET(blas_CODE   ${OMDEV}/lib/lapack-win32-msvc/blas_win32_MT.dll)
   STRING(REGEX REPLACE "/" "\\\\" blas_CODE_NEU ${blas_CODE})
   SET(blas_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/blas_win32_MT.dll)
@@ -261,11 +261,11 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${blas_CODE_NEU} to ${blas_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(blas${model} ALL DEPENDS ${blas_OUTPUT})  
-  
-  SET(OMC_MODELNAME ${model})  
-  # generate model.mos 
-  
+  ADD_CUSTOM_TARGET(blas${model} ALL DEPENDS ${blas_OUTPUT})
+
+  SET(OMC_MODELNAME ${model})
+  # generate model.mos
+
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${dir}/${model}.c
                  ${dir}/${model}_functions.c
@@ -281,7 +281,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
                      COMMENT "Generating code for ${model} with ${OMC_DEBUG}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
-					 
+
   ADD_CUSTOM_TARGET(${model}codegencpp ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_DEFINITIONS(/TP)
@@ -304,7 +304,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # Dependencies
   ADD_DEPENDENCIES(${model}cp_xml ${model}codegen expat${model} lapack${model} blas${model})
   ADD_DEPENDENCIES(${model} ${model}cp_xml)
-  
+
 #ENDFOREACH(model ${model_sources})
 ENDMACRO(BUILDMODELMOS)
 
@@ -324,12 +324,12 @@ IF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
 
 ENDIF(SUNDIALS_INCLUDE_DIR AND
       SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
-   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
 
   # includes
@@ -344,24 +344,24 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
-  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export)
+
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
   ENDIF(NOT OMDEV)
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
-  link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/lapack-win32-msvc)
-  
-  SET(OMC_MODELNAME ${model})  
-  SET(OMC_MODELDIR ${dir})  
-  # generate model.mos 
+
+  SET(OMC_MODELNAME ${model})
+  SET(OMC_MODELDIR ${dir})
+  # generate model.mos
   FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/c_runtime)
   CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}_FMU.mos)
-  
+
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
@@ -382,13 +382,13 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
-  
+
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
-  
+
   IF(MODELS_INSTALL)
     INSTALL(TARGETS ${model} ARCHIVE DESTINATION ${MODELS_INSTALL_PATH})
     INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt DESTINATION ${MODELS_INSTALL_PATH})
@@ -412,12 +412,12 @@ IF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
 
 ENDIF(SUNDIALS_INCLUDE_DIR AND
       SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
-   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
 
   # includes
@@ -432,8 +432,8 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -441,12 +441,12 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   ENDIF(NOT OMDEV)
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
-  link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/lapack-win32-msvc)
- 
+
   STRING(REPLACE "." "_" FMU_MODELNAME ${model})
-  # generate model.mos 
-  
+  # generate model.mos
+
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.c
@@ -467,7 +467,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
-  
+
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
@@ -475,7 +475,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
-  
+
   IF(MODELS_INSTALL)
     INSTALL(TARGETS ${model} ARCHIVE DESTINATION ${MODELS_INSTALL_PATH})
     INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/modelDescription.xml DESTINATION ${MODELS_INSTALL_PATH})
@@ -491,7 +491,7 @@ IF(MODELS_INSTALL)
 
   SHOW_VARIABLE(MODELS_INSTALL_PATH STRING
     "Output directory for installing models files" "${CMAKE_INSTALL_PREFIX}")
-    
+
   IF(NOT MODELS_INSTALL_PATH)
     PRINT_WARNING("The example installation path is empty"
       "Example installation path was reset to its default value")

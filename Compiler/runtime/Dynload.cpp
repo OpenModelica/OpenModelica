@@ -117,12 +117,12 @@ static int value_to_type_desc(void *value, type_description *desc)
     }
   }; break;
 
-  case Values__TUPLE_3dBOX1: {  
+  case Values__TUPLE_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_TUPLE;
-    while (RML_GETHDR(data) != RML_NILHDR) { 
-      type_description *elem; 
- 
+    while (RML_GETHDR(data) != RML_NILHDR) {
+      type_description *elem;
+
       elem = add_tuple_member(desc);
 
       if (value_to_type_desc(RML_CAR(data), elem)) {
@@ -197,7 +197,7 @@ static int execute_function(void *in_arg, void **out_arg,
   retarg.retval = 1;
 
   if (printDebug) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
-  
+
   fflush(stdout);
   /* call our function pointer! */
   try { /* Don't let external C functions throwing C++ exceptions kill OMC! */
@@ -383,7 +383,7 @@ static int mmc_to_value(void* mmc, void** res)
     *res = (void *) Values__META_5fARRAY(varlst);
     return 0;
   }
-  
+
   if (numslots>0 && ctor > 1) { /* RECORD */
     void *namelst = (void *) mk_nil();
     void *varlst = (void *) mk_nil();
@@ -560,9 +560,9 @@ void *type_desc_to_value(type_description *desc)
   case TYPE_DESC_INT:
     return (void *) Values__INTEGER(mk_icon(desc->data.integer));
   case TYPE_DESC_BOOL:
-    if(getMyBool(desc)) 
+    if(getMyBool(desc))
       return (void *) Values__BOOL(RML_TRUE);
-    return (void *) Values__BOOL(RML_FALSE); 
+    return (void *) Values__BOOL(RML_FALSE);
   case TYPE_DESC_STRING:
     return (void *) Values__STRING(mk_scon(desc->data.string));
   case TYPE_DESC_TUPLE: {
@@ -576,12 +576,12 @@ void *type_desc_to_value(type_description *desc)
     }
     return (void *) Values__TUPLE(lst);
   };
-  case TYPE_DESC_RECORD: { 
+  case TYPE_DESC_RECORD: {
     char **name = desc->data.record.name + desc->data.record.elements;
     type_description *e = desc->data.record.element + desc->data.record.elements;
     void *namelst = (void *) mk_nil();
     void *varlst = (void *) mk_nil();
-    while (e > desc->data.record.element) { 
+    while (e > desc->data.record.element) {
       void *n, *t;
       --name;
       --e;

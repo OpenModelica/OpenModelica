@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Toon Knapen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -22,71 +22,71 @@
 #include <boost/numeric/bindings/lapack/ilaenv.hpp>
 
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits/is_same.hpp>
-#endif 
+#endif
 
 #include <cassert>
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // general system of linear equations A * X = B
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
-     * gesv() computes the solution to a system of linear equations 
-     * A * X = B, where A is an N-by-N matrix and X and B are N-by-NRHS 
+    /*
+     * gesv() computes the solution to a system of linear equations
+     * A * X = B, where A is an N-by-N matrix and X and B are N-by-NRHS
      * matrices.
      *
-     * The LU decomposition with partial pivoting and row interchanges 
-     * is used to factor A as A = P * L * U, where P is a permutation 
-     * matrix, L is unit lower triangular, and U is upper triangular.   
-     * The factored form of A is then used to solve the system of 
+     * The LU decomposition with partial pivoting and row interchanges
+     * is used to factor A as A = P * L * U, where P is a permutation
+     * matrix, L is unit lower triangular, and U is upper triangular.
+     * The factored form of A is then used to solve the system of
      * equations A * X = B.
-     */ 
+     */
 
     namespace detail {
 
-      inline 
+      inline
       void gesv (int const n, int const nrhs,
-                 float* a, int const lda, int* ipiv, 
-                 float* b, int const ldb, int* info) 
+                 float* a, int const lda, int* ipiv,
+                 float* b, int const ldb, int* info)
       {
         LAPACK_SGESV (&n, &nrhs, a, &lda, ipiv, b, &ldb, info);
       }
 
-      inline 
+      inline
       void gesv (int const n, int const nrhs,
-                 double* a, int const lda, int* ipiv, 
-                 double* b, int const ldb, int* info) 
+                 double* a, int const lda, int* ipiv,
+                 double* b, int const ldb, int* info)
       {
         LAPACK_DGESV (&n, &nrhs, a, &lda, ipiv, b, &ldb, info);
       }
 
-      inline 
+      inline
       void gesv (int const n, int const nrhs,
-                 traits::complex_f* a, int const lda, int* ipiv, 
-                 traits::complex_f* b, int const ldb, int* info) 
+                 traits::complex_f* a, int const lda, int* ipiv,
+                 traits::complex_f* b, int const ldb, int* info)
       {
-        LAPACK_CGESV (&n, &nrhs, 
-                      traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_CGESV (&n, &nrhs,
+                      traits::complex_ptr (a), &lda, ipiv,
                       traits::complex_ptr (b), &ldb, info);
       }
-      
-      inline 
+
+      inline
       void gesv (int const n, int const nrhs,
-                 traits::complex_d* a, int const lda, int* ipiv, 
-                 traits::complex_d* b, int const ldb, int* info) 
+                 traits::complex_d* a, int const lda, int* ipiv,
+                 traits::complex_d* b, int const ldb, int* info)
       {
-        LAPACK_ZGESV (&n, &nrhs, 
-                      traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_ZGESV (&n, &nrhs,
+                      traits::complex_ptr (a), &lda, ipiv,
                       traits::complex_ptr (b), &ldb, info);
       }
 
@@ -96,88 +96,88 @@ namespace boost { namespace numeric { namespace bindings {
     inline
     int gesv (MatrA& a, IVec& ipiv, MatrB& b) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrA>::matrix_structure, 
+        typename traits::matrix_traits<MatrA>::matrix_structure,
         traits::general_t
-      >::value)); 
+      >::value));
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrB>::matrix_structure, 
+        typename traits::matrix_traits<MatrB>::matrix_structure,
         traits::general_t
-      >::value)); 
-#endif 
+      >::value));
+#endif
 
       int const n = traits::matrix_size1 (a);
-      assert (n == traits::matrix_size2 (a)); 
-      assert (n == traits::matrix_size1 (b)); 
-      assert (n == traits::vector_size (ipiv)); 
+      assert (n == traits::matrix_size2 (a));
+      assert (n == traits::matrix_size1 (b));
+      assert (n == traits::vector_size (ipiv));
 
-      int info; 
-      detail::gesv (n, traits::matrix_size2 (b), 
-                    traits::matrix_storage (a), 
+      int info;
+      detail::gesv (n, traits::matrix_size2 (b),
+                    traits::matrix_storage (a),
                     traits::leading_dimension (a),
-                    traits::vector_storage (ipiv),  
+                    traits::vector_storage (ipiv),
                     traits::matrix_storage (b),
                     traits::leading_dimension (b),
                     &info);
-      return info; 
+      return info;
     }
 
     template <typename MatrA, typename MatrB>
     inline
     int gesv (MatrA& a, MatrB& b) {
-      // with 'internal' pivot vector 
-      
-      // gesv() errors: 
+      // with 'internal' pivot vector
+
+      // gesv() errors:
       //   if (info == 0), successful
       //   if (info < 0), the -info argument had an illegal value
       //   -- we will use -101 if allocation fails
-      //   if (info > 0), U(i-1,i-1) is exactly zero 
-      int info = -101; 
-      traits::detail::array<int> ipiv (traits::matrix_size1 (a)); 
-      if (ipiv.valid()) 
-        info = gesv (a, ipiv, b); 
-      return info; 
+      //   if (info > 0), U(i-1,i-1) is exactly zero
+      int info = -101;
+      traits::detail::array<int> ipiv (traits::matrix_size1 (a));
+      if (ipiv.valid())
+        info = gesv (a, ipiv, b);
+      return info;
     }
 
 
-    /* 
-     * getrf() computes an LU factorization of a general M-by-N matrix A  
-     * using partial pivoting with row interchanges. The factorization 
-     * has the form A = P * L * U, where P is a permutation matrix, 
+    /*
+     * getrf() computes an LU factorization of a general M-by-N matrix A
+     * using partial pivoting with row interchanges. The factorization
+     * has the form A = P * L * U, where P is a permutation matrix,
      * L is lower triangular with unit diagonal elements (lower
-     * trapezoidal if M > N), and U is upper triangular (upper 
+     * trapezoidal if M > N), and U is upper triangular (upper
      * trapezoidal if M < N).
-     */ 
+     */
 
     namespace detail {
 
-      inline 
+      inline
       void getrf (int const n, int const m,
-                  float* a, int const lda, int* ipiv, int* info) 
+                  float* a, int const lda, int* ipiv, int* info)
       {
         LAPACK_SGETRF (&n, &m, a, &lda, ipiv, info);
       }
 
-      inline 
+      inline
       void getrf (int const n, int const m,
-                  double* a, int const lda, int* ipiv, int* info) 
+                  double* a, int const lda, int* ipiv, int* info)
       {
         LAPACK_DGETRF (&n, &m, a, &lda, ipiv, info);
       }
 
-      inline 
+      inline
       void getrf (int const n, int const m,
-                  traits::complex_f* a, int const 
-                  lda, int* ipiv, int* info) 
+                  traits::complex_f* a, int const
+                  lda, int* ipiv, int* info)
       {
         LAPACK_CGETRF (&n, &m, traits::complex_ptr (a), &lda, ipiv, info);
       }
 
-      inline 
+      inline
       void getrf (int const n, int const m,
-                  traits::complex_d* a, int const lda, 
-                  int* ipiv, int* info) 
+                  traits::complex_d* a, int const lda,
+                  int* ipiv, int* info)
       {
         LAPACK_ZGETRF (&n, &m, traits::complex_ptr (a), &lda, ipiv, info);
       }
@@ -188,70 +188,70 @@ namespace boost { namespace numeric { namespace bindings {
     inline
     int getrf (MatrA& a, IVec& ipiv) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrA>::matrix_structure, 
+        typename traits::matrix_traits<MatrA>::matrix_structure,
         traits::general_t
-      >::value)); 
-#endif 
+      >::value));
+#endif
 
       int const n = traits::matrix_size1 (a);
-      int const m = traits::matrix_size2 (a); 
+      int const m = traits::matrix_size2 (a);
       assert (traits::vector_size (ipiv) == (m < n ? m : n));
 
-      int info; 
-      detail::getrf (n, m, 
-                     traits::matrix_storage (a), 
+      int info;
+      detail::getrf (n, m,
+                     traits::matrix_storage (a),
                      traits::leading_dimension (a),
-                     traits::vector_storage (ipiv),  
+                     traits::vector_storage (ipiv),
                      &info);
-      return info; 
+      return info;
     }
 
 
     /*
-     * getrs() solves a system of linear equations A * X = B 
-     * or A^T * X = B with a general N-by-N matrix A using  
+     * getrs() solves a system of linear equations A * X = B
+     * or A^T * X = B with a general N-by-N matrix A using
      * the LU factorization computed by getrf().
      */
 
     namespace detail {
 
-      inline 
+      inline
       void getrs (char const trans, int const n, int const nrhs,
-                  float const* a, int const lda, int const* ipiv, 
-                  float* b, int const ldb, int* info) 
+                  float const* a, int const lda, int const* ipiv,
+                  float* b, int const ldb, int* info)
       {
         LAPACK_SGETRS (&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
       }
 
-      inline 
+      inline
       void getrs (char const trans, int const n, int const nrhs,
-                  double const* a, int const lda, int const* ipiv, 
-                  double* b, int const ldb, int* info) 
+                  double const* a, int const lda, int const* ipiv,
+                  double* b, int const ldb, int* info)
       {
         LAPACK_DGETRS (&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
       }
 
-      inline 
+      inline
       void getrs (char const trans, int const n, int const nrhs,
-                  traits::complex_f const* a, int const lda, 
-                  int const* ipiv, 
-                  traits::complex_f* b, int const ldb, int* info) 
+                  traits::complex_f const* a, int const lda,
+                  int const* ipiv,
+                  traits::complex_f* b, int const ldb, int* info)
       {
-        LAPACK_CGETRS (&trans, &n, &nrhs, 
-                       traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_CGETRS (&trans, &n, &nrhs,
+                       traits::complex_ptr (a), &lda, ipiv,
                        traits::complex_ptr (b), &ldb, info);
       }
 
-      inline 
+      inline
       void getrs (char const trans, int const n, int const nrhs,
-                  traits::complex_d const* a, int const lda, 
-                  int const* ipiv, 
-                  traits::complex_d* b, int const ldb, int* info) 
+                  traits::complex_d const* a, int const lda,
+                  int const* ipiv,
+                  traits::complex_d* b, int const ldb, int* info)
       {
-        LAPACK_ZGETRS (&trans, &n, &nrhs, 
-                       traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_ZGETRS (&trans, &n, &nrhs,
+                       traits::complex_ptr (a), &lda, ipiv,
                        traits::complex_ptr (b), &ldb, info);
       }
 
@@ -259,127 +259,127 @@ namespace boost { namespace numeric { namespace bindings {
 
     template <typename MatrA, typename MatrB, typename IVec>
     inline
-    int getrs (char const trans, MatrA const& a, IVec const& ipiv, MatrB& b) 
+    int getrs (char const trans, MatrA const& a, IVec const& ipiv, MatrB& b)
     {
-      assert (trans == 'N' || trans == 'T' || trans == 'C'); 
+      assert (trans == 'N' || trans == 'T' || trans == 'C');
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrA>::matrix_structure, 
+        typename traits::matrix_traits<MatrA>::matrix_structure,
         traits::general_t
-      >::value)); 
+      >::value));
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<MatrB>::matrix_structure, 
+        typename traits::matrix_traits<MatrB>::matrix_structure,
         traits::general_t
-      >::value)); 
-#endif 
+      >::value));
+#endif
 
       int const n = traits::matrix_size1 (a);
-      assert (n == traits::matrix_size2 (a)); 
-      assert (n == traits::matrix_size1 (b)); 
-      assert (n == traits::vector_size (ipiv)); 
+      assert (n == traits::matrix_size2 (a));
+      assert (n == traits::matrix_size1 (b));
+      assert (n == traits::vector_size (ipiv));
 
-      int info; 
-      detail::getrs (trans, n, traits::matrix_size2 (b), 
+      int info;
+      detail::getrs (trans, n, traits::matrix_size2 (b),
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
-                     traits::matrix_storage (a), 
+                     traits::matrix_storage (a),
 #else
-                     traits::matrix_storage_const (a), 
-#endif 
+                     traits::matrix_storage_const (a),
+#endif
                      traits::leading_dimension (a),
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
-                     traits::vector_storage (ipiv),  
+                     traits::vector_storage (ipiv),
 #else
-                     traits::vector_storage_const (ipiv),  
+                     traits::vector_storage_const (ipiv),
 #endif
                      traits::matrix_storage (b),
                      traits::leading_dimension (b),
                      &info);
-      return info; 
+      return info;
     }
 
     template <typename MatrA, typename MatrB, typename IVec>
     inline
     int getrs (MatrA const& a, IVec const& ipiv, MatrB& b) {
-      char const no_transpose = 'N'; 
-      return getrs (no_transpose, a, ipiv, b); 
+      char const no_transpose = 'N';
+      return getrs (no_transpose, a, ipiv, b);
     }
 
     /*
-     * getri() computes the inverse of a matrix using  
+     * getri() computes the inverse of a matrix using
      * the LU factorization computed by getrf().
      */
 
     namespace detail {
 
-      inline 
-      void getri (int const n, float* a, int const lda, int const* ipiv, 
-                  float* work, int const lwork, int* info) 
+      inline
+      void getri (int const n, float* a, int const lda, int const* ipiv,
+                  float* work, int const lwork, int* info)
       {
         LAPACK_SGETRI (&n, a, &lda, ipiv, work, &lwork, info);
       }
 
-      inline 
-      void getri (int const n, double* a, int const lda, int const* ipiv, 
-                  double* work, int const lwork, int* info) 
+      inline
+      void getri (int const n, double* a, int const lda, int const* ipiv,
+                  double* work, int const lwork, int* info)
       {
         LAPACK_DGETRI (&n, a, &lda, ipiv, work, &lwork, info);
       }
 
-      inline 
-      void getri (int const n, traits::complex_f* a, int const lda, 
-          int const* ipiv, traits::complex_f* work, int const lwork, 
-          int* info) 
+      inline
+      void getri (int const n, traits::complex_f* a, int const lda,
+          int const* ipiv, traits::complex_f* work, int const lwork,
+          int* info)
       {
-        LAPACK_CGETRI (&n, traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_CGETRI (&n, traits::complex_ptr (a), &lda, ipiv,
             traits::complex_ptr (work), &lwork, info);
       }
 
-      inline 
-      void getri (int const n, traits::complex_d* a, int const lda, 
-          int const* ipiv, traits::complex_d* work, int const lwork, 
-          int* info) 
+      inline
+      void getri (int const n, traits::complex_d* a, int const lda,
+          int const* ipiv, traits::complex_d* work, int const lwork,
+          int* info)
       {
-        LAPACK_ZGETRI (&n, traits::complex_ptr (a), &lda, ipiv, 
+        LAPACK_ZGETRI (&n, traits::complex_ptr (a), &lda, ipiv,
             traits::complex_ptr (work), &lwork, info);
       }
 
-			
-			
+
+
       template <typename MatrA, typename IVec, typename Work>
       inline
-      int getri (MatrA& a, IVec const& ipiv, Work& work) 
+      int getri (MatrA& a, IVec const& ipiv, Work& work)
       {
-	#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+	#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
         BOOST_STATIC_ASSERT((boost::is_same<
-              typename traits::matrix_traits<MatrA>::matrix_structure, 
+              typename traits::matrix_traits<MatrA>::matrix_structure,
               traits::general_t
-              >::value)); 
-	#endif 
+              >::value));
+	#endif
 
         int const n = traits::matrix_size1 (a);
         assert (n > 0);
-        assert (n <= traits::leading_dimension (a)); 
+        assert (n <= traits::leading_dimension (a));
         assert (n == traits::matrix_size2 (a));
-        assert (n == traits::vector_size (ipiv)); 
+        assert (n == traits::vector_size (ipiv));
         assert (n <= traits::vector_size (work)); //Minimal workspace size
 
         int info;
         //double* dummy = traits::matrix_storage (a);
-        detail::getri (n, traits::matrix_storage (a), 
+        detail::getri (n, traits::matrix_storage (a),
             traits::leading_dimension (a),
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
-            traits::vector_storage (ipiv),  
+            traits::vector_storage (ipiv),
 #else
-            traits::vector_storage_const (ipiv), 
+            traits::vector_storage_const (ipiv),
 #endif
             traits::vector_storage (work),
             traits::vector_size (work),
             &info);
         return info;
       }
-		
-			
+
+
       inline
       int getri_block(float)
       {
@@ -406,7 +406,7 @@ namespace boost { namespace numeric { namespace bindings {
 
     } // namespace detail
 
-		
+
     template <typename MatrA, typename IVec>
     inline
     int getri(MatrA& a, IVec& ipiv, minimal_workspace)
@@ -418,7 +418,7 @@ namespace boost { namespace numeric { namespace bindings {
 
       return detail::getri(a, ipiv, work);
 
-    } 
+    }
 
 
     // optimal workspace allocation
@@ -449,7 +449,7 @@ namespace boost { namespace numeric { namespace bindings {
     int getri(MatrA& a, IVec& ipiv, Work& work)
     {
       return detail::getri(a, ipiv, work);
-    } 
+    }
 
   } // namespace lapack
 
@@ -458,4 +458,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 
 
-#endif 
+#endif

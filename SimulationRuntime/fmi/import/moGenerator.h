@@ -112,7 +112,7 @@ typedef struct{
   fmiCausality causality;
   fmiAlias alias;
   fmiScalarVariableType type;
-  void* variable; 
+  void* variable;
 } fmiScalarVariable;
 
 typedef struct{
@@ -123,7 +123,7 @@ typedef struct{
   int nsv; // number of scalar variables
   fmiScalarVariable* list_sv;
   int nav; // number of array variables
-  fmiArrayVariable* list_av;  
+  fmiArrayVariable* list_av;
 } fmiModelVariable;
 
 typedef struct{

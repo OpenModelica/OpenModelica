@@ -194,7 +194,7 @@ extern void ErrorImpl__setCheckpoint(const char* id)
   // fprintf(stderr, "setCheckpoint(%s)\n",id); fflush(stderr);
   //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue.size(),id);
 }
-  
+
 extern void ErrorImpl__delCheckpoint(const char* id)
 {
   pair<int,string> cp;

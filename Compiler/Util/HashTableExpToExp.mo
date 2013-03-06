@@ -12,7 +12,7 @@ encapsulated package HashTableExpToExp "
   RCS: $Id: HashTableExpToExp.mo 15213 2013-02-18 10:17:07Z petar $
 
   "
-  
+
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key       - The key used to uniquely define elements in a hashtable

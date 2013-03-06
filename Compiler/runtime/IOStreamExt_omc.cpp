@@ -168,7 +168,7 @@ extern void IOStreamExt_printReversedList(modelica_metatype lst, int whereToPrin
   default: MMC_THROW();
   }
   strs = (const char**) malloc(sizeof(const char*)*lstLen);
-  
+
   for (i=0; i<lstLen ; i++, lst = MMC_CDR(lst)) {
     strs[i] = MMC_STRINGDATA(MMC_CAR(lst));
   }

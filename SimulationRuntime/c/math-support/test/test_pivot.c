@@ -15,7 +15,7 @@ int test_Quaternion(double q0, double q1, double q2, double q3);
 int test_35();
 void pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd );
 
-// main 
+// main
 int main()
 {
   // return code

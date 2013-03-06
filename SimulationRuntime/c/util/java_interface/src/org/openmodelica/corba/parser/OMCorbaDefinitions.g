@@ -53,7 +53,7 @@ replaceable_type : '(' 'replaceable' 'type' ID ')' {memory = new VariableDefinit
 
 type : basetype
      | complextype
-     | '[' INT type {memory = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.ARRAY, (ComplexTypeDefinition) memory, $INT.int);} 
+     | '[' INT type {memory = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.ARRAY, (ComplexTypeDefinition) memory, $INT.int);}
      | fqid {memory = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.DEFINED_TYPE, (String) memory);};
 varDef : type ID {memory = new VariableDefinition((ComplexTypeDefinition)memory, $ID.text, curPackage);};
 input  : '(' 'input' varDef ')';

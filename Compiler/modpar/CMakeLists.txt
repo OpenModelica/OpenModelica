@@ -8,16 +8,16 @@ INCLUDE_DIRECTORIES(${RMLHOME}/include/plain)
 endif(WIN32)
 
 IF(USE_MODPAR)
-  SET(OBJECTS  Codegen.cpp 
+  SET(OBJECTS  Codegen.cpp
 	TaskMerging.cpp
-	TaskGraph.cpp 
-	MergeRule.cpp 
-	SingleChildMerge.cpp 
-	DuplicateParentMerge.cpp 
-	MergeAllParents.cpp 
-	MergeSiblings.cpp 
-	Schedule.cpp 
-	TaskGraphExt.cpp 
+	TaskGraph.cpp
+	MergeRule.cpp
+	SingleChildMerge.cpp
+	DuplicateParentMerge.cpp
+	MergeAllParents.cpp
+	MergeSiblings.cpp
+	Schedule.cpp
+	TaskGraphExt.cpp
 	solvers.cpp)
 ELSE(USE_MODPAR)
   SET(OBJECTS  TaskGraphExt_stub.cpp)

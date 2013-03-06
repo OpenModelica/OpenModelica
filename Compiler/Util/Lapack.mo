@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -63,7 +63,7 @@ public function dgeev
     inLDVR, inWORK, inLWORK, outA, outWR, outWI, outVL, outVR, outWORK, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgeev;
-  
+
 public function dgegv
   input String inJOBVL;
   input String inJOBVR;
@@ -104,7 +104,7 @@ public function dgels
   output list<Real> outWORK;
   output Integer outINFO;
   external "C" LapackImpl__dgels(inTRANS, inM, inN, inNRHS, inA, inLDA, inB,
-    inLDB, inWORK, inLWORK, outA, outB, outWORK, outINFO) 
+    inLDB, inWORK, inLWORK, outA, outB, outWORK, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgels;
 
@@ -125,7 +125,7 @@ public function dgelsx
   output list<Integer> outJPVT;
   output Integer outRANK;
   output Integer outINFO;
-  external "C" LapackImpl__dgelsx(inM, inN, inNRHS, inA, inLDA, inB, inLDB, 
+  external "C" LapackImpl__dgelsx(inM, inN, inNRHS, inA, inLDA, inB, inLDB,
       inJPVT, inRCOND, inWORK, inLWORK, outA, outB, outJPVT, outRANK, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgelsx;
@@ -251,7 +251,7 @@ public function dgetrs
   output list<list<Real>> outB;
   output Integer outINFO;
   external "C" LapackImpl__dgetrs(inTRANS, inN, inNRHS, inA, inLDA, inIPIV, inB,
-    inLDB, outB, outINFO) 
+    inLDB, outB, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgetrs;
 

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -63,7 +63,7 @@ uniontype State "- Machine states, the string contains the classname."
   record UNKNOWN
     Absyn.Path path;
   end UNKNOWN;
-  
+
    record OPTIMIZATION
     Absyn.Path path;
    end OPTIMIZATION;
@@ -108,7 +108,7 @@ uniontype State "- Machine states, the string contains the classname."
     Boolean hasAlgorithms;
     Boolean hasConstraints;
   end HAS_RESTRICTIONS;
-  
+
   record TYPE_INTEGER
     Absyn.Path path;
   end TYPE_INTEGER;
@@ -167,7 +167,7 @@ end State;
 public
 uniontype Event "- Events"
   record FOUND_EQUATION "There are equations inside the current definition" end FOUND_EQUATION;
-    
+
   record FOUND_ALGORITHM "There are algorithms inside the current definition" end FOUND_ALGORITHM;
 
   record FOUND_CONSTRAINT "There are constranit (equations) inside the current definition" end FOUND_CONSTRAINT;
@@ -350,9 +350,9 @@ algorithm
     case TYPE_STRING(path = p) then p;
     case TYPE_BOOL(path = p) then p;
     case TYPE_ENUM(path = p) then p;
-      
+
     case EXTERNAL_OBJ(p) then p;
-    
+
     case META_TUPLE(p) then p;
     case META_LIST(p) then p;
     case META_OPTION(p) then p;
@@ -360,7 +360,7 @@ algorithm
     case META_UNIONTYPE(p) then p;
     case META_ARRAY(p) then p;
     case META_POLYMORPHIC(p) then p;
-      
+
     case _ then Absyn.IDENT("#getStateName failed#");
   end match;
 end getStateName;
@@ -403,7 +403,7 @@ algorithm
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
     case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
     case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
-    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);    
+    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);
     case (SCode.R_OPERATOR(),p) then RECORD(p);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
@@ -491,7 +491,7 @@ algorithm
     case (MODEL(path = p),FOUND_ALGORITHM()) then inState;
     case (BLOCK(path = p),FOUND_ALGORITHM()) then inState;
     case (FUNCTION(path = p),FOUND_ALGORITHM()) then inState;
-    
+
     case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,b2,b3);
     case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_CONSTRAINT()) then HAS_RESTRICTIONS(p,b1,b2,true);
     case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_ALGORITHM()) then HAS_RESTRICTIONS(p,b1,true,b3);
@@ -525,22 +525,22 @@ public function valid "function: valid
 algorithm
   _ := match (inState,inRestriction)
     local Absyn.Path p;
-    
+
     case (UNKNOWN(path = p),_) then ();
-    
+
     case (HAS_RESTRICTIONS(path = p),SCode.R_CLASS()) then ();
     case (HAS_RESTRICTIONS(path = p),SCode.R_MODEL()) then ();
     case (HAS_RESTRICTIONS(path = p),SCode.R_OPTIMIZATION()) then ();
     case (MODEL(path = p),SCode.R_MODEL()) then ();
 
-   
+
     case (RECORD(path = p),SCode.R_RECORD()) then ();
     case (RECORD(path = p),SCode.R_CONNECTOR(_)) then ();
     case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD()) then ();
-    
+
     case (BLOCK(path = p),SCode.R_BLOCK()) then ();
     case (MODEL(path = p),SCode.R_MODEL()) then ();
-    
+
     case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then ();
     case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
     case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_CONNECTOR(_)) then ();
@@ -550,7 +550,7 @@ algorithm
     case (TYPE_BOOL(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_ENUM(path = _),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
     case (ENUMERATION(p),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
-    
+
     case (TYPE(path = p),SCode.R_TYPE()) then ();
     case (TYPE_INTEGER(path = p),SCode.R_TYPE()) then ();
     case (TYPE_REAL(path = p),SCode.R_TYPE()) then ();
@@ -558,7 +558,7 @@ algorithm
     case (TYPE_BOOL(path = p),SCode.R_TYPE()) then ();
     case (TYPE_ENUM(path = p),SCode.R_TYPE()) then ();
     case (ENUMERATION(p),SCode.R_TYPE()) then ();
-    
+
     case (PACKAGE(path = p),SCode.R_PACKAGE()) then ();
     case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
 
@@ -665,7 +665,7 @@ algorithm
   end matchcontinue;
 end matchingState;
 
-public function isFunction 
+public function isFunction
 "function: isFunction
   returns true if state is FUNCTION."
   input State inState;
@@ -742,7 +742,7 @@ public function stateToSCodeRestriction
 algorithm
   (outRestriction, outPath) := match (inState)
     local Absyn.Path p; Boolean isExpandable, isImpure;
-    
+
     case UNKNOWN(p) then (SCode.R_CLASS(),p);
     case OPTIMIZATION(p) then (SCode.R_OPTIMIZATION(),p);
     case MODEL(p) then (SCode.R_MODEL(),p);

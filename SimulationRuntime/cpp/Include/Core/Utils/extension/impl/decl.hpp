@@ -4,7 +4,7 @@
  *
  * (C) Copyright Jeremy Pack 2007
  * Copyrignt 2008 Stjepan Rajko
- * 
+ *
  * Distributed under the Boost Software License, Version 1.0. (See
  * accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -27,7 +27,7 @@
 
 #else
 
-#  define BOOST_EXTENSION_EXPORT_DECL 
+#  define BOOST_EXTENSION_EXPORT_DECL
 #  define BOOST_EXTENSION_IMPORT_DECL
 
 #endif

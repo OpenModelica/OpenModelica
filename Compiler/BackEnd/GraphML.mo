@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -32,9 +32,9 @@
 encapsulated package GraphML
 " file:         GraphML
   package:     GraphML
-  description: GraphML contains functions to generate a gaphML file for yED 
+  description: GraphML contains functions to generate a gaphML file for yED
 
-  
+
   RCS: $Id: GraphML 9566 2011-08-01 07:04:56Z perost $
 "
 
@@ -43,7 +43,7 @@ protected import List;
 protected import System;
 
 /*************************************************
- * types 
+ * types
  ************************************************/
 
 public constant String COLOR_BLACK      = "000000";
@@ -93,7 +93,7 @@ public uniontype EdgeLabel
   record EDGELABEL
     String text;
     String color;
-  end EDGELABEL;  
+  end EDGELABEL;
 end EdgeLabel;
 
 public uniontype Edge
@@ -118,7 +118,7 @@ public uniontype Graph
 end Graph;
 
 /*************************************************
- * public 
+ * public
  ************************************************/
 
 public function getGraph
@@ -146,7 +146,7 @@ protected
   String gid;
   Boolean d;
   list<Node> n;
-  list<Edge> e;  
+  list<Edge> e;
 algorithm
   GRAPH(gid,d,n,e) := inG;
   outG := GRAPH(gid,d,NODE(id,text,color,shapeType)::n,e);
@@ -169,7 +169,7 @@ protected
   String gid;
   Boolean d;
   list<Node> n;
-  list<Edge> e;  
+  list<Edge> e;
 algorithm
   GRAPH(gid,d,n,e) := inG;
   outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows)::e);
@@ -187,7 +187,7 @@ algorithm
   str := dumpStart();
   str := dumpGraph_Internal(inGraph,"  ",str);
   str := dumpEnd(str);
-  System.writeFile(name,str);           
+  System.writeFile(name,str);
 end dumpGraph;
 
 public function printGraph
@@ -199,11 +199,11 @@ public function printGraph
 algorithm
   print(dumpStart());
   print(dumpGraph_Internal(inGraph,"  ",""));
-  print(dumpEnd(""));           
+  print(dumpEnd(""));
 end printGraph;
 
 /*************************************************
- * protected 
+ * protected
  ************************************************/
 
 protected function dumpStart
@@ -224,7 +224,7 @@ algorithm
    "  <key attr.name=\"url\" attr.type=\"string\" for=\"edge\" id=\"d8\"/>\n",
    "  <key attr.name=\"description\" attr.type=\"string\" for=\"edge\" id=\"d9\"/>\n",
    "  <key for=\"edge\" id=\"d10\" yfiles.type=\"edgegraphics\"/>\n"});
-end dumpStart; 
+end dumpStart;
 
 protected function dumpEnd
   input String is;
@@ -235,7 +235,7 @@ algorithm
    "    <y:Resources/>\n",
    "  </data>\n",
    "</graphml>\n"});
-end dumpEnd; 
+end dumpEnd;
 
 protected function appendString
   input String inString;
@@ -263,12 +263,12 @@ algorithm
          s = stringAppendList({inString,inStringDelemiter,"<graph edgedefault=\"", sd , "\" id=\"" , id , "\">\n"});
          s = List.fold1(nodes,dumpNode,t,s);
          s = List.fold1(edges,dumpEdge,t,s);
-         s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});         
+         s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});
          s = stringAppendList({s,inStringDelemiter , "</graph>\n"});
        then
-        s;     
+        s;
    end match;
-end dumpGraph_Internal;  
+end dumpGraph_Internal;
 
 protected function dumpNode
   input Node inNode;
@@ -277,7 +277,7 @@ protected function dumpNode
   output String oAcc;
 algorithm
   oAcc := match (inNode,inString,iAcc)
-  local 
+  local
     String id,t,text,st_str,color,s;
     ShapeType st;
      case(NODE(id=id,text=text,color=color,shapeType=st) ,_,_)
@@ -298,9 +298,9 @@ algorithm
            t , "</data>\n",
            inString ,"</node>\n"});
        then
-        s;     
+        s;
    end match;
-end dumpNode;  
+end dumpNode;
 
 protected function getShapeTypeString
   input ShapeType st;
@@ -327,8 +327,8 @@ protected function dumpEdge
   output String oAcc;
 algorithm
   oAcc := match (inEdge,inString,iAcc)
-  local 
-    String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;  
+  local
+    String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;
     LineType lt;
     Option<ArrowType> sarrow,tarrow;
     Option<EdgeLabel> label;
@@ -347,16 +347,16 @@ algorithm
            "        <y:PolyLineEdge>\n",
            "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
            "          <y:LineStyle color=\"#" , color , "\" type=\"" , lt_str , "\" width=\"2.0\"/>\n",
-           sl_str,      
+           sl_str,
            "          <y:Arrows source=\"" , sa_str , "\" target=\"" , ta_str , "\"/>\n",
            "          <y:BendStyle smoothed=\"false\"/>\n",
            "        </y:PolyLineEdge>\n",
            t , "</data>\n",
-           inString , "</edge>\n"});      
+           inString , "</edge>\n"});
      then
-      s;   
+      s;
    end match;
-end dumpEdge; 
+end dumpEdge;
 
 protected function getEdgeLabelString
   input Option<EdgeLabel> label;

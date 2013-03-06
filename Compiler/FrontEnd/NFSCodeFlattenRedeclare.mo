@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -83,7 +83,7 @@ public uniontype Replacement
     Item new;
     Env env;
   end REPLACED;
-  
+
   record PUSHED "the redeclares got pushed into the extends of the base classes"
     SCode.Ident name;
     Item redeclaredItem;
@@ -91,7 +91,7 @@ public uniontype Replacement
     NFSCodeEnv.ExtendsTable old;
     NFSCodeEnv.ExtendsTable new;
     Env env;
-  end PUSHED;  
+  end PUSHED;
 end Replacement;
 
 public type Replacements = list<Replacement>;
@@ -143,7 +143,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +&
-          SCode.elementName(inRedeclare) +& " in " +& 
+          SCode.elementName(inRedeclare) +& " in " +&
           NFSCodeEnv.getEnvName(inEnv) +& "\n");
       then
         fail();
@@ -226,7 +226,7 @@ algorithm
         exl = addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClasses, exl);
       then
         ex :: exl;
-    
+
   end matchcontinue;
 end addRedeclareToEnvExtendsTable2;
 
@@ -255,7 +255,7 @@ algorithm
       Item el_item, redecl_item;
       SCode.Element el;
       Env cls_env, env;
-   
+
    case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS(name = _)), _, _)
       equation
         cls_env = NFSCodeEnv.makeClassEnvironment(el, true);
@@ -277,7 +277,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +&
-          SCodeDump.printElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare)) +& 
+          SCodeDump.printElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare)) +&
           " in " +& Absyn.pathString(NFSCodeEnv.getEnvPath(inEnv)));
       then
         fail();
@@ -290,7 +290,7 @@ public function replaceRedeclares
    redeclared, and the environment in which the modified element was declared
    (used to qualify the redeclares). The redeclares are then either replaced if
    they can be found in the immediate local environment of the class, or pushed
-   into the correct extends clauses if they are inherited." 
+   into the correct extends clauses if they are inherited."
   input list<NFSCodeEnv.Redeclaration> inRedeclares;
   input Item inClassItem "The item of the class to be modified.";
   input Env inClassEnv "The environment of the class to be modified.";
@@ -305,7 +305,7 @@ algorithm
       Item item;
       Env env;
 
-    case (_, _, _, _, NFSCodeLookup.IGNORE_REDECLARES()) 
+    case (_, _, _, _, NFSCodeLookup.IGNORE_REDECLARES())
       then (SOME(inClassItem), SOME(inClassEnv));
 
     case (_, _, _, _, NFSCodeLookup.INSERT_REDECLARES())
@@ -363,8 +363,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for:\n\t");
-        Debug.traceln("redeclares: " +& 
-          stringDelimitList(List.map(inRedeclares, NFSCodeEnv.printRedeclarationStr), "\n---------\n") +&  
+        Debug.traceln("redeclares: " +&
+          stringDelimitList(List.map(inRedeclares, NFSCodeEnv.printRedeclarationStr), "\n---------\n") +&
           "\n\titem: " +& NFSCodeEnv.itemStr(inItem) +& "\n\tin scope:" +& NFSCodeEnv.getEnvName(inElementEnv));
       then
         fail();
@@ -380,7 +380,7 @@ algorithm
     local
       list<SCode.SubMod> sub_mods;
       list<NFSCodeEnv.Redeclaration> redeclares;
-    
+
     case SCode.MOD(subModLst = sub_mods)
       equation
         redeclares = List.fold(sub_mods, extractRedeclareFromSubMod, {});
@@ -401,7 +401,7 @@ algorithm
   outRedeclares := match(inMod, inRedeclares)
     local
       SCode.Element el;
-      NFSCodeEnv.Redeclaration redecl; 
+      NFSCodeEnv.Redeclaration redecl;
 
     case (SCode.NAMEMOD(A = SCode.REDECL(element = el)), _)
       equation
@@ -436,12 +436,12 @@ algorithm
       equation
         name = NFSCodeEnv.getItemName(item);
         // do not asume the story ends here
-        // you have to push into extends again 
+        // you have to push into extends again
         // even if you find it in the local scope!
         envRpl = pushRedeclareIntoExtendsNoFail(name, item, inEnv);
-      then  
+      then
         replaceElementInScope(name, item, envRpl);
-        
+
     // If the previous case failed, see if we can find the redeclared element in
     // any of the base classes. If so, push the redeclare into those base
     // classes instead, i.e. add them to the list of redeclares in the
@@ -452,7 +452,7 @@ algorithm
         bcl = NFSCodeLookup.lookupBaseClasses(name, Util.tuple21(inEnv));
       then
         pushRedeclareIntoExtends(name, item, bcl, inEnv);
-        
+
     // The redeclared element could not be found, show an error.
     case (NFSCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
@@ -462,7 +462,7 @@ algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {name, scope_name}, info);
       then
-        fail(); 
+        fail();
 
   end matchcontinue;
 end replaceRedeclaredElementInEnv;
@@ -484,14 +484,14 @@ algorithm
       list<String> bcl_str;
       Env env;
       tuple<Env, Replacements> envRpl;
-    
+
     case (_, _, _)
       equation
         bcl = NFSCodeLookup.lookupBaseClasses(inName, Util.tuple21(inEnv));
         (envRpl) = pushRedeclareIntoExtends(inName, inRedeclare, bcl, inEnv);
       then
         envRpl;
-    
+
     else inEnv;
   end matchcontinue;
 end pushRedeclareIntoExtendsNoFail;
@@ -512,15 +512,15 @@ protected
   Env env;
   Replacements repl;
 algorithm
-  (env, repl) := inEnv; 
-  
+  (env, repl) := inEnv;
+
   NFSCodeEnv.FRAME(extendsTable = etOld as NFSCodeEnv.EXTENDS_TABLE(exts, re, cei)) :: _ := env;
   exts := pushRedeclareIntoExtends2(inName, inRedeclare, inBaseClasses, exts);
   etNew := NFSCodeEnv.EXTENDS_TABLE(exts, re, cei);
-  
+
   env := NFSCodeEnv.setEnvExtendsTable(etNew, env);
   repl := PUSHED(inName, inRedeclare, inBaseClasses, etOld, etNew, env)::repl;
-  
+
   outEnv := (env, repl);
   // tracePushRedeclareIntoExtends(inName, inRedeclare, inBaseClasses, env, etOld, etNew);
 end pushRedeclareIntoExtends;
@@ -617,7 +617,7 @@ algorithm
 
   end matchcontinue;
 end pushRedeclareIntoExtends3;
-        
+
 public function replaceElementInScope
   "Replaces an element in the current scope."
   input SCode.Ident inElementName;
@@ -663,7 +663,7 @@ algorithm
       NFSCodeEnv.ClassType ty1, ty2;
       Item item;
 
-    case (NFSCodeEnv.VAR(var = el1, isUsed = iu1), 
+    case (NFSCodeEnv.VAR(var = el1, isUsed = iu1),
           NFSCodeEnv.VAR(var = el2, isUsed = iu2))
       equation
         el2 = propagateAttributesVar(el1, el2);
@@ -861,13 +861,13 @@ algorithm
     case (_, _, _, _)
       equation
         print("replacing element: " +& inElementName +& " env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n\t");
-        print("Old Element:" +& NFSCodeEnv.itemStr(inOldItem) +& 
+        print("Old Element:" +& NFSCodeEnv.itemStr(inOldItem) +&
               " env: " +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inOldItem)) +& "\n\t");
-        print("New Element:" +& NFSCodeEnv.itemStr(inNewItem) +& 
-              " env: " +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inNewItem)) +& 
+        print("New Element:" +& NFSCodeEnv.itemStr(inNewItem) +&
+              " env: " +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inNewItem)) +&
               "\n===============\n");
       then ();
-    
+
     else
       equation
         print("traceReplaceElementInScope failed on element: " +& inElementName +& "\n");
@@ -889,7 +889,7 @@ algorithm
   _ := matchcontinue(inName, inRedeclare, inBaseClasses, inEnv, inEtNew, inEtOld)
     case (_, _, _, _, _, _)
       equation
-        print("pushing: " +& inName +& " redeclare: " +& NFSCodeEnv.itemStr(inRedeclare) +& "\n\t"); 
+        print("pushing: " +& inName +& " redeclare: " +& NFSCodeEnv.itemStr(inRedeclare) +& "\n\t");
         print("into baseclases: " +& stringDelimitList(List.map(inBaseClasses, Absyn.pathString), ", ") +& "\n\t");
         print("called from env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n");
         print("-----------------\n");

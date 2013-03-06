@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -38,13 +38,13 @@ encapsulated package List
 
   This package contains all functions that operate on the List type, such as
   mapping and filtering functions.
-  
+
   Most of the functions in this package follows a naming convention that looks
   like (? means zero or one, + means one or more, * means zero or more):
 
     (operation(n)?(_m)?(prefix)*)+
 
-  operation: The operation that the function does, i.e. mapping, folding, etc. 
+  operation: The operation that the function does, i.e. mapping, folding, etc.
           n: The number of extra arguments that the function takes.
           m: The number of lists created.
      prefix: One of the following prefixes:
@@ -69,14 +69,14 @@ encapsulated package List
          Sorted: Expects the given list(s) to be sorted.
           Tuple: Operates on tuples, either by expecting tuple types as
                  input or by returning tuples instead of multiple lists.
-     
+
   All operator functions has the same parameter order as the types defined
   below, i.e. ValueType before ElementType, and so on. Some types are
   bidirectional, in which case they appear commented out in the outputs list
   below just to show the order. The r prefix changes this order by either moving
   FoldType to the top if FoldType is used, otherwise moving the ElementType to the
   bottom.
-  
+
   The n and m numbers define the number of extra arguments or lists created, and
   is only used when they deviate from the expected values. I.e. map should be
   called map_1 according to the convention, since it creates one list. But this
@@ -95,7 +95,7 @@ encapsulated package List
 
   (element, extra arg 1, extra arg 2, fold arg) -> fold arg
 "
-  
+
 protected import Debug;
 protected import Flags;
 protected import Error;
@@ -170,7 +170,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value " 
+        Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value "
           +& intString(inCount));
       then
         fail();
@@ -201,7 +201,7 @@ algorithm
   outRange := intRange_tail(1, 1, inStop);
 end intRange;
 
-public function intRange2 
+public function intRange2
   "Returns a list of integers from inStart to inStop.
      Example listIntRange2(3,5) => {3,4,5}"
   input Integer inStart;
@@ -214,7 +214,7 @@ algorithm
   outRange := intRange_tail(inStart, step, inStop);
 end intRange2;
 
-public function intRange3 
+public function intRange3
   "Returns a list of integers from inStart to inStop with step inStep.
      Example: listIntRange2(3,9,2) => {3,5,7,9}"
   input Integer inStart;
@@ -401,7 +401,7 @@ public function isEqualOnTrue
   input list<ElementType2> inList2;
   input CompFunc inCompFunc;
   output Boolean outIsEqual;
- 
+
   partial function CompFunc
     input ElementType1 inElement1;
     input ElementType2 inElement2;
@@ -414,7 +414,7 @@ algorithm
       ElementType2 e2;
       list<ElementType1> rest1;
       list<ElementType2> rest2;
-    
+
     case ({}, {}, _) then true;
     case (e1 :: rest1, e2 :: rest2, _)
       equation
@@ -529,21 +529,21 @@ public function consOnBool
   output list<ElementType> outTrueList;
   output list<ElementType> outFalseList;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
   match(inValue, inElement, inTrueList, inFalseList)
     local
       list<ElementType> lst;
 
-    case (true, _, _, _) 
+    case (true, _, _, _)
       equation
         lst = inElement :: inTrueList;
-      then 
+      then
         (lst, inFalseList);
 
-    else 
+    else
       equation
         lst = inElement :: inFalseList;
-      then 
+      then
         (inTrueList, lst);
   end match;
 end consOnBool;
@@ -643,7 +643,7 @@ end appendLastList;
 
 public function insert
  "Inserts an element at a position
-  example: insert({2,1,4,2},2,3) => {2,3,1,4,2} " 
+  example: insert({2,1,4,2},2,3) => {2,3,1,4,2} "
   input list<ElementType> inList;
   input Integer inN;
   input ElementType inElement;
@@ -658,7 +658,7 @@ end insert;
 
 public function set
  "set an element at a position
-  example: insert({2,1,4,2},2,3) => {2,3,4,2} " 
+  example: insert({2,1,4,2},2,3) => {2,3,4,2} "
   input list<ElementType> inList;
   input Integer inN;
   input ElementType inElement;
@@ -702,7 +702,7 @@ public function second
 algorithm
   outSecond := listGet(inList, 2);
 end second;
- 
+
 public function last
   "Returns the last element of a list. Fails if the list is empty."
   input list<ElementType> inList;
@@ -782,7 +782,7 @@ algorithm
   true := (inN >= 0);
   outList := firstN_tail(inList, inN, {});
   outList := listReverse(outList);
-end firstN;  
+end firstN;
 
 protected function firstN_tail
   "Tail recursive implementation of firstN."
@@ -1074,13 +1074,13 @@ algorithm
   end matchcontinue;
 end mergeSorted;
 
-public function sortIntN 
+public function sortIntN
   "Provides same functionality as sort, but for integer values between 1
    and N. The complexity in this case is O(n)"
   input list<Integer> inList;
   input Integer inN;
   output list<Integer> outSorted;
-protected 
+protected
   array<Boolean> a1;
 algorithm
   a1 := arrayCreate(inN, false);
@@ -1105,7 +1105,7 @@ algorithm
         acc = consOnTrue(a1[index], index, iAcc);
       then
         sortIntN1(a1,index-1,acc);
-  end match;        
+  end match;
 end sortIntN1;
 
 public function unique
@@ -1124,7 +1124,7 @@ public function uniqueIntN
   input Integer N;
   output list<Integer> outList;
 protected
-  array<Boolean> arr; 
+  array<Boolean> arr;
 algorithm
   arr := arrayCreate(N,true);
   outList := uniqueIntN_work(inList, arr, {});
@@ -1154,7 +1154,7 @@ public function uniqueIntNArr
   "Takes a list of integes and returns a list with duplicates removed, so that
    each element in the new list is unique. O(listLength(inList)). The function
    also takes an array of Integer of size N+1 to mark the already selected entries <= N.
-   The last entrie of the array is used for the mark index. It will be updated after 
+   The last entrie of the array is used for the mark index. It will be updated after
    each call"
   input list<Integer> inList;
   input array<Integer> markarr;
@@ -1287,10 +1287,10 @@ public function splitOnTrue
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
     splitOnTrue_tail(inList, inFunc, {}, {});
 end splitOnTrue;
-  
+
 protected function splitOnTrue_tail
   "Tail recursive implementation of splitOnTrue."
   input list<ElementType> inList;
@@ -1305,14 +1305,14 @@ protected function splitOnTrue_tail
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
   match(inList, inFunc, inTrueList, inFalseList)
     local
       ElementType e;
       list<ElementType> rest_e, tl, fl;
       Boolean pred;
 
-    case ({}, _, tl, fl) 
+    case ({}, _, tl, fl)
       then (listReverse(tl), listReverse(fl));
 
     case (e :: rest_e, _, tl, fl)
@@ -1339,10 +1339,10 @@ public function split1OnTrue
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
     split1OnTrue_tail(inList, inFunc, inArg1, {}, {});
 end split1OnTrue;
-  
+
 protected function split1OnTrue_tail
   "Tail recursive implementation of split1OnTrue."
   input list<ElementType> inList;
@@ -1359,14 +1359,14 @@ protected function split1OnTrue_tail
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
   match(inList, inFunc, inArg1, inTrueList, inFalseList)
     local
       ElementType e;
       list<ElementType> rest_e, tl, fl;
       Boolean pred;
 
-    case ({}, _, _, tl, fl) 
+    case ({}, _, _, tl, fl)
       then (listReverse(tl), listReverse(fl));
 
     case (e :: rest_e, _, _, tl, fl)
@@ -1395,10 +1395,10 @@ public function split2OnTrue
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
     split2OnTrue_tail(inList, inFunc, inArg1, inArg2, {}, {});
 end split2OnTrue;
-  
+
 protected function split2OnTrue_tail
   "Tail recursive implementation of split2OnTrue."
   input list<ElementType> inList;
@@ -1417,14 +1417,14 @@ protected function split2OnTrue_tail
     output Boolean outResult;
   end PredicateFunc;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
   match(inList, inFunc, inArg1, inArg2, inTrueList, inFalseList)
     local
       ElementType e;
       list<ElementType> rest_e, tl, fl;
       Boolean pred;
 
-    case ({}, _, _, _, tl, fl) 
+    case ({}, _, _, _, tl, fl)
       then (listReverse(tl), listReverse(fl));
 
     case (e :: rest_e, _, _, _, tl, fl)
@@ -1522,7 +1522,7 @@ algorithm
 
   end match;
 end splitFirstOption;
-  
+
 public function splitLast
   "Returns the last element of a list and a list of all previous elements. If
    the list is the empty list, the function fails.
@@ -1605,14 +1605,14 @@ public function splitOnBoolList_tail
   output list<ElementType> outTrueList;
   output list<ElementType> outFalseList;
 algorithm
-  (outTrueList, outFalseList) := 
+  (outTrueList, outFalseList) :=
   match(inList, inBools, inTrueAccum, inFalseAccum)
     local
       ElementType e;
       list<ElementType> rest, fl, tl;
       list<Boolean> brest;
 
-    case ({}, {}, _, _) 
+    case ({}, {}, _, _)
       then (listReverse(inTrueAccum), listReverse(inFalseAccum));
 
     case (e :: rest, true :: brest, _, _)
@@ -1722,7 +1722,7 @@ algorithm
   list2 := listReverse(inList2);
   outResult := productMap_tail(list1, list2, inMapFunc, {});
 end productMap;
-  
+
 protected function productMap_tail
   "Tail-recursive implementation of productMap."
   input list<ElementType1> inList1;
@@ -1742,7 +1742,7 @@ algorithm
       ElementType1 e;
       list<ElementType1> rest;
       list<ElementOutType> result;
-      
+
     case ({}, _, _, _) then inAccumList;
 
     case (e :: rest, _, _, _)
@@ -1826,7 +1826,7 @@ algorithm
   end match;
 end transposeList_tail;
 
-public function setEqualOnTrue 
+public function setEqualOnTrue
   "Takes two lists and a comparison function over two elements of the lists.
    It returns true if the two sets are equal, false otherwise."
   input list<ElementType> inList1;
@@ -1841,7 +1841,7 @@ public function setEqualOnTrue
   end CompFunc;
 algorithm
   outIsEqual := matchcontinue(inList1, inList2, inCompFunc)
-    local 
+    local
       list<ElementType> lst;
       Integer lst_size;
 
@@ -1851,14 +1851,14 @@ algorithm
         lst_size = listLength(lst);
         true = intEq(lst_size, listLength(inList1));
         true = intEq(lst_size, listLength(inList2));
-      then 
+      then
         true;
-     
+
     else false;
   end matchcontinue;
 end setEqualOnTrue;
 
-public function intersectionIntN 
+public function intersectionIntN
   "Provides same functionality as listIntersection, but for integer values
    between 1 and N. The complexity in this case is O(n)."
   input list<Integer> inList1;
@@ -1881,7 +1881,7 @@ algorithm
  end matchcontinue;
 end intersectionIntN;
 
-protected function intersectionIntVec 
+protected function intersectionIntVec
   "Helper function to intersectionIntN."
   input array<Integer> inArray;
   input Integer inIndex;
@@ -1892,19 +1892,19 @@ algorithm
     local
       list<Integer> acc;
 
-    case(_, 0, _) 
-      then 
+    case(_, 0, _)
+      then
         iAcc;
 
-    case(_, _, _) 
+    case(_, _, _)
       equation
         acc = consOnTrue(intEq(inArray[inIndex],2),inIndex,iAcc);
-      then 
+      then
         intersectionIntVec(inArray, inIndex - 1, acc);
   end match;
 end intersectionIntVec;
 
-protected function addPos 
+protected function addPos
   "Helper function to intersectionIntN."
   input list<Integer> inList;
   input array<Integer> inArray;
@@ -1912,26 +1912,26 @@ protected function addPos
   output array<Integer> outArray;
 algorithm
   outArray := matchcontinue(inList, inArray, inIndex)
-    local 
+    local
       Integer i;
       list<Integer> irest;
       array<Integer> arr;
 
     case({}, _, _) then inArray;
 
-    case(i :: irest, _, _) 
+    case(i :: irest, _, _)
       equation
         arr = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
         arr = addPos(irest, inArray, inIndex);
-      then 
+      then
         arr;
 
-    case(i :: _, _, _) 
+    case(i :: _, _, _)
       equation
         failure(_ = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex)));
         print("Internal error in List.addPos, index = " +& intString(i) +&
           " but array size is " +& intString(arrayLength(inArray)) +& "\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end addPos;
@@ -1991,7 +1991,7 @@ public function intersection1OnTrue
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  (outIntersection, outList1Rest) := 
+  (outIntersection, outList1Rest) :=
     intersection1OnTrue_help(inList1, inList2, inCompFunc);
   outList2Rest := setDifferenceOnTrue(inList2, outIntersection, inCompFunc);
 end intersection1OnTrue;
@@ -2032,7 +2032,7 @@ algorithm
   end matchcontinue;
 end intersection1OnTrue_help;
 
-public function setDifferenceIntN 
+public function setDifferenceIntN
   "Provides same functionality as setDifference, but for integer values
    between 1 and N. The complexity in this case is O(n)"
   input list<Integer> inList1;
@@ -2052,10 +2052,10 @@ algorithm
       then
         setDifferenceIntVec(a, inN, {});
     else then {};
- end matchcontinue;  
+ end matchcontinue;
 end setDifferenceIntN;
 
-protected function setDifferenceIntVec 
+protected function setDifferenceIntVec
   "Helper function to intersectionIntN."
   input array<Integer> inArray;
   input Integer inIndex;
@@ -2066,14 +2066,14 @@ algorithm
     local
       list<Integer> acc;
 
-    case(_, 0, _) 
-      then 
+    case(_, 0, _)
+      then
         iAcc;
 
-    case(_, _, _) 
+    case(_, _, _)
       equation
         acc = consOnTrue(intEq(inArray[inIndex],1),inIndex,iAcc);
-      then 
+      then
         setDifferenceIntVec(inArray, inIndex - 1, acc);
   end match;
 end setDifferenceIntVec;
@@ -2082,7 +2082,7 @@ public function setDifferenceOnTrue
   "Takes two lists and a comparison function over two elements of the lists. It
    returns the set difference of the two lists A-B, using the comparison
    function passed as argument to determine identity between two elements.
-     Example: 
+     Example:
        setDifferenceOnTrue({1, 2, 3}, {1, 3}, intEq) => {2}"
   input list<ElementType> inList1;
   input list<ElementType> inList2;
@@ -2144,7 +2144,7 @@ algorithm
   end matchcontinue;
 end setDifference;
 
-public function unionIntN 
+public function unionIntN
   "Provides same functionality as listUnion, but for integer values between 1
    and N. The complexity in this case is O(n)"
   input list<Integer> inList1;
@@ -2164,10 +2164,10 @@ algorithm
       then
         unionIntVec(a, inN, {});
     else then {};
- end matchcontinue;    
+ end matchcontinue;
 end unionIntN;
 
-protected function unionIntVec 
+protected function unionIntVec
   "Helper function to listIntersectionIntN."
   input array<Integer> inArray;
   input Integer inIndex;
@@ -2178,19 +2178,19 @@ algorithm
     local
       list<Integer> acc;
 
-    case(_, 0, _) 
-      then 
+    case(_, 0, _)
+      then
         iAcc;
 
-    case(_, _, _) 
+    case(_, _, _)
       equation
         acc = consOnTrue(intGt(inArray[inIndex],0),inIndex,iAcc);
-      then 
+      then
         unionIntVec(inArray, inIndex - 1, acc);
   end match;
 end unionIntVec;
 
-public function unionElt 
+public function unionElt
   "Takes a value and a list of values and inserts the value into the list if it
    is not already in the list. If it is in the list it is not inserted.
     Example:
@@ -2244,7 +2244,7 @@ algorithm
       list<ElementType> rest, accum;
 
     case ({}, {}, _) then listReverse(inAccumList);
-    case ({}, e :: rest, _) 
+    case ({}, e :: rest, _)
       equation
         accum = unionElt(e, inAccumList);
       then
@@ -2253,7 +2253,7 @@ algorithm
     case (e :: rest, _, _)
       equation
         accum = unionElt(e, inAccumList);
-      then  
+      then
         union_tail(rest, inList2, accum);
 
   end match;
@@ -2284,7 +2284,7 @@ algorithm
       list<ElementType> rest, accum;
 
     case ({}, _) then listReverse(inAccumList);
-    case (e :: rest, _) 
+    case (e :: rest, _)
       equation
         accum = unionElt(e, inAccumList);
       then
@@ -2345,7 +2345,7 @@ algorithm
 
   end match;
 end unionOnTrue_tail;
-      
+
 public function unionList
   "Takes a list of lists and returns the union of the sublists.
      Example: unionList({1}, {1, 2}, {3, 4}, {5}}) => {1, 2, 3, 4, 5}"
@@ -2362,7 +2362,7 @@ public function unionOnTrueList
   "Takes a list of lists and a comparison function over two elements of the
    lists. It returns the union of all sublists using the comparison function
    for identity.
-     Example: 
+     Example:
        unionOnTrueList({{1}, {1, 2}, {3, 4}}, intEq) => {1, 2, 3, 4}"
   input list<list<ElementType>> inList;
   input CompFunc inCompFunc;
@@ -2379,7 +2379,7 @@ algorithm
     else reduce1(inList, unionOnTrue, inCompFunc);
   end match;
 end unionOnTrueList;
-    
+
 public function map
   "Takes a list and a function, and creates a new list by applying the function
    to each element of the list."
@@ -2429,7 +2429,7 @@ algorithm
       ElementOutType new_head;
       list<ElementInType> rest;
       list<ElementOutType> accum;
-    
+
     case ({}, _, _) then inAccumList;
 
     case (head :: rest, _, _)
@@ -2475,7 +2475,7 @@ protected function map_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList, inFunc, inAccumList1, inAccumList2)
     local
       ElementInType head;
@@ -2490,7 +2490,7 @@ algorithm
     case (head :: rest, _, _, _)
       equation
         (new_head1, new_head2) = inFunc(head);
-        (accum1, accum2) = map_2_tail(rest, inFunc, 
+        (accum1, accum2) = map_2_tail(rest, inFunc,
           new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
         (accum1, accum2);
@@ -2529,7 +2529,7 @@ algorithm
       ElementInType head;
       ElementOutType new_head;
       list<ElementInType> rest;
-    
+
     case ({}, _, _) then inAccumList;
 
     case (SOME(head) :: rest, _, _)
@@ -2538,7 +2538,7 @@ algorithm
       then
         mapOption_tail(rest, inFunc, new_head :: inAccumList);
 
-    case (NONE() :: rest, _, _) 
+    case (NONE() :: rest, _, _)
       then mapOption_tail(rest, inFunc, inAccumList);
   end match;
 end mapOption_tail;
@@ -2579,7 +2579,7 @@ algorithm
       ElementInType head;
       ElementOutType new_head;
       list<Option<ElementInType>> rest;
-    
+
     case ({}, _, _, _) then inAccumList;
 
     case (SOME(head) :: rest, _, _, _)
@@ -2588,7 +2588,7 @@ algorithm
       then
         map1Option_tail(rest, inFunc, inArg1, new_head :: inAccumList);
 
-    case (NONE() :: rest, _, _, _) 
+    case (NONE() :: rest, _, _, _)
       then map1Option_tail(rest, inFunc, inArg1, inAccumList);
   end match;
 end map1Option_tail;
@@ -2800,7 +2800,7 @@ protected function map1_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList, inFunc, inArg1, inAccumList1, inAccumList2)
     local
       ElementInType head;
@@ -2815,7 +2815,7 @@ algorithm
     case (head :: rest, _, _, _, _)
       equation
         (new_head1, new_head2) = inFunc(head, inArg1);
-        (accum1, accum2) = map1_2_tail(rest, inFunc, inArg1, 
+        (accum1, accum2) = map1_2_tail(rest, inFunc, inArg1,
           new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
         (accum1, accum2);
@@ -2866,7 +2866,7 @@ protected function map1_3_tail
     output ElementOutType3 outElement3;
   end MapFunc;
 algorithm
-  (outList1, outList2, outList3) := 
+  (outList1, outList2, outList3) :=
   match(inList, inFunc, inArg1, inAccumList1, inAccumList2, inAccumList3)
     local
       ElementInType head;
@@ -2883,8 +2883,8 @@ algorithm
     case (head :: rest, _, _, _, _, _)
       equation
         (new_head1, new_head2, new_head3) = inFunc(head, inArg1);
-        (accum1, accum2, accum3) = map1_3_tail(rest, inFunc, inArg1, 
-          new_head1 :: inAccumList1, new_head2 :: inAccumList2, 
+        (accum1, accum2, accum3) = map1_3_tail(rest, inFunc, inArg1,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2,
           new_head3 :: inAccumList3);
       then
         (accum1, accum2, accum3);
@@ -3089,7 +3089,7 @@ protected function map2_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList, inFunc, inArg1, inArg2, inAccumList1, inAccumList2)
     local
       ElementInType head;
@@ -3277,7 +3277,7 @@ public function map3_2
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
     map3_2_tail(inList, inFunc, inArg1, inArg2, inArg3, {}, {});
   outList1 := listReverse(outList1);
   outList2 := listReverse(outList2);
@@ -3304,7 +3304,7 @@ protected function map3_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList, inFunc, inArg1, inArg2, inArg3, inAccumList1, inAccumList2)
     local
       ElementInType head;
@@ -3442,7 +3442,7 @@ public function map4_2
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
     map4_2_tail(inList, inFunc, inArg1, inArg2, inArg3, inArg4, {}, {});
   outList1 := listReverse(outList1);
   outList2 := listReverse(outList2);
@@ -3471,7 +3471,7 @@ protected function map4_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList, inFunc, inArg1, inArg2, inArg3, inArg4, inAccumList1, inAccumList2)
     local
       ElementInType head;
@@ -3910,7 +3910,7 @@ algorithm
       list<ElementOutType> res;
 
     case ({}, _, _) then inAccum;
-    
+
     case (e :: rest, _, _)
       equation
         res = inMapFunc(e);
@@ -3960,7 +3960,7 @@ algorithm
       list<ElementOutType> res;
 
     case ({}, _, _, _) then listReverse(inAccum);
-    
+
     case (e :: rest, _, _, _)
       equation
         res = inMapFunc(e, inArg1);
@@ -4014,7 +4014,7 @@ algorithm
       list<ElementOutType> res;
 
     case ({}, _, _, _, _) then listReverse(inAccum);
-    
+
     case (e :: rest, _, _, _, _)
       equation
         res = inMapFunc(e, inArg1, inArg2);
@@ -4071,12 +4071,12 @@ algorithm
       list<ElementInType> xs;
 
     case ({}, _, _, _) then listReverse(inAccum);
-      
+
     case (a::xs, _, _, _)
       equation
         b = inMapFunc1(a);
         c = inMapFunc2(b);
-      then 
+      then
         mapMap_tail(xs, inMapFunc1, inMapFunc2, c :: inAccum);
   end match;
 end mapMap_tail;
@@ -4103,7 +4103,7 @@ algorithm
       list<ElementInType> xs;
 
     case ({}, _, _) then ();
-      
+
     case (a::xs, _, _)
       equation
         b = inMapFunc1(a);
@@ -4415,7 +4415,7 @@ end applyAndFold1;
 public function mapList
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists.
-     Example: mapList({{1, 2},{3},{4}}, intString) => 
+     Example: mapList({{1, 2},{3},{4}}, intString) =>
                       {{\"1\", \"2\"}, {\"3\"}, {\"4\"}}"
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
@@ -4430,10 +4430,10 @@ algorithm
 end mapList;
 
 public function mapList0
-  "Takes a list of lists and a functions, and applying 
+  "Takes a list of lists and a functions, and applying
   the function to all elements in  the list of lists.
      Example: mapList0({{1, 2},{3},{4}}, print)"
-     
+
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
 
@@ -4445,10 +4445,10 @@ algorithm
 end mapList0;
 
 public function mapList1_0
-  "Takes a list of lists and a functions, and applying 
+  "Takes a list of lists and a functions, and applying
   the function to all elements in  the list of lists.
      Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1)"
-     
+
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
   input ArgType1 inArg1;
@@ -4462,10 +4462,10 @@ algorithm
 end mapList1_0;
 
 public function mapList2_0
-  "Takes a list of lists and a functions, and applying 
+  "Takes a list of lists and a functions, and applying
   the function to all elements in  the list of lists.
      Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1, inArg2)"
-     
+
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
   input ArgType1 inArg1;
@@ -4481,19 +4481,19 @@ algorithm
 end mapList2_0;
 
 public function mapList1_1
-  "Takes a list of lists and a functions, and applying 
+  "Takes a list of lists and a functions, and applying
   the function to all elements in  the list of lists.
      Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1)"
-     
+
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
   input ArgType1 inArg1;
-  output list<list<ElementOutType>> outListList;  
+  output list<list<ElementOutType>> outListList;
 
   partial function MapFunc
     input ElementInType inElement;
     input ArgType1 inArg1;
-    output ElementOutType outElement;    
+    output ElementOutType outElement;
   end MapFunc;
 algorithm
   outListList := map2(inListList, map1, inFunc, inArg1);
@@ -4503,7 +4503,7 @@ public function mapListReverse
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists. The order of the
    elements in the inner lists will be reversed compared to mapList.
-     Example: mapListReverse({{1, 2}, {3}, {4}}, intString) => 
+     Example: mapListReverse({{1, 2}, {3}, {4}}, intString) =>
                              {{\"4\"}, {\"3\"}, {\"2\", \"1\"}}"
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
@@ -4579,7 +4579,7 @@ algorithm
     case (e :: rest, _, _)
       equation
         arg = inFoldFunc(e, inStartValue);
-      then 
+      then
         fold(rest, inFoldFunc, arg);
 
   end match;
@@ -4609,7 +4609,7 @@ algorithm
     case (e :: rest, _, _)
       equation
         arg = inFoldFunc(inStartValue, e);
-      then 
+      then
         foldr(rest, inFoldFunc, arg);
 
   end match;
@@ -4644,7 +4644,7 @@ algorithm
     case (e :: rest, _, _, _)
       equation
         arg = inFoldFunc(e, inExtraArg, inStartValue);
-      then 
+      then
         fold1(rest, inFoldFunc, inExtraArg, arg);
 
   end match;
@@ -4676,7 +4676,7 @@ algorithm
     case (e :: rest, _, _, _)
       equation
         arg = inFoldFunc(inStartValue, e, inExtraArg);
-      then 
+      then
         fold1r(rest, inFoldFunc, inExtraArg, arg);
 
   end match;
@@ -4713,7 +4713,7 @@ algorithm
     case (e :: rest, _, _, _, _)
       equation
         arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inStartValue);
-      then 
+      then
         fold2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
@@ -4747,7 +4747,7 @@ algorithm
     case (e :: rest, _, _, _, _)
       equation
         arg = inFoldFunc(inStartValue, e, inExtraArg1, inExtraArg2);
-      then 
+      then
         fold2r(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
@@ -4786,7 +4786,7 @@ algorithm
     case (e :: rest, _, _, _, _, _)
       equation
         arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue);
-      then 
+      then
         fold3(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, arg);
 
   end match;
@@ -4828,7 +4828,7 @@ algorithm
     local
       ElementType e;
       list<ElementType> rest;
-      FoldType1 arg1; 
+      FoldType1 arg1;
       FoldType2 arg2;
       FoldType3 arg3;
 
@@ -4838,7 +4838,7 @@ algorithm
       equation
         (arg1, arg2, arg3) = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue1, inStartValue2, inStartValue3);
         (outResult1, outResult2, outResult3) = fold43(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, arg1, arg2, arg3);
-      then 
+      then
         (outResult1, outResult2, outResult3);
 
   end match;
@@ -4948,7 +4948,7 @@ algorithm
       ElementOutType res;
       list<ElementOutType> rest_res, acc;
       FoldType arg;
-      
+
     case ({}, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _)
       equation
@@ -5011,7 +5011,7 @@ algorithm
       ElementOutType res;
       list<ElementOutType> rest_res, acc;
       FoldType arg;
-      
+
     case ({}, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _)
       equation
@@ -5078,7 +5078,7 @@ algorithm
       ElementOutType res;
       list<ElementOutType> rest_res, acc;
       FoldType arg;
-      
+
     case ({}, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _, _)
       equation
@@ -5149,7 +5149,7 @@ algorithm
       ElementOutType res;
       list<ElementOutType> rest_res, acc;
       FoldType arg;
-      
+
     case ({}, _, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _, _, _)
       equation
@@ -5208,7 +5208,7 @@ algorithm
       equation
         ((res, arg)) = inFunc((e1, inArg));
         acc = res :: inAccumList;
-        (rest_res, arg) = 
+        (rest_res, arg) =
           mapFoldTuple_tail(rest_e1, inFunc, arg, acc);
       then
         (rest_res, arg);
@@ -5287,7 +5287,7 @@ public function mapFoldListTuple
     output tuple<ElementOutType, FoldType> outTuple;
   end FuncType;
 algorithm
-  (outListList, outFoldArg) := 
+  (outListList, outFoldArg) :=
     mapFoldListTuple_tail(inListList, inFunc, inFoldArg, {});
 end mapFoldListTuple;
 
@@ -5348,7 +5348,7 @@ algorithm
     case (_ , _, _)
       equation
         arg = inFoldFunc(inStartValue);
-      then 
+      then
         foldcallN(n-1, inFoldFunc, arg);
 
   end match;
@@ -5375,7 +5375,7 @@ algorithm
       list<ElementType> rest;
 
     case ({e1}, _) then e1;
-    case ({e1, e2}, _) 
+    case ({e1, e2}, _)
       equation
         res = inReduceFunc(e1, e2);
       then
@@ -5418,7 +5418,7 @@ algorithm
       list<ElementType> rest;
 
     case ({e1}, _, _) then e1;
-    case ({e1, e2}, _, _) 
+    case ({e1, e2}, _, _)
       equation
         res = inReduceFunc(e1, e2, inExtraArg1);
       then
@@ -5500,7 +5500,7 @@ end thread_tail;
 
 public function thread3
   "Takes three lists of the same type and threads (interleaves) them together.
-     Example: thread({1, 2, 3}, {4, 5, 6}, {7, 8, 9}) => 
+     Example: thread({1, 2, 3}, {4, 5, 6}, {7, 8, 9}) =>
              {7, 4, 1, 8, 5, 2, 9, 6, 3}"
   input list<ElementType> inList1;
   input list<ElementType> inList2;
@@ -6245,7 +6245,7 @@ end threadMap3Fold_tail;
 public function thread3Map_2
   "Takes three lists and a function, and threads (interleaves) and maps the
    elements of the three lists, creating two new list.
-     Example: thread3Map({1, 2}, {3, 4}, {5, 6}, intAddSub3) => 
+     Example: thread3Map({1, 2}, {3, 4}, {5, 6}, intAddSub3) =>
               ({1+3+5, 2+4+6}, {1-3-5, 2-4-6})"
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
@@ -6262,7 +6262,7 @@ public function thread3Map_2
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
     thread3Map_2_tail(inList1, inList2, inList3, inFunc, {}, {});
 end thread3Map_2;
 
@@ -6285,7 +6285,7 @@ public function thread3Map_2_tail
     output ElementOutType2 outElement2;
   end MapFunc;
 algorithm
-  (outList1, outList2) := 
+  (outList1, outList2) :=
   match(inList1, inList2, inList3, inFunc, inAccum1, inAccum2)
     local
       ElementType1 e1;
@@ -6299,7 +6299,7 @@ algorithm
       list<ElementOutType1> resl1;
       list<ElementOutType2> resl2;
 
-    case ({}, {}, {}, _, _, _) 
+    case ({}, {}, {}, _, _, _)
       then (listReverse(inAccum1), listReverse(inAccum2));
 
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _)
@@ -6333,7 +6333,7 @@ public function thread3MapFold
     output ArgType1 outArg;
   end MapFunc;
 algorithm
-  (outList,outArg) := thread3MapFold_tail(inList1, inList2, inList3, inFunc, 
+  (outList,outArg) := thread3MapFold_tail(inList1, inList2, inList3, inFunc,
     inArg, {});
 end thread3MapFold;
 
@@ -6357,7 +6357,7 @@ public function thread3MapFold_tail
     output ArgType1 outArg;
   end MapFunc;
 algorithm
-  (outList,outArg) := 
+  (outList,outArg) :=
   match(inList1, inList2, inList3, inFunc, inArg, inAccum)
     local
       ElementType1 e1;
@@ -6375,7 +6375,7 @@ algorithm
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _)
       equation
         (res,arg) = inFunc(e1, e2, e3, inArg);
-        (reslst,arg) = thread3MapFold_tail(rest1, rest2, rest3, inFunc, 
+        (reslst,arg) = thread3MapFold_tail(rest1, rest2, rest3, inFunc,
           arg, res :: inAccum);
       then
         (reslst,arg);
@@ -6405,7 +6405,7 @@ public function thread3Map3
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := thread3Map3_tail(inList1, inList2, inList3, inFunc, 
+  outList := thread3Map3_tail(inList1, inList2, inList3, inFunc,
     inArg1, inArg2, inArg3, {});
 end thread3Map3;
 
@@ -6431,7 +6431,7 @@ public function thread3Map3_tail
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := 
+  outList :=
   match(inList1, inList2, inList3, inFunc, inArg1, inArg2, inArg3, inAccum)
     local
       ElementType1 e1;
@@ -6448,7 +6448,7 @@ algorithm
       equation
         res = inFunc(e1, e2, e3, inArg1, inArg2, inArg3);
       then
-        thread3Map3_tail(rest1, rest2, rest3, inFunc, 
+        thread3Map3_tail(rest1, rest2, rest3, inFunc,
           inArg1, inArg2, inArg3, res :: inAccum);
   end match;
 end thread3Map3_tail;
@@ -6768,7 +6768,7 @@ algorithm
   (outListIndex, outPosition) := positionList_impl(inElement, inList, 0);
 end positionList;
 
-protected function positionList_impl 
+protected function positionList_impl
   "Implementation of positionList."
   input ElementType inElement;
   input list<list<ElementType>> inList;
@@ -6776,7 +6776,7 @@ protected function positionList_impl
   output Integer outListIndex;
   output Integer outPosition;
 algorithm
-  (outListIndex, outPosition) := 
+  (outListIndex, outPosition) :=
   matchcontinue (inElement, inList, inListIndex)
     local
       list<ElementType> e;
@@ -6789,7 +6789,7 @@ algorithm
       then
         (inListIndex, pos);
 
-    case (_, _ :: rest, _) 
+    case (_, _ :: rest, _)
       equation
         (index, pos) = positionList_impl(inElement, rest, inListIndex + 1);
       then
@@ -6836,7 +6836,7 @@ protected
   list<ElementType> rest;
 algorithm
   e :: rest := inList;
-  outElement := Debug.bcallret2(not valueEq(inElement, e), 
+  outElement := Debug.bcallret2(not valueEq(inElement, e),
     getMember, inElement, rest, e);
 end getMember;
 
@@ -6891,7 +6891,7 @@ public function isMemberOnTrue
   input list<ElementType> inList;
   input CompFunc inCompFunc;
   output Boolean outIsMember;
-  
+
   partial function CompFunc
     input ValueType inValue;
     input ElementType inElement;
@@ -6923,28 +6923,28 @@ public function exist
   end FindFunc;
 algorithm
   outList := matchcontinue(inList,inFindFunc)
-  local 
+  local
     list<ElementType> t;
     ElementType h; Boolean ret;
     case({},_)
       then false;
-    case(h::t,_) 
-      equation 
+    case(h::t,_)
+      equation
         true = inFindFunc(h);
-    then 
+    then
       true;
     case(_::t,_)
        equation
          ret = exist(t,inFindFunc);
-       then ret;      
+       then ret;
   end matchcontinue;
 end exist;
 
 public function extractOnTrue
   "Takes a list of values and a filter function over the values and returns a
-   two lists. one of values for which the matching function returns true and the 
+   two lists. one of values for which the matching function returns true and the
    other containing the remaining elements.
-   N.B. The original list is lost in here. Will fix if I comeup with something more efficient. 
+   N.B. The original list is lost in here. Will fix if I comeup with something more efficient.
      Example:
        extractOnTrue({1, 2, 3, 4, 5}, isEven) => {2, 4}, {1, 3, 5}"
   input list<ElementType> inList;
@@ -6997,7 +6997,7 @@ algorithm
     case (e :: rest, _, _, _)
       equation
         (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, inExtractedList, e :: inRemainingList);
-      then 
+      then
         (exted, remain);
 
   end matchcontinue;
@@ -7169,7 +7169,7 @@ end filterOnTrue_tail;
 public function filter1
   "Takes a list of values, a filter function over the values and an extra
    argument, and returns a sub list of values for which the matching function
-   succeeds.  
+   succeeds.
      Example:
        filter({1, 2, 3, 4, 5}, isEven) => {2, 4}"
   input list<ElementType> inList;
@@ -7470,7 +7470,7 @@ algorithm
         select_tail(rest, inFunc, consOnTrue(res, e , inAccum));
   end match;
 end select_tail;
-    
+
 public function selectFirst
   "This function retrieves the first element of a list for which the passed
    function evaluates to true."
@@ -7574,7 +7574,7 @@ algorithm
         select1_tail(rest, inFunc, inArg1, consOnTrue(res, e ,inAccum));
   end match;
 end select1_tail;
-      
+
 public function select1r
   "Same as select1, but with swapped arguments."
   input list<ElementType> inList;
@@ -7620,7 +7620,7 @@ algorithm
         select1r_tail(rest, inFunc, inArg1, consOnTrue(res, e, inAccum));
   end match;
 end select1r_tail;
-  
+
 public function select2
   "This function retrieves all elements of a list for which the given function
    evaluates to true. The elements that evaluates to false are thus removed
@@ -7669,11 +7669,11 @@ algorithm
       equation
         res = inFunc(e, inArg1, inArg2);
       then
-        select2_tail(rest, inFunc, inArg1, inArg2, 
+        select2_tail(rest, inFunc, inArg1, inArg2,
           consOnTrue(res, e, inAccum));
   end match;
 end select2_tail;
-  
+
 public function deleteMember
   "Takes a list and a value, and deletes the first occurence of the value in the
    list. Example: deleteMember({1, 2, 3, 2}, 2) => {1, 3, 2}"
@@ -7749,7 +7749,7 @@ public function deleteMemberOnTrue_tail
     output Boolean outIsEqual;
   end CompareFunc;
 algorithm
-  (outList, outDeletedElement) := 
+  (outList, outDeletedElement) :=
   match(inValue, inList, inCompareFunc, inAccumList, inIsEqual)
     local
       ElementType e, e2;
@@ -7809,7 +7809,7 @@ algorithm
       list<ElementType> rest;
       Integer pos;
       list<Integer> rest_pos;
-      
+
     case (_, {}, _, _) then listAppend(listReverse(inAccumList), inList);
     case (e :: rest, pos :: rest_pos, _, _)
       equation
@@ -7899,7 +7899,7 @@ algorithm
   end match;
 end replaceAtWithList;
 
-public function replaceAtWithFill 
+public function replaceAtWithFill
   "Takes
    - an element,
    - a position
@@ -7908,7 +7908,7 @@ public function replaceAtWithFill
    The function replaces the value at the given position in the list, if the
    given position is out of range, the fill value is used to padd the list up to
    that element position and then insert the value at the position
-     Example: replaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => 
+     Example: replaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") =>
               {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input ElementType inElement;
   input Integer inPosition;
@@ -8036,7 +8036,7 @@ algorithm
     list<Type_a> a;
     Integer i;
     case({},_) then inLength;
-    case(a::rest, _) 
+    case(a::rest, _)
       equation
         i = inLength+listLength(a);
         outLength = lengthListElementsHelp(rest, i);
@@ -8099,7 +8099,7 @@ protected
   Boolean cont;
 algorithm
   (arg, el, cont) := inFunc(inArg);
-  outList := generate_tail2(arg, inFunc, el, cont, inAccumList); 
+  outList := generate_tail2(arg, inFunc, el, cont, inAccumList);
 end generate_tail;
 
 protected function generate_tail2
@@ -8187,7 +8187,7 @@ algorithm
         (acc, res) = mapFoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, res, acc);
       then
         (acc, res);
-        
+
     case ({}, _, _, _, _) then (listReverse(inAccumList), inStartValue);
 
   end match;
@@ -8256,11 +8256,11 @@ algorithm
         (oe1, res) = inMapFunc(ie1, inConstArg);
         res = inFoldFunc(res, inStartValue);
         acc = oe1 :: acc;
-        (acc, res) = 
+        (acc, res) =
           map1FoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, inConstArg, res, acc);
       then
         (acc, res);
-        
+
     case ({}, _, _, _, _, _) then (listReverse(inAccumList), inStartValue);
 
   end match;
@@ -8273,7 +8273,7 @@ public function accumulateMap
   input list<ElementInType> inList;
   input MapFunc inMapFunc;
   output list<ElementOutType> outList;
- 
+
   partial function MapFunc
     input ElementInType inElement;
     input list<ElementOutType> inAccumList;
@@ -8290,7 +8290,7 @@ public function accumulateMapReverse
   input list<ElementInType> inList;
   input MapFunc inMapFunc;
   output list<ElementOutType> outList;
- 
+
   partial function MapFunc
     input ElementInType inElement;
     input list<ElementOutType> inAccumList;
@@ -8308,7 +8308,7 @@ public function accumulateMapAccum
   input MapFunc inMapFunc;
   input list<ElementOutType> inAccumList;
   output list<ElementOutType> outList;
- 
+
   partial function MapFunc
     input ElementInType inElement;
     input list<ElementOutType> inAccumList;
@@ -8340,7 +8340,7 @@ public function accumulateMapAccum1
   input ArgType1 inArg;
   input list<ElementOutType> inAccumList;
   output list<ElementOutType> outList;
- 
+
   partial function MapFunc
     input ElementInType inElement;
     input ArgType1 inArg;

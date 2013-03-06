@@ -18,12 +18,12 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
    */
 #ifndef BOOST_NUMERIC_BINDINGS_USE_CUSTOM_COMPLEX_TYPE
   typedef std::complex< float >  complex_f ;
-  typedef std::complex< double > complex_d ; 
+  typedef std::complex< double > complex_d ;
 #endif
 
-  template <typename T> 
+  template <typename T>
   T real (std::complex<T> const& c) { return std::real (c); }
-  template <typename T> 
+  template <typename T>
   T imag (std::complex<T> const& c) { return std::imag (c); }
 
 }}}}

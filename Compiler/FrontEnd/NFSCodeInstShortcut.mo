@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -37,7 +37,7 @@ encapsulated package NFSCodeInstShortcut
   RCS: $Id: NFSCodeInstShortcut.mo 13614 2012-10-25 00:03:02Z perost $
 
   Prototype SCode transformation to SCode without:
-  - redeclares 
+  - redeclares
   - modifiers
   enable with +d=scodeInstShortcut.
 "
@@ -75,7 +75,7 @@ public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
 public type Prefix = NFInstTypes.Prefix;
 
-public type InstInfo = list<Absyn.Path>; 
+public type InstInfo = list<Absyn.Path>;
 public constant InstInfo emptyInstInfo = {};
 
 protected type Item = NFSCodeEnv.Item;
@@ -88,10 +88,10 @@ public function translate
   output SCode.Program outSCode;
 algorithm
   outSCode := matchcontinue(inClassPath, inEnv, inProgram)
-    local 
+    local
       list<Class> classes;
       String name;
-    
+
     case (_, _, _)
       equation
         classes = NFSCodeApplyRedeclare.translate(inClassPath, inEnv, inProgram);
@@ -99,7 +99,7 @@ algorithm
         // print("Done with NFSCodeInstShortcut ...\n");
       then
         classes;
-    
+
     /*
     case (_, _, _)
       equation
@@ -107,7 +107,7 @@ algorithm
         showSCode(classes);
       then
         classes;*/
-    
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -123,12 +123,12 @@ protected function showSCode
   input SCode.Program inProgram;
 algorithm
   _ := matchcontinue(inProgram)
-    local 
-      SCode.Program rest; 
+    local
+      SCode.Program rest;
       SCode.Element e;
-    
+
     case ({}) then ();
-    
+
     case (e::rest)
       equation
         true = Flags.isSet(Flags.SHOW_SCODE);
@@ -138,7 +138,7 @@ algorithm
         showSCode(rest);
       then
         ();
-    
+
     else ();
   end matchcontinue;
 end showSCode;
@@ -153,7 +153,7 @@ algorithm
     local
       Item item;
       Absyn.Path path;
-      Env env; 
+      Env env;
       String name;
       list<Class> classes;
       list<Element> const_el;
@@ -166,13 +166,13 @@ algorithm
         // Look up the class to translate it in the environment.
         (item, path, env) = NFSCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         // Instantiate that class.
-        (classes, _, _) = 
+        (classes, _, _) =
               mkClassItem(
-                item, 
+                item,
                 NFInstTypesOld.NOMOD(),
-                NFInstTypes.NO_PREFIXES(), 
-                env, 
-                NFInstTypes.EMPTY_PREFIX(SOME(path)), 
+                NFInstTypes.NO_PREFIXES(),
+                env,
+                NFInstTypes.EMPTY_PREFIX(SOME(path)),
                 emptyInstInfo);
       then
         classes;
@@ -249,37 +249,37 @@ algorithm
       InstInfo ii;
       Boolean isBasic, isChain;
       list<NFSCodeEnv.Redeclaration> redeclares;
-      
+
 
     case (NFSCodeEnv.CLASS(
-            cls = scls as SCode.CLASS(name = name), 
-            env = env, 
-            classType = NFSCodeEnv.BASIC_TYPE()), _, _, _, _, _) 
+            cls = scls as SCode.CLASS(name = name),
+            env = env,
+            classType = NFSCodeEnv.BASIC_TYPE()), _, _, _, _, _)
       equation
         // we should apply inMod here!
         // classes = Util.if_(isBasicType(name), {}, {scls});
-        classes = {scls};   
-      then 
+        classes = {scls};
+      then
         (classes, NFInstTypes.NO_PREFIXES(), inInstInfo);
 
-    case (NFSCodeEnv.CLASS(cls = scls as 
+    case (NFSCodeEnv.CLASS(cls = scls as
             SCode.CLASS(classDef =
               SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _)
       equation
         // we should apply inMod here!
       then
         ({scls}, NFInstTypes.NO_PREFIXES(), inInstInfo);
-        
+
     // A class with parts, instantiate all elements in it.
     case (NFSCodeEnv.CLASS(
             cls = SCode.CLASS(
-                    name, sprefs, ep, pp, res, 
+                    name, sprefs, ep, pp, res,
                     SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt), info),
         env = {NFSCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, _)
       equation
         // Enter the class scope and look up all class elements.
         env = NFSCodeEnv.mergeItemEnv(inItem, inEnv);
-        
+
         // Apply modifications to the elements and instantiate them.
         mel = NFSCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = NFSCodeEnv.getEnvExtendsFromTable(env);
@@ -289,7 +289,7 @@ algorithm
         sprefs = SCode.prefixesSetReplaceable(sprefs, SCode.NOT_REPLACEABLE());
 
         elems = appendUnion(elems, elems);
-        
+
         scls = SCode.CLASS(
                name, sprefs, ep, pp, res,
                SCode.PARTS(elems, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt),
@@ -298,28 +298,28 @@ algorithm
         ({scls}, NFInstTypes.NO_PREFIXES(), ii);
 
     // A derived class from basic type.
-    case (NFSCodeEnv.CLASS(cls = scls as  
+    case (NFSCodeEnv.CLASS(cls = scls as
             SCode.CLASS(
                     name, sprefs, ep, pp, res,
-                    SCode.DERIVED(dty, smod, attr, cmt), info)), 
+                    SCode.DERIVED(dty, smod, attr, cmt), info)),
           _, _, _, _, _)
       equation
         // Look up the inherited class.
         (item as NFSCodeEnv.CLASS(classType = NFSCodeEnv.BASIC_TYPE()), _, env) =
           NFSCodeLookup.lookupTypeSpec(dty, inEnv, info);
-        
+
         prefs = inPrefixes;
         classes = {scls};
         ii = inInstInfo;
       then
         (classes, prefs, ii);
-        
+
     // A derived class, look up the inherited class and instantiate it.
-    case (NFSCodeEnv.CLASS(cls = scls as  
+    case (NFSCodeEnv.CLASS(cls = scls as
             SCode.CLASS(
                     name, sprefs, ep, pp, res,
                     SCode.DERIVED(dty as Absyn.TPATH(path, ad), smod, attr, cmt), info),
-                    env = envDerived), 
+                    env = envDerived),
           _, _, _, _, _)
       equation
         // Look up the inherited class.
@@ -333,13 +333,13 @@ algorithm
         dim_count = listLength(dims);
         mod = NFSCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = NFSCodeMod.mergeMod(inMod, mod);
-        
+
         // Apply the redeclarations from the derived environment!!!!
         redeclares = listAppend(
-          NFSCodeEnv.getDerivedClassRedeclares(name, dty, envDerived), 
+          NFSCodeEnv.getDerivedClassRedeclares(name, dty, envDerived),
           NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
-        (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);     
-        
+        (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);
+
         (classes, prefs, ii) = mkClassItem(item, mod, inPrefixes, env, inPrefix, inInstInfo);
 
         // Merge the attributes of this class with the prefixes of the inherited
@@ -347,24 +347,24 @@ algorithm
         prefs = NFInstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
 
         tname = Absyn.pathStringReplaceDot(path, "$");
-        
+
         cls::classes = classes;
-        name2 = SCode.elementName(cls);        
+        name2 = SCode.elementName(cls);
         isChain = boolAnd(stringEq(name, tname), stringEq(name, name2));
         tname = Util.if_(isChain, tname +& "_chain", tname);
-        
+
         tname = "'" +& tname +& "_" +& NFSCodeEnv.getEnvName(inEnv) +& "'";
-        
+
         sprefs = SCode.prefixesSetRedeclare(sprefs, SCode.NOT_REDECLARE());
         sprefs = SCode.prefixesSetReplaceable(sprefs, SCode.NOT_REPLACEABLE());
-        
+
         scls  = SCode.CLASS(
                   name, sprefs, ep, pp, res,
-                  SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(tname), ad), smod, attr, cmt), info);        
-        
-        cls = SCode.setClassName(tname, cls);        
-        classes = cls::classes; 
-        
+                  SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(tname), ad), smod, attr, cmt), info);
+
+        cls = SCode.setClassName(tname, cls);
+        classes = cls::classes;
+
         classes = listAppend({scls}, classes);
       then
         (classes, prefs, ii);
@@ -391,7 +391,7 @@ algorithm
 
   end matchcontinue;
 end mkClassItem;
-  
+
 protected function mkClassExtends
   input SCode.Element inClassExtends;
   input Modifier inMod;
@@ -403,7 +403,7 @@ protected function mkClassExtends
   output list<Class> outClasses;
   output InstInfo outInstInfo;
 algorithm
-  (outClasses, outInstInfo) := 
+  (outClasses, outInstInfo) :=
   matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix, inInstInfo)
     local
       SCode.ClassDef cdef;
@@ -419,7 +419,7 @@ algorithm
       DAE.Type base_ty, ext_ty, comp_ty;
       InstInfo ii;
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
             composition = cdef)), _, _, _, _, _, _)
       equation
         (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
@@ -467,7 +467,7 @@ algorithm
 
   end matchcontinue;
 end getClassExtendsBaseClass;
-        
+
 protected function mkElementList
 "Helper function to mkClassItem."
   input list<tuple<SCode.Element, Modifier>> inElements;
@@ -516,7 +516,7 @@ algorithm
 end mkElementList;
 
 protected function mkElement_dispatch
-"Helper function to mkElementList. 
+"Helper function to mkElementList.
  Dispatches the given element to the correct function for transformation."
   input tuple<SCode.Element, Modifier> inElement;
   input Modifier inOriginalMod;
@@ -549,11 +549,11 @@ algorithm
       Absyn.Path fullName;
       InstInfo ii;
 
-    // A component 
+    // A component
     case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _, _)
       equation
         (res, ii) = mkElement(elem, mod, inOriginalMod, inPrefixes, inEnv, inPrefix, inInstInfo);
-        accum_el = listAppend(inAccumEl, res); 
+        accum_el = listAppend(inAccumEl, res);
       then
         (accum_el, inExtends, ii);
 
@@ -565,7 +565,7 @@ algorithm
         accum_el = listAppend(inAccumEl, res);
       then
         (accum_el, rest_exts, ii);
-    
+
     // functions, packages, classes
     case ((elem as SCode.CLASS(name = name),mod), _, _, _, _, _, _, _)
       equation
@@ -580,7 +580,7 @@ algorithm
         accum_el = listAppend(inAccumEl, res);
       then
         (accum_el, inExtends, ii);
-    
+
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
@@ -599,13 +599,13 @@ algorithm
         (accum_el, rest_exts, ii) = mkElement_dispatch(inElement, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inInstInfo);
       then
         (accum_el, rest_exts, ii); //(inAccumEl, inExtends, inInstInfo);*/
-    
+
     // Ignore any other kind of elements (class definitions, etc.).
     else
       equation
         (elem, _) = inElement;
         // print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n");
-      then 
+      then
         (inAccumEl, inExtends, inInstInfo);
   end matchcontinue;
 end mkElement_dispatch;
@@ -621,7 +621,7 @@ protected function mkElement
   output list<Element> outElements;
   output InstInfo outInstInfo;
 algorithm
-  (outElements, outInstInfo) := 
+  (outElements, outInstInfo) :=
   match(inElement, inClassMod, inOriginalMod, inPrefixes, inEnv, inPrefix, inInstInfo)
     local
       Absyn.ArrayDim ad;
@@ -657,12 +657,12 @@ algorithm
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(
-            name, 
+            name,
             sprefixes,
             attributes as SCode.ATTR(arrayDims = ad),
             typeSpec as Absyn.TPATH(tpath, arrayDimOpt),
             smod,
-            cmt, 
+            cmt,
             condition,
             info), _, _, _, _, _, _)
       equation
@@ -670,7 +670,7 @@ algorithm
         (item, tpath, env) = NFSCodeLookup.lookupClassName(tpath, inEnv, info);
         (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
         // NFSCodeCheck.checkPartialInstance(item, info);
-        
+
         // the class is defined in the same env as the component
         sameEnv = stringEq(NFSCodeEnv.getEnvName(inEnv), NFSCodeEnv.getEnvName(env));
 
@@ -678,7 +678,7 @@ algorithm
         //(dims,functions) = instDimensions(ad, inEnv, inPrefix, info, functions);
         //prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
         prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
-        
+
         // Check that it's legal to instantiate the class.
         NFSCodeCheck.checkInstanceRestriction(item, prefix, info);
 
@@ -711,23 +711,23 @@ algorithm
         mod = NFSCodeMod.propagateMod(mod, dim_count);
         //binding = NFSCodeMod.getModifierBinding(mod);
         //(binding,functions) = instBinding(binding, dim_count, functions);
- 
+
         // Create the component and add it to the program.
         smod = NFSCodeMod.removeRedeclaresFromMod(smod);
         // set as no redeclare
         sprefixes = SCode.prefixesSetRedeclare(sprefixes, SCode.NOT_REDECLARE());
-        
+
         tname = Absyn.pathStringReplaceDot(tpath, "$");
         isBasic = isBasicType(tname);
-        tname = Util.if_(isBasic, tname, "'" +& tname +& "$" +& name +& "'"); 
+        tname = Util.if_(isBasic, tname, "'" +& tname +& "$" +& name +& "'");
         typeSpec = Absyn.TPATH(Absyn.IDENT(tname), NONE());
-        
+
         cls::classes = classes;
         cls = SCode.setClassName(tname, cls);
         classes = Util.if_(isBasic, classes, cls::classes);
-        
+
         comp = SCode.COMPONENT(
-            name, 
+            name,
             sprefixes,
             attributes,
             typeSpec,
@@ -735,7 +735,7 @@ algorithm
             cmt,
             condition,
             info);
-        
+
         classes = listAppend(classes, {comp});
       then
         (classes, ii);
@@ -761,15 +761,15 @@ protected function isInsideType
   output Boolean componentIsInsideType;
 algorithm
   componentIsInsideType := matchcontinue(inCompEnv, inTypePath, inTypeEnv, inInfo)
-    local 
+    local
       Absyn.Path tpath;
     case (_, _, _, _)
       equation
-        tpath = NFSCodeLookup.qualifyPath(inTypePath, inTypeEnv, inInfo, NONE()); 
-      then 
+        tpath = NFSCodeLookup.qualifyPath(inTypePath, inTypeEnv, inInfo, NONE());
+      then
         Absyn.pathPrefixOf(tpath, NFSCodeEnv.getEnvPath(inCompEnv));
-    case (_, _, _, _) 
-      then 
+    case (_, _, _, _)
+      then
         Absyn.pathPrefixOf(inTypePath, NFSCodeEnv.getEnvPath(inCompEnv));
     else false;
   end matchcontinue;
@@ -830,28 +830,28 @@ algorithm
         prefs = NFInstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         mod = NFSCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = NFSCodeMod.mergeMod(inClassMod, mod);
-        
-        (classes, _, ii) = 
+
+        (classes, _, ii) =
           mkClassItem(item, mod, prefs, env, inPrefix, inInstInfo);
-        
+
         smod = NFSCodeMod.removeRedeclaresFromMod(smod);
-        
+
         name = Absyn.pathStringReplaceDot(path, "$");
         isBasic = isBasicType(name);
         name = Util.if_(
-                isBasic, 
-                name, 
+                isBasic,
+                name,
                 "'" +& name +& "$ext_" +& NFSCodeEnv.getEnvName(inEnv) +& "'");
-        
+
         cls::classes = classes;
         cls = SCode.setClassName(name, cls);
-        classes = cls::classes; 
-        
+        classes = cls::classes;
+
         cls = SCode.EXTENDS(Absyn.IDENT(name), visibility, smod, ann, info);
         classes = Util.if_(isBasic, {cls}, listAppend(classes, {cls}));
       then
         (classes, ii);
-        
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);

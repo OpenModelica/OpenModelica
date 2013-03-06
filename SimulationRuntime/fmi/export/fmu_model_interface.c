@@ -591,7 +591,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   }
   }
   */
-  
+
   /*
   //Activate sample and evaluate again
   if (activateSampleEvents(comp->fmuData))

@@ -1,22 +1,22 @@
 #pragma once
-  
+
 
 #include <Solver/INonLinSolverSettings.h>
-class NewtonSettings :public INonLinSolverSettings 
+class NewtonSettings :public INonLinSolverSettings
 {
 public:
     NewtonSettings();
         /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
-    virtual long int    getNewtMax();                    
-    virtual void        setNewtMax(long int);    
+    virtual long int    getNewtMax();
+    virtual void        setNewtMax(long int);
     /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
     virtual double        getRtol();
-    virtual void        setRtol(double);                
+    virtual void        setRtol(double);
     /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
-    virtual double        getAtol();                        
-    virtual void        setAtol(double);                
+    virtual double        getAtol();
+    virtual void        setAtol(double);
     /*Dämpfungsfaktor (default: 0.9)*/
-    virtual double        getDelta();                            
+    virtual double        getDelta();
     virtual void        setDelta(double);
     virtual void load(string);
 private:

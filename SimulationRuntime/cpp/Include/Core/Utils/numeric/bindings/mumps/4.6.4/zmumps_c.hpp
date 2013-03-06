@@ -9,7 +9,7 @@
 
   This version of MUMPS is provided to you free of charge. It is public
   domain, based on public domain software developed during the Esprit IV
-  European project PARASOL (1996-1999) by CERFACS, ENSEEIHT-IRIT and RAL. 
+  European project PARASOL (1996-1999) by CERFACS, ENSEEIHT-IRIT and RAL.
   Since this first public domain version in 1999, the developments are
   supported by the following institutions: CERFACS, ENSEEIHT-IRIT, and
   INRIA.
@@ -68,7 +68,7 @@ typedef struct
     ZMUMPS_INT icntl[40];
     ZMUMPS_DOUBLE2 cntl[5];
     ZMUMPS_INT n;
-   
+
     ZMUMPS_INT nz_alloc; /* used in matlab interface to decide if
                        we free + malloc when we have large variation */
 

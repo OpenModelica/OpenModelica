@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  * Copyright Thomas Klimpel 2008
  *
@@ -7,7 +7,7 @@
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -22,23 +22,23 @@
 #include <boost/numeric/bindings/lapack/workspace.hpp>
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // Eigendecomposition of a banded Hermitian matrix.
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      * hbevx() computes the eigenvalues and optionally the associated
      * eigenvectors of a banded Hermitian matrix A. A matrix is Hermitian
      * when herm( A ) == A. When A is real, a Hermitian matrix is also
@@ -61,17 +61,17 @@ namespace boost { namespace numeric { namespace bindings {
      * When uplo=='L', the (i,j) element with j>=i is in position  (i-j) + j * (KD+1).
      *
      * The matrix A is thus a rectangular matrix with KD+1 rows and N columns.
-     */ 
+     */
 
     namespace detail {
-      inline 
+      inline
       void hbevx (
         char const jobz, char const range, char const uplo, int const n, int const kd,
         float* ab, int const ldab, float* q, int const ldq,
         float const vl, float const vu, int const il, int const iu,
         float const abstol, int& m,
         float* w, float* z, int const ldz,
-        float* work, int* iwork, int* ifail, int& info) 
+        float* work, int* iwork, int* ifail, int& info)
       {
         LAPACK_SSBEVX (
           &jobz, &range, &uplo, &n, &kd, ab, &ldab, q, &ldq,
@@ -80,14 +80,14 @@ namespace boost { namespace numeric { namespace bindings {
           work, iwork, ifail, &info);
       }
 
-      inline 
+      inline
       void hbevx (
         char const jobz, char const range, char const uplo, int const n, int const kd,
         double* ab, int const ldab, double* q, int const ldq,
         double const vl, double const vu, int const il, int const iu,
         double const abstol, int& m,
         double* w, double* z, int const ldz,
-        double* work, int* iwork, int* ifail, int& info) 
+        double* work, int* iwork, int* ifail, int& info)
       {
         LAPACK_DSBEVX (
           &jobz, &range, &uplo, &n, &kd, ab, &ldab, q, &ldq,
@@ -96,14 +96,14 @@ namespace boost { namespace numeric { namespace bindings {
           work, iwork, ifail, &info);
       }
 
-      inline 
+      inline
       void hbevx (
         char const jobz, char const range, char const uplo, int const n, int const kd,
         traits::complex_f* ab, int const ldab, traits::complex_f* q, int const ldq,
         float const vl, float const vu, int const il, int const iu,
         float const abstol, int& m,
         float* w, traits::complex_f* z, int const ldz,
-        traits::complex_f* work, float* rwork, int* iwork, int* ifail, int& info) 
+        traits::complex_f* work, float* rwork, int* iwork, int* ifail, int& info)
       {
         LAPACK_CHBEVX (
           &jobz, &range, &uplo, &n, &kd, traits::complex_ptr(ab), &ldab,
@@ -113,14 +113,14 @@ namespace boost { namespace numeric { namespace bindings {
           traits::complex_ptr(work), rwork, iwork, ifail, &info);
       }
 
-      inline 
+      inline
       void hbevx (
         char const jobz, char const range, char const uplo, int const n, int const kd,
         traits::complex_d* ab, int const ldab, traits::complex_d* q, int const ldq,
         double const vl, double const vu, int const il, int const iu,
         double const abstol, int& m,
         double* w, traits::complex_d* z, int const ldz,
-        traits::complex_d* work, double* rwork, int* iwork, int* ifail, int& info) 
+        traits::complex_d* work, double* rwork, int* iwork, int* ifail, int& info)
       {
         LAPACK_ZHBEVX (
           &jobz, &range, &uplo, &n, &kd, traits::complex_ptr(ab), &ldab,
@@ -129,7 +129,7 @@ namespace boost { namespace numeric { namespace bindings {
           w, traits::complex_ptr(z), &ldz,
           traits::complex_ptr(work), rwork, iwork, ifail, &info);
       }
-    } 
+    }
 
 
     namespace detail {
@@ -260,28 +260,28 @@ namespace boost { namespace numeric { namespace bindings {
     template <typename AB, typename Q, typename R, typename Z, typename W, typename IFail, typename Work>
     int hbevx( char const jobz, char const range, AB& ab, Q& q, R vl, R vu, int il, int iu, R abstol, int& m,
       W& w, Z& z, IFail& ifail, Work work ) {
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<AB>::matrix_structure, 
+        typename traits::matrix_traits<AB>::matrix_structure,
         traits::hermitian_t
-      >::value)); 
-#endif 
+      >::value));
+#endif
 
       typedef typename AB::value_type                            value_type ;
 
       int const n = traits::matrix_size2 (ab);
-      assert (n == traits::matrix_size1 (z)); 
+      assert (n == traits::matrix_size1 (z));
       assert (n == traits::vector_size (w));
       assert (n == traits::vector_size (ifail));
       assert ( jobz=='N' || jobz=='V' );
 
-      int info ; 
+      int info ;
       detail::Hbevx< n_workspace_args<value_type>::value >() (jobz, range,
         traits::matrix_uplo_tag( ab ), n,
         traits::matrix_upper_bandwidth(ab),
-        traits::matrix_storage (ab), 
+        traits::matrix_storage (ab),
         traits::leading_dimension (ab),
-        traits::matrix_storage (q), 
+        traits::matrix_storage (q),
         traits::leading_dimension (q),
         vl, vu, il, iu, abstol, m,
         traits::vector_storage (w),

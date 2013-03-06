@@ -1,6 +1,6 @@
 #pragma once
 
- 
+
 
 /*****************************************************************************/
 /**
@@ -8,7 +8,7 @@
 Abstract dataexchange interface for dae system
 
 \date     June, 1st, 2011
-\author   
+\author
 
 */
 /*****************************************************************************
@@ -29,9 +29,9 @@ public:
     Returns all simulation results for all Variables (R matrix), rhs(dR) and residues (Re)
     */
     virtual void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re) =0;
-    
+
     virtual void getOutputNames(vector<string >& output_names) = 0;
-    
+
     /**
     Returns all output variables results
     */
@@ -49,7 +49,7 @@ public:
     */
     virtual unsigned long getDimR()=0;
     /**
-    Retunrs number of state variables 
+    Retunrs number of state variables
     */
     virtual unsigned long getDimdR()=0;
     /**

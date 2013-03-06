@@ -11,9 +11,9 @@
 
 #include <boost/numeric/bindings/traits/fortran.h>
 
-#define AMOS_DBESI FORTRAN_ID( dbesi ) 
-#define AMOS_CBESI FORTRAN_ID( cbesi ) 
-#define AMOS_ZBESI FORTRAN_ID( zbesi ) 
+#define AMOS_DBESI FORTRAN_ID( dbesi )
+#define AMOS_CBESI FORTRAN_ID( cbesi )
+#define AMOS_ZBESI FORTRAN_ID( zbesi )
 
 #define AMOS_DBESJ FORTRAN_ID( dbesj )
 #define AMOS_CBESJ FORTRAN_ID( cbesj )

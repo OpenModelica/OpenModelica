@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -32,13 +32,13 @@
 encapsulated package BackendDAEEXT
 " file:        BackendDAEEXT.mo
   package:     BackendDAEEXT
-  description: The BackendDAEEXT module is an externally implemented module (in file 
-               Compiler/runtime/BackendDAEEXT.cpp) used for the BLT and index reduction 
-               algorithms in BackendDAE. 
-               The implementation mainly consists of several bitvectors implemented 
-               using std::vector<bool> since such functionality is not available in 
+  description: The BackendDAEEXT module is an externally implemented module (in file
+               Compiler/runtime/BackendDAEEXT.cpp) used for the BLT and index reduction
+               algorithms in BackendDAE.
+               The implementation mainly consists of several bitvectors implemented
+               using std::vector<bool> since such functionality is not available in
                MetaModelica Compiler (MMC).
-  
+
   RCS: $Id$
 "
 
@@ -197,7 +197,7 @@ public function getF
 end getF;
 
 /******************************************
- C-Implementation Stuff from 
+ C-Implementation Stuff from
  Kamer Kaya, Johannes Langguth and Bora Ucar
  see: http://bmi.osu.edu/~kamer/index.html
  *****************************************/
@@ -208,7 +208,7 @@ public function setIncidenceMatrix
   "
   input Integer nv;
   input Integer ne;
-  input Integer nz;  
+  input Integer nz;
   input array<list<Integer>> m;
 
   external "C" BackendDAEEXT_setIncidenceMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
@@ -223,8 +223,8 @@ public function cheapmatching
       2: Karp-Sipser
       3: Random Karp-Sipser (DEFAULT)
       4: Minimum Degree (two-sided)
- 
-     Other than these two, non-positive values are not allowed.  
+
+     Other than these two, non-positive values are not allowed.
   "
   input Integer nv;
   input Integer ne;
@@ -248,21 +248,21 @@ public function matching
       8: ABMP (Alt et al.'s algorithm)
       9: ABMP-BFS (ABMP + BFS)
      10: PR-FIFO-FAIR (DEFAULT)
- 
+
   cheapID: id of cheap algo (0-4)
       0: No Cheap Matching
       1: Simple Greedy
       2: Karp-Sipser
       3: Random Karp-Sipser (DEFAULT)
       4: Minimum Degree (two-sided)
- 
+
   relabel_period: used only when matchID = 10. Otherwise it is ignored.
       For the PR based algorithm, a global relabeling is started after
       every (m+n) x 'relabel_period' pushes where m and
       n are the number of rows and columns of the matrix. Default is 1.
        -1: for a global relabeling after every m pushes
        -2: for a global relabeling after every n pushes
-     Other than these two, non-positive values are not allowed.  
+     Other than these two, non-positive values are not allowed.
   "
   input Integer nv;
   input Integer ne;
@@ -289,7 +289,7 @@ public function setAssignment
   input array<Integer> ass1;
   input array<Integer> ass2;
   output Boolean outBoolean;
-  
+
   external "C" outBoolean=BackendDAEEXT_setAssignment(lenass1,lenass2,ass1,ass2) annotation(Library = "omcruntime");
 end setAssignment;
 

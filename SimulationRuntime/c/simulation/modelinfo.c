@@ -227,13 +227,13 @@ static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
 static void printProfilingDataHeader(FILE *fout, DATA *data) {
   char *filename;
   int i;
-  
+
   filename = malloc(strlen(data->modelData.modelFilePrefix) + 15);
   sprintf(filename, "%s_prof.data", data->modelData.modelFilePrefix);
   indent(fout, 2); fprintf(fout, "<filename>");printStrXML(fout,filename);fprintf(fout,"</filename>\n");
   indent(fout, 2); fprintf(fout, "<filesize>%ld</filesize>\n", (long) fileSize(filename));
   free(filename);
-  
+
   indent(fout, 2); fprintf(fout, "<format>\n");
   indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
@@ -271,7 +271,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #endif
   if(!plotCommands)
     WARNING1(LOG_UTIL, "Plots of profiling data were disabled: %s\n", strerror(errno));
-  
+
   ASSERT2(fout, "Failed to open %s: %s\n", filename, strerror(errno));
 
   if(plotCommands) {

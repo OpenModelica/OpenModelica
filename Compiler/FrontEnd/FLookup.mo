@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -88,7 +88,7 @@ public function lookupSimpleName
   output Absyn.Path outPath;
   output Env outEnv;
 algorithm
-  (SOME(outItem), SOME(outPath), SOME(outEnv)) := 
+  (SOME(outItem), SOME(outPath), SOME(outEnv)) :=
     lookupSimpleName2(inName, inEnv, {});
 end lookupSimpleName;
 
@@ -114,7 +114,7 @@ algorithm
     // Check the local scope.
     case (_, _, _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupInLocalScope(inName, inEnv, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
@@ -125,14 +125,14 @@ algorithm
         rest_env, _)
       equation
         frameNotEncapsulated(frame_type);
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupSimpleName2(inName, rest_env, scope_name :: inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // If the current frame is encapsulated, check for builtin types and
     // functions in the top scope.
-    case (_, Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE()) :: 
+    case (_, Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE()) ::
         rest_env, _)
       equation
         rest_env = FEnv.getEnvTopScope(rest_env);
@@ -195,25 +195,25 @@ algorithm
     // Look among the inherited components.
     case (_, _, _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES(), inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // Look among the qualified imports.
-    case (_, Env.FRAME(importTable = 
+    case (_, Env.FRAME(importTable =
         Env.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupInQualifiedImports(inName, imps, inEnv);
       then
         (opt_item, opt_path, opt_env);
 
     // Look among the unqualified imports.
-    case (_, Env.FRAME(importTable = 
+    case (_, Env.FRAME(importTable =
         Env.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
       equation
-        (item, path, env) = 
+        (item, path, env) =
           lookupInUnqualifiedImports(inName, imps, inEnv);
       then
         (SOME(item), SOME(path), SOME(env));
@@ -222,7 +222,7 @@ algorithm
     // (for example a for or match/matchcontinue scope).
     case (_, Env.FRAME(frameType = Env.IMPLICIT_SCOPE(iterIndex=_)) :: rest_env, _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupInLocalScope(inName, rest_env, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
@@ -294,14 +294,14 @@ protected
   Env env;
   list<Extends> bcl;
 algorithm
-  Env.FRAME(extendsTable = 
+  Env.FRAME(extendsTable =
     Env.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
   // Remove the extends, base class names should not be inherited.
   env := FEnv.removeExtendsFromLocalScope(inEnv);
   // Unhide the imports in case they've been hidden so we can find the base
   // classes.
   env := FEnv.setImportTableHidden(env, false);
-  (outItem, outPath, outEnv) := 
+  (outItem, outPath, outEnv) :=
     lookupInBaseClasses2(inName, bcl, env, inEnv, inReplaceRedeclares, inVisitedScopes);
 end lookupInBaseClasses;
 
@@ -389,9 +389,9 @@ algorithm
         // (imports are not inherited).
         item = FEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
-        (opt_item, opt_env) = FFlattenRedeclare.replaceRedeclares(redecls, 
-          item, env, inEnvWithExtends, inReplaceRedeclares); 
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_env) = FFlattenRedeclare.replaceRedeclares(redecls,
+          item, env, inEnvWithExtends, inReplaceRedeclares);
+        (opt_item, opt_path, opt_env) =
           lookupInBaseClasses4(Absyn.IDENT(inName), opt_item, opt_env);
       then
         (opt_item, opt_path, opt_env);
@@ -441,7 +441,7 @@ algorithm
       Item item;
       Absyn.Path path;
       Env env;
-      
+
     // If the item and env is NONE it means that an error occured (hopefully a
     // user error), and we should stop searching.
     case (_, NONE(), NONE()) then (NONE(), NONE(), NONE());
@@ -486,7 +486,7 @@ algorithm
     case (_, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _)
       equation
         false = stringEqual(inName, name);
-        (opt_item, opt_path, opt_env) = 
+        (opt_item, opt_path, opt_env) =
           lookupInQualifiedImports(inName, rest_imps, inEnv);
       then
         (opt_item, opt_path, opt_env);
@@ -545,7 +545,7 @@ algorithm
     // No match, continue with the rest of the imports.
     case (_, _ :: rest_imps, _)
       equation
-        (item, path, env) = 
+        (item, path, env) =
           lookupInUnqualifiedImports(inName, rest_imps, inEnv);
       then
         (item, path, env);
@@ -570,7 +570,7 @@ end lookupFullyQualified;
 
 public function lookupNameInPackage
   "Looks up a name inside the environment of a package, returning the
-  environment item, path and environment of the name if found." 
+  environment item, path and environment of the name if found."
   input Absyn.Path inName;
   input Env inEnv;
   output Item outItem;
@@ -600,7 +600,7 @@ algorithm
     case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
       equation
         // Look up the name in the local scope.
-        (SOME(item), SOME(new_path), SOME(env)) = 
+        (SOME(item), SOME(new_path), SOME(env)) =
           lookupInLocalScope(name, inEnv, {});
         origin = itemOrigin(item);
         env = FEnv.setImportTableHidden(env, false);
@@ -629,7 +629,7 @@ algorithm
       Absyn.ComponentRef cref, cref_rest;
       Item item;
       Env env;
-     
+
     // Simple identifier, look in the local scope.
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
@@ -639,11 +639,11 @@ algorithm
         (item, cref);
 
     // Qualified identifier.
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs, 
+    case (Absyn.CREF_QUAL(name = name, subscripts = subs,
         componentRef = cref_rest), _)
       equation
         // Look in the local scope.
-        (SOME(item), SOME(new_path), SOME(env)) = 
+        (SOME(item), SOME(new_path), SOME(env)) =
           lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item.
         (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
@@ -677,7 +677,7 @@ algorithm
       Absyn.Info info;
 
     // A variable.
-    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
+    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
         modifications = mods, info = info)), env)
       equation
         //env = FEnv.setImportTableHidden(env, false);
@@ -692,7 +692,7 @@ algorithm
         (item, path, env);
 
     // A class.
-    case (_, Env.CLASS(env = {class_env}), _) 
+    case (_, Env.CLASS(env = {class_env}), _)
       equation
         // Look in the class's environment.
         env = FEnv.enterFrame(class_env, inEnv);
@@ -730,7 +730,7 @@ algorithm
       Absyn.Info info;
 
     // A variable.
-    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
+    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
         modifications = mods, info = info)), _)
       equation
         // Look up the variable's type.
@@ -853,7 +853,7 @@ algorithm
   outBaseClasses := listReverse(outBaseClasses);
   outItems := listReverse(outItems);
 end lookupInheritedNameAndBC;
-  
+
 public function lookupRedeclaredClassByItem
   input Item inItem;
   input Env inEnv;
@@ -885,7 +885,7 @@ algorithm
     // outputs its own errors.
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);  
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- FLookup.lookupRedeclaredClassByItem failed on " +&
             FEnv.getItemName(inItem) +& " in " +&
             FEnv.getEnvName(inEnv));
@@ -903,7 +903,7 @@ protected function lookupRedeclaredClass2
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := 
+  (outItem, outEnv) :=
     matchcontinue(inItem, inRedeclarePrefix, inReplaceablePrefix, inEnv, inInfo)
     local
       SCode.Ident name;
@@ -912,7 +912,7 @@ algorithm
       Absyn.Info info;
       SCode.Redeclare rdp;
       SCode.Replaceable rpp;
- 
+
     // Replaceable element which is not a redeclaration => return the element.
     case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
       then (inItem, inEnv);
@@ -921,16 +921,16 @@ algorithm
     case (Env.CLASS(cls = SCode.CLASS(name = name)),
         SCode.REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
       equation
-        (SOME(item), _, SOME(env)) = lookupInBaseClasses(name, inEnv, 
+        (SOME(item), _, SOME(env)) = lookupInBaseClasses(name, inEnv,
           IGNORE_REDECLARES(), {});
-        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) = 
+        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
           FEnv.getItemPrefixes(item);
         (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
       then
         (item, env);
 
     // Non-replaceable element => error.
-    case (Env.CLASS(cls = SCode.CLASS(name = name, info = info)), 
+    case (Env.CLASS(cls = SCode.CLASS(name = name, info = info)),
         _, SCode.NOT_REPLACEABLE(), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
@@ -942,7 +942,7 @@ algorithm
     case (Env.VAR(var = SCode.COMPONENT(name = name, info = info)), _, _, _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS, 
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
           {"component", name, "a class"}, info);
       then
         fail();
@@ -975,7 +975,7 @@ protected function lookupName
   output Env outEnv;
   output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv, outOrigin) := 
+  (outItem, outName, outEnv, outOrigin) :=
   matchcontinue(inName, inEnv, inLookupStrategy, inInfo, inErrorType)
     local
       Absyn.Ident id;
@@ -1000,7 +1000,7 @@ algorithm
         origin = itemOrigin(item);
       then
         (item, new_path, env, origin);
-        
+
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _, _, _, _)
       equation
@@ -1013,7 +1013,7 @@ algorithm
         path = joinPaths(new_path, path);
       then
         (item, path, env, origin);
-             
+
     case (Absyn.FULLYQUALIFIED(path = path), _, _, _, _)
       equation
         (item, path, env) = lookupFullyQualified(path, inEnv);
@@ -1027,10 +1027,10 @@ algorithm
         Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
         fail();
-        
+
   end matchcontinue;
 end lookupName;
- 
+
 protected function joinPaths
   "Joins two paths, like Absyn.joinPaths but not with quite the same behaviour.
    If the second path is fully qualified it just returns the cref, because then
@@ -1214,7 +1214,7 @@ algorithm
     else inCref;
   end matchcontinue;
 end crefStripEnvPrefix;
-  
+
 protected function crefStripEnvPrefix2
   input Absyn.ComponentRef inCref;
   input Absyn.Path inEnvPath;
@@ -1226,7 +1226,7 @@ algorithm
       Absyn.ComponentRef cref;
       Absyn.Path env_path;
 
-    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref), 
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.QUALIFIED(name = id2, path = env_path))
       equation
         true = stringEqual(id1, id2);
@@ -1256,7 +1256,7 @@ algorithm
       Env env;
 
     // Special case for StateSelect, do nothing.
-    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
+    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {},
         componentRef = Absyn.CREF_IDENT(name = _)), _, _)
       then inCref;
 
@@ -1344,7 +1344,7 @@ algorithm
   (_, outCref) := lookupCrefInPackage(inCref, inEnv);
   outCref := Absyn.crefMakeFullyQualified(outCref);
 end lookupCrefFullyQualified;
-  
+
 public function joinCrefs
   "Joins two component references. If the second cref is fully qualified it just
   returns the cref, because then it has been looked up through an import and
@@ -1389,22 +1389,22 @@ algorithm
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
       equation
         cls = makeDummyMetaType(name);
-      then 
+      then
         (Env.CLASS(cls, Env.emptyEnv, Env.BASIC_TYPE()),
           inTypeSpec,
           Env.emptyEnv);
-         
+
   end match;
 end lookupTypeSpec;
-   
+
 protected function makeDummyMetaType
   input String inTypeName;
   output SCode.Element outClass;
 algorithm
-  outClass := 
+  outClass :=
   SCode.CLASS(
-    inTypeName, 
-    SCode.defaultPrefixes, 
+    inTypeName,
+    SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
 end makeDummyMetaType;
@@ -1485,7 +1485,7 @@ public function lookupCrefUnique
    first identifier of the cref is looked up, since that's enough to determine
    the scope, so the returned environment is the environment where the first
    identifier of the cref is defined.
-   
+
    The Unique part of the function name comes from the fact that this function
    is used by NFSCodeInst.prefixCref to find a unique name for all crefs."
   input DAE.ComponentRef inCref;

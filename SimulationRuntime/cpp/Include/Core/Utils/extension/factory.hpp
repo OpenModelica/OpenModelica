@@ -48,7 +48,7 @@ public:
       >::create;
   }
 
-  /** \brief Default constructor. 
+  /** \brief Default constructor.
     * On creation, this factory is empty.
     */
   factory() : func(0) {}

@@ -1,5 +1,5 @@
 #include "stdafx.h"
- 
+
 
 #include "NewtonSettings.h"
 
@@ -18,7 +18,7 @@ long int     NewtonSettings::getNewtMax()
 void         NewtonSettings::setNewtMax(long int max)
 {
     iNewt_max =max;
-}    
+}
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double         NewtonSettings::getRtol()
 {
@@ -27,25 +27,25 @@ double         NewtonSettings::getRtol()
 void         NewtonSettings::setRtol(double t)
 {
     dRtol=t;
-}                
+}
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double         NewtonSettings::getAtol()
 {
     return dAtol;
-}                        
+}
 void         NewtonSettings::setAtol(double t)
 {
     dAtol =t;
-}                
+}
 /*Dämpfungsfaktor (default: 0.9)*/
 double         NewtonSettings::getDelta()
 {
     return dDelta;
-}                            
+}
 void         NewtonSettings::setDelta(double t)
 {
     dDelta = t;
-}    
+}
 
 void NewtonSettings::load(string)
 {

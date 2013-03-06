@@ -2,8 +2,8 @@
 #include "CVode.h"
 #include "CVodeSettings.h"
 #include <Math/Functions.h>
-#include <System/ISystemProperties.h>  
- 
+#include <System/ISystemProperties.h>
+
 
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
@@ -11,7 +11,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     , _cvodesettings    (dynamic_cast<ICVodeSettings*>(_settings))
     , _z          (NULL)
     , _z0          (NULL)
-    , _z1          (NULL)        
+    , _z1          (NULL)
     , _zInit        (NULL)
     , _zLastSucess      (NULL)
     , _zLargeStep      (NULL)
@@ -20,12 +20,12 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     , _outStps        (0)
     , _locStps        (0)
     , _idid          (0)
-    , _hOut          (0.0)  
-    , _hZero        (0.0)  
+    , _hOut          (0.0)
+    , _hZero        (0.0)
     , _hUpLim        (0.0)
     , _hZeroCrossing    (0.0)
     , _hUpLimZeroCrossing  (0.0)
-    , _tOut          (0.0)  
+    , _tOut          (0.0)
     , _tLastZero      (0.0)
     , _tRealInitZero    (0.0)
     , _doubleZeroDistance  (0.0)
@@ -43,18 +43,18 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
 }
 
 Cvode::~Cvode()
-{  
-    if(_z)            
+{
+    if(_z)
         delete [] _z;
-    if(_z0)            
+    if(_z0)
         delete [] _z0;
-    if(_z1)            
+    if(_z1)
         delete [] _z1;
-    if(_zInit)          
+    if(_zInit)
         delete [] _zInit;
-    if(_zLastSucess)      
+    if(_zLastSucess)
         delete [] _zLastSucess;
-    if(_zLargeStep)        
+    if(_zLargeStep)
         delete [] _zLargeStep;
     if(_f0)
         delete [] _f0;
@@ -84,9 +84,9 @@ void Cvode::init()
     // Kennzeichnung, dass init()() (vor der Integration) aufgerufen wurde
     _idid = 5000;
 
-    // System im Solver assemblen, da folgende Reihenfolge einzuhalten ist: 
+    // System im Solver assemblen, da folgende Reihenfolge einzuhalten ist:
     // 1) System assemblen und updaten, alles für Nullstellsuche anlegen
-    // 2) Spezielle Dimensionen bestimmen (muss wg. ODE/DAE im Solver stattfinden) 
+    // 2) Spezielle Dimensionen bestimmen (muss wg. ODE/DAE im Solver stattfinden)
     // 3) Zustandsvektor anlegen
 
     SolverDefaultImplementation::init();
@@ -100,7 +100,7 @@ void Cvode::init()
     */
     if(_dimSys <= 0 /*|| dimAEq > 0*/)
     {
-        _idid = -1; 
+        _idid = -1;
         throw std::invalid_argument("Cvode::init()");
     }
     else
@@ -155,7 +155,7 @@ void Cvode::init()
         _cvodeMem = CVodeCreate(CV_BDF, CV_NEWTON);
         if(check_flag((void*)_cvodeMem, "CVodeCreate", 0))
         {
-            _idid = -5; 
+            _idid = -5;
             throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
         }
 
@@ -174,7 +174,7 @@ void Cvode::init()
         _CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
         if(check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
         {
-            _idid = -5; 
+            _idid = -5;
             throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
         }
 
@@ -182,7 +182,7 @@ void Cvode::init()
         _idid = CVodeInit(_cvodeMem, CV_fCallback, _tCurrent, _CV_y0);
         if(_idid < 0)
         {
-            _idid = -5; 
+            _idid = -5;
             throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
         }
 
@@ -339,11 +339,11 @@ void Cvode::solve(const SOLVERCALL action)
             }
 
             // Abbruchkriterium (erreichen der Endzeit)
-            else if  ( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())  
+            else if  ( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())
                 _solverStatus = DONE;
         }
 
-        _firstCall = false; 
+        _firstCall = false;
 
     }
     else
@@ -371,14 +371,14 @@ void Cvode::doTimeEvents()
         {
             //Handle time event
             //
-            /*ToDo: Time events umstellen durch SimManager 
+            /*ToDo: Time events umstellen durch SimManager
           event_system->handleEvent(iter->second);
           */
             //Handle all events that occured at this time
             //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
             mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 
-            //Check if old time events were overrned because step size is not adequate 
+            //Check if old time events were overrned because step size is not adequate
             if(distance(_time_events.begin(),iter)>0)
                 throw std::runtime_error("Time event was not reached, please check solver step size");
             //Erase old time entries
@@ -459,7 +459,7 @@ void Cvode::CVodeCore()
             event_system->saveConditions();
         }*/
 
-        
+
         // A root is found
         if(_idid == 2)
         {
@@ -480,9 +480,9 @@ void Cvode::CVodeCore()
             //Event Iteration starten
             event_system->giveZeroFunc(_zeroVal);
             mixed_system->handleSystemEvents(_events);
-            
+
         }//EVENT Iteration beendet
-        
+
 
         // Diagnostics
         _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
@@ -640,7 +640,7 @@ void Cvode::writeSimulationInfo()
 
 
     //// System
-    //outputStream 
+    //outputStream
     //  << "Dimension  des Systems (ODE):             " << (int)_dimSys << "\n";
 
     //// Status, Anzahl Schritte, Nullstellenzeugs
@@ -658,7 +658,7 @@ void Cvode::writeSimulationInfo()
     //  {
     //  outputStream << "Nullstellensuche:                         Bisektion\n" << endl;
     //  }
-    //  else 
+    //  else
     //  {*/
     //  outputStream << "Nullstellensuche:                         Lineare Interpolation\n" << endl;
     //  /*}*/
@@ -675,7 +675,7 @@ void Cvode::writeSimulationInfo()
     //  << "Obere Grenze für Schrittweite:            " << _hUpLim << "\n\n";
 
     //// Status
-    //outputStream 
+    //outputStream
     //  << "Solver-Status:                            " << _idid << "\n\n";
 }
 

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -53,26 +53,26 @@ public constant Integer SymbolicJacobianGIndex = 5;
 
 public constant String partialDerivativeNamePrefix = "$pDER";
 
-public type Type = .DAE.Type 
-"Once we are in BackendDAE, the Type can be only basic types or enumeration. 
+public type Type = .DAE.Type
+"Once we are in BackendDAE, the Type can be only basic types or enumeration.
  We cannot do this in DAE because functions may contain many more types.
  adrpo: yes we can, we just simplify the DAE.Type, see Types.simplifyType";
 
 public
-uniontype BackendDAEType 
+uniontype BackendDAEType
 "- BackendDAEType to indicate different types of BackendDAEs.
    For example for simulation, initialization, jacobian, algebraic loops etc. "
-  record SIMULATION  "Type for the normal BackendDAE.DAE for simulation" 
+  record SIMULATION  "Type for the normal BackendDAE.DAE for simulation"
   end SIMULATION;
-  record JACOBIAN  "Type for jacobian BackendDAE.DAE" 
+  record JACOBIAN  "Type for jacobian BackendDAE.DAE"
   end JACOBIAN;
-  record ALGEQSYSTEM "Type for algebraic loop BackendDAE.DAE" 
+  record ALGEQSYSTEM "Type for algebraic loop BackendDAE.DAE"
   end ALGEQSYSTEM;
-  record ARRAYSYSTEM "Type for multidim equation arrays BackendDAE.DAE" 
+  record ARRAYSYSTEM "Type for multidim equation arrays BackendDAE.DAE"
   end ARRAYSYSTEM;
-  record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE" 
+  record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"
   end PARAMETERSYSTEM;
-  record INITIALSYSTEM "Type for initial system BackendDAE.DAE" 
+  record INITIALSYSTEM "Type for initial system BackendDAE.DAE"
   end INITIALSYSTEM;
 end BackendDAEType;
 
@@ -91,7 +91,7 @@ uniontype VarKind "- Variabile kind"
   record CONST end CONST;
   record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
   record JAC_VAR end JAC_VAR;
-  record JAC_DIFF_VAR end JAC_DIFF_VAR; 
+  record JAC_DIFF_VAR end JAC_DIFF_VAR;
 end VarKind;
 
 uniontype Var "- Variables"
@@ -146,7 +146,7 @@ uniontype Equation "- Equation"
     .DAE.Algorithm alg;
     .DAE.ElementSource source "origin of algorithm";
   end ALGORITHM;
-  
+
   record WHEN_EQUATION
     Integer size              "size of equation";
     WhenEquation whenEquation "whenEquation" ;
@@ -157,10 +157,10 @@ uniontype Equation "- Equation"
      Integer size "size of equation" ;
     .DAE.Exp left "left ; lhs" ;
     .DAE.Exp right "right ; rhs" ;
-    .DAE.ElementSource source "the element source";  
+    .DAE.ElementSource source "the element source";
      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end COMPLEX_EQUATION;
-  
+
   record IF_EQUATION " an if-equation"
     list< .DAE.Exp> conditions "Condition";
     list<list<Equation>> eqnstrue "Equations of true branch";
@@ -194,12 +194,12 @@ uniontype WhenOperator "- Reinit Statement"
     .DAE.Exp level;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
-  
+
   record TERMINATE " The Modelica builtin terminate(msg)"
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE;
-  
+
   record NORETCALL "call with no return value, i.e. no equation.
     Typically sideeffect call of external function but also
     Connections.* i.e. Connections.root(...) functions."
@@ -207,7 +207,7 @@ uniontype WhenOperator "- Reinit Statement"
     list< .DAE.Exp> functionArgs;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
-  
+
 end WhenOperator;
 
 public
@@ -249,7 +249,7 @@ uniontype EventInfo "- EventInfo"
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
-    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions 
+    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
     Integer relationsNumber            "stores the number of relation in all zero-crossings";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
@@ -274,12 +274,12 @@ uniontype Shared "Data shared for all equation-systems"
   record SHARED
     Variables knownVars                     "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects               "External object variables";
-    Variables aliasVars                     "Data originating from removed simple equations needed to build 
+    Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).
 
-                                             In that way, double buffering of variables in pre()-buffer, extrapolation 
-                                             buffer and results caching, etc., is avoided, but in C-code output all the 
-                                             data about variables' names, comments, units, etc. is preserved as well as 
+                                             In that way, double buffering of variables in pre()-buffer, extrapolation
+                                             buffer and results caching, etc., is avoided, but in C-code output all the
+                                             data about variables' names, comments, units, etc. is preserved as well as
                                              pinter to their values (trajectories).";
     EquationArray initialEqs                "initialEqs ; Initial equations" ;
     EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
@@ -291,7 +291,7 @@ uniontype Shared "Data shared for all equation-systems"
     EventInfo eventInfo                     "eventInfo" ;
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
-    SymbolicJacobians symjacs               "Symbolic Jacobians";   
+    SymbolicJacobians symjacs               "Symbolic Jacobians";
   end SHARED;
 end Shared;
 
@@ -419,7 +419,7 @@ uniontype Solvability
     Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_TIMEVARYING;
   record SOLVABILITY_NONLINEAR "The variable occurse nonlinear in the equation." end SOLVABILITY_NONLINEAR;
-  record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve 
+  record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve
                      the equation for it." end SOLVABILITY_UNSOLVABLE;
 end Solvability;
 
@@ -487,7 +487,7 @@ end StateOrder;
 public
 type StateSets = list<StateSet> "List of StateSets";
 
-public 
+public
 uniontype StateSet
   record STATESET
     Integer rang;
@@ -509,20 +509,20 @@ uniontype StrongComponent
     Integer eqn;
     Integer var;
   end SINGLEEQUATION;
-   
+
   record EQUATIONSYSTEM
     list<Integer> eqns;
     list<Integer> vars "be carefule with states, this are solved for der(x)";
     Option<list<tuple<Integer, Integer, Equation>>> jac;
     JacobianType jacType;
   end EQUATIONSYSTEM;
-  
+
   record MIXEDEQUATIONSYSTEM
     StrongComponent condSystem;
     list<Integer> disc_eqns;
     list<Integer> disc_vars;
   end MIXEDEQUATIONSYSTEM;
-  
+
   record SINGLEARRAY
     Integer eqn;
     list<Integer> vars "be carefule with states, this are solved for der(x)";
@@ -562,20 +562,20 @@ type StrongComponents = list<StrongComponent> "- Order of the equations the have
 public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
 
-public 
-type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system 
+public
+type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
                               String,                   // Matrix name
                               list<Var>,                // diff vars
                               list<Var>,                // result diffed equation
                               list<Var>                 // all diffed equation
                               >;
 
-public 
+public
 type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>, // column-wise sparse pattern
                            tuple<list< .DAE.ComponentRef>,                            // diff vars
                                  list< .DAE.ComponentRef>>>;                          // diffed vars
 
-public 
+public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
 
 end BackendDAE;

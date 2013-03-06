@@ -1,12 +1,12 @@
 /*
- * 
+ *
  * Copyright (c) Toon Knapen, Karl Meerbergen & Kresimir Fresl 2003
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * KF acknowledges the support of the Faculty of Civil Engineering, 
+ * KF acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -22,23 +22,23 @@
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 #include <boost/numeric/bindings/traits/detail/utils.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // Schur factorization of general matrix.
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      * gees() computes a Schur factorization of an N-by-N matrix A.
      *
      * The Schur decomposition is A = U S * herm(U)  where  U  is a
@@ -56,14 +56,14 @@ namespace boost { namespace numeric { namespace bindings {
      *                           array with vector_size( work ) >= 2*matrix_size1( a )
      *                           and rwork is a real array with
      *                           vector_size( rwork ) >= matrix_size1( a ).
-     */ 
+     */
 
     namespace detail {
-      inline 
+      inline
       void gees (char const jobvs, char const sort, logical_t* select, int const n,
                  float* a, int const lda, int& sdim, traits::complex_f* w,
                  float* vs, int const ldvs, float* work, int const lwork,
-                 bool* bwork, int& info) 
+                 bool* bwork, int& info)
       {
         traits::detail::array<float> wr(n);
         traits::detail::array<float> wi(n);
@@ -77,11 +77,11 @@ namespace boost { namespace numeric { namespace bindings {
       }
 
 
-      inline 
+      inline
       void gees (char const jobvs, char const sort, logical_t* select, int const n,
                  double* a, int const lda, int& sdim, traits::complex_d* w,
                  double* vs, int const ldvs, double* work, int const lwork,
-                 bool* bwork, int& info) 
+                 bool* bwork, int& info)
       {
         traits::detail::array<double> wr(n);
         traits::detail::array<double> wi(n);
@@ -95,12 +95,12 @@ namespace boost { namespace numeric { namespace bindings {
       }
 
 
-      inline 
+      inline
       void gees (char const jobvs, char const sort, logical_t* select, int const n,
                  traits::complex_f* a, int const lda, int& sdim, traits::complex_f* w,
                  traits::complex_f* vs, int const ldvs,
                  traits::complex_f* work, int lwork, float* rwork, bool* bwork,
-                 int& info) 
+                 int& info)
       {
         LAPACK_CGEES (&jobvs, &sort, select, &n, traits::complex_ptr(a), &lda, &sdim,
                       traits::complex_ptr(w), traits::complex_ptr (vs), &ldvs,
@@ -108,19 +108,19 @@ namespace boost { namespace numeric { namespace bindings {
       }
 
 
-      inline 
+      inline
       void gees (char const jobvs, char const sort, logical_t* select, int const n,
                  traits::complex_d* a, int const lda, int& sdim, traits::complex_d* w,
                  traits::complex_d* vs, int const ldvs,
                  traits::complex_d* work, int lwork, double* rwork, bool* bwork,
-                 int& info) 
+                 int& info)
       {
         LAPACK_ZGEES (&jobvs, &sort, select, &n, traits::complex_ptr(a), &lda, &sdim,
                       traits::complex_ptr(w), traits::complex_ptr(vs), &ldvs,
                       traits::complex_ptr(work), &lwork, rwork, bwork, &info);
       }
 
-    } 
+    }
 
 
     namespace detail {
@@ -129,32 +129,32 @@ namespace boost { namespace numeric { namespace bindings {
        inline
        int gees (char jobvs, MatrA& a, EigVal& w, SchVec& vs, Work& work) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
          BOOST_STATIC_ASSERT((boost::is_same<
-           typename traits::matrix_traits<MatrA>::matrix_structure, 
+           typename traits::matrix_traits<MatrA>::matrix_structure,
            traits::general_t
-         >::value)); 
+         >::value));
          BOOST_STATIC_ASSERT((boost::is_same<
-           typename traits::matrix_traits<SchVec>::matrix_structure, 
+           typename traits::matrix_traits<SchVec>::matrix_structure,
            traits::general_t
-         >::value)); 
-#endif 
+         >::value));
+#endif
 
          typedef typename MatrA::value_type                            value_type ;
 
          int const n = traits::matrix_size1 (a);
-         assert (n == traits::matrix_size2 (a)); 
-         assert (n == traits::matrix_size1 (vs)); 
-         assert (n == traits::matrix_size2 (vs)); 
-         assert (n == traits::vector_size (w)); 
-         assert (3*n <= traits::vector_size (work)); 
+         assert (n == traits::matrix_size2 (a));
+         assert (n == traits::matrix_size1 (vs));
+         assert (n == traits::matrix_size2 (vs));
+         assert (n == traits::vector_size (w));
+         assert (3*n <= traits::vector_size (work));
 
          logical_t* select=0;
          bool* bwork=0;
 
-         int info, sdim; 
+         int info, sdim;
          detail::gees (jobvs, 'N', select, n,
-                       traits::matrix_storage (a), 
+                       traits::matrix_storage (a),
                        traits::leading_dimension (a),
                        sdim,
                        traits::vector_storage (w),
@@ -174,33 +174,33 @@ namespace boost { namespace numeric { namespace bindings {
        int gees (char jobvs, MatrA& a, EigVal& w, SchVec& vs,
 		 Work& work, RWork& rwork) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
          BOOST_STATIC_ASSERT((boost::is_same<
-           typename traits::matrix_traits<MatrA>::matrix_structure, 
+           typename traits::matrix_traits<MatrA>::matrix_structure,
            traits::general_t
-         >::value)); 
+         >::value));
          BOOST_STATIC_ASSERT((boost::is_same<
-           typename traits::matrix_traits<SchVec>::matrix_structure, 
+           typename traits::matrix_traits<SchVec>::matrix_structure,
            traits::general_t
-         >::value)); 
-#endif 
+         >::value));
+#endif
 
          typedef typename MatrA::value_type                            value_type ;
 
          int const n = traits::matrix_size1 (a);
-         assert (n == traits::matrix_size2 (a)); 
-         assert (n == traits::matrix_size1 (vs)); 
-         assert (n == traits::matrix_size2 (vs)); 
-         assert (n == traits::vector_size (w)); 
-         assert (2*n <= traits::vector_size (work)); 
-         assert (n <= traits::vector_size (rwork)); 
+         assert (n == traits::matrix_size2 (a));
+         assert (n == traits::matrix_size1 (vs));
+         assert (n == traits::matrix_size2 (vs));
+         assert (n == traits::vector_size (w));
+         assert (2*n <= traits::vector_size (work));
+         assert (n <= traits::vector_size (rwork));
 
          logical_t* select=0;
          bool* bwork=0;
 
-         int info, sdim; 
+         int info, sdim;
          detail::gees (jobvs, 'N', select, n,
-                       traits::matrix_storage (a), 
+                       traits::matrix_storage (a),
                        traits::leading_dimension (a),
                        sdim,
                        traits::vector_storage (w),
@@ -339,4 +339,4 @@ namespace boost { namespace numeric { namespace bindings {
 
 }}}
 
-#endif 
+#endif

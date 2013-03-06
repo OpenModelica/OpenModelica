@@ -11,13 +11,13 @@
 
 #include <boost/numeric/bindings/lapack/hegv.hpp>
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
   namespace lapack {
 
     template <typename A, typename B, typename W, typename Work>
     int sygv (int itype, char jobz, char uplo, A& a, B& b, W& w, Work work = optimal_workspace()) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       typedef typename A::value_type                               value_type ;
       typedef typename traits::type_traits< value_type >::real_type real_type ;
       BOOST_STATIC_ASSERT((boost::is_same<value_type, real_type>::value));

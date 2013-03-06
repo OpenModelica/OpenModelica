@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -71,7 +71,7 @@ public uniontype EntryOrigin
   record IMPORTED_ORIGIN
     "An entry that has been imported with an import statement."
     Absyn.Import imp;
-    Absyn.Info info; 
+    Absyn.Info info;
     Env originEnv "The environment the entry was imported from.";
   end IMPORTED_ORIGIN;
 end EntryOrigin;
@@ -137,7 +137,7 @@ public function exitScope
 algorithm
   ENV(scopes = outEnv :: _) := inEnv;
 end exitScope;
-  
+
 public function exitScopes
   input Env inEnv;
   input Integer inScopes;
@@ -171,7 +171,7 @@ algorithm
   ENV(scopes = scopes) := inEnv;
   outEnv := List.last(scopes);
 end builtinScope;
-  
+
 public function isTopScope
   input Env inEnv;
   output Boolean outIsTopScope;
@@ -232,9 +232,9 @@ protected
 algorithm
   ENV(name, ty, scopes, sc, entries) := inEnv;
   entries := avlTreeAdd(entries, entryName(inEntry), inEntry, mergeEntry);
-  outEnv := ENV(name, ty, scopes, sc, entries); 
+  outEnv := ENV(name, ty, scopes, sc, entries);
 end insertEntry;
-  
+
 protected function mergeEntry
   "Update function used by insertEntry to resolve conflicts when trying to add
    an entry which already exists."
@@ -269,7 +269,7 @@ algorithm
         origins = mergeOrigin(origin, old_origins);
       then
         ENTRY(name, element, scope, origins);
-        
+
     case (ENTRY(name = name), _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -326,7 +326,7 @@ protected function mergeInheritedOrigin
    if no matching origin is found."
   input EntryOrigin inNewOrigin;
   input list<EntryOrigin> inOldOrigins;
-  output list<EntryOrigin> outOrigins; 
+  output list<EntryOrigin> outOrigins;
 algorithm
   outOrigins := matchcontinue(inNewOrigin, inOldOrigins)
     local
@@ -354,7 +354,7 @@ algorithm
 
   end matchcontinue;
 end mergeInheritedOrigin;
-  
+
 protected function checkOrigin
   "Checks that it's possible to merge a new origin with a list of existing
    origins for an entry. Also determines whether we should keep the old or the
@@ -479,7 +479,7 @@ algorithm
     else ();
   end match;
 end checkOriginImportConflict;
-   
+
 protected function printImportShadowWarning
   "Prints a warning that an import was shadowed by a local/inherited element.
    This is allowed, but since it makes the import useless it's almost certainly a
@@ -497,7 +497,7 @@ algorithm
   Error.addMultiSourceMessage(Error.LOOKUP_SHADOWING,
     {import_str}, {info1, info2});
 end printImportShadowWarning;
- 
+
 protected function printDoubleDeclarationError
   input SCode.Element inOldElement;
   input SCode.Element inNewElement;
@@ -510,7 +510,7 @@ algorithm
   Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
     {name}, {info2, info1});
 end printDoubleDeclarationError;
-  
+
 public function insertElement
   input SCode.Element inElement;
   input Env inEnv;
@@ -592,7 +592,7 @@ algorithm
     NONE(), NONE(), Absyn.dummyInfo);
   outEnv := insertElement(iter, inEnv);
 end insertIterator;
-  
+
 public function lookupEntry
   input String inName;
   input Env inEnv;
@@ -654,7 +654,7 @@ algorithm
         entry = setEntryScope(inEntry, env);
       then
         (entry, env);
-        
+
   end match;
 end resolveEntry;
 
@@ -673,7 +673,7 @@ algorithm
 
   end match;
 end originEnv;
-  
+
 protected function setEntryOrigin
   input Entry inEntry;
   input list<EntryOrigin> inOrigin;
@@ -701,7 +701,7 @@ algorithm
   scope := scopeCount(inEnv);
   outEntry := ENTRY(name, element, scope, origins);
 end setEntryScope;
-  
+
 protected function entryScopeLevel
   input Entry inEntry;
   output Integer outScopeLevel;
@@ -753,7 +753,7 @@ public function getImplicitScopeIndex
 algorithm
   ENV(scopeType = IMPLICIT_SCOPE(iterIndex = outIndex)) := inEnv;
 end getImplicitScopeIndex;
-  
+
 public function isLocalScopeEntry
   input Entry inEntry;
   input Env inEnv;
@@ -761,7 +761,7 @@ public function isLocalScopeEntry
 algorithm
   outIsLocal := intGe(entryScopeLevel(inEntry), scopeExplicitCount(inEnv));
 end isLocalScopeEntry;
-  
+
 public function entryHasBuiltinOrigin
   input Entry inEntry;
   output Boolean outBuiltin;
@@ -791,7 +791,7 @@ algorithm
   ENTRY(_, element, scope, origins) := inEntry;
   outEntry := ENTRY(inName, element, scope, origins);
 end renameEntry;
-    
+
 public function entryElement
   input Entry inEntry;
   output SCode.Element outElement;
@@ -820,7 +820,7 @@ algorithm
     case ENV(name = SOME(name)) then name;
     case ENV(scopes = {}) then "<builtin>";
     else "<global>";
-  
+
   end match;
 end scopeName;
 
@@ -890,7 +890,7 @@ algorithm
   strl := inIdent :: strl;
   outPath := Absyn.stringListPathReversed(strl);
 end prefixIdentWithEnv;
-        
+
 public function isEqual
   "Checks if two environments are equal, with regards to the scope names."
   input Env inEnv1;
@@ -951,7 +951,7 @@ algorithm
 
   end matchcontinue;
 end isPrefix;
-  
+
 public function printEnvPathStr
   input Env inEnv;
   output String outString;
@@ -1019,7 +1019,7 @@ algorithm
   ENTRY(element = SCode.CLASS(name = name, encapsulatedPrefix = ep)) := inClass;
   outEnv := openScope(SOME(name), ep, inEnv);
 end openClassEntryScope;
-  
+
 protected function elementSplitterRegular
   input SCode.Element inElement;
   input list<SCode.Element> inClsAndVars;
@@ -1112,14 +1112,14 @@ algorithm
           inSplitFunc, inInfo, inAccumEnv);
       then
         env;
-        
+
     case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, env)
       equation
         path = envPath(inEnv);
         env = insertEnumLiterals(enums, path, 1, env);
       then
         env;
-                
+
   end match;
 end populateEnvWithClassDef;
 
@@ -1162,7 +1162,7 @@ algorithm
 
   end match;
 end populateEnvWithClassDef2;
-        
+
 protected function insertEnumLiterals
   input list<SCode.Enum> inEnum;
   input Absyn.Path inEnumPath;
@@ -1186,7 +1186,7 @@ algorithm
 
   end match;
 end insertEnumLiterals;
-      
+
 protected function insertEnumLiteral
   "Extends the environment with an enumeration."
   input SCode.Enum inEnum;
@@ -1293,7 +1293,7 @@ algorithm
     // A renaming import, 'import D = A.B.C'.
     case (Absyn.NAMED_IMPORT(name = name), _, _, _, _)
       equation
-        entry = renameEntry(inEntry, name); 
+        entry = renameEntry(inEntry, name);
         env = insertEntry(entry, inAccumEnv);
       then
         env;
@@ -1364,7 +1364,7 @@ algorithm
   origins := inOrigin2 :: origins;
   outOrigin := INHERITED_ORIGIN(bc, info, origins, env);
 end collapseInheritedOrigins2;
-  
+
 protected function populateEnvWithExtends
   input list<SCode.Element> inExtends;
   input list<EntryOrigin> inOrigins;
@@ -1502,7 +1502,7 @@ public type AvlValue = Entry;
 
 protected constant AvlTree emptyAvlTree = AVLTREENODE(NONE(), 0, NONE(), NONE());
 
-public uniontype AvlTree 
+public uniontype AvlTree
   "The binary tree data structure"
   record AVLTREENODE
     Option<AvlTreeValue> value "Value";
@@ -1512,7 +1512,7 @@ public uniontype AvlTree
   end AVLTREENODE;
 end AvlTree;
 
-public uniontype AvlTreeValue 
+public uniontype AvlTreeValue
   "Each node in the binary tree can have a value associated with it."
   record AVLTREEVALUE
     AvlKey key "Key" ;
@@ -1520,7 +1520,7 @@ public uniontype AvlTreeValue
   end AVLTREEVALUE;
 end AvlTreeValue;
 
-protected function avlTreeNew 
+protected function avlTreeNew
   "Return an empty tree"
   output AvlTree tree;
 algorithm
@@ -1611,7 +1611,7 @@ algorithm
 
   end match;
 end avlTreeAdd2;
-  
+
 protected function avlTreeAddUnique
   "Inserts a new value into the tree. Fails if the key already exists in the tree."
   input AvlTree inAvlTree;
@@ -1630,7 +1630,7 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
       then avlBalance(avlTreeAddUnique2(inAvlTree, stringCompare(key, rkey), key, value));
- 
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAddUnique failed"});
@@ -1663,7 +1663,7 @@ algorithm
       equation
         t = avlCreateEmptyIfNone(right);
         t = avlTreeAddUnique(t, key, value);
-      then  
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
@@ -1730,7 +1730,7 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
       then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
- 
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
@@ -1762,7 +1762,7 @@ algorithm
     case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _)
       equation
         t = avlTreeReplace(t, inKey, inValue);
-      then  
+      then
         AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
@@ -1844,7 +1844,7 @@ algorithm
   end match;
 end avlTreeUpdate2;
 
-protected function avlCreateEmptyIfNone 
+protected function avlCreateEmptyIfNone
   "Help function to AvlTreeAdd"
     input Option<AvlTree> t;
     output AvlTree outT;
@@ -1855,7 +1855,7 @@ algorithm
   end match;
 end avlCreateEmptyIfNone;
 
-protected function avlBalance 
+protected function avlBalance
   "Balances an AvlTree"
   input AvlTree bt;
   output AvlTree outBt;
@@ -1866,7 +1866,7 @@ algorithm
   outBt := avlDoBalance(d, bt);
 end avlBalance;
 
-protected function avlDoBalance 
+protected function avlDoBalance
   "Performs balance if difference is > 1 or < -1"
   input Integer difference;
   input AvlTree bt;
@@ -1881,7 +1881,7 @@ algorithm
   end match;
 end avlDoBalance;
 
-protected function avlDoBalance2 
+protected function avlDoBalance2
 "help function to doBalance"
   input Boolean inDiffIsNegative;
   input AvlTree inBt;
@@ -1889,12 +1889,12 @@ protected function avlDoBalance2
 algorithm
   outBt := match(inDiffIsNegative,inBt)
     local AvlTree bt;
-    case(true,bt) 
+    case(true,bt)
       equation
         bt = avlDoBalance3(bt);
         bt = avlRotateLeft(bt);
       then bt;
-    case(false,bt) 
+    case(false,bt)
       equation
         bt = avlDoBalance4(bt);
         bt = avlRotateRight(bt);
@@ -1936,7 +1936,7 @@ algorithm
   end matchcontinue;
 end avlDoBalance4;
 
-protected function avlSetRight 
+protected function avlSetRight
   "set right treenode"
   input AvlTree node;
   input Option<AvlTree> right;
@@ -1950,7 +1950,7 @@ algorithm
   outNode := AVLTREENODE(value, height, l, right);
 end avlSetRight;
 
-protected function avlSetLeft 
+protected function avlSetLeft
   "set left treenode"
   input AvlTree node;
   input Option<AvlTree> left;
@@ -1964,7 +1964,7 @@ algorithm
   outNode := AVLTREENODE(value, height, left, r);
 end avlSetLeft;
 
-protected function avlLeftNode 
+protected function avlLeftNode
   "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
@@ -1972,7 +1972,7 @@ algorithm
   AVLTREENODE(left = subNode) := node;
 end avlLeftNode;
 
-protected function avlRightNode 
+protected function avlRightNode
   "Retrieve the right subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
@@ -1980,7 +1980,7 @@ algorithm
   AVLTREENODE(right = subNode) := node;
 end avlRightNode;
 
-protected function avlExchangeLeft 
+protected function avlExchangeLeft
   "help function to balance"
   input AvlTree inNode;
   input AvlTree inParent;
@@ -1994,7 +1994,7 @@ algorithm
   outParent := avlBalance(node);
 end avlExchangeLeft;
 
-protected function avlExchangeRight 
+protected function avlExchangeRight
   "help function to balance"
   input AvlTree inNode;
   input AvlTree inParent;
@@ -2008,7 +2008,7 @@ algorithm
   outParent := avlBalance(node);
 end avlExchangeRight;
 
-protected function avlRotateLeft 
+protected function avlRotateLeft
   "help function to balance"
   input AvlTree node;
   output AvlTree outNode "updated node";
@@ -2016,7 +2016,7 @@ algorithm
   outNode := avlExchangeLeft(Util.getOption(avlRightNode(node)), node);
 end avlRotateLeft;
 
-protected function avlRotateRight 
+protected function avlRotateRight
   "help function to balance"
   input AvlTree node;
   output AvlTree outNode "updated node";
@@ -2024,7 +2024,7 @@ algorithm
   outNode := avlExchangeRight(Util.getOption(avlLeftNode(node)), node);
 end avlRotateRight;
 
-protected function avlDifferenceInHeight 
+protected function avlDifferenceInHeight
   "help function to balance, calculates the difference in height between left
   and right child"
   input AvlTree node;
@@ -2036,7 +2036,7 @@ algorithm
   diff := avlGetHeight(l) - avlGetHeight(r);
 end avlDifferenceInHeight;
 
-protected function avlComputeHeight 
+protected function avlComputeHeight
   "Compute the height of the AvlTree and store in the node info."
   input AvlTree bt;
   output AvlTree outBt;
@@ -2046,7 +2046,7 @@ protected
   AvlValue val;
   Integer hl,hr,height;
 algorithm
-  AVLTREENODE(value = v as SOME(AVLTREEVALUE(value = val)), 
+  AVLTREENODE(value = v as SOME(AVLTREEVALUE(value = val)),
     left = l, right = r) := bt;
   hl := avlGetHeight(l);
   hr := avlGetHeight(r);
@@ -2054,7 +2054,7 @@ algorithm
   outBt := AVLTREENODE(v, height, l, r);
 end avlComputeHeight;
 
-protected function avlGetHeight 
+protected function avlGetHeight
   "Retrieve the height of a node"
   input Option<AvlTree> bt;
   output Integer height;

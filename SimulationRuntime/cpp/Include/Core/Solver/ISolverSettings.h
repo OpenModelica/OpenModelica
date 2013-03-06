@@ -7,13 +7,13 @@
 Abstract interface class for general solver settings.
 
 \date     October, 1st, 2008
-\author   
+\author
 
 */
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
- 
+
 class ISolverSettings
 {
 public:

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_EXPORT_DECL
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
- 
+
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
@@ -57,7 +57,7 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
 }
 
         void SolverDefaultImplementation::setStartTime(const double& t)
-    { 
+    {
         _tCurrent = t;
     };
 
@@ -66,12 +66,12 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
         _tEnd = t;
     };
 
-     void SolverDefaultImplementation::setInitStepSize(const double& h)    
+     void SolverDefaultImplementation::setInitStepSize(const double& h)
     {
         _h = h;
     };
 
-    
+
 
     const IDAESolver::SOLVERSTATUS SolverDefaultImplementation::getSolverStatus()
     {
@@ -85,21 +85,21 @@ void SolverDefaultImplementation::init()
     // Set current start time to the system
     continous_system->setTime(_tCurrent);
 
-    // Assemble the system 
+    // Assemble the system
     //init_system->init(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
     _initialization->initializeSystem(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
-    
+
 
     //// Write out head line
     //if (_outputStream)
     //{
     //    // Write head line (step time step size) into output stream
     //    *_outputStream << "step\t time\t h";
-    //    
+    //
     //    // Prompt system to write out its results
     //    _system->writeOutput(IMixedSystem::HEAD_LINE);
 
-    //    // Write a line break into output stream        
+    //    // Write a line break into output stream
     //    *_outputStream << std::endl;
     //}
    _system->writeOutput(IMixedSystem::HEAD_LINE);
@@ -130,13 +130,13 @@ void SolverDefaultImplementation::init()
         memset(_events,false,_dimZeroFunc*sizeof(bool));
         memcpy(_zeroValLargeStep,_zeroVal,_dimZeroFunc*sizeof(double));
     }
-    
+
      // Set flags
-    _firstCall            = true; 
+    _firstCall            = true;
     _firstStep            = true;
     _zeroSearchActive    = false;
 
-    // Reset counter 
+    // Reset counter
     _totStps     = 0;
     _accStps     = 0;
     _rejStps    = 0;
@@ -144,15 +144,15 @@ void SolverDefaultImplementation::init()
     _zeros        = 0;
 
     // Set initial step size
-    //_h = _settings->_globalSettings->_hOutput;    
+    //_h = _settings->_globalSettings->_hOutput;
 }
 
 void SolverDefaultImplementation::setZeroState()
 {
-    
+
         // Reset Zero-State
     _zeroStatus = IDAESolver::UNCHANGED_SIGN;;
-    
+
     // Alle Elemente im ZeroFunction-Array durchgehen
     for (int i=0; i<_dimZeroFunc; ++i)
     {
@@ -161,22 +161,22 @@ void SolverDefaultImplementation::setZeroState()
         //if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && (_zeroVal[i]!= 0.0 || _zeroValLastSuccess[i] != 0.0))
         if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && abs(_zeroVal[i]-_zeroValLastSuccess[i])>UROUND)
         {
-        
+
             // Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
-            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol() || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) < _settings->getZeroTimeTol()) ) 
+            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol() || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) < _settings->getZeroTimeTol()) )
             {
-                
+
                 //  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
                 _zeroStatus = IDAESolver::EQUAL_ZERO;
                 _events[i] = true;
-                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt
                 // die Richtung des Vorzeichenwechsels nicht erkannt werden kann
                 if ( _zeroVal[i] == 0.0 )
                     _zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
             }
             else
             {
-              
+
                 // Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
                 _zeroStatus = IDAESolver::ZERO_CROSSING;
 
@@ -191,7 +191,7 @@ void SolverDefaultImplementation::setZeroState()
         else
             _events[i] = false;
     }
-    // Bei erstem Schritt können gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt für den Fall : 
+    // Bei erstem Schritt können gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt für den Fall :
     //_zeroVal[i]-_zeroValLastSuccess[i])<UROUND
     if (_tLastSuccess == 0.0 && _zeroStatus == IDAESolver::EQUAL_ZERO)
     {
@@ -201,20 +201,20 @@ void SolverDefaultImplementation::setZeroState()
         if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0)
         {
             // Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
-            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol()  || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) <_settings->getZeroTimeTol()) ) 
+            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol()  || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) <_settings->getZeroTimeTol()) )
             {
-                
+
                 //  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
                 _zeroStatus = IDAESolver::EQUAL_ZERO;
                 _events[i] = true;
-                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt
                 // die Richtung des Vorzeichenwechsels nicht erkannt werden kann
                 if ( _zeroVal[i] == 0.0 )
                     _zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
             }
             else
             {
-                
+
                 // Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
                 _zeroStatus = IDAESolver::ZERO_CROSSING;
 
@@ -241,10 +241,10 @@ void SolverDefaultImplementation::setZeroState()
 
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {
-    
+
     //if (_outputStream && _settings->_globalSettings->_resultsOutput)
     //{
-    //    // Reset curser within output stream to last valid position (before zero crossing) 
+    //    // Reset curser within output stream to last valid position (before zero crossing)
     //    if(_outputCommand & IContinuous::RESET)
     //        if(stp == 1)
     //            _outputStream->seekp(_curserPosition);
@@ -260,12 +260,12 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
 
     //        // Write out output stream
     //        _system->writeOutput(_outputCommand);
-    //        
+    //
     //        // Write a line break into output stream
     //        *_outputStream << std::endl;
     //    }
     //}
-    
+
     if(_outputCommand & IMixedSystem::WRITE)
     {
         _system->writeOutput(_outputCommand);

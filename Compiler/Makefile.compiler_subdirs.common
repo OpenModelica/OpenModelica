@@ -54,7 +54,7 @@ parser: $(SRCHSRCDIR)
 modpar: $(SRCHSRCDIR)
 	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
-clean:	
+clean:
 	for d in ../runtime/ ../../Parser/ ../modpar/; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
@@ -64,7 +64,7 @@ clean:
 	$(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) *.srz *.o *.sig *.sigx *.c *.h
 
 reallyclean: clean
-	$(RM) -f $(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) $(PROG)$(EXEEXT) 
+	$(RM) -f $(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) $(PROG)$(EXEEXT)
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLMO)

@@ -15,25 +15,25 @@
 #include <boost/numeric/bindings/traits/detail/array.hpp>
 // #include <boost/numeric/bindings/traits/std_vector.hpp>
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  include <boost/static_assert.hpp>
 #  include <boost/type_traits.hpp>
-#endif 
+#endif
 
 #include <cassert>
 
 
-namespace boost { namespace numeric { namespace bindings { 
+namespace boost { namespace numeric { namespace bindings {
 
   namespace lapack {
 
     ///////////////////////////////////////////////////////////////////
     //
     // hegv
-    // 
+    //
     ///////////////////////////////////////////////////////////////////
 
-    /* 
+    /*
      *  hegv() computes all the eigenvalues, and optionally, the eigenvectors
      *  of a real generalized symmetric-definite eigenproblem, of the form
      *  A*x=(lambda)*B*x,  A*Bx=(lambda)*x,  or B*A*x=(lambda)*x.
@@ -117,38 +117,38 @@ namespace boost { namespace numeric { namespace bindings {
      *                    The factorization of B could not be completed and
      *                    no eigenvalues or eigenvectors were computed.
      *
-     */ 
+     */
 
     namespace detail {
 
-      inline 
-      void hegv (int const itype, char const jobz, char const uplo, int const n, 
-                 float *a, int const lda, float *b, int const ldb, 
+      inline
+      void hegv (int const itype, char const jobz, char const uplo, int const n,
+                 float *a, int const lda, float *b, int const ldb,
                  float *w, float *work, int const lwork, int& info)
       {
         LAPACK_SSYGV (&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, &info);
       }
 
-      inline 
-      void hegv (int const itype, char const jobz, char const uplo, int const n, 
-                 double *a, int const lda, double *b, int const ldb, 
+      inline
+      void hegv (int const itype, char const jobz, char const uplo, int const n,
+                 double *a, int const lda, double *b, int const ldb,
                  double *w, double *work, int const lwork, int& info)
       {
         LAPACK_DSYGV (&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, &info);
       }
 
-      inline 
-      void hegv (int const itype, char const jobz, char const uplo, int const n, 
-                 traits::complex_f *a, int const lda, traits::complex_f *b, int const ldb, 
+      inline
+      void hegv (int const itype, char const jobz, char const uplo, int const n,
+                 traits::complex_f *a, int const lda, traits::complex_f *b, int const ldb,
                  float *w, traits::complex_f *work, int const lwork, float *rwork, int& info)
       {
         LAPACK_CHEGV (&itype, &jobz, &uplo, &n, traits::complex_ptr(a), &lda,
           traits::complex_ptr(b), &ldb, w, traits::complex_ptr(work), &lwork, rwork, &info);
       }
 
-      inline 
-      void hegv (int const itype, char const jobz, char const uplo, int const n, 
-                 traits::complex_d *a, int const lda, traits::complex_d *b, int const ldb, 
+      inline
+      void hegv (int const itype, char const jobz, char const uplo, int const n,
+                 traits::complex_d *a, int const lda, traits::complex_d *b, int const ldb,
                  double *w, traits::complex_d *work, int const lwork, double *rwork, int& info)
       {
         LAPACK_ZHEGV (&itype, &jobz, &uplo, &n, traits::complex_ptr(a), &lda,
@@ -167,8 +167,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that allocates work arrays
         template <typename T, typename R>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, optimal_workspace, int& info ) {
 
            traits::detail::array<T> work( std::max<int>(1,34*n) );
@@ -179,8 +179,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that allocates work arrays
         template <typename T, typename R>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, minimal_workspace, int& info ) {
 
            traits::detail::array<T> work( std::max<int>(1,3*n-1) );
@@ -191,8 +191,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that uses given workarrays
         template <typename T, typename R, typename W>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, detail::workspace1<W> work, int& info ) {
 
            assert (traits::vector_size (work.w_) >= 3*n-1);
@@ -208,8 +208,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that allocates work arrays
         template <typename T, typename R>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, optimal_workspace, int& info ) {
 
            traits::detail::array<T> work( std::max<int>(1,34*n) );
@@ -222,8 +222,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that allocates work arrays
         template <typename T, typename R>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, minimal_workspace, int& info ) {
 
            traits::detail::array<T> work( std::max<int>(1,2*n-1) );
@@ -236,8 +236,8 @@ namespace boost { namespace numeric { namespace bindings {
         // Function that uses given workarrays
         template <typename T, typename R, typename WC, typename WR>
         void operator() (
-                 int const itype, char const jobz, char const uplo, int const n, 
-                 T *a, int const lda, T *b, int const ldb, 
+                 int const itype, char const jobz, char const uplo, int const n,
+                 T *a, int const lda, T *b, int const ldb,
                  R *w, detail::workspace2<WC,WR> work, int& info ) {
 
            assert (traits::vector_size (work.w_) >= 2*n-1);
@@ -252,23 +252,23 @@ namespace boost { namespace numeric { namespace bindings {
     template <typename A, typename B, typename W, typename Work>
     int hegv (int itype, char jobz, char uplo, A& a, B& b, W& w, Work work = optimal_workspace()) {
 
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK 
+#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
       BOOST_STATIC_ASSERT((boost::is_same<
-        typename traits::matrix_traits<A>::matrix_structure, 
+        typename traits::matrix_traits<A>::matrix_structure,
         traits::general_t
-      >::value)); 
-#endif 
+      >::value));
+#endif
 
       int const n = traits::matrix_size1 (a);
       assert ( n>0 );
-      assert (traits::matrix_size2 (a)==n); 
-      assert (traits::leading_dimension (a)>=n); 
-      assert (traits::vector_size (w)==n); 
+      assert (traits::matrix_size2 (a)==n);
+      assert (traits::leading_dimension (a)>=n);
+      assert (traits::vector_size (w)==n);
 
       int const nb = traits::matrix_size1 (b);
       assert ( nb>0 );
-      assert (traits::matrix_size2 (b)==nb); 
-      assert (traits::leading_dimension (b)>=nb); 
+      assert (traits::matrix_size2 (b)==nb);
+      assert (traits::leading_dimension (b)>=nb);
       assert ( n== nb);
 
       assert ( uplo=='U' || uplo=='L' );
@@ -280,14 +280,14 @@ namespace boost { namespace numeric { namespace bindings {
       int info;
       detail::Hegv< n_workspace_args<typename A::value_type>::value >() (
                    itype, jobz, uplo, n,
-                   traits::matrix_storage (a), 
+                   traits::matrix_storage (a),
                    traits::leading_dimension (a),
-                   traits::matrix_storage (b), 
+                   traits::matrix_storage (b),
                    traits::leading_dimension (b),
-                   traits::vector_storage (w),  
+                   traits::vector_storage (w),
                    work,
                    info);
-      return info; 
+      return info;
     }
   }
 

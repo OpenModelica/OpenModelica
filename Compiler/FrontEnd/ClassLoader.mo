@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -264,12 +264,12 @@ algorithm
       String pd,file,id;
       Absyn.ClassPart cp;
       Absyn.Class cl;
-      
+
     case (CLASSPART(cp),_,_,_,_)
       equation
         cps = mergeBefore(cp,acc);
       then cps;
-      
+
     case (ELEMENT(ei,true),_,_,_,_)
       equation
         cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
@@ -299,7 +299,7 @@ algorithm
         ei = Absyn.makeClassElement(cl);
         cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
-    
+
   end matchcontinue;
 end loadCompletePackageFromMp2;
 
@@ -415,7 +415,7 @@ algorithm
         duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
         duplicatesStr = stringDelimitList(duplicates, ", ");
         Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
-        
+
         // get all the .mo files in the directory!
         mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
         // get all the subdirs containing package.mo
@@ -425,16 +425,16 @@ algorithm
         mofiles = listAppend(subdirs,mofiles);
         // check if all are present in the package.order
         differences = List.setDifference(mofiles, namesToFind);
-        // issue a warning if not all are present        
-        differencesStr = stringDelimitList(differences, "\n\t");        
+        // issue a warning if not all are present
+        differencesStr = stringDelimitList(differences, "\n\t");
         Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
         po1 = getPackageContentNamesinParts(namesToFind,cp,{});
         List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
-        
+
         po2 = List.map(differences, makeClassLoad);
-        
+
         po = List.appendNoCopy(po2, po1);
-      then 
+      then
         po;
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
@@ -446,7 +446,7 @@ algorithm
         mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
         po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
       then po;
-    
+
     case (Absyn.CLASS(info=info),_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
@@ -491,7 +491,7 @@ algorithm
         Error.assertionOrAddSourceMessage(System.directoryExists(mp +& pd +& str) or System.regularFileExists(mp +& pd +& str +& ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
       then ();
     else ();
-  end match;  
+  end match;
 end checkPackageOrderFilesExist;
 
 protected function existPackage
@@ -502,7 +502,7 @@ protected
   String pd;
 algorithm
   pd := System.pathDelimiter();
-  b := System.regularFileExists(mp +& pd +& name +& pd +& "package.mo"); 
+  b := System.regularFileExists(mp +& pd +& name +& pd +& "package.mo");
 end existPackage;
 
 protected function getPackageContentNamesinParts

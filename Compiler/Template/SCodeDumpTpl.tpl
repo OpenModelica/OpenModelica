@@ -11,13 +11,13 @@ template dumpElements(list<SCode.Element> elements, Boolean indent)
 ::= dumpElements2(elements, "", indent, true, true)
 end dumpElements;
 
-template dumpElements2(list<SCode.Element> elements, String prevSpacing, 
+template dumpElements2(list<SCode.Element> elements, String prevSpacing,
     Boolean indent, Boolean firstElement, Boolean inPublicSection)
 ::=
 match elements
   case el :: rest_els then
     let spacing = dumpElementSpacing(el)
-    let pre_spacing = if not firstElement then 
+    let pre_spacing = if not firstElement then
       dumpPreElementSpacing(spacing, prevSpacing)
     let el_str = dumpElement(el,'')
     let vis_str = dumpElementVisibility(el, inPublicSection)
@@ -40,7 +40,7 @@ match elements
       >>
     elements_str
 end dumpElements2;
-  
+
 template dumpPreElementSpacing(String curSpacing, String prevSpacing)
 ::= if not prevSpacing then curSpacing
 end dumpPreElementSpacing;
@@ -91,7 +91,7 @@ match element
   case DEFINEUNIT(__) then dumpSectionVisibility(visibility, inPublicSection)
 end dumpElementVisibility;
 
-template dumpSectionVisibility(SCode.Visibility visibility, 
+template dumpSectionVisibility(SCode.Visibility visibility,
     Boolean inPublicSection)
 ::=
 match visibility
@@ -125,7 +125,7 @@ match extends
     let visibility_str = dumpVisibility(visibility)
     let mod_str = dumpModifier(modifications)
     let ann_str = dumpAnnotationOpt(ann)
-    '<%visibility_str%>extends <%bc_str%><%mod_str%><%ann_str%>' 
+    '<%visibility_str%>extends <%bc_str%><%mod_str%><%ann_str%>'
 end dumpExtends;
 
 template dumpClass(SCode.Element class, String each)
@@ -141,10 +141,10 @@ match class
     let header_str = dumpClassHeader(classDef, name)
     let footer_str = dumpClassFooter(classDef, cdef_str, name)
     //let cmt_str = dumpClassComment(classDef)
-    //let cmt2_str = if cdef_str then 
-    //    if cmt_str then 
-    //      '<%\n%> <%cmt_str%>' 
-    //    else "" 
+    //let cmt2_str = if cdef_str then
+    //    if cmt_str then
+    //      '<%\n%> <%cmt_str%>'
+    //    else ""
     //  else cmt_str
     <<
     <%prefixes_str%> <%header_str%> <%footer_str%>
@@ -170,7 +170,7 @@ match classDef
     let extdecl_str = dumpExternalDeclOpt(externalDecl)
     let annl_str = (annotationLst |> ann => dumpAnnotationElement(ann) ;separator="\n")
     //let cmt_str = dumpClassComment(comment)
-    let cdef_str = 
+    let cdef_str =
       <<
       <%el_str%>
         <%annl_str%>
@@ -197,9 +197,9 @@ match classDef
   case DERIVED(__) then
     let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
-    let attr_str = dumpAttributes(attributes) 
-    let cmt_str = dumpCommentOpt(comment) 
-    '= <%attr_str%><%type_str%><%mod_str%><%cmt_str%>' 
+    let attr_str = dumpAttributes(attributes)
+    let cmt_str = dumpCommentOpt(comment)
+    '= <%attr_str%><%type_str%><%mod_str%><%cmt_str%>'
   case ENUMERATION(__) then
     let enum_str = if enumLst then
         (enumLst |> enum => dumpEnumLiteral(enum) ;separator=", ")
@@ -237,8 +237,8 @@ match classDef
 end dumpClassFooter;
 
 template dumpClassComment(Option<SCode.Comment> comment)
-::= 
-  match comment 
+::=
+  match comment
     case SOME(CLASS_COMMENT(comment = SOME(cmt))) then dumpComment(cmt)
     case SOME(cmt as COMMENT(__)) then dumpComment(cmt)
 end dumpClassComment;
@@ -255,7 +255,7 @@ match component
     let mod_str = dumpModifier(modifications)
     let cond_str = match condition case SOME(cond) then ' if <%AbsynDumpTpl.dumpExp(cond)%>'
     let cmt_str = dumpCommentOpt(comment)
-    '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cond_str%><%cmt_str%>' 
+    '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cond_str%><%cmt_str%>'
 end dumpComponent;
 
 template dumpDefineUnit(SCode.Element defineUnit)
@@ -367,7 +367,7 @@ match condition
         <%rest_str%>
         >>
 end dumpElseIfEEquation;
-  
+
 template dumpForEEquation(SCode.EEquation for_equation)
 ::=
 match for_equation
@@ -412,7 +412,7 @@ match when_equation
     >>
 end dumpWhenEEquation;
 
-template dumpAlgorithmSections(list<SCode.AlgorithmSection> algorithms, 
+template dumpAlgorithmSections(list<SCode.AlgorithmSection> algorithms,
     String label)
 ::=
   if algorithms then
@@ -583,7 +583,7 @@ end dumpInnerOuter;
 template dumpReplaceable(SCode.Replaceable replaceable)
 ::=
 match replaceable
-  case REPLACEABLE(__) then 
+  case REPLACEABLE(__) then
     'replaceable '
 end dumpReplaceable;
 
@@ -596,7 +596,7 @@ match replaceable
     let mod_str = dumpModifier(cc_mod)
     ' constrainedby <%path_str%><%mod_str%>'
 end dumpReplaceableConstrainClass;
-    
+
 template dumpEach(SCode.Each each)
 ::=
 match each
@@ -646,7 +646,7 @@ template dumpFunctionRestriction(SCode.FunctionRestriction funcRest)
 match funcRest
   case FR_NORMAL_FUNCTION(__) then if isImpure then 'impure function' else 'function'
   case FR_EXTERNAL_FUNCTION(__) then if isImpure then 'impure function' else 'function'
-  
+
   case FR_OPERATOR_FUNCTION(__) then 'operator function'
   case FR_RECORD_CONSTRUCTOR(__) then 'function'
   else errorMsg("SCodeDump.dumpFunctionRestriction: Unknown Function restriction.")
@@ -657,7 +657,7 @@ template dumpModifier(SCode.Mod modifier)
 match modifier
   case MOD(__) then
     let binding_str = dumpModifierBinding(binding)
-    let submod_str = if subModLst then 
+    let submod_str = if subModLst then
       '(<%(subModLst |> submod => dumpSubModifier(submod) ;separator=", ")%>)'
     '<%submod_str%><%binding_str%>'
 end dumpModifier;
@@ -682,7 +682,7 @@ match modifier
     let each_str = dumpEach(eachPrefix)
     '<%dumpElement(element, each_str)%>'
 end dumpRedeclModifier;
-    
+
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
 ::= match binding case SOME((exp, _)) then ' = <%AbsynDumpTpl.dumpExp(exp)%>'
 end dumpModifierBinding;
@@ -750,14 +750,14 @@ template dumpAnnotation(SCode.Annotation annotation)
 ::=
 if Config.showAnnotations() then
   match annotation
-    case ANNOTATION(__) then 
+    case ANNOTATION(__) then
      let modifStr = '<%dumpModifier(modification)%>'
-     let annStr = if modifStr then modifStr else '()' 
+     let annStr = if modifStr then modifStr else '()'
      ' annotation<%annStr%>'
 end dumpAnnotation;
 
 template dumpAnnotationElement(SCode.Annotation annotation)
-::= 
+::=
   let annstr = '<%dumpAnnotation(annotation)%>'
   if annstr then
     '<%annstr%>;'
@@ -784,7 +784,7 @@ template dumpCommentOpt(Option<SCode.Comment> comment)
 end dumpCommentOpt;
 
 template dumpComment(SCode.Comment comment)
-::= 
+::=
 if Config.showAnnotations() then
   match comment
     case COMMENT(__) then

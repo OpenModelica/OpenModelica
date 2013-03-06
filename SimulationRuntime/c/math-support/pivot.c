@@ -29,7 +29,7 @@
 #define min(a,b) ((a > b) ? (b) : (a))
 #endif
 
-/* 
+/*
 find the maximum element below (and including) line/row start
 */
 int maxsearch( double *A, modelica_integer start, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd, modelica_integer *maxrow, modelica_integer *maxcol, double *maxabsval)

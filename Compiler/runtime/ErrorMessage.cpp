@@ -108,7 +108,7 @@ std::string ErrorMessage::getMessage_()
         return "";
       }
       message_.replace(str_pos, 2, *tok);
-      str_pos += tok->size() + 1; 
+      str_pos += tok->size() + 1;
       *tok++;
     }
     else if(index_symbol >= '0' || index_symbol <= '9')
@@ -117,7 +117,7 @@ std::string ErrorMessage::getMessage_()
 
       if(index >= tokens_.size() || index < 0)
       {
-        std::cerr << "Internal error: Invalid positional index %" << index + 1 
+        std::cerr << "Internal error: Invalid positional index %" << index + 1
           << " in error message.\n";
         std::cerr << "Given message was: " << message_ << "\n";
         return "";

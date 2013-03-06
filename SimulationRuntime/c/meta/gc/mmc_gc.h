@@ -33,13 +33,13 @@
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file defines the MetaModelica garbage collector (GC) interface
  *  We have two collectors:
- *  - generational 
+ *  - generational
  *  - mark-and-sweep
  *  and we can switch between them at runtime when needed.
- *  We start with the generational and if there is not enough 
+ *  We start with the generational and if there is not enough
  *  memory to allocate a new older generation we switch to a
  *  mark-and-sweep collector.
- * 
+ *
  * RCS: $Id: mmc_gc.h 8047 2011-03-01 10:19:49Z perost $
  *
  */
@@ -114,7 +114,7 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
   {
     mmc_GC_add_roots_fallback(p, n, local_GC_state, name);
   }
-} 
+}
 
 #else
 

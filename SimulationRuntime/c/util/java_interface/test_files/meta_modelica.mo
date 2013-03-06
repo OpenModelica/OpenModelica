@@ -67,12 +67,12 @@ public function if_
   input Type_a inTypeA3;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   outTypeA:=
   matchcontinue (inBoolean1,inTypeA2,inTypeA3)
     local Type_a r;
-    case (true,r,_) then r; 
-    case (false,_,r) then r; 
+    case (true,r,_) then r;
+    case (false,_,r) then r;
   end matchcontinue;
 end if_;
 
@@ -87,16 +87,16 @@ public function listMap
     replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
   replaceable type Type_b subtypeof Any;
-algorithm 
-  outTypeBLst := listMap_impl_2(inTypeALst,{},inFuncTypeTypeAToTypeB);  
+algorithm
+  outTypeBLst := listMap_impl_2(inTypeALst,{},inFuncTypeTypeAToTypeB);
 end listMap;
 
-function listMap_impl_2 
+function listMap_impl_2
   replaceable type TypeA subtypeof Any;
   replaceable type TypeB subtypeof Any;
   input  list<TypeA> inLst;
   input  list<TypeB> accumulator;
-  input  FuncTypeTypeVarToTypeVar fn;  
+  input  FuncTypeTypeVarToTypeVar fn;
   output list<TypeB> outLst;
   partial function FuncTypeTypeVarToTypeVar
     input TypeA inTypeA;
@@ -117,7 +117,7 @@ algorithm
         hdChanged = fn(hd);
         l = hdChanged::l;
         result = listMap_impl_2(rest, l, fn);
-    then 
+    then
         result;
   end matchcontinue;
 end listMap_impl_2;
@@ -129,16 +129,16 @@ public function listMap0
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
-algorithm 
+algorithm
   _:=
   matchcontinue (inTypeALst,inFuncTypeTypeATo)
     local
       Type_a f;
       list<Type_a> r;
       FuncTypeType_aTo fn;
-    case ({},_) then (); 
+    case ({},_) then ();
     case ((f :: r),fn)
-      equation 
+      equation
         fn(f);
         listMap0(r, fn);
       then

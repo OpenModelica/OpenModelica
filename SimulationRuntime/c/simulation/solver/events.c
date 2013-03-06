@@ -74,11 +74,11 @@ void initSample(DATA* data, double startTime, double stopTime)
       data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start;
     else
       data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start + ceil((data->modelData.samplesInfo[i].start - startTime) / data->modelData.samplesInfo[i].interval) * data->modelData.samplesInfo[i].interval;
-    
+
     if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent))
       data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
   }
-  
+
   if(stopTime < data->simulationInfo.nextSampleEvent)
     DEBUG(LOG_EVENTS, "there are no sample-events");
   else
@@ -100,10 +100,10 @@ void initSample(DATA* data, double startTime, double stopTime)
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
   double time = solverInfo->currentTime + solverInfo->currentStepSize;
-  
+
   if(data->simulationInfo.nextSampleEvent <= time + eps)
   {
-    solverInfo->currentStepSize = data->simulationInfo.nextSampleEvent - solverInfo->currentTime;    
+    solverInfo->currentStepSize = data->simulationInfo.nextSampleEvent - solverInfo->currentTime;
     data->simulationInfo.sampleActivated = 1;
   }
 }
@@ -165,7 +165,7 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
   if(checkForStateEvent(data, solverInfo->eventLst))
     if(!solverInfo->solverRootFinding)
       findRoot(data, solverInfo->eventLst, &(solverInfo->currentTime));
-    
+
   if(data->simulationInfo.sampleActivated == 1)
     return 1;
   if(listLen(eventLst)>0)
@@ -187,14 +187,14 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   double time = data->localData[0]->timeValue;
   long i;
   LIST_NODE* it;
-  
+
   sim_result.emit(&sim_result,data);
-  
+
   /* sample event */
   if(data->simulationInfo.sampleActivated)
   {
     storePreValues(data);
-    
+
     /* activate sample event */
     for(i=0; i<data->modelData.nSamples; ++i)
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
@@ -203,7 +203,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
         INFO3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
       }
   }
-  
+
   /* state event */
   if(listLen(eventLst)>0)
   {
@@ -212,7 +212,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
 
     for(it = listFirstNode(eventLst); it; it = listNextNode(it))
       INFO2(LOG_EVENTS, "[%ld] %s", *((long*) listNodeData(it)), zeroCrossingDescription[*((long*) listNodeData(it))]);
-    
+
     listClear(eventLst);
     solverInfo->stateEvents++;
   }
@@ -221,7 +221,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   updateDiscreteSystem(data);
   saveZeroCrossingsAfterEvent(data);
   /*sim_result_emit(data);*/
-  
+
   /* sample event */
   if(data->simulationInfo.sampleActivated)
   {
@@ -234,17 +234,17 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
         data->simulationInfo.nextSampleTimes[i] += data->modelData.samplesInfo[i].interval;
       }
     }
-    
+
     for(i=0; i<data->modelData.nSamples; ++i)
       if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent))
         data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
 
     data->simulationInfo.sampleActivated = 0;
-    
+
     INDENT(LOG_EVENTS);
     DEBUG1(LOG_EVENTS, "next sample-event at t = %g", data->simulationInfo.nextSampleEvent);
     RELEASE(LOG_EVENTS);
-    
+
     solverInfo->sampleEvents++;
   }
 }
@@ -421,7 +421,7 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
       }
       *b = c;
       right = 0;
-    } 
+    }
     else  /*else Zerocrossing in right Section */
     {
       for(i=0; i < data->modelData.nStates; i++)
@@ -473,7 +473,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
     /* found event in left section */
     if((data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == -1 &&
         data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == 1) ||
-       (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1 && 
+       (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1 &&
         data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
     {
       INFO3(LOG_ZEROCROSSINGS, "%ld changed from %s to current %s",
@@ -483,7 +483,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
       listPushFront(tmpEventList, listNodeData(it));
     }
   }
-  
+
   if(listLen(tmpEventList) > 0)
     return 1;   /* event in left section */
   return 0;     /* event in right section */

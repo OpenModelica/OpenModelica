@@ -1,7 +1,7 @@
 // ObjectBase.h: Schnittstelle für die Klasse Object.
 //
 //////////////////////////////////////////////////////////////////////
- 
+
 #pragma once
 
 
@@ -27,8 +27,8 @@ class Object : public IObject
 {
 public:
 
-    typedef map<string,boost::shared_ptr<IObject> > PtrMap;    
-    typedef vector< boost::shared_ptr<IObject> > PtrVector;    
+    typedef map<string,boost::shared_ptr<IObject> > PtrMap;
+    typedef vector< boost::shared_ptr<IObject> > PtrVector;
 
     /// Zur Unterscheidung unterschiedlicher Berechnungsaufrufe in updateOutput bzw. writeOutput
     DCS_API Object(UIDSTR uid, string name);
@@ -43,7 +43,7 @@ public:
 
     DCS_API virtual void setName(const string name);
 
-    
+
     /// (Re-)Initialisiert das Objekt und schließt den Aufbau ab
     DCS_API virtual void init();
 
@@ -73,10 +73,10 @@ public:
 
 
 protected:
-    UIDSTR        
+    UIDSTR
         _uid;        ///< Zur eindeutige Zuordnung zu Preprozessorobjekten.
 
-    std::string 
+    std::string
         _name;        ///< Userdefinierter Bezeichner.
 
 };
@@ -86,7 +86,7 @@ protected:
 /** Map allgemeiner Objekte (Bauteil-Objektliste).
 Physikalische Anschlüsse, andere Container oder Funktionsobjekte, die
 sich nicht auf einen ISimType<T> abbilden lassen, können als Objekte übergeben
-werden. Die dazu verwendete Map verwendet als Schlüssel einen ID-String der 
+werden. Die dazu verwendete Map verwendet als Schlüssel einen ID-String der
 sich wie folgt zusammen setzt:
 
 Physikalischer Anschluss
@@ -96,7 +96,7 @@ allg. Objekte
 id = <Bezeichner des Objekt-Typs>_<fortlaufende Nummer>
 
 Innerhalb der create-Methode des Bauteils werden die Objekte von ObjectBase*
-auf den entsprechenden Typ gecastet und dereferenziert um den eigentlichen 
+auf den entsprechenden Typ gecastet und dereferenziert um den eigentlichen
 Konstruktor mit ein Referenz auf den "echten" Typen aufrufen zu können.
 Übersichtshalber werden die Objekte in der folgenden Reihenfolge übergeben:
 
@@ -114,6 +114,6 @@ COutputMech3D:    räumlich mechanisch
 
 Andere Objekte:
 */
-typedef std::vector<Object*> ObjectPtrArray;    
+typedef std::vector<Object*> ObjectPtrArray;
 
 

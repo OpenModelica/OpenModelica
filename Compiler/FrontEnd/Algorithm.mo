@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -172,7 +172,7 @@ algorithm
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    
+
     // assignment to a constant, report error
     case (lhs, _, rhs, _, DAE.ATTR(variability = SCode.CONST()), _, _)
       equation
@@ -206,7 +206,7 @@ algorithm
         rt_str = Types.unparseType(rt);
         info = DAEUtil.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
-        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, 
+        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
           {lhs_str, rhs_str, lt_str, rt_str}, info);
       then
         fail();
@@ -240,7 +240,7 @@ algorithm
       DAE.Exp rhs_1, e3, e1;
       DAE.Type t, ty;
       list<DAE.Exp> ea2;
-    
+
     case (DAE.CREF(componentRef = c, ty = _), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
@@ -295,7 +295,7 @@ algorithm
       DAE.Statement ass;
       list<DAE.Statement> rest_ass;
     case ({}, {}, {}, {}, _, _, _) then {};
-    case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
+    case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop,
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
       equation
         ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, attributes, initial_, source);
@@ -328,7 +328,7 @@ algorithm
       DAE.Properties rprop;
       list<DAE.Type> lhrtypes, tpl;
       list<DAE.TupleConst> clist;
-      
+
     case (lhs, lprop, rhs, rprop, _, _)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
@@ -358,11 +358,11 @@ algorithm
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
         lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
-         /* Don\'t use new rhs\', since type conversions of 
-            several output args are not clearly defined. */ 
+         /* Don\'t use new rhs\', since type conversions of
+            several output args are not clearly defined. */
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
-    // a tuple in rhs        
+    // a tuple in rhs
     case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
@@ -382,8 +382,8 @@ algorithm
         str1 = stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCodeDump.printInitialStr(initial_);
-        Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +& 
-          lhs_str +& " = " +& rhs_str +& 
+        Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +&
+          lhs_str +& " = " +& rhs_str +&
           "\n\tprops lhs: (" +& str1 +& ") =  props rhs: " +& str2 +&
           "\n\tin " +& strInitial +& " section");
       then
@@ -495,12 +495,12 @@ public function optimizeIf
   output list<Statement> ostmts "can be empty or selected branch";
 algorithm
   ostmts := match (icond, istmts, iels, isource)
-    local 
-      list<Statement> stmts; 
-      DAE.Else els; 
+    local
+      list<Statement> stmts;
+      DAE.Else els;
       DAE.ElementSource source;
       DAE.Exp cond;
-      
+
     case (DAE.BCONST(true), stmts, _, source) then stmts;
     case (DAE.BCONST(false), stmts, DAE.NOELSE(), source) then {};
     case (DAE.BCONST(false), _, DAE.ELSE(stmts), source) then stmts;
@@ -577,14 +577,14 @@ algorithm
       DAE.Type t;
       list<Statement> stmts;
       DAE.Dimensions dims;
-    
+
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
         DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
-    
+
     case (_, e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -615,14 +615,14 @@ algorithm
       DAE.Type t;
       list<Statement> stmts;
       DAE.Dimensions dims;
-    
+
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t, isArray, i, -1, e, stmts, inLoopPrlVars, source);
-    
+
     case (_, e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -661,7 +661,7 @@ algorithm
 end makeWhile;
 
 public function makeWhenA "function: makeWhenA
-  This function creates a DAE.STMT_WHEN algorithm construct, 
+  This function creates a DAE.STMT_WHEN algorithm construct,
   checking that the types of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;

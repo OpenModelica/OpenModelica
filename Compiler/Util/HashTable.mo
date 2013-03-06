@@ -12,7 +12,7 @@ encapsulated package HashTable "
   RCS: $Id$
 
   "
-  
+
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key       - The key used to uniquely define elements in a hashtable
@@ -31,10 +31,10 @@ public type Key = DAE.ComponentRef;
 public type Value = Integer;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref, FuncCrefEqual, FuncCrefStr, FuncExpStr>;
-public type HashTable = tuple<array<list<tuple<Key, Integer>>>, 
-                              tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>, 
-                              Integer, 
-                              Integer, 
+public type HashTable = tuple<array<list<tuple<Key, Integer>>>,
+                              tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
+                              Integer,
+                              Integer,
                               HashTableCrefFunctionsType>;
 
 partial function FuncHashCref

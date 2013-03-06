@@ -33,10 +33,10 @@ encapsulated package Causalize
 " file:        Causalize.mo
   package:     Causalize
   description: Causalize contains functions to causalize the equation system.
-               This includes algorithms to check if the system is singulare, 
+               This includes algorithms to check if the system is singulare,
                match the equations with variables and sorting to BLT-Form.
-         
-               
+
+
   RCS: $Id: Causalize.mo 14235 2013-01-23 04:34:35Z jfrenkel $"
 
 public import BackendDAE;
@@ -57,7 +57,7 @@ protected import Matching;
 /*
  * types
  *
- * 
+ *
  *
  */
 
@@ -74,9 +74,9 @@ public partial function StructurallySingularSystemHandlerFunc
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2; 
+  output array<Integer> outAssignments2;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-end StructurallySingularSystemHandlerFunc; 
+end StructurallySingularSystemHandlerFunc;
 
 public partial function matchingAlgorithmFunc
   input BackendDAE.EqSystem isyst;
@@ -102,7 +102,7 @@ public type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stat
 /*
  * public part
  *
- * 
+ *
  *
  */
 
@@ -110,7 +110,7 @@ public type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stat
  * protected part
  *
  */
- 
+
 
 
 /*****************************************
@@ -216,7 +216,7 @@ algorithm
   // free states matching information because there it is unkown if the state or the state derivative was matched
   ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
- 
+
 protected function freeStateAssignments
 "function freeStateAssignments
   author Frenkel TUD 2013-01
@@ -238,7 +238,7 @@ algorithm
     case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
   end match;
 end freeStateAssignments;
- 
+
 protected function foundSingularSystem
 "function: foundSingularSystem
   author: Frenkel TUD 2012-12
@@ -255,16 +255,16 @@ protected function foundSingularSystem
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2; 
+  output array<Integer> outAssignments2;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
-  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) := 
+  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) :=
   match(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
     case (_::_,_,_,_,_,_,_)
       equation
         singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-      then 
+      then
         fail();
   end match;
 end foundSingularSystem;
@@ -277,7 +277,7 @@ protected function singularSystemError
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-protected  
+protected
   Integer n;
   list<Integer> unmatched,unmatched1,vars;
   String eqn_str,var_str;
@@ -319,7 +319,7 @@ protected
 algorithm
   i := ass[e];
   b := intGt(i,0);
-  oAcc := List.consOnTrue(b,i,iAcc); 
+  oAcc := List.consOnTrue(b,i,iAcc);
 end getAssignedVars;
- 
+
 end Causalize;

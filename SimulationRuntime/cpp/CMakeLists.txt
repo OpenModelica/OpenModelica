@@ -8,7 +8,7 @@ SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE F
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
-#set mico paths 
+#set mico paths
 SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
 SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
 #set sundials solvers include and library directories
@@ -92,9 +92,9 @@ endif()
 
 #Mico corba
 if(USE_MICO)
-  find_library(MICO_LIBRARY  mico2313  
+  find_library(MICO_LIBRARY  mico2313
     PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  find_path(MICO_INCLUDE_DIR CORBA.h 
+  find_path(MICO_INCLUDE_DIR CORBA.h
      ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
   message(STATUS ${MICO_LIBRARY})
   message(STATUS ${MICO_INCLUDE_DIR})
@@ -161,7 +161,7 @@ set (KINSOL_LIB ${libKinsolName})
 endIf()
 
 GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
-GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME) 
+GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
 
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
@@ -191,7 +191,7 @@ set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 set (MATH_LIB ${libMathName})
 # configure a header file to pass some library names
-# to the source code which are used to dynamic load and instantiate 
+# to the source code which are used to dynamic load and instantiate
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/LibrariesConfig.h.in"
@@ -216,33 +216,33 @@ endif()
 
 
 MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
- 
+
 FOREACH(HEADER ${${HEADER_LIST}})
     STRING(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
     STRING(REPLACE Include "" DIR ${DIR})
 	#message(STATUS "coopy to "include/omc/cpp/${DIR})
 	INSTALL(FILES ${HEADER} DESTINATION include/omc/cpp/${DIR})
 ENDFOREACH(HEADER)
- 
+
 ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
- 
+
 
 
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
-install (FILES "Include/Core/DataExchange/IHistory.h" 
+install (FILES "Include/Core/DataExchange/IHistory.h"
   DESTINATION include/omc/cpp/Core/DataExchange)
- 
- 
+
+
  #copy Utils/extension
- SET(HS Include/Core/Object/IObject.h Include/Core/Object/Object.h  Include/Core/Utils/extension/adaptable_factory.hpp  Include/Core/Utils/extension/common.hpp Include/Core/Utils/extension/convenience.hpp 
-  Include/Core/Utils/extension/extension.hpp  Include/Core/Utils/extension/factory.hpp Include/Core/Utils/extension/factory_map.hpp Include/Core/Utils/extension/filesystem.hpp 
-  Include/Core/Utils/extension/parameter.hpp Include/Core/Utils/extension/parameter_map.hpp Include/Core/Utils/extension/registry.hpp Include/Core/Utils/extension/shared_library.hpp 
+ SET(HS Include/Core/Object/IObject.h Include/Core/Object/Object.h  Include/Core/Utils/extension/adaptable_factory.hpp  Include/Core/Utils/extension/common.hpp Include/Core/Utils/extension/convenience.hpp
+  Include/Core/Utils/extension/extension.hpp  Include/Core/Utils/extension/factory.hpp Include/Core/Utils/extension/factory_map.hpp Include/Core/Utils/extension/filesystem.hpp
+  Include/Core/Utils/extension/parameter.hpp Include/Core/Utils/extension/parameter_map.hpp Include/Core/Utils/extension/registry.hpp Include/Core/Utils/extension/shared_library.hpp
   Include/Core/Utils/extension/type_map.hpp
  Include/Core/Utils/extension/impl/adaptable_factory.hpp Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
  Include/Core/Utils/extension/impl/create.hpp  Include/Core/Utils/extension/impl/create_func.hpp Include/Core/Utils/extension/impl/decl.hpp
- Include/Core/Utils/extension/impl/factory.hpp Include/Core/Utils/extension/impl/factory_map.hpp Include/Core/Utils/extension/impl/function.hpp Include/Core/Utils/extension/impl/library_impl.hpp 
+ Include/Core/Utils/extension/impl/factory.hpp Include/Core/Utils/extension/impl/factory_map.hpp Include/Core/Utils/extension/impl/function.hpp Include/Core/Utils/extension/impl/library_impl.hpp
  Include/Core/Utils/extension/impl/shared_library.hpp Include/Core/Utils/extension/impl/typeinfo.hpp
-  Include/FMU/fmiModelFunctions.h Include/FMU/fmiModelTypes.h Include/FMU/fmu_model_interface.c Include/FMU/fmu_model_interface.h) 
+  Include/FMU/fmiModelFunctions.h Include/FMU/fmiModelTypes.h Include/FMU/fmu_model_interface.c Include/FMU/fmu_model_interface.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
-  
+

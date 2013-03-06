@@ -69,7 +69,7 @@ int allocateMixedSearchData(int size, void** voiddata)
   data->iterationVars = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
   data->iterationVars2 = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
   data->iterationVarsPre = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
-  
+
   data->stateofSearch = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
 
   ASSERT(*voiddata, "allocateMixedSearchData() voiddata failed!");
@@ -298,7 +298,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
         }
       }
     }
-    
+
     stepCount++;
     mixedIterations++;
 

@@ -1,5 +1,5 @@
 #pragma once
- 
+
 #pragma warning (disable: 4996)
 #ifndef BOOST_THREAD_USE_DLL
 #define BOOST_THREAD_USE_DLL
@@ -12,8 +12,8 @@
 #include <vector>
 #include <algorithm>
 #include <map>
-//#include <unordered_map> 
-#include <boost/unordered_map.hpp> 
+//#include <unordered_map>
+#include <boost/unordered_map.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>

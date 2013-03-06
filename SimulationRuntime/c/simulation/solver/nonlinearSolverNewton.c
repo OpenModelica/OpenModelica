@@ -471,7 +471,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     if(ACTIVE_STREAM(LOG_NLS_JAC))
     {
       char buffer[4096];
-      
+
       INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", *n, *n);
       INDENT(LOG_NLS_JAC);
       for(i=0; i<solverData->n;i++)

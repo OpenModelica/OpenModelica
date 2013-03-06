@@ -1,10 +1,10 @@
 #ifndef THREAD_H
-#define THREAD_H 
+#define THREAD_H
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
   #include <windows.h>
 
-  #define THREAD_RET_TYPE DWORD 
+  #define THREAD_RET_TYPE DWORD
     #define THREAD_RET_TYPE_NO_API DWORD
   typedef LPVOID THREAD_PARAM_TYPE;
 
@@ -27,7 +27,7 @@
 
 /**
  * Puts the current thread to sleep for the specified amount of milliseconds.
- */ 
+ */
 void delay(unsigned milliseconds);
 
 class Thread
@@ -79,7 +79,7 @@ class Semaphore
          bool TryWait();
          bool Post();
          bool Post(unsigned count);
-         
+
   private:
          Semaphore(const Semaphore&);
          Semaphore& operator= (const Semaphore&);

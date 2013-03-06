@@ -467,7 +467,7 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
     mmc_uint_t slots = MMC_HDRSLOTS(hdr);
     /*mmc_uint_t ctor = MMC_HDRCTOR(hdr);*/
     /*mmc_uint_t start = 0;*/
-    
+
     /* we should NOT have forward here! */
     assert(!MMC_HDR_IS_FORWARD(hdr));
 
@@ -480,7 +480,7 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
       /*}*/
       /*else*/
       /*  start = 0; */ /* do NOT ignore the fields slot! */
-      
+
       /*assert(slots > start);*/
       next = mmc_forward_vec(scan, slots, next, region_low, region_nbytes);
     }

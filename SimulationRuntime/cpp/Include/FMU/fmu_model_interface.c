@@ -29,7 +29,7 @@
  *
  */
 
- 
+
 // array of value references of states
 #if NUMBER_OF_STATES>0
 fmiValueReference vrStates[NUMBER_OF_STATES] = STATES;
@@ -81,7 +81,7 @@ fmiStatus Initialize(void* fmuData)
 // TODO    overwriteOldSimulationData(comp->fmuData);
 // TODO    return fmuFail;
 // TODO  }
-// TODO  
+// TODO
 // TODO  /* due to an event overwrite old values */
 // TODO  overwriteOldSimulationData(comp->fmuData);
 // TODO
@@ -94,7 +94,7 @@ void* fmuDataConstructor() //TODO Diese Funktion auf C++ anpassen
   /* intialize modelData */
   //TODO setupDataStruc(comp->fmuData);
   //TODO initializeDataStruc(comp->fmuData);
-  //TODO setupDataStruc2(comp->fmuData); 
+  //TODO setupDataStruc2(comp->fmuData);
 
   /* setup model data with default start data */
   //TODO setDefaultStartValues(comp);
@@ -157,7 +157,7 @@ void fmuDataEventUpdate()
   //TODO }
   //TODO }
   //TODO */
-  //TODO 
+  //TODO
   //TODO /*
   //TODO //Activate sample and evaluate again
   //TODO if (activateSampleEvents(comp->fmuData))
@@ -693,7 +693,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
       "fmiInitialize: toleranceControlled=%d relativeTolerance=%g",
       toleranceControlled, relativeTolerance);
   *eventInfo  = comp->eventInfo;
-   
+
   if(Initialize(comp->fmuData) == fmiOK)
   {
       comp->state = modelInitialized;

@@ -3,7 +3,7 @@ package CodegenJava
 import interface SimCodeTV;
 
 
-template translateModel(SimCode simCode) 
+template translateModel(SimCode simCode)
  "Generates Java code and Makefile for compiling and running a simulation of a
   Modelica model."
 ::=
@@ -14,15 +14,15 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
-     "" //empty result for true case 
+     "" //empty result for true case
   //else "" //the else is automatically empty, too
-  //this top-level template always returns an empty result 
+  //this top-level template always returns an empty result
   //since generated texts are written to files directly
 end translateModel;
 
 template translateFunctions(FunctionCode functionCode)
  "Generates Java code and Makefile for compiling and calling Modelica and
-  MetaModelica functions." 
+  MetaModelica functions."
 ::=
 match functionCode
 
@@ -39,7 +39,7 @@ template simulationFile(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-  
+
   <%simulationFileHeader(simCode)%>
   <%modelClassName(simCode)%>
   <%globalData(modelInfo)%>
@@ -63,10 +63,10 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   package simCodeJava; // solver package name
-  
+
   import java.io.IOException;
   import java.math.*;
-  
+
   >>
 end simulationFileHeader;
 
@@ -102,12 +102,12 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
 
   <%\t%>private static DATA localData = new DATA();
   <%\t%>//final time localData.timeValue = 0;
-    
+
   <%\t%>//final double $P$old$Ptime = localData.oldTime;
   <%\t%>//final double $P$current_step_size = globalData.current_stepsize;
-      
+
   <%\t%><%addGlobalInitialization(modelInfo)%>
-  
+
   >>
 end globalData;
 
@@ -130,7 +130,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.paramVars |> var =>
     globalDataInitialization(var, "parameters")
   ;separator="\n"%>
-  
+
   >>
 end addGlobalInitialization;
 
@@ -153,7 +153,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.paramVars |> var =>
     globalDataVarDefine(var, "parameters")
   ;separator="\n"%>
-  
+
   >>
 end addGlobalDefinition;
 
@@ -176,7 +176,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.paramVars |> var =>
     globalDataVarReverseDefine(var, "parameters")
   ;separator="\n"%>
-  
+
   >>
 end addVarReverseDefinition;
 
@@ -218,7 +218,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   <%\t%>static SuperModel temp = new <%dotPath(modelInfo.name)%>();
-      
+
   <%\t%>public static void main(String[] args) throws IOException
   <%\t%>{
   <%\t%><%\t%>JavaSolver.solver_main(temp, localData);
@@ -233,11 +233,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <%\t%>public <%dotPath(modelInfo.name)%>()
   <%\t%>{
   <%\t%><%\t%>//localData = data;
-      
+
   <%\t%><%\t%>//$Px = localData.states[0];
   <%\t%>//$P$DER$Px = localData.statesDerivatives[0];
   <%\t%>}
-    
+
   >>
 end functionModelConstructor;
 
@@ -245,19 +245,19 @@ template functionInitializeDataStruc()
  "Generates function in simulation file."
 ::=
   <<
-    // Used to initialize the data structure 
+    // Used to initialize the data structure
     /*
     public DATA initializeDataStruc(DATA_FLAGS flags)
     {
-      DATA returnData = new DATA(fortran_integer, fortran_integer, fortran_integer, long, long, 
+      DATA returnData = new DATA(fortran_integer, fortran_integer, fortran_integer, long, long,
         fortran_integer, long, long, long, long, long);
-    
+
       return returnData;
     }
     */
-      
+
   >>
-end functionInitializeDataStruc; 
+end functionInitializeDataStruc;
 
 template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
  "Generates function in simulation file."
@@ -265,17 +265,17 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
 match extObjInfo
 case EXTOBJINFO(__) then
   <<
-    protected void finalize () 
+    protected void finalize ()
     {
       System.out.println("memsucker %d destroyed...\n");
     }
-    
+
     // used to deinitialize the data structure
     public void deInitializeDataStruc(DATA data, DATA_FLAGS flags)
     {
-      /* In java, memory deallocation is automatically handled. so no need to free the memory explicitly. */ 
+      /* In java, memory deallocation is automatically handled. so no need to free the memory explicitly. */
     }
-    
+
   >>
 end functionDeInitializeDataStruc;
 
@@ -287,12 +287,12 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
     public int input_function()
     {
-      <%vars.inputVars |> SIMVAR(__) hasindex i0 => 
+      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
       '<%cref(name)%> = localData.inputVars[<%i0%>];'
       ;separator="\n"%>
       return 0;
     }
-    
+
   >>
 end functionInput;
 
@@ -304,12 +304,12 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
     public int output_function()
     {
-      <%vars.outputVars |> SIMVAR(__) hasindex i0 => 
+      <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
       'localData.outputVars[<%i0%>] = <%cref(name)%>;'
       ;separator="\n"%>
       return 0;
     }
-    
+
   >>
 end functionOutput;
 
@@ -325,34 +325,34 @@ template functionDaeRes()
       double[] statesBackup;
       double[] statesDerivativesBackup;
       double timeBackup;
-    
+
       statesBackup = localData.states;
       statesDerivativesBackup = localData.statesDerivatives;
       timeBackup = localData.timeValue;
       localData.states = x;
-    
+
       for (i = 0; i < localData.nStates; i++) {
         temp_xd[i] = localData.statesDerivatives[i];
       }
-    
+
       localData.statesDerivatives = temp_xd;
       localData.timeValue = t;
-    
+
       functionODE();
-    
+
       /* get the difference between the temp_xd(=localData->statesDerivatives)
         and xd(=statesDerivativesBackup) */
       for (i = 0; i < localData.nStates; i++) {
         delta[i] = localData.statesDerivatives[i] - statesDerivativesBackup[i];
       }
-    
+
       localData.states = statesBackup;
       localData.statesDerivatives = statesDerivativesBackup;
       localData.timeValue = timeBackup;
-    
+
       return 0;
     }
-    
+
   >>
 end functionDaeRes;
 
@@ -370,18 +370,18 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<
-    /* 
+    /*
      * extern int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
     */
     public int function_storeDelayed()
     {
       <%varDecls%>
-  
+
       <%storePart%>
-  
+
       return 0;
     }
-    
+
   >>
 end functionStoreDelayed;
 
@@ -396,16 +396,16 @@ template functionODE(list<SimEqSystem> derivativEquations, ModelInfo modelInfo)
       public int functionODE(DATA localData)
       {
         <%addGlobalDefinition(modelInfo)%>
-           
+
       <%varDecls%>
-  
+
       <%odeEquations%>
-      
+
       <%addVarReverseDefinition(modelInfo)%>
-          
+
         return 0;
       }
-    
+
   }// end main class
 
   >>
@@ -479,7 +479,7 @@ case BINARY(__) then
   case DIV(__) then '(<%e1%> / <%e2%>)'
   case POW(__) then 'Math.pow(<%e1%>, <%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  else "daeExpBinary:ERR" 
+  else "daeExpBinary:ERR"
 end daeExpBinary;
 
 template daeExpUnary(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -550,7 +550,7 @@ case rel as RELATION(__) then
     case EQUAL(ty = T_STRING(__))     then '(<%e1%>.equals(<%e2%>))'
     case EQUAL(ty = T_INTEGER(__))        then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = T_ENUMERATION(__))then '(<%e1%> == <%e2%>)'    
+    case EQUAL(ty = T_ENUMERATION(__))then '(<%e1%> == <%e2%>)'
     case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = T_STRING(__))    then '(!<%e1%>.equals(<%e2%>))'
     case NEQUAL(ty = T_INTEGER(__))       then '(<%e1%> != <%e2%>)'
@@ -582,7 +582,7 @@ case IFEXP(__) then
       let condVar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
       let resVarType = expTypeFromExpArrayIf(expThen)
       let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
-      let &preExp +=  
+      let &preExp +=
       <<
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
@@ -608,11 +608,11 @@ end daeExpIf;
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // let var3 = Util.escapeModelicaStringToCString(string)
     // 'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
-  
-  // case CALL(attr=CALL_ATTR(ty=ty), 
+
+  // case CALL(attr=CALL_ATTR(ty=ty),
             // path=IDENT(name="DIVISION_ARRAY_SCALAR"),
             // expLst={e1, e2, DAE.SCONST(string=string)}) then
-    // let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+    // let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         // case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         // else "real_array"
     // let var = tempDecl(type, &varDecls)
@@ -621,7 +621,7 @@ end daeExpIf;
     // let var3 = Util.escapeModelicaStringToCString(string)
     // let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>,"<%var3%>");<%\n%>'
     // '<%var%>'
-  
+
   // case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     // '$P$DER<%cref(arg.componentRef)%>'
 
@@ -630,36 +630,36 @@ end daeExpIf;
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::max(<%var1%>,<%var2%>)'
-  
+
   // case CALL(ty = T_INTEGER(),
             // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
-  
+
   // case CALL(ty = T_ENUMERATION(__),
             // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
-    // 'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'  
-  
+    // 'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+
   // case CALL( ty = T_REAL(),
             // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::min(<%var1%>,<%var2%>)'
-  
+
   // case CALL(
             // path=IDENT(name="abs"), expLst={e1}, ty = T_INTEGER()) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // 'std::abs(<%var1%>)'
-  
+
   // case CALL(
             // path=IDENT(name="abs"), expLst={e1}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // 'fabs(<%var1%>)'
-  
-   // sqrt 
+
+   // sqrt
   // case CALL(
             // path=IDENT(name="sqrt"),
             // expLst={e1}) then
@@ -674,27 +674,27 @@ end daeExpIf;
     // let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     // let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
     // if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-  
+
   // case CALL(
             // path=IDENT(name="div"), expLst={e1,e2}, ty = T_INTEGER()) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'ldiv(<%var1%>,<%var2%>).quot'
-  
+
   // case CALL(
             // path=IDENT(name="div"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'trunc(<%var1%>/<%var2%>)'
-  
+
   // case CALL(
             // path=IDENT(name="mod"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
-    
 
-  //some expression type Arrays are missed 
+
+  //some expression type Arrays are missed
 
 
   // case CALL(
@@ -704,7 +704,7 @@ end daeExpIf;
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // let typeStr = expTypeFromExpShort(e1)
     // 'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
-  
+
   // case CALL(
             // path=IDENT(name="String"),
             // expLst={s, format}) then
@@ -714,7 +714,7 @@ end daeExpIf;
     // let typeStr = expTypeFromExpModelica(s)
     // let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     // '<%tvar%>'
-  
+
 
   // case CALL(
             // path=IDENT(name="String"),
@@ -726,7 +726,7 @@ end daeExpIf;
     // let typeStr = expTypeFromExpModelica(s)
     // let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     // '<%tvar%>'
-  
+
   // case CALL(
             // path=IDENT(name="String"),
             // expLst={s, minlen, leftjust, signdig}) then
@@ -737,7 +737,7 @@ end daeExpIf;
     // let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     // '<%tvar%>'
-  
+
   // case CALL(
             // path=IDENT(name="delay"),
             // expLst={ICONST(integer=index), e, d, delayMax}) then
@@ -747,19 +747,19 @@ end daeExpIf;
     // let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     // '<%tvar%>'
-  
+
   // case CALL(
             // path=IDENT(name="integer"),
             // expLst={toBeCasted}) then
     // let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // '((modelica_integer)<%castedVar%>)'
-  
+
   // case CALL(
             // path=IDENT(name="Integer"),
             // expLst={toBeCasted}) then
     // let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // '((modelica_integer)<%castedVar%>)'
-  
+
   // case CALL(path=IDENT(name="clock"), expLst={}) then
     // 'mmc_clock()'
 
@@ -767,12 +767,12 @@ end daeExpIf;
             // path=IDENT(name="noEvent"),
             // expLst={e1}) then
     // daeExp(e1, context, &preExp, &varDecls)
-  
+
   // case CALL(
             // path=IDENT(name="anyString"),
             // expLst={e1}) then
     // 'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'
-  
+
   // case CALL(
             // path=IDENT(name="mmc_get_field"),
             // expLst={s1, ICONST(integer=i)}) then
@@ -780,12 +780,12 @@ end daeExpIf;
     // let expPart = daeExp(s1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     // '<%tvar%>'
-  
+
   // case CALL( path=IDENT(name = "mmc_unbox_record"),
             // expLst={s1}, ty=ty) then
     // let argStr = daeExp(s1, context, &preExp, &varDecls)
     // unboxRecord(argStr, ty, &preExp, &varDecls)
-  
+
   // case exp as CALL(__) then
     // let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     // let funName = '<%underscorePath(path)%>'
@@ -884,9 +884,9 @@ end scalarLhsCref;
 template functionName(ComponentRef cr)
 ::=
   match cr
-  case CREF_IDENT(__) then 
+  case CREF_IDENT(__) then
     System.stringReplace(ident, "_", "__")
-  case CREF_QUAL(__) then 
+  case CREF_QUAL(__) then
     '<%System.stringReplace(ident, "_", "__")%>_<%functionName(componentRef)%>'
 end functionName;
 
@@ -917,7 +917,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   case cref as CREF(componentRef=cr, ty=ty) then
      let cast = match ty case T_INTEGER(__) then "(int)" //else ""
       '<%cast%><%cref(cr)%>'
-   
+
 end daeExpCrefRhs;
 
 template crefStr(ComponentRef cr)
@@ -945,7 +945,7 @@ template subscriptStr(Subscript subscript)
   let &preExp = buffer ""
   let &varDecls = buffer ""
   match subscript
-  case INDEX(__) 
+  case INDEX(__)
   case SLICE(__) then daeExp(exp, contextFunction, &preExp, &varDecls)
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
@@ -995,7 +995,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       'modelica_<%expTypeShort(ty)%>'
     else match ty case T_COMPLEX(__) then
-      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>' // alachew 'struct <%underscorePath(name)%>' // 
+      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>' // alachew 'struct <%underscorePath(name)%>' //
     else
       'modelica_<%expTypeShort(ty)%>'
   case 3 then
@@ -1042,16 +1042,16 @@ template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case T_INTEGER(__)         then "integer"  
+  case T_INTEGER(__)         then "integer"
   case T_REAL(__)        then "real"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "boolean"
-  case T_ENUMERATION(__) then "integer"  
+  case T_ENUMERATION(__) then "integer"
   // alachew case T_OTHER(__)       then "complex"
-  case T_ARRAY(__)       then expTypeShort(ty)   
+  case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
-  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>' // alachew 'struct <%underscorePath(name)%>'  
+  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>' // alachew 'struct <%underscorePath(name)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
@@ -1062,14 +1062,14 @@ template replaceDotAndUnderscore(String str)
 ::=
   match str
   case name then
-    let str_dots = System.stringReplace(name,".", "_")  
+    let str_dots = System.stringReplace(name,".", "_")
     let str_underscores = System.stringReplace(str_dots, "_", "__")
     '<%str_underscores%>'
 end replaceDotAndUnderscore;
 
 template underscorePath(Path path)
  "Generate paths with components separated by underscores.
-  Replaces also the . in identifiers with _. 
+  Replaces also the . in identifiers with _.
   The dot might happen for world.gravityAccleration"
 ::=
   match path
@@ -1212,7 +1212,7 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
 ::=
   <<
 
-  
+
   >>
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationFunctionsFile;
@@ -1228,17 +1228,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   let libsPos2 = if dirExtra then libsStr // else ""
   <<
   # Makefile generated by OpenModelica
-  
+
   #top_dir = /c/OpenModelica/java_runtime/
   #simulation_dir = $(top_dir)simCodeJava/
-  
+
   #all: copy
-  
+
   #copy:
-  #<%\t%>cp TestModel.java $(simulation_dir) 
-  #<%\t%>cp TestModel_init.txt $(top_dir) 
-  #<%\t%>(cd $(top_dir); make -f Makefile) 
-      
+  #<%\t%>cp TestModel.java $(simulation_dir)
+  #<%\t%>cp TestModel_init.txt $(top_dir)
+  #<%\t%>(cd $(top_dir); make -f Makefile)
+
   JFLAGS = -g
   JC = javac
   .SUFFIXES: .java .class
@@ -1252,7 +1252,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   simulation_dir = $(top_dir)java_runtime/simCodeJava/
 
   CLASSES = \
-  <%\t%>simCodeJava/<%fileNamePrefix%>.java 
+  <%\t%>simCodeJava/<%fileNamePrefix%>.java
   #<%\t%>$(simulation_dir)/JavaSolver.java \
 
   default: all
@@ -1271,8 +1271,8 @@ template simulationInitFile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)), 
-             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__))) 
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)),
+             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
   then
   <<
   <%s.startTime%> // start value
@@ -1297,17 +1297,17 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%initVals(vars.intParamVars)%>
   <%initVals(vars.intAlgVars)%>
   <%initVals(vars.boolParamVars)%>
-  <%initVals(vars.boolAlgVars)%>    
+  <%initVals(vars.boolAlgVars)%>
   <%initVals(vars.stringParamVars)%>
-  <%initVals(vars.stringAlgVars)%>  
+  <%initVals(vars.stringAlgVars)%>
   >>
 end simulationInitFile;
 
 template initVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
   <<
-  <%match initialValue 
-      case SOME(v) then 
+  <%match initialValue
+      case SOME(v) then
         match v
         case ICONST(__) then integer
         case RCONST(__) then real
@@ -1316,8 +1316,8 @@ template initVals(list<SimVar> varsLst) ::=
         case ENUM_LITERAL(__) then '<%index%>'
         else "*ERROR* initial value of unknown type"
       else "0.0 //default"
-    %> 
-    >>  
+    %>
+    >>
   ;separator="\n"
 end initVals;
 
@@ -1328,7 +1328,7 @@ template functionsFile(String filePrefix,
  "Generates the contents of the main C file for the function case."
 ::=
   <<
-  
+
   >>
 end functionsFile;
 
@@ -1337,7 +1337,7 @@ template externalFunctionIncludes(list<String> includes)
 ::=
 
   <<
- 
+
 
   >>
 end externalFunctionIncludes;

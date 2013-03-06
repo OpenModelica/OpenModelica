@@ -1,9 +1,9 @@
 #pragma once
- 
+
 #include "textfilewriter.h"
 
 
-template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3> 
+template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
 struct BufferReaderWriter
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
@@ -25,7 +25,7 @@ public:
         }
     }
     /**
-    Reads all Simulation results (algebraic and state variables in R, derivatives in dR) 
+    Reads all Simulation results (algebraic and state variables in R, derivatives in dR)
     Rij i variable index
     j number of time index
     */
@@ -49,7 +49,7 @@ public:
 
 
     }
-    
+
     void read(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re)
     {
         try
@@ -73,7 +73,7 @@ public:
 
 
     }
-    
+
     void read(ublas::matrix<double>& R,vector<unsigned int>& indices)
     {
         ublas::matrix<double>::size_type m = size();
@@ -81,8 +81,8 @@ public:
         ublas::matrix<double>::size_type i,i2=0,j;
         try
         {
-            
-            
+
+
             R.resize(n,m);
         }
         catch(std::exception& ex)
@@ -114,7 +114,7 @@ public:
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
-            throw std::runtime_error("getVariables: time parameters");  
+            throw std::runtime_error("getVariables: time parameters");
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
     }
@@ -125,7 +125,7 @@ public:
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
-            throw std::runtime_error("getVariables: time parameters");  
+            throw std::runtime_error("getVariables: time parameters");
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
         r = _residues_buffer[iter->second];
@@ -167,7 +167,7 @@ public:
 
         // textwriter->write(v,v2, time);
     }
-    
+
     void write(const ublas::vector<double>& v,const ublas::vector<double>& v2,const ublas::vector<double>& v3,double time)
     {
         try
@@ -202,7 +202,7 @@ public:
         try
         {
             std::pair<double,unsigned long> i;
-            BOOST_FOREACH(i, _time_entries) 
+            BOOST_FOREACH(i, _time_entries)
             {
                 time.push_back(i.first);
 
@@ -240,7 +240,7 @@ public:
     typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
     typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
     typedef ublas::vector<double, ublas::bounded_array<double,dim_3> > value_type_r;
-protected:    
+protected:
     typedef boost::circular_buffer<  value_type_v   > buffer_type_v;
     typedef boost::circular_buffer<  value_type_dv   > buffer_type_d;
     typedef boost::circular_buffer<  value_type_r   > buffer_type_r;
@@ -251,7 +251,7 @@ protected:
     _time_entries_type _time_entries;
     unsigned long  _buffer_pos;
 
-    //private:    
+    //private:
     //TextwriterType* textwriter;
 
 };

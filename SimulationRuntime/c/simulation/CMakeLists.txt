@@ -1,5 +1,5 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
-# CMakefile for compilation of OMC 
+# CMakefile for compilation of OMC
 
 # Subdirectorys
 ADD_SUBDIRECTORY(libf2c)
@@ -15,8 +15,8 @@ SET(simulation_sources  options.c simulation_input_xml.cpp simulation_runtime.cp
 						modelinfo.c simulation_info_xml.c)
 
 SET(simulation_headers options.h simulation_input_xml.h simulation_runtime.h modelinfo.h simulation_info_xml.h
-					../linearization/linearize.h ../simulation_data.h ../omc_inline.h ../util/omc_msvc.h ../openmodelica.h ../openmodelica_func.h)				 
-						 
+					../linearization/linearize.h ../simulation_data.h ../omc_inline.h ../util/omc_msvc.h ../openmodelica.h ../openmodelica_func.h)
+
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)
 ADD_LIBRARY(simulation ${simulation_sources} ${simulation_headers})
@@ -25,5 +25,5 @@ ADD_LIBRARY(simulation ${simulation_sources} ${simulation_headers})
 # Install
 INSTALL(TARGETS simulation
 		ARCHIVE DESTINATION lib/omc)
-		
+
 #INSTALL(FILES ${simulation_headers} DESTINATION include)

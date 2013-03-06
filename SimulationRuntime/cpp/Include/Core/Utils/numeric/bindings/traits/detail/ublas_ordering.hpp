@@ -1,12 +1,12 @@
 /*
- * 
- * Copyright (c) Kresimir Fresl 2002 
+ *
+ * Copyright (c) Kresimir Fresl 2002
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
  *
- * Author acknowledges the support of the Faculty of Civil Engineering, 
+ * Author acknowledges the support of the Faculty of Civil Engineering,
  * University of Zagreb, Croatia.
  *
  */
@@ -14,7 +14,7 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_DETAIL_UBLAS_ORDERING_H
 #define BOOST_NUMERIC_BINDINGS_TRAITS_DETAIL_UBLAS_ORDERING_H
 
-#include <boost/numeric/ublas/fwd.hpp> 
+#include <boost/numeric/ublas/fwd.hpp>
 
 namespace boost { namespace numeric { namespace bindings { namespace traits {
 
@@ -22,11 +22,11 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 
     template <typename StOrdTag>
     struct ublas_ordering {};
-    
-    template<> 
+
+    template<>
     struct ublas_ordering<boost::numeric::ublas::row_major_tag> {
-      typedef row_major_t                        type; 
-      typedef boost::numeric::ublas::row_major   functor_type; 
+      typedef row_major_t                        type;
+      typedef boost::numeric::ublas::row_major   functor_type;
 
       template <typename M>
       static typename M::size_type leading_dimension( M const& m ) {
@@ -43,11 +43,11 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
         return 1 ;
       }
     };
-    
-    template<> 
+
+    template<>
     struct ublas_ordering<boost::numeric::ublas::column_major_tag> {
-      typedef column_major_t                        type; 
-      typedef boost::numeric::ublas::column_major   functor_type; 
+      typedef column_major_t                        type;
+      typedef boost::numeric::ublas::column_major   functor_type;
 
       template <typename M>
       static typename M::size_type leading_dimension( M const& m ) {
@@ -67,8 +67,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 
     template <typename StOrdTag>
     struct ublas_banded_ordering {};
-    
-    template<> 
+
+    template<>
     struct ublas_banded_ordering<boost::numeric::ublas::row_major_tag> {
 
       template <typename M>
@@ -86,8 +86,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
         return leading_dimension(m)-1 ;
       }
     };
-    
-    template<> 
+
+    template<>
     struct ublas_banded_ordering<boost::numeric::ublas::column_major_tag> {
 
       template <typename M>
@@ -109,4 +109,4 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 
 }}}}
 
-#endif 
+#endif

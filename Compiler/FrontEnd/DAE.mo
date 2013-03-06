@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -63,7 +63,7 @@ public uniontype VarKind
   record VARIABLE "variable" end VARIABLE;
   record DISCRETE "discrete" end DISCRETE;
   record PARAM "parameter"   end PARAM;
-  record CONST "constant"    end CONST;  
+  record CONST "constant"    end CONST;
 end VarKind;
 
 public uniontype ConnectorType
@@ -309,17 +309,17 @@ public uniontype Element
     list<Exp> functionArgs;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end NORETCALL;
-  
+
   record CONSTRAINT " constraint section"
     Constraint constraints;
     ElementSource source "the origin of the component/equation/algorithm" ;
-  end CONSTRAINT;  
-  
+  end CONSTRAINT;
+
   record CLASS_ATTRIBUTES
     ClassAttributes classAttrs;
   end CLASS_ATTRIBUTES;
-    
-  
+
+
 end Element;
 
 public constant Type T_ASSERTIONLEVEL = T_ENUMERATION(NONE(), Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")), {"error","warning"}, {}, {}, emptyTypeSource);
@@ -351,7 +351,7 @@ public uniontype InlineType
 
   record EARLY_INLINE "Inline even earlier than NORM_INLINE. This will display the inlined code in the flattened model and also works for functions calling other functions that should be inlined."
   end EARLY_INLINE;
-  
+
   record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
   end NO_INLINE;
 
@@ -475,7 +475,7 @@ public uniontype Distribution
     Exp name;
     Exp params;
     Exp paramNames;
-  end DISTRIBUTION;    
+  end DISTRIBUTION;
 end Distribution;
 
 public uniontype ExtArg
@@ -618,7 +618,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_FOR;
-  
+
   record STMT_PARFOR
     Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
@@ -676,7 +676,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record STMT_BREAK
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_BREAK;
-  
+
   record STMT_ARRAY_INIT "For function initialization"
     String name;
     Type ty;
@@ -749,8 +749,8 @@ uniontype Attributes "- Attributes"
   end ATTR;
 end Attributes;
 
-public 
-constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()); 
+public
+constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrParam = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrConst = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
@@ -778,13 +778,13 @@ end Binding;
 
 public
 type EqualityConstraint = Option<tuple<Absyn.Path, Integer, InlineType>>
-  "contains the path to the equalityConstraint function, 
+  "contains the path to the equalityConstraint function,
    the dimension of the output and the inline type of the function";
 
 public type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
 public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
 
-// default constants that can be used 
+// default constants that can be used
 public constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
 public constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
 public constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
@@ -811,10 +811,10 @@ public constant Type T_ARRAY_BOOL_NODIM    = T_ARRAY(T_BOOL_DEFAULT,{DIM_UNKNOWN
 public constant Type T_ARRAY_STRING_NODIM  = T_ARRAY(T_STRING_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
 
 public uniontype Type "models the different front-end and back-end types"
-  
+
   record T_INTEGER
     list<Var> varLst;
-    TypeSource source;  
+    TypeSource source;
   end T_INTEGER;
 
   record T_REAL
@@ -841,9 +841,9 @@ public uniontype Type "models the different front-end and back-end types"
     TypeSource source;
   end T_ENUMERATION;
 
-  record T_ARRAY 
-    "an array can be represented in two equivalent ways: 
-       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+  record T_ARRAY
+    "an array can be represented in two equivalent ways:
+       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
        2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
        In general Inst generates 1 and all the others generates 2"
     Type ty "Type";
@@ -852,11 +852,11 @@ public uniontype Type "models the different front-end and back-end types"
   end T_ARRAY;
 
   record T_NORETCALL "For functions not returning any values."
-    TypeSource source; 
+    TypeSource source;
   end T_NORETCALL;
 
   record T_UNKNOWN "Used when type is not yet determined"
-    TypeSource source; 
+    TypeSource source;
   end T_UNKNOWN;
 
   record T_COMPLEX
@@ -865,7 +865,7 @@ public uniontype Type "models the different front-end and back-end types"
     EqualityConstraint equalityConstraint;
     TypeSource source;
   end T_COMPLEX;
-  
+
   record T_SUBTYPE_BASIC
     ClassInf.State complexClassType "complexClassType ; The type of a class" ;
     list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
@@ -880,18 +880,18 @@ public uniontype Type "models the different front-end and back-end types"
     FunctionAttributes functionAttributes;
     TypeSource source;
   end T_FUNCTION;
-  
+
   record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
     Type functionType "the type of the function";
     TypeSource source;
   end T_FUNCTION_REFERENCE_VAR;
-  
+
   record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
     Boolean builtin;
     Type functionType "type of the non-boxptr function";
     TypeSource source;
   end T_FUNCTION_REFERENCE_FUNC;
-  
+
   record T_TUPLE
     list<Type> tupleType "tupleType ; For functions returning multiple values.";
     TypeSource source;
@@ -953,12 +953,12 @@ public uniontype Type "models the different front-end and back-end types"
     String name;
     TypeSource source;
   end T_METAPOLYMORPHIC;
-  
+
   record T_METATYPE "this type contains all the meta types"
     Type ty;
     TypeSource source;
   end T_METATYPE;
-  
+
 end Type;
 
 public uniontype CodeType
@@ -967,7 +967,7 @@ public uniontype CodeType
 
   record C_TYPENAME
   end C_TYPENAME;
-  
+
   record C_VARIABLENAME
   end C_VARIABLENAME;
 
@@ -994,14 +994,14 @@ public
 uniontype FunctionBuiltin
   record FUNCTION_NOT_BUILTIN "Function is not builtin"
   end FUNCTION_NOT_BUILTIN;
-  
+
   record FUNCTION_BUILTIN "Function is builtin"
     Option<String> name;
   end FUNCTION_BUILTIN;
-  
+
   record FUNCTION_BUILTIN_PTR "The function has a body, but its function pointer is builtin. This means inline code+optimized pointer if need be."
   end FUNCTION_BUILTIN_PTR;
-  
+
 end FunctionBuiltin;
 
 //This was a function restriction in SCode and Absyn
@@ -1164,7 +1164,7 @@ uniontype Mod "Modification"
 end Mod;
 
 /* -- End Types.mo -- */
-  
+
 public
 uniontype Exp "Expressions
     The `Exp\' datatype closely corresponds to the `Absyn.Exp\'
@@ -1173,7 +1173,7 @@ uniontype Exp "Expressions
     operators. It also contains expression indexing with the `ASUB\'
     constructor.  Indexing arbitrary array expressions is currently
     not supported in Modelica, but it is needed here.
-    
+
     When making additions, update at least the following functions:
     * Expression.traverseExp
     * Expression.traverseExpTopDown
@@ -1230,7 +1230,7 @@ uniontype Exp "Expressions
 
   record RELATION "Relation, e.g. a <= 0
     Index contains normal an Integer for every ZeroCrossing
-    but if Relation is in algorithm with for loop the iterator and the range 
+    but if Relation is in algorithm with for loop the iterator and the range
     of static iterator is needed for codegen"
     Exp exp1;
     Operator operator;
@@ -1307,9 +1307,9 @@ uniontype Exp "Expressions
     Type ty;
   end CODE;
 
-  record EMPTY 
-    "an empty expression, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are 
-     constants with no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate 
+  record EMPTY
+    "an empty expression, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are
+     constants with no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate
      the model.
      From Modelica specification: a package may we look inside should not be partial in a simulation model!"
     String scope "the scope where we could not find the binding";
@@ -1352,7 +1352,7 @@ uniontype Exp "Expressions
     list<String> fieldNames;
     Integer index; //Index in the uniontype
   end METARECORDCALL;
-  
+
   record MATCHEXPRESSION
     MatchType matchType;
     list<Exp> inputs;
@@ -1360,7 +1360,7 @@ uniontype Exp "Expressions
     list<MatchCase> cases;
     Type et;
   end MATCHEXPRESSION;
-  
+
   record BOX "MetaModelica boxed value"
     Exp exp;
   end BOX;
@@ -1369,7 +1369,7 @@ uniontype Exp "Expressions
     Exp exp;
     Type ty;
   end UNBOX;
-  
+
   record SHARED_LITERAL
     "Before code generation, we make a pass that replaces constant literals
     with a SHARED_LITERAL expression. Any immutable type can be shared:
@@ -1378,7 +1378,7 @@ uniontype Exp "Expressions
     Integer index;
     Type ty "The type is required for code generation to work properly";
   end SHARED_LITERAL;
-  
+
   record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
     Pattern pattern;
   end PATTERN;
@@ -1591,11 +1591,11 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     Type ty;
   end AND;
 
-  record OR 
+  record OR
     Type ty;
   end OR;
 
-  record NOT 
+  record NOT
     Type ty;
   end NOT;
 
@@ -1633,7 +1633,7 @@ public
 uniontype ComponentRef "- Component references
     CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
     CREF_IDENT(..) is used for non-qualifed component names, e.g. x"
-  
+
   record CREF_QUAL
     Ident ident;
     Type identType "type of the identifier, without considering the subscripts";
@@ -1653,7 +1653,7 @@ uniontype ComponentRef "- Component references
     Type identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
   end CREF_ITER;
-  
+
   record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
     ComponentRef componentRef;
     String instant;
@@ -1677,7 +1677,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   record INDEX
     Exp exp "a[i+1]" ;
   end INDEX;
-  
+
   record WHOLE_NONEXP "Used for non-expanded arrays. Should probably be combined with WHOLEDIM
     into one case with Option<Exp> argument."
     Exp exp;

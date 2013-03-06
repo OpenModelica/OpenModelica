@@ -1,5 +1,5 @@
 #pragma once
- 
+
 class IAlgLoop;
 
 /*****************************************************************************/
@@ -9,7 +9,7 @@ Abstract interface class for numerical methods for the (possibly iterative)
 solution of algebraic loops in open modelica.
 
 \date     September, 1st, 2008
-\author   
+\author
 
 */
 /*****************************************************************************
@@ -19,7 +19,7 @@ class IAlgLoopSolver
 {
 
 public:
-    /// Enumeration to control the time integration 
+    /// Enumeration to control the time integration
     enum SOLVERCALL
     {
         UNDEF_CALL        =    0x00000000,

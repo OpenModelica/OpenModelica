@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -39,7 +39,7 @@
 enum _FLAG
 {
   FLAG_UNKNOWN = 0,
-  
+
   FLAG_CLOCK,
   FLAG_CPU,
   FLAG_F,
@@ -63,17 +63,17 @@ enum _FLAG
   FLAG_R,
   FLAG_S,
   FLAG_W,
-  
+
   FLAG_MAX
 };
 
 enum _FLAG_TYPE
 {
   FLAG_TYPE_UNKNOWN = 0,
-  
+
   FLAG_TYPE_FLAG,         /* e.g. -f */
   FLAG_TYPE_OPTION,       /* e.g. -f=value or -f value */
-  
+
   FLAG_TYPE_MAX
 };
 

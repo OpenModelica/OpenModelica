@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -65,7 +65,7 @@ algorithm
     local
       String file, strIMatrix, strVariables, flatStr, strEquations;
       array<list<String>> m;
-    
+
     case (_, _, flatStr)
       equation
         file = stringAppend(fileNamePrefix, "_imatrix.m");
@@ -94,7 +94,7 @@ algorithm
       list<BackendDAE.Equation> eqnsl;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wcLst;
-    
+
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}, shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst))))
       equation
         eqnsl = BackendEquation.equationList(eqns);
@@ -118,7 +118,7 @@ algorithm
       String s1,s2,s3,res;
       DAE.Exp e1,e2,e,condition;
       DAE.ComponentRef cr;
-    
+
     case (BackendDAE.EQUATION(exp = e1,scalar = e2), _)
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -126,7 +126,7 @@ algorithm
         res = stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
-    
+
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2), _)
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -134,15 +134,15 @@ algorithm
         res = stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
-        
+
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2), _)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({"'", s1," = ",s2, ";'"});
       then
-        res;        
-    
+        res;
+
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -150,7 +150,7 @@ algorithm
         res = stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
-    
+
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,left = cr,right = e2)), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -159,14 +159,14 @@ algorithm
         res = stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),_)
       equation
         s1 = ExpressionDump.printExpStr(e);
         res = stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
-    
+
     case (BackendDAE.ALGORITHM(alg=_),_)
       equation
         res = stringAppendList({"Algorithm\n"});
@@ -460,7 +460,7 @@ algorithm
       BackendDAE.WhenEquation we;
       list<list<String>> lstres;
       DAE.Algorithm alg;
-    
+
     // equation
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
@@ -469,7 +469,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    
+
     // array equation
     case (vars,BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
       equation
@@ -478,7 +478,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    
+
     // complex equation
     case (vars,BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
       equation
@@ -486,8 +486,8 @@ algorithm
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
-        res;    
-    
+        res;
+
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
@@ -496,7 +496,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    
+
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
@@ -505,14 +505,14 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    
+
     // residual equation
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e))
       equation
         res = incidenceRowExp(e, vars);
       then
         res;
-    
+
     // when equation
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we))
       equation
@@ -523,20 +523,20 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    
+
    // ALGORITHM For now assume that algorithm will be solvable for correct
    // variables. I.e. find all variables in algorithm and add to lst.
    // If algorithm later on needs to be inverted, i.e. solved for
    // different variables than calculated, a non linear solver or
    // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(alg=alg)) 
+    case (vars,BackendDAE.ALGORITHM(alg=alg))
       equation
         expl = Algorithm.getAllExps(alg);
         lstres = List.map1(expl, incidenceRowExp, vars);
         res_1 = List.flatten(lstres);
       then
         res_1;
-    
+
     case (vars,_)
       equation
         print("- DAEQuery.incidenceRow failed\n");
@@ -564,9 +564,9 @@ algorithm
       list<DAE.Exp> expl;
       Algorithm.Else else_;
       list<list<String>> lstlst;
-    
+
     case ({},_) then {};
-    
+
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
@@ -575,7 +575,7 @@ algorithm
         res = List.flatten({lst1,lst2,lst3});
       then
         res;
-    
+
     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
@@ -585,7 +585,7 @@ algorithm
         res = List.flatten({lst1,lst2,lst3_1});
       then
         res;
-    
+
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
@@ -594,37 +594,37 @@ algorithm
         res = List.flatten({lst1,lst2,lst3});
       then
         res;
-    
+
     case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on IF not implemented\n");
       then
         {};
-    
+
     case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
       then
         {};
-        
+
     case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
       then
         {};
-    
+
     case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on WHILE not implemented\n");
       then
         {};
-    
+
     case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on WHEN not implemented\n");
       then
         {};
-    
+
     case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
       equation
         print("- DAEQuery.incidenceRowStmts on ASSERT not implemented\n");
@@ -654,7 +654,7 @@ algorithm
       DAE.Operator op1;
       list<list<DAE.Exp>> explTpl;
       DAE.ReductionIterators iters;
-    
+
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),p) =
@@ -665,35 +665,35 @@ algorithm
         pStr = List.map(p_1, intString);
       then
         pStr;
-    
+
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
-    
+
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
-    
+
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
-    
+
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
-    
+
     case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
@@ -701,13 +701,13 @@ algorithm
         pStr = listAppend(s1, s2);
       then
         pStr;
-    
+
     case (DAE.UNARY(exp = e),vars)
       equation
         pStr = incidenceRowExp(e, vars);
       then
         pStr;
-    
+
     case (DAE.LBINARY(exp1 = e1,exp2 = e2),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
@@ -715,13 +715,13 @@ algorithm
         pStr = listAppend(s1, s2);
       then
         pStr;
-    
+
     case (DAE.LUNARY(exp = e),vars)
       equation
         pStr = incidenceRowExp(e, vars);
       then
         pStr;
-    
+
     case (DAE.RELATION(exp1 = e1,exp2 = e2),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
@@ -729,7 +729,7 @@ algorithm
         pStr = listAppend(s1, s2);
       then
         pStr;
-    
+
     case (DAE.IFEXP(expCond = e1 as DAE.RELATION(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         opStr = ExpressionDump.relopSymbol(op1);
@@ -745,7 +745,7 @@ algorithm
         pStr = {ss};
       then
         pStr;
-    
+
     // if-expressions with a variable
 //    case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = cref1),expThen = e2,expElse = e3),vars) /* if expressions. */
 /*      local String ss,sb;
@@ -814,21 +814,21 @@ algorithm
         pStr = {ss};
       then
         pStr;
-    
+
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
-    
+
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         (_,p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         {};
-    
+
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* pre(v) is considered a known variable */ //IS IT????
       equation
         (_,p) = BackendVariable.getVar(cr, vars);
@@ -857,25 +857,25 @@ algorithm
         pStr = incidenceRowMatrixExp(explTpl, vars);
       then
         pStr;
-    
+
     case (DAE.TUPLE(PR = expl),vars)
       equation
         print("- DAEQuery.incidence_row_exp TUPLE not impl. yet.");
       then
         {};
-    
+
     case (DAE.CAST(exp = e),vars)
       equation
         pStr = incidenceRowExp(e, vars);
       then
         pStr;
-    
+
     case (DAE.ASUB(exp = e),vars)
       equation
         pStr = incidenceRowExp(e, vars);
       then
         pStr;
-    
+
     case (DAE.REDUCTION(expr = e1,iterators = iters),vars)
       equation
         s1 = incidenceRowExp(e1, vars);

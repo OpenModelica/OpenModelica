@@ -31,7 +31,7 @@ bool Socket::create()
          std::cerr << "Failed to create TCP socket: " << strerror(errno) << std::endl;
          exit(1);
   }
-  
+
   m_socket_type = SOCK_STREAM;
   return true;
 }
@@ -83,7 +83,7 @@ bool Socket::connect(const std::string &host, const int port)
   hints.ai_socktype = m_socket_type;
 
   getaddrinfo(host.c_str(), to_string(port).c_str(), &hints, &res);
-  
+
   if(::connect(m_sock, res->ai_addr, res->ai_addrlen) == -1)
   {
          std::cerr << "Failed to connect to " << host << " on port " << port << ": "
@@ -128,16 +128,16 @@ bool Socket::UDP_send(const std::string &addr, const std::string &s,
   hints.ai_socktype = SOCK_DGRAM;
 
   getaddrinfo(addr.c_str(), to_string(port).c_str(), &hints, &res);
-  
+
   if(sendto(m_sock, s.c_str(), s.size(), 0, res->ai_addr, res->ai_addrlen) < 0)
   {
-         std::cerr << "Couldn't send UDP package to " << addr << " on port " 
+         std::cerr << "Couldn't send UDP package to " << addr << " on port "
                 << port << ": " << strerror(errno) << std::endl;
          exit(1);
   }
 
   return true;
-}  
+}
 
 int Socket::UDP_recv(std::string &s) const
 {

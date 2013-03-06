@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -37,9 +37,9 @@ encapsulated package Name
   RCS: $Id: Name.mo 8980 2011-05-13 09:12:21Z adrpo $
 
   The Name in a pool.
-  
+
   TODO! USE AN AVLTREE to handle unique instead of a pool!
-  
+
   "
 
 public import Pool;
@@ -49,7 +49,7 @@ type Names = Pool.Pool<Name> "an array of shared names";
 
 constant Integer defaultPoolSizeNames = 100000;
 
-protected 
+protected
 import Util;
 import System;
 
@@ -98,17 +98,17 @@ public function dump
   input Integer ignored;
   input Option<Name> inStrOpt;
 algorithm
-  _ := match(ignored, inStrOpt) 
+  _ := match(ignored, inStrOpt)
     local Name s;
-    case (_, SOME(s)) 
-      equation 
-        print(s +& "\n"); 
-      then 
+    case (_, SOME(s))
+      equation
+        print(s +& "\n");
+      then
         ();
-    
-    case (_, _) 
-      equation 
-        print("\n"); 
+
+    case (_, _)
+      equation
+        print("\n");
       then ();
   end match;
 end dump;
@@ -116,7 +116,7 @@ end dump;
 public function dumpPool
   input Names inNames;
 algorithm
-  _ := Util.arrayApplyR(Pool.members(inNames), Pool.next(inNames), dump, 0);  
+  _ := Util.arrayApplyR(Pool.members(inNames), Pool.next(inNames), dump, 0);
 end dumpPool;
 
 end Name;

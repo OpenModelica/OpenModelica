@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -73,23 +73,23 @@ algorithm
       DAE.Type from,to;
       Integer i,ival;
       list<Integer> dims;
-    
+
     case (_,_,{}) then {};
-    
+
     case (from as DAE.T_INTEGER(varLst = _),to as DAE.T_REAL(varLst = _),(Values.INTEGER(integer = i) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
-    
+
     case (from as DAE.T_REAL(varLst = _),to as DAE.T_INTEGER(varLst = _),(Values.REAL(real = r) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
       then
         (Values.INTEGER(ival) :: vallst);
-    
+
     case (from,to,(Values.ARRAY(valueLst = vals, dimLst = dims) :: vrest))
       equation
         vallst = typeConvert(from, to, vals);
@@ -104,7 +104,7 @@ public function valueExpType "creates a DAE.Type from a Value"
   output DAE.Type tp;
 algorithm
   tp := matchcontinue(inValue)
-  local 
+  local
     Absyn.Path path;
     Integer indx;
     list<String> nameLst;
@@ -114,12 +114,12 @@ algorithm
     list<DAE.Var> varLst;
     list<Integer> int_dims;
     DAE.Dimensions dims;
-    
+
     case(Values.INTEGER(_)) then DAE.T_INTEGER_DEFAULT;
     case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
-    case(Values.ENUM_LITERAL(name = path, index = indx)) 
+    case(Values.ENUM_LITERAL(name = path, index = indx))
       equation
         path = Absyn.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{},DAE.emptyTypeSource);
@@ -127,12 +127,12 @@ algorithm
       eltTp=valueExpType(List.first(valLst));
       dims = List.map(int_dims, Expression.intDimension);
     then DAE.T_ARRAY(eltTp,dims,DAE.emptyTypeSource);
-    
+
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
       eltTps = List.map(valLst,valueExpType);
       varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(),DAE.emptyTypeSource);
-    
+
     case _
       equation
         print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
@@ -148,7 +148,7 @@ protected function valueExpTypeExpVar "help function to valueExpType"
 algorithm
   expVar := DAE.TYPES_VAR(name, DAE.dummyAttrVar, etp, DAE.UNBOUND(), NONE());
 end valueExpTypeExpVar;
-   
+
 public function isZero "Returns true if value is zero"
   input Value inValue;
   output Boolean isZero;
@@ -216,14 +216,14 @@ algorithm
       Integer n_1,n;
       Value res;
       list<Value> vlst;
-    
+
     case (Values.ARRAY(valueLst = vlst),n)
       equation
         n_1 = n - 1;
         res = listNth(vlst, n_1);
       then
         res;
-    
+
   end match;
 end nthArrayelt;
 
@@ -903,7 +903,7 @@ algorithm
       Absyn.Path path;
       Absyn.CodeNode code;
       Value valType;
-      DAE.Type ety; 
+      DAE.Type ety;
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
     case (Values.REAL(real = r))       then DAE.RCONST(r);
@@ -924,7 +924,7 @@ algorithm
         explist = List.map((v :: xs), valueExp);
         DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
-      then 
+      then
         DAE.MATRIX(t,dim,explist::mexpl);
 
     // Matrix last row
@@ -938,7 +938,7 @@ algorithm
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
-      then 
+      then
         DAE.MATRIX(t,dim,{explist});
 
     // Generic array
@@ -1024,9 +1024,9 @@ algorithm
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType))
       equation
         ety = Types.simplifyType(Types.typeOfValue(valType));
-      then 
+      then
         DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
-    
+
     case (v)
       equation
         s = "ValuesUtil.valueExp failed for " +& valString(v);
@@ -1160,13 +1160,13 @@ algorithm
     // A 1-dimensional array.
     case Values.ARRAY(valueLst = vals)
       equation
-        reals = valueReals(vals); 
+        reals = valueReals(vals);
       then
         List.map(reals, List.create);
 
   end matchcontinue;
 end matrixValueReals;
-  
+
 public function valueNeg "function: valueNeg
   author: PA
 
@@ -1870,7 +1870,7 @@ algorithm
         dim = dim - 1;
       then
         (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
-    
+
     case ({}) then (Values.ARRAY({},{0}),{});
   end match;
 end matrixStripFirstColumn;
@@ -2086,7 +2086,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     case ((r as Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
       equation
         Print.printBuf("record SimulationResult\n");
@@ -2099,13 +2099,13 @@ algorithm
     case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
         recordName = Absyn.pathStringNoQual(recordPath);
-        
+
         Print.printBuf("record " +& recordName +& "\n");
         valRecordString(xs,ids);
         Print.printBuf("end " +& recordName +& ";");
       then
         ();
-    
+
     case ((Values.OPTION(SOME(r))))
       equation
         Print.printBuf("SOME(");
@@ -2155,7 +2155,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    
+
     // MetaModelica array
     case Values.META_ARRAY(valueLst = vs)
       equation
@@ -2164,7 +2164,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    
+
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
     case (Values.ENUM_LITERAL(index = n, name=p))
@@ -2173,19 +2173,19 @@ algorithm
         Print.printBuf(s);
       then
         ();
-    
+
     case(Values.NORETCALL()) then ();
-    
+
     case (Values.META_FAIL())
       equation
         Print.printBuf("fail()");
       then ();
-        
+
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr))
       equation
         Print.printBuf("/* <EMPTY(scope: " +& scope +& ", name: " +& name +& ", ty: " +& tyStr +& ")> */");
       then ();
-    
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valString2 failed"});
@@ -2240,9 +2240,9 @@ algorithm
       Value x;
       list<Value> xs;
       list<String> ids;
-    
+
     case ({},{}) then ();
-            
+
     case (x :: (xs as (_ :: _)),id :: (ids as (_ :: _)))
       equation
         Print.printBuf("    ");
@@ -2253,7 +2253,7 @@ algorithm
         valRecordString(xs,ids);
       then
         ();
-    
+
     case (x :: {},id :: {})
       equation
         Print.printBuf("    ");
@@ -2263,14 +2263,14 @@ algorithm
         Print.printBuf("\n");
       then
         ();
-        
+
     case (xs,ids)
       equation
         print("ValuesUtil.valRecordString failed:\nids: "+& stringDelimitList(ids, ", ") +&
         "\nvals: " +& stringDelimitList(List.map(xs, valString), ", ") +& "\n");
-      then 
+      then
         fail();
-  
+
   end matchcontinue;
 end valRecordString;
 
@@ -2335,7 +2335,7 @@ algorithm
         Print.printBuf(message);
         Print.printBuf("\n");
         unparsePtolemyValues(time, rest, varnames);
-        
+
         str = Print.getString();
         Print.clearBuf();
         Print.printBuf(oldBuf);
@@ -2609,37 +2609,37 @@ public function containsEmpty
   output Option<Values.Value> outOptValue;
 algorithm
   outOptValue := match(inValues)
-    local 
+    local
       Values.Value v;
       list<Values.Value> rest, lst;
       Option<Values.Value> vOpt;
-    
+
     case ((v as Values.EMPTY(scope = _))::rest) then SOME(v);
 
     case (Values.ARRAY(valueLst = lst)::rest)
-      equation 
+      equation
         vOpt = containsEmpty(lst);
-      then 
+      then
         vOpt;
 
     case (Values.RECORD(orderd = lst)::rest)
-      equation 
+      equation
         vOpt = containsEmpty(lst);
-      then 
+      then
         vOpt;
 
     case (Values.TUPLE(valueLst = lst)::rest)
-      equation 
+      equation
         vOpt = containsEmpty(lst);
-      then 
+      then
         vOpt;
-    
+
     case (_::rest)
-      equation 
+      equation
         vOpt = containsEmpty(rest);
-      then 
+      then
         vOpt;
-    
+
     case (_) then NONE();
 
   end match;

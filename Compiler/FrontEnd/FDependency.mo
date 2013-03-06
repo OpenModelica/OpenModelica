@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -82,7 +82,7 @@ public function analyse
 algorithm
   analyseClass(inClassName, inEnv, Absyn.dummyInfo);
   analyseClassExtends(inEnv);
-  (outEnv, outProgram) := 
+  (outEnv, outProgram) :=
     collectUsedProgram(inEnv, inProgram, inClassName);
 end analyse;
 
@@ -110,8 +110,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- FDependency.analyseClass failed for " +& 
-          Absyn.pathString(inClassName) +& " in " +& 
+        Debug.traceln("- FDependency.analyseClass failed for " +&
+          Absyn.pathString(inClassName) +& " in " +&
           FEnv.getEnvName(inEnv));
       then
         fail();
@@ -172,7 +172,7 @@ algorithm
 
     case (Absyn.IDENT(name = _), _, _, _)
       equation
-        (item, _, env, _) = 
+        (item, _, env, _) =
           FLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
@@ -187,12 +187,12 @@ algorithm
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _)
       equation
-        (item, _, env, _) = 
+        (item, _, env, _) =
           FLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
         (item, env, _) = FEnv.resolveRedeclaredItem(item, env);
         analyseItem(item, env);
         (item, env) = lookupNameInItem(rest_path, item, env, inErrorType);
-      then  
+      then
         (item, env);
 
     case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _)
@@ -225,7 +225,7 @@ algorithm
 
     case (_, _, {}, _) then (inItem, inEnv);
 
-    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec = 
+    case (_, Env.VAR(var = SCode.COMPONENT(typeSpec =
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
       equation
         (item, type_env) = lookupClass(type_path, inEnv, info, inErrorType);
@@ -301,7 +301,7 @@ algorithm
 
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
-    case (Env.CLASS(cls = cls as SCode.CLASS(classDef = cdef, 
+    case (Env.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
         restriction = res, info = info), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
@@ -337,7 +337,7 @@ algorithm
       Env.Frame cls_env;
       Util.StatefulBoolean is_used;
       String name;
-      
+
     case (Env.VAR(isUsed = SOME(is_used)), _)
       equation
         Util.setStatefulBoolean(is_used, true);
@@ -373,7 +373,7 @@ algorithm
     else ();
   end match;
 end markFrameAsUsed;
-        
+
 protected function markEnvAsUsed
   "Marks an environment as used. This is done by marking each frame as used, and
   for each frame we also analyse the class it represents to make sure we don't
@@ -444,8 +444,8 @@ algorithm
       list<Absyn.Path> paths;
 
     // A class made of parts, analyse elements, equation, algorithms, etc.
-    case (SCode.PARTS(elementLst = el, normalEquationLst = nel, 
-        initialEquationLst = iel, normalAlgorithmLst = nal, 
+    case (SCode.PARTS(elementLst = el, normalEquationLst = nel,
+        initialEquationLst = iel, normalAlgorithmLst = nal,
         initialAlgorithmLst = ial, externalDecl = ext_decl,
         annotationLst = annl, comment = cmt), _, _, _, _)
       equation
@@ -474,7 +474,7 @@ algorithm
     // A class extends.
     case (SCode.CLASS_EXTENDS(baseClassName = bc), _, _, _, _)
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, 
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"FDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
       then
         fail();
@@ -488,7 +488,7 @@ algorithm
         (ty_item, _, ty_env) = FLookup.lookupTypeSpec(ty, env, inInfo);
         (ty_item, ty_env, _) = FEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = FEnv.mergeItemEnv(ty_item, ty_env);
-        // TODO! Analyse array dimensions from attributes! 
+        // TODO! Analyse array dimensions from attributes!
         analyseModifier(mods, inEnv, ty_env, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
@@ -559,7 +559,7 @@ algorithm
           "destructor", inElements, stringEqual);
         env_str = FEnv.getEnvName(inEnv);
         checkExternalObject2(inElements, has_con, has_des, env_str, inInfo);
-      then 
+      then
         fail();
 
   end match;
@@ -639,7 +639,7 @@ algorithm
     else ();
   end match;
 end analyseMetaType;
- 
+
 protected function analyseRedeclaredClass
   "If a class is a redeclaration of an inherited class we need to also analyse
   the inherited class."
@@ -651,7 +651,7 @@ algorithm
       Item item;
       String name;
 
-    case (SCode.CLASS(name = _), _) 
+    case (SCode.CLASS(name = _), _)
       equation
         false = SCode.isElementRedeclare(inClass);
       then ();
@@ -665,7 +665,7 @@ algorithm
 
   end matchcontinue;
 end analyseRedeclaredClass;
-        
+
 protected function analyseRedeclaredClass2
   input Item inItem;
   input Env.Env inEnv;
@@ -695,8 +695,8 @@ algorithm
         fail();
 
   end matchcontinue;
-end analyseRedeclaredClass2; 
-        
+end analyseRedeclaredClass2;
+
 protected function analyseElements
   input list<SCode.Element> inElements;
   input Env.Env inEnv;
@@ -768,14 +768,14 @@ algorithm
       equation
         //print("bc = " +& Absyn.pathString(bc) +& "\n");
         //print("bc2 = " +& Absyn.pathString(bc2) +& "\n");
-        (ty_item, _, ty_env) = 
+        (ty_item, _, ty_env) =
           FLookup.lookupBaseClassName(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
         ty_env = FEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
       then
         exts;
-        
+
     // A component.
     case (SCode.COMPONENT(name = name, attributes = attr, typeSpec = ty,
         modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _, _)
@@ -794,48 +794,48 @@ algorithm
       then
         inExtends;
 
-    //operators in operator record might be used later. 
+    //operators in operator record might be used later.
     case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, SCode.R_OPERATOR_RECORD())
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
-        
-    //operators in any other class type are error. 
+
+    //operators in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, _)
       equation
         //mahge: FIX HERE.
         errorMessage = "operators are allowed in OPERATOR RECORD only. Error on:" +& name;
         Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
       then
-        fail();      
-    
-    //operator functions in operator record might be used later. 
+        fail();
+
+    //operator functions in operator record might be used later.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_OPERATOR_RECORD())
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
-        inExtends;  
-        
-     //operators functions in any other class type are error. 
+        inExtends;
+
+     //operators functions in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, _)
       equation
         //mahge: FIX HERE.
         errorMessage = "Operator functions are allowed in OPERATOR RECORD only. Error on:" +& name;
         Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
       then
-        fail();     
-    
-    //functions in operator might be used later. 
+        fail();
+
+    //functions in operator might be used later.
     case (SCode.CLASS(name = name, restriction=res, info = info), _, _, SCode.R_OPERATOR())
       equation
         // Allowing external functions to be used operator functions
         true = SCode.isFunctionOrExtFunctionRestriction(res);
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
-        inExtends;  
-        
-    //operators should only contain function definitions    
+        inExtends;
+
+    //operators should only contain function definitions
     case (SCode.CLASS(name = name, restriction = res, info = info), _, _, SCode.R_OPERATOR())
       equation
         false = SCode.isFunctionOrExtFunctionRestriction(res);
@@ -843,8 +843,8 @@ algorithm
         errorMessage = "Operators can only contain functions. Error on:" +& name;
         Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
       then
-        fail(); 
-      
+        fail();
+
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
     case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _, _)
@@ -858,15 +858,15 @@ algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
-    
-    // inner/innerouter classes may not be explicitly used but might be needed anyway 
+
+    // inner/innerouter classes may not be explicitly used but might be needed anyway
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER()), info = info), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
-    
-    // inner/innerouter classes may not be explicitly used but might be needed anyway 
+
+    // inner/innerouter classes may not be explicitly used but might be needed anyway
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER()), info = info), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
@@ -891,7 +891,7 @@ algorithm
     case (_, _, Env.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
         true = markAsUsedOnRestriction2(inRestriction);
-        Env.VAR(isUsed = SOME(is_used)) = 
+        Env.VAR(isUsed = SOME(is_used)) =
           Env.avlTreeGet(cls_and_vars, inName);
         Util.setStatefulBoolean(is_used, true);
       then
@@ -1280,7 +1280,7 @@ algorithm
     // Otherwise, try to analyse the modifier name, and if that succeeds also
     // try and analyse the rest of the modification. This is needed for example
     // for the graphical annotations such as Icon.
-    case (SCode.NAMEMOD(ident = id, A = mods), _, _) 
+    case (SCode.NAMEMOD(ident = id, A = mods), _, _)
       equation
         analyseAnnotationName(id, inEnv, inInfo);
         analyseModifier(mods, inEnv, Env.emptyEnv, inInfo);
@@ -1300,7 +1300,7 @@ protected
   Item item;
   Env.Env env;
 algorithm
-  (item, _, env, _) := 
+  (item, _, env, _) :=
     FLookup.lookupNameSilent(Absyn.IDENT(inName), inEnv, inInfo);
   (item, env, _) := FEnv.resolveRedeclaredItem(item, env);
   analyseItem(item, env);
@@ -1369,7 +1369,7 @@ algorithm
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
-        
+
     case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _)
       equation
         env = FEnv.extendEnvWithIterators(iters, System.tmpTickIndex(Env.tmpTickIndex), inEnv);
@@ -1411,7 +1411,7 @@ algorithm
       Env.Env env;
 
     case (Absyn.WILD(), _, _) then ();
-      
+
     case (_, _, _)
       equation
         // We want to use lookupClass since we need the item and environment, and
@@ -1445,7 +1445,7 @@ algorithm
       then
         ((e, (env, info)));
 
-    case ((e as Absyn.MATCHEXP(matchTy = _), 
+    case ((e as Absyn.MATCHEXP(matchTy = _),
         (Env.FRAME(frameType = Env.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
@@ -1534,7 +1534,7 @@ protected function analyseStatement
   input SCode.Statement inStatement;
   input Env.Env inEnv;
 algorithm
-  (_, _) := SCode.traverseStatements(inStatement, 
+  (_, _) := SCode.traverseStatements(inStatement,
     (analyseStatementTraverser, inEnv));
 end analyseStatement;
 
@@ -1557,7 +1557,7 @@ algorithm
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
-    
+
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), env))
       equation
         env = FEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(Env.tmpTickIndex), env);
@@ -1565,7 +1565,7 @@ algorithm
       then
         ((stmt, env));
 
-    case ((stmt, env)) 
+    case ((stmt, env))
       equation
         info = SCode.getStatementInfo(stmt);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
@@ -1583,7 +1583,7 @@ protected function analyseClassExtends
   that are used. Adding all class extends would also be problematic, since we
   would have to make sure that any class extend and it's dependencies are marked
   as used.
-  
+
   This phase goes through all used classes, and if it finds a class extends in
   one of them it sets the use flag to the same as the base class. This is not a
   perfect solution since it means that all class extends that extend a certain
@@ -1645,7 +1645,7 @@ algorithm
       then
         ();
 
-    case (Env.AVLTREEVALUE(key = key_str, value = Env.CLASS(cls = cls, 
+    case (Env.AVLTREEVALUE(key = key_str, value = Env.CLASS(cls = cls,
         env = {cls_env}, classType = cls_ty)), _)
       equation
         env = FEnv.enterFrame(cls_env, inEnv);
@@ -1673,8 +1673,8 @@ algorithm
       String cls_name;
       Env.Env env;
 
-    case (SCode.CLASS(name = cls_name, classDef = 
-          SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
+    case (SCode.CLASS(name = cls_name, classDef =
+          SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _),
           info = info), Env.CLASS_EXTENDS(), _)
       equation
         // Look up the base class of the class extends, and check if it's used.
@@ -1718,7 +1718,7 @@ protected
 algorithm
   (_, env) := Builtin.initialEnv(Env.emptyCache());
   Env.FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
-  (outProgram, outEnv) := 
+  (outProgram, outEnv) :=
     collectUsedProgram2(cls_and_vars, inEnv, inProgram, inClassName, env);
 end collectUsedProgram;
 
@@ -1736,7 +1736,7 @@ protected function collectUsedProgram2
   output SCode.Program outProgram;
   output Env.Env outAccumEnv;
 algorithm
-  (outProgram, outAccumEnv) := 
+  (outProgram, outAccumEnv) :=
   matchcontinue(clsAndVars, inEnv, inProgram, inClassName, inAccumEnv)
     local
       SCode.Element cls_el;
@@ -1756,7 +1756,7 @@ algorithm
           inClassName, env, Absyn.IDENT(name));
         SCode.CLASS(name = _) = cls_el;
         cls = cls_el;
-        (rest_prog, env) = 
+        (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
         (cls :: rest_prog, env);
@@ -1764,14 +1764,14 @@ algorithm
     // Could not collect the class (i.e. it's not used), continue with the rest.
     case (_, _, _ :: rest_prog, _, env)
       equation
-        (rest_prog, env) = 
+        (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
         (rest_prog, env);
 
   end matchcontinue;
 end collectUsedProgram2;
-   
+
 protected function collectUsedClass
   "Checks if the given class is used in the program, and if that's the case it
   adds the class to the accumulated environment. Otherwise it just fails."
@@ -1784,7 +1784,7 @@ protected function collectUsedClass
   output SCode.Element outClass;
   output Env.Env outAccumEnv;
 algorithm
-  (outClass, outAccumEnv) := 
+  (outClass, outAccumEnv) :=
   match(inClass, inEnv, inClsAndVars, inClassName, inAccumEnv, inAccumPath)
     local
       SCode.Ident name, basename;
@@ -1799,7 +1799,7 @@ algorithm
       Env.Env class_env, env, enclosing_env;
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
-  
+
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
         SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _, _)
       equation
@@ -1815,9 +1815,9 @@ algorithm
         enclosing_env = FEnv.enterScope(inEnv, name);
         (cdef, class_env) =
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
-        
+
         //Fix operator record restriction to record
-        res = fixRestrictionOfOperatorRecord(res);  
+        res = fixRestrictionOfOperatorRecord(res);
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
         resolved_item = updateItemEnv(resolved_item, cls, class_env);
         basename = name +& Env.BASE_CLASS_SUFFIX;
@@ -1836,7 +1836,7 @@ algorithm
         // The class is used, recursively collect it's contents.
         {class_frame} = FEnv.getItemEnv(item);
         enclosing_env = FEnv.enterScope(inEnv, name);
-        (cdef, class_env) = 
+        (cdef, class_env) =
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
         //Fix operator record restriction to record
         res = fixRestrictionOfOperatorRecord(res);
@@ -1855,7 +1855,7 @@ protected function fixRestrictionOfOperatorRecord
   output SCode.Restriction outRes;
 algorithm
   outRes := match(inRes)
-  case (SCode.R_OPERATOR_RECORD()) 
+  case (SCode.R_OPERATOR_RECORD())
       then SCode.R_RECORD();
 
   else inRes;
@@ -1872,7 +1872,7 @@ algorithm
   isUsed := match(inItem, inClassDef)
     // GraphicalAnnotationsProgram____ is a special case, since it's not used by
     // anything, but needed during instantiation.
-    case (Env.CLASS(cls = SCode.CLASS(name = "GraphicalAnnotationsProgram____")), _) 
+    case (Env.CLASS(cls = SCode.CLASS(name = "GraphicalAnnotationsProgram____")), _)
       then true;
     // Otherwise, use the environment item to determine if the class is used or
     // not.
@@ -1908,7 +1908,7 @@ protected function collectUsedClassDef
   output SCode.ClassDef outClass;
   output Env.Env outEnv;
 algorithm
-  (outClass, outEnv) := 
+  (outClass, outEnv) :=
   match(inClassDef, inEnv, inClassEnv, inClassName, inAccumPath)
     local
       list<SCode.Element> el;
@@ -1925,18 +1925,18 @@ algorithm
 
     case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), _, _, _, _)
       equation
-        (el, env) = 
+        (el, env) =
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
         (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), env);
 
-    case (SCode.CLASS_EXTENDS(bc, mods, 
+    case (SCode.CLASS_EXTENDS(bc, mods,
         SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), _, _, _, _)
       equation
-        (el, env) = 
+        (el, env) =
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
-        (SCode.CLASS_EXTENDS(bc, mods, 
+        (SCode.CLASS_EXTENDS(bc, mods,
           SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), env);
 
     case (SCode.ENUMERATION(enumLst = _), _, _, _, _)
@@ -1945,7 +1945,7 @@ algorithm
     else (inClassDef, {inClassEnv});
   end match;
 end collectUsedClassDef;
-         
+
 protected function collectUsedElements
   "Collects a class definition's elements."
   input list<SCode.Element> inElements;
@@ -1966,7 +1966,7 @@ algorithm
   // Collect all constants in the top class, even if they're not used.
   // This makes it easier to write test cases.
   collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
-  (outUsedElements, outNewEnv) := 
+  (outUsedElements, outNewEnv) :=
     collectUsedElements2(inElements, inEnv, cls_and_vars, {}, {empty_class_env},
       inClassName, inAccumPath, collect_constants);
   outNewEnv := removeUnusedRedeclares(outNewEnv, inEnv);
@@ -1986,7 +1986,7 @@ protected function collectUsedElements2
   output list<SCode.Element> outAccumElements;
   output Env.Env outAccumEnv;
 algorithm
-  (outAccumElements, outAccumEnv) := 
+  (outAccumElements, outAccumEnv) :=
   matchcontinue(inElements, inEnclosingEnv, inClsAndVars, inAccumElements,
       inAccumEnv, inClassName, inAccumPath, inCollectConstants)
     local
@@ -1995,12 +1995,12 @@ algorithm
       Env.Env accum_env;
 
     // Tail recursive function, reverse the result list.
-    case ({}, _, _, _, _, _, _, _) 
+    case ({}, _, _, _, _, _, _, _)
       then (listReverse(inAccumElements), inAccumEnv);
 
     case (el :: rest_el, _, _, accum_el, accum_env, _, _, _)
       equation
-        (el, accum_env) = collectUsedElement(el, inEnclosingEnv, inClsAndVars, 
+        (el, accum_env) = collectUsedElement(el, inEnclosingEnv, inClsAndVars,
           accum_env, inClassName, inAccumPath, inCollectConstants);
         accum_el = el :: accum_el;
         (accum_el, accum_env) = collectUsedElements2(rest_el, inEnclosingEnv,
@@ -2031,7 +2031,7 @@ protected function collectUsedElement
   output SCode.Element outElement;
   output Env.Env outAccumEnv;
 algorithm
-  (outElement, outAccumEnv) := 
+  (outElement, outAccumEnv) :=
   match(inElement, inEnclosingEnv, inClsAndVars, inAccumEnv, inClassName,
       inAccumPath, inCollectConstants)
     local
@@ -2045,14 +2045,14 @@ algorithm
     case (SCode.CLASS(name = name), _, _, env, _, _, _)
       equation
         cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
-        (cls, env) = 
+        (cls, env) =
           collectUsedClass(inElement, inEnclosingEnv, inClsAndVars,
             inClassName,env, cls_path);
       then
         (cls, env);
-  
+
     // A constant.
-    case (SCode.COMPONENT(name = name, 
+    case (SCode.COMPONENT(name = name,
       attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, _, _)
       equation
         item = Env.avlTreeGet(inClsAndVars, name);
@@ -2060,7 +2060,7 @@ algorithm
         env = FEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
         (inElement, env);
-        
+
     // Class components are always collected, regardless of whether they are
     // used or not.
     case (SCode.COMPONENT(name = name), _, _, _, _, _, _)
@@ -2074,7 +2074,7 @@ algorithm
 
   end match;
 end collectUsedElement;
-    
+
 protected function removeUnusedRedeclares
   "An unused element might be redeclared, but it's still not actually used. This
    function removes such redeclares from extends clauses, so that it's safe to
@@ -2089,7 +2089,7 @@ protected
   AvlTree cv;
   AvlTree tys;
   CSetsType cs;
-  list<SCode.Element> du;  
+  list<SCode.Element> du;
   ExtendsTable exts;
   ImportTable imps;
   Option<Util.StatefulBoolean> is_used;
@@ -2098,11 +2098,11 @@ protected
   Option<SCode.Element> cei;
   Env.Env env;
 algorithm
-  {Env.FRAME(name, st, ty, cv, tys, cs, du, Env.EXTENDS_TABLE(bcl, re, cei), 
+  {Env.FRAME(name, st, ty, cv, tys, cs, du, Env.EXTENDS_TABLE(bcl, re, cei),
     imps, is_used)} := inEnv;
   env := FEnv.removeRedeclaresFromLocalScope(inTotalEnv);
   bcl := List.map1(bcl, removeUnusedRedeclares2, env);
-  outEnv := {Env.FRAME(name, st, ty, cv, tys, cs, du, 
+  outEnv := {Env.FRAME(name, st, ty, cv, tys, cs, du,
     Env.EXTENDS_TABLE(bcl, re, cei), imps, is_used)};
 end removeUnusedRedeclares;
 

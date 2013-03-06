@@ -1,5 +1,5 @@
 #pragma once
- 
+
 /*****************************************************************************/
 /**
 
@@ -15,7 +15,7 @@ Copyright (c) 2008, OSMC
 class IGlobalSettings
 {
   enum {CSV, MAT};
-public:    
+public:
     virtual  ~IGlobalSettings() {}
     ///< Start time of integration (default: 0.0)
     virtual double getStartTime()=0;
@@ -34,12 +34,12 @@ public:
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
     virtual bool getInfoOutput()=0;
     virtual void setInfoOutput(bool)=0;
-    virtual string    getOutputPath() =0;    
-    virtual void setOutputPath(string)=0;        
-    virtual string    getSelectedSolver()=0;    
+    virtual string    getOutputPath() =0;
+    virtual void setOutputPath(string)=0;
+    virtual string    getSelectedSolver()=0;
     virtual void setSelectedSolver(string)=0;
-    virtual string    getSelectedNonLinSolver()=0;    
-    virtual void setSelectedNonLinSSolver(string)=0;       
+    virtual string    getSelectedNonLinSolver()=0;
+    virtual void setSelectedNonLinSSolver(string)=0;
     virtual void load(std::string xml_file)=0;
   virtual void setResultsFileName(string)=0;
   virtual string getResultsFileName()=0;

@@ -465,7 +465,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       ix = anyStringWorkCode(data,ix,base_id+i-1);
     }
-    checkAnyStringBufSize(ix,numslots*100+400);   
+    checkAnyStringBufSize(ix,numslots*100+400);
     ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%d_data,%d,%d) {&%s__desc", id, numslots, ctor, desc->path);
     for (i=2; i<=numslots; i++) {
       ix += sprintf(anyStringBuf+ix, ",omc_tmp%d", base_id+i-1);
@@ -481,7 +481,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
     data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
     ix = anyStringWorkCode(data,ix,base_id+i);
   }
-  checkAnyStringBufSize(ix,numslots*100+400);   
+  checkAnyStringBufSize(ix,numslots*100+400);
   ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%d_data,%d,%d) {", id, numslots, ctor);
   for (i=1; i<=numslots; i++) {
     ix += sprintf(anyStringBuf+ix, "%somc_tmp%d", i==1 ? "" : ",", base_id+i);

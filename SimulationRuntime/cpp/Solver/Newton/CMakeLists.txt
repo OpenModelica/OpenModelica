@@ -8,13 +8,13 @@ target_link_libraries( ${NewtonName} ${LAPACK_LIBRARIES})
 
 
 install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
-#install (FILES "../Interfaces/NewtonSettings.xml" 
+#install (FILES "../Interfaces/NewtonSettings.xml"
 #  DESTINATION bin/config)
 
 
- 
 
 
-  
-  
- 
+
+
+
+

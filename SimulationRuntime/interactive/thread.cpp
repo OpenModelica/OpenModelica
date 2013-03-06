@@ -84,7 +84,7 @@ bool Semaphore::Wait()
 
 bool Semaphore::TryWait()
 {
-  return WaitForSingleObject(semaphore_handle, 0) == WAIT_OBJECT_0; 
+  return WaitForSingleObject(semaphore_handle, 0) == WAIT_OBJECT_0;
 }
 
 bool Semaphore::Post()
@@ -127,7 +127,7 @@ bool Thread::Join()
 
 Mutex::Mutex()
 {
-  pthread_mutex_init(&mutex_handle, NULL);       
+  pthread_mutex_init(&mutex_handle, NULL);
 }
 
 Mutex::~Mutex()
@@ -172,7 +172,7 @@ bool Semaphore::Wait()
 
 bool Semaphore::TryWait()
 {
-  return sem_trywait(&semaphore_handle) == 0;       
+  return sem_trywait(&semaphore_handle) == 0;
 }
 
 bool Semaphore::Post()
@@ -186,7 +186,7 @@ bool Semaphore::Post()
   {
          success = (sem_post(&semaphore_handle) == 0);
   }
-  
+
   impl->mutex.Unlock();
   return success;
 }

@@ -68,7 +68,7 @@ public:
           ::get_class_type();
       typename std::map<TypeInfo, generic_type_holder*>::iterator
         it = instances_.find(t);
-  
+
       type_holder<StoredType>* holder;
       if (it == instances_.end()) {
         holder = new type_holder<StoredType>;

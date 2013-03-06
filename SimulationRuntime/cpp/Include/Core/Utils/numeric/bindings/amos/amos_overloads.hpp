@@ -25,36 +25,36 @@ namespace boost { namespace numeric { namespace bindings { namespace amos { name
   //void besi(const fcomplex * z, const fcomplex * fnu, const int * kode, const int * n, fcomplex* cy, int * nz, int * error) ;
 
   inline
-  void besi(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, int& error) 
+  void besi(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, int& error)
   { AMOS_DBESI( &z, &fnu, &kode, &n, cy, &nz ) ; }
 
   inline
-  void besi(const complex_f& z, const float&  fnu, const int& kode, const int& n, complex_f* cy, int & nz, int & error) 
+  void besi(const complex_f& z, const float&  fnu, const int& kode, const int& n, complex_f* cy, int & nz, int & error)
   { AMOS_CBESI( complex_ptr( &z ), &fnu, &kode, &n, complex_ptr( cy ), &nz, &error ) ; }
 
   // inline
   // void besi(const complex_d* z, const double* fnu, const int * kode, const int * n, complex_d* cy, int * nz, int * error)  ;
-  
+
   //
   // BESJ
   //
-  
+
   inline
-  void besj(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, int& error) 
+  void besj(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, int& error)
   { AMOS_DBESJ( &z, &fnu, &n, cy, &nz ) ; }
 
   inline
-  void besj(const complex_f& z, const float&  fnu, const int& kode, const int& n, complex_f* cy, int & nz, int & error) 
+  void besj(const complex_f& z, const float&  fnu, const int& kode, const int& n, complex_f* cy, int & nz, int & error)
   { AMOS_CBESJ( complex_ptr( &z ), &fnu, &kode, &n, complex_ptr( cy ), &nz, &error ) ; }
 
-  
+
 
   //
   // BESY
   //
-  
+
   inline
-  void besy(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, double* wrk, int& error) 
+  void besy(const double& z, const double& fnu, const int& kode, const int& n, double* cy, int& nz, double* wrk, int& error)
   { AMOS_DBESY( &z, &fnu, &n, cy ) ; }
 
 }}}}}

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -40,12 +40,12 @@ encapsulated package Flags
   of flags, debug flag and configuration flags. The flags are stored and
   retrieved with set/getGlobalRoot so that they can be accessed everywhere in
   the compiler.
-  
+
   Configuration flags are flags such as +std which affects the behaviour of the
   compiler. These flags can have different types, see the FlagData uniontype
   below, and they also have a default value. There is also another package,
   Config, which acts as a wrapper for many of these flags.
-    
+
   Debug flags are boolean flags specified with +d, which can be used together
   with the Debug package. They are typically used to enable printing of extra
   information that helps debugging, such as the failtrace flag. All debug flags
@@ -61,7 +61,7 @@ protected import Corba;
 protected import Debug;
 protected import Error;
 protected import ErrorExt;
-protected import Global; 
+protected import Global;
 protected import List;
 protected import Print;
 protected import Settings;
@@ -92,7 +92,7 @@ end ConfigFlag;
 public uniontype FlagData
   "This uniontype is used to store the values of configuration flags."
 
-  record EMPTY_FLAG 
+  record EMPTY_FLAG
     "Only used to initialize the flag array."
   end EMPTY_FLAG;
 
@@ -125,7 +125,7 @@ public uniontype FlagData
     "Value of an enumeration flag."
     Integer data;
     list<tuple<String, Integer>> validValues "The valid values of the enum.";
-  end ENUM_FLAG; 
+  end ENUM_FLAG;
 end FlagData;
 
 public uniontype FlagVisibility
@@ -170,7 +170,7 @@ constant DebugFlag CEVAL = DEBUG_FLAG(2, "ceval",
   Util.gettext("Prints extra information from Ceval."));
 constant DebugFlag LINEARIZATION = DEBUG_FLAG(3, "linearization",
   Util.notrans(""));
-constant DebugFlag JACOBIAN = DEBUG_FLAG(4, "jacobian", 
+constant DebugFlag JACOBIAN = DEBUG_FLAG(4, "jacobian",
   Util.notrans(""));
 constant DebugFlag CHECK_BACKEND_DAE = DEBUG_FLAG(5, "checkBackendDae",
   Util.gettext("Do some simple analyses on the datastructure from the frontend to check if it is consistent"));
@@ -357,12 +357,12 @@ constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(95, "uncertainties",
 constant DebugFlag DUMP_DAE= DEBUG_FLAG(96, "daeunparser",
   Util.gettext("Enables dumping of the DAE"));
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(97, "showStartOrigin",
-  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));   
+  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(98, "noMixedTearing",
   Util.gettext("Disables tearing of mixed system."));
 constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(99, "doLinearTearing",
-  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));    
+  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(100, "dumpinitialsystem",
   Util.gettext("Dumps the initial equation system."));
 constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(101, "scodeInstShortcut",
@@ -380,7 +380,7 @@ constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(106, "showProgramChanges",
 constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(107, "showEquationSource",
     Util.gettext("display the element source information in the dumped DAE for easier debugging"));
 constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(108, "NLSanalyticJacobian",
-    Util.gettext("generates analytical jacobian for non-linear algebraic loops")); 
+    Util.gettext("generates analytical jacobian for non-linear algebraic loops"));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(109, "inlineSolver",
     Util.gettext("generates code for inline solver"));
 constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(110, "dumpInlineSolver",
@@ -520,7 +520,7 @@ constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets debug flags. Use +help=debug to see available flags."));
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), 
+  NONE(), EXTERNAL(), BOOL_FLAG(false),
   SOME(STRING_OPTION({"debug", "optmodules"})),
   Util.gettext("Displays the help text."));
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
@@ -533,14 +533,14 @@ constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc"})),
   Util.gettext("Sets the target compiler to use."));
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
-  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA)}), 
+  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA)}),
   SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica"})),
   Util.gettext("Sets the grammar and semantics to accept."));
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
   NONE(), EXTERNAL(), STRING_FLAG("3.x"), SOME(STRING_OPTION({"1.x", "2.x", "3.x"})),
   Util.gettext("Sets the annotation version that should be used."));
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
-  ENUM_FLAG(1000, 
+  ENUM_FLAG(1000,
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33)}),
   SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3"})),
   Util.gettext("Sets the language standard that should be used."));
@@ -593,7 +593,7 @@ constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgo
     ("0", Util.gettext("No cheap matching.")),
     ("1", Util.gettext("cheap matching, traveres all equations and match the first free variable")),
     ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
-    Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));    
+    Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
   NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
   SOME(STRING_DESC_OPTION({
@@ -615,7 +615,7 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
     ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
     ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
-    Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));  
+    Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
@@ -672,10 +672,10 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
-  NONE(), EXTERNAL(), STRING_FLAG("C"), 
+  NONE(), EXTERNAL(), STRING_FLAG("C"),
   SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "Dump", "XML", "Java","ResidualCMP"})),
   Util.gettext("Sets the target language for the code generation"));
-constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections", 
+constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Orders connect equations alphabetically if set."));
 constant ConfigFlag TYPE_INFO = CONFIG_FLAG(19, "typeinfo",
@@ -742,10 +742,10 @@ constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     Util.gettext("Sets the reduction method to be used."));
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent", 
+constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
-constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale", 
+constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
@@ -773,7 +773,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
-  
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -855,7 +855,7 @@ algorithm
       Flags flags;
       Integer debug_count, config_count;
 
-    case () 
+    case ()
       equation
         outFlags = getGlobalRoot(Global.flagsIndex);
       then
@@ -872,7 +872,7 @@ algorithm
         saveFlags(flags);
       then
         flags;
-        
+
   end matchcontinue;
 end loadFlags;
 
@@ -909,7 +909,7 @@ algorithm
     case (DEBUG_FLAG(index = index, name = name), _)
       equation
         index_str = intString(index);
-        err_str = "Invalid flag " +& name +& " with index " +& index_str +& 
+        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
           " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
@@ -941,7 +941,7 @@ algorithm
     case (CONFIG_FLAG(index = index, name = name), _, _)
       equation
         index_str = intString(index);
-        err_str = "Invalid flag " +& name +& " with index " +& index_str +& 
+        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
           " in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly.";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
@@ -1121,7 +1121,7 @@ algorithm
         List.map1_0(inValues, setDebugFlag, debug_flags);
       then
         ();
-        
+
     // Special case for +help, show help text.
     case ("help", _, _)
       equation
@@ -1167,7 +1167,7 @@ algorithm
 
   end matchcontinue;
 end parseConfigFlag;
-      
+
 protected function setDebugFlag
   "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;
@@ -1196,14 +1196,14 @@ algorithm
         (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
       then
         ();
-         
+
     else
       equation
         Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
       then
         fail();
 
-  end matchcontinue;      
+  end matchcontinue;
 end setDebugFlag2;
 
 protected function matchDebugFlag
@@ -1265,7 +1265,7 @@ algorithm
       list<tuple<String, Integer>> enums;
 
     // A boolean value.
-    case ({s}, BOOL_FLAG(data = _), _) 
+    case ({s}, BOOL_FLAG(data = _), _)
       equation
         b = Util.stringBool(s);
       then
@@ -1275,7 +1275,7 @@ algorithm
     case ({}, BOOL_FLAG(data = _), _) then BOOL_FLAG(true);
 
     // An integer value.
-    case ({s}, INT_FLAG(data = _), _) 
+    case ({s}, INT_FLAG(data = _), _)
       equation
         i = stringInt(s);
         true = stringEq(intString(i), s);
@@ -1313,7 +1313,7 @@ algorithm
         Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
       then
         fail();
-        
+
   end matchcontinue;
 end stringFlagData;
 
@@ -1352,20 +1352,20 @@ algorithm
 
     case {} then "nothing";
     case {s} equation _ = Util.stringBool(s); then "the boolean value " +& s;
-    case {s} 
-      equation 
+    case {s}
+      equation
         i = stringInt(s);
         // intString returns 0 on failure, so this is to make sure that it
         // actually succeeded.
         true = stringEq(intString(i), s);
-      then 
+      then
         "the number " +& intString(i);
     //case {s}
     //  equation
     //    _ = stringReal(s);
     //  then
     //    "the number " +& intString(i);
-    case {s} then "the string \"" +& s +& "\""; 
+    case {s} then "the string \"" +& s +& "\"";
     case _ then "a list of values.";
   end matchcontinue;
 end printActualTypeStr;
@@ -1417,7 +1417,7 @@ algorithm
     else ();
   end matchcontinue;
 end applySideEffects;
-        
+
 public function setConfigValue
   "Sets the value of a configuration flag."
   input ConfigFlag inFlag;
@@ -1775,15 +1775,15 @@ algorithm
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +& 
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +&
           stringDelimitList(strl, ", ");
       then
         opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +& 
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +&
           stringAppendList(List.map(descl, printFlagOptionDescShort));
-      then 
+      then
         opt_str;
   end match;
 end printValidOptions;

@@ -59,7 +59,7 @@ inline bool load_single_library(type_map& current_type_map,
     if (!lib.open()) {
       return false;
     }
-    
+
     void (*func)(type_map&) =
       lib.shared_library::get<void, type_map&>
       ("boost_extension_exported_type_map_function");

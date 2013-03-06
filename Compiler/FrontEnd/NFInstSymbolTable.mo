@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -244,7 +244,7 @@ algorithm
     case (_, ht :: rest_st) then BaseHashTable.get(inName, ht);
     // Search the next scope if it wasn't found in the first.
     case (_, _ :: rest_st) then get(inName, rest_st);
-    
+
   end matchcontinue;
 end get;
 
@@ -342,7 +342,7 @@ public function addComponent
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable := matchcontinue(inComponent, inSymbolTable) 
+  outSymbolTable := matchcontinue(inComponent, inSymbolTable)
     local
       Absyn.Path name;
       Option<Component> comp;
@@ -384,7 +384,7 @@ algorithm
     local
       HashTable ht;
       SymbolTable st;
-      
+
     // The symboltable consists of at least two scopes, try to add the component
     // to the symboltable with addUnique. This means that we reuse iterator
     // scopes as long as we don't get any conflicting iterator names, to avoid
@@ -453,7 +453,7 @@ protected function addAliases
    we add aliases to the symboltable, so that whenever a top-level component is
    referred to by its fully qualified name we find an alias that points to its
    non-qualified name, and look up that component instead.
-   
+
    TODO: Check what kind of restrictions actually apply in this case. We might
          only need to introduce aliases if the class is a package, but the
          specification is a bit vague on what can be accessed from where."
@@ -596,7 +596,7 @@ algorithm
 
   end match;
 end addInstCondElement;
-    
+
 protected function addInstCondComponent
   "Adds an instantiated conditional component to the symboltable. inOldComponent
    is optionally the already existing component, or NONE if the component didn't
@@ -703,7 +703,7 @@ algorithm
         (comp, st);
 
     // Previous case failed, try to look it up as an outer reference.
-    else 
+    else
       equation
         (cref, st) = NFInstUtil.replaceCrefOuterPrefix(inCref, inSymbolTable);
         comp = lookupCref(cref, st);
@@ -781,12 +781,12 @@ algorithm
     // No inner reference set, find the inner component and set the reference.
     case (NFInstTypes.OUTER_COMPONENT(name = outer_name, innerName = NONE()), st)
       equation
-        (inner_name, inner_comp) = findInnerComponent(outer_name, st); 
+        (inner_name, inner_comp) = findInnerComponent(outer_name, st);
         outer_comp = NFInstTypes.OUTER_COMPONENT(outer_name, SOME(inner_name));
         st = add(outer_name, outer_comp, st);
       then
         (inner_name, SOME(inner_comp), st);
-        
+
     // Reference already set, just return the name of it.
     case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(inner_name)), st)
       then (inner_name, NONE(), st);
@@ -882,7 +882,7 @@ algorithm
         true = NFInstUtil.isInnerComponent(comp);
       then
         (path, comp);
-        
+
     // Previous case failed, but we have some prefix. Remove the first part of
     // the prefix and try again.
     case (_, _ :: pathl, _)
@@ -907,7 +907,7 @@ algorithm
     case (_)
       equation
         deps = findCyclicDependencies(inSymbolTable);
-        dep_str = 
+        dep_str =
           stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
         dep_str = "{" +& dep_str +& "}";
         // TODO: The "in scope" part of this error message should be removed, since
@@ -922,7 +922,7 @@ algorithm
           {"Found cyclic dependencies, but failed to show error."});
       then
         fail();
-  
+
   end matchcontinue;
 end showCyclicDepError;
 
@@ -943,7 +943,7 @@ algorithm
   (_, dep_graph) := Graph.topologicalSort(dep_graph, nodeEqual);
   {outDeps} := Graph.findCycles(dep_graph, nodeEqual);
 end findCyclicDependencies;
-  
+
 protected function buildDependencyGraph
   "Helper function to findCyclicDependencies. Used to build the dependency graph."
   input list<tuple<Absyn.Path, Component>> inComponents;
@@ -976,7 +976,7 @@ algorithm
 
   end match;
 end buildDependencyGraph;
-  
+
 public function addBindingDependency
   "Helper function to buildDependencyGraph. Adds a dependency for a binding."
   input Binding inBinding;
@@ -1069,7 +1069,7 @@ algorithm
     else ();
   end matchcontinue;
 end dumpSymbolTableKeys;
-  
+
 public function dumpSymbolTable
   "Prints the symboltable to standard output."
   input SymbolTable inSymbolTable;

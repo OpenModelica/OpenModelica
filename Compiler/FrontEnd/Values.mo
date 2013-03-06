@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -107,18 +107,18 @@ uniontype Value
 
   record NORETCALL
   end NORETCALL;
-  
+
   record META_BOX
     Value value;
   end META_BOX;
-  
+
   record META_FAIL
     "If the result of constant evaluation of a MetaModelica function call is fail(),
     we need to propagate this value in order to avoid running the code over and over again.
     This is mostly an optimization."
   end META_FAIL;
-    
-  record EMPTY 
+
+  record EMPTY
     "an empty value, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are constants with
      no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate the model.
      From Modelica specification: a package may we look inside should not be partial in a simulation model!"
@@ -127,7 +127,7 @@ uniontype Value
     Value ty "the DAE.Type translated to Value using defaults";
     String tyStr "the type of the variable";
   end EMPTY;
-    
+
 end Value;
 
 public uniontype IntRealOp

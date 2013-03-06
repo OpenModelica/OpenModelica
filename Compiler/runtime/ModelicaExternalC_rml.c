@@ -67,7 +67,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ModelicaExternalC__Streams_5freadLine)
 {
   state mem_state;
-  
+
   mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
   long line = RML_UNTAGFIXNUM(rmlA1);
@@ -102,7 +102,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ModelicaExternalC__File_5ffullPathName)
 {
   state mem_state;
-  
+
   mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
   int fail = 0;

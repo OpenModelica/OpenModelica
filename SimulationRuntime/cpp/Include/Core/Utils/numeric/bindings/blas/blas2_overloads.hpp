@@ -29,7 +29,7 @@ namespace boost { namespace numeric { namespace bindings { namespace blas { name
   void ger( const int& m, const int& n, const float  & alpha, const float  * x_ptr, const int& incx, const float  * y_ptr, const int& incy, float  * a_ptr, const int& lda ) { BLAS_SGER( &m, &n, &alpha, x_ptr, &incx, y_ptr, &incy, a_ptr, &lda ) ; }
   inline
   void ger( const int& m, const int& n, const double & alpha, const double * x_ptr, const int& incx, const double * y_ptr, const int& incy, double * a_ptr, const int& lda ) { BLAS_DGER( &m, &n, &alpha, x_ptr, &incx, y_ptr, &incy, a_ptr, &lda ) ; }
-/*  
+/*
   inline
   void geru( const int& m, const int& n, const complex_f & alpha, const complex_f * x_ptr, const int& incx, complex_f * y_ptr, const int& incy, complex_f * a_ptr, const int& lda ) { BLAS_CGERU( &m, &n, complex_ptr( &alpha ), complex_ptr( x_ptr ), &incx, complex_ptr( y_ptr ), &incy, complex_ptr( a_ptr ), &lda ) ; }
   inline

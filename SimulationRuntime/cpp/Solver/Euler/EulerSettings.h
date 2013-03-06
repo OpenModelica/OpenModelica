@@ -2,14 +2,14 @@
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_IMPORT_DECL
 #include <Solver/SolverSettings.h>
 #include <Euler/IEulerSettings.h>
- 
+
 /*****************************************************************************/
 /**
 
 Encapsulation of settings for euler solver
 
 \date     October, 1st, 2008
-\author 
+\author
 
 
 */
@@ -30,8 +30,8 @@ public:
      Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
     */
     virtual unsigned int getZeroSearchMethod();
-    virtual void setZeroSearchMethod(unsigned int );        
-        
+    virtual void setZeroSearchMethod(unsigned int );
+
     /**
     Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
     */
@@ -41,21 +41,21 @@ public:
     For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gewählt werden. ([false,true]; default: false = Fixpunktiteration)
     */
      virtual bool getUseNewtonIteration();
-     virtual void setUseNewtonIteration(bool);    
+     virtual void setUseNewtonIteration(bool);
     /**
     Equidistant output(by interpolation polynominal) ([true,false]; default: false)
     */
      virtual bool getDenseOutput();
-     virtual void setDenseOutput(bool);    
+     virtual void setDenseOutput(bool);
         /**
-    Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)    
+    Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
     */
      virtual double getIterTol();
     virtual void setIterTol(double);
     //initializes the settings object by an xml file
      virtual void load(std::string xml_file);
 private:
-    int 
+    int
         _method,                ///< Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)
         _zeroSearchMethod;        ///< Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
 

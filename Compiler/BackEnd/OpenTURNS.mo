@@ -5,16 +5,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -32,13 +32,13 @@ encapsulated package OpenTURNS "
   package:     OpenTURNS
   description: Connection to OpenTURNS, software for uncertainty propagation. The connection consists of two parts
   1. Generation of python script as input to OPENTURNS
-  2. Generation and compilation of wrapper that calls the standard OpenModelica simulator and retrieves the final values 
-  (after simulation has stopped at endTime) 
+  2. Generation and compilation of wrapper that calls the standard OpenModelica simulator and retrieves the final values
+  (after simulation has stopped at endTime)
 
   RCS: $Id: OpenTURNS.mo 10958 2012-01-25 01:12:35Z wbraun $
   "
 
-public 
+public
 import Absyn;
 import BackendDAE;
 import DAE;
@@ -79,17 +79,17 @@ public function generateOpenTURNSInterface "generates the dll and the python scr
   input DAE.DAElist inDAElist;
   input String templateFile "the filename to the template file (python script)";
   output String scriptFile "the name of the generated file";
-  
+
   protected
   String cname_str,fileNamePrefix,fileDir,cname_last_str;
   list<String> libs;
-  BackendDAE.BackendDAE dae,strippedDae;  
+  BackendDAE.BackendDAE dae,strippedDae;
   SimCode.SimulationSettings simSettings;
 algorithm
   cname_str := Absyn.pathString(inPath);
   cname_last_str := Absyn.pathLastIdent(inPath);
   fileNamePrefix := cname_str;
-      
+
   simSettings := CevalScript.convertSimulationOptionsToSimCode(
     CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(
       Interactive.setSymbolTableAST(Interactive.emptySymboltable,inProgram),inPath,fileNamePrefix)
@@ -98,25 +98,25 @@ algorithm
   //print("enter dae:");
   //BackendDump.dump(inDaelow);
   dae := BackendDAEOptimize.removeParameters(inDaelow);
-  //print("generating python script\n");  
- 
+  //print("generating python script\n");
+
  scriptFile := generatePythonScript(inPath,templateFile,dae,inDaelow);
- 
+
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
-  
+
   strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae, NONE(), NONE(), NONE(),NONE());
-  
+
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
   (_,libs,fileDir,_,_,_) := SimCodeMain.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-  
-  //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");  
+
+  //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");
   CevalScript.compileModel(fileNamePrefix , libs, fileDir, "", "");
-  
+
   generateXMLFile(cname_last_str,strippedDae);
   generateWrapperLibrary(cname_str,cname_last_str);
-end generateOpenTURNSInterface; 
+end generateOpenTURNSInterface;
 
 protected function generateWrapperLibrary
 "@author:adrpo
@@ -125,7 +125,7 @@ protected function generateWrapperLibrary
  replace #define WRAPPERNAME ModelName_wrapper in wrapper_template.c
  replace WRAPPERNAME = ModelName_wrapper in wrapper_template.makefile
  replace ModelName_wrapper in wrapper_template.command
- generates files: 
+ generates files:
    ModelName_wrapper.makefile from wrapper_template.makefile
    ModelName_wrapper.c from wrapper_template.c
  then compiles the wrapper using the specific wrapper_template.command!"
@@ -141,21 +141,21 @@ algorithm
   strCWrapperContents := System.readFile(getFullShareFileName(cStrCWrapperTemplate));
   strCWrapperContents := System.stringReplace(strCWrapperContents,"<%fullModelName%>", fullClassName);
   strCWrapperContents := System.stringReplace(strCWrapperContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
-  // dump the result into ModelName_wrapper.c  
+  // dump the result into ModelName_wrapper.c
   System.writeFile(lastClassName +& cStrWrapperSuffix +& ".c", strCWrapperContents);
-  
+
   // read the wrapper_template.makefile template, replace the extension points
   strMakefileContents := System.readFile(getFullShareFileName(cStrMakefileWrapperTemplate));
   strMakefileContents := System.stringReplace(strMakefileContents,"<%fullModelName%>", fullClassName);
   strMakefileContents := System.stringReplace(strMakefileContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
   // dump the result into ModelName_wrapper.makefile
   System.writeFile(lastClassName +& cStrWrapperSuffix +& ".makefile",strMakefileContents);
-  
+
   // we should check if it works fine!
   compileWrapperCommand := System.readFile(getFullShareFileName(cStrWrapperCompileCmd));
   compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
   compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%currentDirectory%>", System.pwd());
-  compileWrapperCommand := compileWrapperCommand +& " > " +& lastClassName +& cStrWrapperSuffix +& ".log" +& " 2>&1";  
+  compileWrapperCommand := compileWrapperCommand +& " > " +& lastClassName +& cStrWrapperSuffix +& ".log" +& " 2>&1";
   runCommand(compileWrapperCommand);
 end generateWrapperLibrary;
 
@@ -172,9 +172,9 @@ end generateXMLFile;
 protected function generateXMLFileContent "help function"
   input String className;
   input BackendDAE.BackendDAE dae;
-  output String content;  
+  output String content;
 algorithm
-  content := generateXMLHeader(className) +& "<wrapper>\n" +& generateXMLLibrary(className,dae)+&"\n"+&generateXMLExternalCode(className,dae)+& "\n</wrapper>"; 
+  content := generateXMLHeader(className) +& "<wrapper>\n" +& generateXMLLibrary(className,dae)+&"\n"+&generateXMLExternalCode(className,dae)+& "\n</wrapper>";
 end generateXMLFileContent;
 
 protected function generateXMLHeader "help function"
@@ -215,12 +215,12 @@ algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae);
   varLst := List.select(varLst,BackendVariable.varHasUncertaintyAttribute);
   // adrpo: 2012-11-28: sems the order is fine without listReverse!
-  // varLst := listReverse(varLst); 
+  // varLst := listReverse(varLst);
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
   dllStr := " <path>" +& className +& cStrWrapperSuffix +& System.getDllExt() +& "</path>";
   funcStr := "   <function provided=\"yes\">" +& className +& cStrWrapperSuffix +& "</function>";
-  
+
   content :=stringDelimitList({
    "<library>",
    "",
@@ -251,12 +251,12 @@ protected function generateXMLLibraryInputs "help function"
   input list<BackendDAE.Var> varLst;
   output list<String> strLst;
 algorithm
-  strLst := matchcontinue (varLst) 
-  local 
+  strLst := matchcontinue (varLst)
+  local
     String varName,varStr;
     BackendDAE.Var v;
     list<BackendDAE.Var> rest;
-    
+
     case ({}) then {};
     case (v::rest)
       equation
@@ -270,7 +270,7 @@ algorithm
        DAE.REFINE() = BackendVariable.varUncertainty(v);
        varName = ComponentReference.crefStr(BackendVariable.varCref(v));
        varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
-       strLst = generateXMLLibraryInputs(rest);    
+       strLst = generateXMLLibraryInputs(rest);
       then varStr::strLst;
     case (_::rest)
       equation
@@ -278,17 +278,17 @@ algorithm
       then strLst;
   end matchcontinue;
 end generateXMLLibraryInputs;
-  
+
 protected function generateXMLLibraryOutputs "help function"
   input list<BackendDAE.Var> varLst;
   output list<String> strLst;
 algorithm
-  strLst := matchcontinue(varLst) 
+  strLst := matchcontinue(varLst)
   local
     String varName,varStr;
     BackendDAE.Var v;
     list<BackendDAE.Var> rest;
-  case({}) then {};  
+  case({}) then {};
   case(v::rest) equation
      DAE.SOUGHT() = BackendVariable.varUncertainty(v);
      varName = ComponentReference.crefStr(BackendVariable.varCref(v));
@@ -297,7 +297,7 @@ algorithm
     then varStr::strLst;
     case(_::rest) equation
      strLst = generateXMLLibraryOutputs(rest);
-    then strLst;  
+    then strLst;
   end matchcontinue;
 end generateXMLLibraryOutputs;
 
@@ -317,12 +317,12 @@ algorithm
   modelName := Absyn.pathString(inModelPath);
   modelLastName := Absyn.pathLastIdent(inModelPath);
   templateFileContent := System.readFile(templateFile);
-  //generate the different parts of the python file 
+  //generate the different parts of the python file
   (distributions,distributionVarLst) := generateDistributions(inDaelow);
   (correlationMatrix) := generateCorrelationMatrix(inDaelow,listLength(distributionVarLst),List.map(distributionVarLst,Util.tuple21));
   collectionDistributions := generateCollectionDistributions(inDaelow,distributionVarLst);
-  inputDescriptions := stringDelimitList(List.map(distributionVarLst, getName), ", "); //generateInputDescriptions(inDaelow); 
-  
+  inputDescriptions := stringDelimitList(List.map(distributionVarLst, getName), ", "); //generateInputDescriptions(inDaelow);
+
   pythonFileName    := System.stringReplace(templateFile,"template",modelName);
 
   // Replace template markers
@@ -334,7 +334,7 @@ algorithm
 
   //Write file
   //print("writing python script to file "+&pythonFileName+&"\n");
-  System.writeFile(pythonFileName,pythonFileContent);    
+  System.writeFile(pythonFileName,pythonFileContent);
 end generatePythonScript;
 
 protected function generateDistributions "generates distibution code for the python script.
@@ -353,14 +353,14 @@ model A
   parameter Distribution distributionF = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA);
   parameter Distribution distributionL = Uniform(250, 260);
   parameter Distribution distributionI = Beta(2.5, 4.0, 3.1e2, 4.5e2);
-  Real u(distribution = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA)); // distribution name becomes <instancename>+\"_\"+<distribution name> 
+  Real u(distribution = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA)); // distribution name becomes <instancename>+\"_\"+<distribution name>
 end A; "
   input BackendDAE.BackendDAE dae;
   output String distributions;
   output list<tuple<String,String>> distributionVarLst;
 protected
   list<BackendDAE.Var> varLst;
-  list<DAE.Distribution> dists;  
+  list<DAE.Distribution> dists;
   list<String> sLst;
   String header;
   BackendDAE.BackendDAE dae2;
@@ -370,17 +370,17 @@ algorithm
   dae2 := BackendDAEOptimize.removeParameters(dae);
   //print("removed parameters, dae2:");
   //BackendDump.dump(dae2);
-  
-  varLst := BackendDAEUtil.getAllVarLst(dae2); 
+
+  varLst := BackendDAEUtil.getAllVarLst(dae2);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
-  Util.addInternalError(listLength(varLst) == 0, "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ..."); 
+  Util.addInternalError(listLength(varLst) == 0, "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...");
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
 
   // reverse to get them in the proper order
   distributionVarLst := listReverse(distributionVarLst);
   sLst := listReverse(sLst);
-  
+
   header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model";
   distributions := stringDelimitList(header::sLst,"\n");
 end generateDistributions;
@@ -389,16 +389,16 @@ protected function generateDistributionVariable " generates a distribution varia
    input tuple<DAE.Distribution,DAE.ComponentRef> tpl;
    input BackendDAE.BackendDAE dae;
    output String str;
-   output tuple<String,String> distributionVar "the name of the python variable for the distribution and the description (Modelica variable name), used later for generating the collection"; 
+   output tuple<String,String> distributionVar "the name of the python variable for the distribution and the description (Modelica variable name), used later for generating the collection";
 algorithm
   (str,distributionVar) := matchcontinue(tpl,dae)
-    local 
+    local
       String name,args,varName,distVar;
       DAE.Exp e1,e2,e3,e2_1,e3_1;
       DAE.ComponentRef cr;
       list<DAE.Exp> expl1,expl2;
-      
-    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) 
+
+    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
       equation
         // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
         // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
@@ -406,26 +406,26 @@ algorithm
         // keep the variable name EXACTLY as it is
         varName = ComponentReference.crefStr(cr);
         // use the variable name with "." replaced by "_"
-        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr); 
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
         // add LogNormal.MUSIGMA!
         str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)";
-      then 
+      then
         (str,(varName,distVar));
-        
-    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) 
+
+    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
       equation
         // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
         // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
         args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
         // keep the variable name EXACTLY as it is
         varName = ComponentReference.crefStr(cr);
-        // use the variable name with "." replaced by "_"        
-        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr); 
+        // use the variable name with "." replaced by "_"
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
         str = distVar+& " = " +& name +& "("+&args+&")";
-      then 
+      then
         (str,(varName,distVar));
-        
-    case((DAE.DISTRIBUTION(e1,e2,e3),cr),_) 
+
+    case((DAE.DISTRIBUTION(e1,e2,e3),cr),_)
       equation
         ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
@@ -434,19 +434,19 @@ algorithm
         //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
         //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
         (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
-      then 
+      then
         (str,distributionVar);
   end matchcontinue;
 end generateDistributionVariable;
 
-protected function generateCorrelationMatrix 
+protected function generateCorrelationMatrix
 "function to generate the corelation matrix in the python script"
   input BackendDAE.BackendDAE dae;
   input Integer numDists "number of distributions == number of uncertain variables == size of correlation matrix";
   input list<String> uncertainVars;
   output String correlationMatrix;
 protected
-  array<DAE.Algorithm> algs; 
+  array<DAE.Algorithm> algs;
   DAE.Algorithm correlationAlg;
   String header;
 algorithm
@@ -459,7 +459,7 @@ algorithm
         correlationMatrix = header +& generateCorrelationMatrix2(correlationAlg,uncertainVars);
      then
        correlationMatrix;
-    
+
     case (_, _, _)
       equation
         algs = BackendDAEUtil.getAlgorithms(dae);
@@ -468,19 +468,19 @@ algorithm
         Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
      then
        fail();
-    
+
     else
       equation
         Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed ...");
       then
-        fail();   
+        fail();
   end matchcontinue;
 end generateCorrelationMatrix;
 
-protected function stripCorrelationFromDae 
+protected function stripCorrelationFromDae
 "removes the correlation vector and it's corresponding algorithm section from the DAE.
  This means that it must remove from two places, the variables and the equations"
-  input BackendDAE.BackendDAE dae; 
+  input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE strippedDae;
 protected
   BackendDAE.EqSystems eqs;
@@ -492,9 +492,9 @@ algorithm
   strippedDae := BackendDAE.DAE(eqs,shared);
 end stripCorrelationFromDae;
 
-protected function eqnSystemNotZero 
+protected function eqnSystemNotZero
 "returns true if system contains variables and equations"
-  input BackendDAE.EqSystem eqs; 
+  input BackendDAE.EqSystem eqs;
   output Boolean notZero;
 protected
   BackendDAE.EquationArray eqns;
@@ -514,7 +514,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets)  := eqsys;
   vars := stripCorrelationVars(vars);
-  eqns := stripCorrelationEqns(eqns); 
+  eqns := stripCorrelationEqns(eqns);
   outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
 end stripCorrelationVarsAndEqns;
 
@@ -537,7 +537,7 @@ algorithm
 
     case(BackendDAE.ALGORITHM(alg=alg)) then hasCorrelationStatement(alg);
     case(_) then false;
-  
+
   end matchcontinue;
 end equationIsCorrelationBinding;
 
@@ -548,7 +548,7 @@ protected
   list<BackendDAE.Var> varLst;
 algorithm
   (_,varLst) := List.splitOnTrue(BackendVariable.varList(vars),isCorrelationVar);
-  outVars := BackendVariable.listVar1(varLst); 
+  outVars := BackendVariable.listVar1(varLst);
 end stripCorrelationVars;
 
 protected function isCorrelationVar "help function"
@@ -557,37 +557,37 @@ protected function isCorrelationVar "help function"
 algorithm
   res := matchcontinue(var)
     local DAE.ComponentRef cr;
-    
-    case _ 
+
+    case _
       equation
         cr = BackendVariable.varCref(var);
-        true = isCorrelationVarCref(cr);      
+        true = isCorrelationVarCref(cr);
       then true;
-    
+
     case(_) then false;
-  
-  end matchcontinue;  
+
+  end matchcontinue;
 end isCorrelationVar;
 
 protected function isCorrelationVarCref "help function"
  input DAE.ComponentRef cr;
  output Boolean res;
 algorithm
-  res := 0 == System.strcmp(ComponentReference.crefFirstIdent(cr),"correlation");  
+  res := 0 == System.strcmp(ComponentReference.crefFirstIdent(cr),"correlation");
 end isCorrelationVarCref;
-  
+
 protected function hasCorrelationStatement " help function "
   input DAE.Algorithm alg;
   output Boolean res;
 algorithm
   res := matchcontinue(alg)
-    local 
+    local
       list<DAE.Statement> stmts;
-    
+
     case(DAE.ALGORITHM_STMTS({})) then false;
     case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),_,_)::_)) then true;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then hasCorrelationStatement(DAE.ALGORITHM_STMTS(stmts));
-  
+
   end matchcontinue;
 end hasCorrelationStatement;
 
@@ -597,10 +597,10 @@ protected function getCorrelationExp " help function "
 algorithm
   res := matchcontinue(alg)
     local list<DAE.Statement> stmts;
-    
+
     case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),res,_)::_)) then res;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then getCorrelationExp(DAE.ALGORITHM_STMTS(stmts));
-  
+
   end matchcontinue;
 end getCorrelationExp;
 
@@ -608,7 +608,7 @@ protected function generateCorrelationMatrix2 "help function"
   input DAE.Algorithm correlationAlg;
   input list<String> uncertainVars;
   output String str;
-protected 
+protected
   DAE.Exp exp;
   list<DAE.Exp> expl;
 algorithm
@@ -633,9 +633,9 @@ algorithm
   plow := intMin(p1,p2);
   phigh := intMax(p1,p2);
   str := "RS["+&intString(plow)+&","+&intString(phigh)+&"] = "+&valStr;
-end generateCorrelationMatrix3;   
-  
-protected function generateCollectionDistributions 
+end generateCorrelationMatrix3;
+
+protected function generateCollectionDistributions
 "generate the collection distributions in the python script"
   input BackendDAE.BackendDAE dae;
   input list<tuple<String,String>> distributionVarLst;
@@ -646,7 +646,7 @@ algorithm
   collectionVarName := "collectionMarginals";
   collectionDistributions := "# Initialization of the distribution collection:\n"
   +& collectionVarName+&" = DistributionCollection()\n"
-  +& stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");   
+  +& stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");
 end generateCollectionDistributions;
 
 protected function getName "help function"
@@ -661,10 +661,10 @@ protected function generateCollectionDistributions2 "help function"
   input tuple<String,BackendDAE.BackendDAE> tpl;
   output String str;
 algorithm
-  str := Util.tuple21(tpl)+& ".add(Distribution(" +& Util.tuple22(distVarTpl) +& ",\"" +&Util.tuple21(distVarTpl)+&"\"))";  
+  str := Util.tuple21(tpl)+& ".add(Distribution(" +& Util.tuple22(distVarTpl) +& ",\"" +&Util.tuple21(distVarTpl)+&"\"))";
 end generateCollectionDistributions2;
 
-protected function generateInputDescriptions 
+protected function generateInputDescriptions
 "generates the input variables for the XML wrapper"
   input BackendDAE.BackendDAE dae;
   output String inputDescriptions;
@@ -677,11 +677,11 @@ public function getFullSharePath
  returns $OPENMODELICAHOME/share/omc/scripts/OpenTurns/"
  output String strFullSharePath;
 algorithm
- strFullSharePath := 
-   Settings.getInstallationDirectoryPath() +& 
-   System.pathDelimiter() +& 
-   cStrSharePath +& 
-   System.pathDelimiter();  
+ strFullSharePath :=
+   Settings.getInstallationDirectoryPath() +&
+   System.pathDelimiter() +&
+   cStrSharePath +&
+   System.pathDelimiter();
 end getFullSharePath;
 
 public function getFullShareFileName
@@ -691,7 +691,7 @@ public function getFullShareFileName
  input String strFileName;
  output String strFullShareFileName;
 algorithm
- strFullShareFileName := getFullSharePath() +& strFileName;  
+ strFullShareFileName := getFullSharePath() +& strFileName;
 end getFullShareFileName;
 
 public function runPythonScript
@@ -711,7 +711,7 @@ algorithm
         cmdFile = inStrPythonScriptFile +& ".bat";
         System.writeFile(cmdFile, cmdContents);
         logFile = inStrPythonScriptFile +& ".log";
-        runCommand(cmdFile +& " > " +& logFile +& " 2>&1"); 
+        runCommand(cmdFile +& " > " +& logFile +& " 2>&1");
       then
         logFile;
   end match;
@@ -732,7 +732,7 @@ algorithm
         print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
       then
         ();
-  end matchcontinue;      
+  end matchcontinue;
 end runCommand;
 
 end OpenTURNS;

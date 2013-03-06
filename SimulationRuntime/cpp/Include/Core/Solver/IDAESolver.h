@@ -1,15 +1,15 @@
 #pragma once
 
- 
+
 
 /*****************************************************************************/
 /**
 
-Abstract interface class for numerical time integration methods 
+Abstract interface class for numerical time integration methods
 in open modelica.
 
 \date     October, 1st, 2008
-\author   
+\author
 
 */
 /*****************************************************************************
@@ -19,7 +19,7 @@ class IDAESolver
 {
 
 public:
-    /// Enumeration to control the time integration 
+    /// Enumeration to control the time integration
     enum SOLVERCALL
     {
         UNDEF_CALL        =    0x00000000,
@@ -49,16 +49,16 @@ public:
         EQUAL_ZERO,            ///< Value of zero function smaller than given tolerance (_zeroTol)
         ZERO_CROSSING,        ///< zero crossing = change in sign of zero function
         NO_ZERO,            ///< Even though zero crossing occured, no value of zero function did not become zero in given intervall
-        UNCHANGED_SIGN        ///< no zero crossing = continoue time integration 
+        UNCHANGED_SIGN        ///< no zero crossing = continoue time integration
     };
 
     virtual ~IDAESolver()    {};
 
 
-    /// Set start time 
+    /// Set start time
     virtual void setStartTime(const double& time) = 0;
 
-    /// Set end time 
+    /// Set end time
     virtual void setEndTime(const double& time) = 0;
 
     /// Set the initial step size (needed for reinitialization after external zero search)

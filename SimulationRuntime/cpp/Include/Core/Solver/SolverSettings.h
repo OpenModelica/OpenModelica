@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ISolverSettings.h"
- 
+
 
 
 /*****************************************************************************/
@@ -10,7 +10,7 @@
 Encapsulation of general solver settings.
 
 \date     October, 1st, 2008
-\author 
+\author
 
 
 */
@@ -40,7 +40,7 @@ public:
     /// Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
      virtual double getZeroTimeTol();
    virtual void setZeroTimeTol(double) ;
-    
+
         virtual double getZeroRatio();
     virtual void setZeroRatio(double) ;
    virtual double getATol();
@@ -62,9 +62,9 @@ private:
     _zeroRatio,    ///< = Hinit_{afterZero} / Hinit_{orig} Verhältnis zwischen Originaler Initialschrittweite und Anfangsschrittweite nach Neustart des Solvers
   _dRtol,
    _dAtol;
-    IGlobalSettings*  
+    IGlobalSettings*
     _globalSettings;  ///< Global simulation settings
-   
+
 
      //Serialization of settings class
     friend class boost::serialization::access;

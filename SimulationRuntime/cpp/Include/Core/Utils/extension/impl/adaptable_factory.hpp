@@ -11,7 +11,7 @@
 // No header guard - this file is intended to be included multiple times.
 
 # define N BOOST_PP_ITERATION()
-         
+
 public:
 template <class Interface, class Derived
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, class Param)>
