@@ -284,7 +284,7 @@ BitmapWidget::BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent)
 }
 
 void BitmapWidget::setUpForm()
-{        
+{
   mpBrowseBox = new QLineEdit;
 
   mpBrowseButton = new QPushButton(Helper::browse);
@@ -316,7 +316,7 @@ void BitmapWidget::setUpForm()
 }
 
 void BitmapWidget::edit()
-{        
+{
   if(!(mpBrowseBox->text().endsWith("png") || mpBrowseBox->text().endsWith("bmp") || mpBrowseBox->text().endsWith("jpg")))
   {
     QMessageBox::critical(mpParentMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),

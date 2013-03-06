@@ -52,7 +52,7 @@ class OMCProxy;
 class  BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
-public:    
+public:
   BitmapAnnotation(QString shape, Component *pParent);
   BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
   BitmapAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);

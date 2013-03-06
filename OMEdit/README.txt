@@ -1,7 +1,7 @@
 /*
  * RCS: $Id$
  */
- 
+
 Windows
 ------------------------------
 
@@ -27,7 +27,7 @@ Windows
 
 Linux
 ------------------------------
-  
+
   Run the following commands
   ------------------------------
   - apt-get build-dep openmodelica

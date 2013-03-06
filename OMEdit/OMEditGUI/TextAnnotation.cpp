@@ -79,7 +79,7 @@ TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParen
 
 TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent)
   : ShapeAnnotation(graphicsView, pParent)
-{    
+{
   // initialize all fields with default values
   initializeFields();
   mFontWeight = QFont::Normal;
@@ -113,7 +113,7 @@ QPainterPath TextAnnotation::shape() const
 }
 
 void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{    
+{
   Q_UNUSED(option);
   Q_UNUSED(widget);
 

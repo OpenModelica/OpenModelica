@@ -72,7 +72,7 @@ void ComponentsProperties::parseString(QString value)
   int index = 0;
   QStringList list = StringHandler::unparseStrings(value);
   mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
-  
+
   bool ok;
   if (mIndex.isEmpty())
     mIndexValue = -1;
@@ -80,48 +80,48 @@ void ComponentsProperties::parseString(QString value)
     mIndexValue = -2;
   else
     mIndexValue = mIndex.toInt(&ok,10);
-  
+
   if (list.size() > 0)
     mClassName = list.at(0);
   else
     return;
-  
+
   if (list.size() > 1)
     mName = list.at(1);
   else
     return;
-  
+
   if (list.size() > 2)
     mComment = list.at(2);
   else
     return;
-  
+
   if (list.size() > 3)
     mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
   else
     return;
-  
+
   if (list.size() > 4)
     mIsFinal = static_cast<QString>(list.at(4)).contains("true");
   else
     return;
-  
+
   if (list.size() > 5)
     mIsFlow = static_cast<QString>(list.at(5)).contains("true");
   else
     return;
-  
+
   if (list.size() > 10)
   {
     mIsStream = static_cast<QString>(list.at(6)).contains("true");
     index = 1;
   }
-  
+
   if (list.size() > 6 + index)
     mIsReplaceable = static_cast<QString>(list.at(6 + index)).contains("true");
   else
     return;
-  
+
   if (list.size() > 7 + index)
   {
     QMap<QString, QString>::iterator variability_it;
@@ -134,17 +134,17 @@ void ComponentsProperties::parseString(QString value)
       }
     }
   }
-  
+
   if (list.size() > 8 + index)
     mIsInner = static_cast<QString>(list.at(8 + index)).contains("inner");
   else
     return;
-  
+
   if (list.size() > 8 + index)
     mIsOuter = static_cast<QString>(list.at(8 + index)).contains("outer");
   else
     return;
-  
+
   if (list.size() > 9 + index)
   {
     QMap<QString, QString>::iterator casuality_it;

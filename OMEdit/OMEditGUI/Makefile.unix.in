@@ -5,7 +5,7 @@ builddir_bin=$(top_builddir)/build/bin/
 builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 resourcedir=./Resources/nls/
-  
+
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@

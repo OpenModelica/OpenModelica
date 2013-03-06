@@ -76,7 +76,7 @@ HEADERS  += mainwindow.h \
     PolygonAnnotation.h \
     RectangleAnnotation.h \
     EllipseAnnotation.h \
-    TextAnnotation.h \    
+    TextAnnotation.h \
     ComponentsProperties.h \
     CornerItem.h \
     ConnectorWidget.h \
