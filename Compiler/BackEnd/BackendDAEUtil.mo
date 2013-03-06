@@ -1448,8 +1448,10 @@ algorithm
       equation
         ((BackendDAE.VAR(varKind = kind)::_),_) = BackendVariable.getVar(cr, vars);
         res = isKindDiscrete(kind);
+        b = Util.getOptionOrDefault(blst,res);
+        b = Util.boolAndList({b,res});
       then
-        ((e,false,(vars,knvars,SOME(res))));
+        ((e,false,(vars,knvars,SOME(b))));
     // builtin variable time is not discrete
     case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
     // Known variables that are input are continuous
