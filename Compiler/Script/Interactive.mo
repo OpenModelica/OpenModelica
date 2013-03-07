@@ -10296,6 +10296,7 @@ algorithm
       list<Absyn.ComponentItem> items;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
+      Absyn.ArrayDim arrayDimensions;
       Option<Absyn.Modification> mod,modification;
       Option<Absyn.Exp> cond;
       Option<Absyn.Comment> ann,annotation_;
@@ -10313,14 +10314,14 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         publst = getPublicList(parts);
         Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
+        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
-            {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
       then
         (newp,"true");
@@ -10334,14 +10335,14 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         protlst = getProtectedList(parts);
         Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
+        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToProtected(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
       then
         (newp,"true");
@@ -10356,14 +10357,14 @@ algorithm
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
         Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
+        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
       then
         (newp,"true");
@@ -10378,14 +10379,14 @@ algorithm
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         protlst = getProtectedList(parts);
         Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
+        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToProtected(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
       then
         (newp,"true");
