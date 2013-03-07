@@ -9468,5 +9468,16 @@ algorithm
   end match;
 end transposeArray;
 
+public function getCrefFromCrefOrAsub
+  "Get the cref from an expression that might be ASUB. If so, return the base CREF (this function does *not* always return a CREF with the same type as the full expression)."
+  input DAE.Exp exp;
+  output DAE.ComponentRef cr;
+algorithm
+  cr := match exp
+    case DAE.CREF(componentRef=cr) then cr;
+    case DAE.ASUB(exp=DAE.CREF(componentRef=cr)) then cr;
+  end match;
+end getCrefFromCrefOrAsub;
+
 end Expression;
 

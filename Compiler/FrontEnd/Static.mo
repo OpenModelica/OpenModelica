@@ -5200,10 +5200,18 @@ algorithm
       Prefix.Prefix pre;
       String sp;
 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, constant variability */
+      equation
+        (cache,exp_1,DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        _ = Expression.getCrefFromCrefOrAsub(exp_1);
+        true = Types.isParameterOrConstant(c);
+      then (cache, DAE.BCONST(false), DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
+
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, \'discrete\' variable */
       equation
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         Types.simpleType(tp1);
+        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
         (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
@@ -5211,25 +5219,18 @@ algorithm
 
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, boolean or integer => discrete variable */
       equation
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        _ = Expression.getCrefFromCrefOrAsub(exp_1);
         Types.simpleType(tp1);
         Types.discreteType(tp1);
         exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, constant variability */
-      equation
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        true = Types.isParameterOrConstant(c);
-        Types.simpleType(tp1);
-        exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
-
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_)
       equation
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
         Types.simpleType(tp1);
         (cache,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sp = PrefixUtil.printPrefixStr3(pre);
