@@ -1884,8 +1884,8 @@ void ProjectTab::getModelComponents(QString modelName)
             pDiagramComponent->resetTransform();
             pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
             pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
-            pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
             pDiagramComponent->setRotation(transformation->getRotateAngle());
+            pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
           }
           if (pIconComponent)
           {
@@ -1896,8 +1896,8 @@ void ProjectTab::getModelComponents(QString modelName)
             pIconComponent->resetTransform();
             pIconComponent->scale(transformation->getScaleIcon(), transformation->getScaleIcon());
             pIconComponent->setPos(transformation->getPositionXIcon(), transformation->getPositionYIcon());
-            pIconComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
             pIconComponent->setRotation(transformation->getRotateAngleIcon());
+            pIconComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
           }
         }
       }
@@ -1923,8 +1923,8 @@ void ProjectTab::getModelComponents(QString modelName)
             pDiagramComponent->resetTransform();
             pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
             pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
-            pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
             pDiagramComponent->setRotation(transformation->getRotateAngle());
+            pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
           }
         }
       }
