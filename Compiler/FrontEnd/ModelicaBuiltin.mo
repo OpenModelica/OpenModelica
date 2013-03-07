@@ -1878,8 +1878,7 @@ Similar to <a href=\"http://linux.die.net/man/3/realpath\">realpath(3)</a>, but 
 </html>"));
 end realpath;
 
-function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
-  The result depends on the current MODELICAPATH. Returns the empty string on failure."
+function uriToFilename
   input String uri;
   output String filename := "";
 protected
@@ -1942,6 +1941,11 @@ algorithm
   else
     filename := uri;
   end if;
+annotation(Documentation(info="<html>
+Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
+modelica:// URI's are only handled if the class is already loaded.
+Returns the empty string on failure.
+</html>"));
 end uriToFilename;
 
 function getLoadedLibraries
