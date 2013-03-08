@@ -1428,7 +1428,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 
       if reinits then
         <<
-        //For whenclause index: <%int%>
+        /* for whenclause index <%int%> */
         if(initial())
         {
           <%initial_assign%>
@@ -1488,21 +1488,21 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
 end functionWhenReinitStatementThen;
 
 //Pavol: this one is never used, is it obsolete ??
-template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let val = daeExp(value, contextSimulationDiscrete,
-                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      '<%cref(stateVar)%> = $P$PRE<%cref(stateVar)%>;';separator="\n"
-    )
-  <<
-   <%body%>
-  >>
-end functionWhenReinitStatementElse;
+//template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
+//                            Text &varDecls /*BUFP*/)
+// "Generates re-init statement for when equation."
+//::=
+//  let body = (reinits |> reinit =>
+//    match reinit
+//    case REINIT(__) then
+//      let val = daeExp(value, contextSimulationDiscrete,
+//                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
+//      '<%cref(stateVar)%> = $P$PRE<%cref(stateVar)%>;';separator="\n"
+//    )
+//  <<
+//   <%body%>
+//  >>
+//end functionWhenReinitStatementElse;
 
 template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n)
 ::=
@@ -1878,7 +1878,7 @@ template relationTpl(Integer index1, Exp relation, Context context, Text &varDec
     >>
   else
     <<
-    // UNKNOWN Relation for <%index1%>
+    /* UNKNOWN Relation for <%index1%> */
     >>
 end relationTpl;
 
@@ -3089,27 +3089,28 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   >>
 end simulationInitFile;
 
-template initVals(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(__) =>
-  <<
-  <%match initialValue
-    case SOME(v) then initVal(v)
-      else "0.0 //default"
-    %> //<%crefStr(name)%>
-    >>
-  ;separator="\n"
-end initVals;
-
-template initVal(Exp initialValue)
-::=
-  match initialValue
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '<%Util.escapeModelicaStringToCString(string)%>'
-  case BCONST(__) then if bool then "true" else "false"
-  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
-  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
-end initVal;
+// lochel: this is apparently not used
+// template initVals(list<SimVar> varsLst) ::=
+//   varsLst |> SIMVAR(__) =>
+//   <<
+//   <%match initialValue
+//     case SOME(v) then initVal(v)
+//       else "0.0 //default"
+//     %> //<%crefStr(name)%>
+//     >>
+//   ;separator="\n"
+// end initVals;
+// 
+// template initVal(Exp initialValue)
+// ::=
+//   match initialValue
+//   case ICONST(__) then integer
+//   case RCONST(__) then real
+//   case SCONST(__) then '<%Util.escapeModelicaStringToCString(string)%>'
+//   case BCONST(__) then if bool then "true" else "false"
+//   case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
+//   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
+// end initVal;
 
 template commonHeader(String filePrefix)
 ::=
