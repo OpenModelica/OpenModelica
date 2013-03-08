@@ -48,10 +48,10 @@ end initial;
 
 function terminal
   output Boolean isTerminal;
-external "builtin";
 annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
+external "builtin";
 end terminal;
 
 type AssertionLevel = enumeration(error, warning) annotation(Documentation(info="<html>
