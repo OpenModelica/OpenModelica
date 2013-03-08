@@ -1897,6 +1897,7 @@ algorithm
     isFileUri := regexBool(uri, "^file://", caseInsensitive=true);
     if isModelicaUri then
       libraries := getLoadedLibraries();
+      assert(sum(1 for lib in libraries) > 0, "No libraries loaded");
       path := matches[2];
       while path <> "" loop
         (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
