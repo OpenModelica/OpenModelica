@@ -40,10 +40,10 @@ end der;
 
 function initial
   output Boolean isInitial;
-external "builtin";
 annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
+external "builtin";
 end initial;
 
 function terminal
