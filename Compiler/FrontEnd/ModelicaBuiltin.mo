@@ -1897,7 +1897,10 @@ algorithm
     isFileUri := regexBool(uri, "^file://", caseInsensitive=true);
     if isModelicaUri then
       libraries := getLoadedLibraries();
-      assert(sum(1 for lib in libraries) > 0, "No libraries loaded");
+      if sum(1 for lib in libraries) == 0 then
+        filename := "";
+        return;
+      end if;
       path := matches[2];
       while path <> "" loop
         (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
@@ -1920,7 +1923,11 @@ algorithm
             end if;
           end for;
           print(if not isMatch then "Could not resolve URI: " + uri + "\n" else "");
-          assert(isMatch,"Could not resolve URI: " + uri);
+          if not isMatch then
+            print("Could not resolve URI: " + uri + "\n");
+            filename := "";
+            return;
+          end if;
         end if;
       end while;
       filename := if isMatch then realpath(filename + "/" + matches[3]) else filename;
@@ -1930,12 +1937,14 @@ algorithm
     elseif isFileUri and not isFileUriAbsolute then
       str := "file:// schema without absolute paths are not supported: " + uri;
       print(str + "\n");
-      assert(false, str);
+      filename := "";
+      return;
     elseif not (isModelicaUri or isFileUri) then
       /* Not using else because OpenModelica handling of assertions at runtime is not very good */
       str := "Unknown URI schema: " + uri;
       print(str + "\n");
-      assert(false, str);
+      filename := "";
+      return;
     else
       /* empty */
     end if;
