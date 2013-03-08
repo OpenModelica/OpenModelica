@@ -111,7 +111,7 @@ runtimeCPPinstall:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
 
 omc-diff: mkbuilddirs 
-	(! test -f testsuite/Makefile) || $(MAKE) -C testsuite/ -f Makefile omc-diff
+	$(MAKE) -C testsuite/ -f Makefile omc-diff
 
 testlibrariemsl31cpp:
 	(cd testsuite/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
