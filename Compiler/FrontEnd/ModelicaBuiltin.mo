@@ -40,18 +40,16 @@ end der;
 
 function initial
   output Boolean isInitial;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
 
 function terminal
   output Boolean isTerminal;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -83,9 +81,8 @@ function sample "Trigger time events"
   parameter input Real start(fixed=false);
   parameter input Real interval(fixed=false);
   output Boolean isSample;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
 </html>"));
 end sample;
@@ -304,13 +301,12 @@ function linspace
   input Real x2 "end";
   input Integer n "number";
   output Real v[n];
-
-annotation(__OpenModelica_EarlyInline=true,Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>
-</html>"));
 algorithm
   // assert(n >= 2, "linspace requires n>=2 but got " + String(n));
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
+annotation(__OpenModelica_EarlyInline=true,Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>
+</html>"));
 end linspace;
 
 function div = $overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
@@ -631,9 +627,8 @@ end Subtask;
 
 function print "Prints to stdout, useful for debugging."
   input String str;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
-annotation(version="OpenModelica extension");
+annotation(__OpenModelica_Impure = true, version="OpenModelica extension");
 end print;
 
 function classDirectory "No clue what it does as it's not standardized"
@@ -800,26 +795,24 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer[3] x;
     input Integer[3] y;
     output Integer[3] z;
-    annotation(__OpenModelica_EarlyInline = true);
     external "builtin" cross(x,y,z);
   /* Not working due to problems with non-builtin overloaded functions
   algorithm
     z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
   */
-  annotation(preferredView="text");
+  annotation(__OpenModelica_EarlyInline = true, preferredView="text");
   end crossInt;
 
   function crossReal
     input Real[3] x;
     input Real[3] y;
     output Real[3] z;
-    annotation(__OpenModelica_EarlyInline = true);
     external "builtin" cross(x,y,z);
   /* Not working due to problems with non-builtin overloaded functions
   algorithm
     z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
   */
-  annotation(preferredView="text");
+  annotation(__OpenModelica_EarlyInline = true, preferredView="text");
   end crossReal;
 
   function skewInt
@@ -1149,14 +1142,13 @@ end setPlotCommand;
 
 function getSettings
   output String settings;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   settings :=
     "Compile command: " + getCompileCommand() + "\n" +
     "Temp folder path: " + getTempDirectoryPath() + "\n" +
     "Installation folder: " + getInstallationDirectoryPath() + "\n" +
     "Modelica path: " + getModelicaPath() + "\n";
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end getSettings;
 
 function setTempDirectoryPath
@@ -1191,10 +1183,9 @@ function appendEnvironmentVar "Appends a variable to the environment variables l
   input String var;
   input String value;
   output String result "returns \"error\" if the variable could not be appended";
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   result := if setEnvironmentVar(var,getEnvironmentVar(var)+value) then getEnvironmentVar(var) else "error";
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end appendEnvironmentVar;
 
 function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar."
@@ -1240,28 +1231,25 @@ end setCompilerFlags;
 function setDebugFlags "example input: failtrace,-noevalfunc"
   input String debugFlags;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+d=" + debugFlags);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDebugFlags;
 
 function setPreOptModules "example input: removeFinalParameters,removeSimpleEquations,expandDerOperator"
   input String modules;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+preOptModules=" + modules);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPreOptModules;
 
 function setCheapMatchingAlgorithm "example input: 3"
   input Integer matchingAlgorithm;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+cheapmatchingAlgorithm=" + String(matchingAlgorithm));
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setCheapMatchingAlgorithm;
 
 function getMatchingAlgorithm
@@ -1278,10 +1266,9 @@ end getAvailableMatchingAlgorithms;
 function setMatchingAlgorithm "example input: omc"
   input String matchingAlgorithm;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+matchingAlgorithm=" + matchingAlgorithm);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setMatchingAlgorithm;
 
 function getIndexReductionMethod
@@ -1298,19 +1285,17 @@ end getAvailableIndexReductionMethods;
 function setIndexReductionMethod "example input: dynamicStateSelection"
   input String method;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+indexReductionMethod=" + method);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setIndexReductionMethod;
 
 function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
   input String modules;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+postOptModules=" + modules);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPastOptModules;
 
 function getTearingMethod
@@ -1327,10 +1312,9 @@ end getAvailableTearingMethods;
 function setTearingMethod "example input: omcTearing"
   input String tearingMethod;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+tearingMethod=" + tearingMethod);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setTearingMethod;
 
 function setCommandLineOptions
@@ -1541,10 +1525,9 @@ end getAnnotationVersion;
 function setAnnotationVersion "Sets the annotation version."
   input String annotationVersion;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+annotationVersion=" + annotationVersion);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setAnnotationVersion;
 
 function getNoSimplify "Returns true if noSimplify flag is set."
@@ -1569,10 +1552,9 @@ end getVectorizationLimit;
 function setVectorizationLimit
   input Integer vectorizationLimit;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+v=" + String(vectorizationLimit));
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setVectorizationLimit;
 
 public function getDefaultOpenCLDevice
@@ -1586,10 +1568,9 @@ public function setDefaultOpenCLDevice
   "Sets the default OpenCL device to be used."
   input Integer defdevid;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+o=" + String(defdevid));
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDefaultOpenCLDevice;
 
 function setShowAnnotations
@@ -1608,10 +1589,9 @@ end getShowAnnotations;
 function setOrderConnections "Sets the orderConnection flag."
   input Boolean orderConnections;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+orderConnections=" + String(orderConnections));
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setOrderConnections;
 
 function getOrderConnections "Returns true if orderConnections flag is set."
@@ -1623,10 +1603,9 @@ end getOrderConnections;
 function setLanguageStandard "Sets the Modelica Language Standard."
   input String inVersion;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+std=" + inVersion);
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setLanguageStandard;
 
 function getLanguageStandard "Returns the current Modelica Language Standard in use."
@@ -2128,10 +2107,9 @@ end getPackages;
 function setPlotSilent "Sets the plotSilent flag."
   input Boolean silent;
   output Boolean success;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+plotSilent=" + String(silent));
-annotation(preferredView="text");
+annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPlotSilent;
 
 function getPlotSilent "Returns true if plotSilent flag is set."

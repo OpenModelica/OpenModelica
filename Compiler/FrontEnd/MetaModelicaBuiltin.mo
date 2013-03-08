@@ -33,184 +33,184 @@ function boolAnd
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := b1 and b2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end boolAnd;
 
 function boolOr
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := b1 or b2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end boolOr;
 
 function boolNot
   input Boolean b;
   output Boolean nb;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   nb := not b;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end boolNot;
 
 function boolEq
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := b1 == b2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end boolEq;
 
 function boolString
   input Boolean b;
   output String str;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   str := if b then "true" else "false";
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end boolString;
 
 function intAdd
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := i1 + i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intAdd;
 
 function intSub
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := i1 - i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intSub;
 
 function intMul
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := i1 * i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intMul;
 
 function intDiv
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := div(i1,i2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intDiv;
 
 function intMod
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := mod(i1,i2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intMod;
 
 function intMax
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := max(i1,i2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intMax;
 
 function intMin
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := min(i1,i2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intMin;
 
 function intAbs
   input Integer i;
   output Integer oi;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   oi := abs(i);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intAbs;
 
 function intNeg
   input Integer i;
   output Integer oi;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   oi := -i;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intNeg;
 
 function intLt
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 < i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intLt;
 
 function intLe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 <= i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intLe;
 
 function intEq
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 == i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intEq;
 
 function intNe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 <> i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intNe;
 
 function intGe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 >= i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intGe;
 
 function intGt
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := i1 > i2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intGt;
 
 function intReal
   input Integer i;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := i;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intReal;
 
 function intString
@@ -224,150 +224,150 @@ function realAdd
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := r1+r2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realAdd;
 
 function realSub
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := r1-r2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realSub;
 
 function realMul
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := r1*r2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realMul;
 
 function realDiv
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := r1/r2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realDiv;
 
 function realMod
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := mod(r1,r2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realMod;
 
 function realPow
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := r1^r2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realPow;
 
 function realMax
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := max(r1,r2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realMax;
 
 function realMin
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   r := min(r1,r2);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realMin;
 
 function realAbs
   input Real x;
   output Real y;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   y := abs(x);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realAbs;
 
 function realNeg
   input Real x;
   output Real y;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   y := -x;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realNeg;
 
 function realLt
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 < x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realLt;
 
 function realLe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 <= x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realLe;
 
 function realEq
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 == x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realEq;
 
 function realNe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 <> x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realNe;
 
 function realGe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 >= x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realGe;
 
 function realGt
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := x1 > x2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realGt;
 
 function realInt
   input Real r;
   output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   i := integer(r);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realInt;
 
 function realString
@@ -450,27 +450,27 @@ function stringAppend "O(s1+s2)"
   input String s1;
   input String s2;
   output String s;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   s := s1 + s2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end stringAppend;
 
 function stringEq
   input String s1;
   input String s2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := s1 == s2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end stringEq;
 
 function stringEqual
   input String s1;
   input String s2;
   output Boolean b;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   b := s1 == s2;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end stringEqual;
 
 function stringCompare
@@ -542,9 +542,9 @@ function listNth<A> "index from 0; this function is deprecated"
   input List<A> lst;
   input Integer index;
   output A element;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   element := listGet(lst,index+1);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end listNth;
 
 function listRest<A> "O(1)"
@@ -576,9 +576,9 @@ function cons<A> "O(1)"
   input A element;
   input List<A> inLst;
   output List<A> outLst;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   outLst := element::inLst;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end cons;
 
 function arrayLength<A> "O(1)"
@@ -598,9 +598,9 @@ function arrayNth<A> "index from 0 is depreceated; use arrayGet"
   input array<A> arr;
   input Integer index;
   output A value;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   value := arrayGet(arr,index+1);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end arrayNth;
 
 function arrayCreate<A>
@@ -631,8 +631,8 @@ function arrayUpdate<A>
   input Integer index;
   input A newValue;
   output array<A> newArray "same as the input array; used for folding";
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end arrayUpdate;
 
 function arrayCopy<A>
@@ -660,22 +660,22 @@ end anyString;
 function printAny<A>
   "print(anyString(a)), but to stderr"
   input A a;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end printAny;
 
 function debug_print<A>
   "For RML compatibility"
   input String str;
   input A a;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end debug_print;
 
 function tick
   output Integer t;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end tick;
 
 function equality<A>
@@ -690,8 +690,8 @@ function setGlobalRoot<A>
   "
   input Integer index;
   input A value;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end setGlobalRoot;
 
 function valueConstructor<A>
@@ -731,6 +731,7 @@ function referenceEq<A>
   input A a1;
   input A a2;
   output Boolean b;
+external "builtin";
   annotation(__OpenModelica_Impure = true, Documentation(info="<html>
 <p>This is a very fast comparison of two values which only checks if the pointers are equal.</p>
 <p>The intended way of using the function is to speed up comparisons.</p>
@@ -739,14 +740,13 @@ you can use referenceEq instead of structural equality (<a href=\"modelica://val
 <p>You can also use the function to speed up comparsions if the rate of success is expected to be high or the cost of structural equality is high. But then you need to do a structural equality check after to make sure nothing is wrong.</p>
 <p>You can use the function to avoid reconstructing an identical datastructure on traversals, which saves memory and time spent on garbage collection: case rec as REC(x) equation nx = f(x); then if referenceEq(x,nx) then rec else REC(nx);</p>
 </html>"));
-external "builtin";
 end referenceEq;
 
 function clock
   "Use the diff to compare two time samples to each other. Not very accurate."
   output Real t;
-  annotation(__OpenModelica_Impure = true);
 external "builtin";
+  annotation(__OpenModelica_Impure = true);
 end clock;
 
 function isNone<A> "Returns true if the input is NONE()"
@@ -869,8 +869,8 @@ function setStackOverflowSignal
   "Sets the stack overflow signal to the given value and returns the old one"
   input Boolean inSignal;
   output Boolean outSignal;
-  annotation(__OpenModelica_Impure = true, __OpenModelica_EarlyInline = true);
 algorithm
   outSignal := inSignal;
+  annotation(__OpenModelica_Impure = true, __OpenModelica_EarlyInline = true);
 end setStackOverflowSignal;
 
