@@ -29,12 +29,10 @@ include Makefile.common
 .testvariables:
 settings:
 
-difftool: mkbuilddirs
-	$(MAKE) -C testsuite/difftool
-omc: difftool interactive docs fmi fmil opencl_rt
+omc: omc-diff interactive docs fmi fmil opencl_rt
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: difftool interactive docs fmi fmil opencl_rt
+omcd: omc-diff interactive docs fmi fmil opencl_rt
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 boehm-gc-lib: @LIBGC@
@@ -94,7 +92,7 @@ endif
 
 # configure --without-rml works using this target
 bootstrap-from-tarball:
-	$(MAKE) difftool interactive docs fmi fmil opencl_rt
+	$(MAKE) omc-diff interactive docs fmi fmil opencl_rt
 	$(MAKE) -C Compiler/runtime install
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install
@@ -105,7 +103,7 @@ bootstrap-from-tarball:
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
 	test -f build/bin/omc
-	$(MAKE) difftool interactive docs fmi fmil opencl_rt
+	$(MAKE) omc-diff interactive docs fmi fmil opencl_rt
 	$(MAKE) -C Compiler/runtime install
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install

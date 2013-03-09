@@ -1,4 +1,4 @@
-inclu.PHONY : all omc release mosh clean .testvariables mkbuilddirs qtclean qtclean-common difftool modelica3d
+inclu.PHONY : all omc release mosh clean .testvariables mkbuilddirs qtclean qtclean-common omc-diff modelica3d
 
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/
