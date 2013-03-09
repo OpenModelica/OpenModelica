@@ -7709,24 +7709,17 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls)
     '$P$PRE<%cref(cr.componentRef)%>'
   case LUNARY(operator=NOT,exp=cr as CREF(__)) then
     '(!$P$PRE<%cref(cr.componentRef)%>)'
-  case ASUB(exp = cr as CREF(__), sub = subs) then
-    let cref = cref(cr.componentRef)
-    '*(&$P$PRE<%cref%><%daeExpCallPreAsub(getDimensionSizes(cr.ty),subs,context,&preExp,&varDecls)%>)'
+  case ASUB(exp = cr as CREF(ty=T_ARRAY(ty=aty,dims=dims)), sub=subs) then
+    let cref = '<%cref(cr.componentRef)%>'
+    let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
+    let dimsLenStr = listLength(dims)
+    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+    let type = expTypeShort(aty)
+    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&($P$PRE<%arrayCrefCStr(cr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    <<<%arrayScalarRhs(aty,subs, tmpArr, context, preExp, varDecls)%>>>
   else
     error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
 end daeExpCallPre;
-
-template daeExpCallPreAsub(list<Integer> dims, list<Exp> subs, Context context, Text &preExp, Text &varDecls)
-::=
-  match subs
-  case {} then ""
-  case sub::subs2 then
-    let offset = daeExp(sub, context, &preExp, &varDecls)
-    (match dims
-      case _::dims2 then
-      << + (<%offset%><% if not intEq(intProduct(dims2),1) then '*<%intProduct(dims2)%>'%>)<%daeExpCallPreAsub(dims2,subs2,context,&preExp,&varDecls)%>>>
-    )
-end daeExpCallPreAsub;
 
 template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)
