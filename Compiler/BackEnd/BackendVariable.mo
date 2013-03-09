@@ -2334,7 +2334,7 @@ algorithm
       equation
         (n < size) = true "Have space to add array elt." ;
         n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(v));
+        arr_1 = arrayUpdate(arr, n_1, SOME(v));
       then
         BackendDAE.VARIABLE_ARRAY(n_1,size,arr_1);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
@@ -2347,7 +2347,7 @@ algorithm
         newsize = expandsize_1 + size;
         arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
         n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(v));
+        arr_2 = arrayUpdate(arr_1, n_1, SOME(v));
       then
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
@@ -2452,6 +2452,25 @@ algorithm
   outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0, arrSize, emptyarr), bucketSize, 0);
 end emptyVars;
 
+public function emptyVarsSized "function emptyVarsSized
+  author: Frenkel TUD 2013-02
+  Returns a Variable datastructure that is empty.
+  Using the bucketsize 10000 and array size 1000."
+  input Integer size;
+  output BackendDAE.Variables outVariables;
+protected
+  array<list<BackendDAE.CrefIndex>> arr;
+  list<Option<BackendDAE.Var>> lst;
+  array<Option<BackendDAE.Var>> emptyarr;
+  Integer bucketSize, arrSize;
+algorithm
+  arrSize := intMax(BaseHashTable.lowBucketSize,size);
+  bucketSize := realInt(realMul(intReal(arrSize), 1.4));
+  arr := arrayCreate(bucketSize, {});
+  emptyarr := arrayCreate(arrSize, NONE());
+  outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0, arrSize, emptyarr), bucketSize, 0);
+end emptyVarsSized;
+
 public function varList
 "function: varList
   Takes BackendDAE.Variables and returns a list of \'Var\', useful for e.g. dumping."
@@ -2496,14 +2515,27 @@ algorithm
   end match;
 end listVar;
 
+public function listVarSized "function listVarSized
+  author: Frenkel TUD 2012-05
+  Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
+  input list<BackendDAE.Var> inVarLst;
+  input Integer size;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := List.fold(inVarLst,addVar,emptyVarsSized(size));
+end listVarSized;
+
 public function listVar1 "function listVar1
   author: Frenkel TUD 2012-05
   ToDo: replace all listVar calls with this function, tailrecursive implementation
   Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
   input list<BackendDAE.Var> inVarLst;
   output BackendDAE.Variables outVariables;
+protected
+  Integer size;
 algorithm
-  outVariables := List.fold(inVarLst,addVar,emptyVars());
+  size := listLength(inVarLst);
+  outVariables := List.fold(inVarLst,addVar,emptyVarsSized(size));
 end listVar1;
 
 public function equationSystemsVarsLst
@@ -2927,25 +2959,18 @@ public function compressVariables
 algorithm
   oVars := matchcontinue(iVars)
     local
-      array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-      Integer bucketSize,nvars,arrSize,nvars1;
+      Integer arrSize,size;
       array<Option<BackendDAE.Var>> varOptArr;
-      BackendDAE.VariableArray varArr;
-    case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(nvars,arrSize,varOptArr),bucketSize=bucketSize))
+    case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=arrSize,varOptArr=varOptArr),numberOfVars=size))
       equation
-        crefIdxLstArr = arrayCreate(bucketSize, {});
-        nvars1 = compressVariables1(1,nvars,1,varOptArr,crefIdxLstArr,bucketSize);
-        // clear old elements
-        varOptArr = Util.arraySet(nvars1+1,nvars,varOptArr,NONE());
-        // generate updated data structs
-        varArr = BackendDAE.VARIABLE_ARRAY(nvars1,arrSize,varOptArr);
+        oVars = emptyVarsSized(size);
       then
-        BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
+        compressVariables1(1,size,varOptArr,oVars);
     else
       equation
-        print("compressVariables failed\n");
+        print("BackendVariable.compressVariables failed\n");
       then
-        fail();
+        fail();     
   end matchcontinue;
 end compressVariables;
 
@@ -2953,49 +2978,39 @@ protected function compressVariables1
 " function: compressVariables1
   author: Frenkel TUD 2012-09"
   input Integer index;
-  input Integer numberOfElement;
-  input Integer insertindex;
+  input Integer nVars;
   input array<Option<BackendDAE.Var>> varOptArr;
-  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-  input Integer bucketSize;
-  output Integer newnumberOfElement;
+  input BackendDAE.Variables iVars;
+  output BackendDAE.Variables oVars;
 algorithm
-  newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize)
+  oVars := matchcontinue(index,nVars,varOptArr,iVars)
     local
       BackendDAE.Var var;
-      DAE.ComponentRef cr;
-      Integer e,indx,i;
-      list<BackendDAE.CrefIndex> indexes;
+      BackendDAE.Variables vars;
     // found element
-    case(_,_,_,_,_,_)
+    case(_,_,_,_)
       equation
-        true = intLe(index,numberOfElement);
-        SOME(var as BackendDAE.VAR(varName=cr)) = varOptArr[index];
-        // insert on new pos
-        _ = arrayUpdate(varOptArr,insertindex,SOME(var));
-        // add to hash vec
-        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
-        indexes = crefIdxLstArr[indx + 1];
-        i = insertindex-1;
-        _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));
+        true = intLe(index,nVars);
+        SOME(var) = varOptArr[index];
+        vars = addVar(var,iVars);
       then
-        compressVariables1(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize);
+        compressVariables1(index+1,nVars,varOptArr,vars);
     // found non element
-    case(_,_,_,_,_,_)
+    case(_,_,_,_)
       equation
-        true = intLe(index,numberOfElement);
+        true = intLe(index,nVars);
         NONE() = varOptArr[index];
       then
-        compressVariables1(index+1,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize);
+        compressVariables1(index+1,nVars,varOptArr,iVars);
     // at the end
-    case(_,_,_,_,_,_)
+    case(_,_,_,_)
       equation
-        false = intLe(index,numberOfElement);
+        false = intLe(index,nVars);
       then
-        insertindex-1;
+        iVars;
     else
       equation
-        print("compressVariables1 failed\n");
+        print("BackendVariable.compressVariables1 failed for index " +& intString(index) +& " and Number of Variables " +& intString(nVars) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -3147,10 +3162,11 @@ algorithm
         failure((_,_) = getVar(cr, vars));
         // print("adding when not existing previously\n");
         indx = ComponentReference.hashComponentRefMod(cr, bsize);
+        indx_1 = indx + 1;
         newpos = vararrayLength(varr);
         varr_1 = vararrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
+        indexes = hashvec[indx_1];
+        hashvec_1 = arrayUpdate(hashvec, indx_1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
         n_1 = vararrayLength(varr_1);
         //fastht = BaseHashTable.add((cr,{newpos}),fastht);
       then
@@ -3692,9 +3708,9 @@ algorithm
     case (vars1,vars2)
       equation
         // to avoid side effects from arrays copy first
-        vars1 = copyVariables(vars1);
-        varlst = varList(vars2);
-        vars1_1 = List.fold(varlst, addVar, vars1);
+        vars1_1 = emptyVarsSized(varsSize(vars1)+varsSize(vars2));
+        vars1_1 = traverseBackendDAEVars(vars1, mergeVariables1, vars1_1);
+        vars1_1 = traverseBackendDAEVars(vars2, mergeVariables1, vars1_1);
       then
         vars1_1;
     case (_,_)
@@ -3704,6 +3720,19 @@ algorithm
         fail();
   end matchcontinue;
 end mergeVariables;
+
+protected function mergeVariables1
+"author: Frenkel TUD 2013-02"
+ input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
+ output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
+protected
+ BackendDAE.Var v;
+ BackendDAE.Variables vars;
+algorithm
+  (v,vars) := inTpl;
+  vars := addVar(v,vars);
+  outTpl := (v,vars);
+end mergeVariables1;
 
 public function traverseBackendDAEVars "function: traverseBackendDAEVars
   author: Frenkel TUD

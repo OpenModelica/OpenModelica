@@ -1891,8 +1891,8 @@ algorithm
     case (e::eqns,_,_,_,_,_,_,_,_,false) equation
       //true = RTOpts.eliminationLevel() > 0;
       //false = equationHasZeroCrossing(e);
-      ({e},_) = BackendVarTransform.replaceEquations({e},repl,NONE());
-
+      ({e},_) = BackendVarTransform.replaceEquations({e},repl,NONE()) "this can be dangerous in case of if-equations, because the can be simplified to a list of equations";
+      
       // Attempt to solve the equation wrt to the variables to be eliminated.
       varIndexList = m[eqnIndex];
       (elimVarIndex :: _) = List.intersectionOnTrue(varIndexList, elimVarIndexList, intEq);
@@ -2057,24 +2057,20 @@ algorithm
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
+    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
     BackendDAE.SymbolicJacobians symjacs;
-    list<BackendDAE.Equation> eqnslst;
-    Boolean b;
     BackendDAE.StateSets stateSets;
-
+  
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
-                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,_,_)
+                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,_,_) 
     equation
        orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
-       eqnslst = BackendEquation.equationList(orderedEqs);
-       (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst,repl,NONE());
-       orderedEqs = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,orderedEqs);
+       (orderedEqs,_) = BackendVarTransform.replaceEquationsArr(orderedEqs,repl,NONE());
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared);
 
