@@ -4557,6 +4557,7 @@ algorithm
       equation
         (cache, arrexp_1, DAE.PROP(ty, c), _) =
           elabExp(cache, env, arrexp, impl,NONE(), true, pre, info);
+        true = Types.isArray(ty,{});
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
         false = Types.isString(tp);
@@ -4575,6 +4576,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
+        true = Types.isArray(ty,{});
         tp = Types.simplifyType(ty);
         arrexp_1 = DAE.TSUB(arrexp_1, 1, tp);
         elt_ty = Types.arrayElementType(ty);
