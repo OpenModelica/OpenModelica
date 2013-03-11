@@ -293,3 +293,8 @@ or online http://opensource.org/licenses/LGPL-2.1.
                            2006-2011 The University of Colorado Denver
 [LGPL 2.1] lpsolve55
 [Public Domain] sqlite3
+
+[BSD-like] Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
+           This product includes software developed by the University of Chicago,
+           as Operator of Argonne National Laboratory.
+           Disclaimer: http://www.netlib.org/minpack/disclaimer
