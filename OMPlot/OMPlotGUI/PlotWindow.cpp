@@ -585,23 +585,60 @@ void PlotWindow::plotParametric()
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
+        //Read in timevector
+        double startTime = omc_matlab4_startTime(&reader);
+        double stopTime =  omc_matlab4_stopTime(&reader);
+        if (reader.nvar < 1)
+          throw NoVariableException("Variable doesnt exist: time");
+        double *timeVals = (double*) malloc(reader.nrows*sizeof(double));
+        memcpy(timeVals, omc_matlab4_read_vals(&reader,1), reader.nrows*sizeof(double));
         //Fill variable x with data
         var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
         if(!var)
             throw NoVariableException(QString("Variable doesn't exist : ").append(xVariable).toStdString().c_str());
-        double *xVals = (double*) malloc(reader.nrows*sizeof(double));
-        memcpy(xVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+        // if variable is not a parameter then
+        if (!var->isParam)
+        {
+            double *xVals = (double*) malloc(reader.nrows*sizeof(double));
+            memcpy(xVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+            for (int i = 0 ; i < reader.nrows ; i++)
+              pPlotCurve->addXAxisValue(xVals[i]);
+        }
+        // if variable is a parameter then
+        else
+        {
+            double xval;
+            if (omc_matlab4_val(&xval,&reader,var,0.0))
+              throw NoVariableException(QString("Parameter doesn't have a value : ").append(xVariable).toStdString().c_str());
+            pPlotCurve->addXAxisValue(startTime);
+            pPlotCurve->addYAxisValue(xval);
+            pPlotCurve->addXAxisValue(stopTime);
+            pPlotCurve->addYAxisValue(xval);
+        }
         //Fill variable y with data
         var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
         if(!var)
             throw NoVariableException(QString("Variable doesn't exist : ").append(yVariable).toStdString().c_str());
-        double *yVals = (double*) malloc(reader.nrows*sizeof(double));
-        memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
-        for (int i = 0 ; i < reader.nrows ; i++)
-          pPlotCurve->addXAxisValue(xVals[i]);
-        for (int i = 0 ; i < reader.nrows ; i++)
-          pPlotCurve->addYAxisValue(yVals[i]);
-        pPlotCurve->setData(xVals, yVals, reader.nrows);
+        // if variable is not a parameter then
+        if (!var->isParam)
+        {
+            double *yVals = (double*) malloc(reader.nrows*sizeof(double));
+            memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+            for (int i = 0 ; i < reader.nrows ; i++)
+              pPlotCurve->addYAxisValue(yVals[i]);
+        }
+        // if variable is a parameter then
+        else
+        {
+            double yval;
+            if (omc_matlab4_val(&yval,&reader,var,0.0))
+              throw NoVariableException(QString("Parameter doesn't have a value : ").append(yVariable).toStdString().c_str());
+            pPlotCurve->addXAxisValue(startTime);
+            pPlotCurve->addYAxisValue(yval);
+            pPlotCurve->addXAxisValue(stopTime);
+            pPlotCurve->addYAxisValue(yval);
+        }
+        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         pPlotCurve->attach(mpPlot);
         mpPlot->replot();
