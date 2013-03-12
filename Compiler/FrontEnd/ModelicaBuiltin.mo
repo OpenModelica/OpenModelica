@@ -2656,7 +2656,7 @@ algorithm
   end if;
   annotation(Documentation(info="<html>
 <h2>Usage</h2>
-<p>Modelica3D requires some changes to the standard ModelicaServices in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an inner ModelicaServices.Modelica3D.Controller object. This API call will load the modified ModelicaServices 3.2.1 so Modelica3D runs.</p>
+<p>Modelica3D requires some changes to the standard ModelicaServices in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an object declared as: <pre>inner ModelicaServices.Modelica3D.Controller m3d_control</pre>. This API call will load the modified ModelicaServices 3.2.1 so Modelica3D runs. You can also simply call loadModel(ModelicaServices,{\"3.2.1 modelica3d\"});</p>
 <p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
 <p>For more information and example models, visit the <a href=\"https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public/wiki\">Modelica3D wiki</a>.</p>
  </html>"));
