@@ -60,7 +60,6 @@ protected import MetaUtil;
 protected import System;
 protected import Types;
 protected import Util;
-protected import NFSCodeCheck;
 protected import NFSCodeFlatten;
 protected import SCodeDump;
 
@@ -106,15 +105,6 @@ algorithm
         // translate given absyn to scode.
         spAbsyn = List.fold(inClasses, translate2, {});
         spAbsyn = listReverse(spAbsyn);
-
-        // NOTE: we check duplicates separately for builtin
-        //       and for absyn to allow duplicates of
-        //       ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
-
-        // check duplicates in builtin (initial) functions
-        NFSCodeCheck.checkDuplicateElements(spInitial);
-        // check duplicates in absyn
-        NFSCodeCheck.checkDuplicateElements(spAbsyn);
 
         sp = listAppend(spInitial, spAbsyn);
       then
@@ -1458,7 +1448,6 @@ algorithm
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
-        true = NFSCodeCheck.checkIdentNotEqTypeName(n, t, info);
         // Debug.fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors

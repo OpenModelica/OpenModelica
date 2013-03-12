@@ -52,65 +52,6 @@ protected import List;
 protected import SCodeDump;
 protected import Util;
 
-public function checkDuplicateElements
-  input SCode.Program inProgram;
-algorithm
-  _ := match(inProgram)
-    local
-      SCode.Program sp;
-      list<String> names;
-
-    case (sp)
-      equation
-        names = SCode.elementNames(sp);
-        names = List.sort(names,Util.strcmpBool);
-        (_,names) = Util.splitUniqueOnBool(names,stringEqual);
-        checkForDuplicateElements(names,sp);
-        List.map_0(sp,checkDuplicateElementsInClass);
-      then ();
-  end match;
-end checkDuplicateElements;
-
-public function checkDuplicateElementsInClass
-  input SCode.Element el;
-algorithm
-  _ := match el
-    local
-      SCode.Program sp;
-      list<SCode.Element> elts;
-      Absyn.Info info;
-
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts),info=info)
-      equation
-        checkDuplicateElements(elts);
-      then ();
-    case SCode.CLASS(classDef=SCode.CLASS_EXTENDS(composition=SCode.PARTS(elementLst=elts)),info=info)
-      equation
-        checkDuplicateElements(elts);
-      then ();
-    else ();
-  end match;
-end checkDuplicateElementsInClass;
-
-protected function checkForDuplicateElements
-"Verifies that the input is empty; else an error message is printed"
-  input list<String> duplicateNames;
-  input SCode.Program program;
-algorithm
-  _ := match (duplicateNames,program)
-    local
-      String msg,id;
-      SCode.Element elt;
-    case ({},_) then ();
-    case (id::_,_)
-      equation
-        elt = SCode.getElementNamedFromElts(id,program);
-        msg = stringDelimitList(duplicateNames, ",");
-        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,{msg},SCode.elementInfo(elt));
-      then fail();
-  end match;
-end checkForDuplicateElements;
-
 public function checkRecursiveShortDefinition
   input Absyn.TypeSpec inTypeSpec;
   input String inTypeName;

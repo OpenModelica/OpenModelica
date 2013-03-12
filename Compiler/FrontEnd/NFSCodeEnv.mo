@@ -725,8 +725,11 @@ protected function extendEnvWithVar
 protected
   String var_name;
   Util.StatefulBoolean is_used;
+  Absyn.TypeSpec ty;
+  Absyn.Info info;
 algorithm
-  SCode.COMPONENT(name = var_name) := inVar;
+  SCode.COMPONENT(name = var_name, typeSpec = ty, info = info) := inVar;
+  true := NFSCodeCheck.checkIdentNotEqTypeName(var_name, ty, info);
   is_used := Util.makeStatefulBoolean(false);
   outEnv := extendEnvWithItem(VAR(inVar, SOME(is_used)), inEnv, var_name);
 end extendEnvWithVar;
