@@ -1581,7 +1581,7 @@ algorithm
         l1 = unparseType(t1);
         l2 = unparseType(t2);
         l1 = stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
-        Debug.fprintln(Flags.FAILTRACE, l1);
+        print(l1);
         */
       then false;
   end matchcontinue;
@@ -2228,6 +2228,8 @@ algorithm
     case (DAE.T_UNKNOWN(_))                then "#T_UNKNOWN#";
     case (DAE.T_ANYTYPE(anyClassType = _)) then "#ANYTYPE#";
     case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
+    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" +& unparseType(ty);
+    case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" +& unparseType(ty);
     case (ty) then "Internal error Types.unparseType: not implemented yet\n";
   end match;
 end unparseType;

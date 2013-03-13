@@ -1059,7 +1059,6 @@ algorithm
         //System.stopTimer();
         //print("\nConnect and Overconstrained: " +& realString(System.getTimerIntervalTime()));
 
-
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c);
         dae = updateDeducedUnits(callscope_1,store,dae);
 
@@ -1956,6 +1955,7 @@ algorithm
       SCode.Partial partialPrefix;
       SCode.Encapsulated encapsulatedPrefix;
       UnitAbsyn.InstStore store;
+      Boolean b;
 
     /*  Real class */
     case (cache,env,ih,store,mods,pre, ci_state,
@@ -2050,20 +2050,12 @@ algorithm
       then
         (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE() */,NONE(),NONE(),graph);
 
-     /* Ignore functions if not implicit instantiation */
-    case (cache,env,ih,store,mods,pre,ci_state,cls,_,_,(impl as false),_,graph,_,_)
-      equation
-        true = SCode.isFunction(cls);
-        clsname = SCode.className(cls);
-        //print("Ignore function" +& clsname +& "\n");
-      then
-        (cache,env,ih,store,DAEUtil.emptyDae, inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
-
     /* Instantiate a class definition made of parts */
     case (cache,env,ih,store,mods,pre,ci_state,
           c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info,partialPrefix = partialPrefix,encapsulatedPrefix = encapsulatedPrefix),
           vis,inst_dims,impl,callscope,graph,_,_)
       equation
+        ErrorExt.setCheckpoint("instClassParts");
         false = isBuiltInClass(n) "If failed above, no need to try again";
         // Debug.fprint(Flags.INSTTR, "ICLASS [");
         implstr = Util.if_(impl, "impl] ", "expl] ");
@@ -2080,8 +2072,22 @@ algorithm
         // s = realString(time);
         // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
         cache = Env.addCachedEnv(cache,n,env_1);
+        dae = Util.if_(SCode.isFunction(c) and not impl, DAE.DAE({}), dae);
+        ErrorExt.delCheckpoint("instClassParts");
       then
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph);
+
+     /* Ignore functions if not implicit instantiation, and doing checkModel - some dimensions might not be complete... */
+    case (cache,env,ih,store,mods,pre,ci_state,c as SCode.CLASS(name = _),_,_,impl,_,graph,_,_)
+      equation
+        b = Flags.getConfigBool(Flags.CHECK_MODEL) and (not impl) and SCode.isFunction(c);
+        Debug.bcall1(not b, ErrorExt.delCheckpoint, "instClassParts");
+        Debug.bcall1(b, ErrorExt.rollBack, "instClassParts");
+        true = b;
+        // clsname = SCode.className(cls);
+        // print("Ignore function" +& clsname +& "\n");
+      then
+        (cache,env,ih,store,DAEUtil.emptyDae, inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     // failure
     else
