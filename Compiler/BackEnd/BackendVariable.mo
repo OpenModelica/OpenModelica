@@ -65,7 +65,16 @@ protected import Types;
 
 /* =======================================================
  *
- *  Section for functions that deals with Var
+ *  Section for type definitions
+ *
+ * =======================================================
+ */
+
+protected constant Integer HASHVECFACTOR = 1.4;
+
+/* =======================================================
+ *
+ *  Section for functions that deals with Var 
  *
  * =======================================================
  */
@@ -2074,18 +2083,18 @@ algorithm
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
         str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
         format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
         msg = DAE.BINARY(
               DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
-              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
               );
-        // do not add if const true
-        false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
-      then
+      then 
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
     else then iMinmax;
   end matchcontinue;
@@ -2465,7 +2474,7 @@ protected
   Integer bucketSize, arrSize;
 algorithm
   arrSize := intMax(BaseHashTable.lowBucketSize,size);
-  bucketSize := realInt(realMul(intReal(arrSize), 1.4));
+  bucketSize := realInt(realMul(intReal(arrSize), HASHVECFACTOR));
   arr := arrayCreate(bucketSize, {});
   emptyarr := arrayCreate(arrSize, NONE());
   outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0, arrSize, emptyarr), bucketSize, 0);
@@ -2494,25 +2503,12 @@ public function listVar
   Takes Var list and creates a BackendDAE.Variables structure, see also var_list."
   input list<BackendDAE.Var> inVarLst;
   output BackendDAE.Variables outVariables;
+protected
+  Integer size;
 algorithm
-  outVariables := match (inVarLst)
-    local
-      BackendDAE.Variables res,vars;
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-
-    case ({})
-      equation
-        res = emptyVars();
-      then
-        res;
-
-    case ((v :: vs))
-      equation
-        vars = listVar(vs);
-      then
-        addVar(v, vars);
-  end match;
+  size := listLength(inVarLst);
+  outVariables := emptyVarsSized(size);
+  outVariables := List.fold(listReverse(inVarLst),addVar,outVariables);
 end listVar;
 
 public function listVarSized "function listVarSized
@@ -2595,7 +2591,93 @@ algorithm
   end match;
 end varsSize;
 
+public function resizeVars "function: resizeVars
+  author: Frenkel TUD
 
+  check the number of vars and the bucketSize and expand the bucketSize if neccessary.
+  (Shure the hashentries also updated)
+"
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+protected
+ Integer numberOfVars,bucketSize,size;
+ BackendDAE.VariableArray varArr;
+algorithm
+  BackendDAE.VARIABLES(numberOfVars = numberOfVars,bucketSize = bucketSize,varArr=varArr) := inVariables;
+  size := realInt(realMul(intReal(numberOfVars), HASHVECFACTOR));
+  outVariables := Debug.bcallret2(intGt(numberOfVars,bucketSize),resizeVars1,varArr,numberOfVars,inVariables);
+end resizeVars;
+
+protected function resizeVars1 "function: resizeVars
+  author: Frenkel TUD
+
+  check the number of vars and the bucketSize and expand the bucketSize if neccessary.
+  (Shure the hashentries also updated)
+"
+  input BackendDAE.VariableArray inVariables;
+  input Integer numberOfVars;
+  output BackendDAE.Variables outVariables;
+protected
+  Integer arrSize,bucketSize;
+  array<list<BackendDAE.CrefIndex>> arr;
+  array<Option<BackendDAE.Var>> varOptArr;
+algorithm
+  BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := inVariables;
+  arrSize:=intMax(BaseHashTable.lowBucketSize, numberOfVars);
+  bucketSize:=realInt(realMul(intReal(arrSize), HASHVECFACTOR));
+  arr:=arrayCreate(bucketSize, {});
+  arr := resizeVars2(numberOfVars,varOptArr,bucketSize,arr);
+  outVariables := BackendDAE.VARIABLES(arr,inVariables, bucketSize, numberOfVars);
+end resizeVars1;
+
+protected function resizeVars2
+"function: resizeVars2
+  author: Frenkel TUD"
+  input Integer index;
+  input array<Option<BackendDAE.Var>> varOptArr;
+  input Integer bucketSize;
+  input array<list<BackendDAE.CrefIndex>> iArr;
+  output array<list<BackendDAE.CrefIndex>> oArr;
+algorithm
+  oArr := match (index,varOptArr,bucketSize,iArr)
+    local
+      array<list<BackendDAE.CrefIndex>> arr;
+    case (0,_,_,_) then iArr;
+    case (_,_,_,_)
+      equation
+        arr = resizeVars3(varOptArr[index],index,bucketSize,iArr);
+      then 
+        resizeVars2(index-1,varOptArr,bucketSize,arr);
+  end match;
+end resizeVars2;
+
+protected function resizeVars3
+"function: resizeVars3
+  author: Frenkel TUD"
+  input Option<BackendDAE.Var> inVar;
+  input Integer pos;
+  input Integer bucketSize;
+  input array<list<BackendDAE.CrefIndex>> iArr;
+  output array<list<BackendDAE.CrefIndex>> oArr;
+algorithm
+  oArr := match (inVar,pos,bucketSize,iArr)
+    local
+      Integer indx,indx_1,pos_1;
+      list<BackendDAE.CrefIndex> indexes;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      DAE.ComponentRef cr;
+    case (NONE(),_,_,_) then iArr;
+    case (SOME(BackendDAE.VAR(varName = cr)),_,_,_)
+      equation
+        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
+        indx_1 = indx + 1;
+        indexes = iArr[indx_1];
+        pos_1 = pos - 1;
+        hashvec = arrayUpdate(iArr, indx_1, (BackendDAE.CREFINDEX(cr,pos_1) :: indexes));
+      then
+        hashvec;
+  end match;
+end resizeVars3;
 
 public function isVariable
 "function: isVariable
@@ -3094,6 +3176,35 @@ algorithm
   end match;
 end addKnVarDAE;
 
+public function addNewKnVarDAE
+"function: addNewKnVarDAE
+  author: Frenkel TUD 2011-04
+  Add a variable to Variables of a BackendDAE.
+  No Check if variable already exist. Use only for new variables"
+  input BackendDAE.Var inVar;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
+algorithm
+  oshared := match (inVar,shared)
+    local
+      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      equation
+        knvars1 = addNewVar(inVar,knvars);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
+  end match;
+end addNewKnVarDAE;
+
 public function addAliasVarDAE
 "function: addAliasVarDAE
   author: Frenkel TUD 2012-09
@@ -3122,6 +3233,35 @@ algorithm
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addAliasVarDAE;
+
+public function addNewAliasVarDAE
+"function: addNewAliasVarDAE
+  author: Frenkel TUD 2012-09
+  Add a alias variable to Variables of a BackendDAE.Shared
+  No Check if variable already exist. Use only for new variables"
+  input BackendDAE.Var inVar;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
+algorithm
+  oshared := match (inVar,shared)
+    local
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      equation
+        aliasVars = addNewVar(inVar,aliasVars);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
+  end match;
+end addNewAliasVarDAE;
 
 public function addVars "function: addVars
   author: PA
@@ -3439,14 +3579,14 @@ algorithm
         crlst = ComponentReference.expandCref(cr1,true);
         (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
-        (vLst,indxs);
+        (vLst,indxs);        
     /* failure
-    case (cr,vars)
+    case (_,_)
       equation
         Debug.fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
-    */
+     */
   end matchcontinue;
 end getVar;
 

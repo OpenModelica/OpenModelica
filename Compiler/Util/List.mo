@@ -1163,29 +1163,54 @@ public function uniqueIntNArr
 algorithm
   oAcc := matchcontinue(inList,markarr,iAcc)
     local
-      Integer i,len,mark;
-      list<Integer> ilst,acc;
+      Integer len,mark;
+      list<Integer> acc;
     case ({},_,_)
-      equation
-        len = arrayLength(markarr);
-        _=arrayUpdate(markarr,len,markarr[len]+1);
       then iAcc;
-    case (i::ilst,_,_)
+    case (_,_,_)
       equation
-        len = arrayLength(markarr);
+       len = arrayLength(markarr);
+       mark = markarr[len];
+       _=arrayUpdate(markarr,len,mark+1);
+       acc = uniqueIntNArr1(inList,len,mark+1,markarr,iAcc);
+     then
+        acc;
+    else
+      equation
+        print("List.uniqueIntNArr failed entry to large\n");
+      then
+        fail();
+  end matchcontinue;
+end uniqueIntNArr;
+
+protected function uniqueIntNArr1
+  "helpfer for uniqueIntNArr1"
+  input list<Integer> inList;
+  input Integer len;
+  input Integer mark;
+  input array<Integer> markarr;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(inList,len,mark,markarr,iAcc)
+    local
+      Integer i;
+      list<Integer> ilst,acc;
+    case ({},_,_,_,_) then iAcc;
+    case (i::ilst,_,_,_,_)
+      equation
         true = intLt(i,len);
-        mark = markarr[len];
         acc = consOnTrue(intNe(markarr[i],mark),i,iAcc);
         _=arrayUpdate(markarr,i,mark);
       then
-        uniqueIntNArr(ilst,markarr,acc);
+        uniqueIntNArr1(ilst,len,mark,markarr,acc);
     else
       equation
         print("List.uniqueIntNArr failed entrie to large\n");
       then
         fail();
   end matchcontinue;
-end uniqueIntNArr;
+end uniqueIntNArr1;
 
 public function uniqueOnTrue
   "Takes a list of elements and a comparison function over two elements of the
@@ -4718,6 +4743,43 @@ algorithm
 
   end match;
 end fold2;
+
+public function foldList2
+  "Takes a list and a function operating on list elements having an extra
+   argument that is 'updated', thus returned from the function, and two constant
+   arguments that is not updated. fold will call the function for each element in
+   a sequence, updating the start value."
+  input list<list<ElementType>> inList;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  partial function FoldFunc
+    input ElementType inElement;
+    input ArgType1 inConstantArg1;
+    input ArgType2 inConstantArg2;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult := match(inList, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue)
+    local
+      list<ElementType> e;
+      list<list<ElementType>> rest;
+      FoldType arg;
+
+    case ({}, _, _, _, _) then inStartValue;
+
+    case (e :: rest, _, _, _, _)
+      equation
+        arg = fold2(e, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue);
+      then 
+        foldList2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
+
+  end match;
+end foldList2;
 
 public function fold2r
   "Same as fold2, but with reversed order on the fold function arguments."
