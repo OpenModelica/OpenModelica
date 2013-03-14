@@ -70,7 +70,7 @@ protected import Types;
  * =======================================================
  */
 
-protected constant Integer HASHVECFACTOR = 1.4;
+protected constant Real HASHVECFACTOR = 1.4;
 
 /* =======================================================
  *
