@@ -184,7 +184,7 @@ record CoordinateSystem
   Real extent[2,2]/*(each final unit=\"mm\")*/;
   Boolean preserveAspectRatio=true;
   Real initialScale = 0.1;
-  Real grid[2]/*(each final unit=\"mm\")*/ = {1.0, 1.0};
+  Real grid[2]/*(each final unit=\"mm\")*/ = {2.0, 2.0};
 end CoordinateSystem;
 
 // example
