@@ -2130,8 +2130,7 @@ algorithm
     case (cache,env,"getDerivedClassModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        crefCName = Absyn.pathToCref(className);
-        str = Interactive.getDerivedClassModifierValue(absynClass, crefCName);
+        str = Interactive.getDerivedClassModifierValue(absynClass, className);
       then
         (cache,Values.STRING(str),st);
 
@@ -6525,7 +6524,7 @@ algorithm
       list<String> strs;
       String s;
 
-    case Absyn.MODIFICATION(componentRef=Absyn.CREF_IDENT(name="StopTime")) then true;
+    case Absyn.MODIFICATION(path=Absyn.IDENT(name="StopTime")) then true;
     else false;
 
   end match;

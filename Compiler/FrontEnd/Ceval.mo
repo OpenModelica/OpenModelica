@@ -6637,15 +6637,16 @@ algorithm
       Absyn.ElementArg m;
       Env.Cache cache;
       Absyn.Info mod_info;
+      Absyn.Path p;
 
     case (cache,env,{},_,_,msg,_) then (cache,{});
     /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,_)
+    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,path = p,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,_)
       equation
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg, info);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
       then
-        (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt,mod_info) :: res);
+        (cache,Absyn.MODIFICATION(b,e,p,SOME(mod_1),stropt,mod_info) :: res);
     case (cache,env,(m :: args),impl,st,msg,_) /* TODO: look through redeclarations for Eval(var) as well */
       equation
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);

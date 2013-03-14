@@ -622,7 +622,7 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
   record MODIFICATION
     Boolean finalPrefix "final prefix";
     Each eachPrefix "each";
-    ComponentRef componentRef "componentRef";
+    Path path;
     Option<Modification> modification "modification";
     Option<String> comment "comment";
     Info info;
@@ -5248,7 +5248,7 @@ algorithm
     case ({}) then true;
 
     // skip "interaction" annotation!
-    case (MODIFICATION(componentRef = CREF_IDENT(name = "interaction")) :: rest)
+    case (MODIFICATION(path = IDENT(name = "interaction")) :: rest)
       equation
         b = onlyLiteralsInAnnotationMod(rest);
       then

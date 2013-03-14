@@ -577,7 +577,10 @@ element_modification_or_replaceable returns [void* ast] @init {
 element_modification [void *each, void *final] returns [void* ast] @init {
   $ast = NULL;
 } :
-  cr=component_reference ( mod=modification )? cmt=string_comment { $ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt), PARSER_INFO($start)); }
+  path=name_path2 ( mod=modification )? cmt=string_comment
+  {
+    $ast = Absyn__MODIFICATION(final, each, path, mk_some_or_none(mod), mk_some_or_none(cmt), PARSER_INFO($start));
+  }
   ;
 
 element_redeclaration returns [void* ast]  @init {

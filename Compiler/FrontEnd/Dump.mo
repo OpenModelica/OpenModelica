@@ -972,14 +972,15 @@ algorithm
       Option<Ident> optcmt;
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
-    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = r,modification = optm,comment = optcmt))
+      Absyn.Path p;
+    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = p,modification = optm,comment = optcmt))
       equation
         Print.printBuf("Absyn.MODIFICATION(");
         printBool(f);
         Print.printBuf(", ");
         dumpEach(each_);
         Print.printBuf(", ");
-        printComponentRef(r);
+        printPath(p);
         Print.printBuf(", ");
         printOptModification(optm);
         Print.printBuf(", ");
@@ -1016,12 +1017,13 @@ algorithm
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constr;
       String redeclareStr, replaceableStr;
+      Absyn.Path p;
 
-    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = r,modification = optm,comment = optstr))
+    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = p,modification = optm,comment = optstr))
       equation
         s1 = unparseEachStr(each_);
         s2 = selectString(f, "final ", "");
-        s3 = printComponentRefStr(r);
+        s3 = Absyn.pathString(p);
         s4 = unparseOptModificationStr(optm);
         s5 = unparseStringCommentOption(optstr);
         str = stringAppendList({s1,s2,s3,s4,s5});
@@ -6748,14 +6750,15 @@ algorithm
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Info info;
-    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment,info)
+      Absyn.Path p;
+    case Absyn.MODIFICATION(finalPrefix,eachPrefix,p,modification,comment,info)
       equation
         Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
         Print.printBuf(Util.if_(finalPrefix,"true","false"));
         Print.printBuf(", eachPrefix = ");
         printEachAsCorbaString(eachPrefix);
-        Print.printBuf(", componentRef = ");
-        printComponentRefAsCorbaString(componentRef);
+        Print.printBuf(", path = ");
+        printPathAsCorbaString(p);
         Print.printBuf(", modification = ");
         printOption(modification, printModificationAsCorbaString);
         Print.printBuf(", comment = ");

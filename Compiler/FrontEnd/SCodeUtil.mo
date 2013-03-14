@@ -1973,12 +1973,13 @@ algorithm
       SCode.SubMod sub;
       Option<SCode.SubMod> opt_mod;
       list<SCode.SubMod> accum;
+      Absyn.Path p;
 
     case (Absyn.MODIFICATION(finalPrefix = fp, eachPrefix = ep,
-        componentRef = cref, modification = mod, info = info) :: rest_args, _)
+        path = p, modification = mod, info = info) :: rest_args, _)
       equation
         smod = translateMod(mod, SCode.boolFinal(fp), translateEach(ep), info);
-        sub = translateSub(cref, smod, info);
+        sub = translateSub(p, smod, info);
       then
         translateArgs_tail(rest_args, sub :: inAccumSubs);
 
@@ -2113,72 +2114,28 @@ protected function translateSub
 "function: translateSub
   This function converts a Absyn.ComponentRef plus a list
   of modifications into a number of nested SCode.SUBMOD."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path inPath;
   input SCode.Mod inMod;
   input Absyn.Info info;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match (inComponentRef,inMod,info)
+  outSubMod := match (inPath,inMod,info)
     local
       String c_str,mod_str,i;
-      Absyn.ComponentRef c,path;
+      Absyn.Path c,path;
       SCode.Mod mod,mod_1;
       list<SCode.Subscript> ss;
       SCode.SubMod sub;
 
-    // First some rules to prevent bad modifications
-    case ((c as Absyn.CREF_IDENT(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))),_)
-      equation
-        c_str = Dump.printComponentRefStr(c);
-        mod_str = SCodeDump.printModStr(mod);
-        Error.addSourceMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str}, info);
-      then
-        fail();
-    case ((c as Absyn.CREF_QUAL(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))),_)
-      equation
-        c_str = Dump.printComponentRefStr(c);
-        mod_str = SCodeDump.printModStr(mod);
-        Error.addSourceMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str}, info);
-      then
-        fail();
     // Then the normal rules
-    case (Absyn.CREF_IDENT(name = i,subscripts = ss),mod,_)
-      equation
-        mod_1 = translateSubSub(ss, mod);
-      then
-        SCode.NAMEMOD(i,mod_1);
-    case (Absyn.CREF_QUAL(name = i,subscripts = ss,componentRef = path),mod,_)
+    case (Absyn.IDENT(name = i),mod,_) then SCode.NAMEMOD(i,mod);
+    case (Absyn.QUALIFIED(name = i,path = path),mod,_)
       equation
         sub = translateSub(path, mod, info);
         mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),info);
-        mod_1 = translateSubSub(ss, mod);
-      then
-        SCode.NAMEMOD(i,mod_1);
+      then SCode.NAMEMOD(i,mod);
   end match;
 end translateSub;
-
-protected function translateSubSub
-"function: translateSubSub
-  This function is used to handle the case when a array component is
-  indexed in the modification, so that only one or a limitied number
-  of array elements should be modified."
-  input list<SCode.Subscript> inSubscriptLst;
-  input SCode.Mod inMod;
-  output SCode.Mod outMod;
-algorithm
-  outMod := match (inSubscriptLst,inMod)
-    local
-      Absyn.Info info;
-
-    case ({}, _) then inMod;
-    else
-      equation
-        info = SCode.getModifierInfo(inMod);
-        Error.addSourceMessage(Error.SUBSCRIPTED_MODIFIER, {}, info);
-      then
-        fail();
-  end match;
-end translateSubSub;
 
 public function translateSCodeModToNArgs
 "@author: adrpo
