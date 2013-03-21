@@ -3117,7 +3117,12 @@ template commonHeader(String filePrefix)
   <<
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
   <% if acceptMetaModelicaGrammar() then "#include \"meta_modelica.h\"" %>
-  <% if Flags.isSet(Flags.OPENMP) then "#include <omp.h>" else "#define omp_get_thread_num() 0" %>
+  #ifdef _OPENMP_
+  #include <omp.h>
+  #else
+  #define omp_get_thread_num() 0
+  #define omp_get_max_threads() 1
+  #endif
   #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
