@@ -1203,11 +1203,13 @@ algorithm
       DAE.Properties props;
       list<DAE.Type> restTupleTypes;
       DAE.TypeSource tsrc;
+      Absyn.ForIterators iters;
 
-    case (cache,env,fn,exp,_,_,st,doVect,pre,_)
+    case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
       equation
         env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
-        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iterators, impl, st, doVect, pre, info);
+        iters = listReverse(iters);
+        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
         // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
         (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
@@ -1224,11 +1226,12 @@ algorithm
         (cache,exp_1,prop,st);
 
     // the freaking expression can be a function call returning a tuple!
-    case (cache,env,fn,exp,_,_,st,doVect,pre,_)
+    case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
       equation
         false = Config.acceptMetaModelicaGrammar();
         env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
-        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iterators, impl, st, doVect, pre, info);
+        iters = listReverse(iters);
+        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
         // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
         (cache,exp_1,props,st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
