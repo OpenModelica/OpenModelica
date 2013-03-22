@@ -349,7 +349,7 @@ record Bitmap
   // end GraphicItem
 
   Real extent[2,2]/*(each final unit=\"mm\")*/;
-  String fileName \"Name of bitmap file\";
+  String fileName = \"\" \"Name of bitmap file\";
   String imageSource \"Base64 representation of bitmap\";
 end Bitmap;
 
