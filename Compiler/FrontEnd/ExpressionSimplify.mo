@@ -1088,7 +1088,7 @@ algorithm
     // Then try array concatenation
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,ty=tp1,scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
-        es = simplifyCat(1,es,{},false);
+        es = simplifyCat(1,es);
         tp1 = Expression.unliftArray(tp1);
         sc = not Expression.isArrayType(tp1);
         tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
@@ -1114,7 +1114,7 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("cat"),expLst=DAE.ICONST(i)::es,attr=DAE.CALL_ATTR(ty=tp))
       equation
-        es = simplifyCat(i,es,{},false);
+        es = simplifyCat(i,es);
         i = listLength(es);
         e = Expression.makeBuiltinCall("cat",DAE.ICONST(i)::es,tp);
       then e;
@@ -1192,6 +1192,26 @@ algorithm
 end simplifySymmetric;
 
 protected function simplifyCat
+  input Integer inDim;
+  input list<DAE.Exp> inExpList;
+  output list<DAE.Exp> outExpList;
+algorithm
+  outExpList := match(inDim, inExpList)
+    local
+      list<DAE.Exp> expl;
+
+    case (1, _)
+      equation
+        expl = List.map(inExpList, Expression.matrixToArray);
+      then
+        simplifyCat2(inDim, expl, {}, false);
+
+    else simplifyCat2(inDim, inExpList, {}, false);
+
+  end match;
+end simplifyCat;
+
+protected function simplifyCat2
   input Integer dim;
   input list<DAE.Exp> ies;
   input list<DAE.Exp> acc;
@@ -1201,7 +1221,7 @@ algorithm
   oes := matchcontinue (dim,ies,acc,changed)
     local
       list<DAE.Exp> es1,es2,esn,es;
-      DAE.Exp e;
+      DAE.Exp e, e2;
       DAE.Dimension ndim,dim1,dim2,dim11;
       DAE.Dimensions dims;
       DAE.Type etp;
@@ -1211,31 +1231,27 @@ algorithm
       DAE.TypeSource ts;
 
     case (_,{},_,true) then listReverse(acc);
-    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
+
+    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts)) ::
+            DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
       equation
         esn = listAppend(es1,es2);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.T_ARRAY(etp,ndim::dims,ts);
         e = DAE.ARRAY(etp,sc,esn);
-      then simplifyCat(dim,e::es,acc,true);
-    case (1,DAE.MATRIX(matrix=ms1,integer=i1,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
-      equation
-        i = i1+i2;
-        mss = listAppend(ms1,ms2);
-        ndim = Expression.addDimensions(dim1,dim2);
-        etp = DAE.T_ARRAY(etp,ndim::dims,ts);
-        e = DAE.MATRIX(etp,i,mss);
-      then simplifyCat(dim,e::es,acc,true);
+      then simplifyCat2(dim,e::es,acc,true);
+
     case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.T_ARRAY(dims=dim11::dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,ty=DAE.T_ARRAY(dims=_::dim2::_))::es,_,_)
       equation
         mss = List.threadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.T_ARRAY(etp,dim11::ndim::dims,ts);
         e = DAE.MATRIX(etp,i,mss);
-      then simplifyCat(dim,e::es,acc,true);
-    case (_,e::es,_,_) then simplifyCat(dim,es,e::acc,changed);
+      then simplifyCat2(dim,e::es,acc,true);
+
+    case (_,e::es,_,_) then simplifyCat2(dim,es,e::acc,changed);
   end matchcontinue;
-end simplifyCat;
+end simplifyCat2;
 
 protected function simplifyBuiltinStringFormat
   input DAE.Exp exp;

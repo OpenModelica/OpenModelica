@@ -5420,6 +5420,7 @@ algorithm
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
         ety = Types.simplifyType(ty);
+        dim_exp = DAE.ICONST(size);
         call = Expression.makeBuiltinCall("identity", {dim_exp}, ety);
       then
         (cache, call, DAE.PROP(ty,c));
