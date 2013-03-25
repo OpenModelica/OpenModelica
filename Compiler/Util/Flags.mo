@@ -524,7 +524,7 @@ constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
   SOME(STRING_OPTION({"debug", "optmodules"})),
   Util.gettext("Displays the help text."));
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
   SOME("+v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -774,7 +774,7 @@ constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
 constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(48, "wsm-testsuite",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used when running the WSM testsuite."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's

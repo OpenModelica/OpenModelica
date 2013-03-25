@@ -3661,59 +3661,31 @@ public function testsuiteFriendly "Testsuite friendly name (start after testsuit
   input String name;
   output String friendly;
 algorithm
-  friendly := matchcontinue(name)
-  local
-    String outStr;
-  case(_)
-     equation
-        true = Config.getRunningWSMTestsuite();
-        outStr = testsuiteFriendlyWSM(name);
-     then outStr;
-  case(_)
-    equation
-      outStr = testsuiteFriendly2(Config.getRunningTestsuite(),name);         
-    then outStr;
-  end matchcontinue;     
+  friendly := testsuiteFriendly2(Config.getRunningTestsuite(),Config.getRunningWSMTestsuite(),name);
 end testsuiteFriendly;
-
 
 protected function testsuiteFriendly2 "Testsuite friendly name (start after testsuite/ or build/)"
   input Boolean cond;
+  input Boolean wsmTestsuite;
   input String name;
   output String friendly;
 algorithm
-  friendly := matchcontinue (cond,name)
+  friendly := match (cond,wsmTestsuite,name)
     local
       Integer i;
       list<String> strs;
       String newName;
+    case (_,true,_) then System.basename(name);
     
-    case (true,_)
+    case (true,_,_)
       equation
-        true = "Windows_NT" ==& System.os();
-        // replace \\ with / for Windows.
-        newName = System.stringReplace(name, "\\", "/"); 
+        newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
         (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
-        friendly = listGet(strs,i);
-      then
-        friendly;
-    
-    case (true,_)
-      equation
-        false = "Windows_NT" ==& System.os();
-        (i,strs) = System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then friendly;
     
     else name;
-  end matchcontinue;
+  end match;
 end testsuiteFriendly2;
-
-protected function testsuiteFriendlyWSM "This function is the special case for MathCore WSM"
-  input String name;
-  output String friendly;  
-algorithm
-  friendly:=System.basename(name);   
-end testsuiteFriendlyWSM;
 
 end Util;
