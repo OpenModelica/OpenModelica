@@ -143,7 +143,6 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Equation> eqnslst;
-      Integer oldsize,newsize;
       BackendDAE.Matching matching;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
@@ -2001,8 +2000,6 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.StrongComponents comps;
-      array<Integer> ass1,ass2;
       BackendDAE.StateSets stateSets;
     case (false,_) then isyst;
 //    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
@@ -2292,12 +2289,11 @@ algorithm
       list<Integer> nodesList, nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
       list<BackendDAE.Var> jacDiffVars, indiffVars, indiffedVars;
-      BackendDAE.Variables diffedVars, diffVars, varswithDiffs;
+      BackendDAE.Variables diffedVars,  varswithDiffs;
       BackendDAE.EquationArray orderedEqns;
       array<Option<list<Integer>>> forbiddenColor;
       array<Integer> colored, colored1, ass1, ass2;
       array<list<Integer>> coloredArray;
-      list<Integer> varsIndexes;
 
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
 
@@ -3048,14 +3044,12 @@ algorithm
       BackendDAE.Variables initialVars;
       BackendDAE.EquationArray initialEqs;
       BackendDAE.EqSystem initEqSystem;
-      BackendDAE.SymbolicJacobian jacobian;
 
       BackendDAE.Variables orderedVars, knownVars;
       BackendDAE.EquationArray orderedEqs;
 
       list<BackendDAE.Var>  orderedVarList, knownVarList, states, inputs, outputs, parameters;
       list<DAE.ComponentRef> orderedVarCrefList, knownVarCrefList;
-      BackendDAE.SparsePattern sparsityPattern;
 
       BackendDAE.Shared shared;
 
@@ -6176,7 +6170,6 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var v;
       DAE.Exp e;
-      Boolean b;
     case ((DAE.CREF(componentRef = cr),(knvars,_)))
       equation
         (v::{},_::{}) = BackendVariable.getVar(cr,knvars);
@@ -6280,10 +6273,8 @@ protected function simplifyIfEquation1
 algorithm
   outEqns := matchcontinue(conditions,theneqns,elseenqs,source,knvars,inEqns)
     local
-      DAE.Exp e;
-      list<DAE.Exp> explst,fbsExp;
+      list<DAE.Exp> fbsExp;
       list<list<DAE.Exp>> tbsExp;
-      list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
       HashTable2.HashTable ht;
       list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
@@ -6491,10 +6482,8 @@ algorithm
   (obrancheqns,outEqns) := match(brancheqns,condition,conditions,brancheqns1,inEqns)
     local
       DAE.Exp e,cond,msg,level;
-      list<DAE.Exp> explst;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns,beqns;
-      list<list<BackendDAE.Equation>> eqnslst;
       Integer size;
       DAE.ElementSource source,source1;
     case ({},_,_,_,_)
@@ -6779,12 +6768,11 @@ protected function simplifysemiLinearWork "function simplifysemiLinearWork
 algorithm
   (osyst,oshared) := matchcontinue (isyst,ishared)
     local
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<tuple<BackendDAE.Equation,Integer>> eqnslst;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      Boolean b;
       HashTableExpToIndex.HashTable ht;
       array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
       BackendDAE.StateSets stateSets;
@@ -6881,9 +6869,7 @@ algorithm
       DAE.Exp sa,sb,s1,y,x;
       list<DAE.Exp> rest;
       list<tuple<DAE.Exp,Integer,DAE.ElementSource>> explst;
-      array<tuple<BackendDAE.Equation,Integer>> eqnsarray;
       list<tuple<BackendDAE.Equation,Integer>> acc;
-      HashTableExpToIndex.HashTable ht;
       BackendDAE.Equation eqn,eqn1;
       Integer i1,index,index1;
       Absyn.Path path;
@@ -7297,7 +7283,7 @@ algorithm
     local
       BackendDAE.Variables vars;
       DAE.Type tp;
-      DAE.Exp e,zero;
+      DAE.Exp e;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       list<DAE.Exp> explst;
@@ -7601,8 +7587,7 @@ algorithm
       HashTable2.HashTable initalAliases;
       Boolean optimizationfound,negate;
       DAE.ComponentRef cr1,cr2;
-      DAE.Exp e1,e2,e1_1,e2_1;
-      list<DAE.Exp> ea1,ea2;
+      DAE.Exp e1,e2;
 
     case ({},_,_,_,_) then (listReverse(iAcc),iInitalAliases,iOptimizationfound);
     case ((eqn as BackendDAE.EQUATION(exp=e1,scalar=e2))::eqnslst,_,_,_,_)
@@ -7967,7 +7952,6 @@ algorithm
       BackendDAE.WhenEquation elsewhenPart, whenEquation;
       list<BackendDAE.Var> vars, vars1;
       list<BackendDAE.Equation> eqns, eqns1, additionalInitialEquations, additionalInitialEquations1;
-      String crStr;
 
       DAE.Exp condition;
       DAE.ComponentRef left;
@@ -8014,7 +7998,6 @@ algorithm
   (outCondition, outVars, outEqns, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inCondition, inSource, inIndex, inHT)
     local
       Integer index, localIndex;
-      BackendDAE.WhenEquation elsewhenPart, whenEquation;
       BackendDAE.Var var;
       BackendDAE.Equation eqn;
       BackendDAE.Equation initialEqn;
@@ -8025,8 +8008,6 @@ algorithm
       DAE.Exp crefPreExp;
 
       DAE.Exp condition;
-      DAE.ComponentRef left;
-      DAE.Exp right;
       list<DAE.Exp> array;
 
       DAE.Type ty;
@@ -8086,18 +8067,11 @@ algorithm
   (outConditionList, outVars, outEqns, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inConditionList, inSource, inIndex, inHT)
     local
       Integer index;
-      BackendDAE.WhenEquation elsewhenPart, whenEquation;
-      BackendDAE.Var var;
-      BackendDAE.Equation eqn;
       list<BackendDAE.Var> vars1, vars2;
       list<BackendDAE.Equation> eqns1, eqns2;
-      String crStr;
 
       DAE.Exp condition;
       list<DAE.Exp> conditionList;
-      DAE.ComponentRef left;
-      DAE.Exp right;
-      list<DAE.Exp> array;
       list<BackendDAE.Equation> additionalInitialEquations, additionalInitialEquations1;
 
       HashTableExpToIndex.HashTable ht;
@@ -8134,12 +8108,9 @@ algorithm
   (outStmts, outPreStmts, outVars, outAdditionalInitialEquations, outIndex) := matchcontinue(inStmts, inVars, inIndex)
     local
       DAE.Exp condition;
-      list<DAE.ComponentRef> crefLst;
       DAE.Statement stmt, elseWhen;
       list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2, elseWhenList;
-      list<tuple<DAE.ComponentRef, Integer>> crintLst;
-      list<BackendDAE.Var> vars1, vars2;
-      list<BackendDAE.Equation> eqns, additionalInitialEquations, additionalInitialEquations1;
+      list<BackendDAE.Equation>  additionalInitialEquations, additionalInitialEquations1;
       Integer index;
       DAE.ElementSource source;
       list<BackendDAE.Var> vars;
@@ -8240,7 +8211,6 @@ algorithm
   (outCondition, outVars, outStmts, outAdditionalInitialEquations, outIndex) := matchcontinue(inCondition, inSource, inIndex)
     local
       Integer index;
-      BackendDAE.WhenEquation elsewhenPart, whenEquation;
       BackendDAE.Var var;
       DAE.Statement stmt;
       list<BackendDAE.Var> vars;
@@ -8249,8 +8219,6 @@ algorithm
       DAE.Exp crefPreExp;
 
       DAE.Exp condition;
-      DAE.ComponentRef left;
-      DAE.Exp right;
       list<DAE.Exp> array;
 
       DAE.Type ty;
@@ -8313,18 +8281,11 @@ algorithm
   (outConditionList, outVars, outStmts, outAdditionalInitialEquations, outIndex) := matchcontinue(inConditionList, inSource, inIndex)
     local
       Integer index;
-      BackendDAE.WhenEquation elsewhenPart, whenEquation;
-      BackendDAE.Var var;
-      BackendDAE.Equation eqn;
       list<BackendDAE.Var> vars1, vars2;
       list<DAE.Statement> stmt1, stmt2;
-      String crStr;
 
       DAE.Exp condition;
       list<DAE.Exp> conditionList;
-      DAE.ComponentRef left;
-      DAE.Exp right;
-      list<DAE.Exp> array;
 
       list<BackendDAE.Equation> additionalInitialEquations, additionalInitialEquations1;
 

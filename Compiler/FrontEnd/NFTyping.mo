@@ -152,7 +152,6 @@ algorithm
       Class cls;
       Absyn.Path name;
       SymbolTable st;
-      DAE.Type ty;
 
     case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name), cls),
         _, _, _, st)
@@ -948,7 +947,6 @@ algorithm
       DAE.CallAttributes attrs;
       DAE.Dimensions forEachDim;
       Absyn.Path fnName;
-      Component rec;
 
       case(NFInstTypes.FUNCTION(fnName, inputs, outputs, _, _), _, _, _, _)
         equation
@@ -1332,8 +1330,6 @@ algorithm
     local
       Component comp;
       Class cls;
-      Absyn.Path bc;
-      DAE.Type ty;
       SymbolTable st;
       Connections conn;
 
@@ -1611,11 +1607,8 @@ algorithm
     local
       DAE.ComponentRef lhs, rhs;
       Face lhs_face, rhs_face;
-      DAE.Type lhs_ty, rhs_ty;
       Boolean lhs_id, rhs_id, is_deleted;
-      ConnectorType lhs_cty, rhs_cty;
       Option<Component> lhs_comp, rhs_comp;
-      DAE.VarKind lhs_var, rhs_var;
       list<Equation> eql;
       Connections conn;
       Connector lhs_conn, rhs_conn;
@@ -1720,10 +1713,7 @@ algorithm
     local
       Face face;
       Component comp;
-      DAE.Type ty;
       DAE.ComponentRef cref, last_cref;
-      DAE.ConnectorType dcty;
-      ConnectorType cty;
 
     // A connector that is part of a deleted conditional component.
     case (_, _, NONE(), NONE(), _)

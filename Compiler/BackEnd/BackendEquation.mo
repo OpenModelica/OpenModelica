@@ -660,7 +660,7 @@ public function traverseBackendDAEExpsEqnListWithStop
 algorithm
   (outBoolean,outTypeA) := match(inEquations,func,inTypeA)
     local
-      Type_a arg,arg1;
+      Type_a arg;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       Boolean b;
@@ -691,7 +691,7 @@ public function traverseBackendDAEExpsEqnListListWithStop
 algorithm
   (outBoolean,outTypeA) := match(inEquations,func,inTypeA)
     local
-      Type_a arg,arg1;
+      Type_a arg;
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> eqns;
       Boolean b;
@@ -821,14 +821,14 @@ algorithm
       DAE.Exp e1,e2,cond;
       list<DAE.Exp> expl;
       DAE.Type tp;
-      DAE.ComponentRef cr,cr1;
-      BackendDAE.WhenEquation elsePart,elsePart1;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation elsePart;
       DAE.ElementSource source;
       Integer size;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       list<Integer> dimSize;
       DAE.Algorithm alg;
-      list<DAE.Statement> stmts,stmts1;
+      list<DAE.Statement> stmts;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3,b4;
@@ -1166,7 +1166,7 @@ algorithm
   (outBoolean,outTypeA) := match(inExpl,rel,ext_arg)
   local
       DAE.Exp e;
-      list<DAE.Exp> expl1,res;
+      list<DAE.Exp> res;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       Boolean b;
     case({},_,ext_arg_1) then (true,ext_arg_1);
@@ -1584,7 +1584,6 @@ public function requationsAddDAE
 algorithm
   oshared := match (inEquations,shared)
     local
-      BackendDAE.Var var;
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
@@ -1869,7 +1868,6 @@ algorithm
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> eqns;
       list<list<DAE.Subscript>> subslst;
-      String errorMessage;
       Boolean diffed;
       Real r;
 
@@ -2239,14 +2237,12 @@ algorithm
   outTpls := match (lhs,rhs,inTpls)
       local
         DAE.ComponentRef cr1,cr2;
-        DAE.Exp e,e1,e2,ne,ne1;
+        DAE.Exp e1,e2;
         DAE.Type ty;
         list<DAE.Exp> elst1,elst2;
         list<list<DAE.Exp>> elstlst1,elstlst2;
-        list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
         list<DAE.Var> varLst1,varLst2;
         Absyn.Path patha,patha1,pathb,pathb1;
-        DAE.Dimensions dims;
       // a = b;
       case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_)
         then (cr1,cr2,lhs,rhs,false)::inTpls;
@@ -2473,10 +2469,8 @@ algorithm
   outTpls := match (exp,inTpls)
       local
         DAE.ComponentRef cr1,cr2;
-        DAE.Exp e,e1,e2,ne,ne1;
+        DAE.Exp e1,e2;
         DAE.Type ty;
-        list<DAE.Exp> elst1,elst2;
-        list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
       // a + b
       case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
         then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;

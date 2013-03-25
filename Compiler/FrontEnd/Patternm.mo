@@ -190,7 +190,6 @@ algorithm
       Absyn.ComponentRef fcr;
       Absyn.FunctionArgs fargs;
       Absyn.Path utPath;
-      Absyn.Direction direction;
       Env.Cache cache;
       Absyn.Exp lhs;
       DAE.Attributes attr;
@@ -2016,10 +2015,8 @@ algorithm
     local
       String name;
       Env.Cache cache;
-      SCode.Variability var;
       Boolean b;
       Absyn.Info info;
-      DAE.Type ty;
     case (SCode.COMPONENT(name=name),_,(cache,_))
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));

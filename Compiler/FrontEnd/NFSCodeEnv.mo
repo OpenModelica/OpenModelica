@@ -195,7 +195,6 @@ algorithm
   outEnv := matchcontinue(inEnv, inName)
     local
       Frame cls_env;
-      AvlTree cls_and_vars;
       Item item;
 
     case (_, _)
@@ -1533,7 +1532,6 @@ algorithm
     local
       Absyn.Path bc, path;
       list<Redeclaration> rm;
-      Absyn.Info i;
 
     // only one extends!
     case (_, Absyn.TPATH(path, _), _)

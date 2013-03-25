@@ -1768,11 +1768,8 @@ algorithm
   outValue := match(inExp, inEnv)
     local
       Env.Env env;
-      list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
       Integer res, dim;
       DAE.ComponentRef cr;
-      DAE.ComponentRef prefix,currentPrefix;
-      Absyn.Ident currentPrefixIdent;
       list<DAE.Exp> expl;
       list<Values.Value> vals;
       Env.CSetsType clst;
@@ -1806,12 +1803,10 @@ algorithm
     local
       Env.Env env;
       list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
-      Integer res, dim;
+      Integer res;
       DAE.ComponentRef cr;
       DAE.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
-      list<DAE.Exp> expl;
-      list<Values.Value> vals;
       Env.CSetsType rest;
 
     case (cr, {}, env, _) then inStartValue;
@@ -6631,7 +6626,6 @@ algorithm
       list<Absyn.ElementArg> res,args;
       Boolean b,impl;
       Absyn.Each e;
-      Absyn.ComponentRef cr;
       Option<String> stropt;
       Option<Interactive.SymbolTable> st;
       Absyn.ElementArg m;

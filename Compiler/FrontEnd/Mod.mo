@@ -1853,8 +1853,7 @@ algorithm
   outMod:= matchcontinue (inModOuter,inModInner,inEnv,inPrefix)
     local
       DAE.Mod m;
-      list<DAE.SubMod> submods;
-      String strPrefix, s1, s2, s3, s4;
+      String  s1, s2, s3, s4;
       Option<Absyn.Path> p;
       list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
       SCode.Final fp1, fp2;
@@ -1938,9 +1937,9 @@ protected function doMerge "function: merge
   input Prefix.Prefix inPrefix4;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inModOuter,inModInner,inEnv3,inPrefix4)
+  outMod := match (inModOuter,inModInner,inEnv3,inPrefix4)
     local
-      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_,mm1,mm2,mm3,cm,icm;
+      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,mm1,mm2,mm3,cm,icm;
       SCode.Visibility vis;
       SCode.Final finalPrefix,f,f1,f2;
       SCode.Replaceable r;
@@ -2042,7 +2041,7 @@ algorithm
       then
         DAE.REDECL(finalPrefix,each1,{(elementOne,mm1)});
 
-  end matchcontinue;
+  end match;
 end doMerge;
 
 protected function checkModification
@@ -2272,7 +2271,6 @@ algorithm
       SCode.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
-      Boolean b;
       list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
       SCode.Program els1, els2;
 
@@ -2688,7 +2686,6 @@ algorithm
     local
       list<tuple<SCode.Element, DAE.Mod>> tup;
       list<DAE.SubMod> subs;
-      String s1;
       SCode.Final fp;
       DAE.EqMod eq;
 

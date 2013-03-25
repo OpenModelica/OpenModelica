@@ -611,8 +611,6 @@ protected function simplifyIfExp
 algorithm
   exp := match (cond,tb,fb)
     local
-      Boolean b,b1;
-      DAE.Exp e;
       // Condition is constant
     case (DAE.BCONST(true),_,_) then tb;
     case (DAE.BCONST(false),_,_) then fb;
@@ -1768,7 +1766,7 @@ algorithm
     local
       list<DAE.Exp> expl, expl1, expl2;
       DAE.Exp exp;
-      Type tp1, tp2, tp;
+      Type   tp;
 
     // Both arrays are empty. The result is defined in the spec by sum, so we
     // return the default value which is 0.
@@ -3197,7 +3195,7 @@ protected function simplifyBinaryConst
 algorithm
   outExp := match (inOperator1,inExp2,inExp3)
     local
-      Integer ie1,ie2,i1,i2;
+      Integer ie1,ie2;
       Real e2_1,e1_1,v1,v2;
       Boolean b,b1,b2;
       DAE.Exp exp1,exp2,val;
@@ -3552,7 +3550,7 @@ algorithm
     local
       DAE.Exp e3,e4,e,e1,e2,res;
       Operator op1,op2;
-      Type ty,ty2,tp,tp2,ty1;
+      Type ty,ty2,tp,tp2;
       Real r1,r2,r3;
     // (a+b)c1 => ac1+bc1, for constant c1 and a or b
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
@@ -4580,7 +4578,6 @@ protected function simplifyReductionFoldPhase
 algorithm
   exp := match (str,ty,exps,defaultValue)
     local
-      Integer len;
       Values.Value val;
       DAE.Exp arr_exp;
       DAE.Type aty;

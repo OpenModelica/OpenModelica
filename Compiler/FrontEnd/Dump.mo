@@ -494,7 +494,7 @@ protected function unparseEnumliterals
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inAbsynEnumLiteralLst)
+  outString := match (inAbsynEnumLiteralLst)
     local
       Ident s1,s2,res,str;
       Option<Absyn.Comment> optcmt;
@@ -519,7 +519,7 @@ algorithm
       then
         res;
 
-    end matchcontinue;
+    end match;
 end unparseEnumliterals;
 
 protected function printEnumliterals
@@ -967,7 +967,6 @@ algorithm
     local
       Boolean f;
       Absyn.Each each_;
-      Absyn.ComponentRef r;
       Option<Absyn.Modification> optm;
       Option<Ident> optcmt;
       Absyn.RedeclareKeywords keywords;
@@ -1010,7 +1009,6 @@ algorithm
       Ident s1,s2,s3,s4,s5,str;
       Boolean f;
       Absyn.Each each_;
-      Absyn.ComponentRef r;
       Option<Absyn.Modification> optm;
       Option<Ident> optstr;
       Absyn.RedeclareKeywords keywords;
@@ -3569,7 +3567,7 @@ algorithm
   outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Ident s1,s2,is,str;
-      Integer i_1,i;
+      Integer i;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
 
@@ -6743,7 +6741,6 @@ algorithm
     local
       Boolean finalPrefix;
       Absyn.Each eachPrefix;
-      Absyn.ComponentRef componentRef;
       Option<Absyn.Modification> modification;
       Option<String> comment;
       Absyn.RedeclareKeywords redeclareKeywords;

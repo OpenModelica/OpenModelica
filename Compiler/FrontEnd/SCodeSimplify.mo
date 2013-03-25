@@ -99,13 +99,8 @@ protected function simplifyClassDef
 algorithm
   outClassDef := match(inClassDef)
     local
-      SCode.Element cl, newCls, parentElement;
-      SCode.Program rest;
-      SCode.Element el;
-      SCode.Ident className, baseClassName, name;
-      Absyn.ComponentRef fullCref;
-      Absyn.Path path;
-      list<SCode.Element> els, modifiers;
+      SCode.Ident  baseClassName;
+      list<SCode.Element> els;
       list<SCode.Equation> ne "the list of equations";
       list<SCode.Equation> ie "the list of initial equations";
       list<SCode.AlgorithmSection> na "the list of algorithms";
@@ -116,8 +111,6 @@ algorithm
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
       SCode.ClassDef cDef;
-      Option<SCode.Element> baseClassOpt;
-      Absyn.Info info;
       SCode.Mod mod;
       SCode.Attributes attr;
       Option<SCode.Comment> cmt;
@@ -169,7 +162,6 @@ algorithm
     local
       SCode.Element el;
       list<SCode.Element> rest, els;
-      Absyn.Info info;
       Absyn.Path bcp;
 
     // handle classes without elements!

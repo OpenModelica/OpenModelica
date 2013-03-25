@@ -246,7 +246,6 @@ algorithm
   str := matchcontinue(op)
     local
       Absyn.Path p;
-      DAE.Type ty;
     case(DAE.ADD(_)) then " + ";
     case(DAE.SUB(_)) then " - ";
     case(DAE.MUL(_)) then " * ";
@@ -3033,8 +3032,6 @@ algorithm
       IOStream.IOStream myStream;
       String str;
       list<DAE.Element> daelist;
-      list<DAE.Function> funcs;
-      splitElements splElems;
       list<compWithSplitElements> fixedDae;
       functionList funList;
     case (DAE.DAE(daelist), _)

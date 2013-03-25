@@ -4502,7 +4502,7 @@ public function setClassPrefixes
   input Element cl;
   output Element outCl;
 algorithm
-  outCl := matchcontinue(inPrefixes, cl)
+  outCl := match(inPrefixes, cl)
     local
       ClassDef parts;
       Encapsulated e;
@@ -4515,7 +4515,7 @@ algorithm
     // not the same, change
     case(_,CLASS(id,prefixes,e,pp,restriction,parts,info))
       then CLASS(id,inPrefixes,e,pp,restriction,parts,info);
-  end matchcontinue;
+  end match;
 end setClassPrefixes;
 
 public function makeEquation
@@ -4540,14 +4540,14 @@ public function equationsContainReinit
   input list<EEquation> inEqs;
   output Boolean hasReinit;
 algorithm
-  hasReinit := matchcontinue(inEqs)
+  hasReinit := match(inEqs)
     local Boolean b;
     case (_)
       equation
         b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
       then
         b;
-  end matchcontinue;
+  end match;
 end equationsContainReinit;
 
 public function equationContainReinit
@@ -4596,14 +4596,14 @@ public function algorithmsContainReinit
   input list<Statement> inAlgs;
   output Boolean hasReinit;
 algorithm
-  hasReinit := matchcontinue(inAlgs)
+  hasReinit := match(inAlgs)
     local Boolean b;
     case (_)
       equation
         b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
       then
         b;
-  end matchcontinue;
+  end match;
 end algorithmsContainReinit;
 
 public function algorithmContainReinit

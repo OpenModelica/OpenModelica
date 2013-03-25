@@ -78,15 +78,10 @@ algorithm
 
       BackendDAE.BackendDAE dlow,dlow_1;
       Interactive.SymbolTable st;
-      DAE.FunctionTree funcs;
 
-      BackendDAE.IncidenceMatrix m,mt,my,mx;
-      array<Integer> ass1,ass2;
+      BackendDAE.IncidenceMatrix m,mt;
 
-      Integer varCount;
-      BackendDAE.Variables vars,kvars;
-      list<Integer>  varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,approximatedEquations_one,equationToExtract,otherEquations,squareBlockEquations,removedVars;
-      BackendDAE.EquationArray eqns,ieqns;
+      list<Integer>     approximatedEquations,approximatedEquations_one;
       list<BackendDAE.Equation> setC_eq,setS_eq;
       list<BackendDAE.EqSystem> eqsyslist;
       BackendDAE.Variables allVars,knownVariables,unknownVariables,sharedVars;
@@ -94,14 +89,10 @@ algorithm
       list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,outputvars;
       BackendDAE.Shared shared;
 
-      BackendDAE.EqSystem currentSystem,newSystem;
-      BackendDAE.EquationArray newSystemEqns;
-      BackendDAE.Variables newSystemVars;
+      BackendDAE.EqSystem currentSystem;
 
-      list<Integer> yEqMap,yVarMap,xEqMap,xVarMap;
-      Integer nEqs,nVars;
-      ExtIncidenceMatrix mExt,knownsSystem;
-      list<Integer> setS,setC,unknownsVarsMatch,unknownsEqsMatch,remainingEquations;
+      ExtIncidenceMatrix mExt;
+      list<Integer> setS,setC,unknownsVarsMatch,remainingEquations;
 
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
@@ -726,7 +717,6 @@ algorithm
     array<Integer> ass1,ass2;
     list<list<Integer>> comps,comps_fixed;
     list<Integer> setC;
-    String dump,text;
     Integer nxVarMap,nxEqMap,size;
   case(_,{},_,_,_,_,_,_)
     equation
@@ -1010,7 +1000,7 @@ protected function getEquationsNumber
   input ExtIncidenceMatrix m;
   output list<Integer> numbers;
 algorithm
-numbers:=matchcontinue(m)
+numbers:= match(m)
     local
       ExtIncidenceMatrix t;
       Integer eq;
@@ -1022,7 +1012,7 @@ numbers:=matchcontinue(m)
       equation
         inner_ret = getEquationsNumber(t);
       then eq::inner_ret;
-  end matchcontinue;
+  end match;
 end getEquationsNumber;
 
 protected function getMathematicaText
@@ -1073,7 +1063,7 @@ protected function getVariables
   input ExtIncidenceMatrix m;
   output list<Integer> varsOut;
 algorithm
-varsOut:=matchcontinue(m)
+varsOut:= match(m)
    local
       list<Integer> vars,newVars;
       ExtIncidenceMatrix t;
@@ -1085,7 +1075,7 @@ varsOut:=matchcontinue(m)
            newVars=listAppend(vars,getVariables(t));
            newVars=List.unique(newVars);
         then newVars;
-end matchcontinue;
+end match;
 end getVariables;
 
 protected function listTail
@@ -1177,7 +1167,7 @@ protected function countKnowns
   input list<Integer> knowns;
   output Integer out;
 algorithm
-  out:=matchcontinue(row,knowns)
+  out:= match(row,knowns)
     local
       list<Integer> vars;
       Integer n;
@@ -1185,7 +1175,7 @@ algorithm
         equation
           n=listLength(List.intersectionOnTrue(vars,knowns,intEq));
         then n;
-  end matchcontinue;
+  end match;
 end countKnowns;
 
 protected function sortEquations
@@ -1290,7 +1280,7 @@ protected function removeUnrelatedEquations2
   input list<Integer> knowns;
   output Boolean out;
 algorithm
-out:=matchcontinue(row,knowns)
+out:= match(row,knowns)
   local
     list<Integer> vars;
     Boolean ret;
@@ -1298,7 +1288,7 @@ out:=matchcontinue(row,knowns)
       equation
         ret = containsAny(vars,knowns);
       then ret;
-end matchcontinue;
+end match;
 end removeUnrelatedEquations2;
 
 protected function removeUnrelatedEquations
@@ -1353,7 +1343,7 @@ protected function restoreIndicesEquivalence
   input list<Integer> map;
   output list<Integer> out;
 algorithm
-out:=matchcontinue(inList,map)
+out:= match(inList,map)
   local
     list<Integer> t,inner_ret;
     Integer h,v;
@@ -1365,7 +1355,7 @@ out:=matchcontinue(inList,map)
         v = listGet(map,h);
         inner_ret = restoreIndicesEquivalence(t,map);
       then v::inner_ret;
-end matchcontinue;
+end match;
 end restoreIndicesEquivalence;
 
 protected function addIndexEquivalence
@@ -1401,7 +1391,7 @@ protected function addVarEquivalences
   output list<Integer> varMapOut;
   output list<Integer> varsOut;
 algorithm
-(varMapOut,varsOut):=matchcontinue(vars,map,varsFixed)
+(varMapOut,varsOut):= match(vars,map,varsFixed)
   local
     Integer h,v;
     list<Integer> remaining,newMap,innerVars,innerMap;
@@ -1413,7 +1403,7 @@ algorithm
        (v,newMap)=addIndexEquivalence(h,map);
        (innerMap,innerVars)=addVarEquivalences(remaining,newMap,v::varsFixed);
       then (innerMap,innerVars);
-end matchcontinue;
+end match;
 end addVarEquivalences;
 
 protected function prepareForMatching2
@@ -1425,7 +1415,7 @@ protected function prepareForMatching2
   output list<Integer> varMapOut;
   output list<list<Integer>> mOut;
 algorithm
-(eqMapOut,varMapOut,mOut):=matchcontinue(mExt,eqMap,varMap,m)
+(eqMapOut,varMapOut,mOut):= match(mExt,eqMap,varMap,m)
     local
       Integer eq;
       list<Integer> vars,newVarMap,newEqMap,newVars;
@@ -1441,7 +1431,7 @@ algorithm
           (newVarMap,newVars) = addVarEquivalences(vars,varMap,{});
           (newEqMap,newVarMap,newM) = prepareForMatching2(t,newEqMap,newVarMap,newVars::m);
         then (newEqMap,newVarMap,newM);
-  end matchcontinue;
+  end match;
 end prepareForMatching2;
 
 protected function prepareForMatching
@@ -1461,7 +1451,7 @@ protected function removeDummyEquations
    input Integer max_neqs;
    output list<list<Integer>> out;
 algorithm
-out:=matchcontinue(comps,max_neqs)
+out:= match(comps,max_neqs)
    local
       list<list<Integer>> t,ret;
       list<Integer> h,row;
@@ -1472,7 +1462,7 @@ out:=matchcontinue(comps,max_neqs)
         row=List.removeOnTrue(max_neqs,intLt,h);
         ret=removeDummyEquations(t,max_neqs);
       then row::ret;
-end matchcontinue;
+end match;
 end removeDummyEquations;
 
 protected function fixUnderdeterminedSystem
@@ -1509,7 +1499,7 @@ protected function getExtIncidenceMatrix2
   input ExtIncidenceMatrix acc;
   output ExtIncidenceMatrix mOut;
 algorithm
-  mOut:=matchcontinue(i,m,acc)
+  mOut:= match(i,m,acc)
     local
       BackendDAE.IncidenceMatrixElement h;
       list<BackendDAE.IncidenceMatrixElement> t;
@@ -1519,7 +1509,7 @@ algorithm
     case(_,h::t,_)
         equation
         then getExtIncidenceMatrix2(i+1,t,(i,h)::acc);
-  end matchcontinue;
+  end match;
 end getExtIncidenceMatrix2;
 
 protected function dumpExtIncidenceMatrix
@@ -2432,7 +2422,7 @@ protected function removeSimpleEquationsUC
   input BackendDAE.BackendDAE daeIn;
   output BackendDAE.BackendDAE daeOut;
 algorithm
-  daeOut:=matchcontinue(daeIn)
+  daeOut:= match(daeIn)
     local
       BackendDAE.BackendDAE dae;
       list<AliasSet> sets;
@@ -2468,7 +2458,7 @@ algorithm
         dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
       then dae;
-  end matchcontinue;
+  end match;
 end removeSimpleEquationsUC;
 
 protected function addCrefsToHashTable
@@ -2558,7 +2548,7 @@ protected function rateVariableList
   input list<BackendDAE.Var> vars;
   output Real out;
 algorithm
-out:=matchcontinue(vars)
+out:= match(vars)
   local
     Real r1,r2,r;
     BackendDAE.Var h;
@@ -2572,7 +2562,7 @@ out:=matchcontinue(vars)
         r2 = rateVariableList(t);
         r = Util.if_(realGt(r1,r2),r1,r2);
       then r;
-end matchcontinue;
+end match;
 end rateVariableList;
 
 protected function rateSetElement
@@ -2637,7 +2627,7 @@ protected function isRemovableVarList
   input list<BackendDAE.Var> vars;
   output Boolean out;
 algorithm
-out:=matchcontinue(vars)
+out:= match(vars)
   local
     Boolean r1,r2,r;
     BackendDAE.Var h;
@@ -2651,7 +2641,7 @@ out:=matchcontinue(vars)
         r2 = isRemovableVarList(t);
         r = r1 and r2;
       then r;
-end matchcontinue;
+end match;
 end isRemovableVarList;
 
 protected function isRemovableSymbol
@@ -2697,7 +2687,7 @@ protected function generateEquation
   input DAE.Exp e;
   output BackendDAE.Equation out;
 algorithm
-  out := matchcontinue (cr,e)
+  out := match (cr,e)
     local
       Boolean differentiated;
       DAE.ElementSource source;
@@ -2708,7 +2698,7 @@ algorithm
         differentiated=false;
       then
         BackendDAE.SOLVED_EQUATION(cr,e,source,differentiated);
-  end matchcontinue;
+  end match;
 end generateEquation;
 
 protected function createReplacementsAndEquationsForSet
@@ -2899,7 +2889,7 @@ protected function createSet
 algorithm
   setOut:=match(cr1,e1,sign1In,cr2,e2,sign2In)
     local
-      Integer current_sign,sign1_temp,sign1,sign2;
+      Integer sign1,sign2;
       HashSet.HashSet new_symbols;
       HashTable.HashTable new_signs;
       HashTable2.HashTable new_expl;

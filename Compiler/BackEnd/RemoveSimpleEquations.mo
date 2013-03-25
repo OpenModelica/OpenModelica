@@ -209,16 +209,11 @@ algorithm
   match (foundSimple,iSimpleeqnslst,iEqnslst,index,traversals,iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple)
     local
       BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
       BackendVarTransform.VariableReplacements repl;
-      Boolean b,b1;
+      Boolean b1;
       array<SimpleContainer> simpleeqns;
-      list<list<SimpleContainer>> sets;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      HashSet.HashSet unreplacable;
-      tuple<BackendDAE.Variables,BackendDAE.Shared,BackendVarTransform.VariableReplacements,HashSet.HashSet,array<list<Integer>>,list<BackendDAE.Equation>,Boolean> tpl;
     case (false,_,{},_,_,_,_,_,_,_,_,_)
       then ((traversals,iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple));
     case (false,_,_,_,_,_,_,_,_,_,{},_)
@@ -541,16 +536,11 @@ algorithm
   match (foundSimple,didReplacement,iSimpleeqnslst,iEqnslst,iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple)
     local
       BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
       BackendVarTransform.VariableReplacements repl;
-      Boolean b,b1;
+      Boolean b1;
       array<SimpleContainer> simpleeqns;
-      list<list<SimpleContainer>> sets;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      HashSet.HashSet unreplacable;
-      tuple<BackendDAE.Variables,BackendDAE.Shared,BackendVarTransform.VariableReplacements,HashSet.HashSet,array<list<Integer>>,list<BackendDAE.Equation>,Boolean> tpl;
     case (false,_,_,{},_,_,_,_,_,_,_)
       then ((iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,didReplacement or globalFoundSimple));
     case (false,_,_,_,_,_,_,_,_,_,_)
@@ -659,14 +649,10 @@ algorithm
   outTpl := match (lhs,rhs,eqnAttributes,selfCalled,inTpl)
     local
       DAE.ComponentRef cr1,cr2;
-      DAE.Exp e,e1,e2,ne,ne1;
+      DAE.Exp e1,e2;
       DAE.Type ty;
       list<DAE.Exp> elst1,elst2;
       list<list<DAE.Exp>> elstlst1,elstlst2;
-      list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
-      list<DAE.Var> varLst1,varLst2;
-      Absyn.Path patha,patha1,pathb,pathb1;
-      DAE.Dimensions dims;
     // a = b;
     case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_,_,_)
       then addSimpleEquationAcausal(cr1,cr2,lhs,rhs,false,eqnAttributes,selfCalled,inTpl);
@@ -830,14 +816,7 @@ protected function simpleEquationAcausal1
 algorithm
   outTpl := matchcontinue (lhs,rhs,eqnAttributes,selfCalled,inTpl)
     local
-      DAE.ComponentRef cr1,cr2;
-      DAE.Exp e,e1,e2,ne,ne1;
-      DAE.Type ty;
       list<DAE.Exp> elst1,elst2;
-      list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
-      list<DAE.Var> varLst1,varLst2;
-      Absyn.Path patha,patha1,pathb,pathb1;
-      DAE.Dimensions dims;
     // Record
     case (_,_,_,_,_)
       equation
@@ -945,9 +924,8 @@ algorithm
   outTpl := match (exp,eqnAttributes,selfCalled,inTpl)
     local
       DAE.ComponentRef cr1,cr2;
-      DAE.Exp e,e1,e2,ne,ne1;
+      DAE.Exp e1,e2;
       DAE.Type ty,tp;
-      list<DAE.Exp> elst1,elst2;
     // a + b
     case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
       then addSimpleEquationAcausal(cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true,eqnAttributes,selfCalled,inTpl);
@@ -1019,7 +997,7 @@ algorithm
       Integer index;
       array<list<Integer>> mT;
       list<BackendDAE.Var> vars1,vars2;
-      list<Integer> ilst1,ilst2,ilsta;
+      list<Integer> ilst1,ilst2;
       Boolean b,varskn1,varskn2,time1,time2;
       DAE.Exp e;
       DAE.Type ty;
@@ -1418,13 +1396,11 @@ protected function solveTimeIndependentAcausal1
   input AccTuple inTpl;
   output AccTuple outTpl;
 algorithm
-  outTpl := matchcontinue (vlst,ilst,lhs,rhs,eqnAttributes,inTpl)
+  outTpl := match (vlst,ilst,lhs,rhs,eqnAttributes,inTpl)
     local
       DAE.ComponentRef cr;
       DAE.Exp cre,es;
       list<DAE.ComponentRef> crlst;
-      BackendDAE.Var v;
-      Integer i;
     // a = ...
     case (_,_,_,_,_,_)
       equation
@@ -1439,7 +1415,7 @@ algorithm
         constOrAliasArrayAcausal(vlst,ilst,es,eqnAttributes,inTpl);
     // {a1,a2,a3,..} = ...
 
-  end matchcontinue;
+  end match;
 end solveTimeIndependentAcausal1;
 
 protected function constOrAliasArrayAcausal
@@ -1613,7 +1589,7 @@ algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) := match(rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
     local
       Integer r;
-      list<Integer> rest,next,colls;
+      list<Integer> rest;
       SimpleContainer s;
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
@@ -1655,10 +1631,9 @@ algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) :=
   match(visited,s,r,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
     local
-      list<Integer> rest,next;
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
-      Boolean b,continue;
+      Boolean continue;
     case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // report error
@@ -1702,7 +1677,7 @@ algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) :=
   match(s,r,oi,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
     local
-      list<Integer> rest,next;
+      list<Integer> next;
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
       BackendDAE.Var v;
@@ -1773,7 +1748,7 @@ protected function getAlias3
 algorithm
   (oRmax,oSmax,oUnremovable) := match(var,i,state,replacable,r,iRmax,iSmax,iUnremovable)
     local
-      Integer w,w1,w2;
+      Integer w1,w2;
       Option<tuple<Integer,Integer>> tpl;
     case(_,_,false,false,_,_,_,NONE())
       equation
@@ -1965,7 +1940,6 @@ algorithm
       BackendDAE.Var v,pv;
       DAE.ComponentRef pcr,cr;
       EquationAttributes eqnAttributes;
-      DAE.ElementSource source;
       Boolean negate,replacable,replaceble1,constExp,isState;
       DAE.Exp exp,exp1,expcr,dexp;
       BackendDAE.Variables vars;
@@ -2118,7 +2092,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp crexp;
       BackendDAE.Variables vars;
-      Boolean bs,diffed;
+      Boolean bs;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
       BackendVarTransform.VariableReplacements repl;
@@ -2314,14 +2288,14 @@ algorithm
   match (sc,r,ilast,exp,optExp,globalnegate,derReplaceState,mark,simpleeqnsarr,iMT,unreplacable,iVars,iEqnslst,ishared,iRepl,iAttributes)
     local
       Integer i1,i2,i;
-      list<Integer> rest,rows;
+      list<Integer> rows;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef cr,cr1,cr2;
-      Boolean negate,replacable,state,globalnegate1,diffed,replaceble1;
+      Boolean negate,replacable,globalnegate1,diffed,replaceble1;
       DAE.ElementSource source;
       DAE.Exp crexp,exp1;
       Option<DAE.Exp> dexp;
@@ -2612,7 +2586,7 @@ algorithm
   matchcontinue (minmax,mark,simpleeqnsarr)
     local
       DAE.Exp min,max;
-      String s,s1,s2,s3,s4,s5;
+      String s,s4,s5;
       Real rmin,rmax;
     case ((SOME(min),SOME(max)),_,_)
       equation
@@ -2755,12 +2729,10 @@ algorithm
     local
       DAE.ComponentRef cr;
       Option<DAE.Exp> start,start1;
-      tuple<Option<DAE.Exp>,DAE.ComponentRef> value;
       list<tuple<Option<DAE.Exp>,DAE.ComponentRef>> values;
       list<tuple<DAE.Exp,DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
       BackendDAE.Variables knVars;
-      Option<tuple<Option<DAE.Exp>,DAE.ComponentRef>> tpl;
     // default value
     case (_,_,(_,{}),_) then inVar;
     // fixed true only one start value -> nothing changed
@@ -2835,7 +2807,6 @@ protected function equalNonFreeStartValues
 algorithm
   oValue := matchcontinue(iValues,knVars,iValue)
     local
-      Option<tuple<Option<DAE.Exp>,DAE.ComponentRef>> value;
       list<tuple<Option<DAE.Exp>,DAE.ComponentRef>> values;
       DAE.Exp e,e1,e2;
       Boolean b;
@@ -2870,9 +2841,8 @@ protected function equalFreeStartValues
   input tuple<Option<DAE.Exp>,Option<DAE.Exp>,DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>,Option<DAE.Exp>,DAE.ComponentRef> oValue;
 algorithm
-  oValue := matchcontinue(iValues,knVars,iValue)
+  oValue := match(iValues,knVars,iValue)
     local
-      Option<tuple<Option<DAE.Exp>,DAE.ComponentRef>> value;
       list<tuple<Option<DAE.Exp>,DAE.ComponentRef>> values;
       DAE.Exp e,e1,e2;
       Boolean b;
@@ -2896,7 +2866,7 @@ algorithm
         true = Expression.expEqual(e1, e2);
       then
         equalFreeStartValues(values,knVars,iValue);
-  end matchcontinue;
+  end match;
 end equalFreeStartValues;
 
 protected function replaceCrefWithBindExp
@@ -2910,7 +2880,6 @@ algorithm
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-      Boolean b;
       HashSet.HashSet hs;
     // true if crefs replaced in expression
     case ((DAE.CREF(componentRef=cr), (vars,_,hs)))
@@ -2955,12 +2924,6 @@ protected function selectFreeValue
 algorithm
   outVar := match(iZeroFreeValues,inVar)
     local
-      DAE.Exp e,e1;
-      DAE.ComponentRef cr,cr1;
-      BackendDAE.Var v;
-      list<tuple<DAE.Exp,DAE.ComponentRef>> zerofreevalues;
-      Integer i,i1;
-      Option<tuple<DAE.Exp,DAE.ComponentRef,Integer>> favorit;
     case ({},_) then inVar;
     case (_,_)
       then
@@ -2979,8 +2942,8 @@ protected function selectFreeValue1
 algorithm
   outVar := match(iZeroFreeValues,iFavorit,iStr,inVar)
     local
-      DAE.Exp e,e1;
-      DAE.ComponentRef cr,cr1;
+      DAE.Exp e;
+      DAE.ComponentRef cr;
       BackendDAE.Var v;
       list<tuple<DAE.Exp,DAE.ComponentRef>> zerofreevalues;
       Integer i,i1;
@@ -3123,7 +3086,7 @@ algorithm
   outDAE:=
   match (b,inDAE,repl)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,knvars1;
+      BackendDAE.Variables knvars,exobj,knvars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns,inieqns,remeqns1;
       array<DAE.Constraint> constrs;

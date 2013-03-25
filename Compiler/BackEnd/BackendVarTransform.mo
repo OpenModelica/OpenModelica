@@ -795,7 +795,7 @@ public function replacementEmpty
 algorithm
   empty := match(repl)
     local
-      HashTable2.HashTable ht,derConst;
+      HashTable2.HashTable ht;
     case REPLACEMENTS(hashTable = ht,derConst=NONE())
       then
         intLt(BaseHashTable.hashTableCurrentSize(ht),1);
@@ -839,7 +839,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
-      DAE.Type t,tp,ety;
+      DAE.Type t,tp;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
@@ -1426,7 +1426,7 @@ protected function replaceEquations2
   end FuncTypeExp_ExpToBoolean;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
-  matchcontinue (inBackendDAEEquationLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
+  match (inBackendDAEEquationLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
     local
       BackendDAE.Equation a;
       list<BackendDAE.Equation> es,acc;
@@ -1438,7 +1438,7 @@ algorithm
         (es,b) = replaceEquations2(es, inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc,b);
       then
         (es,b);
-  end matchcontinue;
+  end match;
 end replaceEquations2;
 
 protected function replaceEquation
@@ -1458,7 +1458,6 @@ algorithm
   matchcontinue (inBackendDAEEquation,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
-      list<BackendDAE.Equation> es;
       VariableReplacements repl;
       BackendDAE.Equation a;
       DAE.ComponentRef cr;

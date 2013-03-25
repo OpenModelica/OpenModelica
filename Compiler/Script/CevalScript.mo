@@ -895,18 +895,18 @@ algorithm
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,n;
-      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel, fmiNumberOfRealModelVariables, fmiNumberOfIntegerModelVariables, fmiNumberOfBooleanModelVariables, fmiNumberOfStringModelVariables, fmiNumberOfEnumerationModelVariables;
+      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
       list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime;
       Interactive.Statements istmts;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected, inputConnectors, outputConnectors;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, sort, builtin, showProtected, inputConnectors, outputConnectors;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
-      Absyn.ComponentRef crefCPath, crefCName;
+      Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
       list<Real> realVals;
       list<tuple<String,list<String>>> deps;
@@ -2959,7 +2959,7 @@ algorithm
     local
       Absyn.Restriction restriction;
       Absyn.Class absynClass;
-      String str,re,classNameStr;
+      String str,re;
       Option<SCode.Program> fp;
       SCode.Program scodeP, scodePNew;
       list<Interactive.InstantiatedClass> ic,ic_1;
@@ -2971,7 +2971,6 @@ algorithm
       NFSCodeEnv.Env senv;
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
-      Absyn.Path newClassName;
 
     case (cache, _, _, Interactive.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
       equation
@@ -3089,7 +3088,6 @@ algorithm
       BackendDAE.BackendDAE indexed_dlow;
       Interactive.SymbolTable st;
       list<String> libs;
-      Values.Value outValMsg;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
 
@@ -3398,7 +3396,6 @@ algorithm
   (outCache,outInteractiveSymbolTable3,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues):=
   matchcontinue (inCache,inEnv,inValues,inInteractiveSymbolTable,inMsg)
     local
-      Values.Value ret_val;
       Interactive.SymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
@@ -3537,7 +3534,7 @@ algorithm
     local
       Interactive.SymbolTable newst;
       String res,str;
-      Values.Value ret_val,simValue;
+      Values.Value simValue;
 
     case (0,_,_,_,_,_,_,_,_)
       equation
@@ -4427,7 +4424,6 @@ algorithm
   (outCache,outInteractiveSymbolTable,compileDir,outString1,outString2,outString4):=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
-      Values.Value ret_val;
       Interactive.SymbolTable st,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
@@ -6455,7 +6451,6 @@ algorithm
   res := matchcontinue (val,env)
     local
       Absyn.Path path;
-      Real t;
     case (Values.CODE(Absyn.C_TYPENAME(path as Absyn.IDENT(_) /* We only want to lookup idents in the symboltable; also speeds up e.g. simulate(Modelica.A.B.C) so we do not instantiate all classes */)),_)
       equation
         (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
@@ -6520,9 +6515,6 @@ protected function hasStopTime2 "For use with getNamedAnnotation"
 algorithm
   b := match (arg)
     local
-      list<Absyn.ElementArg> arglst;
-      list<String> strs;
-      String s;
 
     case Absyn.MODIFICATION(path=Absyn.IDENT(name="StopTime")) then true;
     else false;
@@ -6939,12 +6931,7 @@ algorithm
    local
      Env.Cache cache;
      Env.Env env;
-     SCode.Element c;
      Absyn.Path fpath;
-     SCode.Replaceable repp;
-     SCode.Redeclare redp;
-     SCode.Partial ppp;
-     list<Absyn.Path> functionDependencies;
 
    // if is partial instantiation no function evaluation/generation
    case (cache, env, fpath)
@@ -7049,40 +7036,17 @@ algorithm
   (outCache,outValue,outST):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg)
     local
-      Integer start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<Interactive.SymbolTable> stOpt;
-      Real lhvReal,rhvReal,sum,r,realStart1,realStop1,realStep1;
-      String str,lhvStr,rhvStr,s;
-      Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
-      Absyn.Exp exp_1,exp;
+      Boolean impl;
       list<Env.Frame> env;
       Ceval.Msg msg;
-      Absyn.Element elt_1,elt;
-      Absyn.CodeNode c;
-      list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vals;
-      list<DAE.Exp> es,expl;
-      list<list<DAE.Exp>> expll;
-      Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal;
-      DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,cond;
-      Absyn.Path funcpath,name;
-      DAE.Operator relop;
+      list<Values.Value> vallst;
+      list<DAE.Exp> expl;
+      Values.Value newval,value;
+      DAE.Exp e;
+      Absyn.Path funcpath;
       Env.Cache cache;
-      DAE.Exp expExp;
-      list<Integer> dims;
-      DAE.Dimensions arrayDims;
-      DAE.ComponentRef cr;
-      list<String> fieldNames, n, names;
-      DAE.Type t;
       Interactive.SymbolTable st;
-      DAE.Exp daeExp;
-      Absyn.Path path;
-      Option<Values.Value> ov;
-      Option<DAE.Exp> foldExp;
-      DAE.Type ty;
-      list<DAE.Type> tys;
-      DAE.ReductionIterators iterators;
-      list<list<Values.Value>> valMatrix;
-      Absyn.Info info;
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),impl,stOpt,msg)

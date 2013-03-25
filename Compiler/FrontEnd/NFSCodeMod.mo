@@ -1013,7 +1013,6 @@ public function removeRedeclaresFromMod
 algorithm
   outMod := match(inMod)
     local
-      Option<String> n;
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
@@ -1039,11 +1038,10 @@ protected function removeRedeclaresFromSubMod
   input list<SCode.SubMod> inSl;
   output list<SCode.SubMod> outSl;
 algorithm
-  outSl := matchcontinue(inSl)
+  outSl := match(inSl)
     local
       String n;
       list<SCode.SubMod> sl,rest;
-      SCode.SubMod sm;
       SCode.Mod m;
       list<SCode.Subscript> ssl;
 
@@ -1063,7 +1061,7 @@ algorithm
       then
         SCode.IDXMOD(ssl, m)::sl;
 
-  end matchcontinue;
+  end match;
 end removeRedeclaresFromSubMod;
 
 

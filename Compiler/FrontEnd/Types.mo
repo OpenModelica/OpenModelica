@@ -1243,7 +1243,7 @@ public function setVarDefaultInput "Sets a DAE.Var to input"
   input Var var;
   output Var outV;
 algorithm
-  outV := matchcontinue(var)
+  outV := match(var)
     local
       Ident name;
       SCode.ConnectorType ct;
@@ -1258,14 +1258,14 @@ algorithm
     case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,_,io,vis),tp,bind,cnstForRange)
     then DAE.TYPES_VAR(name,DAE.ATTR(SCode.POTENTIAL(),prl,SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),tp,bind,cnstForRange);
 
-  end matchcontinue;
+  end match;
 end setVarDefaultInput;
 
 public function setVarProtected "Sets a DAE.Var to input"
   input Var var;
   output Var outV;
 algorithm
-  outV := matchcontinue(var)
+  outV := match(var)
     local
       Ident name;
       SCode.ConnectorType ct;
@@ -1280,7 +1280,7 @@ algorithm
     case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,_),tp,bind,cnstForRange)
     then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,SCode.PROTECTED()),tp,bind,cnstForRange);
 
-  end matchcontinue;
+  end match;
 end setVarProtected;
 
 protected function setVarType "Sets a DAE.Var's type"
@@ -1381,7 +1381,7 @@ protected function subtype2 "function: subtype
 algorithm
   outBoolean := matchcontinue (inType1,inType2,requireRecordNamesEqual)
     local
-      Boolean res, b1, b2, b;
+      Boolean res;
       Ident l1,l2;
       list<Var> els1,els2;
       Absyn.Path p1,p2;
@@ -4289,7 +4289,7 @@ algorithm
       Boolean sc, a;
       Integer nmax;
       DAE.Dimension dim1, dim2, dim11, dim22;
-      DAE.Dimensions dims,dims1,dims2;
+      DAE.Dimensions dims;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<DAE.Exp>> ell_1,ell,elist_big;
@@ -4307,7 +4307,6 @@ algorithm
       list<DAE.Element> localDecls;
       DAE.TypeSource ts,ts1,ts2;
       list<Var> els1,els2;
-      ClassInf.State st1,st2;
       Absyn.Path p1,p2;
 
     // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
@@ -7634,8 +7633,7 @@ algorithm
     local
       DAE.Type inner1,inner2;
       DAE.TypeSource ts1,ts2;
-      DAE.Dimensions dims2;
-      DAE.Dimension d,d1,d2;
+      DAE.Dimension d1,d2;
     case (DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims={_},source=ts2))
       equation
         (oty1,oty2) = ifExpMakeDimsUnknown(inner1,inner2);

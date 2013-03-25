@@ -642,8 +642,6 @@ algorithm
       Env fs, env;
       SCode.Element c;
       Ident n;
-      ClassType ct;
-      SCode.ClassDef cdef;
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n), _)
       equation
@@ -681,7 +679,7 @@ algorithm
       ExtendsTable et;
       ImportTable it;
       Option<Util.StatefulBoolean> iu;
-      Env fs, env, frames, classEnv, oldCE;
+      Env fs,  frames, classEnv, oldCE;
       SCode.Element e, oldE;
       Ident n;
       ClassType oldCT,clsTy;
@@ -820,7 +818,7 @@ algorithm
       DAE.Var v;
       Ident n;
       SCode.Element c;
-      Env fs,coenv,remember;
+      Env fs,coenv;
       DAE.Mod m;
 
     // Environment of component
@@ -854,7 +852,7 @@ algorithm
       Option<Ident> id;
       Option<ScopeType> st;
       FrameType ft;
-      AvlTree clsAndVars,tys,clsAndVars2;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
       list<SCode.Element> du;
       ExtendsTable et;
@@ -948,14 +946,14 @@ public function extendFrameI
   input SCode.Element inImport;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv,inImport)
+  outEnv := match (inEnv,inImport)
     local Env env;
     case (_, _)
       equation
         env = FEnv.extendEnvWithImport(inImport, inEnv);
       then
         env;
-  end matchcontinue;
+  end match;
 end extendFrameI;
 
 public function extendFrameDefunit
@@ -1267,11 +1265,10 @@ protected function printFrameStr "function: printFrameStr
 algorithm
   outString := match (inFrame)
     local
-      Ident s1,s2,s3,frmTyStr,res,sid;
+      Ident s1,s2,frmTyStr,res,sid;
       Option<Ident> optName;
       AvlTree httypes;
       AvlTree ht;
-      list<AvlValue> imps;
       CSetsType crs;
       FrameType frameType;
 
@@ -1987,7 +1984,6 @@ algorithm
       Integer h;
       AvlTree t_1,t;
       Option<AvlTreeValue> oval;
-      Absyn.Info info;
 
     /*/ Don't allow replacing of nodes.
     case (_, 0, key, _)
@@ -2761,7 +2757,6 @@ public function addEvaluatedCref
 algorithm
   ocache := match (cache,var,cr)
     local
-      String str;
       Option<array<EnvCache>> envCache;
       Option<Env> initialEnv;
       array<DAE.FunctionTree> functions;

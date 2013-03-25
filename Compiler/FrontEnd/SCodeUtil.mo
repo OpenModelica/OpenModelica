@@ -560,8 +560,6 @@ algorithm
       Option<String> l ;
       Option<Absyn.ComponentRef> out ;
       list<Absyn.Exp> a;
-      list<Absyn.ElementItem> els;
-      list<Absyn.ClassPart> cls;
       Option<SCode.Annotation> ann1,ann2,ann;
     // none
     case (NONE(),_) then NONE();
@@ -1095,7 +1093,6 @@ algorithm
       list<Absyn.ElementItem> es;
       SCode.Visibility vis;
       Absyn.Element e;
-      list<String> names;
 
     case ({},_) then {};
     case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: es),vis)
@@ -1488,7 +1485,6 @@ protected function translateImports "Used to handle group imports, i.e. A.B.C.{x
 algorithm
   elts := match (imp,visibility,info)
     local
-      Absyn.Import imp2;
       String name;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
@@ -1958,7 +1954,6 @@ algorithm
     local
       Boolean fp;
       Absyn.Each ep;
-      Absyn.ComponentRef cref;
       Option<Absyn.Modification> mod;
       Absyn.Info info;
       list<Absyn.ElementArg> rest_args;
@@ -2015,7 +2010,6 @@ algorithm
       SCode.Encapsulated ep;
       SCode.Partial pp;
       SCode.Restriction res;
-      SCode.ClassDef cdef;
       Absyn.Info info;
       Absyn.TypeSpec ty;
       Option<SCode.Comment> cmt;
@@ -2121,10 +2115,9 @@ protected function translateSub
 algorithm
   outSubMod := match (inPath,inMod,info)
     local
-      String c_str,mod_str,i;
-      Absyn.Path c,path;
-      SCode.Mod mod,mod_1;
-      list<SCode.Subscript> ss;
+      String i;
+      Absyn.Path path;
+      SCode.Mod mod;
       SCode.SubMod sub;
 
     // Then the normal rules

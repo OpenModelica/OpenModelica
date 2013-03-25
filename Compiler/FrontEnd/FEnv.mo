@@ -717,7 +717,6 @@ algorithm
       CSetsType crs;
       list<SCode.Element> du;
       ExtendsTable et;
-      ImportTable it;
       Option<Util.StatefulBoolean> iu;
       Env.Env rest;
       Import imp;

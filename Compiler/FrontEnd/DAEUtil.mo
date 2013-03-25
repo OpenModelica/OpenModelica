@@ -401,7 +401,7 @@ algorithm
   //        implement this by walking dae once and check element with each var in the list
   //        instead of walking the dae once for each var.
   // outDae := List.fold(vars,removeVariable,dae);
-  outDae := matchcontinue(dae, vars)
+  outDae := match(dae, vars)
     local
       list<DAE.Element> elements;
     case (DAE.DAE(elements), _)
@@ -409,7 +409,7 @@ algorithm
         elements = removeVariablesFromElements(elements, vars, {});
       then
         DAE.DAE(elements);
-  end matchcontinue;
+  end match;
 end removeVariables;
 
 protected function removeVariablesFromElements
@@ -6601,7 +6601,7 @@ public function addAdditionalComment
   input String message;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue (source,message)
+  outSource := match (source,message)
     local
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -6609,8 +6609,6 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
-      DAE.Exp h1,t1,t2;
-      list<DAE.Exp> es1,es2,es;
       list<SCode.Comment> comment;
       Boolean b;
       SCode.Comment c;
@@ -6623,7 +6621,7 @@ algorithm
       then
         DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment);
 
-  end matchcontinue;
+  end match;
 end addAdditionalComment;
 
 public function getCommentsFromSource

@@ -654,7 +654,6 @@ algorithm
       inEnvWithExtends, inReplaceRedeclares, inVisitedScopes)
     local
       Absyn.Path bc, path;
-      list<Extends> rest_bc;
       Item item;
       Env env;
       list<NFSCodeEnv.Redeclaration> redecls;
@@ -1083,8 +1082,6 @@ algorithm
       Absyn.Info info;
       Env env;
       Item item;
-      Option<Item> opt_item;
-      Option<Env> opt_env;
       list<Item> items;
       list<Absyn.Path> bcl;
 

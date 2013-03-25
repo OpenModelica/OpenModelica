@@ -235,8 +235,6 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-      Integer mark,low,high;
-      Boolean foundequal;
     case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2,_,_,_,_)
       equation
         vlst = List.map1r(comp,arrayGet,ass2);
@@ -408,7 +406,7 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.Variables vars,evars,vars_1;
+      BackendDAE.Variables vars,vars_1;
       list<BackendDAE.Equation> eqn_lst,eqn_lst1,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,var_lst_1,cont_var,disc_var;
       list<Integer> indxcont_var,indxdisc_var,indxcont_eqn,indxdisc_eqn;
@@ -1640,7 +1638,7 @@ algorithm
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
       Absyn.Path functionName;
-      list<DAE.Exp> functionArgs,functionArgs1;
+      list<DAE.Exp> functionArgs;
 
     case ({},_,_) then ({},inTypeA);
 

@@ -181,7 +181,6 @@ algorithm
   outModTable := match(inMod, inModTable)
     local
       String inner_name, outer_name;
-      Modifier inner_mod, outer_mod;
       tuple<String, Modifier> mod;
       ModTable rest_mods;
       Boolean eq_name;
@@ -839,8 +838,7 @@ protected function printSubMod
 algorithm
   outString := match(inSubMod)
     local
-      list<SCode.Subscript> subs;
-      String id, mod_str, subs_str;
+      String id;
 
     case NFInstTypes.MODIFIER(name = id)
       then id +& " = " +& printMod(inSubMod);

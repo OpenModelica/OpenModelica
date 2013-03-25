@@ -2816,7 +2816,6 @@ algorithm
       list<Integer> rest,rows,queue,rqueue,bvars,beqns,lst,vorphans,vorphanseqns;
       list<list<Integer>> queuelst;
 
-      BackendDAE.EqSystem syst;
     case ({},_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
       equation
         //markIndexdColums(1,arrayLength(vec1),mark+1,colummarks,vec2);

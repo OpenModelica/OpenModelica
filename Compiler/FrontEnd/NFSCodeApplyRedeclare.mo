@@ -164,7 +164,6 @@ algorithm
     local
       Changes changes;
       IScope is;
-      IScopes rest;
 
     // what we get here is just one scope
     case ({is}, _)
@@ -191,11 +190,10 @@ protected function mkElementChanges
   input Changes inChangesAcc;
   output Changes outChanges;
 algorithm
-  outChanges := matchcontinue(inIScope, inParentIScopes, inNewName, inChangesAcc)
+  outChanges := match(inIScope, inParentIScopes, inNewName, inChangesAcc)
     local
       Changes changes;
-      IScope is;
-      IScopes rest, parts, parentScopes;
+      IScopes  parts, parentScopes;
       Kind kind;
       Infos infos;
       Prefix prefix;
@@ -222,7 +220,7 @@ algorithm
       then
         changes;
 
-  end matchcontinue;
+  end match;
 end mkElementChanges;
 
 protected function mkClassChanges
@@ -243,7 +241,6 @@ algorithm
       Infos infos;
       Element e;
       Absyn.Path n, np;
-      String nn;
       Integer i, j;
       IScope derivedTarget, is;
       Absyn.Path p;
@@ -317,8 +314,8 @@ algorithm
       Infos infos;
       Element e;
       Integer i;
-      Absyn.Path n, np, fp;
-      String nn, on;
+      Absyn.Path n, np;
+      String  on;
       Option<Absyn.ArrayDim> ad;
       IScope is;
 
@@ -360,7 +357,7 @@ protected function mkExtendsChanges
   input Changes inChangesAcc;
   output Changes outChanges;
 algorithm
-  outChanges := matchcontinue(inKind, inInfos, inKids, inParentIScopes, inChangesAcc)
+  outChanges := match(inKind, inInfos, inKids, inParentIScopes, inChangesAcc)
     local
       Changes changes;
       IScopes parts;
@@ -369,7 +366,6 @@ algorithm
       Element e;
       Integer i;
       Absyn.Path n, np;
-      String nn;
       IScope is;
 
     case (kind as NFSCodeAnalyseRedeclare.EX(n), infos, parts, _, _)
@@ -386,7 +382,7 @@ algorithm
       then
         changes;
 
-  end matchcontinue;
+  end match;
 end mkExtendsChanges;
 
 protected function mkNewElement
@@ -432,10 +428,9 @@ protected function splitChanges
   output Changes outClones;
   output Changes outRepls;
 algorithm
-  (outClones, outRepls) := matchcontinue(inChanges, inClonesAcc, inReplsAcc)
+  (outClones, outRepls) := match(inChanges, inClonesAcc, inReplsAcc)
     local
       Changes cl, rp, rest, changes;
-      Change ch;
       Integer i;
       Absyn.Path on;
       Absyn.Path nn;
@@ -458,7 +453,7 @@ algorithm
       then
         (cl, rp);
 
-  end matchcontinue;
+  end match;
 end splitChanges;
 
 protected function getClonesByScope
@@ -474,11 +469,6 @@ algorithm
     local
       Changes macc, racc, rest;
       Change ch;
-      Integer i;
-      Absyn.Path on;
-      Absyn.Path nn;
-      IScope s;
-      SCode.Element n;
 
     case (_, {}, _, _) then (listReverse(inMatchingAcc), listReverse(inRestAcc));
 
@@ -531,11 +521,6 @@ algorithm
     local
       Changes macc, rest;
       Change ch;
-      Integer i;
-      Absyn.Path on;
-      Absyn.Path nn;
-      IScope s;
-      SCode.Element n;
 
     case (_, {}, _, _) then listReverse(inMatchingAcc);
 
@@ -568,11 +553,11 @@ protected function getChangeName
   input Change inChange;
   output Absyn.Path outName;
 algorithm
-  outName := matchcontinue(inChange)
+  outName := match(inChange)
     local Absyn.Path on;
     case (CLONE(originalName = on)) then on;
     case (REPLACE(originalName = on)) then on;
-  end matchcontinue;
+  end match;
 end getChangeName;
 
 protected function printChanges
@@ -628,10 +613,10 @@ protected function applyChangesToProgram
   input Changes inChanges;
   output Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram, inPrefix, inScope, inClassPath, inChanges)
+  outProgram := match(inProgram, inPrefix, inScope, inClassPath, inChanges)
     local
       Program rest, newp, newels;
-      Element e, newe;
+      Element e;
 
     case ({}, _, _, _, _) then {};
 
@@ -643,7 +628,7 @@ algorithm
       then
         newp;
 
-  end matchcontinue;
+  end match;
 end applyChangesToProgram;
 
 protected function applyChangesToElement
@@ -671,7 +656,6 @@ algorithm
       Option<Absyn.Exp> cnd;
       SCode.Visibility v;
       Option<SCode.Annotation> ann;
-      Prefix prefix;
       Scope scope;
       Absyn.Path bcp;
       Changes clones, changes;
@@ -725,7 +709,6 @@ algorithm
       Element e;
       String n;
       Changes changes;
-      Change ch;
 
     // any other class
     case (SCode.CLASS(name = n), _, _, _, _)
@@ -791,7 +774,7 @@ protected function applyChangesToClassDef
   input Changes inChanges;
   output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := matchcontinue(inClassDef, inPrefix, inScope, inClassPath, inChanges)
+  outClassDef := match(inClassDef, inPrefix, inScope, inClassPath, inChanges)
     local
       list<Element> el;
       list<SCode.Equation> eq;
@@ -807,10 +790,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       SCode.Attributes a;
-      Absyn.Path p;
       String n;
-      Boolean b;
-      Changes changes;
       list<Program> els;
 
     case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt), _, _, _, _)
@@ -845,7 +825,7 @@ algorithm
     case (cd as SCode.PDER(functionPath = _), _, _, _, _)
       then
         cd;
-  end matchcontinue;
+  end match;
 end applyChangesToClassDef;
 
 protected function sameScope
@@ -865,7 +845,7 @@ protected function openScope
   input Scope inScope;
   output Scope outScope;
 algorithm
-  outScope := matchcontinue(inName, inScope)
+  outScope := match(inName, inScope)
     local
       Absyn.Path p;
       Scope w;
@@ -878,7 +858,7 @@ algorithm
         w = Absyn.WITHIN(p);
       then
         w;
-  end matchcontinue;
+  end match;
 end openScope;
 
 protected function scopeStr

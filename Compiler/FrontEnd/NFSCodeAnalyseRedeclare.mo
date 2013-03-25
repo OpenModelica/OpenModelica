@@ -145,7 +145,6 @@ algorithm
     local
       IScopes islist;
       String name;
-      Program classes;
       Env env;
       Item item;
       Absyn.Path path;
@@ -217,38 +216,19 @@ algorithm
       list<Element> el;
       list<tuple<Element, Modifier>> mel;
       Absyn.TypeSpec dty, ts, tsFull;
-      Option<Absyn.ArrayDim> ad;
       Item item;
       Env env, envDerived;
       Absyn.Info info;
       SCode.Mod smod;
       Modifier mod;
       NFSCodeEnv.AvlTree cls_and_vars;
-      String name, tname, name1, name2;
-      list<SCode.Equation> eq, ieq;
-      list<SCode.AlgorithmSection> alg, ialg;
-      DAE.Type ty;
+      String name;
       Absyn.ArrayDim dims;
-      list<DAE.Var> vars;
-      list<SCode.Enum> enums;
-      Absyn.Path path;
-      list<Element> elems;
-      Boolean cse, ice;
-      Element scls, scls2, cls;
-      SCode.ClassDef cdef;
+      Element scls;
       Integer dim_count;
       list<NFSCodeEnv.Extends> exts;
       SCode.Restriction res;
-      ClassInf.State state;
       SCode.Attributes attr;
-      Prefix prefix;
-      SCode.Prefixes sprefs;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      list<SCode.ConstraintSection> cs;
-      list<Absyn.NamedArg> clsattr;
-      Option<SCode.ExternalDecl> ed;
-      list<SCode.Annotation> al;
       Option<SCode.Comment> cmt;
       InstStack ii;
       IScopes islist;
@@ -434,13 +414,10 @@ algorithm
     local
       tuple<Element, Modifier> elem, new_elem;
       list<tuple<Element, Modifier>> rest_el;
-      Boolean cse;
-      list<Element> accum_el;
       list<NFSCodeEnv.Extends> exts;
       InstStack ii;
       Env env;
       IScopes islist;
-      IScope is;
       String str;
       list<tuple<Item, Env>> previousItem;
       Modifier orig_mod;
@@ -491,7 +468,6 @@ algorithm
       Item item;
       SCode.Element orig_el, new_el;
       Env env;
-      Boolean b;
       list<tuple<NFSCodeEnv.Item, Env>> previousItem;
 
     // Only components which are actually replaceable needs to be looked up,
@@ -561,23 +537,12 @@ algorithm
   (outIScopes, outExtends, outInstStack) :=
   matchcontinue(inElement, inOriginalElement, inOriginalMod, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
-      Element elem, cls, orig;
+      Element elem,  orig;
       Modifier mod;
-      list<Element> res;
-      Option<Element> ores;
-      Boolean cse;
-      list<Element> accum_el;
       Redeclarations redecls;
       list<NFSCodeEnv.Extends> rest_exts;
-      String name;
-      Prefix prefix;
-      Env env;
-      Item item;
       InstStack ii;
-      Absyn.Info info;
       IScopes islist;
-      IScope is;
-      Integer i;
 
     // A component
     case ((elem as SCode.COMPONENT(name = _), mod), (orig, _), _, _, _, _, _, _, _)
@@ -641,32 +606,16 @@ algorithm
   matchcontinue(inElement, inClassMod, inOrigElement, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
       Absyn.Info info;
-      Absyn.Path path, tpath, newpath;
+      Absyn.Path  tpath;
       Element comp, orig;
-      DAE.Type ty;
       Env env;
-      Item item, itemOld;
+      Item item;
       Redeclarations redecls;
-      Binding binding;
       Prefix prefix;
       SCode.Mod smod;
-      Modifier mod, cmod;
-      String name, tname, newname;
-      list<DAE.Dimension> dims;
-      array<Dimension> dim_arr;
-      Element cls;
-      list<Element> classes;
-      Integer dim_count;
-      Absyn.Exp cond_exp;
-      DAE.Exp inst_exp;
-      ParamType pty;
-      SCode.Prefixes sprefs;
-      SCode.Attributes attributes;
-      Absyn.TypeSpec typeSpec;
-      Option<SCode.Comment> cmt;
-      Option<Absyn.Exp> condition;
+      Modifier mod;
+      String name;
       InstStack ii;
-      Boolean sameEnv, isBasic, isCompInsideType;
       Option<Absyn.ArrayDim> ad;
       IScopes islist;
       IScope is;
@@ -809,15 +758,9 @@ algorithm
       Item item, itemOld;
       Env env;
       Modifier mod;
-      Element cls, scls;
-      list<Element> classes;
-      DAE.Type ty;
-      Boolean cse;
-      String name, tname;
       SCode.Visibility visibility;
       Option<SCode.Annotation> ann;
       InstStack ii;
-      Boolean isBasic;
       IScopes islist;
       IScope is;
       Replacements replacements;
@@ -866,7 +809,7 @@ algorithm
   _ := matchcontinue(inExtendedClass, inEnv, inInfo)
     local
       Absyn.Path env_path;
-      String env_str, path_str;
+      String  path_str;
 
     case (_, _, _)
       equation
@@ -973,7 +916,7 @@ protected function mkInfos
   input Infos inInfosAcc;
   output Infos outInfos;
 algorithm
-  outInfos := matchcontinue(inPreviousItems, inInfosAcc)
+  outInfos := match(inPreviousItems, inInfosAcc)
     local
       list<tuple<Item, Env>> rest;
       Item i; Env e;
@@ -982,7 +925,7 @@ algorithm
 
     case ((i, e)::rest, _) then mkInfos(rest, RI(i, e)::inInfosAcc);
 
-  end matchcontinue;
+  end match;
 end mkInfos;
 
 protected function filterInfos
@@ -1018,7 +961,7 @@ algorithm
       IScope s;
       Kind k;
       Infos i, i1, i2;
-      IScopes p, rest, acc, p1, p2;
+      IScopes p, rest, acc,  p2;
       Boolean b, b1, b2;
       Absyn.Path n1, n2;
       Element c, e;
@@ -1154,7 +1097,7 @@ protected function mergeComponentModifiers
   input SCode.Element inOldComp;
   output SCode.Element outComp;
 algorithm
-  outComp := matchcontinue(inNewComp, inOldComp)
+  outComp := match(inNewComp, inOldComp)
     local
       SCode.Ident n1,n2;
       SCode.Prefixes p1,p2;
@@ -1174,7 +1117,7 @@ algorithm
       then
         c;
 
-  end matchcontinue;
+  end match;
 end mergeComponentModifiers;
 
 protected function mergeModifiers
@@ -1214,10 +1157,10 @@ protected function mergeBindings
   input Option<tuple<Absyn.Exp, Boolean>> inOld;
   output Option<tuple<Absyn.Exp, Boolean>> outBnd;
 algorithm
-  outBnd := matchcontinue(inNew, inOld)
+  outBnd := match(inNew, inOld)
     case (SOME(_), _) then inNew;
     case (NONE(), _) then inOld;
-  end matchcontinue;
+  end match;
 end mergeBindings;
 
 protected function mergeSubMods
@@ -1250,7 +1193,7 @@ protected function removeSub
 algorithm
   outSubs := matchcontinue(inSub, inOld)
     local
-      list<SCode.SubMod> sl, rest, old;
+      list<SCode.SubMod>  rest;
       SCode.Ident id1, id2;
       list<SCode.Subscript> idxs1, idxs2;
       SCode.SubMod s;
@@ -1284,9 +1227,8 @@ algorithm
   outInfos := matchcontinue(inInfos)
     local
       Infos infos;
-      Info info;
       Env env, denv;
-      Element e,c;
+      Element e;
       SCode.Prefixes p;
       Absyn.TypeSpec ts;
 
@@ -1327,7 +1269,7 @@ public function filterRedeclareIScopes
   input IScopes inIScopesAcc;
   output IScopes outIScopes;
 algorithm
-  outIScopes := matchcontinue(inIScopes, inIScopesAcc)
+  outIScopes := match(inIScopes, inIScopesAcc)
     local
       IScope s;
       Kind k;
@@ -1346,7 +1288,7 @@ algorithm
       then
         acc;
 
-  end matchcontinue;
+  end match;
 end filterRedeclareIScopes;
 
 public function hasRedeclares
@@ -1355,7 +1297,6 @@ public function hasRedeclares
 algorithm
   hasRedecl := matchcontinue(inIScope)
     local
-      IScope rest;
       Boolean b, b1, b2;
       IScopes p;
       Absyn.Path n;
@@ -1443,13 +1384,11 @@ public function mergeDerivedClasses
   input IScopes inIScopes;
   output IScope outIScope;
 algorithm
-  outIScope := matchcontinue(inIScopes)
+  outIScope := match(inIScopes)
     local
       IScope s, last;
       Element e, eLast;
       IScopes ilist, p, rest;
-      Program elements;
-      Absyn.Path derivedPath;
       Kind k;
       Infos i, ni;
       Env env, envLast;
@@ -1479,7 +1418,7 @@ algorithm
       then
         s;
 
-  end matchcontinue;
+  end match;
 end mergeDerivedClasses;
 
 public function propagateModifiersAndArrayDims
@@ -1508,13 +1447,13 @@ public function mergeCdefs
   input SCode.ClassDef inNewCd2;
   output SCode.ClassDef outCd;
 algorithm
-  outCd := matchcontinue(inOldCd1, inNewCd2)
+  outCd := match(inOldCd1, inNewCd2)
     local
       SCode.Attributes atr1, atr2;
-      SCode.ClassDef cd1, cd2, cd;
-      Absyn.TypeSpec ts1, ts2, ts;
-      Option<SCode.Comment> cmt1, cmt2, cmt;
-      SCode.Mod m1, m2, m;
+      SCode.ClassDef   cd;
+      Absyn.TypeSpec ts1, ts2;
+      Option<SCode.Comment> cmt1, cmt2;
+      SCode.Mod m1, m2;
 
     case (SCode.DERIVED(ts1, m1, atr1, cmt1), SCode.DERIVED(ts2, m2, atr2, cmt2))
       equation
@@ -1523,14 +1462,14 @@ algorithm
       then
         cd;
 
-  end matchcontinue;
+  end match;
 end mergeCdefs;
 
 public function removeRedeclareMods
   input Element inElement;
   output Element outElement;
 algorithm
-  outElement := matchcontinue(inElement)
+  outElement := match(inElement)
     local
       Element e;
       String n;
@@ -1547,7 +1486,6 @@ algorithm
       Option<Absyn.Exp> cnd;
       SCode.Visibility v;
       Option<SCode.Annotation> ann;
-      Prefix prefix;
       Absyn.Path bcp;
 
     case (SCode.CLASS(n, p, ep, pp, rp, cd, i))
@@ -1575,14 +1513,14 @@ algorithm
       then
         e;
 
-  end matchcontinue;
+  end match;
 end removeRedeclareMods;
 
 protected function removeRedeclareModsFromClassDef
   input SCode.ClassDef inClassDef;
   output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := matchcontinue(inClassDef)
+  outClassDef := match(inClassDef)
     local
       list<Element> el;
       list<SCode.Equation> eq;
@@ -1598,10 +1536,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       SCode.Attributes a;
-      Absyn.Path p;
       String n;
-      Boolean b;
-      list<Program> els;
 
     case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt))
       equation
@@ -1635,7 +1570,7 @@ algorithm
     case (cd as SCode.PDER(functionPath = _))
       then
         cd;
-  end matchcontinue;
+  end match;
 end removeRedeclareModsFromClassDef;
 
 public function getDerivedIScopes
@@ -1647,7 +1582,7 @@ algorithm
     local
       IScope s;
       Element e;
-      IScopes ilist, acc;
+      IScopes  acc;
 
     // this might be an error!
     case ({}, _) then listReverse(inIScopesAcc);
@@ -1676,30 +1611,30 @@ public function iScopeInfos
   input IScope inIScope;
   output Infos outInfos;
 algorithm
-  outInfos := matchcontinue(inIScope)
+  outInfos := match(inIScope)
     local Infos infos;
     case (IS(infos = infos)) then infos;
-  end matchcontinue;
+  end match;
 end iScopeInfos;
 
 public function iScopeParts
   input IScope inIScope;
   output IScopes outIScopes;
 algorithm
-  outIScopes := matchcontinue(inIScope)
+  outIScopes := match(inIScope)
     local IScopes parts;
     case (IS(parts = parts)) then parts;
-  end matchcontinue;
+  end match;
 end iScopeParts;
 
 public function iScopeKind
   input IScope inIScope;
   output Kind outKind;
 algorithm
-  outKind := matchcontinue(inIScope)
+  outKind := match(inIScope)
     local Kind kind;
     case (IS(kind = kind)) then kind;
-  end matchcontinue;
+  end match;
 end iScopeKind;
 
 protected function printIScopes
@@ -1801,12 +1736,12 @@ public function iScopeStr
   input IScope inIScope;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inIScope)
+  outStr := match(inIScope)
     local
       Infos i;
       Kind k;
       IScopes p;
-      String si, sk, ski, s, str;
+      String si, sk, ski,  str;
 
     case (IS(k, i, p))
       equation
@@ -1818,7 +1753,7 @@ algorithm
       then
         str;
 
-  end matchcontinue;
+  end match;
 end iScopeStr;
 
 protected function iScopeStrIndent
@@ -1865,8 +1800,6 @@ public function infosStr
 algorithm
   outStr := matchcontinue(inInfos)
     local
-      Absyn.Path n;
-      Prefix p;
       Infos rest;
       String str;
       Replacements replacements;
@@ -2054,7 +1987,7 @@ protected function replacementStr
   input Replacement inReplacement;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inReplacement)
+  outStr := match(inReplacement)
     local
       SCode.Ident nm;
       Item o;
@@ -2080,7 +2013,7 @@ algorithm
       then
         str;
 
-  end matchcontinue;
+  end match;
 end replacementStr;
 
 protected function redeclareInfoStr
@@ -2280,7 +2213,7 @@ protected function splitParts
   output IScopes outScopesCO;
   output IScopes outScopesEX;
 algorithm
-  (outScopesCL, outScopesCO, outScopesEX) := matchcontinue(inScopes, inScopesAccCL, inScopesAccCO, inScopesAccEX)
+  (outScopesCL, outScopesCO, outScopesEX) := match(inScopes, inScopesAccCL, inScopesAccCO, inScopesAccEX)
     local
       IScopes rest, cl, co, ex;
       IScope i;
@@ -2307,7 +2240,7 @@ algorithm
         (cl, co, ex) = splitParts(rest, inScopesAccCL, inScopesAccCO, i::inScopesAccEX);
       then
         (cl, co, ex);
-  end matchcontinue;
+  end match;
 end splitParts;
 
 public function isLocal

@@ -407,7 +407,6 @@ algorithm
     local
       NFSCodeEnv.Redeclaration redecl;
       list<NFSCodeEnv.Redeclaration> rest_redecls;
-      SCode.Element el;
       String el_name;
       Absyn.Info el_info;
 

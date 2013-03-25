@@ -83,7 +83,7 @@ algorithm
       list<DAE.Exp> out1,expExpLst,expExpLst1;
       DAE.Type exptyp;
       list<Integer> dimSize;
-      String msg,se1;
+      String msg;
       DAE.SymbolicOperation op1,op2;
       DAE.FunctionTree funcs;
       DAE.Algorithm alg;

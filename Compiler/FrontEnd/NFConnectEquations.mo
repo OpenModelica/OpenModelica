@@ -130,10 +130,6 @@ protected function addConnectionToSet
 algorithm
   outSets := matchcontinue(inConnection, inSets)
     local
-      Connector lhs, rhs;
-      Absyn.Info info;
-      DisjointSets sets;
-      list<Connector> lhs_connl, rhs_connl;
       DAE.VarKind var;
 
     // Don't add parameter/constant connectors, asserts for them should already
@@ -179,9 +175,8 @@ protected function generateEquation_dispatch
   input ConnectorType inType;
   output DAE.DAElist outEquations;
 algorithm
-  outEquations := matchcontinue(inSet, inType)
+  outEquations := match(inSet, inType)
     local
-      DAE.DAElist dae;
 
     case (_, NFConnect2.POTENTIAL()) then generatePotentialEquations(inSet);
     case (_, NFConnect2.FLOW()) then generateFlowEquations(inSet);
@@ -193,7 +188,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end generateEquation_dispatch;
 
 protected function generatePotentialEquations

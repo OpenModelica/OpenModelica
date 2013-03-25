@@ -86,12 +86,8 @@ algorithm
     local
       BackendDAE.BackendDAE dlow;
       list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.IncidenceMatrix m, mt;
-      array<Integer> ass1, ass2;
       list<SimCode.SimEqSystem> eqs;
-      list<list<Integer>> s;
-      list<DAE.ComponentRef> states,disc,algs;
+      list<DAE.ComponentRef> disc;
       BackendDAE.EquationArray eqsdae;
       BackendDAE.Shared shared;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
@@ -894,7 +890,7 @@ public function simpleWhens
   output list<SimCode.SimWhenClause> o;
 algorithm
   o:=
-    matchcontinue i
+    match i
     local
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
@@ -905,7 +901,7 @@ algorithm
      */
     case (head :: tail)
       then listAppend({head},simpleWhens(tail));
-    end matchcontinue;
+    end match;
 end simpleWhens;
 
 
@@ -914,7 +910,7 @@ public function sampleWhens
   output list<SimCode.SimWhenClause> o;
 algorithm
   o:=
-    matchcontinue i
+    match i
     local
       list<SimCode.SimWhenClause> tail;
       SimCode.SimWhenClause head;
@@ -925,7 +921,7 @@ algorithm
      */
     case (head :: tail)
       then sampleWhens(tail);
-    end matchcontinue;
+    end match;
 end sampleWhens;
 
 function newDiscreteVariables
@@ -1001,7 +997,7 @@ algorithm
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
-      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;

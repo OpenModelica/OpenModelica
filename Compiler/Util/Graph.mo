@@ -1028,7 +1028,6 @@ algorithm
   outColor := matchcontinue(inForbiddenColor, inNode, inIndex)
   local
     list<Integer> nodes;
-    Integer index;
     case (_, _, _)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);

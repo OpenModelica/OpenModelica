@@ -459,7 +459,6 @@ algorithm
       BackendDAE.Variables knvars;
       Absyn.Info info;
       String msg;
-      DAE.ElementSource source;
     // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
@@ -583,7 +582,6 @@ protected function evaluateParameter
 algorithm
   (oKnVars,oCache,oRepl) := matchcontinue(var,inKnVars,inIEqns,iRepl,iCache,env)
     local
-      BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
@@ -818,12 +816,10 @@ algorithm
       BackendDAE.Variables knvars;
       BackendDAE.Var v;
       BackendVarTransform.VariableReplacements repl1,evrepl;
-      String str;
       Integer i,mark;
       list<list<Integer>> rest;
       Env.Cache cache;
       list<Integer> ilst;
-      list<BackendDAE.Var> vlst;
 
     case({},_,_,_,_,_,_,_,_,_)
       then
@@ -871,15 +867,10 @@ algorithm
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      DAE.Exp e,e1;
+      DAE.Exp e;
       Option<DAE.VariableAttributes> attr;
       BackendVarTransform.VariableReplacements repl,repleval;
-      SCode.Comment comment;
-      Env.Cache cache;
-      Values.Value value;
       BackendDAE.Variables knVars;
-      Boolean b;
-      Integer mark;
     // Parameter with bind expression
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation

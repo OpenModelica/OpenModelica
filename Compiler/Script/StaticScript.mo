@@ -124,8 +124,6 @@ algorithm
   match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo)
     local
       Absyn.Exp crexp;
-      Absyn.ComponentRef cr;
-      DAE.ComponentRef  cr_1;
       list<Absyn.NamedArg> args;
       Boolean impl;
       Interactive.SymbolTable st;
@@ -503,7 +501,7 @@ algorithm
       DAE.Exp e_1;
       DAE.Properties prop;
       list<Env.Frame> env;
-      Absyn.ComponentRef cr,fn;
+      Absyn.ComponentRef fn;
       DAE.Const c;
       Absyn.Exp exp;
       list<Absyn.Exp> args;
@@ -547,7 +545,7 @@ function: elabCall
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
+  match (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
@@ -557,16 +555,14 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
-      Absyn.Path fn_1;
       Env.Cache cache;
       Prefix.Prefix pre;
-      Ident fnstr;
   case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
         (cache,e,prop,st);
-  end matchcontinue;
+  end match;
 end elabCall;
 
 public function elabGraphicsExp

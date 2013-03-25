@@ -396,7 +396,7 @@ algorithm
   outTpl := matchcontinue(inTpl)
     local
       BackendDAE.Var var, var0;
-      BackendDAE.Variables vars, vars0, inlineVars;
+      BackendDAE.Variables vars, vars0;
       DAE.ComponentRef cr, x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4;
       DAE.Type ty;
       DAE.InstDims arryDim;

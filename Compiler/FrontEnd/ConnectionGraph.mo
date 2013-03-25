@@ -111,9 +111,7 @@ algorithm
       ConnectionGraph graph;
       list<DAE.Element> elts;
       list<DAE.ComponentRef> roots;
-      DAE.DAElist dae;
       DaeEdges broken, connected;
-      list<Connect.ConnectorElement> cset;
 
     // empty graph gives you the same dae
     case (GRAPH(_, {}, {}, {}, {}), _, _) then (inDAE, {}, {});
@@ -794,12 +792,10 @@ algorithm
       DaeEdges connections, broken, connected;
       HashTableCG.HashTable table;
       DAE.ComponentRef dummyRoot;
-      list<DAE.Element> dae;
       String brokenConnectsViaGraphViz;
       list<String> userBrokenLst;
       list<list<String>> userBrokenLstLst;
       list<tuple<String,String>> userBrokenTplLst;
-      list<Connect.ConnectorElement> cset;
 
     // deal with empty connection graph
     case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), _)
@@ -1795,9 +1791,7 @@ algorithm
   toRemove := matchcontinue(inConnects, inBroken, inAcc)
     local
       DAE.ComponentRef c1, c2;
-      list<DAE.Element> brokenDAE, els;
       DaeEdges rest;
-      DAE.DAElist dae;
       list<DAE.ComponentRef> tr;
 
     case (_, {}, _) then List.unique(inAcc);
@@ -1832,7 +1826,7 @@ protected function removeFromConnects
   input list<DAE.ComponentRef> inToRemove;
   output list<Connect.ConnectorElement> outConnects;
 algorithm
-  outConnects := matchcontinue(inConnects, inToRemove)
+  outConnects := match(inConnects, inToRemove)
     local
       DAE.ComponentRef c;
       list<DAE.ComponentRef> rest;
@@ -1846,7 +1840,7 @@ algorithm
         cset = removeFromConnects(cset, rest);
       then
         cset;
-  end matchcontinue;
+  end match;
 end removeFromConnects;
 
 public function addBrokenEqualityConstraintEquations

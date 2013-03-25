@@ -672,7 +672,6 @@ public function printExtendsError2
 algorithm
   _ := matchcontinue(inError, inBaseClass, inPartPath, inEnv, inInfo)
     local
-      Absyn.Path bc, part_path;
       String bc_str, env_str, part;
       list<Extends> exts;
       Error.Message msg;
@@ -873,7 +872,6 @@ algorithm
     local
       Extends ext;
       list<Extends> rest_ext;
-      Absyn.Path bc;
       Option<Extends> opt_ext;
       Option<Item> opt_item;
       Option<Env> opt_env;
@@ -990,7 +988,7 @@ algorithm
   (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv, inExtendsTable)
     local
       Item item;
-      Absyn.Path path, path2;
+      Absyn.Path path;
       list<Import> rest_imps;
       Env env;
       Option<Item> opt_item;
@@ -1259,7 +1257,6 @@ algorithm
       Absyn.Path path;
       Item item;
       String basename;
-      Env env;
 
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)

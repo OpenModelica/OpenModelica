@@ -5810,7 +5810,7 @@ public function pathSetLastIdent
   input Path inLastIdent;
   output Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inLastIdent)
+  outPath := match(inPath, inLastIdent)
     local
       Path p;
       String n;
@@ -5829,7 +5829,7 @@ algorithm
       then
         FULLYQUALIFIED(p);
 
-  end matchcontinue;
+  end match;
 end pathSetLastIdent;
 
 public function expContainsInitial

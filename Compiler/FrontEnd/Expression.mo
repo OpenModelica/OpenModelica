@@ -1472,7 +1472,7 @@ public function getArrayOrRangeContents "returns the list of expressions in the 
 algorithm
   es := match e
     local
-      Boolean bstart,bstep,bstop;
+      Boolean bstart,bstop;
       Integer istart,istep,istop;
       Real rstart,rstep,rstop;
     case DAE.ARRAY(array=es) then es;
@@ -1764,7 +1764,6 @@ algorithm
       list<Var> varLst;
       list<DAE.Type> typs;
       Type ty;
-      list<String> strlst;
 
     // count the variables in array
     case DAE.T_ARRAY(dims = ad)
@@ -3638,7 +3637,7 @@ algorithm
   local
     Integer i;
     DAE.Dimension d;
-    list<DAE.Exp> explst, restexps;
+    list<DAE.Exp> explst;
     DAE.Exp arrexp;
     DAE.Dimensions dims;
 
@@ -3683,7 +3682,6 @@ algorithm
     DAE.Dimension d;
     list<DAE.Exp> explst, restexps, restarr;
     DAE.Exp arrexp;
-    DAE.Dimensions dims;
 
     case({}, _, _) then {};
 
@@ -3717,7 +3715,6 @@ public function arrayFill
 algorithm
   oExp := matchcontinue(dims,inExp)
     local
-      list<DAE.Exp> expl;
     case({},_) then inExp;
     case(_,_)
       equation
@@ -3913,7 +3910,6 @@ algorithm
     local
       Boolean b;
       list<Exp> array;
-      Exp e1, e2;
 
     case (_, true) equation
     then true;
@@ -9086,7 +9082,6 @@ algorithm
   outExps := match (inExp,ty)
     local
       DAE.Exp exp;
-      DAE.Type tt,ty2;
       list<DAE.Var> vs;
       DAE.ComponentRef cr;
       Absyn.Path p1,p2;
@@ -9150,7 +9145,7 @@ public function promoteExp
 algorithm
   (outExp, outType) := matchcontinue(inExp, inType, inDims)
     local
-      Integer dim_count, dims_to_add;
+      Integer  dims_to_add;
       DAE.Type ty, res_ty;
       DAE.Exp exp;
       list<DAE.Type> tys;
@@ -9350,20 +9345,20 @@ protected function hashReductionInfo "help function to hashExp"
   input DAE.ReductionInfo info;
   output Integer hash;
 algorithm
-  hash := matchcontinue(info)
+  hash := match(info)
   local
     Absyn.Path path;
 
     // TODO: complete hasing of all subexpressions
     case(DAE.REDUCTIONINFO(path,_,_,_))            then 22 + stringHashDjb2(Absyn.pathString(path));
-  end matchcontinue;
+  end match;
 end hashReductionInfo;
 
 protected protected function hashReductionIter "help function to hashExp"
   input DAE.ReductionIterator iter;
   output Integer hash;
 algorithm
-  hash := matchcontinue(iter)
+  hash := match(iter)
   local
     String id;
     DAE.Exp e1,e2;
@@ -9371,14 +9366,14 @@ algorithm
 
     case(DAE.REDUCTIONITER(id,e1,SOME(e2),_))       then 23 + stringHashDjb2(id)+hashExp(e1)+hashExp(e2);
     case(DAE.REDUCTIONITER(id,e1,NONE(),_))         then 24 + stringHashDjb2(id)+hashExp(e1);
-  end matchcontinue;
+  end match;
 
 end hashReductionIter;
 protected protected function hashOp "help function to hashExp"
   input DAE.Operator op;
   output Integer hash;
 algorithm
-  hash := matchcontinue(op)
+  hash := match(op)
     local
       Absyn.Path path;
 
@@ -9414,7 +9409,7 @@ algorithm
     case(DAE.EQUAL(_))                                  then 54;
     case(DAE.NEQUAL(_))                                 then 55;
     case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(Absyn.pathString(path)) ;
-    end matchcontinue;
+    end match;
 end hashOp;
 
 public function matrixToArray

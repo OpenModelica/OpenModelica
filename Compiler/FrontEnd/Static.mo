@@ -1201,8 +1201,6 @@ algorithm
       list<DAE.ReductionIterator> reductionIters;
       DAE.Dimensions dims;
       DAE.Properties props;
-      list<DAE.Type> restTupleTypes;
-      DAE.TypeSource tsrc;
       Absyn.ForIterators iters;
 
     case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
@@ -2145,7 +2143,7 @@ algorithm
   outSize := matchcontinue(inStartValue, inStepValue, inStopValue)
     local
       Integer int_start, int_step, int_stop, dim;
-      Real real_start, real_step, real_stop, r;
+      Real real_start, real_step, real_stop;
 
     // start:stop where start > stop gives an empty vector.
     case (_, NONE(), _)
@@ -2660,9 +2658,9 @@ algorithm
       DAE.Exp el_1,el_2;
       DAE.Properties prop,prop1,prop1_1,prop2;
       DAE.Type t1,t1_1;
-      Integer t1_dim1,nmax;
+      Integer nmax;
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
-      Boolean array,impl,havereal,a,scalar,doVect;
+      Boolean impl,havereal,a,doVect;
       DAE.Type at;
       list<Env.Frame> env;
       Option<Interactive.SymbolTable> st;
@@ -3586,14 +3584,12 @@ protected function elabBuiltinSymmetric "This function elaborates the builtin op
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Type tp;
-      Boolean sc, impl;
-      list<DAE.Exp> expl,exp_2;
+      Boolean  impl;
       DAE.Dimension d1,d2;
       DAE.Type eltp,newtp;
-      Integer dim1,dim2,dimMax;
       DAE.Properties prop;
       DAE.Const c;
       list<Env.Frame> env;
@@ -3601,8 +3597,6 @@ algorithm
       DAE.Exp exp_1,exp;
       Env.Cache cache;
       Prefix.Prefix pre;
-      list<list<DAE.Exp>> mexpl,mexp_2;
-      Integer i;
 
     case (cache,env,{matexp},_,impl,pre,_)
       equation
@@ -3614,7 +3608,7 @@ algorithm
         prop = DAE.PROP(newtp,c);
       then
         (cache,exp,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinSymmetric;
 
 protected function elabBuiltinTranspose "function: elabBuiltinTranspose
@@ -7142,15 +7136,13 @@ algorithm
       DAE.Exp call_exp,callExp,daeexp;
       list<String> t_lst,names;
       String fn_str,types_str,scope,pre_str,componentName,fnIdent;
-      String s,name,argStr,stringifiedInstanceFunctionName,lastId;
+      String s,name,argStr,stringifiedInstanceFunctionName;
       Env.Cache cache;
       DAE.Type tp;
-      ClassInf.State complexClassType;
       Prefix.Prefix pre;
       SCode.Restriction re;
       Integer index;
       list<DAE.Var> vars;
-      Util.Status status;
       list<SCode.Element> comps;
       Absyn.InnerOuter innerOuter;
       list<Absyn.Path> operNames;
@@ -7535,7 +7527,6 @@ algorithm
   isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inEnv,inInfo)
   local
     String scopeName, errorString;
-    Env.ScopeType scopeType;
     list<Env.Frame> restFrames;
 
 
@@ -8427,7 +8418,7 @@ algorithm
       list<DAE.Exp> args_1;
       list<DAE.Const> clist;
       DAE.Dimensions dims;
-      list<Env.Frame> env, func_env;
+      list<Env.Frame> env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       DAE.Type t,restype;
@@ -8712,7 +8703,6 @@ protected function evaluateFuncArgTypeDims
 algorithm
   outType := matchcontinue(inType, inEnv, inCache)
     local
-      DAE.Exp exp;
       DAE.Type ty;
       DAE.TypeSource ts;
       Integer n;
@@ -12107,7 +12097,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
       Ceval.Msg msg;
-      DAE.Type ty,t1,t2;
+      DAE.Type ty;
 
     case (cache,env,e1,e2,e3,DAE.C_VAR(),_,_,_,impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),_,_,_,impl,st,_)

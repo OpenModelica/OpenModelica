@@ -529,7 +529,7 @@ algorithm
     local
       DAE.ElementSource source;
       DAE.Exp r;
-      Option<DAE.Exp> quantity,unit,displayUnit,initial_,fixed,nominal,so;
+      Option<DAE.Exp> quantity,unit,displayUnit,fixed,nominal,so;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.StateSelect> stateSelectOption;
       Option<DAE.Uncertainty> uncertainOption;
@@ -617,7 +617,6 @@ algorithm
     local
       BackendDAE.ZeroCrossing zc;
       list<BackendDAE.ZeroCrossing> rest,stmts;
-      DAE.ElementSource source;
       Boolean b;
 
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
@@ -668,7 +667,6 @@ algorithm
     local
       BackendDAE.WhenClause wc;
       list<BackendDAE.WhenClause> rest,stmts;
-      DAE.ElementSource source;
       Boolean b;
 
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
@@ -723,7 +721,6 @@ algorithm
     local
       BackendDAE.WhenOperator re;
       list<BackendDAE.WhenOperator> rest,stmts;
-      DAE.ElementSource source;
       Boolean b;
 
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
@@ -867,9 +864,9 @@ algorithm
   (outElement,inlined) := matchcontinue(inElement,inFunctions)
     local
       Functiontuple fns;
-      list<DAE.Element> cdr,cdr_1,elist,elist_1;
+      list<DAE.Element> elist,elist_1;
       list<list<DAE.Element>> dlist,dlist_1;
-      DAE.Element el,el_1,res;
+      DAE.Element el,el_1;
       DAE.ComponentRef componentRef;
       DAE.VarKind kind;
       DAE.VarDirection direction;
@@ -1290,7 +1287,6 @@ algorithm
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
-      Boolean b;
       DAE.ElementSource source;
 
     case (e,fns,source)
@@ -1318,7 +1314,6 @@ algorithm
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
-      Boolean b,b1;
       DAE.ElementSource source;
 
     case (e,fns,source)
@@ -1679,16 +1674,15 @@ protected function addReplacement
   input VarTransform.VariableReplacements iRepl;
   output VarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := matchcontinue(iCr,iExp,iRepl)
+  oRepl := match(iCr,iExp,iRepl)
     local
-      DAE.Exp e;
       DAE.Type tp;
     case (DAE.CREF_IDENT(identType=tp),_,_)
       equation
         false = Expression.isArrayType(tp);
         false = Expression.isRecordType(tp);
       then VarTransform.addReplacement(iRepl, iCr, iExp);
-  end matchcontinue;
+  end match;
 end addReplacement;
 
 protected function checkInlineType "
@@ -2143,8 +2137,8 @@ algorithm
   (outExp,source) := match (inExp,fn,infns,inSource)
     local
       Boolean changed;
-      DAE.Exp e,e_1,e_2,e1,e1_1,e2,e2_1;
-      DAE.EquationExp eq1,eq2;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.EquationExp eq2;
       Functiontuple fns;
     case (DAE.PARTIAL_EQUATION(e),_,fns,_)
       equation

@@ -110,7 +110,7 @@ algorithm
     local
       list<Integer> changedeqns,discEqns;
       list<list<Integer>> eqns_1,unassignedStates,unassignedEqns;
-      Integer contiEqn,size,newsize,mark;
+      Integer contiEqn,size,newsize;
       array<Integer> ass1,ass2,markarr;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -265,19 +265,18 @@ algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outArg,oNotDiffableMSS):=
   matchcontinue (unassignedStates,unassignedEqns,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,mark,markarr,inArg,iNotDiffableMSS)
     local
-      list<Integer> changedeqns,eqns1,ueqns1;
+      list<Integer> eqns1;
       BackendDAE.StateOrder so,so1;
       BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn,ass1,ass2;
-      Integer noofeqns,eqnssize;
+      Integer noofeqns;
       BackendDAE.EquationArray eqnsarray;
       BackendDAE.Variables vars;
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqnstpl;
       list<tuple<list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
-      String eqnstr;
     case (_,_,_,_::_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqnsarray),_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
       equation
         // get from scalar eqns indexes the indexes in the equation array
@@ -603,14 +602,13 @@ algorithm
     local
       Integer eqnss,eqnss1;
       BackendDAE.EquationArray eqns_1,eqns;
-      list<Integer> es,ilst,eqnslst,eqnslst1,changedEqns,ilst1;
+      list<Integer> ilst,eqnslst,eqnslst1,ilst1;
       BackendDAE.Variables v,v1;
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       BackendDAE.Matching matching;
       array<Integer> ass1,ass2,mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
@@ -856,7 +854,6 @@ algorithm
       Integer e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es;
-      list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqntpl;
     case ({},_,_,_,_) then inEqnTpl;
     case (e::es,_,_,_,_)
       equation
@@ -963,7 +960,6 @@ algorithm
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef dcr,cr;
-      String ident;
       DAE.CallAttributes attr;
       Integer index;
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
@@ -1041,7 +1037,6 @@ algorithm
   (osyst,oshared,outAss1,outAss2,oArg):=
   match (iNotDiffableMSS,isyst,ishared,inAss1,inAss2,iArg)
     local
-      list<BackendDAE.Equation> notDiffedEquations,inDiffEqns,inOrgEqns;
       list<tuple<list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
       list<Integer> unassignedEqns,unassignedStates,eqns,ilst;
       BackendDAE.Variables v;
@@ -1107,16 +1102,13 @@ algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn):=
   matchcontinue (b,statesWithUnusedDer,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn)
     local
-      Integer eqnss,eqnss1,i;
-      BackendDAE.EquationArray eqns_1,eqns;
-      list<Integer> es,ilst,eqnslst,eqnslst1,ilst1;
+      Integer i;
+      BackendDAE.EquationArray eqns;
+      list<Integer> ilst,eqnslst,eqnslst1;
       BackendDAE.Variables v,v1;
-      BackendDAE.StateOrder so;
-      BackendDAE.ConstraintEquations orgEqnsLst;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       BackendDAE.Matching matching;
       array<Integer> ass1,ass2,mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
@@ -1590,7 +1582,6 @@ algorithm
   oTpl := match inTpl
     local
       BackendDAE.Var var;
-      BackendDAE.StateOrder so;
       Integer diffcount,statecount;
       Boolean b;
       DAE.ComponentRef cr;
@@ -2190,7 +2181,6 @@ algorithm
   (osyst,oshared,oHt,oSetIndex) :=
   matchcontinue(nfreeStates,nOrgEqns,isyst,ishared,iSo,orgEqnsLst,iMapEqnIncRow,iMapIncRowEqn,iHt,iSetIndex)
     local
-      list<DAE.ComponentRef> dummyStates;
       list<BackendDAE.Equation> eqnslst;
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.EqSystem syst;
@@ -2280,7 +2270,6 @@ algorithm
       list<BackendDAE.Equation> eqnslst,eqnslst1;
       list<Integer> ilst;
       list<BackendDAE.Var> varlst,dummyVars,lov,hov;
-      list<DAE.ComponentRef> dummyStates;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn,ass1,ass2;
       Integer nfreeStates,neqns,setIndex,ne,ne1,nv,nv1;
@@ -2368,7 +2357,6 @@ algorithm
       HashTable2.HashTable repl;
       BackendDAE.Var var;
       DAE.ComponentRef cr,dcr;
-      Integer diffcount;
       DAE.Exp exp;
     // finished
     case({},_,_,_,_) then (iAcc,iRepl);
@@ -2403,7 +2391,7 @@ protected function getlowerOrderDerivatives
 algorithm
   oVars := matchcontinue(inVar,level,so,vars,iVars)
     local
-      Integer diffindx,diffindx1;
+      Integer diffindx;
       DAE.ComponentRef dcr;
       list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> vlst;
@@ -2479,13 +2467,12 @@ algorithm
       BackendDAE.Variables vars,hovvars;
       BackendDAE.EquationArray eqns,eqns1;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       BackendDAE.AdjacencyMatrixEnhanced me;
       BackendDAE.AdjacencyMatrixTEnhanced meT;
       StateSets stateSets;
       String msg;
       array<Integer> indexmap,invindexmap,vec1,vec2,ass1,ass2;
-      list<Integer> derstatesindexs,ilst,assigned,unassigned;
+      list<Integer> ilst,assigned,unassigned;
       BackendDAE.IncidenceMatrix m,m1;
       BackendDAE.IncidenceMatrixT mT,mT1;
       list<list<Integer>> comps;
@@ -3262,16 +3249,13 @@ algorithm
   (outDummyVars,outDummyStates,oStateSets) :=
   matchcontinue(iSets,inVarSize,inEqnsSize,iVars,iEqns,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,level,iShared,inHov,inDummyStates,iStateSets)
     local
-      array<list<Integer>> mapEqnIncRow,mapEqnIncRow1;
-      array<Integer> mapIncRowEqn,mapIncRowEqn1,ass1arr;
+      array<list<Integer>> mapEqnIncRow1;
+      array<Integer> mapIncRowEqn1,ass1arr;
       list<DAE.ComponentRef> dummyStates;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       BackendDAE.EqSystem syst;
-      BackendDAE.Variables hov1,lov;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
-      list<Integer> seteqns,unassigned,assigned,set,statevars,dstatevars,ass1,ass2,ass,assigend1,range;
+      list<Integer> seteqns,unassigned,assigned,set,statevars,dstatevars,ass1,ass2,assigend1,range;
       list<BackendDAE.Var> varlst;
       list<list<Integer>> sets;
       array<Boolean> flag;
@@ -3464,7 +3448,6 @@ algorithm
   eqns := match(U,neqns,m,mT,ass1,ass2,mapEqnIncRow,mapIncRowEqn)
     local
       array<Integer> colummarks;
-      list<Integer> set;
     case({},_,_,_,_,_,_,_) then {};
     case(_,_,_,_,_,_,_,_)
       equation
@@ -3533,7 +3516,7 @@ algorithm
   (outSubset,oFound) :=
   match (elst,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,iFound)
     local
-      Integer e,v;
+      Integer e;
       list<Integer> rows,rest,set;
       Boolean found;
     case ({},_,_,_,_,_,_,_,_,_,_) then (inSubset,iFound);
@@ -3759,10 +3742,9 @@ algorithm
   (outEqns,outIndxs,outOrgEqns) :=
   match (inOrgEqns,inOrgEqns1,inEqns,inIndxs)
     local
-      list<Integer> restcomp;
-      BackendDAE.ConstraintEquations rest,orgeqns;
+      BackendDAE.ConstraintEquations rest;
       BackendDAE.Equation eqn;
-      Integer e,l,c;
+      Integer e;
       list<BackendDAE.Equation> orgeqn;
     case ({},_,_,_) then (inEqns,inIndxs,inOrgEqns1);
     case ((e,{eqn})::rest,_,_,_)
@@ -4639,7 +4621,6 @@ algorithm
   matchcontinue(dstates,states,unassignedEqns,assignedEqns,vars,varSize,eqns,eqnsSize,mapIncRowEqn,level,iStateSets)
       local
         list<BackendDAE.Var> varlst,statecandidates,ovarlst;
-        list<DAE.ComponentRef> dummystates;
         Integer unassignedEqnsSize,size,rang;
         list<BackendDAE.Equation> eqnlst,oeqnlst;
         list<Integer> unassignedEqns1,assignedEqns1;
@@ -5457,7 +5438,6 @@ protected function generateArrayVar
 algorithm
   outVars := match(name,varKind,varType,attr)
     local
-      DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
       BackendDAE.Var var;
       list<BackendDAE.Var> vars;
@@ -5908,7 +5888,6 @@ algorithm
     local
       HashTableCrIntToExp.HashTable ht;
       DAE.ComponentRef name,cr;
-      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type tp;
@@ -6012,9 +5991,8 @@ algorithm
   oTpl := matchcontinue inTpl
     local
       BackendDAE.Variables vars;
-      BackendDAE.StateOrder so;
       HashTableCrIntToExp.HashTable ht;
-      DAE.ComponentRef name,cr,dcr;
+      DAE.ComponentRef name,cr;
       BackendDAE.Var var;
       Integer diffcount,i,j;
       list<BackendDAE.Var> varlst;
@@ -6055,7 +6033,7 @@ algorithm
   (oVarLst,oHt,oN) := matchcontinue (diffCount,diffedCount,iOrigName,iName,inVar,vars,iVarLst,iHt,iN)
     local
       HashTableCrIntToExp.HashTable ht;
-      DAE.ComponentRef name,cr;
+      DAE.ComponentRef name;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type tp;
@@ -6215,7 +6193,7 @@ algorithm
   (oVarLst,oHt) := matchcontinue (diffCount,diffedCount,iOrigName,iName,inVar,vars,so,iVarLst,iHt)
     local
       HashTableCrIntToExp.HashTable ht;
-      DAE.ComponentRef name,cr;
+      DAE.ComponentRef name;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type tp;
@@ -6317,11 +6295,9 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type tp;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> value;
       DAE.InstDims dim;
       .DAE.ElementSource source,source1;
-      Option<DAE.VariableAttributes> attr,odattr;
+      Option<DAE.VariableAttributes> odattr;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -6508,8 +6484,7 @@ algorithm
       BackendDAE.Var v,v1;
       HashTableCrIntToExp.HashTable ht;
       DAE.Exp e,e1;
-      DAE.ComponentRef cr;
-      Option<DAE.VariableAttributes> attr,new_attr;
+      Option<DAE.VariableAttributes> attr;
 
     case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht))
       equation
@@ -6999,7 +6974,6 @@ algorithm
       list<BackendDAE.Var> vlst;
       list<Integer> ilst,changedVars;
       BackendDAE.Variables vars;
-      Boolean nostate;
     case({},{},_,_) then (inVars,iChangedVars);
     case((v as BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)))::vlst,index::ilst,_,_)
       equation
@@ -8072,7 +8046,6 @@ algorithm
   matchcontinue (inTpl)
     local
       BackendDAE.Equation e;
-      BackendDAE.StateOrder so;
       BackendDAE.Variables v;
       DAE.ComponentRef cr,dcr;
       list<BackendDAE.Var> vlst,dvlst;
@@ -8095,7 +8068,6 @@ protected function addStateOrderFinder
 algorithm
   oVars := match(iVlst,iDerVlst,inVars)
     local
-      Integer diffindx,derdiffindex;
       DAE.ComponentRef cr,dcr;
       BackendDAE.Var var,dvar;
       list<BackendDAE.Var> vlst,dvlst;

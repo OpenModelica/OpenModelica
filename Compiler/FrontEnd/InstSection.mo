@@ -456,7 +456,7 @@ algorithm
       Absyn.Info info;
       DAE.Element daeElt2;
       list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
-      Integer i1,ipriority,index;
+      Integer i1,ipriority;
       list<DAE.Element> daeElts,daeElts3;
       DAE.ComponentRef cr_,cr1_,cr2_;
       DAE.Type t;
@@ -1154,7 +1154,7 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       String i;
-      Values.Value fst,v;
+      Values.Value fst;
       list<Values.Value> rest;
       list<SCode.EEquation> eqs;
       SCode.Initial initial_;
@@ -1392,17 +1392,10 @@ algorithm
     local
       DAE.DAElist dae; DAE.Exp e1,e2;
       SCode.Initial initial_;
-      DAE.ComponentRef cr,c1_1,c2_1,c1,c2,assignedCr;
-      DAE.Type t,t1,t2,ty,elabedType,ty2;
-      DAE.DAElist dae1,dae2;
-      ClassInf.State cs;
+      DAE.ComponentRef cr;
+      DAE.Type t;
       String n; list<DAE.Var> vs;
       DAE.Type tt;
-      Values.Value value;
-      list<DAE.Element> dael;
-      DAE.EqualityConstraint ec;
-      DAE.TypeSource ts;
-      DAE.Exp exp1, exp2;
       list<DAE.Exp> exps1,exps2;
       list<DAE.Type> tys;
 
@@ -2421,7 +2414,7 @@ algorithm
     local
       list<Env.Frame> env;
       Boolean impl;
-      list<DAE.Statement> stmts1,stmts2,stmts;
+      list<DAE.Statement> stmts;
       SCode.Statement x;
       list<SCode.Statement> xs;
       Env.Cache cache;
@@ -4566,7 +4559,7 @@ protected function checkWhenAlgorithm
 "
   input SCode.Statement inWhenAlgorithm;
 algorithm
-  _ := matchcontinue(inWhenAlgorithm)
+  _ := match(inWhenAlgorithm)
 
     // check for reinit
     case (_)
@@ -4576,7 +4569,7 @@ algorithm
       then
         ();
 
-  end matchcontinue;
+  end match;
 end checkWhenAlgorithm;
 
 protected function checkForReinitInWhenInitialAlg
@@ -4622,8 +4615,6 @@ algorithm
     local
       Absyn.Info info;
       list<SCode.Statement> algs;
-      list<list<SCode.Statement>> algs_lst;
-      list<tuple<Absyn.Exp, list<SCode.Statement>>> tpl_el;
 
     // continue if when equations are not nested
     case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
@@ -4653,14 +4644,14 @@ protected function checkWhenEquation
    end when;"
   input SCode.EEquation inWhenEq;
 algorithm
-  _ := matchcontinue(inWhenEq)
+  _ := match(inWhenEq)
     case (_)
       equation
         checkForReinitInWhenInitialEq(inWhenEq);
         checkForNestedWhenInEquation(inWhenEq);
       then
         ();
-  end matchcontinue;
+  end match;
 end checkWhenEquation;
 
 protected function checkForReinitInWhenInitialEq
@@ -4674,7 +4665,6 @@ algorithm
       Absyn.Exp exp;
       Absyn.Info info;
       list<SCode.EEquation> el;
-      list<list<SCode.EEquation>> el2;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
 
     // add an error for when initial() then reinit()

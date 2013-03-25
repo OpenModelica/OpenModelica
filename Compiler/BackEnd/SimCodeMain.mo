@@ -387,10 +387,6 @@ algorithm
   _ := match (simCode,inQSSrequiredData,target)
     local
       BackendDAE.BackendDAE outIndexedBackendDAE;
-      array<Integer> equationIndices, variableIndices;
-      BackendDAE.IncidenceMatrix incidenceMatrix;
-      BackendDAE.IncidenceMatrixT incidenceMatrixT;
-      BackendDAE.StrongComponents strongComponents;
       BackendQSS.QSSinfo qssInfo;
       String str;
       SimCode.SimCode sc;

@@ -1972,11 +1972,7 @@ algorithm
     local
       list<Set> rest, sets;
       Set set;
-      list<ConnectorElement> elms;
-      DAE.ComponentRef name;
       list<DAE.ComponentRef> setCrefs;
-      Boolean b;
-      String str;
 
     case ({}, _) then {};
 
@@ -2008,7 +2004,7 @@ function mergeEquSetsAsCrefs
 algorithm
   outSetsAsCrefs := matchcontinue(inSetsAsCrefs)
     local
-      list<DAE.ComponentRef> set, set1, set2;
+      list<DAE.ComponentRef> set;
       list<list<DAE.ComponentRef>> rest, sets;
 
     case ({}) then {};
@@ -2031,7 +2027,7 @@ algorithm
   (outSet, outSets) := matchcontinue(inSet, inSets)
     local
       list<DAE.ComponentRef> set, set1, set2;
-      list<list<DAE.ComponentRef>> rest, sets;
+      list<list<DAE.ComponentRef>> rest;
 
     case (_, {}) then (inSet, inSets);
     // we can't merge it
@@ -2066,7 +2062,7 @@ algorithm
   outUsefulConnectedExpandable := match (inSets, inAcc)
     local
       list<DAE.ComponentRef> set, acc;
-      list<list<DAE.ComponentRef>> rest, sets;
+      list<list<DAE.ComponentRef>> rest;
 
     case ({}, _) then inAcc;
 
@@ -2085,7 +2081,7 @@ public function allCrefsAreExpandable
   input list<DAE.ComponentRef> inConnects;
   output Boolean allAreExpandable;
 algorithm
-  allAreExpandable := matchcontinue(inConnects)
+  allAreExpandable := match(inConnects)
     local
       list<DAE.ComponentRef> rest;
       DAE.ComponentRef name;
@@ -2098,7 +2094,7 @@ algorithm
         b = Debug.bcallret1(isExpandable(name), allCrefsAreExpandable, rest, false);
       then b;
 
-  end matchcontinue;
+  end match;
 end allCrefsAreExpandable;
 
 protected function removeUnconnectedExpandablePotentials
@@ -2111,7 +2107,7 @@ protected function removeUnconnectedExpandablePotentials
 algorithm
   outDAE := matchcontinue(inDAE, inSets, hasExpandable)
     local
-      list<DAE.Element> pvars, elems;
+      list<DAE.Element>  elems;
       list<DAE.ComponentRef> equVars, potentialVars, unconnected;
       DAE.DAElist dae;
 
@@ -2595,7 +2591,7 @@ algorithm
   outDae := matchcontinue(inSet, inConnected, inBroken, inDae)
     local
       list<ConnectorElement> eql;
-      DAE.DAElist dae1, dae2, dae;
+      DAE.DAElist   dae;
 
     // A set pointer left from generateSetList, ignore it.
     case (Connect.SET_POINTER(index = _), _, _, _) then inDae;
@@ -3120,7 +3116,6 @@ algorithm
       tuple<Connect.Sets, array<Set>> sets;
       DAE.Exp e;
       DAE.Type ty;
-      String s;
 
     // sometimes we get ASUB(inStream/actualStream, 1) so we should remove that
     /*/ TODO! FIXME! make this work correctly without this workaround!
@@ -3715,7 +3710,7 @@ public function removeReferenceFromConnects
 algorithm
   (outConnects, wasRemoved) := matchcontinue(inConnects, inCref, inPrefix)
     local
-      list<ConnectorElement> rest, prefix, all;
+      list<ConnectorElement> rest,  all;
       ConnectorElement e;
       DAE.ComponentRef name;
       Boolean b;

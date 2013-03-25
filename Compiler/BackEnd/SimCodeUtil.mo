@@ -1433,7 +1433,7 @@ algorithm
   matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       String cname, fileDir;
-      Integer n_h, maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
+      Integer  maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
       Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
       BackendDAE.BackendDAE dlow, dlow2;
       Option<BackendDAE.BackendDAE> initDAE;
@@ -1458,18 +1458,16 @@ algorithm
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
       list<SimCode.SimWhenClause> whenClauses;
-      list<BackendDAE.Equation> sampleEqns;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;
       list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
-      list<BackendDAE.Variables> orderedVars;
-      BackendDAE.Variables knownVars, vars;
-      list<BackendDAE.Var> varlst, varlst1, varlst2;
+      BackendDAE.Variables knownVars;
+      list<BackendDAE.Var> varlst;
 
       list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Boolean ifcpp, hasDivStmts;
+      Boolean ifcpp;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
@@ -1925,14 +1923,11 @@ algorithm
   (outEqns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outSymJacs) := match(inEqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs)
     local
       Integer index, countLinearSys, countNonLinSys, countMixedSys;
-      Integer linearSysIndex, nonLinSysIndex, hybridSysIndex;
       list<SimCode.SimEqSystem> eqs, rest, res;
       list<DAE.ComponentRef> crefs;
       SimCode.SimEqSystem eq, cont;
       list<SimCode.SimVar> discVars;
       list<SimCode.SimEqSystem> discEqs;
-      list<Integer> values;
-      list<Integer> value_dims;
       list<SimCode.JacobianMatrix> symjacs, restSymJacs;
       Option<SimCode.JacobianMatrix> optSymJac;
       SimCode.JacobianMatrix symJac;
@@ -2128,7 +2123,7 @@ algorithm
       list<SimCode.SimEqSystem> equations1, noDiscEquations1;
       Boolean bwhen, bdisc, bdynamic;
       list<SimCode.SimVar> tempvars;
-      String eqnsStr, message;
+      String  message;
 
     // handle empty
     case (_, _, _, {}, _, _) then ({}, {}, {}, iuniqueEqIndex, itempvars);
@@ -2282,7 +2277,7 @@ algorithm
       BackendDAE.Var v;
       list<BackendDAE.Equation> eqnlst;
       list<BackendDAE.Var> varlst;
-      list<Integer> zcEqns, eqnslst;
+      list<Integer> zcEqns;
       list<SimCode.SimEqSystem> equations_, equations1, noDiscEquations1;
       list<SimCode.SimVar> tempvars;
       // handle empty
@@ -2442,7 +2437,7 @@ protected function createEquation
 algorithm
   (equation_, ouniqueEqIndex, otempvars) := matchcontinue (eqNum, varNum, syst, shared, linearSystem, skipDiscInAlgorithm, iuniqueEqIndex, itempvars)
     local
-      Expression.ComponentRef cr, cr_1;
+      Expression.ComponentRef cr;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> values;
       BackendDAE.Var v;
@@ -2456,13 +2451,11 @@ algorithm
       list<BackendDAE.WhenClause> wcl;
       DAE.ComponentRef left, varOutput;
       DAE.Exp e1, e2, varexp, exp_, right, cond, prevarexp;
-      DAE.Type ty;
       BackendDAE.WhenEquation whenEquation, elseWhen;
       String algStr, message, eqStr;
       DAE.ElementSource source;
       list<DAE.Statement> asserts;
       SimCode.SimEqSystem elseWhenEquation;
-      BackendVarTransform.VariableReplacements repl;
       DAE.Algorithm alg;
       list<SimCode.SimVar> tempvars;
       Boolean initialCall;
@@ -2695,7 +2688,7 @@ protected function solveAlgorithmInverse "function solveAlgorithmInverse
   input list<BackendDAE.Var> inSolveFor;
   output list<DAE.Statement> outStmts;
 algorithm
-  outStmts := matchcontinue (inStmts, inSolveFor)
+  outStmts := match (inStmts, inSolveFor)
     local
       DAE.ComponentRef cr1;
       DAE.Exp e11, e12, varexp1, solvedExp1;
@@ -2742,7 +2735,7 @@ algorithm
       source2 = DAEUtil.addSymbolicTransformationSolve(true, source2, cr2, e21, e22, solvedExp2, asserts);
       tp2 = Expression.typeof(varexp2);
     then {DAE.STMT_ASSIGN(tp1, varexp1, solvedExp1, source1), DAE.STMT_ASSIGN(tp2, varexp2, solvedExp2, source2)};
-  end matchcontinue;
+  end match;
 end solveAlgorithmInverse;
 
 // =============================================================================
@@ -2889,9 +2882,8 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.Exp> e1lst, e2lst;
       SimCode.SimEqSystem simeqn;
-      list<SimCode.SimEqSystem> eqSystlst, eqSystlst1;
-      list<tuple<DAE.Exp, DAE.Exp>> exptl, exptl1;
-      list<DAE.ComponentRef> crefs;
+      list<SimCode.SimEqSystem> eqSystlst;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl;
       Integer uniqueEqIndex;
       Absyn.Path path, rpath;
       String ident;
@@ -3032,7 +3024,6 @@ algorithm
   otempvars := match(inTmpCrefsLst, itempvars)
     local
       list<DAE.Exp> rest;
-      list<SimCode.SimVar> tempvars;
       DAE.Type ty;
       DAE.ComponentRef cr;
       SimCode.SimVar var;
@@ -3085,7 +3076,7 @@ protected function moveDivToMul
 algorithm
   (oExpLst, oExpMuls) := match(iExpLst, iExpLstAcc, iExpMuls)
     local
-      DAE.Exp e, e1, e2, res;
+      DAE.Exp e, e1, e2;
       list<DAE.Exp> rest, acc, elst, elst1;
     case ({}, _, _) then (iExpLstAcc, iExpMuls);
     // a/b
@@ -3124,7 +3115,7 @@ protected function createNonlinearResidualExp
 algorithm
   resExp := matchcontinue(iExp1, iExp2)
     local
-      DAE.Exp e, e1, e2, res;
+      DAE.Exp e,   res;
       list<DAE.Exp> explst, explst1, mexplst;
       DAE.Type ty;
     case(_, _)
@@ -3202,18 +3193,16 @@ algorithm
     local
       Integer size, uniqueEqIndex;
       DAE.Exp res_exp, e1, e2, e;
-      list<DAE.Exp> explst, explst1, e2lst;
+      list<DAE.Exp> explst, explst1;
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eq;
       list<SimCode.SimEqSystem> eqSystemsRest, eqSystlst;
       list<Integer> ds;
-      list<Option<Integer>> ad;
       DAE.ComponentRef left;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
-      list<tuple<DAE.Exp, DAE.Exp>> exptl, exptl1;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl;
       list<DAE.ComponentRef> crefs, crefstmp;
-      list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
       BackendVarTransform.VariableReplacements repl;
       DAE.Type ty;
@@ -3457,11 +3446,10 @@ algorithm
   (equations_, noDiscequations_, ouniqueEqIndex, otempvars) :=
   matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, isyst, ishared, inComp, iuniqueEqIndex, itempvars)
     local
-      list<BackendDAE.Equation> eqn_lst, cont_eqn, disc_eqn;
-      list<BackendDAE.Var> var_lst, cont_var, disc_var, var_lst_1;
-      BackendDAE.Variables vars_1, vars, knvars, exvars, ave;
-      BackendDAE.EquationArray eqns_1, eqns, eeqns;
-      BackendDAE.BackendDAE subsystem_dae;
+      list<BackendDAE.Equation> eqn_lst,  disc_eqn;
+      list<BackendDAE.Var> var_lst,  disc_var, var_lst_1;
+      BackendDAE.Variables vars_1, vars, knvars, exvars;
+      BackendDAE.EquationArray eqns_1, eqns;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       array<DAE.Constraint> constrs;
@@ -3474,15 +3462,11 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       list<SimCode.SimVar> simVarsDisc;
       list<SimCode.SimEqSystem> discEqs;
-      list<Integer> values, value_dims, comps_flat, rf, tf;
+      list<Integer>    rf, tf;
       SimCode.SimEqSystem equation_;
-      BackendDAE.BackendDAE subsystem_dae_1, subsystem_dae_2;
-      array<Integer> v1, v2, v1_1, v2_1;
-      BackendDAE.IncidenceMatrix m_3, m;
-      BackendDAE.IncidenceMatrixT mT_3, mt;
-      BackendDAE.StrongComponents comps;
+      BackendDAE.IncidenceMatrix  m;
+      BackendDAE.IncidenceMatrixT  mt;
       BackendDAE.StrongComponent comp, comp1;
-      list<list<Integer>> r, t, comps_1;
       Integer index, uniqueEqIndex;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -3633,17 +3617,11 @@ algorithm
     (mixedEvent, skipDiscInAlgorithm, inVars, inKnVars, inEquationArray, inConstrs, inClassAttrs, inJacobian, inJacobianType, inFuncs, inAllVars, iuniqueEqIndex, itempvars)
     local
       Integer uniqueEqIndex, uniqueEqIndex2;
-      BackendDAE.BackendDAE subsystem_dae, subsystem_dae_1, subsystem_dae_2;
-      BackendDAE.Variables v, kv, evars, emptyVars;
-      BackendDAE.EquationArray eqn, eeqns, emptyEqns;
+      BackendDAE.Variables v, kv,  emptyVars;
+      BackendDAE.EquationArray eqn,  emptyEqns;
       list<BackendDAE.Equation> eqn_lst;
       list<DAE.ComponentRef> crefs;
-      Env.Cache cache;
       list<SimCode.SimEqSystem> resEqs;
-      BackendDAE.StrongComponents comps;
-      list<Integer> comps_flat;
-      list<list<Integer>> r, t;
-      list<Integer> rf, tf;
       list<SimCode.SimVar> simVars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
@@ -3653,15 +3631,10 @@ algorithm
       array<DAE.ClassAttributes> clsAttrs;
       list<list<Real>> jacVals;
       list<Real> rhsVals, solvedVals;
-      BackendDAE.Variables ave;
       list<DAE.ElementSource> sources;
       list<DAE.ComponentRef> names;
-      list<list<Integer>> comps_1;
-      array<Integer> v1, v2, v1_1, v2_1;
-      BackendVarTransform.VariableReplacements repl;
       list<SimCode.SimVar> tempvars;
       String str;
-      BackendDAE.SampleLookup sampleLookup;
 
       Option<SimCode.JacobianMatrix> jacobianMatrix;
 
@@ -3962,25 +3935,17 @@ protected function createTornSystem
   output list<SimCode.SimVar> otempvars;
 algorithm
    (equations_, ouniqueEqIndex, otempvars) :=
-   matchcontinue(liniear, skipDiscInAlgorithm, tearingVars, residualEqns, otherEqns, isyst, ishared, iuniqueEqIndex, itempvars)
+   match(liniear, skipDiscInAlgorithm, tearingVars, residualEqns, otherEqns, isyst, ishared, iuniqueEqIndex, itempvars)
      local
        list<BackendDAE.Var> tvars, ovarsLst;
-       list<BackendDAE.Equation> reqns, reqns1, otherEqnsLst;
-       BackendDAE.Variables vars, kv, v, diffVars, ovars;
-       BackendDAE.EquationArray eqns, eqns1, oeqns;
-       BackendVarTransform.VariableReplacements repl;
+       list<BackendDAE.Equation> reqns,  otherEqnsLst;
+       BackendDAE.Variables vars, kv,  diffVars, ovars;
+       BackendDAE.EquationArray eqns,  oeqns;
        list<SimCode.SimVar> tempvars;
-       list<SimCode.SimEqSystem> simequations, resEqs, simequations1;
+       list<SimCode.SimEqSystem> simequations, resEqs;
        Integer uniqueEqIndex, uniqueEqIndex2;
-       list<DAE.ComponentRef> tcrs, crefs;
-       list<DAE.Exp> elst, ecrlst, beqs;
-       list<tuple<DAE.Exp, DAE.Exp>> exptl;
+       list<DAE.ComponentRef> tcrs;
        DAE.FunctionTree functree;
-       list<SimCode.SimVar> simVars;
-       BackendDAE.EqSystem syst;
-       BackendDAE.IncidenceMatrix m;
-       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
 
        Option<SimCode.JacobianMatrix> jacobianMatrix;
        list<Integer> otherEqnsInts, otherVarsInts;
@@ -4018,7 +3983,7 @@ algorithm
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, "NLSJac", uniqueEqIndex, tempvars);
        then
          ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix, liniear)}, uniqueEqIndex, tempvars);
-   end matchcontinue;
+   end match;
 end createTornSystem;
 
 protected function solveOtherEquations "function solveOtherEquations
@@ -4125,7 +4090,7 @@ protected function createTornSystemOtherEqns
   output list<SimCode.SimVar> otempvars;
 algorithm
    (equations_, ouniqueEqIndex, otempvars) :=
-   matchcontinue(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, isimequations)
+   match(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, isimequations)
      local
        BackendDAE.EquationArray eqns;
        list<SimCode.SimVar> tempvars;
@@ -4134,7 +4099,6 @@ algorithm
        BackendDAE.Equation eqn;
        list<Integer> vars;
        list<tuple<Integer, list<Integer>>> rest;
-       BackendDAE.EqSystem syst;
        BackendDAE.StrongComponent comp;
 
      case({}, _, _, _, _, _, _)
@@ -4150,7 +4114,7 @@ algorithm
        // generade other equations
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(rest, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex, tempvars, simequations);
      then (simequations, uniqueEqIndex, tempvars);
-   end matchcontinue;
+   end match;
 end createTornSystemOtherEqns;
 
 protected function createTornSystemOtherEqns1
@@ -4232,15 +4196,13 @@ protected function createStateSetsSystem
 algorithm
   (osyst, osharedChanged):= match (isyst, sharedChanged)
     local
-      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-      tuple<list<SimCode.SimEqSystem>, Integer, list<SimCode.SimVar>> tpl;
       list<SimCode.StateSet> equations;
       Integer uniqueEqIndex, numStateSets;
       list<SimCode.SimVar> tempvars;
@@ -4275,11 +4237,11 @@ protected function createStateSetsSets
   output Integer oNumStateSets;
 algorithm
   (oVars, oEquations, ouniqueEqIndex, otempvars, oNumStateSets) :=
-  matchcontinue(iStateSets, iVars, iEqns, shared, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
+  match(iStateSets, iVars, iEqns, shared, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
     local
       DAE.FunctionTree functree;
       BackendDAE.StateSets sets;
-      Integer rang, numStateSets, nCandidates, index;
+      Integer rang, numStateSets, nCandidates;
       list<DAE.ComponentRef> crset;
       DAE.ComponentRef crA, crJ;
       BackendDAE.Variables vars, knVars;
@@ -4290,8 +4252,6 @@ algorithm
       list<SimCode.StateSet> simequations;
       list<SimCode.SimVar> tempvars;
       Integer uniqueEqIndex;
-      BackendDAE.Variables diffVars, ovars;
-      BackendDAE.EquationArray eqnsarr, oeqnsarr;
       HashSet.HashSet hs;
       array<Boolean> marked;
     case({}, _, _, _, _, _, _, _, _) then (iVars, iEquations, iuniqueEqIndex, itempvars, iNumStateSets);
@@ -4375,7 +4335,7 @@ algorithm
         (vars, simequations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(sets, vars, iEqns, shared, comps, SimCode.SES_STATESET(iuniqueEqIndex, nCandidates, rang, crset, crstates, crA, jacobianMatrix)::iEquations, uniqueEqIndex, tempvars, iNumStateSets+1);
       then
         (vars, simequations, uniqueEqIndex, tempvars, numStateSets);
-*/  end matchcontinue;
+*/  end match;
 end createStateSetsSets;
 
 protected function markSetStates
@@ -4445,13 +4405,11 @@ algorithm
   (outEquations, outVars):=
   matchcontinue (inComp, marked, inEquationArray, inVariables, inEquations, inVars)
     local
-      list<Integer> elst, vlst, indxlst;
+      list<Integer> elst, vlst;
       list<BackendDAE.Equation> eqnlst;
       list<BackendDAE.Var> varlst;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer, list<Integer>>> eqnvartpllst;
-      BackendDAE.StrongComponents rest, acc;
-      Boolean b1, b2;
+      BackendDAE.StrongComponents rest;
     case ({}, _, _, _, _, _) then (inEquations, inVars);
     case (comp::rest, _, _, _, _, _)
       equation
@@ -4498,15 +4456,13 @@ algorithm
     Env.Cache cache;
     BackendDAE.BackendDAE backendDAE, jacBackendDAE;
 
-    BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars, alldiffedVars, residualVars;
+    BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars,  residualVars;
     BackendDAE.EquationArray emptyEqns, eqns;
-    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, allVarsLst, otherVarsLst, residualVarsLst, statevars;
-    list<BackendDAE.Equation> residual_eqnlst;
-    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs, knownVarsComRefs, otherVarsLstComRefs;
+    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst, residualVarsLst, statevars;
+    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
 
     DAE.ComponentRef x;
     BackendDAE.SymbolicJacobian symJacBDAE;
-    BackendDAE.SparsePattern sparsePattern;
     BackendDAE.SparseColoring sparseColoring;
     list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs;
 
@@ -4520,7 +4476,6 @@ algorithm
 
     list<SimCode.SimEqSystem> columnEquations;
     list<SimCode.SimVar> columnVars;
-    list<SimCode.SimVar> columnVarsKn;
     list<SimCode.SimVar> seedVars, indexVars;
 
     String errorMessage;
@@ -4677,13 +4632,10 @@ protected function createResidualSetEquations
 algorithm
   oEqs := match (iEqs, crJ, index, applySubs, iAcc)
     local
-      Integer size;
       DAE.ComponentRef crj;
       DAE.Exp res, e1, e2, expJ;
-      list<DAE.Exp> explst;
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eqn;
-      list<Integer> ds;
       DAE.ElementSource source;
       String errorMessage;
     case ({}, _, _, _, _) then listReverse(iAcc);
@@ -4758,15 +4710,14 @@ algorithm
     Env.Cache cache;
     BackendDAE.BackendDAE backendDAE, jacBackendDAE;
 
-    BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars, alldiffedVars, residualVars;
+    BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars,  residualVars;
     BackendDAE.EquationArray emptyEqns, eqns;
-    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, allVarsLst, otherVarsLst, residualVarsLst;
+    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst, residualVarsLst;
     list<BackendDAE.Equation> residual_eqnlst;
-    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs, knownVarsComRefs, otherVarsLstComRefs;
+    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
 
     DAE.ComponentRef x;
     BackendDAE.SymbolicJacobian symJacBDAE;
-    BackendDAE.SparsePattern sparsePattern;
     BackendDAE.SparseColoring sparseColoring;
     list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs;
 
@@ -4780,7 +4731,6 @@ algorithm
 
     list<SimCode.SimEqSystem> columnEquations;
     list<SimCode.SimVar> columnVars;
-    list<SimCode.SimVar> columnVarsKn;
     list<SimCode.SimVar> seedVars, indexVars;
 
     String errorMessage;
@@ -4934,8 +4884,6 @@ protected function createJacobianLinearCode
 algorithm
   res := matchcontinue (inSymjacs, inModelInfo, uniqueEqIndex)
     local
-      BackendDAE.SymbolicJacobians symjacs;
-      Boolean b;
     case (_, _, _)
       equation
         //true = Flags.isSet(Flags.JACOBIAN);
@@ -5260,11 +5208,9 @@ protected function createInitialMatrices "function: createInitialMatrices
 algorithm
   (outJacG, outIniqueEqIndex) := matchcontinue(inDAE, inIniqueEqIndex)
     local
-      BackendDAE.BackendDAE DAE, DAE2;
+      BackendDAE.BackendDAE DAE;
 
-      BackendDAE.SymbolicJacobian jacobian;
       SimCode.JacobianMatrix jacG;
-      Integer iniqueEqIndex;
 /*
     case(DAE, _) equation
       true = Flags.isSet(Flags.SYMBOLIC_INITIALIZATION);
@@ -5882,7 +5828,6 @@ protected function createSingleWhenEqnCode
 algorithm
   (equations_, ouniqueEqIndex, otempvars) := matchcontinue(inEquation, inVars, shared, iuniqueEqIndex, itempvars)
     local
-      Integer uniqueEqIndex;
       DAE.Exp cond, right;
       DAE.ComponentRef left;
       DAE.ElementSource source;
@@ -5890,9 +5835,7 @@ algorithm
       BackendDAE.WhenEquation elseWhen;
       list<DAE.ComponentRef> conditions;
       list<BackendDAE.WhenClause> wcl;
-      list<SimCode.SimEqSystem> resEqs;
       SimCode.SimEqSystem elseWhenEquation;
-      list<SimCode.SimVar> tempvars;
       Boolean initialCall;
 
     // when eq without else
@@ -6039,16 +5982,12 @@ algorithm
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       DAE.FunctionTree funcs;
-      DAE.ElementSource source;
       BackendDAE.BackendDAE subsystem_dae;
-      SimCode.SimEqSystem equation_;
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
-      String str;
       list<SimCode.SimVar> tempvars;
-      list<BackendDAE.Equation> eqns;
       BackendDAE.SampleLookup sampleLookup;
 
     case ({}, _, _, _, _)
@@ -6092,7 +6031,6 @@ algorithm
       DAE.Exp e1, e2;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crefs;
-      BackendVarTransform.VariableReplacements repl;
       list<SimCode.SimEqSystem> resEqs;
       list<SimCode.SimVar> tempvars;
 
@@ -6582,15 +6520,14 @@ algorithm
   (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, useSymbolicInitialization) :=
   matchcontinue(inDAE, inInitDAE, iuniqueEqIndex, itempvars)
     local
-      BackendDAE.EqSystems eqs;
-      BackendDAE.EquationArray initialEqs, removedEqs;
+      BackendDAE.EquationArray  removedEqs;
       list<SimCode.SimVar> tempvars;
       Integer uniqueEqIndex;
 
       list<BackendDAE.Equation> initialEqs_lst;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
 
-      list<SimCode.SimEqSystem> residual_equations, residual_equations1, allEquations, removedEquations, knvarseqns, aliasEquations;
+      list<SimCode.SimEqSystem> residual_equations,  allEquations, removedEquations, knvarseqns, aliasEquations;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.Variables knvars, aliasVars;
@@ -7244,7 +7181,6 @@ algorithm
   match (dlow)
     local
       BackendDAE.Variables knvars;
-      BackendDAE.Variables removedvars;
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
       BackendDAE.Variables aliasVars;
@@ -7623,7 +7559,6 @@ algorithm
   oVar := match(iVar, arrayCref)
     local
       DAE.ComponentRef cr;
-      DAE.ComponentRef name;
       BackendDAE.VarKind varKind;
       String comment, unit, displayUnit;
       Integer index;
@@ -7728,7 +7663,6 @@ protected function addSimVarHashTableCrSimVars
 algorithm
   oHt := matchcontinue(crnosub, var, iHt)
     local
-      DAE.ComponentRef cr;
       list<SimCode.SimVar> varlst;
       HashTableCrSimVars.HashTable ht;
     case (_, _, _)
@@ -9346,7 +9280,6 @@ algorithm
   outExp := match(inExp, inSource)
     local
       DAE.Exp exp;
-      DAE.ElementSource source;
 
     case(_, _)
       equation
@@ -9472,8 +9405,6 @@ algorithm
       list<DAE.ComponentRef> crefs;
       SimCode.SimEqSystem cont, cont1, elseWhenEq, elseWhen;
       list<SimCode.SimEqSystem> discEqs, discEqs1;
-      list<Integer> values;
-      list<Integer> value_dims;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
       DAE.ElementSource source;
@@ -9890,7 +9821,7 @@ public function add "
 algorithm
   outHashTable := matchcontinue (entry, hashTable)
     local
-      Integer hval, indx, newpos, n, n_1, bsize, indx_1;
+      Integer  indx, newpos, n, n_1, bsize, indx_1;
       SimCode.ValueArray varr_1, varr;
       list<tuple<SimCode.Key, Integer>> indexes;
       array<list<tuple<SimCode.Key, Integer>>> hashvec_1, hashvec;
@@ -10057,7 +9988,7 @@ algorithm
   (value, indx):=
   match (key, hashTable)
     local
-      Integer hval, hashindx, bsize, n;
+      Integer   bsize, n;
       list<tuple<SimCode.Key, Integer>> indexes;
       SimCode.Value v;
       array<list<tuple<SimCode.Key, Integer>>> hashvec;
@@ -12047,7 +11978,7 @@ public function traveseSimVars
     output tuple<SimCode.SimVar, tpl> otpl;
   end Func;
 algorithm
-  (outSimVars, oTpl) := matchcontinue(inSimVars, func, iTpl)
+  (outSimVars, oTpl) := match(inSimVars, func, iTpl)
     local
      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
@@ -12080,7 +12011,7 @@ algorithm
          then (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars), intpl);
     case (_, _, _) then fail();
-  end matchcontinue;
+  end match;
 end traveseSimVars;
 
 
@@ -12247,7 +12178,6 @@ algorithm
       list<SimCode.SimVar> vars, discVars;
       list<DAE.Exp> beqs;
       list<DAE.ComponentRef> crefs;
-      list<Integer> values, values_dims;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
       Option<SimCode.SimEqSystem> elseWhen;

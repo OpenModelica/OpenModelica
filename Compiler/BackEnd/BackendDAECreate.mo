@@ -258,8 +258,6 @@ algorithm
       list<BackendDAE.Equation> eqns, reqns, ieqns;
       list<BackendDAE.WhenClause> whenclauses;
       DAE.ElementSource source;
-      list<DAE.Exp> explst;
-      DAE.Exp e2;
       HashTableExpToExp.HashTable inlineHT;
     // class for external object
     case (DAE.EXTOBJECTCLASS(path, source), _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -1082,7 +1080,6 @@ algorithm
       list<list<DAE.Element>> eqnslstlst;
       list<DAE.Element> eqnslst,daeElts;
       String s;
-      DAE.Algorithm alg;
       list<BackendDAE.Equation> eqns,reqns,ieqns;
       Absyn.Path path;
 
@@ -1321,7 +1318,6 @@ algorithm
   outEqns := matchcontinue(cond, conditions, theneqn, theneqns, elseenqs, conditions1, theneqns1, source, functionTree, inEqns)
     local
       list<DAE.Exp> explst;
-      list<list<DAE.Element>> eqnslst;
       list<list<BackendDAE.Equation>> beqnslst;
       list<BackendDAE.Equation> beqns,breqns,bieqns;
 
@@ -1454,7 +1450,6 @@ algorithm
       list<DAE.Exp> explst;
       DAE.Element eqn;
       list<DAE.Element> eqns, beqns;
-      list<list<DAE.Element>> eqnslst;
       DAE.ElementSource source;
     case ({}, _, _, _, _)
       then
@@ -1675,7 +1670,7 @@ algorithm
       DAE.Exp cond;
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
-      String scond, str;
+      String  str;
       DAE.ElementSource source;
 
     case (DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = NONE(), source=source), _, _, _)
@@ -1731,8 +1726,6 @@ algorithm
       DAE.Dimensions ds;
       list<DAE.Exp> expl;
       list<list<DAE.Element>> eqnslst;
-      Boolean b;
-      String s;
       Absyn.Path functionName;
       HashTableCrToExpSourceTpl.HashTable ht;
       list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> crexplst;
@@ -2207,12 +2200,11 @@ protected function getWhenEquationFromVariable
   output BackendDAE.WhenEquation outEquation;
   output list<BackendDAE.Equation> outEquations;
 algorithm
-  (outEquation, outEquations) := matchcontinue(inCr, inEquations)
+  (outEquation, outEquations) := match(inCr, inEquations)
     local
       DAE.ComponentRef cr1, cr2;
       BackendDAE.WhenEquation eq;
-      BackendDAE.Equation eq2;
-      list<BackendDAE.Equation> rest, rest2;
+      list<BackendDAE.Equation> rest;
 
     case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_EQ(left=cr2))::rest)
       equation
@@ -2224,7 +2216,7 @@ algorithm
         Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {});
       then
         fail();
-  end matchcontinue;
+  end match;
 end getWhenEquationFromVariable;
 
 
@@ -2525,7 +2517,6 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       list<DAE.Exp> explst1, explst2;
       list<list<DAE.Exp>> explstlst1, explstlst2;
-      list<DAE.Var> varLst1, varLst2;
       list<DAE.ComponentRef> crefs1, crefs2;
       DAE.Dimensions dims1, dims2;
       Integer arrayTyp1, arrayTyp2, i1, i2;
@@ -2924,7 +2915,6 @@ algorithm
   outVariables := matchcontinue (inEquation, inKnVariables, inVariables)
     local
       DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> vars;
       list<DAE.Statement> statementLst;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)), _, _)
@@ -3451,7 +3441,7 @@ algorithm
       BackendDAE.EventInfo einfo, einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SampleLookup sampleLookup;
-      list<BackendDAE.WhenClause> whenclauses, whenclauses1;
+      list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relationsLst, sampleLst;
@@ -3561,12 +3551,10 @@ algorithm
   matchcontinue (inVariables1, knvars, inEquationLst2, inEqnCount, inWhenClauseLst4, inWhenClauseCount, inNumberOfRelations, inNumberOfMathFunctions, inZeroCrossingLst, inRelationsLst, inSamplesLst)
     local
       BackendDAE.Variables v;
-      list<DAE.Exp> conds;
       list<BackendDAE.ZeroCrossing> zcs, zcs1, res, res1, relationsLst, sampleLst;
       Integer size, countRelations, eq_count_1, eq_count, wc_count, countMathFunctions;
       BackendDAE.Equation e;
-      list<BackendDAE.Equation> xs, el, eq_reslst, eqnselse;
-      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> xs, el, eq_reslst;
       DAE.Exp daeExp, e1, e2, eres1, eres2;
       BackendDAE.WhenClause wc;
       list<BackendDAE.WhenClause> xsWhen, wc_reslst;
@@ -3733,7 +3721,7 @@ algorithm
   (oIfEqn, outcountRelations, outcountMathFunctions, outZeroCrossings, outrelationsinZC, outSamplesLst) :=
   match(inIfEqn, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars)
     local
-      DAE.Exp condition, e;
+      DAE.Exp condition;
       list<DAE.Exp> conditions, restconditions;
       BackendDAE.Equation ifeqn;
       list<BackendDAE.Equation> eqnstrue, elseeqns;
@@ -3968,7 +3956,7 @@ algorithm
       BackendDAE.Variables vars, knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings, zc_lst, relations, samples;
       DAE.Operator op;
-      Integer numRelations, alg_indx, new_idx, itmp, numRelations1, numMathFunctions;
+      Integer numRelations, alg_indx,  itmp, numRelations1, numMathFunctions;
       BackendDAE.ZeroCrossing zc;
       DAE.CallAttributes attr;
       DAE.Type ty;
@@ -4337,7 +4325,6 @@ algorithm
       DAE.Operator op;
       list<BackendDAE.ZeroCrossing> newzero, zc_lst;
       BackendDAE.ZeroCrossing z_c;
-      Integer indx, length;
       String str;
     case ((DAE.RELATION(exp1 = e1, operator = op, exp2 = e2)), _, _, z_c)
       equation

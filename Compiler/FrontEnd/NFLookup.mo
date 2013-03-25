@@ -129,10 +129,8 @@ public function lookupBaseClassName
 algorithm
   (outEntry, outEnv) := match(inName, inEnv, inInfo)
     local
-      Absyn.Ident id;
       Env env;
       Entry entry;
-      Absyn.Path path;
 
     // Normal baseclass.
     case (_, _, _)

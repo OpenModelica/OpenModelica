@@ -299,11 +299,11 @@ algorithm
   _:=
   matchcontinue (inBackendDAE,inComp)
     local
-      Integer e_1,v_1,e,indx;
+      Integer e_1,v_1,e;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
-      DAE.ComponentRef cr,cr_1;
-      String origname_str,name,c_name,id;
+      DAE.ComponentRef cr;
+      String origname_str;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))

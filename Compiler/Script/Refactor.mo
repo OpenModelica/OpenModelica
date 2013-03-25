@@ -605,7 +605,6 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      list<Absyn.Subscript> s;
       Option<Real> rot;
       Env.Env env;
       Absyn.Info info;
@@ -1426,7 +1425,6 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
       Absyn.Info info, mod_info;
 
@@ -1527,7 +1525,6 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
       Absyn.Info info, mod_info;
 
@@ -1661,7 +1658,6 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
       Absyn.Info info;
 
@@ -2021,7 +2017,6 @@ algorithm
       Absyn.Each e;
       Option<Absyn.Modification> m;
       Option<String> com;
-      list<Absyn.Subscript> s;
       list<Absyn.ElementArg> resultList;
 
     case({},resultList,_) then resultList;
@@ -2247,7 +2242,6 @@ algorithm
       Absyn.Each e;
       Option<Absyn.Modification> m;
       Option<String> com;
-      list<Absyn.Subscript> s;
 
     case({}) then false;
 
@@ -2279,7 +2273,6 @@ algorithm
       Absyn.Each e;
       Option<Absyn.Modification> m;
       Option<String> com;
-      list<Absyn.Subscript> s;
 
     case({}) then false;
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com):: rest)
@@ -2308,7 +2301,6 @@ algorithm
       Absyn.Each e;
       Option<Absyn.Modification> m;
       Option<String> com;
-      list<Absyn.Subscript> s;
 
     case({}) then {};
 
@@ -2383,7 +2375,6 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      list<Absyn.Subscript> s;
       Absyn.Info info;
 
     case({}) then {};

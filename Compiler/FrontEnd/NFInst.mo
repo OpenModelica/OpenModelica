@@ -120,17 +120,15 @@ algorithm
   (outDae, outGlobals) := matchcontinue(inClassPath, inEnv)
     local
       Entry top_cls;
-      Absyn.Path path;
       Env env;
       String name;
-      Class cls, builtin_el;
+      Class cls;
       SymbolTable symtab, constants;
       FunctionHashTable functions;
       Connections conn;
       list<NFConnect2.Connector> flows;
       DAE.DAElist dae_conn, dae;
       DAE.FunctionTree func_tree;
-      SCode.Element sc;
 
     case (_, _)
       equation
@@ -253,12 +251,11 @@ algorithm
       Absyn.Info info;
       Absyn.Path path;
       Absyn.TypeSpec dty;
-      Boolean ice;
       Class cls;
       ClassInf.State state;
       DAE.Type ty;
       Entry entry;
-      Env env, envDerived;
+      Env env;
       ExtendsState es;
       Globals globals;
       InstPolicy ip;
@@ -819,7 +816,6 @@ algorithm
   match(inElement, inModifiers, inPrefixes, inEnv, inPrefix, inInstPolicy,
       inAccumEl, inExtendsState, inGlobals)
     local
-      Modifier mod;
       Globals globals;
       ExtendsState es;
       Element res;
@@ -903,7 +899,6 @@ algorithm
       array<Dimension> dim_arr;
       Class cls;
       Component comp;
-      list<SCode.Element> redecl;
 
     // an outer component
     case (SCode.COMPONENT(name = name,
@@ -1035,7 +1030,6 @@ algorithm
       InstPolicy ip;
       Prefixes prefs;
       Globals globals;
-      String name;
       SCode.Mod smod;
       Modifier mod;
       Boolean special_ext;
@@ -1903,7 +1897,6 @@ algorithm
       Option<Absyn.Exp> oaexp;
       Option<DAE.Exp> odexp;
       Globals globals;
-      list<tuple<Absyn.Exp, Absyn.Exp>> elseIfBranch;
 
     case (Absyn.REAL(value = rval), _, _, _, globals)
       then (DAE.RCONST(rval), globals);
@@ -2195,7 +2188,6 @@ algorithm
       Entry entry;
       DAE.ComponentRef cref;
       Boolean is_local, is_class, is_global;
-      Absyn.Path path;
       String name_str, env_str;
       Globals globals;
 
@@ -2263,7 +2255,6 @@ algorithm
       Integer iterIndex;
       DAE.Type ty;
       list<DAE.Subscript> subs;
-      Absyn.Path path;
 
     // Don't prefix iterators.
     case (DAE.CREF_IDENT(id, ty, subs), _, _)
@@ -2486,19 +2477,13 @@ algorithm
   (outCref, outGlobals) :=
   matchcontinue(inIsGlobal, inCref, inName, inEnv, inInfo, inGlobals)
     local
-      SymbolTable consts;
-      FunctionHashTable funcs;
       Entry entry;
       Env env;
-      SCode.Element selem;
-      Element elem;
       Absyn.Path name;
       Prefix prefix;
       Globals globals;
-      String item_name;
       DAE.ComponentRef cref;
 
-      Component comp;
 
     case (false, _, _, _, _, _) then (inCref, inGlobals);
 
@@ -2605,7 +2590,6 @@ algorithm
       SymbolTable consts;
       FunctionHashTable funcs;
       Env env;
-      Prefix prefix;
       DAE.Type ty;
       Component comp;
       Absyn.Info info;
@@ -2711,14 +2695,10 @@ algorithm
   (outName, outFunction, outGlobals) := matchcontinue (inName, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Path path;
-      SCode.Element scls;
       Entry entry;
       Env env;
       Class cls;
       list<Element> inputs, outputs, locals;
-      list<list<Statement>> algorithms;
-      list<Statement> stmts;
-      list<Statement> initBindings;
       Function func;
       Boolean is_record;
       DAE.Type ty;
@@ -2790,7 +2770,6 @@ algorithm
       list<list<Statement>> algorithms;
       list<Statement> stmts;
       list<Statement> initBindings;
-      Function func;
       DAE.Type recRetType;
       list<DAE.Var> vars;
 

@@ -526,7 +526,6 @@ algorithm
     local
       String name;
       Absyn.Path bc;
-      Absyn.Import imp;
 
     case SCode.COMPONENT(name = name) then name;
     case SCode.CLASS(name = name) then name;
@@ -767,13 +766,12 @@ algorithm
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
       Item ty_item;
-      Env ty_env, env;
+      Env ty_env;
       SCode.Ident name;
       SCode.Prefixes prefixes;
       SCode.Restriction res;
       String errorMessage;
       list<Extends> exts;
-      Absyn.InnerOuter io;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -2058,7 +2056,7 @@ algorithm
       SCode.Element cls;
       Env env;
       Item item;
-      Absyn.Path cls_path, const_path;
+      Absyn.Path cls_path;
 
     // A class definition, just use collectUsedClass.
     case (SCode.CLASS(name = name), _, _, env, _, _, _)

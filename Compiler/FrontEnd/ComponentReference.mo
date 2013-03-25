@@ -126,7 +126,7 @@ protected protected function hashSubscripts2 "help function"
   input Integer factor;
   output Integer hash;
 algorithm
-  hash := matchcontinue(dims,subs,factor)
+  hash := match(dims,subs,factor)
   local 
     Integer i1;
     DAE.Subscript s;
@@ -137,7 +137,7 @@ algorithm
     case(i1::rest_dims,s::rest_subs,_)
     // TODO: change to using dimensions once cref types has been fixed.
     then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);  
-  end matchcontinue;
+  end match;
 end hashSubscripts2;
 
 protected function hashSubscript "help function"
@@ -2498,7 +2498,6 @@ algorithm
   match (inCref)
     local
       ComponentRef n;
-      Integer d;
     
     case (DAE.WILD()) then 0;
     case (DAE.CREF_IDENT(ident = _)) then 1;
@@ -2517,7 +2516,6 @@ algorithm
   match (inCref,iDepth)
     local
       DAE.ComponentRef n;
-      Integer d;
     
     case (DAE.WILD(),_) then iDepth;
     case (DAE.CREF_IDENT(ident = _),_) then 1+iDepth;

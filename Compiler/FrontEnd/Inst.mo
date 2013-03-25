@@ -1157,7 +1157,6 @@ algorithm
       list<DAE.Var> vars;
       DAE.Var var,  new_var;
       DAE.Type ty;
-      Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
       Env.InstStatus instStatus;
       Absyn.Path p;
       DAE.Attributes attributes;
@@ -1547,28 +1546,18 @@ algorithm
     local
       Option<DAE.Type> bc;
       list<Env.Frame> env;
-      DAE.Mod mods;
-      Prefix.Prefix pre;
       ClassInf.State ci_state;
       SCode.Element c;
-      InstDims inst_dims;
-      Boolean impl;
-      SCode.Visibility vis;
       String n;
       DAE.DAElist dae;
       Connect.Sets csets;
       list<DAE.Var> tys;
-      SCode.Restriction r,rCached;
-      SCode.ClassDef d;
       Env.Cache cache;
       Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
-      CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      Absyn.Path fullEnvPathPlusClass;
-      Option<Absyn.Path> envPathOpt;
-      String className, s1, s2;
+      String  s1, s2;
       UnitAbsyn.InstStore store;
       Absyn.InnerOuter io;
       Absyn.Info info;
@@ -1927,11 +1916,11 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Element c,cls;
+      SCode.Element c;
       InstDims inst_dims;
       Boolean impl;
       SCode.Visibility vis;
-      String clsname,implstr,n;
+      String implstr,n;
       Connect.Sets csets;
       list<DAE.Var> tys;
       SCode.Restriction r;
@@ -5522,7 +5511,7 @@ algorithm
     local
       list<Absyn.Exp> rest;
       Absyn.Exp e;
-      list<tuple<SCode.Element, DAE.Mod>> deps, els;
+      list<tuple<SCode.Element, DAE.Mod>> deps;
 
     // handle the empty case
     case ({}, _, _) then inDependencies;
@@ -5662,7 +5651,6 @@ algorithm
       Boolean hasUnknownDims;
       Absyn.Direction direction;
       list<tuple<SCode.Element, DAE.Mod>> inAllElements;
-      list<SCode.Element> els;
 
     // For constants and parameters we check the component conditional, array dimensions, modifiers and binding
     case ((SCode.COMPONENT(name = name, condition = cExpOpt, attributes = SCode.ATTR(arrayDims = ad, variability = var),
@@ -5940,7 +5928,6 @@ protected function isElementParamOrConst
 algorithm
   outIsParamOrConst := match(inElement)
     local
-      SCode.Element elem;
       SCode.Variability var;
 
     case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = var)), _))
@@ -6006,7 +5993,7 @@ algorithm
   match (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError, daeAcc, varAcc)
     local
-      list<Env.Frame> env,env_1,env_2;
+      list<Env.Frame> env;
       Connect.Sets csets;
       ClassInf.State ci_state;
       DAE.DAElist dae;
@@ -6018,13 +6005,9 @@ algorithm
       InstDims inst_dims;
       Boolean impl;
       Env.Cache cache;
-      Absyn.Info info;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      String elementName;
-      SCode.Element ele;
-      String comp_name;
       UnitAbsyn.InstStore store;
       list<DAE.Element> elts;
 
@@ -6087,15 +6070,13 @@ algorithm
   matchcontinue (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
     local
-      list<Env.Frame> env,env_1,env_2;
+      list<Env.Frame> env,env_1;
       Connect.Sets csets;
-      ClassInf.State ci_state,ci_state_1,ci_state_2;
-      DAE.DAElist dae1,dae2,dae;
-      list<DAE.Var> tys1,tys2,tys;
+      ClassInf.State ci_state,ci_state_1;
+      list<DAE.Var> tys1;
       DAE.Mod mod;
       Prefix.Prefix pre;
       tuple<SCode.Element, DAE.Mod> el;
-      list<tuple<SCode.Element, DAE.Mod>> els;
       InstDims inst_dims;
       Boolean impl;
       Env.Cache cache;
@@ -6386,10 +6367,9 @@ protected function addClassdefToEnv2
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElement,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env,env_1,env_2;
+      list<Env.Frame> env,env_1;
       SCode.Element cl2, enumclass, imp;
       SCode.Element sel1,elt;
-      list<SCode.Element> xs;
       list<SCode.Enum> enumLst;
       Boolean impl;
       InstanceHierarchy ih;
@@ -6662,7 +6642,7 @@ protected function addComponentToEnv
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementMod6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
-      list<Env.Frame> env,env_1,env_2;
+      list<Env.Frame> env,env_1;
       DAE.Mod mod,cmod;
       Prefix.Prefix pre;
       ClassInf.State cistate;
@@ -6674,7 +6654,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       Option<SCode.Comment> comment;
-      list<tuple<SCode.Element, DAE.Mod>> xs,allcomps,comps;
+      list<tuple<SCode.Element, DAE.Mod>> allcomps;
       list<SCode.Equation> eqns;
       InstDims instdims;
       Option<Absyn.Exp> aExp;
@@ -6823,7 +6803,6 @@ algorithm
       Option<Absyn.Exp> condition;
       InstanceHierarchy ih;
       Env.Cache cache;
-      list<SCode.Ident> named;
 
     // a component
     case (cache,env,ih,mods,pre,ci_state,
@@ -7648,7 +7627,6 @@ algorithm
       String n1, n2;
       Option<Absyn.ArrayDim> ad1, ad2;
       Option<Absyn.Exp> cond1, cond2;
-      Boolean b;
 
     // try equality first!
     case(cache,env,(oldElt,oldMod),(newElt,newMod))
@@ -8598,7 +8576,7 @@ algorithm
     local
       Env.Cache cache;
       list<DAE.Element> dae;
-      DAE.Exp exp,crExp;
+      DAE.Exp exp;
       DAE.Element eq;
       DAE.Dimensions dims;
       DAE.ComponentRef cr;
@@ -9484,7 +9462,7 @@ algorithm
       list<Env.Frame> cenv,env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad_1;
-      DAE.Mod mod_1,mods_2,mods_3,mods,type_mods;
+      DAE.Mod mod_1,type_mods;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dim1,dim2,res;
       Prefix.Prefix pre;
@@ -11543,7 +11521,7 @@ algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
     local
       list<Env.Frame> env,env_1;
-      Absyn.Path path,path_2,path3,restPath;
+      Absyn.Path path,path_2,path3;
       String s;
       Env.Cache cache;
       SCode.Element cl;
@@ -14441,14 +14419,9 @@ algorithm
   outExpExpOption := matchcontinue (inMod,inVarLst,inString)
     local
       DAE.Mod mod2,mod;
-      DAE.Exp e,e_1;
-      DAE.Type ty2,ty_1,expected_type,etype;
       String bind_name;
-      Option<DAE.Exp> result;
-      list<Integer> index_list;
       DAE.Binding binding;
       Ident name;
-      Option<Values.Value> optVal;
       list<DAE.Var> varLst;
 
     case (mod,varLst,bind_name)
@@ -16800,9 +16773,6 @@ algorithm
       InstanceHierarchy ih;
       Absyn.InnerOuter io;
       UnitAbsyn.InstStore store;
-      DAE.Mod dM;
-      SCode.Mod sM;
-      String mname;
 
     case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -18294,10 +18264,6 @@ protected function checkFunctionDefUse
 algorithm
   _ := matchcontinue (elts,info)
     local
-      list<DAE.Element> rest;
-      list<DAE.Statement> stmts;
-      list<String> unusedButMightBeDefined;
-      String name;
     case (_,_)
       equation
         _ = checkFunctionDefUse2(elts,NONE(),{},{},info);
@@ -18324,7 +18290,6 @@ algorithm
       list<DAE.Statement> stmts;
       list<String> unbound,outputs,names,outNames;
       String name;
-      DAE.Type ty;
       DAE.InstDims dims;
       DAE.VarDirection dir;
       list<DAE.Var> vars;
@@ -18413,7 +18378,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp,lhs,rhs,exp1,exp2;
       list<DAE.Exp> lhss;
-      list<String> unbound,unboundBranch;
+      list<String> unbound;
       Boolean b,b1,b2;
       Absyn.Info info;
       DAE.Else else_;
@@ -18702,7 +18667,6 @@ algorithm
       DAE.Function func;
       Env.Cache cache;
       DAE.Type recType,fixedTy,funcTy;
-      Ident lastId;
       list<DAE.Var> vars, inputs, locals;
       list<DAE.FuncArg> fargs;
       DAE.EqualityConstraint eqCo;
@@ -18763,10 +18727,8 @@ algorithm
   outCache := matchcontinue (inCache,inEnv,inType)
     local
       Absyn.Path p1;
-      DAE.Function fun;
       list<DAE.Var> vars, inputs, locals;
-      list<DAE.FuncArg> fargs;
-      DAE.Type ty, fixedTy;
+      DAE.Type ty;
       DAE.EqualityConstraint eqCo;
       DAE.TypeSource src;
       Env.Cache cache;
@@ -18793,7 +18755,6 @@ algorithm
   isValid := matchcontinue(inEnv,inName,inAttr,inInfo)
     local
       String errorString,scopeName;
-      Env.ScopeType stype;
       Absyn.Direction dir;
       SCode.Parallelism prl;
       Boolean isparglobal;

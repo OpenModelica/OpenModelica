@@ -162,7 +162,6 @@ algorithm
     local
       SymbolTable st;
       Integer comp_size, bucket_size;
-      Class cls;
 
     case (_)
       equation
@@ -257,8 +256,6 @@ algorithm
   outSymbolTable := match(inClass, inSymbolTable)
     local
       list<Element> comps;
-      list<Equation> eq, ieq;
-      list<list<Statement>> al, ial;
       SymbolTable st;
       Absyn.Path name;
 
@@ -345,9 +342,7 @@ algorithm
   outSymbolTable := matchcontinue(inComponent, inSymbolTable)
     local
       Absyn.Path name;
-      Option<Component> comp;
       SymbolTable st;
-      HashTable scope;
 
     // PACKAGE isn't really a component, so we don't add it. But its class
     // should be added, so return true anyway.
@@ -494,9 +489,7 @@ algorithm
   outSymbolTable := match(inElement, inClassPath, inSymbolTable)
     local
       Component comp;
-      Absyn.Path comp_name, qualified_name;
       SymbolTable st;
-      list<Element> el;
 
     case (NFInstTypes.ELEMENT(component = comp), _, st)
       then addAlias2(comp, inClassPath, st);

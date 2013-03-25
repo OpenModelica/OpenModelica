@@ -151,7 +151,6 @@ algorithm
   matchcontinue (inComps,isyst,ishared,method,iAcc,iRunMatching)
     local
       list<Integer> eindex,vindx;
-      list<list<Integer>> othercomps;
       Boolean b,b1;
       BackendDAE.StrongComponents comps,acc;
       BackendDAE.StrongComponent comp,comp1;
@@ -968,7 +967,6 @@ algorithm
   Unsolvable := matchcontinue(index,size,meT,ass1,ass2)
     local
       BackendDAE.AdjacencyMatrixElementEnhanced elem;
-      Boolean b;
     case(_,_,_,_,_)
       equation
         true = intLe(index,size);

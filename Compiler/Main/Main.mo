@@ -153,7 +153,7 @@ algorithm
       Absyn.Program p,p_1,newprog,iprog;
       AbsynDep.Depends aDep;
       list<Interactive.Variable> vars_1,vars;
-      list<Interactive.CompiledCFunction> cf_1,cf;
+      list<Interactive.CompiledCFunction> cf;
       list<Interactive.InstantiatedClass> b;
       Interactive.Statements exp;
       list<Interactive.LoadedFile> lf;
@@ -999,7 +999,7 @@ public function setWindowsPaths
 algorithm
   _ := matchcontinue(inOMHome)
     local
-      String oldPath,newPath,mingwPath,omHome,omdevPath;
+      String oldPath,newPath,omHome,omdevPath;
 
     // check if we have OMDEV set
     case (omHome)

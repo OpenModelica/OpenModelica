@@ -5401,8 +5401,6 @@ public function foldcallN
 algorithm
   outResult := match(n, inFoldFunc, inStartValue)
     local
-      ElementType e;
-      list<ElementType> rest;
       FoldType arg;
 
     case (0, _, _) then inStartValue;
@@ -5928,7 +5926,6 @@ algorithm
       list<ElementType1> rest1;
       ElementType2 e2;
       list<ElementType2> rest2;
-      ElementOutType res;
 
     case ({}, {}, _, _) then ();
     case (e1 :: rest1, e2 :: rest2, _, _)

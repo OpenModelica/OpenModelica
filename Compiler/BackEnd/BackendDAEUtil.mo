@@ -513,7 +513,7 @@ algorithm
    Var var;
    DAE.Statement stmt;
    DAE.Type type_;
-   list<DAE.Statement> statements,statements1;
+   list<DAE.Statement> statements;
    Boolean b;
    case(statements,{},_) then statements;
    case(statements,out::rest,_)
@@ -2195,7 +2195,6 @@ protected function markStateEquationsWork
 algorithm
   oMark:= matchcontinue (inEqns,nextQueue,m,ass1,iMark)
     local
-      array<Integer> mark;
       Integer eqn;
       list<Integer> eqns,queue,vlst;
     case ({},{},_,_,_) then iMark;
@@ -3871,7 +3870,7 @@ algorithm
   outIntegerLst := matchcontinue (inVarLst,inIntegerLst,vars,diffindex)
     local
        list<Var> rest;
-       list<Integer> irest,res;
+       list<Integer> irest;
        Integer i;
     case ({},{},_,_) then vars;
     /*If variable x is a state, der(x) is a variable in incidence matrix,
@@ -5107,7 +5106,7 @@ protected function adjacencyRowAlgorithmOutputs
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
 algorithm
-  outRow := matchcontinue(algOutputs,inVariables,mark,rowmark,iRow)
+  outRow := match(algOutputs,inVariables,mark,rowmark,iRow)
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest;
@@ -5120,7 +5119,7 @@ algorithm
         row = adjacencyRowAlgorithmOutputs1(vindx,mark,rowmark,iRow);
       then
         adjacencyRowAlgorithmOutputs(rest,inVariables,mark,rowmark,row);
-  end matchcontinue;
+  end match;
 end adjacencyRowAlgorithmOutputs;
 
 protected function adjacencyRowAlgorithmOutputs1
@@ -5134,7 +5133,7 @@ protected function adjacencyRowAlgorithmOutputs1
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
 algorithm
-  outRow := matchcontinue(vindx,mark,rowmark,iRow)
+  outRow := match(vindx,mark,rowmark,iRow)
     local
       Integer i;
       list<Integer> rest;
@@ -5144,7 +5143,7 @@ algorithm
         _ = arrayUpdate(rowmark,i,mark);
       then
         adjacencyRowAlgorithmOutputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_SOLVED())::iRow);
-  end matchcontinue;
+  end match;
 end adjacencyRowAlgorithmOutputs1;
 
 protected function adjacencyRowAlgorithmInputs
@@ -6503,9 +6502,8 @@ algorithm
   matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      Boolean b,b1;
+      Boolean b;
       BackendDAE.JacobianType jactype;
-      String str;
     case (_,_,SOME(jac))
       equation
         //str = BackendDump.dumpJacobianStr(SOME(jac));
@@ -6539,12 +6537,10 @@ algorithm
   outTplExpBoolTypeA := match(inTplExpTypeA)
     local
       DAE.Exp cond,t,f,e,e1;
-      BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars;
-      Boolean b,b1;
+      Boolean b;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-      Option<DAE.FunctionTree> funcs;
     case ((DAE.IFEXP(cond,t,f),(vars,b)))
       equation
         // check if vars not in condition

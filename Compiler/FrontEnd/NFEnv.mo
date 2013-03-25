@@ -368,7 +368,6 @@ protected function checkOrigin
 algorithm
   outElement := match(inNewOrigin, inOldOrigins, inOldElement, inNewElement)
     local
-      list<EntryOrigin> rest_origins;
       String name, err_msg;
       EntryOrigin origin;
 
@@ -466,7 +465,6 @@ algorithm
       Absyn.Import imp;
       String name;
       Absyn.Info info1, info2;
-      SCode.Element el;
 
     case (IMPORTED_ORIGIN(imp = imp, info = info1), IMPORTED_ORIGIN(info = info2))
       equation
@@ -665,7 +663,6 @@ algorithm
   outEnv := match(inOrigin)
     local
       Env env;
-      Entry entry;
 
     case INHERITED_ORIGIN(originEnv = env) then env;
     case REDECLARED_ORIGIN(originEnv = env) then env;
@@ -928,8 +925,7 @@ public function isPrefix
 algorithm
   outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
     local
-      String n1, n2;
-      Env rest1, rest2;
+      Env  rest2;
       Integer sc1, sc2, sc_diff;
 
     // If the first environment has more scopes than the second, then it can't
@@ -1284,7 +1280,6 @@ algorithm
   outAccumEnv := match(inImport, inEntry, inEnv, inInfo, inAccumEnv)
     local
       String name;
-      Absyn.Path path;
       Env env;
       Entry entry;
       SCode.ClassDef cdef;

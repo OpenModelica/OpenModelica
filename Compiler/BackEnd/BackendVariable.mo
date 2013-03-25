@@ -647,11 +647,9 @@ algorithm
       Option<Values.Value> f;
       list<DAE.Subscript> g;
       DAE.ElementSource source;
-      DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
-      Boolean fixed;
 
     case (BackendDAE.VAR(varName = a,
               varKind = BackendDAE.STATE(index=indx),
@@ -1206,7 +1204,6 @@ public function hasContinousVar
 algorithm
   outBoolean := match (inBackendDAEVarLst)
     local
-      Boolean res;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;
@@ -2199,7 +2196,6 @@ algorithm
   match (inExp)
     local
       DAE.ComponentRef name;
-      Absyn.Path fname;
 
     case DAE.CREF(componentRef=name) then (name,false);
     case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)) then (name,true);
@@ -2263,7 +2259,6 @@ algorithm
   matchcontinue (arr,pos,inVarLst)
     local
       BackendDAE.Var v;
-      list<BackendDAE.Var> res;
     case (_,0,_) then inVarLst;
     case (_,_,_)
       equation
@@ -3638,7 +3633,7 @@ protected function replaceVarWithWholeDimSubs
 algorithm
   (outSubscript, oPerformed) := match(inSubscript, iPerformed)
     local
-      DAE.Exp sub_exp,sub_exp_1;
+      DAE.Exp sub_exp;
       list<DAE.Subscript> rest,res;
       Boolean b,const;
 
@@ -3843,7 +3838,6 @@ public function mergeVariables
 algorithm
   outVariables := matchcontinue (inVariables1,inVariables2)
     local
-      list<BackendDAE.Var> varlst;
       BackendDAE.Variables vars1_1,vars1,vars2;
     case (vars1,vars2)
       equation
@@ -4405,10 +4399,9 @@ protected function mergeStartFixed1 "function mergeStartFixed1
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (b,inVar,cr,sv,cra,sva,soa,negate,s4)
+  match (b,inVar,cr,sv,cra,sva,soa,negate,s4)
     local
       String s,s1,s2,s3,s5,s6;
-      DAE.Exp sv1,sva1;
       BackendDAE.Var v;
     // alias var has more dots in the name
     case (false,_,_,_,_,_,_,_,_)
@@ -4435,7 +4428,7 @@ algorithm
         v = setVarStartOrigin(v,soa);
       then
         v;
-  end matchcontinue;
+  end match;
 end mergeStartFixed1;
 
 protected function replaceCrefWithBindExp
@@ -4447,7 +4440,6 @@ algorithm
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-      Boolean b;
       HashSet.HashSet hs;
     // true if crefs replaced in expression
     case ((DAE.CREF(componentRef=cr), (vars,_,hs)))

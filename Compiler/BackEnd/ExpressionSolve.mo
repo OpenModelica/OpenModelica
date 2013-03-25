@@ -183,7 +183,6 @@ protected function solveSimple
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
     local
-      DAE.Exp res;
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
       list<DAE.Statement> asserts;
@@ -330,14 +329,12 @@ protected function solve2
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
-      DAE.Exp lhs,dere,zeroe,rhs,e,z,a;
-      DAE.ComponentRef cr,cr1;
+      DAE.Exp dere,zeroe,rhs,e,z,a;
+      DAE.ComponentRef cr;
       DAE.Exp invCr;
-      DAE.Type tp,tp1;
+      DAE.Type tp;
       list<DAE.Exp> factors;
       list<DAE.Statement> asserts;
-      Real r;
-      Integer i;
 
      // cr = (e1(0)-e2(0))/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr),_)
@@ -513,7 +510,6 @@ algorithm
     local
       DAE.Exp z;
       DAE.Type tp;
-      list<DAE.Statement> asserts;
       String estr,se1,se2,sa;
     case (_,_,_,_,_)
       equation
@@ -583,7 +579,7 @@ protected function solve3
 algorithm
   (outExp,outExp1) := matchcontinue (inExp1,inExp2)
     local
-      DAE.Exp crexp,e1,e2;
+      DAE.Exp e1,e2;
       DAE.ComponentRef cr;
       DAE.Operator op;
 

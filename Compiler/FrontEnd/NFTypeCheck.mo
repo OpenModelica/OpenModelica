@@ -134,7 +134,6 @@ algorithm
       Class cls;
       Absyn.Path name;
       SymbolTable st;
-      DAE.Type ty;
       Absyn.Info info;
       String str;
 
@@ -168,10 +167,10 @@ protected function checkComponent
   output SymbolTable outSymbolTable;
 algorithm
   (outComponent, outSymbolTable) :=
-  matchcontinue(inComponent, inParent, inContext, inSymbolTable)
+  match(inComponent, inParent, inContext, inSymbolTable)
     local
       Absyn.Path name;
-      DAE.Type ty, bindingTy;
+      DAE.Type ty;
       Binding binding;
       SymbolTable st;
       Component comp, inner_comp;
@@ -225,7 +224,7 @@ algorithm
       then
         (comp, st);
 
-  end matchcontinue;
+  end match;
 end checkComponent;
 
 protected function checkComponentBindingType
@@ -234,7 +233,6 @@ protected function checkComponentBindingType
 algorithm
   outC := matchcontinue (inC)
     local
-      Component c;
       DAE.Type ty, propagatedTy, convertedTy;
       Absyn.Path name, eName;
       Option<Component> parent;
@@ -459,11 +457,10 @@ algorithm
   (outExp,outType) := matchcontinue(inExp1,inType1,inOp,inExp2,inType2)
     local
       DAE.Exp exp1,exp2,exp;
-      DAE.Type ty,ty1;
+      DAE.Type ty;
       String e1Str, t1Str, e2Str, t2Str, s1, s2, sugg;
       Boolean isarr1,isarr2;
       DAE.Operator newop;
-      DAE.TypeSource typsrc;
 
 
     // Logical binary operations here are allowed only on Booleans.
@@ -768,7 +765,7 @@ algorithm
       String e1Str, t1Str, e2Str, t2Str, s1, s2, sugg;
       Boolean isarr1,isarr2;
       DAE.Dimensions dims;
-      DAE.Dimension dim,M,N1,N2,K;
+      DAE.Dimension M,N1,N2,K;
       DAE.Operator newop;
       DAE.TypeSource typsrc;
 
@@ -1170,7 +1167,7 @@ protected function checkValidNumericTypesForOp
 algorithm
   isValid := matchcontinue(inType1,inType2,inOp,printError)
     local
-      String t1Str,t2Str,s2,s1;
+      String t1Str,t2Str,s2;
 
     case(_,_,DAE.ADD(_),_) then true;
 
@@ -1380,7 +1377,7 @@ algorithm
   (outArg, outVectDims) := matchcontinue (inArg,inArgType,inExpectedType,inVectDims)
     local
       DAE.Exp e,e_1;
-      DAE.Type e_type,expected_type,e_type_1;
+      DAE.Type e_type,expected_type;
       String e1Str, t1Str, t2Str, s1;
       DAE.Dimensions dims1, dims2, foreachdim;
 
@@ -1561,8 +1558,8 @@ public function findVectorizationDim
 algorithm
   outVectDims := matchcontinue(inGivenDims, inExpectedDims)
     local
-      DAE.Dimensions dims1, dims2;
-      DAE.Dimension dim1, dim2;
+      DAE.Dimensions dims1;
+      DAE.Dimension dim1;
 
     case(_, {}) then inGivenDims;
 
@@ -1694,7 +1691,6 @@ algorithm
       DAE.Dimension dim;
       DAE.Dimensions dims;
       DAE.Exp idx;
-      DAE.ComponentRef cr;
       list<DAE.Exp> calls, subedargs;
 
     case (_, _, _, {}, _) then DAE.CALL(inFnName, inArgs, inAttrs) :: inAccumCalls;

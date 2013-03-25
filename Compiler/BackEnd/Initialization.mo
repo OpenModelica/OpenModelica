@@ -138,11 +138,8 @@ protected function inlineWhenForInitializationEquation "function inlineWhenForIn
 algorithm
   outTpl := match(inTpl)
     local
-      DAE.ComponentRef left;
-      DAE.Exp condition, right;
       DAE.ElementSource source;
       BackendDAE.Equation eqn;
-      DAE.Type identType;
       DAE.Algorithm alg;
       Integer size;
       list< DAE.Statement> stmts;
@@ -206,7 +203,6 @@ algorithm
       list< BackendDAE.Equation> eqns;
       BackendDAE.WhenEquation weqn;
       BackendDAE.Variables vars;
-      list<BackendDAE.Var> initVars;
 
     // active when equation during initialization
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), _, _, _) equation
@@ -778,14 +774,7 @@ algorithm
   (osyst, osharedOptimized):=
   matchcontinue (isyst, sharedOptimized)
     local
-      BackendDAE.EqSystem syst;
-      list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
-      tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
-      tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
       Integer nVars, nEqns;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.BackendDAE inDAE;
 
     // over-determined system
     case(_, _) equation
@@ -936,16 +925,14 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
-      DAE.ComponentRef cr, pcr;
-      String msg, eqn_str, var_str;
+      String msg, eqn_str;
       array<Integer> vec1, vec2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
-      BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
-      list<Integer> unassignedeqns, varindxlst;
+      list<Integer> unassignedeqns;
       list<list<Integer>> ilstlst;
       HashTableCG.HashTable ht;
       HashTable3.HashTable dht;
@@ -1029,9 +1016,8 @@ algorithm
       array<Integer> vec1, vec2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      array<Integer> mapIncRowEqn;
       BackendDAE.EqSystem syst;
-      list<Integer> unassigned, unassigned1;
+      list<Integer> unassigned;
       BackendDAE.Shared shared;
       DAE.FunctionTree funcs;
     // fix undetermined system
@@ -1180,7 +1166,7 @@ protected function replaceFixedCandidates1
 algorithm
   oUnassigned := match(iFound, iI, iI1, iE, iI2, nVars, nEqns, m, mT, vec1, vec2, inVars, inInitVars, mark, markarr, iAcc)
     local
-      Integer i, i1, i2, e;
+      Integer  i1, i2, e;
       Boolean b;
 
     case (true, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) then iI1::iAcc;
@@ -1274,7 +1260,7 @@ protected function pathFoundtraverseEqns "function pathFoundtraverseEqns
 algorithm
   found := matchcontinue (rows, stack, m, mT, ass1, ass2, mark, markarr)
     local
-      list<Integer> rest, visitedColums;
+      list<Integer> rest;
       Integer rc, e;
       Boolean b;
 
@@ -1395,13 +1381,12 @@ algorithm
       list<BackendDAE.Var> varlst;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      DAE.Exp e, e1, crefExp, startExp;
+      DAE.Exp e,  crefExp, startExp;
       DAE.ComponentRef cref, preCref;
       DAE.Type tp;
       String crStr;
       DAE.InstDims arryDim;
       BackendDAE.Shared shared;
-      Option<DAE.Exp> optexp;
 
     case ({}, _, _, _) then (iVars, inEqns, iShared);
 
@@ -1490,7 +1475,7 @@ algorithm
       list<DAE.ComponentRef> vars;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      DAE.Exp e, e1, crefExp, startExp;
+      DAE.Exp e,  crefExp, startExp;
       DAE.Type tp;
       String crStr;
 
@@ -1743,17 +1728,14 @@ protected function collectInitialAliasVars "function collectInitialAliasVars
 algorithm
   outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Var var, preVar, derVar;
+      BackendDAE.Var var, preVar;
       BackendDAE.Variables vars, fixvars;
-      DAE.ComponentRef cr, preCR, derCR;
+      DAE.ComponentRef cr, preCR;
       Boolean isFixed;
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
-      DAE.Exp startExp, bindExp;
-      String errorMessage;
       list<BackendDAE.Var> tempVar;
-      BackendDAE.VarKind varKind;
 
     // discrete
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, tempVar))) equation
@@ -1789,13 +1771,9 @@ protected function collectInitialBindings "function collectInitialBindings
 algorithm
   outTpl := match(inTpl)
     local
-      BackendDAE.Var var, preVar, derVar;
-      BackendDAE.Variables vars, fixvars;
-      DAE.ComponentRef cr, preCR, derCR;
-      Boolean isFixed;
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
       DAE.Type ty;
-      DAE.InstDims arryDim;
-      Option<DAE.Exp> startValue;
       String errorMessage;
       BackendDAE.EquationArray eqns, reeqns;
       DAE.Exp bindExp, crefExp;

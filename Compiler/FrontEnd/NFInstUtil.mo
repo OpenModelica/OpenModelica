@@ -88,7 +88,6 @@ algorithm
       Class cls;
       DAE.Type ty;
       list<DAE.Var> vars;
-      Absyn.Path name;
 
     case (NFInstTypes.COMPLEX_CLASS(components = elems), _, false)
       equation
@@ -527,8 +526,6 @@ algorithm
   outDims := match(inComponent)
     local
       DAE.Type ty;
-      array<Dimension> idimensions;
-      list<Dimension> idims;
       DAE.Dimensions dims;
 
     case NFInstTypes.TYPED_COMPONENT(ty = ty)
@@ -2145,7 +2142,6 @@ algorithm
     local
       String name, str;
       Prefix rest_prefix;
-      Absyn.Path path;
 
     case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
 
@@ -2204,7 +2200,6 @@ public function isModifiableComponent
 algorithm
   outBool := matchcontinue(inComponent)
     local
-      Prefixes prefixes;
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(visibility = SCode.PROTECTED()))) then false;
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = SCode.CONST()), binding = NFInstTypes.UNBOUND())) then true;
     case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = SCode.CONST()))) then false;

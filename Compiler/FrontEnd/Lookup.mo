@@ -1128,9 +1128,8 @@ algorithm
       DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
-      list<Env.Item> imps;
       list<Env.Frame> fs;
-      Env.Frame frame,f;
+      Env.Frame f;
       DAE.ComponentRef ref;
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
@@ -1219,7 +1218,6 @@ algorithm
       DAE.ComponentRef cref,cr;
       list<DAE.Subscript> sb;
       Option<String> sid;
-      list<Env.Item> items;
       Env.Frame f;
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
@@ -3029,7 +3027,7 @@ public function splitEnv
 algorithm
   (outRealEnv, outForEnv) := matchcontinue(inEnv)
     local
-      Env.Env r, f, i, fs;
+      Env.Env r, f,  fs;
       Env.Frame frm;
 
     case ({}) then ({}, {});

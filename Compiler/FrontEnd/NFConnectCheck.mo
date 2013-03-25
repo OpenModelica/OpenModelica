@@ -522,7 +522,6 @@ algorithm
   _ := match(inLhsType, inRhsType, inErrorInfo)
     local
       list<DAE.Var> vars1, vars2;
-      list<Connector> connl1, connl2;
 
     // Two complex connectors, check their components.
     case (DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2), _)

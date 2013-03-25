@@ -1475,7 +1475,6 @@ algorithm
       Env.ExtendsTable et;
       Env.ImportTable it;
       Option<Util.StatefulBoolean> iu;
-      Env.Env fs;
       Env.Frame f;
 
     case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu), cr)

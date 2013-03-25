@@ -170,7 +170,6 @@ algorithm
   (outSections, outElementCount) :=
   match(inElements, inElementCount, inAccumSections)
     local
-      list<Class> accum;
       Integer el_count;
       Elements el;
       Class cls;
@@ -222,7 +221,6 @@ algorithm
     local
       SymbolTable st;
       list<Element> flat_el;
-      Class sections;
 
     case (_, _, _)
       equation
@@ -346,8 +344,6 @@ algorithm
     local
       list<Element> accum_el;
       SymbolTable st;
-      Absyn.Path name;
-      Component comp;
 
     // Try to add the component to the symbol table.
     case (_, _, _, _, st, accum_el)

@@ -3116,7 +3116,7 @@ protected function renameComponentInElementArg
 algorithm
   outElementArg := match (inElementArg1,inComponentRef2,inComponentRef3)
     local
-      Absyn.ComponentRef cr_1,cr,old_comp,new_comp;
+      Absyn.ComponentRef old_comp,new_comp;
       Absyn.Path p,p_1;
       Absyn.Exp exp_1,exp;
       list<Absyn.ElementArg> element_args_1,element_args;
@@ -6535,13 +6535,11 @@ algorithm
   outAbsynElementArgLst:=
   matchcontinue (inAbsynElementArgLst,inPath,inModification)
     local
-      Absyn.ComponentRef cref,cr1,cr2,cr;
       Absyn.Modification mod;
       Option<Absyn.Modification> mod2;
       Boolean f;
       Absyn.Each each_;
       String name,submodident,name1,name2;
-      list<Absyn.Subscript> idx;
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args_1,args,res,submods;
       Absyn.ElementArg m;
@@ -6721,7 +6719,6 @@ algorithm
     local
       Boolean f;
       Absyn.Each each_;
-      Absyn.ComponentRef cr1,cr2,name;
       Absyn.Path p1,p2;
       Absyn.Modification mod,res;
       Option<String> cmt;
@@ -6804,7 +6801,6 @@ algorithm
       String name;
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args;
-      Absyn.ComponentRef cr;
       Absyn.Path p;
     case ({}) then {};
     case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = Absyn.IDENT(name = name),modification = NONE(),comment = cmt) :: rest))
@@ -9639,13 +9635,12 @@ protected function updateProgram2
 algorithm
   outProgram := matchcontinue (classes,w,inProgram2)
     local
-      Absyn.Program prg,newp,p2,newp_1, p1;
+      Absyn.Program prg,newp,p2,newp_1;
       Absyn.Class c1;
       String name;
-      Absyn.Path path;
       list<Absyn.Class> c2,c3;
       Absyn.Within w2;
-      Absyn.TimeStamp ts1,ts2;
+      Absyn.TimeStamp ts2;
 
     case ({},_,prg) then prg;
 
@@ -10798,7 +10793,6 @@ algorithm
     local
       list<Absyn.ElementArg> neweltargs,oldrest,eltargs,eltargs_1;
       Absyn.ElementArg mod;
-      Absyn.ComponentRef cr;
       Absyn.Annotation a;
       Absyn.Path p;
     case (Absyn.ANNOTATION(elementArgs = ((mod as Absyn.MODIFICATION(path = p)) :: oldrest)),Absyn.ANNOTATION(elementArgs = eltargs))
@@ -10830,7 +10824,6 @@ algorithm
   outAbsynElementArgLst := matchcontinue (inAbsynElementArgLst,inPath)
     local
       String id1,id2;
-      Absyn.ComponentRef cr;
       Absyn.ElementArg m;
       list<Absyn.ElementArg> res,xs;
 
@@ -17977,7 +17970,7 @@ algorithm
   matchcontinue (inNamedArg)
     local
       list<Absyn.ElementArg> elts;
-      Absyn.ComponentRef cr_1,cr;
+      Absyn.ComponentRef cr;
       Absyn.ElementArg res;
       String id;
       Absyn.Exp c,e;
@@ -18539,7 +18532,6 @@ algorithm
     local
       Boolean f;
       Absyn.Each e;
-      Absyn.ComponentRef cr,cr1;
       Option<Absyn.Modification> mod,mod1;
       Option<String> cmt;
       Absyn.Info info;
@@ -20081,10 +20073,9 @@ algorithm
   outBaseClassNames :=
   matchcontinue (inClassName,inProgram)
     local
-      Absyn.Path p_class,name,extpath;
+      Absyn.Path p_class;
       list<Absyn.Path> paths;
       Absyn.Class cdef;
-      list<Env.Frame> env;
       list<Absyn.ElementSpec> exts;
       Absyn.Program p;
 
@@ -20106,10 +20097,7 @@ protected function getBaseClassNameFromExtends
 algorithm
   outBaseClassPath := match (inElementSpec)
     local
-      Absyn.Path path_1,path;
-      list<Absyn.ElementArg> earg;
-      list<Env.Frame> env;
-      Option<Absyn.Annotation> annOpt;
+      Absyn.Path path;
 
     case (Absyn.EXTENDS(path = path)) then path;
   end match;

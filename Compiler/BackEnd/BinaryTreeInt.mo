@@ -190,8 +190,8 @@ public function treeAdd "function: treeAdd
 algorithm
   outBinTree := matchcontinue (inBinTree,inKey,inValue)
     local
-      Key key,rkey;
-      Value value,rval;
+      Key rkey;
+      Value rval;
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
       Option<TreeValue> optVal;

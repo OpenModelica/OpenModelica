@@ -1576,7 +1576,7 @@ algorithm
   help := match (inTopics)
     local
       Util.TranslatableContent desc;
-      list<String> debug_flags, rest_topics, strs;
+      list<String>  rest_topics, strs;
       String str,name,str1,str2,str3,str4,str5,str6,str7,str8;
       ConfigFlag config_flag;
       list<tuple<String,String>> topics;

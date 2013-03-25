@@ -112,7 +112,6 @@ algorithm
     local
       array<NFInstTypes.Dimension> adims;
       list<NFInstTypes.Dimension> ldims;
-      list<String> dims_strl;
       String dims_str;
 
     case NFInstTypes.UNTYPED_COMPONENT(dimensions = adims)

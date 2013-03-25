@@ -120,13 +120,12 @@ protected function addElementRedeclarationsToEnv2
 algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
-      SCode.Ident cls_name, name;
+      SCode.Ident  name;
       Absyn.Info info;
       Absyn.Path env_path;
       list<Absyn.Path> ext_pathl;
       Env env;
-      Item base_item, item;
-      SCode.Element redecl;
+      Item  item;
 
     case (_, _)
       equation
@@ -239,22 +238,10 @@ public function processRedeclare
 algorithm
   outRedeclare := matchcontinue(inRedeclare, inEnv, inPrefix)
     local
-      SCode.Ident name;
-      SCode.Partial pp;
-      SCode.Encapsulated ep;
-      SCode.Prefixes prefixes;
-      Absyn.Path path;
-      SCode.Mod mod;
-      Option<SCode.Comment> cmt;
-      SCode.Restriction res;
-      Absyn.Info info;
-      SCode.Attributes attr;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.ArrayDim> ad;
 
       Item el_item, redecl_item;
       SCode.Element el;
-      Env cls_env, env;
+      Env cls_env;
 
    case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS(name = _)), _, _)
       equation
@@ -343,7 +330,6 @@ algorithm
       NFSCodeEnv.ClassType cls_ty;
       list<NFSCodeEnv.Redeclaration> redecls;
       Replacements repl;
-      Item item;
 
     // No redeclares!
     case ({}, _, _, _, _) then (inItem, inTypeEnv, {});
@@ -427,8 +413,6 @@ algorithm
       Item item;
       Absyn.Info info;
       list<Absyn.Path> bcl;
-      list<String> bcl_str;
-      Env env;
       tuple<Env, Replacements> envRpl;
 
     // Try to redeclare this element in the current scope.
@@ -477,12 +461,7 @@ protected function pushRedeclareIntoExtendsNoFail
 algorithm
   outEnv := matchcontinue(inName, inRedeclare, inEnv)
     local
-      SCode.Ident name, scope_name;
-      Item item;
-      Absyn.Info info;
       list<Absyn.Path> bcl;
-      list<String> bcl_str;
-      Env env;
       tuple<Env, Replacements> envRpl;
 
     case (_, _, _)

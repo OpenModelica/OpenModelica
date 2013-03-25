@@ -213,7 +213,7 @@ algorithm
   match(inExpandable, inUndeclaredName, inDeclared)
     local
       DAE.ComponentRef exp_name;
-      DAE.Type exp_ty, new_ty;
+      DAE.Type exp_ty;
       Face exp_face;
       ConnectorType exp_cty;
       ConnectorAttr exp_attr;

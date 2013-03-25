@@ -490,7 +490,7 @@ algorithm
     local
       Connector conn;
       Integer index, parent_id;
-      Node parent, node;
+      Node parent;
 
     // Found the root, return it.
     case (NODE(parent = parent_id), _)
@@ -568,7 +568,7 @@ algorithm
   outNodes := match(inRankCompare, inSet1, inSet2, inNodes)
     local
       Connector conn, conn2;
-      Integer parent, index, index2, rank, rank2;
+      Integer parent, index, index2, rank;
       Node set, set2;
       array<Node> nodes;
 
