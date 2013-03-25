@@ -1867,7 +1867,8 @@ public function valueStr "prints a Value to a string"
 algorithm
   str := match(v)
     local
-      String name; DAE.Type tp; Absyn.Import imp;
+      String name;
+      DAE.Type tp;
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism;
       SCode.Variability variability "variability";

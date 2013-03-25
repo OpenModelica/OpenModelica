@@ -18727,7 +18727,7 @@ algorithm
   outCache := matchcontinue (inCache,inEnv,inType)
     local
       Absyn.Path p1;
-      list<DAE.Var> vars, inputs, locals;
+      list<DAE.Var> vars;
       DAE.Type ty;
       DAE.EqualityConstraint eqCo;
       DAE.TypeSource src;

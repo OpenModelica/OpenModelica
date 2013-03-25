@@ -1065,7 +1065,11 @@ public function replaceCompEIwithRI
   output Infos outInfos;
 algorithm
   outInfos := matchcontinue(inInfos)
-    local Infos infos; Info info; Env env, denv; Element e,c,o; Absyn.TypeSpec ts;
+    local
+      Infos infos;
+      Env env, denv;
+      Element e,c,o;
+      Absyn.TypeSpec ts;
     // use the component from the redeclare
     case (_)
       equation

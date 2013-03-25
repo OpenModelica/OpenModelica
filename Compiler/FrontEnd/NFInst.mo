@@ -2187,7 +2187,7 @@ algorithm
       Env env;
       Entry entry;
       DAE.ComponentRef cref;
-      Boolean is_local, is_class, is_global;
+      Boolean   is_global;
       String name_str, env_str;
       Globals globals;
 
@@ -2698,7 +2698,6 @@ algorithm
       Entry entry;
       Env env;
       Class cls;
-      list<Element> inputs, outputs, locals;
       Function func;
       Boolean is_record;
       DAE.Type ty;

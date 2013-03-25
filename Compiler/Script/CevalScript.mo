@@ -865,7 +865,7 @@ protected function cevalInteractiveFunctions2
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,simflags,s1,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,

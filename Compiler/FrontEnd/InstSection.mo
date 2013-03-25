@@ -1394,7 +1394,7 @@ algorithm
       SCode.Initial initial_;
       DAE.ComponentRef cr;
       DAE.Type t;
-      String n; list<DAE.Var> vs;
+      list<DAE.Var> vs;
       DAE.Type tt;
       list<DAE.Exp> exps1,exps2;
       list<DAE.Type> tys;

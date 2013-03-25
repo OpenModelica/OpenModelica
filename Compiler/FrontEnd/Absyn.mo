@@ -5876,7 +5876,6 @@ public function isInitial
   output Boolean hasReinit;
 algorithm
   hasReinit := match(inExp)
-    local Exp e; Boolean b;
     case (CALL(function_ = CREF_IDENT("initial", _))) then true;
     case (CALL(function_ = CREF_FULLYQUALIFIED(CREF_IDENT("initial", _)))) then true;
     else then false;

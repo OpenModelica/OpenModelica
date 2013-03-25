@@ -424,7 +424,8 @@ algorithm
     local
       DAE.ComponentRef cr;
       list<DAE.Element> rest, els, elist;
-      DAE.Element e,v; String id;
+      DAE.Element v;
+      String id;
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
       Boolean isEmpty;

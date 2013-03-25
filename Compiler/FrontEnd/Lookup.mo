@@ -2000,8 +2000,6 @@ public function selectUpdatedEnv
   output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(inNewEnv, inOldEnv)
-    local Env.Env env;
-
     // return old if is top scope!
     case (_, _)
       equation
