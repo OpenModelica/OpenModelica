@@ -253,6 +253,12 @@ algorithm
   runningTestsuite := not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"");
 end getRunningTestsuite;
 
+public function getRunningWSMTestsuite
+  output Boolean runningTestsuite;
+algorithm
+  runningTestsuite := Flags.getConfigBool(Flags.RUNNING_WSM_TESTSUITE);
+end getRunningWSMTestsuite;
+
 public function getRunningTestsuiteFile
   output String tempFile "File containing a list of files created by running this test so rtest can remove them after";
 algorithm

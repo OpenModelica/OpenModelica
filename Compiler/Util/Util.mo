@@ -3661,8 +3661,21 @@ public function testsuiteFriendly "Testsuite friendly name (start after testsuit
   input String name;
   output String friendly;
 algorithm
-  friendly := testsuiteFriendly2(Config.getRunningTestsuite(),name);
+  friendly := matchcontinue(name)
+  local
+    String outStr;
+  case(_)
+     equation
+        true = Config.getRunningWSMTestsuite();
+        outStr = testsuiteFriendlyWSM(name);
+     then outStr;
+  case(_)
+    equation
+      outStr = testsuiteFriendly2(Config.getRunningTestsuite(),name);         
+    then outStr;
+  end matchcontinue;     
 end testsuiteFriendly;
+
 
 protected function testsuiteFriendly2 "Testsuite friendly name (start after testsuite/ or build/)"
   input Boolean cond;
@@ -3674,26 +3687,33 @@ algorithm
       Integer i;
       list<String> strs;
       String newName;
-
+    
     case (true,_)
       equation
         true = "Windows_NT" ==& System.os();
         // replace \\ with / for Windows.
-        newName = System.stringReplace(name, "\\", "/");
+        newName = System.stringReplace(name, "\\", "/"); 
         (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then
         friendly;
-
+    
     case (true,_)
       equation
         false = "Windows_NT" ==& System.os();
         (i,strs) = System.regex(name, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
         friendly = listGet(strs,i);
       then friendly;
-
+    
     else name;
   end matchcontinue;
 end testsuiteFriendly2;
+
+protected function testsuiteFriendlyWSM "This function is the special case for MathCore WSM"
+  input String name;
+  output String friendly;  
+algorithm
+  friendly:=System.basename(name);   
+end testsuiteFriendlyWSM;
 
 end Util;

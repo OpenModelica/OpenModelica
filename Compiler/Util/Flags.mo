@@ -773,6 +773,9 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
+constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(48, "wsm-testsuite",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Used when running the WSM testsuite."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -824,7 +827,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DUMP_TARGET,
   DELAY_BREAK_LOOP,
   TEARING_METHOD,
-  SCALARIZE_MINMAX
+  SCALARIZE_MINMAX,
+  RUNNING_WSM_TESTSUITE
 };
 
 public function new
