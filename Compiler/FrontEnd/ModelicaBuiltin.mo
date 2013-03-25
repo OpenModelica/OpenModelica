@@ -1866,7 +1866,6 @@ protected
   String [:] matches,matches2;
   String path, schema, str;
   Boolean isUri,isMatch:=false,isModelicaUri,isFileUri,isFileUriAbsolute;
-  Integer i := 0;
 algorithm
   isUri := regexBool(uri, "^[A-Za-z]*://");
   if isUri then
@@ -1893,8 +1892,7 @@ algorithm
           end if;
         else
           /* It is the first part of the name (Modelica.XXX) - look among the loaded classes for the name Modelica and use that path */
-          for f in libraries[:,1] loop
-            i := i + 1;
+          for i in 1:sum(1 for lib in libraries) loop
             if libraries[i,1] == matches2[2] then
               filename := libraries[i,2];
               isMatch := true;
@@ -1940,7 +1938,7 @@ end uriToFilename;
 function getLoadedLibraries
   output String [:,2] libraries;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 Returns a list of names of libraries and their path on the system, for example:
 <pre>{{\"Modelica\",\"/usr/lib/omlibrary/Modelica 3.2.1\"},{\"ModelicaServices\",\"/usr/lib/omlibrary/ModelicaServices 3.2.1\"}}</pre>
 </html>"));
