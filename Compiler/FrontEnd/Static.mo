@@ -292,6 +292,40 @@ algorithm
   (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
 
+public function elabExpInExpression "Like elabExp but casts PROP_TUPLE to a PROP"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp;
+  input Boolean inImplicit;
+  input Option<Interactive.SymbolTable> inST;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Option<Interactive.SymbolTable> st;
+algorithm
+  (outCache,outExp,outProperties,st) := elabExp(inCache,inEnv,inExp,inImplicit,inST,performVectorization,inPrefix,info);
+  (outExp,outProperties) := elabExpInExpression2(outExp,outProperties);
+end elabExpInExpression;
+
+protected function elabExpInExpression2
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outExp,outProperties) := match (inExp,inProperties)
+    local
+      DAE.Type ty;
+      DAE.Const c;
+    case (_,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = ty :: _), tupleConst = DAE.TUPLE_CONST(tupleConstLst = DAE.SINGLE_CONST(const = c) :: _)))
+      then (DAE.TSUB(inExp, 1, ty), DAE.PROP(ty,c));
+    else (inExp,inProperties);
+  end match;
+end elabExpInExpression2;
+
 public function checkAssignmentToInput
   input Absyn.Exp inExp;
   input DAE.Attributes inAttributes;
@@ -1210,33 +1244,9 @@ algorithm
         (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
         // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
-        (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
+        (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExpInExpression(cache, env_1, exp, impl, st, doVect, pre, info);
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
         const = Types.constAnd(expconst, iterconst);
-        fn_1 = Absyn.crefToPath(fn);
-        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
-        prop = DAE.PROP(expty, const);
-        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
-        (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
-        // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
-        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,reductionIters);
-      then
-        (cache,exp_1,prop,st);
-
-    // the freaking expression can be a function call returning a tuple!
-    case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
-        iters = listReverse(iters);
-        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
-        dims = listReverse(dims);
-        // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
-        (cache,exp_1,props,st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
-        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
-        DAE.PROP(expty, expconst) = Types.propTupleFirstProp(props);
-        const = Types.constAnd(expconst, iterconst);
-        exp_1 = DAE.TSUB(exp_1, 1, expty);
         fn_1 = Absyn.crefToPath(fn);
         (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
         prop = DAE.PROP(expty, const);
@@ -3647,7 +3657,7 @@ algorithm
     case (cache,env,{matexp},_,impl,pre,_)
       equation
         (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP(DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = eltp, dims = {d2}), dims = {d1}), c),_)
-          = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
+          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
         dim1 = Expression.dimensionSize(d1);
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
         newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
@@ -3660,7 +3670,7 @@ algorithm
     case (cache,env,{matexp},_,impl,pre,_)
       equation
         (cache,DAE.MATRIX(tp,i,mexpl),DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)),c),_)
-          = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
+          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
         dim1 = Expression.dimensionSize(d1);
         dim2 = Expression.dimensionSize(d2);
         dimMax = intMax(dim1, dim2);
@@ -3675,7 +3685,7 @@ algorithm
     case (cache,env,{matexp},_,impl,pre,_)
       equation
         (cache,exp_1,DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)), c),_)
-          = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
+          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
         newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
         tp = Types.simplifyType(newtp);
         exp = Expression.makeBuiltinCall("transpose", {exp_1}, tp);
