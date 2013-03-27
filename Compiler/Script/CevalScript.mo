@@ -920,6 +920,7 @@ algorithm
       BackendDAE.Shared shared;
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps;
+      list<tuple<Absyn.Path,list<String>>> uses;
 
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -2115,6 +2116,14 @@ algorithm
         files = List.sort(files,Util.strcmpBool);
         files = List.sortedUnique(files, stringEqual);
         v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      then
+        (cache,v,st);
+
+    case (cache,env,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        (absynClass as Absyn.CLASS(restriction = _)) = Interactive.getPathedClassInProgram(classpath, p);
+        uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
+        v = ValuesUtil.makeArray(List.map(uses,makeUsesArray));
       then
         (cache,v,st);
 
@@ -7257,5 +7266,24 @@ algorithm
     case ({}, str1, b, p) then {};
   end matchcontinue;
 end searchClassNames;
+
+protected function makeUsesArray
+  input tuple<Absyn.Path,list<String>> inTpl;
+  output Values.Value v;
+algorithm
+  v := match inTpl
+    local
+      Absyn.Path p;
+      String pstr,ver;
+    case ((p,{ver}))
+      equation
+        pstr = Absyn.pathString(p);
+      then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"makeUsesArray failed"});
+      then fail();
+  end match;
+end makeUsesArray;
 
 end CevalScript;

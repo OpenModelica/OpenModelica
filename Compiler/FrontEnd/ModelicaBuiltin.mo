@@ -2684,6 +2684,17 @@ annotation(
   preferredView="text");
 end getAvailableLibraries;
 
+function getUses
+  input TypeName pack;
+  output String[:,:] uses;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Returns the libraries used by the package {{\"Library1\",\"Version\"},{\"Library2\",\"Version\"}}.
+</html>"),
+  preferredView="text");
+end getUses;
+
 function getDerivedClassModifierNames "Returns the derived class modifier names.
   Example command:
   type Resistance = Real(final quantity=\"Resistance\",final unit=\"Ohm\");
