@@ -135,8 +135,8 @@ fix-svn-eol-style:
 fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
-SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/flattening/libraries/3rdParty/HumMod
-SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
+SOURCE_DIRS=$(SOURCE_DIRS_UTF8) "libraries/Modelica 2.2.2" testsuite/flattening/libraries/3rdParty/HumMod
+SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
