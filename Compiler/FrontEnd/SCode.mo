@@ -3971,8 +3971,10 @@ algorithm
   outInfo := match(inMod)
     local
       Absyn.Info info;
+      Element el;
 
     case MOD(info = info) then info;
+    case REDECL(element = el) then elementInfo(el);
     else Absyn.dummyInfo;
   end match;
 end getModifierInfo;

@@ -7720,6 +7720,7 @@ algorithm
       list<String> sl1,sl2;
       list<SCode.Enum> enumLst;
       list<SCode.Element> elementLst;
+      Absyn.Info info1, info2;
 
     //   Special cases for checking enumerations which can be represented differently
     case(oldCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), newCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
@@ -7748,7 +7749,10 @@ algorithm
       equation
       s1 = SCodeDump.printClassStr(oldCl);
       s2 = SCodeDump.printClassStr(newCl);
-      Error.addMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,{s1,s2});
+      info1 = SCode.elementInfo(oldCl);
+      info2 = SCode.elementInfo(newCl);
+      Error.addMultiSourceMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,
+        {s1, s2}, {info1, info2});
       //print(" *** error message added *** \n");
       then fail();
   end matchcontinue;
@@ -8967,7 +8971,7 @@ algorithm
         // Propagate and instantiate attributes.
         dae1 = propagateAttributes(dae1, inAttributes, inPrefixes, inInfo);
         (cache, dae_var_attr) = instDaeVariableAttributes(cache, env, inMod, ty, {});
-        attr = propagateAbSCDirection(vt, inAttributes, opt_attr);
+        attr = propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
         attr = SCode.removeAttributeDimensions(attr);
 
         // Attempt to set the correct type for array variable if splitArrays is
@@ -8986,7 +8990,7 @@ algorithm
         //        instead we check here if the modification is not the same
         //        as the one on inner
         checkModificationOnOuter(cache, env, ih, inPrefix, inName, cr, inMod,
-          vt, io, inImpl);
+          vt, io, inImpl, inInfo);
 
         // Set the source of this element.
         source = DAEUtil.createElementSource(inInfo, Env.getEnvPath(env),
@@ -9156,14 +9160,15 @@ protected function checkModificationOnOuter
   input SCode.Variability inVariability;
   input Absyn.InnerOuter inInnerOuter;
   input Boolean inImpl;
+  input Absyn.Info inInfo;
 algorithm
   _ := match(inCache, inEnv, inIH, inPrefix, inName, inCref, inMod,
-      inVariability, inInnerOuter, inImpl)
+      inVariability, inInnerOuter, inImpl, inInfo)
 
-    case (_, _, _, _, _, _, _, SCode.CONST(), _, _)
+    case (_, _, _, _, _, _, _, SCode.CONST(), _, _, _)
       then ();
 
-    case (_, _, _, _, _, _, _, SCode.PARAM(), _, _)
+    case (_, _, _, _, _, _, _, SCode.PARAM(), _, _, _)
       then ();
 
     else
@@ -9174,7 +9179,7 @@ algorithm
         //        instead we check here if the modification is not the same
         //        as the one on inner
         false = InnerOuter.modificationOnOuter(inCache, inEnv, inIH, inPrefix,
-          inName, inCref, inMod, inInnerOuter, inImpl);
+          inName, inCref, inMod, inInnerOuter, inImpl, inInfo);
       then
         ();
   end match;
@@ -13625,6 +13630,7 @@ algorithm
       list<DAE.Subscript> finst_dims;
       Absyn.Path path;
       DAE.Type tty;
+      Absyn.Info info;
 
     case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation
@@ -13703,7 +13709,8 @@ algorithm
       equation
         true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
-        Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {s}, info);
       then
         fail();
 
@@ -13776,6 +13783,7 @@ algorithm
       DAE.FunctionAttributes funcattr;
       DAE.TypeSource ts;
       String pstr;
+      Absyn.Info info;
 
     case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation
@@ -13843,7 +13851,8 @@ algorithm
     case (p,ClassInf.META_UNIONTYPE(_),_,_,_,_)
       equation
         pstr = Absyn.pathString(p);
-        Error.addMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr});
+        info = SCode.elementInfo(inClass);
+        Error.addSourceMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr}, info);
       then fail();
     /*------------------------*/
 
@@ -14552,196 +14561,6 @@ algorithm
       then (cache,NONE());
   end matchcontinue;
 end instDaeVariableAttributes;
-
-protected function instBoolBinding
-"function instBoolBinding
-  author: LP
-  instantiates a bool binding and retrieves the value.
-  FIXME: check the type of variable for the fixed because
-         there is a difference between parameters and variables."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Mod inMod;
-  input list<DAE.Var> varLst;
-  input list<Integer> inIntegerLst;
-  input String inString;
-  output Env.Cache outCache;
-  output Option<Boolean> outBooleanOption;
-algorithm
-  (outCache,outBooleanOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
-    local
-      DAE.Exp e;
-      Boolean result;
-      list<Env.Frame> env;
-      DAE.Mod mod;
-      list<Integer> index_list;
-      String bind_name;
-      Env.Cache cache;
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod,varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), Ceval.NO_MSG());
-      then
-        (cache,SOME(result));
-    /* Non constant expression return NONE() */
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst,DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        NONE() = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        Error.addMessage(Error.TYPE_ERROR, {bind_name,"Boolean"});
-      then
-        fail();
-  end matchcontinue;
-end instBoolBinding;
-
-protected function instRealBinding
-"function: instRealBinding
-  author: LP
-  instantiates a real binding and retrieves the value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Mod inMod;
-  input list<DAE.Var> varLst;
-  input list<Integer> inIntegerLst;
-  input String inString;
-  output Env.Cache outCache;
-  output Option<Real> outRealOption;
-algorithm
-  (outCache,outRealOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
-    local
-      DAE.Exp e;
-      Real result;
-      list<Env.Frame> env;
-      DAE.Mod mod;
-      list<Integer> index_list;
-      String bind_name;
-      Env.Cache cache;
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), Ceval.NO_MSG());
-      then
-        (cache,SOME(result));
-    /* non constant expression, return NONE() */
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        NONE() = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        Error.addMessage(Error.TYPE_ERROR, {bind_name,"Real"});
-      then
-        fail();
-  end matchcontinue;
-end instRealBinding;
-
-protected function instIntBinding
-"function: instIntBinding
-  author: LP
-  instantiates an int binding and retrieves the value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Mod inMod;
-  input list<DAE.Var> varLst;
-  input list<Integer> inIntegerLst;
-  input String inString;
-  output Env.Cache outCache;
-  output Option<Integer> outIntegerOption;
-algorithm
-  (outCache,outIntegerOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
-    local
-      DAE.Exp e;
-      Integer result;
-      list<Env.Frame> env;
-      DAE.Mod mod;
-      list<Integer> index_list;
-      String bind_name;
-      Env.Cache cache;
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
-        (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false,NONE(), Ceval.NO_MSG());
-      then
-        (cache,SOME(result));
-    /* got non-constant expression, return NONE() */
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        NONE() = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        Error.addMessage(Error.TYPE_ERROR, {bind_name,"Integer"});
-      then
-        fail();
-  end matchcontinue;
-end instIntBinding;
-
-protected function instStringBinding
-"function: instStringBinding
-  author: LP
-  instantiates a string binding and retrieves the value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Mod inMod;
-  input list<DAE.Var> varLst;
-  input list<Integer> inIntegerLst;
-  input String inString;
-  output Env.Cache outCache;
-  output Option<String> outStringOption;
-algorithm
-  (outCache,outStringOption) :=
-  matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
-    local
-      DAE.Exp e;
-      String result,bind_name;
-      list<Env.Frame> env;
-      DAE.Mod mod;
-      list<Integer> index_list;
-      Env.Cache cache;
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
-        (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false,NONE(), Ceval.NO_MSG());
-      then
-        (cache,SOME(result));
-    /* Non constant expression return NONE() */
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        NONE() = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
-      then
-        (cache,NONE());
-    case (cache,env,mod,varLst,index_list,bind_name)
-      equation
-        Error.addMessage(Error.TYPE_ERROR, {bind_name,"String"});
-      then
-        fail();
-  end matchcontinue;
-end instStringBinding;
 
 protected function instEnumerationBinding
 "function: instEnumerationBinding
@@ -17032,18 +16851,19 @@ protected function propagateAbSCDirection
   input SCode.Variability inVariability;
   input SCode.Attributes inAttributes;
   input Option<SCode.Attributes> inClassAttributes;
+  input Absyn.Info inInfo;
   output SCode.Attributes outAttributes;
 algorithm
-  outAttributes := match(inVariability, inAttributes, inClassAttributes)
+  outAttributes := match(inVariability, inAttributes, inClassAttributes, inInfo)
     local
       Absyn.Direction dir;
 
-    case (SCode.CONST(), _, _) then inAttributes;
-    case (SCode.PARAM(), _, _) then inAttributes;
+    case (SCode.CONST(), _, _, _) then inAttributes;
+    case (SCode.PARAM(), _, _, _) then inAttributes;
     else
       equation
         SCode.ATTR(direction = dir) = inAttributes;
-        dir = propagateAbSCDirection2(dir, inClassAttributes);
+        dir = propagateAbSCDirection2(dir, inClassAttributes, inInfo);
       then
         SCode.setAttributesDirection(inAttributes, dir);
   end match;
@@ -17054,24 +16874,29 @@ Author BZ 2008-05
 This function merged derived SCode.Attributes with the current input SCode.Attributes."
   input Absyn.Direction v1;
   input Option<SCode.Attributes> optDerAttr;
+  input Absyn.Info inInfo;
   output Absyn.Direction v3;
 algorithm
-  v3 := matchcontinue(v1,optDerAttr)
-    local Absyn.Direction v2;
-    case (_,NONE()) then v1;
-    case(Absyn.BIDIR(),SOME(SCode.ATTR(direction=v2))) then v2;
-    case (_,SOME(SCode.ATTR(direction=Absyn.BIDIR()))) then v1;
-    case(_,SOME(SCode.ATTR(direction=v2)))
+  v3 := match(v1, optDerAttr, inInfo)
+    local
+      Absyn.Direction v2;
+
+    case (_,NONE(), _) then v1;
+    case(Absyn.BIDIR(),SOME(SCode.ATTR(direction=v2)), _) then v2;
+    case (_,SOME(SCode.ATTR(direction=Absyn.BIDIR())), _) then v1;
+    case(_,SOME(SCode.ATTR(direction=v2)), _)
       equation
         equality(v1 = v2);
       then v1;
-    case(_,_)
+
+    else
       equation
         print(" failure in propagateAbSCDirection2, Absyn.DIRECTION mismatch");
-        Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {"",""});
+        Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {"",""}, inInfo);
       then
         fail();
-  end matchcontinue;
+
+  end match;
 end propagateAbSCDirection2;
 
 protected function makeCrefBaseType
@@ -18380,13 +18205,16 @@ algorithm
       list<DAE.Exp> lhss;
       list<String> unbound;
       Boolean b,b1,b2;
-      Absyn.Info info;
       DAE.Else else_;
       list<DAE.Statement> stmts;
+      Absyn.Info info;
+
     case (_,_,(true,_,_)) then inUnbound;
     case (_,_,(false,true,_))
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Inst.checkFunctionDefUseStmt failed"});
+        info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"Inst.checkFunctionDefUseStmt failed"}, info);
       then fail();
     case (DAE.STMT_ASSIGN(exp1=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
@@ -18481,7 +18309,8 @@ algorithm
       equation
         str = DAEDump.ppStatementStr(inStmt);
         str = "Inst.checkFunctionDefUseStmt failed: " +& str;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end match;
 end checkFunctionDefUseStmt;

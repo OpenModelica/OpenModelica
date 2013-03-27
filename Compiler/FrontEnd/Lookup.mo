@@ -1854,14 +1854,16 @@ algorithm
       DAE.Type t,ty;
       list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
-      SCode.Element cdef;
+      SCode.Element cdef, comp;
       Env.Cache cache;
+      Absyn.Info info;
 
     case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
 
-    case (cache,Env.VAR(var = _),env,id)
+    case (cache,Env.VAR(var = comp),env,id)
       equation
-        Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
+        info = SCode.elementInfo(comp);
+        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
       then
         fail();
 
@@ -2486,14 +2488,18 @@ protected function lookupClassAssertClass
   output SCode.Element c;
 algorithm
   c := matchcontinue(item)
-    local String id;
+    local
+      String id;
+      SCode.Element comp;
+      Absyn.Info info;
 
     case(Env.CLASS(cls =  c)) then c;
 
     // Searching for class, found component
-    case(Env.VAR(instantiated = DAE.TYPES_VAR(name=id)))
+    case(Env.VAR(instantiated = DAE.TYPES_VAR(name=id), var = comp))
       equation
-        Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
+        info = SCode.elementInfo(comp);
+        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
       then
         fail();
   end matchcontinue;

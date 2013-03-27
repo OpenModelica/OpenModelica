@@ -5774,7 +5774,7 @@ algorithm
         (cache,DAE.ARRAY(_,_,expl),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         tp_1 = Types.arrayElementType(tp);
         dims = Types.getDimensionSizes(tp);
-        checkBuiltinVectorDims(e, env, dims,pre);
+        checkBuiltinVectorDims(e, env, dims, pre, info);
         expl_1 = flattenArray(expl);
         dim = listLength(expl_1);
         tp = DAE.T_ARRAY(tp_1, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
@@ -5811,24 +5811,26 @@ protected function checkBuiltinVectorDims
   input Env.Env env;
   input list<Integer> dimensions;
   input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(expr, env, dimensions,inPrefix)
+  _ := matchcontinue(expr, env, dimensions,inPrefix, inInfo)
     local
       Integer dims_larger_than_one;
       Prefix.Prefix pre;
       String arg_str, scope_str, dim_str, pre_str;
-    case (_, _, _,_)
+    case (_, _, _,_, _)
       equation
         dims_larger_than_one = countDimsLargerThanOne(dimensions);
         (dims_larger_than_one > 1) = false;
       then ();
-    case (_, _, _, pre)
+    case (_, _, _, pre, _)
       equation
         scope_str = Env.printEnvPathStr(env);
         arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
         dim_str = "[" +& stringDelimitList(List.map(dimensions, intString), ", ") +& "]";
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS, {scope_str, pre_str, dim_str, arg_str});
+        Error.addSourceMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS,
+          {scope_str, pre_str, dim_str, arg_str}, inInfo);
       then fail();
   end matchcontinue;
 end checkBuiltinVectorDims;
@@ -10757,7 +10759,7 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
         s = pre_str +& s;
-        Debug.bcall2(genWarning,Error.addMessage,Error.UNBOUND_PARAMETER_WARNING,{s});
+        Debug.bcall3(genWarning,Error.addSourceMessage,Error.UNBOUND_PARAMETER_WARNING,{s}, info);
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);

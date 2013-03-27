@@ -2155,6 +2155,8 @@ algorithm
   dae := matchcontinue(lhs,rhs,tp,source,initial_)
     local
       String s;
+      Absyn.Info info;
+
     // Records
     case(_,_,_,_,_)
       equation
@@ -2183,7 +2185,8 @@ algorithm
       equation
         false = Types.isRecord(tp);
         s = ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs);
-        Error.addMessage(Error.ILLEGAL_EQUATION_TYPE,{s});
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
   end matchcontinue;
 end instComplexEquation;

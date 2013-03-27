@@ -1118,22 +1118,6 @@ algorithm
   end match;
 end translateEitemlist;
 
-protected function checkForDuplicateElements
-"Verifies that the input is empty; else an error message is printed"
-  input list<String> duplicateNames;
-algorithm
-  _ := match duplicateNames
-    local
-      String msg;
-    case {} then ();
-    else
-      equation
-        msg = stringDelimitList(duplicateNames, ",");
-        Error.addMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,{msg});
-      then fail();
-  end match;
-end checkForDuplicateElements;
-
 // stefan
 protected function translateAnnotations
 "function: translateAnnotations
@@ -2019,8 +2003,7 @@ algorithm
 
     case _
       equation
-        true = boolNot(boolOr(Flags.isSet(Flags.SCODE_INST),
-                              Flags.isSet(Flags.SCODE_INST_SHORTCUT)));
+        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
       then
         (inElement, NONE());
 

@@ -1899,7 +1899,6 @@ algorithm
               break;
             end if;
           end for;
-          print(if not isMatch then "Could not resolve URI: " + uri + "\n" else "");
           if not isMatch then
             print("Could not resolve URI: " + uri + "\n");
             filename := "";

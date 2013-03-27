@@ -2534,6 +2534,7 @@ algorithm
       DAE.ElementSource source "the element origin";
       list<list<DAE.ComponentRef>> crefslist;
       Boolean b;
+      Absyn.Info info;
 
     case({},acc) then acc;
 
@@ -2595,7 +2596,8 @@ algorithm
     case(el::_,acc)
       equation
         msg = "- DAEUtil.verifyWhenEquationStatements failed on: " +& DAEDump.dumpElementsStr({el});
-        Error.addMessage(Error.INTERNAL_ERROR,{msg});
+        info = getElementSourceFileInfo(getElementSource(el));
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{msg}, info);
       then
         fail();
   end match;
@@ -3367,6 +3369,8 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       DAE.Type ty,ty1,ty2;
       String str;
+      Absyn.Info info;
+
     // normal equation
     case(DAE.EQUATION(e1,e2,_))
       equation
@@ -3439,7 +3443,8 @@ algorithm
     case(eq)
       equation
         str = "- DAEUtil.makeEquationToResidualExp failed to transform equation: " +& DAEDump.dumpEquationStr(eq) +& " to residual form!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        info = getElementSourceFileInfo(getElementSource(eq));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end matchcontinue;
 end makeEquationToResidualExp;
@@ -4051,6 +4056,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.ElementSource source "the origin of the element";
       Type_a extraArg;
+      Absyn.Info info;
 
     case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),_,extraArg)
       equation
@@ -4238,9 +4244,12 @@ algorithm
         (elt,extraArg);
 
     // Empty function call - stefan
-    case(DAE.NORETCALL(_, _, _),_,extraArg)
+    case(DAE.NORETCALL(source = source),_,extraArg)
       equation
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
+        info = getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+          {"Empty function call in equations",
+           "Move the function calls to appropriate algorithm section"}, info);
       then
         fail();
 
@@ -6683,5 +6692,37 @@ algorithm
       then fail();
   end match;
 end getElementSource;
+
+public function getStatementSource
+  "Returns the element source associated with a statement."
+  input DAE.Statement inStatement;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match(inStatement)
+    local
+      DAE.ElementSource source;
+
+    case DAE.STMT_ASSIGN(source = source) then source;
+    case DAE.STMT_TUPLE_ASSIGN(source = source) then source;
+    case DAE.STMT_ASSIGN_ARR(source = source) then source;
+    case DAE.STMT_IF(source = source) then source;
+    case DAE.STMT_FOR(source = source) then source;
+    case DAE.STMT_PARFOR(source = source) then source;
+    case DAE.STMT_WHILE(source = source) then source;
+    case DAE.STMT_WHEN(source = source) then source;
+    case DAE.STMT_ASSERT(source = source) then source;
+    case DAE.STMT_TERMINATE(source = source) then source;
+    case DAE.STMT_REINIT(source = source) then source;
+    case DAE.STMT_NORETCALL(source = source) then source;
+    case DAE.STMT_RETURN(source = source) then source;
+    case DAE.STMT_BREAK(source = source) then source;
+    case DAE.STMT_ARRAY_INIT(source = source) then source;
+    case DAE.STMT_FAILURE(source = source) then source;
+    case DAE.STMT_TRY(source = source) then source;
+    case DAE.STMT_CATCH(source = source) then source;
+    case DAE.STMT_THROW(source = source) then source;
+
+  end match;
+end getStatementSource;
 
 end DAEUtil;

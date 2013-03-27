@@ -434,7 +434,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), tb, eib, fb, _)
       equation
         (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
-        else_ = makeElse(eib, fb);
+        else_ = makeElse(eib, fb, source);
       then
         {DAE.STMT_IF(e, tb, else_, source)};
     case (e, DAE.PROP(type_ = t), _, _, _, _)
@@ -525,12 +525,12 @@ end optimizeElseIf;
 
 protected function makeElse "function: makeElse
   This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
-  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;
+  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTuple;
   input list<Statement> inStatementLst;
+  input DAE.ElementSource inSource;
   output Else outElse;
 algorithm
-  outElse:=
-  matchcontinue (inTplExpExpTypesPropertiesStatementLstLst, inStatementLst)
+  outElse := matchcontinue(inTuple, inStatementLst, inSource)
     local
       list<Statement> fb, b;
       Else else_;
@@ -538,21 +538,24 @@ algorithm
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> xs;
       Ident e_str, t_str;
       DAE.Type t;
-    case ({}, {}) then DAE.NOELSE();  /* This removes empty else branches */
-    case ({}, fb) then DAE.ELSE(fb);
-    case (((DAE.BCONST(true), DAE.PROP(type_ = t), b) :: xs), fb) then DAE.ELSE(b);
-    case (((DAE.BCONST(false), DAE.PROP(type_ = t), b) :: xs), fb) then makeElse(xs, fb);
-    case (((e, DAE.PROP(type_ = t), b) :: xs), fb)
+      Absyn.Info info;
+
+    case ({}, {}, _) then DAE.NOELSE();  /* This removes empty else branches */
+    case ({}, fb, _) then DAE.ELSE(fb);
+    case (((DAE.BCONST(true), DAE.PROP(type_ = t), b) :: xs), fb, _) then DAE.ELSE(b);
+    case (((DAE.BCONST(false), DAE.PROP(type_ = t), b) :: xs), fb, _) then makeElse(xs, fb, inSource);
+    case (((e, DAE.PROP(type_ = t), b) :: xs), fb, _)
       equation
         (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
-        else_ = makeElse(xs, fb);
+        else_ = makeElse(xs, fb, inSource);
       then
         DAE.ELSEIF(e, b, else_);
-    case (((e, DAE.PROP(type_ = t), _) :: _), _)
+    case (((e, DAE.PROP(type_ = t), _) :: _), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str});
+        info = DAEUtil.getElementSourceFileInfo(inSource);
+        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, info);
       then
         fail();
   end matchcontinue;

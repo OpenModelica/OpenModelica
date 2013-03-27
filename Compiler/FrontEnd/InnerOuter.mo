@@ -1051,6 +1051,8 @@ algorithm
       String str,str2; DAE.ComponentRef cr; DAE.Element v;
       list<DAE.ComponentRef> crs;
       Absyn.InnerOuter io;
+      DAE.ElementSource source;
+      Absyn.Info info;
 
     case(DAE.VAR(componentRef=cr),innerVars)
       equation
@@ -1065,13 +1067,14 @@ algorithm
         // ?? adrpo: NOT USED! TODO! FIXME! str = ComponentReference.printComponentRefStr(cr);
         failExceptForCheck();
       then ();
-    case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
+    case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),innerVars)
       equation
         crs = List.map(innerVars,DAEUtil.varCref);
         {} = List.select1(crs, isInnerOuterMatch, cr);
         str2 = Dump.unparseInnerouterStr(io);
         str = ComponentReference.printComponentRefStr(cr);
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.MISSING_INNER_PREFIX, {str,str2}, info);
       then fail();
   end matchcontinue;
 end checkMissingInnerDecl2;
@@ -1272,21 +1275,24 @@ According to specification modifiers on outer elements is not allowed."
   input DAE.Mod inMod;
   input Absyn.InnerOuter io;
   input Boolean impl;
+  input Absyn.Info inInfo;
   output Boolean modd;
 algorithm
-  modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
-  local
-    String s1,s2,s;
-  // if we don't have the same modification on inner report error!
-  case(_,_,_,_,_,_,DAE.MOD(finalPrefix = _),Absyn.OUTER(),_)
-    equation
-      s1 = ComponentReference.printComponentRefStr(cr);
-      s2 = Mod.prettyPrintMod(inMod, 0);
-      s = s1 +&  " " +& s2;
-      Error.addMessage(Error.OUTER_MODIFICATION, {s});
-    then
-      true;
-  case(_,_,_,_,_,_,_,_,_) then false;
+  modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl,inInfo)
+    local
+      String s1,s2,s;
+    // if we don't have the same modification on inner report error!
+    case(_,_,_,_,_,_,DAE.MOD(finalPrefix = _),Absyn.OUTER(),_,_)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Mod.prettyPrintMod(inMod, 0);
+        s = s1 +&  " " +& s2;
+        Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, inInfo);
+      then
+        true;
+    
+    else false;
+
   end matchcontinue;
 end modificationOnOuter;
 

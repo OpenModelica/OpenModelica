@@ -118,6 +118,7 @@ algorithm
       Env.Cache cache;
       SymbolTable st;
       Boolean partialPrefix;
+      DAE.ElementSource src;
 
     // The DAE.FUNCTION structure might contain an optional function derivative
     // mapping which is why functions below is a list. We only evaluate the
@@ -126,11 +127,12 @@ algorithm
         path = p,
         functions = func :: _,
         type_ = ty,
-        partialPrefix = false), _, st)
+        partialPrefix = false,
+        source = src), _, st)
       equation
         func_name = Absyn.pathString(p);
         (cache, result, st) = evaluateFunctionDefinition(inCache, inEnv, func_name,
-          func, ty, inFunctionArguments, st);
+          func, ty, inFunctionArguments, src, st);
       then
         (cache, result, st);
 
@@ -155,13 +157,14 @@ protected function evaluateFunctionDefinition
   input DAE.FunctionDefinition inFunc;
   input DAE.Type inFuncType;
   input list<Values.Value> inFuncArgs;
+  input DAE.ElementSource inSource;
   input SymbolTable inST;
   output Env.Cache outCache;
   output Values.Value outResult;
   output SymbolTable outST;
 algorithm
   (outCache, outResult, outST) :=
-  matchcontinue(inCache, inEnv, inFuncName, inFunc, inFuncType, inFuncArgs, inST)
+  matchcontinue(inCache, inEnv, inFuncName, inFunc, inFuncType, inFuncArgs, inSource, inST)
     local
       list<DAE.Element> body;
       list<DAE.Element> vars, output_vars;
@@ -175,7 +178,7 @@ algorithm
       list<DAE.ExtArg> ext_fun_args;
       DAE.ExtArg ext_fun_ret;
 
-    case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, st)
+    case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, _, st)
       equation
         // Split the definition into function variables and statements.
         (vars, body) = List.splitOnFirstMatch(body, DAEUtil.isNotVar);
@@ -188,7 +191,7 @@ algorithm
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
         func_params = pairFuncParamsWithArgs(vars, inFuncArgs);
-        func_params = sortFunctionVarsByDependency(func_params);
+        func_params = sortFunctionVarsByDependency(func_params, inSource);
 
         // Create an environment for the function and add all function variables.
         (cache, env, st) =
@@ -205,7 +208,7 @@ algorithm
     case (_, _, _, DAE.FUNCTION_EXT(body = body, externalDecl =
         DAE.EXTERNALDECL(name = ext_fun_name,
                          args = ext_fun_args,
-                         returnArg = ext_fun_ret)), _, _, st)
+                         returnArg = ext_fun_ret)), _, _, _, st)
       equation
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.
@@ -219,7 +222,7 @@ algorithm
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
         func_params = pairFuncParamsWithArgs(vars, inFuncArgs);
-        func_params = sortFunctionVarsByDependency(func_params);
+        func_params = sortFunctionVarsByDependency(func_params, inSource);
 
         // Create an environment for the function and add all function variables.
         (cache, env, st) =
@@ -2591,6 +2594,7 @@ protected function sortFunctionVarsByDependency
   the list of variables so that any dependencies to a variable will be before
   the variable in resulting list."
   input list<FunctionVar> inFuncVars;
+  input DAE.ElementSource inSource;
   output list<FunctionVar> outFuncVars;
 protected
   list<tuple<FunctionVar, list<FunctionVar>>> cycles;
@@ -2598,7 +2602,7 @@ algorithm
   (outFuncVars, cycles) := Graph.topologicalSort(
     Graph.buildGraph(inFuncVars, getElementDependencies, inFuncVars),
     isElementEqual);
-  checkCyclicalComponents(cycles);
+  checkCyclicalComponents(cycles, inSource);
 end sortFunctionVarsByDependency;
 
 protected function getElementDependencies
@@ -2802,8 +2806,9 @@ protected function checkCyclicalComponents
   not empty, print an error message and fail, since it's not allowed for
   constants or parameters to have cyclic dependencies."
   input list<tuple<FunctionVar, list<FunctionVar>>> inCycles;
+  input DAE.ElementSource inSource;
 algorithm
-  _ := match(inCycles)
+  _ := match(inCycles, inSource)
     local
       list<list<FunctionVar>> cycles;
       list<list<DAE.Element>> elements;
@@ -2811,8 +2816,9 @@ algorithm
       list<list<String>> names;
       list<String> cycles_strs;
       String cycles_str, scope_str;
+      Absyn.Info info;
 
-    case ({}) then ();
+    case ({}, _) then ();
 
     else
       equation
@@ -2825,7 +2831,8 @@ algorithm
         cycles_str = stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" +& cycles_str +& "}";
         scope_str = "";
-        Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
+        info = DAEUtil.getElementSourceFileInfo(inSource);
+        Error.addSourceMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str}, info);
       then
         fail();
 
