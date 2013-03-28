@@ -474,16 +474,18 @@ algorithm
 end liftArrayR;
 
 public function dimensionSizeExp
-  "Converts a dimension to an integer expression."
+  "Converts a dimension to an expression."
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
   exp := match(dim)
     local
       Integer i;
+      DAE.Exp e;
 
     case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
     case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
+    case DAE.DIM_EXP(exp = e) then e;
   end match;
 end dimensionSizeExp;
 
@@ -8285,7 +8287,7 @@ public function dimensionsKnownAndEqual
   input DAE.Dimension dim2;
   output Boolean res;
 algorithm
-  res := intEq(dimensionSize(dim1), dimensionSize(dim2));
+  res := expEqual(dimensionSizeExp(dim1), dimensionSizeExp(dim2));
 end dimensionsKnownAndEqual;
 
 public function dimensionKnown

@@ -7750,8 +7750,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let dimPart = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let resVar = tempDecl("modelica_integer", &varDecls /*BUFD*/)
-    let typeStr = '<%expTypeArray(exp.ty)%>'
-    let &preExp += '<%resVar%> = size_of_dimension_<%typeStr%>(<%expPart%>, <%dimPart%>);<%\n%>'
+    let &preExp += '<%resVar%> = size_of_dimension_base_array(<%expPart%>, <%dimPart%>);<%\n%>'
     resVar
   case SIZE(exp=CREF(__)) then
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
