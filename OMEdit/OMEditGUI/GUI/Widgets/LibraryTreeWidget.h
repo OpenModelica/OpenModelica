@@ -102,13 +102,13 @@ public:
   void setType(StringHandler::ModelicaClasses type);
   StringHandler::ModelicaClasses getType();
   void setName(QString name);
-  QString getName() const;
+  const QString& getName() const;
   void setParentName(QString parentName);
-  QString getParentName();
+  const QString& getParentName();
   void setNameStructure(QString nameStructure);
-  QString getNameStructure();
+  const QString& getNameStructure();
   void setFileName(QString fileName);
-  QString getFileName();
+  const QString& getFileName();
   void setReadOnly(bool readOnly);
   bool isReadOnly();
   void setSystemLibrary(bool systemLibrary);

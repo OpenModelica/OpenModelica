@@ -35,6 +35,9 @@
  *
  */
 
+#include <QTcpSocket>
+#include <QTcpServer>
+
 #include "SimulationDialog.h"
 
 /*!

@@ -34,6 +34,9 @@
  * RCS: $Id$
  *
  */
+
+#include <QNetworkReply>
+
 #include "ModelicaTextWidget.h"
 #include "ModelWidgetContainer.h"
 #include "LibraryTreeWidget.h"

@@ -328,7 +328,7 @@ void LibraryTreeNode::setName(QString name)
   mName = name;
 }
 
-QString LibraryTreeNode::getName() const
+const QString& LibraryTreeNode::getName() const
 {
   return mName;
 }
@@ -338,7 +338,7 @@ void LibraryTreeNode::setParentName(QString parentName)
   mParentName = parentName;
 }
 
-QString LibraryTreeNode::getParentName()
+const QString& LibraryTreeNode::getParentName()
 {
   return mParentName;
 }
@@ -348,7 +348,7 @@ void LibraryTreeNode::setNameStructure(QString nameStructure)
   mNameStructure = nameStructure;
 }
 
-QString LibraryTreeNode::getNameStructure()
+const QString& LibraryTreeNode::getNameStructure()
 {
   return mNameStructure;
 }
@@ -367,7 +367,7 @@ void LibraryTreeNode::setFileName(QString fileName)
   }
 }
 
-QString LibraryTreeNode::getFileName()
+const QString& LibraryTreeNode::getFileName()
 {
   return mFileName;
 }

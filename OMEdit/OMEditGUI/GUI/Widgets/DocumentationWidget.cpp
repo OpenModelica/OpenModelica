@@ -35,6 +35,9 @@
  *
  */
 
+#include <QNetworkRequest>
+#include <QNetworkReply>
+
 #include "DocumentationWidget.h"
 
 //! @class DocumentationWidget
