@@ -49,7 +49,6 @@ TRANSLATIONS = Resources/nls/OMEdit_de.ts \
 
 TARGET = OMEdit
 TEMPLATE = app
-CONFIG += console
 
 # This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
 evil_hack_to_fool_lupdate {
