@@ -62,8 +62,8 @@ SOURCES += \
     ../OMSketch/Draw_Arrow.cpp \
     ../OMSketch/Draw_Arc.cpp \
     ../OMSketch/CustomDailog.cpp \
-    ../../OMEdit/OMEditGUI/StringHandler.cpp \
-    ../../OMEdit/OMEditGUI/Helper.cpp
+    ../../OMEdit/OMEditGUI/Util/StringHandler.cpp \
+    ../../OMEdit/OMEditGUI/Util/Helper.cpp
 
 HEADERS += \
     omc_communication.h \
@@ -143,8 +143,8 @@ HEADERS += \
     ../OMSketch/Draw_Arc.h \
     ../OMSketch/CustomDialog.h \
     ../OMSketch/basic.h \
-    ../../OMEdit/OMEditGUI/StringHandler.h \
-    ../../OMEdit/OMEditGUI/Helper.h
+    ../../OMEdit/OMEditGUI/Util/StringHandler.h \
+    ../../OMEdit/OMEditGUI/Util/Helper.h
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
