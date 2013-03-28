@@ -1018,6 +1018,7 @@ void GraphicsView::createActions()
   mpDeleteConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete Connection"), this);
   mpDeleteConnectionAction->setStatusTip(tr("Deletes the connection"));
   mpDeleteConnectionAction->setShortcut(QKeySequence::Delete);
+  mpDeleteConnectionAction->setDisabled(isSystemLibrary);
   // Actions for Components
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
@@ -2980,6 +2981,8 @@ void ModelWidgetContainer::saveModelWidget()
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
     return;
+  if (pModelWidget->getModelicaTextWidget()->isVisible())
+    pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
   mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
 
