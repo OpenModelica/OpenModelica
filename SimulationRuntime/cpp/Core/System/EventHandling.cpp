@@ -115,7 +115,7 @@ Returns true for a variable when it change value
 */
 bool EventHandling::change(double var,string key)
 {
-    return var && !pre(var,key) || !var && pre(var,key);
+    return var != pre(var, key);
 }
 
 void EventHandling::saveDiscreteVar(double var,string key)
@@ -124,7 +124,7 @@ void EventHandling::saveDiscreteVar(double var,string key)
 }
 bool EventHandling::changeDiscreteVar(double var,string key)
 {
-    return var && !_pre_discrete_vars[key] || !var && _pre_discrete_vars[key];
+    return var != _pre_discrete_vars[key];
 }
 
 /**
@@ -137,27 +137,35 @@ double EventHandling::sample(double start,double interval)
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
-bool EventHandling::IterateEventQueue(bool* events)
+bool EventHandling::IterateEventQueue(bool* conditions)
 {
     IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system= dynamic_cast<IEvent*>(_system);
     IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_system);
 
-  bool drestart=false;
-  bool crestart=true;
-  //store events before handled
-  int dimf = event_system->getDimZeroFunc();
-  bool* events_before = new bool[dimf];
-  memcpy(events_before,events, dimf*sizeof(bool));
-  //Handle all events
-  countinous_system->update();
-  event_system->saveDiscreteVars();
-  drestart= event_system->checkForDiscreteEvents();
-  event_system->checkConditions(0,true);
-  event_system->giveConditions(events);
-  //check if new events occured
-  crestart = !(std::equal (events, events+dimf,events_before));
-  return((drestart||crestart)); //returns true if new events occured
+    bool drestart=false;
+    bool crestart=true;        
+    
+    //store conditions before handled
+    int dimf = event_system->getDimZeroFunc(); 
+    bool* conditions_before = new bool[dimf];
+    memcpy(conditions_before,conditions, dimf*sizeof(bool));
+    //save discrete varibales
+    event_system->saveDiscreteVars(); // store values of discrete vars vor next check
+
+    //Handle all events
+    countinous_system->update();    
+  
+    //check if discrete variables changed
+    drestart= event_system->checkForDiscreteEvents();
+
+    //update all conditions    
+    event_system->checkConditions(0,true);
+    event_system->giveConditions(conditions);
+  
+    //check if new events occured   
+    crestart = !(std::equal (conditions, conditions+dimf,conditions_before));
+    return((drestart||crestart)); //returns true if new events occured
 }
 
 
@@ -179,43 +187,6 @@ void  EventHandling::addTimeEvents( event_times_type times)
         _time_events.insert(*iter);
    }
 
-}
-/**
-Checks if the discete variables are changed during the continous system is solved.
-pre_values values of discrete varibales before continous system is solved.
-next_values values of discrete varibales after continous system is solved.
-
-*/
-bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values)
-{
-
-    bool found=true;
-    found = (std::equal (next_values, next_values+size,pre_values));
-    if(!found)
-    {
-        //Calculate start index for iteration
-        int offset = cur_index * size;
-
-        if((num_values - offset) < 0 )
-            return false;
-
-        // calculate end index i_max  for iteration
-        int i_max;
-        if((offset+size) > num_values)
-        {
-            i_max = num_values - offset;
-        }
-        else
-        {
-            i_max = size;
-        }
-        //modify discrete variables with new values
-        for (int i = 0; i < i_max; i++)
-        {
-            *cur_values[i] = values[offset + i];
-        }
-    }
-    return found;
 }
 
 event_times_type EventHandling::makePeriodeEvents(double ts,double te,double interval,long index)

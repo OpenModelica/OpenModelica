@@ -46,20 +46,19 @@ public:
     //Handles  all events occured a the same time. Returns true if a second event iteration is needed
     bool IterateEventQueue(bool* events);
 
-  void saveDiscreteVar(double var,string key);
-   bool changeDiscreteVar(double var,string key);
+    void saveDiscreteVar(double var,string key); // I guess, this was used in a wrong way. it might be obsolete.
+    bool changeDiscreteVar(double var,string key); // I guess, this was used in a wrong way. it might be obsolete.
     void addTimeEvent(long index,double time);
     void addTimeEvents( event_times_type times);
      event_times_type makePeriodeEvents(double ts,double te,double ti,long index);
     ///returns the vector with all time events
      event_times_type& getTimeEvents();
     resetHelpVar_type  resetHelpVar;
-    bool CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values);
 private:
     //Stores all varibales occured before an event
     unordered_map<string,double> _pre_vars;
     //stores all eventes
-  unordered_map<string,double> _pre_discrete_vars;
+    unordered_map<string,double> _pre_discrete_vars; // i guess this was used in a wrong way. it might be obsolete.
     IMixedSystem* _system;
     //Helpvarsvector for discrete variables
     double* _h;
