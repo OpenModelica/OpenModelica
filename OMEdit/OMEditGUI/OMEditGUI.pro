@@ -84,7 +84,8 @@ SOURCES += main.cpp\
     GUI/Dialogs/ImportFMUDialog.cpp \
     GUI/Widgets/VariablesWidget.cpp \
     GUI/Dialogs/NotificationsDialog.cpp \
-    GUI/Dialogs/ShapePropertiesDialog.cpp
+    GUI/Dialogs/ShapePropertiesDialog.cpp \
+    Util/Utilities.cpp
 
 HEADERS  += Util/Helper.h \
     GUI/MainWindow.h \
@@ -114,7 +115,8 @@ HEADERS  += Util/Helper.h \
     GUI/Dialogs/ImportFMUDialog.h \
     GUI/Widgets/VariablesWidget.h \
     GUI/Dialogs/NotificationsDialog.h \
-    GUI/Dialogs/ShapePropertiesDialog.h
+    GUI/Dialogs/ShapePropertiesDialog.h \
+    Util/Utilities.h
 
 # Windows libraries and includes
 win32 {

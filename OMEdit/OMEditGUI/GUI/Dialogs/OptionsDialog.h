@@ -40,6 +40,7 @@
 
 #include "MainWindow.h"
 #include "Helper.h"
+#include "Utilities.h"
 
 class MainWindow;
 class GeneralSettingsPage;

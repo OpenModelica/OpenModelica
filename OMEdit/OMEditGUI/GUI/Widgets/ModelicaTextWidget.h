@@ -44,6 +44,7 @@
 
 #include "MainWindow.h"
 #include "Helper.h"
+#include "Utilities.h"
 
 class ModelWidget;
 class LineNumberArea;

@@ -35,7 +35,6 @@
  *
  */
 
-#include "MainWindow.h"
 #include "Helper.h"
 
 /* Global non-translated variables */
@@ -394,19 +393,4 @@ QString GUIMessages::getMessage(int type)
     default:
       return "";
   }
-}
-
-MdiArea::MdiArea(QWidget *pParent)
-  : QMdiArea(pParent)
-{
-  mpMainWindow = qobject_cast<MainWindow*>(pParent);
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setActivationOrder(QMdiArea::ActivationHistoryOrder);
-  setDocumentMode(true);
-}
-
-MainWindow* MdiArea::getMainWindow()
-{
-  return mpMainWindow;
 }

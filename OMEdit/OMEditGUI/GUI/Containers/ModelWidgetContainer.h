@@ -50,6 +50,7 @@
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
+#include "Utilities.h"
 #include "ModelicaTextWidget.h"
 
 class ModelWidget;
