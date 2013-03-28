@@ -1,3 +1,8 @@
+# @author Martin Sjölund <martin.sjolund@liu.se>
+#
+# RCS: $Id: Makefile.unix.in 13565 2012-10-23 01:07:41Z adeas31 $
+#
+
 .PHONY: install build $(NAME) always
 
 top_builddir=../../
@@ -5,7 +10,7 @@ builddir_bin=$(top_builddir)/build/bin/
 builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 resourcedir=./Resources/nls/
-
+  
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@

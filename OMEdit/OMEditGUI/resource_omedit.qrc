@@ -13,7 +13,6 @@
         <file>Resources/icons/OMS.bmp</file>
         <file>Resources/icons/open.png</file>
         <file>Resources/icons/paste.png</file>
-        <file>Resources/icons/plot.png</file>
         <file>Resources/icons/redo.png</file>
         <file>Resources/icons/rotateanticlockwise.png</file>
         <file>Resources/icons/rotateclockwise.png</file>
@@ -26,7 +25,7 @@
         <file>Resources/css/stylesheet.qss</file>
         <file>Resources/icons/check.png</file>
         <file>Resources/icons/rename.png</file>
-        <file>Resources/icons/zoom100.png</file>
+        <file>Resources/icons/zoomReset.png</file>
         <file>Resources/icons/zoomIn.png</file>
         <file>Resources/icons/zoomOut.png</file>
         <file>Resources/icons/vline.png</file>
@@ -40,9 +39,6 @@
         <file>Resources/icons/record-icon.png</file>
         <file>Resources/icons/class-icon.png</file>
         <file>Resources/icons/connector-icon.png</file>
-        <file>Resources/icons/omeditor_splash.png</file>
-        <file>Resources/icons/omeditor.png</file>
-        <file>Resources/icons/omedit.ico</file>
         <file>Resources/icons/branch-end.png</file>
         <file>Resources/icons/info-icon.png</file>
         <file>Resources/icons/ellipse-shape.png</file>
@@ -53,7 +49,6 @@
         <file>Resources/icons/search.png</file>
         <file>Resources/icons/next.png</file>
         <file>Resources/icons/previous.png</file>
-        <file>Resources/icons/exit.png</file>
         <file>Resources/icons/type-icon.png</file>
         <file>Resources/icons/bitmap-shape.png</file>
         <file>Resources/icons/import-omnotebook.png</file>
@@ -64,35 +59,65 @@
         <file>Resources/icons/shutdown.png</file>
         <file>Resources/icons/stop.png</file>
         <file>Resources/icons/omshell.svg</file>
-        <file>Resources/icons/brushstyle.png</file>
+        <file>Resources/icons/fillstyle.png</file>
         <file>Resources/icons/linestyle.png</file>
         <file>Resources/icons/modeltextoptions.png</file>
-        <file>Resources/icons/dashdotdotline.png</file>
-        <file>Resources/icons/dashdotline.png</file>
-        <file>Resources/icons/dashline.png</file>
-        <file>Resources/icons/dotline.png</file>
-        <file>Resources/icons/solidline.png</file>
-        <file>Resources/icons/backward.png</file>
-        <file>Resources/icons/cross.png</file>
-        <file>Resources/icons/crossdiag.png</file>
-        <file>Resources/icons/forward.png</file>
-        <file>Resources/icons/horizontal.png</file>
-        <file>Resources/icons/horizontalcylinder.png</file>
-        <file>Resources/icons/solid.png</file>
-        <file>Resources/icons/sphere.png</file>
-        <file>Resources/icons/vertical.png</file>
-        <file>Resources/icons/verticalcylinder.png</file>
+        <file>Resources/icons/line-dash.png</file>
+        <file>Resources/icons/line-dash-dot.png</file>
+        <file>Resources/icons/line-dash-dot-dot.png</file>
+        <file>Resources/icons/line-dot.png</file>
+        <file>Resources/icons/line-none.png</file>
+        <file>Resources/icons/line-solid.png</file>
+        <file>Resources/icons/arrow-end-fill.png</file>
+        <file>Resources/icons/arrow-end-open.png</file>
+        <file>Resources/icons/arrow-end-open-half.png</file>
+        <file>Resources/icons/arrow-none.png</file>
+        <file>Resources/icons/arrow-start-fill.png</file>
+        <file>Resources/icons/arrow-start-open.png</file>
+        <file>Resources/icons/arrow-start-open-half.png</file>
+        <file>Resources/icons/fill-backward.png</file>
+        <file>Resources/icons/fill-cross.png</file>
+        <file>Resources/icons/fill-cross-diagnol.png</file>
+        <file>Resources/icons/fill-forward.png</file>
+        <file>Resources/icons/fill-horizontal.png</file>
+        <file>Resources/icons/fill-horizontal-cylinder.png</file>
+        <file>Resources/icons/fill-none.png</file>
+        <file>Resources/icons/fill-solid.png</file>
+        <file>Resources/icons/fill-sphere.png</file>
+        <file>Resources/icons/fill-vertical.png</file>
+        <file>Resources/icons/fill-vertical-cylinder.png</file>
         <file>Resources/icons/omplot.png</file>
         <file>Resources/icons/plotparametricwindow.png</file>
         <file>Resources/icons/plotwindow.png</file>
-        <file>Resources/icons/preferences.png</file>
-        <file>Resources/icons/export-fmi.png</file>
-        <file>Resources/icons/import-fmi.png</file>
+        <file>Resources/icons/export-fmu.png</file>
+        <file>Resources/icons/import-fmu.png</file>
         <file>Resources/icons/libraries.png</file>
         <file>Resources/icons/erroricon.png</file>
         <file>Resources/icons/notificationicon.png</file>
         <file>Resources/icons/warningicon.png</file>
-        <file>Resources/icons/problems.png</file>
-        <file>Resources/icons/clearproblems.png</file>
+        <file>Resources/icons/messages.png</file>
+        <file>Resources/icons/clearmessages.png</file>
+        <file>Resources/icons/switch.png</file>
+        <file>Resources/icons/quit.png</file>
+        <file>Resources/icons/lock.png</file>
+        <file>Resources/icons/unlock.png</file>
+        <file>Resources/icons/omedit.ico</file>
+        <file>Resources/icons/omedit.png</file>
+        <file>Resources/icons/omedit_splashscreen.png</file>
+        <file>Resources/icons/modeling.png</file>
+        <file>Resources/icons/options.png</file>
+        <file>Resources/icons/general.png</file>
+        <file>Resources/icons/about-us.png</file>
+        <file>Resources/icons/flip-horizontal.png</file>
+        <file>Resources/icons/flip-vertical.png</file>
+        <file>Resources/icons/connect-mode.png</file>
+        <file>Resources/icons/export-xml.png</file>
+        <file>Resources/icons/clear.png</file>
+        <file>Resources/icons/optimization-icon.png</file>
+        <file>Resources/icons/refresh.png</file>
+        <file>Resources/icons/add-icon.png</file>
+        <file>Resources/icons/down.png</file>
+        <file>Resources/icons/up.png</file>
+        <file>Resources/icons/print.png</file>
     </qresource>
 </RCC>

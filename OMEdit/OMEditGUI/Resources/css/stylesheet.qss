@@ -1,7 +1,12 @@
+/*
+ * RCS: $Id$
+ */
+
 QMainWindow::separator {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
 }
+
 /* Library Widget Styles */
 QTreeWidget::branch {
     border-image: url(:/Resources/icons/vline.png) 0;
@@ -25,30 +30,31 @@ QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:ha
 QTreeWidget::item {
     height: 22px;
 }
-/* End of Library Widget Styles */
-QTreeWidget#LibrariesTree::branch, QTreeWidget#ProblemsTree::branch {
+QTreeWidget#SystemLibrariesTree::branch, QTreeWidget#UserLibrariesTree::branch, QTreeWidget#MessagesTree::branch, QTreeWidget#SearchedItemsTree::branch {
     border-image: none;
     image : none;
 }
+/* End of Library Widget Styles */
 
-QTextEdit, QLineEdit {
+QLineEdit {
     border: 1px solid gray;
 }
-QPlainTextEdit#ModelicaEditor {
+
+QPlainTextEdit#ModelicaTextEdit {
     selection-background-color: #3399FF;
     selection-color: white;
 }
 
-QStatusBar#ProjectStatusBar {
+QStatusBar#ModelStatusBar {
     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
     border: 1px solid gray;
 }
-QStatusBar#ProjectStatusBar::item {
+QStatusBar#ModelStatusBar::item {
     margin-top: -5px;
     padding: 0px;
     border-left: 1px solid gray;
 }
-QStatusBar#ProjectStatusBar QLabel {
+QStatusBar#ModelStatusBar QLabel {
     margin: 0px;
     padding: 0px 0px 0px 1px;
 }
@@ -57,13 +63,9 @@ QToolButton#InteractiveSimulationButtons {
     padding: 3px;
 }
 
-QListWidget#RecentItemsList::item:hover {
+QListWidget#RecentItemsList::item:hover, QListWidget#LatestNewsList::item:hover{
     border: 1px solid gray;
     color: blue;
-}
-
-QWidget#DocumentationWidget {
-    border: 1px solid gray;
 }
 
 QTabBar::scroller { /* the width of the scroll buttons */
@@ -72,7 +74,7 @@ QTabBar::scroller { /* the width of the scroll buttons */
 QTabBar QToolButton { /* the scroll buttons are tool buttons */
     background-color: palette(window);
 }
-QPlainTextEdit#DocumentationLabel {
-    border: none;
-    background-color: palette(window);
+
+QToolButton#ShapePointsButton {
+    padding: 3px;
 }

@@ -1,8 +1,13 @@
+# @author Martin Sjölund <martin.sjolund@liu.se>
+#
+# RCS: $Id: OMEdit.config.in 13565 2012-10-23 01:07:41Z adeas31 $
+#
+
 QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += @CORBALIBS@ -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot
+LIBS += -L../../OMPlot/bin/ -lOMPlot @CORBALIBS@ -lqwt@with_qwt_suffix@
 INCLUDEPATH += @with_qwt@ @CORBA_QMAKE_INCLUDES@ ../../OMPlot/OMPlotGUI
 
 QMAKE_LFLAGS += @LDFLAGS@
