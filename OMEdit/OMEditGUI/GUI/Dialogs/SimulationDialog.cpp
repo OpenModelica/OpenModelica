@@ -228,6 +228,7 @@ void SimulationDialog::setUpForm()
   mpLogFinalSolutionOfInitializationCheckBox = new QCheckBox(tr("Final Initialization Solution"));
   mpLogFinalSolutionOfInitializationCheckBox->setToolTip(tr("final solution of the initialization"));
   mpLogStatsCheckBox = new QCheckBox(tr("Timer/Events/Solver Statistics"));
+  mpLogStatsCheckBox->setChecked(true);
   mpLogStatsCheckBox->setToolTip(tr("additional statistics about timer/events/solver"));
   mpLogUtilCheckBox = new QCheckBox(tr("Util"));
   mpLogUtilCheckBox->setToolTip(tr("outputs information about util"));
