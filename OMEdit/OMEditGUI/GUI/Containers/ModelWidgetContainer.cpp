@@ -1021,7 +1021,7 @@ void GraphicsView::createActions()
   mpDeleteConnectionAction->setDisabled(isSystemLibrary);
   // Actions for Components
   // Delete Action
-  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);

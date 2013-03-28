@@ -60,10 +60,6 @@ QSize Helper::buttonIconSize = QSize(16, 16);
 int Helper::tabWidth = 20;
 QString Helper::modelicaComponentFormat = "image/modelica-component";
 QString Helper::modelicaFileFormat = "text/uri-list";
-qreal Helper::globalDiagramXScale = 1.0;
-qreal Helper::globalDiagramYScale = 1.0;
-qreal Helper::globalIconXScale = 0.12;
-qreal Helper::globalIconYScale = 0.12;
 qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
 QString Helper::ModelicaSimulationMethods = "dassl,euler,rungekutta,inline-euler,inline-rungekutta,dasslwort,dasslSymJac";
@@ -111,7 +107,6 @@ QString Helper::chooseFile;
 QString Helper::chooseFiles;
 QString Helper::attributes;
 QString Helper::properties;
-QString Helper::connection;
 QString Helper::edit;
 QString Helper::save;
 QString Helper::chooseDirectory;
@@ -223,7 +218,6 @@ void Helper::initHelperVariables()
   Helper::chooseFiles = tr("Choose File(s)");
   Helper::attributes = tr("Attributes");
   Helper::properties = tr("Properties");
-  Helper::connection = tr("Connection");
   Helper::edit = tr("Edit");
   Helper::save = tr("Save");
   Helper::importFMU = tr("Import FMU");
@@ -353,8 +347,6 @@ QString GUIMessages::getMessage(int type)
       return tr("<br /><br />For normal users it is recommended to choose <b>Revert from previous</b>. You can also choose <b>Fix errors manually</b> if you want to fix them by your own.");
     case NO_OPENMODELICA_KEYWORDS:
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
-    case INCOMPATIBLE_CONNECTORS:
-      return tr("Incompatible types for the connectors.");
     case UNABLE_TO_LOAD_FILE:
       return tr("Error has occurred while loading the file <b>%1</b>. Unable to load the file.");
     case FILE_NOT_FOUND:
@@ -365,8 +357,6 @@ QString GUIMessages::getMessage(int type)
       return tr("Delete the existing class(es) before loading the file <b>Adeel</b>.");
     case REDEFINING_EXISTING_CLASSES:
       return tr("Redefining class(es) <b>%1</b> which already exists.");
-    case SEARCH_STRING_NOT_FOUND:
-      return tr("The search string <b>%1</b> is not found.");
     case CLOSE_INTERACTIVE_SIMULATION_TAB:
       return tr("Are you sure you want to close <b>%1</b> interactive simulation?");
     case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:

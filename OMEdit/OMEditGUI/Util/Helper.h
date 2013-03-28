@@ -75,10 +75,6 @@ public:
   static int tabWidth;
   static QString modelicaComponentFormat;
   static QString modelicaFileFormat;
-  static qreal globalDiagramXScale;
-  static qreal globalDiagramYScale;
-  static qreal globalIconXScale;
-  static qreal globalIconYScale;
   static qreal shapesStrokeWidth;
   static int headingFontSize;
   static QString ModelicaSimulationMethods;
@@ -121,7 +117,6 @@ public:
   static QString chooseFiles;
   static QString attributes;
   static QString properties;
-  static QString connection;
   static QString edit;
   static QString save;
   static QString chooseDirectory;
@@ -155,14 +150,6 @@ public:
   static QString loading;
   static QString question;
   static QString search;
-  static QString model;
-  static QString Class;
-  static QString connector;
-  static QString record;
-  static QString block;
-  static QString function;
-  static QString optimization;
-  static QString functionTip;
   static QString unloadClass;
   static QString unloadClassTip;
   static QString simulate;
@@ -245,13 +232,11 @@ public:
     ERROR_IN_MODELICA_TEXT,
     REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY,
     NO_OPENMODELICA_KEYWORDS,
-    INCOMPATIBLE_CONNECTORS,
     UNABLE_TO_LOAD_FILE,
     FILE_NOT_FOUND,
     UNABLE_TO_LOAD_MODEL,
     DELETE_AND_LOAD,
     REDEFINING_EXISTING_CLASSES,
-    SEARCH_STRING_NOT_FOUND,
     CLOSE_INTERACTIVE_SIMULATION_TAB,
     INFO_CLOSE_INTERACTIVE_SIMULATION_TAB,
     INTERACTIVE_SIMULATION_RUNNIG,
