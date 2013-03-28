@@ -366,7 +366,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
   // check if the view is readonly or not
-  if (mpModelWidget->getLibraryTreeNode()->isReadOnly())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
   {
     event->ignore();
     return;
@@ -2662,6 +2662,7 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
   mpModelSwitcherDialog = new QDialog(this, Qt::Popup);
   mpRecentModelsList = new QListWidget(this);
   mpRecentModelsList->setItemDelegate(new ItemDelegate(this));
+  mpRecentModelsList->setTextElideMode(Qt::ElideMiddle);
   mpRecentModelsList->setViewMode(QListView::ListMode);
   mpRecentModelsList->setMovement(QListView::Static);
   connect(mpRecentModelsList, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentModelWidget(QListWidgetItem*)));
