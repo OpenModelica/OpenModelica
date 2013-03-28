@@ -235,14 +235,36 @@ install (FILES "Include/Core/DataExchange/IHistory.h"
 
 
  #copy Utils/extension
- SET(HS Include/Core/Object/IObject.h Include/Core/Object/Object.h  Include/Core/Utils/extension/adaptable_factory.hpp  Include/Core/Utils/extension/common.hpp Include/Core/Utils/extension/convenience.hpp
-  Include/Core/Utils/extension/extension.hpp  Include/Core/Utils/extension/factory.hpp Include/Core/Utils/extension/factory_map.hpp Include/Core/Utils/extension/filesystem.hpp
-  Include/Core/Utils/extension/parameter.hpp Include/Core/Utils/extension/parameter_map.hpp Include/Core/Utils/extension/registry.hpp Include/Core/Utils/extension/shared_library.hpp
-  Include/Core/Utils/extension/type_map.hpp
- Include/Core/Utils/extension/impl/adaptable_factory.hpp Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
- Include/Core/Utils/extension/impl/create.hpp  Include/Core/Utils/extension/impl/create_func.hpp Include/Core/Utils/extension/impl/decl.hpp
- Include/Core/Utils/extension/impl/factory.hpp Include/Core/Utils/extension/impl/factory_map.hpp Include/Core/Utils/extension/impl/function.hpp Include/Core/Utils/extension/impl/library_impl.hpp
- Include/Core/Utils/extension/impl/shared_library.hpp Include/Core/Utils/extension/impl/typeinfo.hpp
-  Include/FMU/fmiModelFunctions.h Include/FMU/fmiModelTypes.h Include/FMU/fmu_model_interface.c Include/FMU/fmu_model_interface.h)
+ SET(HS Include/Core/Object/IObject.h
+        Include/Core/Object/Object.h
+        Include/Core/Utils/extension/adaptable_factory.hpp
+        Include/Core/Utils/extension/common.hpp
+        Include/Core/Utils/extension/convenience.hpp
+        Include/Core/Utils/extension/extension.hpp
+        Include/Core/Utils/extension/factory.hpp
+        Include/Core/Utils/extension/factory_map.hpp
+        Include/Core/Utils/extension/filesystem.hpp
+        Include/Core/Utils/extension/parameter.hpp
+        Include/Core/Utils/extension/parameter_map.hpp
+        Include/Core/Utils/extension/registry.hpp
+        Include/Core/Utils/extension/shared_library.hpp
+        Include/Core/Utils/extension/type_map.hpp
+        Include/Core/Utils/extension/impl/adaptable_factory.hpp
+        Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
+        Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
+        Include/Core/Utils/extension/impl/create.hpp
+        Include/Core/Utils/extension/impl/create_func.hpp
+        Include/Core/Utils/extension/impl/decl.hpp
+        Include/Core/Utils/extension/impl/factory.hpp
+        Include/Core/Utils/extension/impl/factory_map.hpp
+        Include/Core/Utils/extension/impl/function.hpp
+        Include/Core/Utils/extension/impl/library_impl.hpp
+        Include/Core/Utils/extension/impl/shared_library.hpp
+        Include/Core/Utils/extension/impl/typeinfo.hpp
+        Include/FMU/FMUGlobalSettings.h
+        Include/FMU/IFMUInterface.h
+        Include/FMU/FMULibInterface.cpp
+        Include/FMU/FMUWrapper.cpp
+        Include/FMU/FMUWrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
 

@@ -302,6 +302,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%resethelpvar(whenClauses,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
    <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
+   <%giveVariables(modelInfo)%>
    >>
 end simulationCppFile;
 /* <%saveConditions(simCode)%>*/
@@ -2363,6 +2364,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
 
     >>%>
+    bool getReal(int handle, double& value);
+    bool getInteger(int handle, int& value);
+    bool getBoolean(int handle, bool& value);
+
+    bool setReal(int handle, double& value);
+    bool setInteger(int handle, int& value);
+    bool setBoolean(int handle, bool& value);
 >>
 end generateMethodDeclarationCode;
 
@@ -7323,13 +7331,149 @@ end algStmtAssignArr;
 template indexSpecFromCref(ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                   Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to algStmtAssignArr.
-  Currently works only for CREF_IDENT."
-::=
+  Currently works only for CREF_IDENT." ::=
 match cr
 case CREF_IDENT(subscriptLst=subs as (_ :: _)) then
   daeExpCrefRhsIndexSpec(subs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
 end indexSpecFromCref;
 
+// generate Member Function get Real
+
+template giveVariables(ModelInfo modelInfo)
+ "Define Memeber Function getReal off Cpp Target"
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  bool <%lastIdentOfPath(name)%>::getReal(int handle, double& value)
+  {
+    switch(handle)
+    {
+    <%System.tmpTickReset(0)%>
+    <%vars.stateVars |> var hasindex i0 fromindex 0 => giveVariablesState(var, System.tmpTick(), "__z", i0) ;separator="\n"%>
+    <%vars.derivativeVars |> var hasindex i0 fromindex 0 => giveVariablesState(var, System.tmpTick(), "__zDot", i0) ;separator="\n"%>
+    <%vars.algVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+    <%vars.paramVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+
+  bool <%lastIdentOfPath(name)%>::getInteger(int handle, int& value)
+  {
+    switch(handle)
+    {
+    <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
+        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
+        ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+
+  bool <%lastIdentOfPath(name)%>::getBoolean(int handle, bool& value)
+  {
+    switch(handle)
+    {
+    <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
+        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
+        ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+  /*
+  <%System.tmpTickReset(0)%>
+  <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  */
+  bool <%lastIdentOfPath(name)%>::setReal(int handle, double& value)
+  {
+    switch(handle)
+    {
+    <%listAppend(vars.algVars, vars.paramVars) |>
+        var hasindex i0
+            fromindex intAdd(listLength(vars.stateVars), listLength(vars.derivativeVars))
+            => setVariablesDefault(var, i0) ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+
+  bool <%lastIdentOfPath(name)%>::setInteger(int handle, int& value)
+  {
+    switch(handle)
+    {
+    <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
+        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
+        ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+
+  bool <%lastIdentOfPath(name)%>::setBoolean(int handle, bool& value)
+  {
+    switch(handle)
+    {
+    <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
+        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
+        ;separator="\n"%>
+    default:
+      return false;
+    }
+  }
+  /*
+  <%System.tmpTickReset(0)%>
+  <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
+  */
+  >>
+end giveVariables;
+
+template giveVariablesState(SimVar simVar, Integer valueReference, String arrayName, Integer index)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%valueReference%> : value = <%arrayName%>[<%index%>]; return true; <%description%>
+  >>
+end giveVariablesState;
+
+template giveVariablesDefault(SimVar simVar, Integer valueReference)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%valueReference%> : value = <%cref(name)%>; return true; <%description%>
+  >>
+end giveVariablesDefault;
+
+template setVariablesDefault(SimVar simVar, Integer valueReference)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  let variablename = cref(name)
+  match causality
+    case INPUT() then 
+      <<
+      case <%valueReference%> : <%variablename%> = value; return true; <%description%>
+      >>
+    else
+      <<
+      //case <%valueReference%> : <%variablename%> = value; return true; // not an input
+      >>
+  end match
+end setVariablesDefault;
 
 
 end CodegenCpp;
+
