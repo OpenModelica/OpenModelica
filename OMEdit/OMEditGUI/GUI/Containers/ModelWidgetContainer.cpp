@@ -365,7 +365,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 //! @param event contains information of the drag operation.
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
-  // check if the view is readonly or not
+  // check if the class is system library
   if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
   {
     event->ignore();
@@ -402,8 +402,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
   }
   else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat))
   {
-    // check if the view is readonly or not
-    if (mpModelWidget->getLibraryTreeNode()->isReadOnly())
+    // check if the class is system library
+    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
     {
       event->ignore();
       return;
