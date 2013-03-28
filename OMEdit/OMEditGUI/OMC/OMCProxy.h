@@ -181,6 +181,7 @@ public:
   QList<QString> readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  bool isExperiment(QString className);
   QString getSimulationOptions(QString className);
   bool translateModelFMU(QString className);
   bool translateModelXML(QString className);

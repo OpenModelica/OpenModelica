@@ -1954,6 +1954,17 @@ QString OMCProxy::instantiateModel(QString className)
   \param className - the name of the class.
   \return the simulation options
   */
+bool OMCProxy::isExperiment(QString className)
+{
+  sendCommand("isExperiment(" + className + ")", true, className);
+  return StringHandler::unparseBool(getResult());
+}
+
+/*!
+  Returns the simulation options stored in the model.
+  \param className - the name of the class.
+  \return the simulation options
+  */
 QString OMCProxy::getSimulationOptions(QString className)
 {
   sendCommand("getSimulationOptions(" + className + ")", true, className);

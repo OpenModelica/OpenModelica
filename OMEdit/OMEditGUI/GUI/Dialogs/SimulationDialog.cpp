@@ -344,14 +344,18 @@ void SimulationDialog::initializeFields()
     mpSimulationHeading->setText(QString(Helper::simulation).append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationIntervalGroupBox->setDisabled(false);
   }
-  // get the simulation options....
-  QString result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeNode->getNameStructure());
-  result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
-  QStringList simulationOptionsList = StringHandler::getStrings(result);
-  // since we always get simulationOptions so just get the values from array
-  mpStartTimeTextBox->setText(simulationOptionsList.at(0));
-  mpStopTimeTextBox->setText(simulationOptionsList.at(1));
-  mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat(), 'f'));
+  // if the class has experiment annotation then read it.
+  if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeNode->getNameStructure()))
+  {
+    // get the simulation options....
+    QString result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeNode->getNameStructure());
+    result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
+    QStringList simulationOptionsList = StringHandler::getStrings(result);
+    // since we always get simulationOptions so just get the values from array
+    mpStartTimeTextBox->setText(simulationOptionsList.at(0));
+    mpStopTimeTextBox->setText(simulationOptionsList.at(1));
+    mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat()));
+  }
 }
 
 /*!
