@@ -103,6 +103,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpDocumentationWidget = new DocumentationWidget(this);
   // Create DocumentationWidget dock
   mpDocumentationDockWidget = new QDockWidget(tr("Documentation Browser"), this);
+  mpDocumentationDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   mpDocumentationDockWidget->setObjectName("Documentation");
   mpDocumentationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->setWidget(mpDocumentationWidget);
@@ -135,7 +136,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   //mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
-  mpModelWidgetContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   /*! @note register the RecentFile and FindText struct in the Qt's meta system
    * Don't remove/move the following line.
    * Because RecentFile struct should be registered before reading the recentFilesList section from the settings file.

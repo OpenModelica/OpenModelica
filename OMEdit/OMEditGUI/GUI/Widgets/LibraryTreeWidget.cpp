@@ -1222,8 +1222,7 @@ void LibraryTreeWidget::createNewModelicaClass()
   if (pLibraryTreeNode)
   {
     ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(mpMainWindow);
-    QComboBox *pParentClassComboBox = pModelicaClassDialog->getParentClassComboBox();
-    pParentClassComboBox->setEditText(pLibraryTreeNode->getNameStructure());
+    pModelicaClassDialog->getParentClassComboBox()->setEditText(pLibraryTreeNode->getNameStructure());
     pModelicaClassDialog->show();
   }
 }
