@@ -1346,24 +1346,27 @@ void MainWindow::hideProgressBar()
 
 void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
 {
+  Q_UNUSED(pActivatedWindow);
   ModelWidgetContainer *pModelWidgetContainer = qobject_cast<ModelWidgetContainer*>(sender());
-  if (!pActivatedWindow && pModelWidgetContainer)    // if last sub window is closed
+  // get list of opened Model Widgets
+  QList<QMdiSubWindow*> subWindowsList = mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder);
+  if (subWindowsList.isEmpty() && pModelWidgetContainer)
   {
     mpModelSwitcherToolButton->setEnabled(false);
     return;
   }
-  // get list of opened Model Widgets
-  QList<QMdiSubWindow*> subWindowsList = mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder);
-  mpModelSwitcherToolButton->setEnabled(true);
   int j = 0;
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
   {
     if (j >= MaxRecentFiles)
       break;
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-    mpModelSwitcherActions[j]->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
-    mpModelSwitcherActions[j]->setData(pModelWidget->getLibraryTreeNode()->getNameStructure());
-    mpModelSwitcherActions[j]->setVisible(true);
+    if (pModelWidget)
+    {
+      mpModelSwitcherActions[j]->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
+      mpModelSwitcherActions[j]->setData(pModelWidget->getLibraryTreeNode()->getNameStructure());
+      mpModelSwitcherActions[j]->setVisible(true);
+    }
     j++;
   }
   // if subwindowlist size is less than MaxRecentFiles then hide the remaining actions
