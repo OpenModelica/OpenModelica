@@ -183,15 +183,15 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpStatusBar->addPermanentWidget(mpProgressBar);
   mpStatusBar->addPermanentWidget(mpPointerXPositionLabel);
   mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
-  mpPrespectiveTabbar = new QTabBar;
-  mpPrespectiveTabbar->setDocumentMode(true);
-  mpPrespectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
-  mpPrespectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
-  mpPrespectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
-  mpPrespectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
-  mpPrespectiveTabbar->setTabEnabled(3, false);
-  connect(mpPrespectiveTabbar, SIGNAL(currentChanged(int)), SLOT(prespectiveTabChanged(int)));
-  mpStatusBar->addPermanentWidget(mpPrespectiveTabbar);
+  mpPerspectiveTabbar = new QTabBar;
+  mpPerspectiveTabbar->setDocumentMode(true);
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
+  mpPerspectiveTabbar->setTabEnabled(3, false);
+  connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
+  mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);
   QMetaObject::connectSlotsByName(this);
@@ -207,6 +207,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     if (mpMessagesWidget->getMessagesTreeWidget()->topLevelItemCount() > 0) restoreMessagesWidget = true;
     restoreState(settings.value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
+    perspectiveTabChanged(0);
   }
   // read last Open Directory location
   if (settings.contains("lastOpenDirectory"))
@@ -811,9 +812,9 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDo
 
 void MainWindow::switchToWelcomeView()
 {
-  mpPrespectiveTabbar->blockSignals(true);
-  mpPrespectiveTabbar->setCurrentIndex(0);
-  mpPrespectiveTabbar->blockSignals(false);
+  mpPerspectiveTabbar->blockSignals(true);
+  mpPerspectiveTabbar->setCurrentIndex(0);
+  mpPerspectiveTabbar->blockSignals(false);
   mpWelcomePageWidget->setVisible(true);
   mpModelWidgetContainer->setVisible(false);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
@@ -826,9 +827,9 @@ void MainWindow::switchToWelcomeView()
 
 void MainWindow::switchToModelingView()
 {
-  mpPrespectiveTabbar->blockSignals(true);
-  mpPrespectiveTabbar->setCurrentIndex(1);
-  mpPrespectiveTabbar->blockSignals(false);
+  mpPerspectiveTabbar->blockSignals(true);
+  mpPerspectiveTabbar->setCurrentIndex(1);
+  mpPerspectiveTabbar->blockSignals(false);
   mpWelcomePageWidget->setVisible(false);
   mpModelWidgetContainer->setVisible(true);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
@@ -841,9 +842,9 @@ void MainWindow::switchToModelingView()
 
 void MainWindow::switchToPlottingView()
 {
-  mpPrespectiveTabbar->blockSignals(true);
-  mpPrespectiveTabbar->setCurrentIndex(2);
-  mpPrespectiveTabbar->blockSignals(false);
+  mpPerspectiveTabbar->blockSignals(true);
+  mpPerspectiveTabbar->setCurrentIndex(2);
+  mpPerspectiveTabbar->blockSignals(false);
   mpWelcomePageWidget->setVisible(false);
   mpModelWidgetContainer->setVisible(false);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
@@ -859,9 +860,9 @@ void MainWindow::switchToPlottingView()
 
 void MainWindow::switchToInteractiveSimulationView()
 {
-  mpPrespectiveTabbar->blockSignals(true);
-  mpPrespectiveTabbar->setCurrentIndex(3);
-  mpPrespectiveTabbar->blockSignals(false);
+  mpPerspectiveTabbar->blockSignals(true);
+  mpPerspectiveTabbar->setCurrentIndex(3);
+  mpPerspectiveTabbar->blockSignals(false);
   mpWelcomePageWidget->setVisible(false);
   mpModelWidgetContainer->setVisible(false);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
@@ -1041,7 +1042,7 @@ void MainWindow::checkModel()
   }
 }
 
-void MainWindow::prespectiveTabChanged(int tabIndex)
+void MainWindow::perspectiveTabChanged(int tabIndex)
 {
   switch (tabIndex)
   {

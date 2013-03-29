@@ -173,7 +173,7 @@ private:
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
   Label *mpPointerYPositionLabel;
-  QTabBar *mpPrespectiveTabbar;
+  QTabBar *mpPerspectiveTabbar;
   // File Menu
   QAction *mpNewModelicaClassAction;
   QAction *mpOpenModelicaFileAction;
@@ -257,7 +257,7 @@ public slots:
   void zoomOut();
   void instantiatesModel();
   void checkModel();
-  void prespectiveTabChanged(int tabIndex);
+  void perspectiveTabChanged(int tabIndex);
   void openSimulationDialog();
   void openInteractiveSimulation();
   void showFindReplaceDialog();
