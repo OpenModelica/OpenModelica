@@ -591,7 +591,7 @@ void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode
     StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info.at(0));
     QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info.at(2);
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(name, parentName, lib, StringHandler::createTooltip(info, lib, lib), type,
-                                                               fileName, !isFileWritAble(fileName), true, false, this);
+                                                               fileName, !isFileWritAble(fileName), pLibraryTreeNode->isSaved(), false, this);
     pNewLibraryTreeNode->setSystemLibrary(pLibraryTreeNode->isSystemLibrary());
     nodes.append(pNewLibraryTreeNode);
     mLibraryTreeNodesList.append(pNewLibraryTreeNode);

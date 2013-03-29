@@ -2656,7 +2656,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     if (modelName.compare(parentName) == 0)
       parentName = "";
     LibraryTreeNode *pLibraryTreeNode;
-    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, pOMCProxy->getClassRestriction(modelName), parentName);
+    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, pOMCProxy->getClassRestriction(modelName), parentName, false);
     pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
   }
   return true;
