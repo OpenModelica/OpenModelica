@@ -141,7 +141,7 @@ ModelicaTextEdit::ModelicaTextEdit(ModelicaTextWidget *pParent)
   OptionsDialog *pOptionsDialog = mpModelicaTextWidget->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this, SIGNAL(focusOut()), mpModelicaTextWidget->getModelWidget(), SLOT(modelicaEditorTextChanged()));
-  connect(this, SIGNAL(textChanged()), SLOT(hasChanged()));
+  connect(this, SIGNAL(modificationChanged(bool)), SLOT(hasModified(bool)));
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(this);
   connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
@@ -573,11 +573,11 @@ void ModelicaTextEdit::setPlainText(const QString &text)
   }
 }
 
-//! Slot activated when ModelicaEditor textChanged signal is raised.
-//! Checks if model text has changed and then add a * to the model name so that user knows that his current model is not saved.
-void ModelicaTextEdit::hasChanged()
+//! Slot activated when ModelicaEditor modificationChanged signal is raised.
+//! Sets the model as modified so that user knows that his current model is not saved.
+void ModelicaTextEdit::hasModified(bool changed)
 {
-  if (mpModelicaTextWidget->isVisible())
+  if (mpModelicaTextWidget->isVisible() && changed)
   {
     /* if user is changing the system library class. */
     if (mpModelicaTextWidget->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())

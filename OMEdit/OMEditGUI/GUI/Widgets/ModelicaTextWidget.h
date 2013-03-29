@@ -102,7 +102,7 @@ private slots:
   void showContextMenu(QPoint point);
 public slots:
   void setPlainText(const QString &text);
-  void hasChanged();
+  void hasModified(bool changed);
   void setLineWrapping();
   void toggleCommentSelection();
 };
