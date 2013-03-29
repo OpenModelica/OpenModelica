@@ -114,7 +114,7 @@ Component::Component(QString annotation, QString transformationString, Component
   setAcceptHoverEvents(true);
   getClassInheritedComponents();
   parseAnnotationString(annotation);
-  mpTransformation = new Transformation(isLibraryComponent() ? StringHandler::Diagram : mpGraphicsView->getViewType());
+  mpTransformation = new Transformation(isLibraryComponent() ? StringHandler::Icon : mpGraphicsView->getViewType());
   mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
   setTransform(mpTransformation->getTransformationMatrix());
   setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
@@ -786,9 +786,12 @@ void Component::updatePlacementAnnotation()
                               getPlacementAnnotation());
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
-//  // call the addclassannotation if the graphicsview is icon, so the icon in the tree is also updated
-//  if (mpGraphicsView->getViewType() == StringHandler::ICON || mIsConnector)
-//    mpGraphicsView->addClassAnnotation();
+  /* When something is changed in the icon layer then update the LibraryTreeNode in the Library Browser */
+  if (mpGraphicsView->getViewType() == StringHandler::Icon)
+  {
+    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+  }
 }
 
 void Component::prepareResizeComponent(ResizerItem *pResizerItem)
@@ -945,6 +948,12 @@ void Component::deleteMe()
   deleteLater();
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
+  /* When something is deleted from the icon layer then update the LibraryTreeNode in the Library Browser */
+  if (mpGraphicsView->getViewType() == StringHandler::Icon)
+  {
+    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+  }
 }
 
 void Component::rotateClockwise()

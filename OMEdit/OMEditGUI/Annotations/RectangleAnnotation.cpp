@@ -45,6 +45,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
+  setPos(mOrigin);
 }
 
 RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)

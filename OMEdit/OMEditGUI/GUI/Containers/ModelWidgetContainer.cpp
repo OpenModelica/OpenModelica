@@ -497,6 +497,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
           {
             addComponentToView(name, className, "", point, type, false);
             mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", point, type);
+            /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+            pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
           }
           else
           {
@@ -520,6 +522,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
         {
           addComponentToView(name, className, "", point, type, false);
           mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", point, type);
+          /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+          pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
           event->accept();
         }
         else
@@ -1572,6 +1576,11 @@ void GraphicsView::addClassAnnotation()
   if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeNode()->getNameStructure(), annotationString))
   {
     mpModelWidget->setModelModified();
+    /* When something is added/changed in the icon layer then update the LibraryTreeNode in the Library Browser */
+    if (mViewType == StringHandler::Icon)
+    {
+      pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+    }
   }
   else
   {
@@ -1580,117 +1589,6 @@ void GraphicsView::addClassAnnotation()
                                                                     Helper::scriptingKind, Helper::errorLevel, 0,
                                                                     pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
   }
-  // update model icon if something is changed in icon view
-  //    ModelicaTree *pModelicaTree = mpParentModelWidget->mpParentModelWidgetWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
-  //    ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentModelWidget->mModelNameStructure);
-
-  //    if (!pModelicaTreeNode)
-  //        return;
-
-  //    if (mIconType == StringHandler::ICON)
-  //    {
-  //        LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentModelWidget->mModelNameStructure, pModelicaTree);
-  //        libraryLoader->start(QThread::HighestPriority);
-  //        while (libraryLoader->isRunning())
-  //            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-  //    }
-
-  //    /* since the icon of this model has changed in some way so it might be possible that this model is being used in some other models,
-  //       so we look through the modelica files tree and check the components of all models against our current model.
-  //       If a match is found we get the icon annotation of the model and update it.
-  //       */
-  //    /*  QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-  //        QList<Component*> componentslist;
-  //        QString result;
-  //        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentModelWidget->mModelNameStructure);
-
-  //        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-  //        {
-  //           ModelWidget *ModelWidget = mpParentModelWidget->mpParentModelWidgetWidget->getTabByName(node->mNameStructure);
-  //           if (ModelWidget)
-  //           {
-  //               componentslist = ModelWidget->mpDiagramGraphicsView->mComponentsList;
-  //               foreach (Component *component, componentslist)
-  //               {
-  //                   if (component->getClassName().compare(mpParentModelWidget->mModelNameStructure) == 0)
-  //                   {
-  //                       result = pMainWindow->mpOMCProxy->getIconAnnotation(mpParentModelWidget->mModelNameStructure);
-  //                       component->parseAnnotationString(component, result);
-  //                       ModelWidget->mpDiagramGraphicsView->scene()->update();
-  //                   }
-  //               }
-  //           }
-  //        }
-  //    */
-
-  //    if (mIconType == StringHandler::ICON && pModelicaTreeNode->getType() != StringHandler::CONNECTOR)
-  //    {
-  //        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-  //        QList<Component*> componentslist;
-  //        QString result;
-  //        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentModelWidget->mModelNameStructure);
-  //        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-  //        {
-  //            ModelWidget *ModelWidget= mpParentModelWidget->mpParentModelWidgetWidget->getTabByName(node->getNameStructure());
-  //            if(ModelWidget)
-  //            {
-  //                componentslist=ModelWidget->mpDiagramGraphicsView->mComponentsList;
-  //                foreach (Component *component, componentslist)
-  //                {
-  //                    if(component->getClassName()==mpParentModelWidget->mModelNameStructure)
-  //                    {
-  //                        component->parseAnnotationString(component,result);
-  //                        ModelWidget->mpDiagramGraphicsView->scene()->update();
-  //                    }
-  //                }
-  //            }
-  //        }
-  //    }
-  //    else if (mIconType == StringHandler::ICON && pModelicaTreeNode->getType() == StringHandler::CONNECTOR)
-  //    {
-  //        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-  //        QList<Component*> componentslist;
-  //        QString result;
-  //        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentModelWidget->mModelNameStructure);
-  //        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-  //        {
-  //            ModelWidget *ModelWidget= mpParentModelWidget->mpParentModelWidgetWidget->getTabByName(node->getNameStructure());
-  //            if(ModelWidget)
-  //            {
-  //                componentslist=ModelWidget->mpIconGraphicsView->mComponentsList;
-  //                foreach (Component *component, componentslist)
-  //                {
-  //                    if(component->getClassName()==mpParentModelWidget->mModelNameStructure)
-  //                    {
-  //                        component->parseAnnotationString(component,result);
-  //                        ModelWidget->mpIconGraphicsView->scene()->update();
-  //                    }
-  //                }
-  //            }
-  //        }
-  //    }
-  //    else if (mIconType == StringHandler::DIAGRAM && pModelicaTreeNode->getType() == StringHandler::CONNECTOR )
-  //    {
-  //        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-  //        QList<Component*> componentslist;
-  //        QString result= pMainWindow->mpOMCProxy->getDiagramAnnotation(mpParentModelWidget->mModelNameStructure);
-  //        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-  //        {
-  //            ModelWidget *ModelWidget= mpParentModelWidget->mpParentModelWidgetWidget->getTabByName(node->getNameStructure());
-  //            if(ModelWidget)
-  //            {
-  //                componentslist=ModelWidget->mpDiagramGraphicsView->mComponentsList;
-  //                foreach (Component *component, componentslist)
-  //                {
-  //                    if(component->getClassName()==mpParentModelWidget->mModelNameStructure)
-  //                    {
-  //                        component->parseAnnotationString(component,result);
-  //                        ModelWidget->mpDiagramGraphicsView->scene()->update();
-  //                    }
-  //                }
-  //            }
-  //        }
-  //    }
 }
 
 WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
