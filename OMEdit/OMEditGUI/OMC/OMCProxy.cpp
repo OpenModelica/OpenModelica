@@ -825,6 +825,24 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
     {
       QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
       QStringList modelsList = result.split(",", QString::SkipEmptyParts);
+      /*
+        Only allow loading of files that has just one nonstructured entity.
+        From Modelica specs section 13.2.2.2,
+        "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
+         matching the name of the nonstructured entity."
+        */
+      if (modelsList.size() > 1)
+      {
+        QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+        pMessageBox->setIcon(QMessageBox::Critical);
+        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
+        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
+                                        .arg(modelsList.join(",")));
+        pMessageBox->setStandardButtons(QMessageBox::Ok);
+        pMessageBox->exec();
+        return;
+      }
       QStringList existingmodelsList;
       bool existModel = false;
       // check if the model already exists

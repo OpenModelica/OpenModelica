@@ -356,6 +356,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Delete the existing class(es) before loading the file <b>Adeel</b>.");
     case REDEFINING_EXISTING_CLASSES:
       return tr("Redefining class(es) <b>%1</b> which already exists.");
+    case MULTIPLE_TOP_LEVEL_CLASSES:
+      return tr("Only single nonstructured entity is allowed to be stored in the file. The file <b>%1</b> contains following classes <b>%2</b>.");
     case CLOSE_INTERACTIVE_SIMULATION_TAB:
       return tr("Are you sure you want to close <b>%1</b> interactive simulation?");
     case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
