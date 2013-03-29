@@ -185,6 +185,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
   mpPerspectiveTabbar = new QTabBar;
   mpPerspectiveTabbar->setDocumentMode(true);
+  mpPerspectiveTabbar->setShape(QTabBar::RoundedSouth);
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
