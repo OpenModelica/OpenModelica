@@ -2120,6 +2120,22 @@ void ModelWidget::setModelModified()
   mpLibraryTreeNode->setIsSaved(false);
   // clean up the OMC cache for this particular model classname.
   mpModelWidgetContainer->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(mpLibraryTreeNode->getNameStructure());
+  /*
+    If this model is a child model inside a package.
+    Then get the root package. If the package is saved in one file then set the package unsaved.
+    */
+  LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
+  LibraryTreeNode *pLibraryTreeNode;
+  pLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(mpLibraryTreeNode->getNameStructure()));
+  if (pLibraryTreeNode->getFileName().compare(mpLibraryTreeNode->getFileName()) == 0)
+  {
+    // Add a * in the model window title.
+    if (pLibraryTreeNode->getModelWidget())
+    {
+      pLibraryTreeNode->getModelWidget()->setWindowTitle(QString(pLibraryTreeNode->getNameStructure()).append("*"));
+    }
+    pLibraryTreeNode->setIsSaved(false);
+  }
 }
 
 /*!

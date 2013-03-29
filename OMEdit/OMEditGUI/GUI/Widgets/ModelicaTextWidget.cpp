@@ -141,7 +141,7 @@ ModelicaTextEdit::ModelicaTextEdit(ModelicaTextWidget *pParent)
   OptionsDialog *pOptionsDialog = mpModelicaTextWidget->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this, SIGNAL(focusOut()), mpModelicaTextWidget->getModelWidget(), SLOT(modelicaEditorTextChanged()));
-  connect(this, SIGNAL(modificationChanged(bool)), SLOT(hasModified(bool)));
+  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(this);
   connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
@@ -573,12 +573,15 @@ void ModelicaTextEdit::setPlainText(const QString &text)
   }
 }
 
-//! Slot activated when ModelicaEditor modificationChanged signal is raised.
+//! Slot activated when ModelicaTextEdit's QTextDocument contentsChanged SIGNAL is raised.
 //! Sets the model as modified so that user knows that his current model is not saved.
-void ModelicaTextEdit::hasModified(bool changed)
+void ModelicaTextEdit::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
-  if (mpModelicaTextWidget->isVisible() && changed)
+  Q_UNUSED(position);
+  if (mpModelicaTextWidget->isVisible())
   {
+    if (charsRemoved == 0 && charsAdded == 0)
+      return;
     /* if user is changing the system library class. */
     if (mpModelicaTextWidget->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
     {
@@ -598,39 +601,6 @@ void ModelicaTextEdit::hasModified(bool changed)
       mTextChanged = true;
     }
   }
-  //    if (mpParentModelWidget->isReadOnly())
-  //        return;
-
-  //    QString tabName = mpParentModelWidget->mpParentModelWidgetContainer->tabText(mpParentModelWidget->mTabPosition);
-  //    if (!tabName.endsWith("*"))
-  //    {
-  //        tabName.append("*");
-  //        mpParentModelWidget->mpParentModelWidgetContainer->setTabText(mpParentModelWidget->mTabPosition, tabName);
-  //    }
-  //    mpParentModelWidget->mIsSaved = false;
-  //    if (mpParentModelWidget->isChild())
-  //    {
-  //        // find the parent tree node of this model
-  ////        ModelicaTree *pModelicaTree = mpParentModelWidget->mpParentModelWidgetWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
-  ////        ModelicaTreeNode *node = pModelicaTree->getNode(mpParentModelWidget->mModelNameStructure);
-  ////        while (node->parent() != 0)
-  ////            node = dynamic_cast<ModelicaTreeNode*>(node->parent());
-  ////        // find the project tab of the parent of this model.
-  ////        ModelWidget *pModelWidget;
-  ////        MainWindow *pMainWindow = mpParentModelWidget->mpParentModelWidgetWidget->mpParentMainWindow;
-  ////        pModelWidget = pMainWindow->mpModelWidgets->getModelWidget(node->getNameStructure());
-  ////        // if the parent project tab is found then make it unsaved as well.
-  ////        if (pModelWidget)
-  ////        {
-  ////            tabName = mpParentModelWidget->mpParentModelWidgetWidget->tabText(pModelWidget->mTabPosition);
-  ////            if (!tabName.endsWith("*"))
-  ////            {
-  ////                tabName.append("*");
-  ////                mpParentModelWidget->mpParentModelWidgetWidget->setTabText(pModelWidget->mTabPosition, tabName);
-  ////            }
-  ////            pModelWidget->mIsSaved = false;
-  ////        }
-  //    }
 }
 
 void ModelicaTextEdit::setLineWrapping()
