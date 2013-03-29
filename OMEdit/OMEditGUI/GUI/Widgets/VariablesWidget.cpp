@@ -164,7 +164,8 @@ VariablesWidget::VariablesWidget(MainWindow *pParent)
   connect(mpVariablesTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(plotVariables(QTreeWidgetItem*,int)));
   connect(mpVariablesTreeWidget, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   connect(pParent->getPlotWindowContainer(), SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(updatePlotVariablesTree(QMdiSubWindow*)));
-  connect(this, SIGNAL(removeResultFile(VariableTreeItem*)), pParent->getPlotWindowContainer(), SLOT(updatePlotWindows(VariableTreeItem*)));
+  connect(this, SIGNAL(resultFileRemoved(VariableTreeItem*)), pParent->getPlotWindowContainer(), SLOT(updatePlotWindows(VariableTreeItem*)));
+  connect(this, SIGNAL(resultFileUpdated(VariablesTreeWidget*)), pParent->getPlotWindowContainer(), SLOT(updatePlotWindows(VariablesTreeWidget*)));
 }
 
 void VariablesWidget::createActions()
@@ -176,18 +177,19 @@ void VariablesWidget::createActions()
 
 void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath, QList<QString> plotVariablesList)
 {
-  mpVariablesTreeWidget->blockSignals(false);
+  mpVariablesTreeWidget->blockSignals(true);
   // Remove the simulation result if we already had it in tree
   if (!filePath.endsWith('/'))
     filePath = filePath.append("/");
 
+  bool isResultFileRemoved = false;
   int count = mpVariablesTreeWidget->topLevelItemCount();
   for (int i = 0 ; i < count ; i++)
   {
     VariableTreeItem *pItem = dynamic_cast<VariableTreeItem*>(mpVariablesTreeWidget->topLevelItem(i));
     if (pItem->getNameStructure() == fileName)
     {
-      emit removeResultFile(pItem);
+      isResultFileRemoved = true;
       qDeleteAll(pItem->takeChildren());
       delete pItem;
       break;
@@ -260,16 +262,12 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
       parentStructure.append(".").append(variables[i]);
     }
   }
-  // sort items and expand the current plot variables node and collapse all others
+  // sort items and expand the current plot variables node.
   mpVariablesTreeWidget->setSortingEnabled(true);
   mpVariablesTreeWidget->sortItems(0, Qt::AscendingOrder);
-  // collapse all tree items
-  count = mpVariablesTreeWidget->topLevelItemCount();
-  for (int i = 0 ; i < count ; i++)
-  {
-    mpVariablesTreeWidget->topLevelItem(i)->setExpanded(false);
-  }
   newTreePost->setExpanded(true);
+  if (isResultFileRemoved)
+    emit resultFileUpdated(mpVariablesTreeWidget);
   mpVariablesTreeWidget->blockSignals(false);
 }
 
@@ -559,7 +557,7 @@ void VariablesWidget::showContextMenu(QPoint point)
 
 void VariablesWidget::deleteVariablesTreeItem()
 {
-  emit removeResultFile(mSelectedPlotTreeItem);
+  emit resultFileRemoved(mSelectedPlotTreeItem);
   qDeleteAll(mSelectedPlotTreeItem->takeChildren());
   delete mSelectedPlotTreeItem;
 }

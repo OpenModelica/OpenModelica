@@ -43,6 +43,7 @@
 #include "Plot.h"
 
 class MainWindow;
+class VariablesTreeWidget;
 class VariableTreeItem;
 
 class PlotWindowContainer : public MdiArea
@@ -58,6 +59,7 @@ public slots:
   void addPlotParametricWindow();
   void clearPlotWindow();
   void updatePlotWindows(VariableTreeItem *pItem);
+  void updatePlotWindows(VariablesTreeWidget *pVariablesTreeWidget);
 };
 
 #endif // PLOTWINDOWCONTAINER_H

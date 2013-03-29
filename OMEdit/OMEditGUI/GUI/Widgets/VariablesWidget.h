@@ -99,7 +99,8 @@ private:
   VariableTreeItem *mSelectedPlotTreeItem;
   QAction *mpDeleteResultAction;
 signals:
-  void removeResultFile(VariableTreeItem *item);
+  void resultFileRemoved(VariableTreeItem *item);
+  void resultFileUpdated(VariablesTreeWidget *pVariablesTreeWidget);
 public slots:
   void plotVariables(QTreeWidgetItem *item, int column);
   void updatePlotVariablesTree(QMdiSubWindow *window);

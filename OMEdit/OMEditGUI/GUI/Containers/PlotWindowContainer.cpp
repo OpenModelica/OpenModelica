@@ -177,3 +177,57 @@ void PlotWindowContainer::updatePlotWindows(VariableTreeItem *pItem)
     }
   }
 }
+
+/*!
+  This slot is activated when user simulates a model and the result file generated is already in VariablesTreeWidget.\n
+  It is also generated when user opens the result file which is already in VariablesTreeWidget.\n
+  Goes through the list of PlotWindow's and their respective PlotCurve's.\n
+  If the value pointed by PlotCurve is in the new VariablesTreeWidget loaded items then preserve it otherwise remove it.\n
+  In the end we call \sa VariablesWidget::updatePlotVariablesTree() to update the PlotWindow properly.
+  */
+void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeWidget)
+{
+  foreach (QMdiSubWindow *pSubWindow, subWindowList())
+  {
+    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
+    {
+      if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
+      {
+        QString curveNameStructure = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
+        VariableTreeItem *pVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(curveNameStructure);
+        if (pVariableTreeItem)
+        {
+          pVariableTreeItem->setCheckState(0, Qt::Checked);
+        }
+        else
+        {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          pPlotCurve->detach();
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->updateGeometry();
+        }
+      }
+      else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
+      {
+        QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
+        VariableTreeItem *pXVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(xVariable);
+        QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
+        VariableTreeItem *pYVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(yVariable);
+        if (pXVariableTreeItem && pYVariableTreeItem)
+        {
+          pXVariableTreeItem->setCheckState(0, Qt::Checked);
+          pYVariableTreeItem->setCheckState(0, Qt::Checked);
+        }
+        else
+        {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          pPlotCurve->detach();
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->updateGeometry();
+        }
+      }
+    }
+  }
+  mpMainWindow->getVariablesWidget()->updatePlotVariablesTree(currentSubWindow());
+}
