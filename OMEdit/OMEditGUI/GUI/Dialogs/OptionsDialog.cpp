@@ -164,24 +164,24 @@ void OptionsDialog::readModelicaTextSettings()
     mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mSettings.value("textEditor/enableSyntaxHighlighting").toBool());
   if (mSettings.contains("textEditor/enableLineWrapping"))
     mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mSettings.value("textEditor/enableLineWrapping").toBool());
-  if (mSettings.contains("fontFamily"))
-    mpModelicaTextSettings->setFontFamily(mSettings.value("fontFamily").toString());
-  if (mSettings.contains("fontSize"))
-    mpModelicaTextSettings->setFontSize(mSettings.value("fontSize").toInt());
-  if (mSettings.contains("textRule/color"))
-    mpModelicaTextSettings->setTextRuleColor(QColor(mSettings.value("textRule/color").toUInt()));
-  if (mSettings.contains("keywordRule/color"))
-    mpModelicaTextSettings->setKeywordRuleColor(QColor(mSettings.value("keywordRule/color").toUInt()));
-  if (mSettings.contains("typeRule/color"))
-    mpModelicaTextSettings->setTypeRuleColor(QColor(mSettings.value("typeRule/color").toUInt()));
-  if (mSettings.contains("functionRule/color"))
-    mpModelicaTextSettings->setFunctionRuleColor(QColor(mSettings.value("functionRule/color").toUInt()));
-  if (mSettings.contains("quotesRule/color"))
-    mpModelicaTextSettings->setQuotesRuleColor(QColor(mSettings.value("quotesRule/color").toUInt()));
-  if (mSettings.contains("commentRule/color"))
-    mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("commentRule/color").toUInt()));
-  if (mSettings.contains("numberRule/color"))
-    mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("numberRule/color").toUInt()));
+  if (mSettings.contains("textEditor/fontFamily"))
+    mpModelicaTextSettings->setFontFamily(mSettings.value("textEditor/fontFamily").toString());
+  if (mSettings.contains("textEditor/fontSize"))
+    mpModelicaTextSettings->setFontSize(mSettings.value("textEditor/fontSize").toInt());
+  if (mSettings.contains("textEditor/textRuleColor"))
+    mpModelicaTextSettings->setTextRuleColor(QColor(mSettings.value("textEditor/textRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/keywordRuleColor"))
+    mpModelicaTextSettings->setKeywordRuleColor(QColor(mSettings.value("textEditor/keywordRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/typeRuleColor"))
+    mpModelicaTextSettings->setTypeRuleColor(QColor(mSettings.value("textEditor/typeRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/functionRuleColor"))
+    mpModelicaTextSettings->setFunctionRuleColor(QColor(mSettings.value("textEditor/functionRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/quotesRuleColor"))
+    mpModelicaTextSettings->setQuotesRuleColor(QColor(mSettings.value("textEditor/quotesRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/commentRuleColor"))
+    mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("textEditor/commentRuleColor").toUInt()));
+  if (mSettings.contains("textEditor/numberRuleColor"))
+    mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("textEditor/numberRuleColor").toUInt()));
 }
 
 //! Reads the GraphicsViews section settings from omedit.ini
@@ -391,15 +391,15 @@ void OptionsDialog::saveModelicaTextSettings()
 {
   mSettings.setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
   mSettings.setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
-  mSettings.setValue("fontFamily", mpModelicaTextSettings->getFontFamily());
-  mSettings.setValue("fontSize", mpModelicaTextSettings->getFontSize());
-  mSettings.setValue("textRule/color", mpModelicaTextSettings->getTextRuleColor().rgba());
-  mSettings.setValue("keywordRule/color", mpModelicaTextSettings->getKeywordRuleColor().rgba());
-  mSettings.setValue("typeRule/color", mpModelicaTextSettings->getTypeRuleColor().rgba());
-  mSettings.setValue("functionRule/color", mpModelicaTextSettings->getFunctionRuleColor().rgba());
-  mSettings.setValue("quotesRule/color", mpModelicaTextSettings->getQuotesRuleColor().rgba());
-  mSettings.setValue("commentRule/color", mpModelicaTextSettings->getCommentRuleColor().rgba());
-  mSettings.setValue("numberRule/color", mpModelicaTextSettings->getNumberRuleColor().rgba());
+  mSettings.setValue("textEditor/fontFamily", mpModelicaTextSettings->getFontFamily());
+  mSettings.setValue("textEditor/fontSize", mpModelicaTextSettings->getFontSize());
+  mSettings.setValue("textEditor/textRuleColor", mpModelicaTextSettings->getTextRuleColor().rgba());
+  mSettings.setValue("textEditor/keywordRuleColor", mpModelicaTextSettings->getKeywordRuleColor().rgba());
+  mSettings.setValue("textEditor/typeRuleColor", mpModelicaTextSettings->getTypeRuleColor().rgba());
+  mSettings.setValue("textEditor/functionRuleColor", mpModelicaTextSettings->getFunctionRuleColor().rgba());
+  mSettings.setValue("textEditor/quotesRuleColor", mpModelicaTextSettings->getQuotesRuleColor().rgba());
+  mSettings.setValue("textEditor/commentRuleColor", mpModelicaTextSettings->getCommentRuleColor().rgba());
+  mSettings.setValue("textEditor/numberRuleColor", mpModelicaTextSettings->getNumberRuleColor().rgba());
 }
 
 //! Saves the GraphicsViews section settings to omedit.ini
