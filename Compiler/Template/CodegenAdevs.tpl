@@ -113,7 +113,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void external_event(double* q, double e,
              const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb){}
          void confluent_event(double *q, const bool* state_event,
-             const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb){}
+             const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb)
+         {
+             internal_event(q,state_event);
+         }
          void output_func(const double *q, const bool* state_event,
              adevs::Bag<OMC_ADEVS_IO_TYPE>& yb){}
          void gc_output(adevs::Bag<OMC_ADEVS_IO_TYPE>& gb){}
@@ -190,6 +193,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void update_vars(const double* q = NULL, bool doReinit = false)
          {
              calc_vars(q,doReinit);
+             for (int i = 0; i < numMathEvents(); i++)
+                if (eventFuncs[i] != NULL)
+                   eventFuncs[i]->setInit(false);
              save_vars();
          }
          /**
