@@ -430,6 +430,8 @@ algorithm
       equation
         Tpl.tplNoret(CodegenJava.translateModel, simCode);
       then ();
+    case (_,_,"None")
+      then ();
     case (_,_,_)
       equation
         str = "Unknown template target: " +& target;
