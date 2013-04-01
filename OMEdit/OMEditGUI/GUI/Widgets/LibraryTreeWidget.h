@@ -202,7 +202,7 @@ public slots:
   void refresh();
   void exportModelFMU();
   void exportModelXML();
-  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void parseAndLoadModelicaText(QString modelText);
   void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false);
   void openLibraryTreeNode(QString nameStructure);

@@ -1311,8 +1311,30 @@ void LibraryTreeWidget::exportModelXML()
     mpMainWindow->exportModelXML(pLibraryTreeNode);
 }
 
-void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showProgress)
+void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)
 {
+  /* if the file doesn't exist then remove it from the recent files list. */
+  if (checkFileExists)
+  {
+    QFileInfo fileInfo(fileName);
+    if (!fileInfo.exists())
+    {
+      QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+      QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+      QList<QVariant> files = settings.value("recentFilesList/files").toList();
+      // remove the RecentFile instance from the list.
+      foreach (QVariant file, files)
+      {
+        RecentFile recentFile = qvariant_cast<RecentFile>(file);
+        if (recentFile.fileName.compare(fileName) == 0)
+          files.removeOne(file);
+      }
+      settings.setValue("recentFilesList/files", files);
+      mpMainWindow->updateRecentFileActions();
+      return;
+    }
+  }
   // get the class names now to check if they are already loaded or not
   QStringList existingmodelsList;
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));

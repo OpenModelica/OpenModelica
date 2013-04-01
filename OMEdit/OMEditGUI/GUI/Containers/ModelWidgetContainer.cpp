@@ -1815,7 +1815,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  mpMainWindow->getLibraryTreeWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString());
+  mpMainWindow->getLibraryTreeWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString(), true, true);
 }
 
 void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)

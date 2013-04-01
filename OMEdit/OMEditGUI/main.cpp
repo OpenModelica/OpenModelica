@@ -149,9 +149,15 @@ int main(int argc, char *argv[])
         QString omcLoggerArg = a.arguments().at(i);
         omcLoggerArg.remove("--OMCLogger=");
         if (0 == strcmp("true", omcLoggerArg.toStdString().c_str()))
+        {
           OMCLogger = true;
+          continue;
+        }
         else if (0 == strcmp("false", omcLoggerArg.toStdString().c_str()))
+        {
           OMCLogger = false;
+          continue;
+        }
       }
       fileName = a.arguments().at(i);
       if (!fileName.isEmpty())

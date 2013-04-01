@@ -129,6 +129,7 @@ public:
   QAction* getClearFindReplaceTextsAction();
   QAction* getGotoLineNumberAction();
   void addRecentFile(const QString &fileName, const QString &encoding);
+  void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
   int askForExit();
   void beforeClosingMainWindow();
@@ -283,7 +284,6 @@ private:
   void createActions();
   void createToolbars();
   void createMenus();
-  void updateRecentFileActions();
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);
