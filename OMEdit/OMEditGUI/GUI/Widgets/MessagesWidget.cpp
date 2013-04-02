@@ -140,6 +140,17 @@ MessagesTreeWidget* MessagesWidget::getMessagesTreeWidget()
 }
 
 /*!
+  Reimplementation of sizeHint function. Defines the minimum height.
+  */
+QSize MessagesWidget::sizeHint() const
+{
+  QSize size = QWidget::sizeHint();
+  //Set very small height. A minimum apperantly stops at reasonable size. Giving the drawing area more space.
+  size.rheight() = 100; //pixels
+  return size;
+}
+
+/*!
   Adds the Message to the Messages tree.
   \param pMessageItem - is the Message to add.
   */

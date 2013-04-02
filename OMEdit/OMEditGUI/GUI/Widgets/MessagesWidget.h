@@ -60,6 +60,7 @@ private:
 public:
   MessagesWidget(MainWindow *pMainWindow);
   MessagesTreeWidget* getMessagesTreeWidget();
+  QSize sizeHint() const;
   void addGUIMessage(MessagesTreeItem *pMessageItem);
 signals:
   void MessageAdded();
