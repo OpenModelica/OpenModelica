@@ -463,6 +463,28 @@ void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
   updateRecentFileActions();
 }
 
+//! Updates the actions of the recent files menu items.
+void MainWindow::updateRecentFileActions()
+{
+  /* first set all recent files actions visibility to false. */
+  for (int i = 0; i < MaxRecentFiles; ++i)
+    mpRecentFileActions[i]->setVisible(false);
+  /* read the new recent files list */
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  QList<QVariant> files = settings.value("recentFilesList/files").toList();
+  int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
+  for (int i = 0; i < numRecentFiles; ++i)
+  {
+    RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
+    mpRecentFileActions[i]->setText(recentFile.fileName);
+    QStringList dataList;
+    dataList << recentFile.fileName << recentFile.encoding;
+    mpRecentFileActions[i]->setData(dataList);
+    mpRecentFileActions[i]->setVisible(true);
+  }
+  mpWelcomePageWidget->addRecentFilesListItems();
+}
+
 //! Event triggered re-implemented method that closes the main window.
 //! First all tabs (models) are closed, if the user do not push Cancel
 //! (closeAllProjectTabs then returns 'false') the event is accepted and
@@ -932,7 +954,7 @@ void MainWindow::openRecentFile()
   if (action)
   {
     QStringList dataList = action->data().toStringList();
-    mpLibraryTreeWidget->openFile(dataList.at(0), dataList.at(1));
+    mpLibraryTreeWidget->openFile(dataList.at(0), dataList.at(1), true, true);
   }
 }
 
@@ -1821,28 +1843,6 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewPlotParametricWindowAction);
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
-}
-
-//! Updates the actions of the recent files menu items.
-void MainWindow::updateRecentFileActions()
-{
-  /* first set all recent files actions visibility to false. */
-  for (int i = 0; i < MaxRecentFiles; ++i)
-    mpRecentFileActions[i]->setVisible(false);
-  /* read the new recent files list */
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  QList<QVariant> files = settings.value("recentFilesList/files").toList();
-  int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
-  for (int i = 0; i < numRecentFiles; ++i)
-  {
-    RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
-    mpRecentFileActions[i]->setText(recentFile.fileName);
-    QStringList dataList;
-    dataList << recentFile.fileName << recentFile.encoding;
-    mpRecentFileActions[i]->setData(dataList);
-    mpRecentFileActions[i]->setVisible(true);
-  }
-  mpWelcomePageWidget->addRecentFilesListItems();
 }
 
 //! when the dragged object enters the main window
