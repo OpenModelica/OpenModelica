@@ -8531,7 +8531,7 @@ algorithm
       then
         (accum, found);
 
-    case (true, _, _, _) then (inAccum, true);
+    case (true, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _) then (inAccum, false);
 
   end match;
@@ -8586,7 +8586,7 @@ algorithm
       then
         (accum, found);
 
-    case (true, _, _, _, _) then (inAccum, true);
+    case (true, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _) then (inAccum, false);
 
   end match;
@@ -8645,7 +8645,7 @@ algorithm
       then
         (accum, found);
 
-    case (true, _, _, _, _, _) then (inAccum, true);
+    case (true, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _, _) then (inAccum, false);
 
   end match;
@@ -8708,7 +8708,7 @@ algorithm
       then
         (accum, found);
 
-    case (true, _, _, _, _, _, _) then (inAccum, true);
+    case (true, _, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _, _, _) then (inAccum, false);
 
   end match;

@@ -60,6 +60,7 @@ public import Values;
 // protected imports
 protected import Builtin;
 protected import Ceval;
+protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
@@ -86,6 +87,7 @@ protected import Prefix;
 protected import Print;
 protected import Refactor;
 protected import SimCodeMain;
+protected import Static;
 protected import StaticScript;
 protected import System;
 protected import Types;
@@ -463,6 +465,9 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
       Absyn.FunctionArgs fargs;
+      list<Absyn.Subscript> asubs;
+      list<DAE.Subscript> dsubs;
+      list<DAE.ComponentRef> crefs;
 
     case (Absyn.ALGORITHMITEM(info=info,
           algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
@@ -505,21 +510,23 @@ algorithm
         value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
         str = ValuesUtil.valString(value);
         t = Types.typeOfValue(value);
-        newst = addVarToSymboltable(ident, value, t, st);
+        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, Env.emptyEnv, st);
       then (str,newst);
 
     case
       (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
-        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),
+        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp)),
         (st as SYMBOLTABLE(ast = p)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info));
+        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
+        
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
-        newst = addVarToSymboltable(ident, value, t, st_2);
+        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, dsubs), value, env, st_2);
       then
         (str,newst);
 
@@ -533,9 +540,9 @@ algorithm
         (env,st) = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
-        idents = List.map(crefexps, getIdentFromTupleCrefexp);
+        crefs = makeTupleCrefs(crefexps, types, env, cache, info);
         (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info));
-        newst = addVarsToSymboltable(idents, values, types, st_2);
+        newst = addVarsToSymboltable(crefs, values, env, st_2);
       then
         ("",newst);
 
@@ -929,26 +936,49 @@ algorithm
   end matchcontinue;
 end evaluateExprToStr;
 
-protected function getIdentFromTupleCrefexp
-"function: getIdentFromTupleCrefexp
-  Return the (first) identifier of a Component Reference in an expression."
-  input Absyn.Exp inExp;
-  output Absyn.Ident outIdent;
+protected function makeTupleCrefs
+  input list<Absyn.Exp> inCrefs;
+  input list<DAE.Type> inTypes;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Absyn.Info inInfo;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  outIdent:=
-  matchcontinue (inExp)
+  outCrefs := List.threadMap3(inCrefs, inTypes, makeTupleCref, inEnv, inCache, inInfo);
+end makeTupleCrefs;
+
+protected function makeTupleCref
+  "Translates an Absyn.CREF to a DAE.CREF_IDENT."
+  input Absyn.Exp inCref;
+  input DAE.Type inType;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Absyn.Info inInfo;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inType, inEnv, inCache, inInfo)
     local
-      String id,str;
-      Absyn.Exp exp;
-    case Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)) then id;
-    case exp
+      Absyn.Ident id;
+      list<Absyn.Subscript> asubs;
+      list<DAE.Subscript> dsubs;
+      String str;
+
+    case (Absyn.CREF(componentRef = Absyn.CREF_IDENT(id, asubs)), _, _, _, _)
       equation
-        str = Dump.printExpStr(exp);
+        (_, dsubs, _) = Static.elabSubscripts(inCache, inEnv, asubs, true,
+          Prefix.NOPRE(), inInfo);
+      then
+        DAE.CREF_IDENT(id, inType, dsubs);
+
+    else
+      equation
+        str = Dump.printExpStr(inCref);
         Error.addMessage(Error.INVALID_TUPLE_CONTENT, {str});
       then
         fail();
-  end matchcontinue;
-end getIdentFromTupleCrefexp;
+
+  end match;
+end makeTupleCref;
 
 public function getTypeOfVariable
 "function: getTypeOfVariables
@@ -980,72 +1010,30 @@ algorithm
 end getTypeOfVariable;
 
 protected function addVarsToSymboltable
-"function: addVarsToSymboltable
-  Add a list of variables to the interactive
-  symboltable given names, values and types."
-  input list<Absyn.Ident> inAbsynIdentLst;
-  input list<Values.Value> inValuesValueLst;
-  input list<DAE.Type> inTypesTypeLst;
+  "Adds a list of variables to the interactive symboltable."
+  input list<DAE.ComponentRef> inCref;
+  input list<Values.Value> inValues;
+  input Env.Env inEnv;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable:=
-  match (inAbsynIdentLst,inValuesValueLst,inTypesTypeLst,inSymbolTable)
-    local
-      SymbolTable st,st_1,st_2;
-      String id;
-      list<String> idrest;
-      Values.Value v;
-      list<Values.Value> vrest;
-      DAE.Type t;
-      list<DAE.Type> trest;
-    case ({},_,_,st) then st;
-    case ((id :: idrest),(v :: vrest),(t :: trest),st)
-      equation
-        st_1 = addVarToSymboltable(id, v, t, st);
-        st_2 = addVarsToSymboltable(idrest, vrest, trest, st_1);
-      then
-        st_2;
-  end match;
+  outSymbolTable := List.threadFold1(inCref, inValues, addVarToSymboltable,
+    inEnv, inSymbolTable);
 end addVarsToSymboltable;
 
 public function addVarToSymboltable
-"function: addVarToSymboltable
-  Helper function to addVarsToSymboltable."
-  input Absyn.Ident inIdent;
+  "Adds a variable to the interactive symboltable."
+  input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input DAE.Type inType;
+  input Env.Env inEnv;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
+protected
+  list<Variable> vars;
 algorithm
-  outSymbolTable:=
-  match (inIdent,inValue,inType,inSymbolTable)
-    local
-      list<Variable> vars_1,vars;
-      String ident;
-      Values.Value v;
-      DAE.Type t;
-      Absyn.Program p;
-      Option<list<SCode.Element>> sp;
-      list<InstantiatedClass> id;
-      list<CompiledCFunction> cf;
-      list<LoadedFile> lf;
-      AbsynDep.Depends aDep;
-
-    case (ident,v,t,
-      SYMBOLTABLE(
-      ast = p,
-      depends = aDep,
-      explodedAst = sp,
-      instClsLst = id,
-      lstVarVal = vars,
-      compiledFunctions = cf,
-      loadedFiles = lf))
-      equation
-        vars_1 = addVarToVarlist(ident, v, t, vars);
-      then
-        SYMBOLTABLE(p,aDep,sp,id,vars_1,cf,lf);
-  end match;
+  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  vars := addVarToVarList(inCref, inValue, inEnv, vars);
+  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end addVarToSymboltable;
 
 public function appendVarToSymboltable
@@ -1059,68 +1047,24 @@ public function appendVarToSymboltable
   input DAE.Type inType;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
+protected
+  list<Variable> vars;
 algorithm
-  outSymbolTable:=
-  match (inIdent,inValue,inType,inSymbolTable)
-    local
-      list<Variable> vars_1,vars;
-      String ident;
-      Values.Value v;
-      DAE.Type t;
-      Absyn.Program p;
-      Option<list<SCode.Element>> sp;
-      list<InstantiatedClass> id;
-      list<CompiledCFunction> cf;
-      list<LoadedFile> lf;
-      AbsynDep.Depends aDep;
-
-    case (ident,v,t,
-      SYMBOLTABLE(
-      ast = p,
-      depends = aDep,
-      explodedAst = sp,
-      instClsLst = id,
-      lstVarVal = vars,
-      compiledFunctions = cf,
-      loadedFiles = lf))
-      equation
-        vars_1 = (IVAR(ident,v,t))::vars;
-      then
-        SYMBOLTABLE(p,aDep,sp,id,vars_1,cf,lf);
-  end match;
+  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  vars := IVAR(inIdent, inValue, inType) :: vars;
+  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end appendVarToSymboltable;
 
 public function deleteVarFromSymboltable
   input Absyn.Ident inIdent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
+protected
+  list<Variable> vars;
 algorithm
-  outSymbolTable:=
-  match (inIdent,inSymbolTable)
-    local
-      list<Variable> vars_1,vars;
-      String ident;
-      Absyn.Program p;
-      Option<list<SCode.Element>> sp;
-      list<InstantiatedClass> id;
-      list<CompiledCFunction> cf;
-      list<LoadedFile> lf;
-      AbsynDep.Depends aDep;
-
-    case (ident,
-      SYMBOLTABLE(
-      ast = p,
-      depends = aDep,
-      explodedAst = sp,
-      instClsLst = id,
-      lstVarVal = vars,
-      compiledFunctions = cf,
-      loadedFiles = lf))
-      equation
-        vars_1 = deleteVarFromVarlist(ident, vars);
-      then
-        SYMBOLTABLE(p,aDep,sp,id,vars_1,cf,lf);
-  end match;
+  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  vars := deleteVarFromVarlist(inIdent, vars);
+  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end deleteVarFromSymboltable;
 
 protected function deleteVarFromVarlist
@@ -1152,35 +1096,99 @@ algorithm
   end matchcontinue;
 end deleteVarFromVarlist;
 
-protected function addVarToVarlist
-"Assignes a value to a variable with a specific identifier."
-  input Absyn.Ident inIdent;
+protected function addVarToVarList
+  "Assigns a value to a variable with a specific identifier."
+  input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input DAE.Type inType;
-  input list<Variable> inVariableLst;
-  output list<Variable> outVariableLst;
+  input Env.Env inEnv;
+  input list<Variable> inVariables;
+  output list<Variable> outVariables;
+protected
+  Boolean found;
 algorithm
-  outVariableLst := matchcontinue (inIdent,inValue,inType,inVariableLst)
+  (outVariables, found) :=
+    List.findMap3(inVariables, addVarToVarList2, inCref, inValue, inEnv);
+  outVariables := addVarToVarList4(found, inCref, inValue, outVariables);
+end addVarToVarList;
+  
+protected function addVarToVarList2
+  input Variable inOldVariable;
+  input DAE.ComponentRef inCref;
+  input Values.Value inValue;
+  input Env.Env inEnv;
+  output Variable outVariable;
+  output Boolean outFound;
+protected
+  Absyn.Ident id1, id2;
+algorithm
+  IVAR(varIdent = id1) := inOldVariable;
+  DAE.CREF_IDENT(ident = id2) := inCref;
+  outFound := stringEq(id1, id2);
+  outVariable := addVarToVarList3(outFound, inOldVariable, inCref, inValue, inEnv);
+end addVarToVarList2;
+  
+protected function addVarToVarList3
+  input Boolean inFound;
+  input Variable inOldVariable;
+  input DAE.ComponentRef inCref;
+  input Values.Value inValue;
+  input Env.Env inEnv;
+  output Variable outVariable;
+algorithm
+  outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
     local
-      String ident,id2;
-      Values.Value v,val2;
-      DAE.Type t,t2;
-      list<Variable> rest,rest_1;
-    case (ident,v,t,(IVAR(varIdent = id2) :: rest))
-      equation
-        true = stringEq(ident, id2);
-      then
-        (IVAR(ident,v,t) :: rest);
-    case (ident,v,t,(IVAR(varIdent = id2,value = val2,type_ = t2) :: rest))
-      equation
-        false = stringEq(ident, id2);
-        rest_1 = addVarToVarlist(ident, v, t, rest);
-      then
-        (IVAR(id2,val2,t2) :: rest_1);
-    case (ident,v,t,{}) then {IVAR(ident,v,t)};
-  end matchcontinue;
-end addVarToVarlist;
+      Absyn.Ident id;
+      Values.Value val;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
 
+    // Variable is not a match, keep the old one.
+    case (false, _, _, _, _) then inOldVariable;
+
+    // Assigning whole variable => return new variable.
+    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then IVAR(id, inValue, ty);
+
+    // Assigning array slice => update the old variable's value.
+    case (true, IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
+      equation
+        (_, val, _) = CevalFunction.assignVector(inValue, val, subs,
+          Env.emptyCache(), inEnv, NONE());
+      then
+        IVAR(id, val, ty);
+
+  end match;
+end addVarToVarList3;
+
+protected function addVarToVarList4
+  input Boolean inFound;
+  input DAE.ComponentRef inCref;
+  input Values.Value inValue;
+  input list<Variable> inVariables;
+  output list<Variable> outVariables;
+algorithm
+  outVariables := match(inFound, inCref, inValue, inVariables)
+    local
+      Absyn.Ident id;
+      DAE.Type ty;
+
+    // Variable was already updated in addVarToVar, do nothing.
+    case (true, _, _, _) then inVariables;
+
+    // Variable is new, add it to the list of variables.
+    case (false, DAE.CREF_IDENT(id, ty, {}), _, _)
+      then IVAR(id, inValue, ty) :: inVariables;
+
+    // Assigning to an array slice is only allowed for variables that have
+    // already been defined, i.e. that have a size. Print an error otherwise.
+    case (false, DAE.CREF_IDENT(ident = id, subscriptLst = _ :: _), _, _)
+      equation
+        Error.addMessage(Error.SLICE_ASSIGN_NON_ARRAY, {id});
+      then
+        fail();
+
+  end match;
+end addVarToVarList4;
+    
 public function buildEnvFromSymboltable
 "function: buildEnvFromSymboltable
    author: PA
@@ -9709,54 +9717,6 @@ algorithm
     case (p,_) then p;
   end matchcontinue;
 end addScope;
-
-public function updateScope
-"function: updateScope
-   This function takes a PROGRAM and updates the variable scope to according
-   to the value of program:
-   1. BEGIN_DEFINITION ident appends ident to scope
-   2.END_DEFINITION ident removes ident from scope"
-  input Absyn.Program inProgram;
-  input list<Variable> inVariableLst;
-  output list<Variable> outVariableLst;
-algorithm
-  outVariableLst := match (inProgram,inVariableLst)
-    local
-      list<Variable> vars;
-
-    case (_,vars) then vars;
-  end match;
-end updateScope;
-
-protected function removeVarFromVarlist
-"function: removeVarFromVarlist
-  Helper function to updateScope."
-  input Absyn.Ident inIdent;
-  input list<Variable> inVariableLst;
-  output list<Variable> outVariableLst;
-algorithm
-  outVariableLst := matchcontinue (inIdent,inVariableLst)
-    local
-      String id1,id2;
-      list<Variable> rest,rest_1;
-      Variable v;
-
-    case (_,{}) then {};
-
-    case (id1,(IVAR(varIdent = id2) :: rest))
-      equation
-        true = stringEq(id1, id2);
-      then
-        rest;
-
-    case (id1,((v as IVAR(varIdent = id2)) :: rest))
-      equation
-        false = stringEq(id1, id2);
-        rest_1 = removeVarFromVarlist(id1, rest);
-      then
-        (v :: rest_1);
-  end matchcontinue;
-end removeVarFromVarlist;
 
 protected function getVariableValue
 "function: getVariableValue
@@ -19958,6 +19918,22 @@ algorithm
     case (SYMBOLTABLE(ast = outAST)) then outAST;
   end match;
 end getSymbolTableAST;
+
+protected function setSymbolTableVars
+  input list<Variable> inVars;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  Absyn.Program ast;
+  AbsynDep.Depends dep;
+  Option<SCode.Program> exp_ast;
+  list<InstantiatedClass> cls;
+  list<CompiledCFunction> comp_funcs;
+  list<LoadedFile> files;
+algorithm
+  SYMBOLTABLE(ast, dep, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
+  outSymbolTable := SYMBOLTABLE(ast, dep, exp_ast, cls, inVars, comp_funcs, files); 
+end setSymbolTableVars;
 
 public function getFunctionsInProgram
   input Absyn.Program prog;

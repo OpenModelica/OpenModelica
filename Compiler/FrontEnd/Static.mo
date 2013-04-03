@@ -4996,8 +4996,9 @@ algorithm
       equation
         path = Absyn.crefToPath(cr);
         path_str = Absyn.pathString(path);
-        symbol_table_1 = Interactive.addVarToSymboltable(path_str, Values.CODE(Absyn.C_VARIABLENAME(cr)), tp,
-          symbol_table);
+        symbol_table_1 = Interactive.addVarToSymboltable(
+          DAE.CREF_IDENT(path_str, tp, {}),
+          Values.CODE(Absyn.C_VARIABLENAME(cr)), Env.emptyEnv, symbol_table);
         symbol_table_2 = absynCrefListToInteractiveVarList(rest, symbol_table_1, tp);
       then
         symbol_table_2;

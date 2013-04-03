@@ -2112,7 +2112,7 @@ algorithm
   end match;
 end assignRecordComponents;
 
-protected function assignVector
+public function assignVector
   "This function assigns a part of a vector by replacing the parts indicated by
   the subscripts in the old value with the new value."
   input Values.Value inNewValue;

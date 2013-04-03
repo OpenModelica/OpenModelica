@@ -135,100 +135,150 @@ algorithm
   end matchcontinue;
 end makeDebugResult;
 
-protected function handleCommand
-"function handleCommand
-  This function handles the commands in form of strings send to the server
-  If the command is quit, the function returns false, otherwise it sends
-  the string to the parse function and returns true."
-  input String inString;
-  input Interactive.SymbolTable inInteractiveSymbolTable;
-  output Boolean outBoolean;
-  output String outString;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+protected function parseCommand
+  "Helper function to handleCommand. First tries to parse the given command as a
+   list of statements, and if that fails tries to parse it as a collection of
+   classes. Returns either Interactive.Statements or Absyn.Program based on
+   which parser succeeds, or neither if a parser error occured."
+  input String inCommand;
+  output Option<Interactive.Statements> outStatements;
+  output Option<Absyn.Program> outProgram;
 algorithm
-  (outBoolean,outString,outInteractiveSymbolTable) := matchcontinue (inString,inInteractiveSymbolTable)
+  (outStatements, outProgram) := matchcontinue(inCommand)
     local
-      String str,res_1,res,evalstr,debugstr;
-      Interactive.SymbolTable isymb,newisymb;
-      Absyn.Program p,p_1,newprog,iprog;
-      AbsynDep.Depends aDep;
-      list<Interactive.Variable> vars_1,vars;
-      list<Interactive.CompiledCFunction> cf;
-      list<Interactive.InstantiatedClass> b;
-      Interactive.Statements exp;
-      list<Interactive.LoadedFile> lf;
+      Interactive.Statements stmts;
+      Absyn.Program prog;
+      String str;
 
-    case (str,isymb)
-      equation
-        true = Util.strncmp("quit()", str, 6);
-      then
-        (false,"Ok\n",isymb);
-
-    // Interactively evaluate an algorithm statement or expression
-    case (str,isymb)
+    case (_)
       equation
         ErrorExt.setCheckpoint("parsestring");
-        //debug_print("Command: don't typeCheck", str);
-        Debug.fcall0(Flags.DUMP, Print.clearBuf);
-        Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
-        Debug.fprint(Flags.DUMP,
-          "\nNot a class definition, trying expresion parser\n");
-        exp = Parser.parsestringexp(str,"<interactive>");
-        (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
-        Debug.fcall(Flags.DUMP, Dump.dumpIstmt, exp);
-        res_1 = makeDebugResult(Flags.DUMP, evalstr);
-        res = makeDebugResult(Flags.DUMP_GRAPHVIZ, res_1);
+        stmts = Parser.parsestringexp(inCommand, "<interactive>");
         ErrorExt.delCheckpoint("parsestring");
       then
-        (true,res,newisymb);
+        (SOME(stmts), NONE());
 
-    // Add a class or function to the interactive symbol table.
-    // If it is a function, type check it.
-    case (str,
-    (isymb as Interactive.SYMBOLTABLE(
-      ast = iprog,depends=aDep,instClsLst = b,
-      lstVarVal = vars,compiledFunctions = cf,
-      loadedFiles = lf)))
+    case (_)
       equation
         ErrorExt.rollBack("parsestring");
-        // debug_print("Command: typeCheck", str);
+        prog = Parser.parsestring(inCommand, "<interactive>");
+      then
+        (NONE(), SOME(prog));
+
+    else (NONE(), NONE());
+
+  end matchcontinue;
+end parseCommand;
+
+protected function handleCommand
+  "This function handles the commands in form of strings send to the server.
+   If the command is quit, the function returns false, otherwise it sends the
+   string to the parse function and returns true."
+  input String inCommand;
+  input Interactive.SymbolTable inSymbolTable;
+  output Boolean outContinue;
+  output String outResult;
+  output Interactive.SymbolTable outSymbolTable;
+protected
+algorithm
+  (outContinue, outResult, outSymbolTable) :=
+  matchcontinue(inCommand, inSymbolTable)
+    local
+      Option<Interactive.Statements> stmts;
+      Option<Absyn.Program> prog;
+      Interactive.SymbolTable st;
+      String result;
+
+    case (_, _)
+      equation
+        true = Util.strncmp("quit()", inCommand, 6);
+      then
+        (false, "Ok\n", inSymbolTable);
+
+    else
+      equation
         Debug.fcall0(Flags.DUMP, Print.clearBuf);
         Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
-        Debug.fprint(Flags.DUMP, "\nTrying to parse class definition...\n");
-        p = Parser.parsestring(str,"<interactive>");
-        p_1 = Interactive.addScope(p, vars);
-        vars_1 = Interactive.updateScope(p, vars);
-        newprog = Interactive.updateProgram(p_1, iprog);
-        // not needed. the functions will be remove by examining
-        // build times and files!
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, newprog);
-        Debug.fcall(Flags.DUMP, Dump.dump, newprog);
-        res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
-        res_1 = makeDebugResult(Flags.DUMP, res_1);
-        res = makeDebugResult(Flags.DUMP_GRAPHVIZ, res_1);
-        isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf,lf);
+        (stmts, prog) = parseCommand(inCommand);
+        (result, st) =
+          handleCommand2(stmts, prog, inCommand, inSymbolTable);
+        result = makeDebugResult(Flags.DUMP, result);
+        result = makeDebugResult(Flags.DUMP_GRAPHVIZ, result);
       then
-        (true,res,isymb);
+        (true, result, st);
 
-    case (_,isymb)
-      equation
-        Print.printBuf("Error occured building AST\n");
-        debugstr = Print.getString();
-        str = stringAppend(debugstr, "Syntax Error\n");
-        str = stringAppend(str, Error.printMessagesStr());
-      then
-        (true,str,isymb);
-
-    case (str,isymb)
-      equation
-        _ = setStackOverflowSignal(false);
-        Error.addMessage(Error.STACK_OVERFLOW,{str});
-      then
-        (true,"",isymb);
   end matchcontinue;
 end handleCommand;
+
+protected function handleCommand2
+  input Option<Interactive.Statements> inStatements;
+  input Option<Absyn.Program> inProgram;
+  input String inCommand;
+  input Interactive.SymbolTable inSymbolTable;
+  output String outResult;
+  output Interactive.SymbolTable outSymbolTable;
+algorithm
+  (outResult, outSymbolTable) :=
+  matchcontinue(inStatements, inProgram, inCommand, inSymbolTable)
+    local
+      Interactive.Statements stmts;
+      Absyn.Program prog, ast;
+      String result;
+      Interactive.SymbolTable st;
+      list<Interactive.Variable> vars;
+
+    // Interactively evaluate an algorithm statement or expression.
+    case (SOME(stmts), NONE(), _, _)
+      equation
+        (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
+        Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
+        Debug.fcall(Flags.DUMP, Dump.dumpIstmt, stmts);
+      then
+        (result, st);
+
+    // Add a class or function to the interactive symbol table.
+    case (NONE(), SOME(prog), _, Interactive.SYMBOLTABLE(ast = ast, lstVarVal = vars))
+      equation
+        prog = Interactive.addScope(prog, vars);
+        prog = Interactive.updateProgram(prog, ast);
+        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
+        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog);
+        Debug.fcall(Flags.DUMP, Dump.dump, prog);
+        result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
+        st = Interactive.setSymbolTableAST(inSymbolTable, prog);
+      then
+        (result, st);
+
+    // A parser error occured in parseCommand, display the error message. This
+    // is handled here instead of in parseCommand, since parseCommand does not
+    // return a result string.
+    case (NONE(), NONE(), _, _)
+      equation
+        Print.printBuf("Error occurred building AST\n");
+        result = Print.getString();
+        result = stringAppend(result, "Syntax Error\n");
+        result = stringAppend(result, Error.printMessagesStr());
+      then
+        (result, inSymbolTable);
+
+    // A non-parser error occured, display the error message.
+    case (_, _, _, _)
+      equation
+        true = Util.isSome(inStatements) or Util.isSome(inProgram);
+        result = Error.printMessagesStr();
+      then
+        (result, inSymbolTable);
+
+    else
+      equation
+        true = Util.isSome(inStatements) or Util.isSome(inProgram);
+        _ = setStackOverflowSignal(false);
+        Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
+      then
+        ("", inSymbolTable);
+
+  end matchcontinue;
+end handleCommand2;
 
 protected function makeClassDefResult
 "creates a list of classes of the program to be returned from evaluate"
@@ -245,13 +295,13 @@ algorithm
       equation
         names = List.map(cls,Absyn.className);
         names = List.map1(names,Absyn.joinPaths,scope);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
+        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
         names = List.map(cls,Absyn.className);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
+        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
       then res;
 
   end match;

@@ -1498,7 +1498,9 @@ algorithm
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
-        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
+        newst = Interactive.addVarToSymboltable(
+          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
+          Values.STRING(result_file), Env.emptyEnv, st);
         //Reset PostOptModules flags
         Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
       then
@@ -3554,7 +3556,9 @@ algorithm
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
-        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, inSt);
+        newst = Interactive.addVarToSymboltable(
+          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}), 
+          Values.STRING(result_file), Env.emptyEnv, inSt);
       then
         (inCache,simValue,newst);
     else
@@ -3599,7 +3603,9 @@ algorithm
            System.readFile("output.log"),
            ("simulationTime", Values.REAL(timeSimulation)) ::
           {});
-        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, inSt);
+        newst = Interactive.addVarToSymboltable(
+          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
+          Values.STRING(result_file), Env.emptyEnv, inSt);
       then
         (inCache,simValue,newst);
     else
