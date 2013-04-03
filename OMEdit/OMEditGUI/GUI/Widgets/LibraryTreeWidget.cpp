@@ -1203,7 +1203,8 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     {
       menu.addSeparator();
       menu.addAction(mpUnloadClassAction);
-      menu.addAction(mpRefreshAction);
+      /* Only used for development testing. */
+      /*menu.addAction(mpRefreshAction);*/
     }
     menu.addSeparator();
     menu.addAction(mpExportFMUAction);

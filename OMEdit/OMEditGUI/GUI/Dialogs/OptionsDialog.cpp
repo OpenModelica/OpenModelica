@@ -672,7 +672,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
   // Store Customizations Option
-  mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations."));
+  mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

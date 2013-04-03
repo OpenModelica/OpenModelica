@@ -1305,11 +1305,18 @@ void MainWindow::openConfigurationOptions()
   mpOptionsDialog->show();
 }
 
-void MainWindow::openUserManual()
+void MainWindow::openUsersGuide()
 {
-  QUrl userManualPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                       .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
-  QDesktopServices::openUrl(userManualPath);
+  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                       .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
+  QDesktopServices::openUrl(usersGuidePath);
+}
+
+void MainWindow::openSystemDocumentation()
+{
+  QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                                .append("/share/doc/omc/OpenModelicaSystem.pdf"));
+  QDesktopServices::openUrl(systemDocumentationPath);
 }
 
 void MainWindow::openAboutOMEdit()
@@ -1556,11 +1563,15 @@ void MainWindow::createActions()
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
   connect(mpOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
   // Help Menu
-  // user manual action
-  mpUserManualAction = new QAction(tr("User Manual"), this);
-  mpUserManualAction->setStatusTip(tr("Opens the User Manual"));
-  mpUserManualAction->setShortcut(QKeySequence(Qt::Key_F1));
-  connect(mpUserManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
+  // users guide action
+  mpUsersGuideAction = new QAction(tr("OpenModelica Users Guide"), this);
+  mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica Users Guide"));
+  mpUsersGuideAction->setShortcut(QKeySequence(Qt::Key_F1));
+  connect(mpUsersGuideAction, SIGNAL(triggered()), SLOT(openUsersGuide()));
+  // system documentation action
+  mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
+  mpSystemDocumentationAction->setStatusTip(tr("Opens the OpenModelica System Documentation"));
+  connect(mpSystemDocumentationAction, SIGNAL(triggered()), SLOT(openSystemDocumentation()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -1756,7 +1767,8 @@ void MainWindow::createMenus()
   QMenu *pHelpMenu = new QMenu(pMenuBar);
   pHelpMenu->setTitle(tr("&Help"));
   // add actions to Help menu
-  pHelpMenu->addAction(mpUserManualAction);
+  pHelpMenu->addAction(mpUsersGuideAction);
+  pHelpMenu->addAction(mpSystemDocumentationAction);
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
   pMenuBar->addAction(pHelpMenu->menuAction());

@@ -213,7 +213,8 @@ private:
   QAction *mpImportFromOMNotebookAction;
   QAction *mpOptionsAction;
   // Help Menu
-  QAction *mpUserManualAction;
+  QAction *mpUsersGuideAction;
+  QAction *mpSystemDocumentationAction;
   QAction *mpAboutOMEditAction;
   // Toolbar Actions
   // Shapes Toolbar Actions
@@ -270,7 +271,8 @@ public slots:
   void importModelfromOMNotebook();
   void exportModelAsImage();
   void openConfigurationOptions();
-  void openUserManual();
+  void openUsersGuide();
+  void openSystemDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
   void openRecentModelWidget();
