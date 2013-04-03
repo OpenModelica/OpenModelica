@@ -694,8 +694,6 @@ match submod
     '<%dumpModifierPrefix(A)%><%ident%><%dumpModifier(A)%>'
   case NAMEMOD(A = REDECL(__)) then
     '<%dumpRedeclModifier(A)%>'
-  case IDXMOD(__) then
-    '<%dumpModifierPrefix(an)%><%AbsynDumpTpl.dumpSubscripts(subscriptLst)%><%dumpModifier(an)%>'
 end dumpSubModifier;
 
 template dumpAttributes(SCode.Attributes attributes)

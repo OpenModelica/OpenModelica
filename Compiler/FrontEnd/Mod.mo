@@ -240,11 +240,6 @@ algorithm
         true = ClassInf.isBasicTypeComponentName(ident);
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
-    case SCode.IDXMOD(an = mod)::subs
-      equation
-        checkIfModsAreBasicTypeMods(mod);
-        checkIfSubmodsAreBasicTypeMods(subs);
-      then ();
   end match;
 end checkIfSubmodsAreBasicTypeMods;
 
@@ -486,12 +481,6 @@ algorithm
         m_1 = unelabMod(m);
       then
         {SCode.NAMEMOD(i,m_1)};
-    case (DAE.IDXMOD(integerLst = ss,mod = m))
-      equation
-        ss_1 = unelabSubscript(ss);
-        m_1 = unelabMod(m);
-      then
-        {SCode.IDXMOD(ss_1,m_1)};
   end match;
 end unelabSubmod;
 
@@ -652,11 +641,6 @@ algorithm
       then
         (cache,{DAE.NAMEMOD(i,m_1)});
 
-    case (cache,env,ih,pre,DAE.IDXMOD(mod = m,integerLst=idxmod),impl,_)
-      equation
-        (cache,m_1) = updateMod(cache, env, ih, pre, m, impl, info) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
-      then
-        (cache,{DAE.IDXMOD(idxmod,m_1)});
   end match;
 end updateSubmod;
 
@@ -782,13 +766,6 @@ algorithm
         (cache,m_1) = elabMod(cache, env, ih, pre, m, impl, info);
       then
         (cache,{DAE.NAMEMOD(i,m_1)});
-    case (cache,env,ih,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl,_)
-      equation
-        (cache,ss_1,DAE.C_CONST()) = Static.elabSubscripts(cache,env, ss, impl,pre,info);
-        (cache,m_1) = elabMod(cache, env, ih, pre, m, impl, info);
-        smods = makeIdxmods(ss_1, m_1);
-      then
-        (cache,smods);
   end match;
 end elabSubmod;
 
@@ -848,190 +825,8 @@ algorithm
         m_1 = elabUntypedMod(m, env, pre);
       then
         {DAE.NAMEMOD(i,m_1)};
-    case (SCode.IDXMOD(subscriptLst = subcr,an = m),env,pre)
-      equation
-        (_,sList,DAE.C_CONST()) = Static.elabSubscripts(Env.emptyCache(), env, subcr, true,  pre, Absyn.dummyInfo);
-        m_1 = elabUntypedMod(m, env, pre);
-        smods = makeIdxmods(sList, m_1);
-      then
-        smods;
   end match;
 end elabUntypedSubmod;
-
-protected function makeIdxmods "function: makeIdxmods
-  From a list of list of integers, this function creates a list of
-  sub-modifications of the IDXMOD variety."
-  input list<DAE.Subscript> inExpSubscriptLst;
-  input DAE.Mod inMod;
-  output list<DAE.SubMod> outTypesSubModLst;
-algorithm
-  outTypesSubModLst := matchcontinue (inExpSubscriptLst,inMod)
-    local
-      Integer x;
-      DAE.Mod m;
-      list<DAE.SubMod> mods,mods_1;
-      list<DAE.Subscript> xs;
-      list<DAE.Exp> slice;
-
-    // last mod
-    case ({DAE.INDEX(exp = DAE.ICONST(integer = x))},m) then {DAE.IDXMOD({x},m)};
-    // some more mods
-    case ((DAE.INDEX(exp = DAE.ICONST(integer = x)) :: xs),m)
-      equation
-        mods = makeIdxmods(xs, m);
-        mods_1 = prefixIdxmods(mods, x);
-      then
-        mods_1;
-    case ((DAE.SLICE(exp = DAE.ARRAY(array = slice)) :: xs),m)
-      equation
-        mods = expandSlice(slice, xs, 1, m);
-      then
-        mods;
-    case ((DAE.WHOLEDIM() :: xs),m)
-      equation
-        print("# Sorry, [:] slices are not handled in modifications\n");
-      then
-        fail();
-    case(xs,m) equation
-      print("Mod.makeIdxmods failed for mod:");print(printModStr(m));print("\n");
-      print("subs =");print(stringDelimitList(List.map(xs,ExpressionDump.printSubscriptStr),","));
-      print("\n");
-    then fail();
-
-  end matchcontinue;
-end makeIdxmods;
-
-protected function prefixIdxmods "function: prefixIdxmods
-  This function adds a subscript to each DAE.IDXMOD in a list of submodifications."
-  input list<DAE.SubMod> inTypesSubModLst;
-  input Integer inInteger;
-  output list<DAE.SubMod> outTypesSubModLst;
-algorithm
-  outTypesSubModLst := match (inTypesSubModLst,inInteger)
-    local
-      list<DAE.SubMod> mods_1,mods;
-      list<Integer> l;
-      DAE.Mod m;
-      Integer i;
-    case ({},_) then {};
-    case ((DAE.IDXMOD(integerLst = l,mod = m) :: mods),i)
-      equation
-        mods_1 = prefixIdxmods(mods, i);
-      then
-        (DAE.IDXMOD((i :: l),m) :: mods_1);
-  end match;
-end prefixIdxmods;
-
-protected function expandSlice "function: expandSlice
-  This function goes through an array slice modification and creates
-  an singly indexed modification for each index in the slice.  For
-  example, x[2:3] = y is changed into x[2] = y[1] and
-  x[3] = y[2]."
-  input list<DAE.Exp> inExpExpLst;
-  input list<DAE.Subscript> inExpSubscriptLst;
-  input Integer inInteger;
-  input DAE.Mod inMod;
-  output list<DAE.SubMod> outTypesSubModLst;
-algorithm
-  outTypesSubModLst := matchcontinue (inExpExpLst,inExpSubscriptLst,inInteger,inMod)
-    local
-      DAE.Exp e_1,x,e,e_2;
-      DAE.Type t_1,t;
-      list<DAE.SubMod> mods1,mods2,mods;
-      Integer n_1,n;
-      list<DAE.Exp> xs;
-      list<DAE.Subscript> restSubscripts;
-      DAE.Mod m,mod,unfoldedMod;
-      SCode.Final finalPrefix;
-      SCode.Each each_;
-      Option<Values.Value> e_val;
-      DAE.Const const;
-      Ident str;
-      Values.Value val, indexVal;
-      Absyn.Info info;
-
-    case ({},_,_,_) then {};
-    case ({},_,_,_) then {};
-
-    // try to do value indexing on e_val as SOME(val) first!
-    case ((x :: xs),restSubscripts,n,(m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = {},
-                                       eqModOption = SOME(DAE.TYPED(e,SOME(val),DAE.PROP(t,const),_,info)))))
-      equation
-        e_2 = DAE.ICONST(n);
-        //print("FULLValue: " +& ValuesUtil.printValStr(val) +& "\n");
-        // get the indexed value
-        indexVal = ValuesUtil.nthArrayelt(val, n);
-        // transform to exp
-        e_1 = ValuesUtil.valueExp(indexVal);
-        t_1 = Types.unliftArray(t);
-        unfoldedMod = DAE.MOD(finalPrefix,each_,{},
-                              SOME(DAE.TYPED(e_1,SOME(indexVal),DAE.PROP(t_1,const),NONE(),info)));
-        //print("IDXValue: " +& ValuesUtil.printValStr(indexVal) +& "\n");
-        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
-        mods1 = makeIdxmods(DAE.INDEX(x) :: restSubscripts,unfoldedMod);
-        n_1 = n + 1;
-        mods2 = expandSlice(xs, restSubscripts, n_1, m);
-        mods = listAppend(mods1, mods2);
-      then
-        mods;
-
-    // value indexing didn't work, try to index DAE.EXP
-    case ((x :: xs),restSubscripts,n,
-          (m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = {},
-                        eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_,info)))))
-      equation
-        e_2 = DAE.ICONST(n);
-        //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");
-        (e_1,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{e_2}));
-        t_1 = Types.unliftArray(t);
-        unfoldedMod = DAE.MOD(finalPrefix,each_,{},
-                              SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE(),info)));
-        //print("IDXExpression: " +& ExpressionDump.printExpStr(e_1) +& "\n");
-        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
-        mods1 = makeIdxmods((DAE.INDEX(x) :: restSubscripts),unfoldedMod);
-        n_1 = n + 1;
-        mods2 = expandSlice(xs, restSubscripts, n_1, m);
-        mods = listAppend(mods1, mods2);
-      then
-        mods;
-    case (_,_,_,mod)
-      equation
-        str = printModStr(mod);
-        Error.addMessage(Error.ILLEGAL_SLICE_MOD, {str});
-      then
-        fail();
-  end matchcontinue;
-end expandSlice;
-
-protected function expandList "function: expandList
-  This utility function takes a list of integer values and a list of
-  list of integers, and for each integer in the first and each list
-  in the second list creates a
-  list with that integer as head and the second list as tail. All
-  resulting lists are collected in a list and returned."
-  input list<Values.Value> inValuesValueLst;
-  input list<list<Integer>> inIntegerLstLst;
-  output list<list<Integer>> outIntegerLstLst;
-algorithm
-  outIntegerLstLst := matchcontinue (inValuesValueLst,inIntegerLstLst)
-    local
-      list<list<Integer>> l1,l2,l,yy,ys;
-      list<Values.Value> xx,xs;
-      Integer x;
-      list<Integer> y;
-
-    case ({},_) then {};
-    case (_,{}) then {};
-    case ((xx as (Values.INTEGER(integer = x) :: xs)),(yy as (y :: ys)))
-      equation
-        l1 = expandList(xx, ys);
-        l2 = expandList(xs, yy);
-        l = listAppend(l1, l2);
-      then
-        ((x :: y) :: l);
-
-  end matchcontinue;
-end expandList;
 
 protected function insertSubmods "function: insertSubmods
   This function repeatedly calls insertSubmod to incrementally
@@ -1082,13 +877,6 @@ algorithm
         m = merge(m1, m2, env, pre);
       then
         (DAE.NAMEMOD(n1,m) :: tail);
-
-    case (DAE.IDXMOD(integerLst = i1,mod = m1),(DAE.IDXMOD(integerLst = i2,mod = m2) :: tail),env,pre)
-      equation
-        equality(i1 = i2);
-        m = merge(m1, m2, env, pre);
-      then
-        (DAE.IDXMOD(i1,m) :: tail);
     */
     case (sub1,sub2,_,_) then (sub1 :: sub2);
   end matchcontinue;
@@ -1496,12 +1284,6 @@ algorithm
       then
         lst;
 
-    // an index modification, skip it
-    case ((DAE.IDXMOD(integerLst=_) :: rest),id2)
-      equation
-        lst = lookupNamedModifications(rest, id2);
-      then
-        lst;
   end matchcontinue;
 end lookupNamedModifications;
 
@@ -1522,7 +1304,7 @@ protected function tryMergeSubMods
   input list<DAE.SubMod> inSubModLst;
   output DAE.Mod mod;
 algorithm
-  mod := matchcontinue(inSubModLst)
+  mod := match(inSubModLst)
     local
       list<DAE.SubMod> rest;
       DAE.SubMod x;
@@ -1532,7 +1314,6 @@ algorithm
     case ({}) then fail();
 
     case ({DAE.NAMEMOD(mod=mod)}) then mod;
-    case ({DAE.IDXMOD(mod=mod)}) then mod;
 
     case ((x as DAE.NAMEMOD(mod=mod1))::rest)
       equation
@@ -1545,17 +1326,7 @@ algorithm
       then
         mod;
 
-    case ((x as DAE.IDXMOD(mod=mod1))::rest)
-      equation
-        // make sure x is not present in the rest
-        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {}), inSubModLst);
-        // print("FullModsTry: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
-        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
-        mod2 = tryMergeSubMods(rest);
-        mod = merge(mod1, mod2, {}, Prefix.NOPRE());
-      then
-        mod;
-  end matchcontinue;
+  end match;
 end tryMergeSubMods;
 
 protected function lookupCompModification2 "function: lookupCompModification2
@@ -1685,27 +1456,6 @@ algorithm
       list<DAE.SubMod> sms;
 
     case ({},_) then (DAE.NOMOD(),{});
-
-    case ((DAE.IDXMOD(integerLst = {x},mod = mod) :: subs),y) /* FIXME: Redeclaration */
-      equation
-        true = intEq(x, y);
-        (DAE.NOMOD(),subs_1) = lookupIdxModification2(subs,y);
-      then
-        (mod,subs_1);
-
-    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
-      equation
-        true = intEq(x, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs,y);
-      then
-        (mod_1,(DAE.IDXMOD(xs,mod) :: subs_1));
-
-    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
-      equation
-        false = intEq(x, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs,y);
-      then
-        (mod_1,subs_1);
 
     case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
       equation
@@ -2065,13 +1815,6 @@ algorithm
       then
         ();
 
-    // ignore idx for now
-    case (DAE.IDXMOD(_, _)::rest, _)
-      equation
-        checkModification(rest, inMod);
-      then
-        ();
-
     else ();
 
   end matchcontinue;
@@ -2134,14 +1877,6 @@ algorithm
       then
         (DAE.NAMEMOD(n1,m),ss);
 
-    // indexed mods, modifications in the list take precedence
-    case (DAE.IDXMOD(integerLst = i1,mod = m1),(DAE.IDXMOD(integerLst = i2,mod = m2) :: ss),env,pre)
-      equation
-        equality(i1 = i2);
-        m = merge(m1, m2, env, pre);
-      then
-        (DAE.IDXMOD(i1,m),ss);
-
     // handle next
     case (s1,(s2::ss),env,pre)
       equation
@@ -2185,14 +1920,6 @@ algorithm
       then
         (ss,DAE.NAMEMOD(n1,m));
 
-    // indexed mods, modifications in the list take precedence
-    case ((DAE.IDXMOD(integerLst = i1,mod = m1) :: ss),DAE.IDXMOD(integerLst = i2,mod = m2),env,pre)
-      equation
-        equality(i1 = i2);
-        m = merge(m1, m2, env, pre);
-      then
-        (ss,DAE.IDXMOD(i1,m));
-
     // handle rest
     case ((s1 :: ss),s2,env,pre)
       equation
@@ -2218,12 +1945,7 @@ algorithm
         true = stringEq(n1, n2);
       then false;
 
-    case (DAE.IDXMOD(integerLst = i1),DAE.IDXMOD(integerLst = i2))
-      equation
-        equality(i1 = i2);
-      then false;
-
-    case(_,_) then true;
+    else true;
   end matchcontinue;
 end verifySubMerge;
 
@@ -2405,22 +2127,8 @@ algorithm
       then
         true;
 
-    case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
-      equation
-        List.threadMapAllValue(indx1,indx2,intEq,true);
-        true = modSubsetOrEqualOrNonOverlap(mod1,mod2);
-        true = subModsSubsetOrEqual(subModLst1,subModLst2);
-      then
-        true;
-
-    case(subModLst1,DAE.IDXMOD(_,_)::subModLst2)
-      equation
-        true = subModsSubsetOrEqual(subModLst1,subModLst2);
-      then
-        true;
-
     // otherwise false
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end subModsSubsetOrEqual;
 
@@ -2490,16 +2198,8 @@ algorithm
       then
         true;
 
-    case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
-      equation
-        List.threadMapAllValue(indx1,indx2,intEq,true);
-        true = modEqual(mod1,mod2);
-        true = subModsEqual(subModLst1,subModLst2);
-      then
-        true;
-
     // otherwise false
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end subModsEqual;
@@ -2524,15 +2224,8 @@ algorithm
       then
         true;
 
-    case (DAE.IDXMOD(indx1,mod1),DAE.IDXMOD(indx2,mod2))
-      equation
-        List.threadMapAllValue(indx1,indx2,intEq,true);
-        true = modEqual(mod1,mod2);
-      then
-        true;
-
     // otherwise false
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end subModEqual;
 
@@ -2724,35 +2417,29 @@ Helper function for prettyPrintMod"
   input list<DAE.SubMod> inSubs;
   input Integer depth;
   output String str;
-algorithm str := matchcontinue(inSubs,depth)
-  local
-    String s1,s2,id;
-    DAE.SubMod s;
-    DAE.Mod m;
-    list<Integer> li;
-    list<DAE.SubMod> subs;
+algorithm
+  str := match(inSubs,depth)
+    local
+      String s1,s2,id;
+      DAE.SubMod s;
+      DAE.Mod m;
+      list<Integer> li;
+      list<DAE.SubMod> subs;
 
-  case({},_) then "";
-  case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::subs,_)
-    equation
-      s2 = " redeclare(" +& id +&  "), class or component " +& id;
-    then
-      s2;
-  case((s as DAE.NAMEMOD(id,m))::subs,_)
-    equation
-      s2  = prettyPrintMod(m,depth+1);
-      s2 = Util.if_(stringLength(s2) == 0, "", s2);
-      s2 = "(" +& id +& s2 +& "), class or component " +& id;
-    then
-      s2;
-  case((s as DAE.IDXMOD(li,m))::subs,_)
-    equation
-      //s1 = prettyPrintSubs(subs);
-      s2  = prettyPrintMod(m,depth+1);
-      s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& s2;
-    then
-      s1;
-end matchcontinue;
+    case({},_) then "";
+    case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::subs,_)
+      equation
+        s2 = " redeclare(" +& id +&  "), class or component " +& id;
+      then
+        s2;
+    case((s as DAE.NAMEMOD(id,m))::subs,_)
+      equation
+        s2  = prettyPrintMod(m,depth+1);
+        s2 = Util.if_(stringLength(s2) == 0, "", s2);
+        s2 = "(" +& id +& s2 +& "), class or component " +& id;
+      then
+        s2;
+    end match;
 end prettyPrintSubs;
 
 public function prettyPrintSubmod "
@@ -2760,7 +2447,7 @@ Prints a readable format of a sub-modifier, used in error reporting for built-in
   input DAE.SubMod inSub;
   output String str;
 algorithm
-  str := matchcontinue(inSub)
+  str := match(inSub)
     local
       String s1,s2,id;
       DAE.Mod m;
@@ -2786,14 +2473,7 @@ algorithm
       then
         s2;
 
-    case(DAE.IDXMOD(li,m))
-      equation
-        s2  = prettyPrintMod(m,0);
-        s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& s2;
-      then
-        s1;
-
-  end matchcontinue;
+  end match;
 end prettyPrintSubmod;
 
 public function printSubs1Str "function: printSubs1Str
@@ -2832,13 +2512,6 @@ algorithm
       equation
         mod_str = printModStr(mod);
         res = stringAppend(n +& " ", mod_str);
-      then
-        res;
-    case DAE.IDXMOD(integerLst = ss,mod = mod)
-      equation
-        str = printSubscriptsStr(ss);
-        mod_str = printModStr(mod);
-        res = stringAppend(str +& " ", mod_str);
       then
         res;
   end match;
@@ -2985,41 +2658,6 @@ algorithm
   end matchcontinue;
 end emptyModOrEquality;
 
-protected function getAllIndexesFromIdxMods
-"@author: adrpo
-  Go through the entire list of submods and
-  returns a list<tuple<string,mod>> where
-  string created from indexes delimited by DOT."
-  input list<DAE.SubMod> inSubModLst;
-  output list<tuple<String,DAE.SubMod>> indexes;
-algorithm
-  indexes := matchcontinue(inSubModLst)
-    local
-      list<DAE.SubMod> rest;
-      list<Integer> il;
-      DAE.SubMod submod;
-      String str;
-      list<tuple<String,DAE.SubMod>> lst;
-
-    // empty case
-    case({}) then {};
-    // index modifs
-    case((submod as DAE.IDXMOD(integerLst = il))::rest)
-      equation
-        lst = getAllIndexesFromIdxMods(rest);
-        // from an index list {1, 2} make a string such as 1.2
-        str = stringAppendList(List.map(il, intStringDot));
-      then
-        (str,submod)::lst;
-    // ignore named modifs
-    case(_::rest)
-      equation
-        lst = getAllIndexesFromIdxMods(rest);
-      then
-        lst;
-  end matchcontinue;
-end getAllIndexesFromIdxMods;
-
 protected function intStringDot
   input Integer i;
   output String str;
@@ -3047,124 +2685,6 @@ algorithm
     case (_, _) then false;
   end matchcontinue;
 end isPrefixOf;
-
-protected function getOverlap
-  input list<tuple<String, DAE.SubMod>> indexes;
-  output list<tuple<String, DAE.SubMod>> overlap;
-algorithm
-  overlap := match(indexes)
-    local
-      list<tuple<String, DAE.SubMod>> rest, lst, lst1, lst2;
-      tuple<String, DAE.SubMod> t;
-      String idx;
-      DAE.SubMod s;
-
-    // empty cases
-    case ({}) then {};
-    case ((t as (idx, s))::rest)
-      equation
-        lst1 = List.select1(rest, isPrefixOf, idx);
-        lst1 = Util.if_(listLength(lst1)==0, lst1, t::lst1);
-        lst2 = getOverlap(rest);
-        lst = listAppend(lst1, lst2);
-      then
-        lst;
-  end match;
-end getOverlap;
-
-public function checkIdxModsForNoOverlap
-"@author: adrpo
-  This function checks if idx modifications do not overlap.
-  If they do an error message is printed and this function fails.
-  Example:
-  class A Real x[2,2]; end A;
-  A a(x[2] = {1.0,3.0}, x[2,1] = 2.0);"
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-algorithm
-  _ := matchcontinue(inMod, inPrefix, info)
-    local
-      list<DAE.SubMod> subModLst;
-      list<tuple<String, DAE.SubMod>> indexes, overlap;
-      Prefix.Prefix pre;
-      String str1, str2, str3;
-      DAE.EqMod eqMod;
-      DAE.Properties props;
-
-    // no modifications
-    case(DAE.NOMOD(), _, _) then ();
-
-    // no submodifications
-    case(DAE.MOD(subModLst={}), _, _) then ();
-
-    // one submodification with no eqmod cannot generate overlap
-    case(DAE.MOD(subModLst={DAE.IDXMOD(mod=_)}, eqModOption=NONE()), _, _) then ();
-
-    // if eqmod is an array and we have indexmods, we have overlap
-    case(DAE.MOD(subModLst=subModLst, eqModOption=SOME(eqMod)), pre, _)
-      equation
-        // we have properties
-        DAE.TYPED(properties = props) = eqMod;
-        // they are an array!
-        true = Types.isPropArray(props);
-        // we have at least 1 index mod
-        (indexes as _::_) = getAllIndexesFromIdxMods(subModLst);
-        str3 = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
-        // now try to read this very fast ;)
-        str1 = stringDelimitList(
-                 List.map1(
-                   List.map(
-                     List.map(
-                       indexes,
-                       Util.tuple22),
-                     prettyPrintSubmod),
-                   Util.stringAppendReverse,
-                   str3),
-                 ", ");
-        str1 = "(" +& str1 +& ")";
-        str2 = str3 +& "=" +& Types.unparseEqMod(eqMod);
-        // generate a warning
-        Error.addSourceMessage(Error.MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP, {str1, str2, str3}, info);
-      then ();
-
-    // modifications, no overlap
-    case(DAE.MOD(subModLst=subModLst), _, _)
-      equation
-        // now how the heck are we verifying for overlap?
-        // first try: (if you know a better solution, then, BY ANY MEANS, please implement it here)
-        //  from index list generate strings, i.e. 1.2.3., 1.2.4.
-        //  if any of the strings is a prefix of another, we have an overlap!
-        indexes = getAllIndexesFromIdxMods(subModLst);
-        // get the overlap
-        {} = getOverlap(indexes);
-      then
-        ();
-    // modifications, overlap, source message
-    case(DAE.MOD(subModLst=subModLst), pre, _)
-      equation
-        indexes = getAllIndexesFromIdxMods(subModLst);
-        // get the overlap
-        overlap = getOverlap(indexes);
-        str2 = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
-        // now try to read this very fast ;)
-        str1 = stringDelimitList(
-                 List.map1(
-                   List.map(
-                     List.map(
-                       overlap,
-                       Util.tuple22),
-                     prettyPrintSubmod),
-                   Util.stringAppendReverse,
-                   str2),
-                 ", ");
-        str1 = "(" +& str1 +& ")";
-        // generate a warning
-        Error.addSourceMessage(Error.MODIFICATION_INDEX_OVERLAP, {str1, str2}, info);
-      then
-        ();
-  end matchcontinue;
-end checkIdxModsForNoOverlap;
 
 protected function getFullModsFromMod
 "@author: adrpo
@@ -3304,24 +2824,6 @@ algorithm
       then
         fullMods;
 
-    // index modifier, only add LEAFS to the list!
-    case (_, (subMod as DAE.IDXMOD(indexes, mod))::rest)
-      equation
-        cref = ComponentReference.crefSetLastSubs(
-                 inTopCref,
-                 listAppend(
-                   ComponentReference.crefLastSubs(inTopCref),
-                   Expression.intSubscripts(indexes))
-                 );
-        fullMods1 = getFullModsFromMod(cref, mod);
-        fullMods2 = getFullModsFromSubMods(inTopCref, rest);
-        fullMods = listAppend(
-                     Util.if_(List.isEmpty(fullMods1),
-                              SUB_MOD(cref, subMod)::fullMods1, // add if LEAF
-                              fullMods1),
-                     fullMods2);
-      then
-        fullMods;
   end match;
 end getFullModsFromSubMods;
 
@@ -3505,15 +3007,11 @@ protected function isUntypedSubMod
   "Returns true if a submodifier contains any untyped parts, otherwise false."
   input DAE.SubMod inSubMod;
   output Boolean outIsUntyped;
+protected
+  DAE.Mod mod;
 algorithm
-  outIsUntyped := match(inSubMod)
-    local
-      DAE.Mod mod;
-
-    case DAE.NAMEMOD(mod = mod) then isUntypedMod(mod);
-    case DAE.IDXMOD(mod = mod) then isUntypedMod(mod);
-
-  end match;
+  DAE.NAMEMOD(mod = mod) := inSubMod;
+  outIsUntyped := isUntypedMod(mod);
 end isUntypedSubMod;
 
 public function getUntypedCrefs
@@ -3553,12 +3051,6 @@ algorithm
       list<Absyn.ComponentRef> crefs;
 
     case (DAE.NAMEMOD(mod = mod), _)
-      equation
-        crefs = getUntypedCrefs(mod);
-      then
-        listAppend(crefs, inCrefs);
-
-    case (DAE.IDXMOD(mod = mod), _)
       equation
         crefs = getUntypedCrefs(mod);
       then
@@ -3660,8 +3152,7 @@ end removeModList;
 
 public function removeMod "
 Author: BZ, 2009-05
-Remove a modifier(/s) on a specified component.
-TODO: implement IDXMOD and a better support for redeclare."
+Remove a modifier(/s) on a specified component."
   input DAE.Mod inmod;
   input String componentModified;
   output DAE.Mod outmod;
@@ -3738,27 +3229,23 @@ Helper function for removeMod, removes modifiers in submods;
   input list<SubMod> inSubs;
   input String componentName;
   output list<SubMod> outsubs;
-algorithm outsubs := match(inSubs,componentName)
-  local
-    DAE.Mod m1;
-    list<SubMod> subs1,subs2,subs;
-    String s1;
-    SubMod sub;
-  case({},_) then {};
-  case((sub as DAE.NAMEMOD(s1,m1))::subs,_)
-    equation
-      subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
-      subs2 = removeModInSubs(subs,componentName) "check for multiple mod on same comp";
-      outsubs = listAppend(subs1,subs2);
-    then
-      outsubs;
-  case((sub as DAE.IDXMOD(_,m1))::subs,_)
-    equation
-      //TODO: implement check for idxmod?
-      subs2 = removeModInSubs(subs,componentName);
-    then
-      sub::subs2;
-end match;
+algorithm
+  outsubs := match(inSubs,componentName)
+    local
+      DAE.Mod m1;
+      list<SubMod> subs1,subs2,subs;
+      String s1;
+      SubMod sub;
+
+    case({},_) then {};
+    case((sub as DAE.NAMEMOD(s1,m1))::subs,_)
+      equation
+        subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
+        subs2 = removeModInSubs(subs,componentName) "check for multiple mod on same comp";
+        outsubs = listAppend(subs1,subs2);
+      then
+        outsubs;
+  end match;
 end removeModInSubs;
 
 public function addEachIfNeeded
@@ -3815,7 +3302,7 @@ public function addEachToSubsIfNeeded
   input DAE.Dimensions inDimensions;
   output list<DAE.SubMod> outSubMods;
 algorithm
-  outSubMods := matchcontinue(inSubMods, inDimensions)
+  outSubMods := match(inSubMods, inDimensions)
     local
       list<DAE.SubMod> rest;
       DAE.Mod m;
@@ -3833,14 +3320,7 @@ algorithm
       then
         DAE.NAMEMOD(id, m)::rest;
 
-    case (DAE.IDXMOD(idxs, m)::rest, _)
-      equation
-        m = addEachIfNeeded(m, inDimensions);
-        rest = addEachToSubsIfNeeded(rest, inDimensions);
-      then
-        DAE.IDXMOD(idxs, m)::rest;
-
-  end matchcontinue;
+  end match;
 end addEachToSubsIfNeeded;
 
 end Mod;

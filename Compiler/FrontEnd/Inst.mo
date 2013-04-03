@@ -5581,15 +5581,6 @@ algorithm
       then
         exps;
 
-    // handle indexmod
-    case (SCode.IDXMOD(an = mod)::rest)
-      equation
-        (e, sm) = getExpsFromMod(mod);
-        exps = getExpsFromSubMods(rest);
-        exps = listAppend(e, listAppend(sm, exps));
-      then
-        exps;
-
   end match;
 end getExpsFromSubMods;
 
@@ -7234,9 +7225,6 @@ algorithm
         //                    and add it to the cache!
         // (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims);
 
-        // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
-        Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
-
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,
           prefixes, dims, {}, inst_dims, impl, comment, info, graph, csets, env2);
@@ -7450,11 +7438,6 @@ algorithm
        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
      then (cache,SCode.NAMEMOD(ident,mod)::subs);
 
-   case(cache,id,SCode.IDXMOD(idxs,mod)::subs)
-     equation
-      (cache,mod) = removeSelfModReference(cache,id,mod);
-     (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-     then (cache,SCode.IDXMOD(idxs,mod)::subs);
   end matchcontinue;
 end removeSelfModReferenceSubs;
 
@@ -16082,12 +16065,6 @@ algorithm osubs:= matchcontinue(subs)
       mod = traverseModAddFinal2(mod);
     then
       SCode.NAMEMOD(ident,mod)::rest;
-  case((SCode.IDXMOD(intList,mod))::rest )
-    equation
-      rest = traverseModAddFinal4(rest);
-      mod = traverseModAddFinal2(mod);
-    then
-      SCode.IDXMOD(intList, mod)::rest;
   case(_)
     equation print(" we failed with traverseModAddFinal4\n");
     then fail();
@@ -16209,11 +16186,6 @@ algorithm
         smods2 = traverseModAddDims5(cache,env,pre,smods,inExps,inExpOpts);
       then
         SCode.NAMEMOD(n,mod2)::smods2;
-    case (_,_,_,SCode.IDXMOD(an=_)::_,_,_)
-      equation
-        print("Cannot process IDXMOD in the case of non-expanded arrays");
-      then
-        fail();
   end match;
 end traverseModAddDims5;
 
@@ -16253,7 +16225,7 @@ protected function traverseModAddDims3
   input list<Option<Absyn.Exp>> inExpOpts;
   output list<SCode.SubMod> outMods;
 algorithm
-  outMods := matchcontinue(inMods,inExps,inExpOpts)
+  outMods := match(inMods,inExps,inExpOpts)
   local
     SCode.Mod mod,mod2;
     list<SCode.SubMod> smods,smods2;
@@ -16265,12 +16237,7 @@ algorithm
         smods2 = traverseModAddDims3(smods,inExps,inExpOpts);
       then
         SCode.NAMEMOD(n,mod2)::smods2;
-    case (SCode.IDXMOD(an=_)::_,_,_)
-      equation
-        print("Cannot process IDXMOD in the case of non-expanded arrays");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end traverseModAddDims3;
 
 protected function insertSubsInTuple

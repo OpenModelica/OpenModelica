@@ -1210,12 +1210,6 @@ algorithm
       then
         rest;
 
-    case (SCode.IDXMOD(idxs1, _), SCode.IDXMOD(idxs2, _)::rest)
-      equation
-        true = valueEq(idxs1, idxs2);
-      then
-        rest;
-
     case (_, s::rest)
       equation
         rest = removeSub(inSub, rest);

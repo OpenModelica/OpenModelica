@@ -1136,12 +1136,6 @@ uniontype SubMod "-Sub Modification"
     Ident ident "component name";
     Mod mod "modification";
   end NAMEMOD;
-
-  record IDXMOD "index modification, i.e. (x[2] = {1.0,3.0})"
-    list<Integer> integerLst "list of indexes";
-    Mod mod "modification";
-  end IDXMOD;
-
 end SubMod;
 
 public

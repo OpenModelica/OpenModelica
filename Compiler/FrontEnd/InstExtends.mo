@@ -1621,13 +1621,6 @@ algorithm
       then
         (cache, SCode.NAMEMOD(ident, mod) :: rest_mods);
 
-    case (_, _, SCode.IDXMOD(subscriptLst = subs, an = mod) :: rest_mods, _)
-      equation
-        (cache, mod) = fixModifications(inCache, inEnv, mod, inHt);
-        (cache, rest_mods) = fixSubModList(cache, inEnv, rest_mods, inHt);
-      then
-        (cache, SCode.IDXMOD(subs, mod) :: rest_mods);
-
   end match;
 end fixSubModList;
 

@@ -398,12 +398,6 @@ package SCode
       Ident ident;
       Mod A;
     end NAMEMOD;
-
-    record IDXMOD
-      list<Subscript> subscriptLst;
-      Mod an;
-    end IDXMOD;
-
   end SubMod;
 
   type Program = list<Element>;

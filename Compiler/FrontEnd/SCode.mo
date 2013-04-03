@@ -136,19 +136,11 @@ end Mod;
 public
 uniontype SubMod "Modifications are represented in an more structured way than in
     the `Absyn\' module.  Modifications using qualified names
-    (such as in `x.y =  z\') are normalized (to `x(y = z)\').  And a
-    special case when arrays are subscripted in a modification.
-"
+    (such as in `x.y =  z\') are normalized (to `x(y = z)\')."
   record NAMEMOD
     Ident ident;
     Mod A "A named component" ;
   end NAMEMOD;
-
-  record IDXMOD
-    list<Subscript> subscriptLst;
-    Mod an "An array element" ;
-  end IDXMOD;
-
 end SubMod;
 
 public
@@ -1618,15 +1610,7 @@ algorithm
         then
           true;
 
-    case (IDXMOD(ss1,mod1)::subModLst1,IDXMOD(ss2,mod2)::subModLst2)
-        equation
-          true = subscriptsEqual(ss1,ss2);
-          true = modEqual(mod1,mod2);
-          true = subModsEqual(subModLst1,subModLst2);
-        then
-          true;
-
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end subModsEqual;
 
@@ -3932,11 +3916,6 @@ algorithm
       equation
         true = id ==& namedAnnotation;
       then true;
-    case (IDXMOD(an=mod) :: rest,_)
-      equation
-        true = hasBooleanNamedAnnotation2(mod,namedAnnotation);
-      then
-        true;
     case (submod :: rest,_)
       equation
         b = hasBooleanNamedAnnotation3(rest,namedAnnotation);

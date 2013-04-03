@@ -967,13 +967,6 @@ algorithm
       then
         SCode.NAMEMOD(n, m)::sl;
 
-    case (SCode.IDXMOD(ssl, m)::rest, _)
-      equation
-        m = removeCrefPrefixFromModExp(m, id);
-        sl = removeCrefPrefixFromSubModExp(rest, id);
-      then
-        SCode.IDXMOD(ssl, m)::sl;
-
     case (sm::rest, _)
       equation
         sl = removeCrefPrefixFromSubModExp(rest, id);
@@ -1035,7 +1028,7 @@ protected function removeRedeclaresFromSubMod
   input list<SCode.SubMod> inSl;
   output list<SCode.SubMod> outSl;
 algorithm
-  outSl := matchcontinue(inSl)
+  outSl := match(inSl)
     local
       String n;
       list<SCode.SubMod> sl,rest;
@@ -1052,14 +1045,7 @@ algorithm
       then
         SCode.NAMEMOD(n, m)::sl;
 
-    case (SCode.IDXMOD(ssl, m)::rest)
-      equation
-        m = removeRedeclaresFromMod(m);
-        sl = removeRedeclaresFromSubMod(rest);
-      then
-        SCode.IDXMOD(ssl, m)::sl;
-
-  end matchcontinue;
+  end match;
 end removeRedeclaresFromSubMod;
 
 public function extractRedeclares

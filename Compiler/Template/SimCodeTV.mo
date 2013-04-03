@@ -1844,19 +1844,11 @@ end Mod;
 
 uniontype SubMod "Modifications are represented in an more structured way than in
     the `Absyn\' module.  Modifications using qualified names
-    (such as in `x.y =  z\') are normalized (to `x(y = z)\').  And a
-    special case when arrays are subscripted in a modification.
-"
+    (such as in `x.y =  z\') are normalized (to `x(y = z)\')."
   record NAMEMOD
     Ident ident;
     Mod A "A named component" ;
   end NAMEMOD;
-
-  record IDXMOD
-    list<Subscript> subscriptLst;
-    Mod an "An array element" ;
-  end IDXMOD;
-
 end SubMod;
 
 type Program = list<Element> "- Programs

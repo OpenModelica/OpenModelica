@@ -528,12 +528,6 @@ algorithm
       then
         SCode.NAMEMOD(ident, mod);
 
-    case (SCode.IDXMOD(subscriptLst = subs, an = mod), _, _)
-      equation
-        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
-        mod = flattenModifier(mod, inEnv, inInfo);
-      then
-        SCode.IDXMOD(subs, mod);
   end match;
 end flattenSubMod;
 

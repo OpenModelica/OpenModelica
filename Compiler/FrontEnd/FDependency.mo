@@ -1045,11 +1045,6 @@ algorithm
       then
         ();
 
-    case (SCode.IDXMOD(subscriptLst = subs, an = m), (env, ty_env), _)
-      equation
-        analyseModifier(m, env, ty_env, inInfo);
-      then
-        ();
   end match;
 end analyseSubMod;
 
