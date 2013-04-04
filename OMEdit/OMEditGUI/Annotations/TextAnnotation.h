@@ -58,8 +58,7 @@ public:
 private:
   Component *mpComponent;
 public slots:
-  void updateNameTextString(QString textString);
-  void updateParameterTextString(QString parameterName, QString parameterValue);
+  void updateTextString();
 };
 
 #endif // TEXTANNOTATION_H

@@ -731,12 +731,12 @@ void Component::componentNameHasChanged(QString newName)
 {
   mName = newName;
   setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
-  emit componentNameChanged(newName);
+  emit componentDisplayTextChanged();
 }
 
-void Component::componentParameterHasChanged(QString parameterName, QString parameterValue)
+void Component::componentParameterHasChanged()
 {
-  emit componentParameterChanged(parameterName, parameterValue);
+  emit componentDisplayTextChanged();
 }
 
 /*!
@@ -745,7 +745,7 @@ void Component::componentParameterHasChanged(QString parameterName, QString para
   \param parameterString - the parameter string to look for.
   \return the parameter string with value.
   */
-QString Component::getParameterDisplayString(QString parameterString)
+QString Component::getParameterDisplayString(QString parameterName)
 {
   /*
     Use the ComponentParameters class to get the parameters list and then check the parameterString against them.
@@ -757,21 +757,9 @@ QString Component::getParameterDisplayString(QString parameterString)
   QString result;
   foreach (Parameter *pParameter, parametersList)
   {
-    QString expectedParameterString;
-    // parameter can be in form R=%R
-    QString parameterName = pParameter->getNameLabel()->text();
-    QString parameterValue = pParameter->getValueTextBox()->text();
-    expectedParameterString = QString(parameterName).append("=%").append(parameterName);
-    if (expectedParameterString.compare(parameterString) == 0)
+    if (pParameter->getNameLabel()->text().compare(parameterName) == 0)
     {
-      result = QString(parameterName).append("=").append(parameterValue);
-      break;
-    }
-    // parameter can be in form %R
-    expectedParameterString = QString("%").append(parameterName);
-    if (expectedParameterString.compare(parameterString) == 0)
-    {
-      result = parameterValue;
+      result = pParameter->getValueTextBox()->text();
       break;
     }
   }

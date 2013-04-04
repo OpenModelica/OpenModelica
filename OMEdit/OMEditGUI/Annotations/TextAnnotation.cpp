@@ -86,34 +86,12 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   }
   // 10th item of the list contains the textString.
   mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
-  /*
-    From Modelica Spec 33,
-    There are a number of common macros that can be used in the text, and they should be replaced when displaying
-    the text as follows:
-    - %par replaced by the value of the parameter par. The intent is that the text is easily readable, thus if par is
-    of an enumeration type, replace %par by the item name, not by the full name.
-    [Example: if par="Modelica.Blocks.Types.Enumeration.Periodic", then %par should be displayed as
-    "Periodic"]
-    - %% replaced by %
-    - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
-    - %class replaced by the name of the class.
-  */
   if (mpComponent)
   {
-    if ((mOriginalTextString.compare("%name") == 0) || (mOriginalTextString.compare("%class") == 0))
-      connect(mpComponent->getRootParentComponent(), SIGNAL(componentNameChanged(QString)), SLOT(updateNameTextString(QString)));
-    if (mOriginalTextString.compare("%name") == 0)
-      mTextString = mpComponent->getRootParentComponent()->getName();
-    else if (mOriginalTextString.compare("%class") == 0)
-      mTextString = mpComponent->getRootParentComponent()->getClassName();
-    else
+    if (mOriginalTextString.contains("%"))
     {
-      /* Component parameter e.g %R and R=%R */
-      mTextString = mpComponent->getParameterDisplayString(mOriginalTextString);
-      if (mTextString.isEmpty())
-        mTextString = mOriginalTextString;
-      connect(mpComponent->getRootParentComponent(), SIGNAL(componentParameterChanged(QString,QString)),
-              SLOT(updateParameterTextString(QString,QString)));
+      updateTextString();
+      connect(mpComponent->getRootParentComponent(), SIGNAL(componentDisplayTextChanged()), SLOT(updateTextString()));
     }
   }
   else
@@ -306,27 +284,41 @@ QString TextAnnotation::getShapeAnnotation()
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
-void TextAnnotation::updateNameTextString(QString textString)
+void TextAnnotation::updateTextString()
 {
-  mTextString = textString;
-}
-
-void TextAnnotation::updateParameterTextString(QString parameterName, QString parameterValue)
-{
-  // parameter can be in form R=%R
-  QString expectedParameterString;
-  expectedParameterString = QString(parameterName).append("=%").append(parameterName);
-  if (expectedParameterString.compare(mOriginalTextString) == 0)
+  /*
+    From Modelica Spec 33,
+    There are a number of common macros that can be used in the text, and they should be replaced when displaying
+    the text as follows:
+    - %par replaced by the value of the parameter par. The intent is that the text is easily readable, thus if par is
+    of an enumeration type, replace %par by the item name, not by the full name.
+    [Example: if par="Modelica.Blocks.Types.Enumeration.Periodic", then %par should be displayed as
+    "Periodic"]
+    - %% replaced by %
+    - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
+    - %class replaced by the name of the class.
+  */
+  mTextString = mOriginalTextString;
+  mTextString = mTextString.replace("%name", mpComponent->getRootParentComponent()->getName(), Qt::CaseInsensitive);
+  mTextString = mTextString.replace("%class", mpComponent->getRootParentComponent()->getClassName(), Qt::CaseInsensitive);
+  /* handle variables now */
+  QRegExp variablesRegExp ("%\\w+");
+  QStringList variablesList;
+  int pos = 0;
+  while ((pos = variablesRegExp.indexIn(mTextString, pos)) != -1)
   {
-    mTextString = QString(parameterName).append("=").append(parameterValue);
+    variablesList << variablesRegExp.cap(0);
+    pos += variablesRegExp.matchedLength();
   }
-  else
+  foreach (QString variable, variablesList)
   {
-    // parameter can be in form %R
-    expectedParameterString = QString("%").append(parameterName);
-    if (expectedParameterString.compare(mOriginalTextString) == 0)
+    if (!variable.isEmpty())
     {
-      mTextString = parameterValue;
+      QString textValue = mpComponent->getParameterDisplayString(variable.remove("%"));
+      if (!textValue.isEmpty())
+      {
+        mTextString = mTextString.replace(QString("%").append(variable), textValue);
+      }
     }
   }
 }

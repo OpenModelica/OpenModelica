@@ -115,8 +115,8 @@ public:
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void updateConnection();
   void componentNameHasChanged(QString newName);
-  void componentParameterHasChanged(QString parameterName, QString parameterValue);
-  QString getParameterDisplayString(QString parameterString);
+  void componentParameterHasChanged();
+  QString getParameterDisplayString(QString parameterName);
 private:
   QString mName;
   QString mClassName;
@@ -149,8 +149,7 @@ private:
   QList<Component*> mpComponentsList;
   QPointF mOldPosition;
 signals:
-  void componentNameChanged(QString newName);
-  void componentParameterChanged(QString parameterName, QString parameterValue);
+  void componentDisplayTextChanged();
   void componentClicked(Component*);
   void componentTransformChange();
   void componentTransformHasChanged();
