@@ -270,6 +270,17 @@ algorithm
         DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(Absyn.IDENT("sin"),{e},DAE.callAttrBuiltinReal)));
 
+    // der(tan(x)) = ...
+    case (DAE.CALL(path = Absyn.IDENT("tan"),expLst = {e}),_)
+      equation
+        e1 = differentiateExpTime(e, inVariables);
+        e2 = Expression.makeBuiltinCall("cos",{e},DAE.T_REAL_DEFAULT);
+      then
+        DAE.BINARY(
+          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(e2,DAE.POW(DAE.T_REAL_DEFAULT),
+          DAE.RCONST(2.0))),DAE.MUL(DAE.T_REAL_DEFAULT),e1);
+
     // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),_)
       equation
