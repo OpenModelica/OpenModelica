@@ -43,13 +43,13 @@
   \subsection year_2013_subsection 2013
   - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
   - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Dr. Henning Kiel - <a href="mailto:h.kiel@kostal.com">h.kiel@kostal.com</a>
+  - Dr. Henning Kiel
   - Alachew Shitahun
 
   \subsection year_2012_subsection 2012
   - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
   - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Dr. Henning Kiel - <a href="mailto:h.kiel@kostal.com">h.kiel@kostal.com</a>
+  - Dr. Henning Kiel
 
   \subsection year_2011_subsection 2011
   - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
