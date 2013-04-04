@@ -364,35 +364,37 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
       i++;
       continue;
     }
-    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || !mParametersOnly)
+    /*
+      I didn't find anything useful in the specification regarding this issue.
+      The parameters dialog is only suppose to show the parameters. However, Dymola also shows the variables in the parameters window
+      which have the dialog annotation with them. So, if the variable has dialog or it is a parameter then show it.
+      */
+    QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
+    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
     {
-      QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
-      if (dialogAnnotation.size() > 0)
+      // get the tab value
+      QString tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
+      // get the group value
+      QString groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
+      if (!mTabsMap.contains(tab))
       {
-        // get the tab value
-        QString tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
-        // get the group value
-        QString groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
-        if (!mTabsMap.contains(tab))
+        ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+        QGroupBox *pGroupBox = new QGroupBox(groupBox);
+        QGridLayout *pGroupBoxLayout = new QGridLayout;
+        pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+        mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
+      }
+      else
+      {
+        ParametersScrollArea *pParametersScrollArea;
+        pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
+        if (pParametersScrollArea)
         {
-          ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-          QGroupBox *pGroupBox = new QGroupBox(groupBox);
-          QGridLayout *pGroupBoxLayout = new QGridLayout;
-          pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
-          mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
-        }
-        else
-        {
-          ParametersScrollArea *pParametersScrollArea;
-          pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
-          if (pParametersScrollArea)
+          if (!pParametersScrollArea->getGroupBox(groupBox))
           {
-            if (!pParametersScrollArea->getGroupBox(groupBox))
-            {
-              QGroupBox *pGroupBox = new QGroupBox(groupBox);
-              QGridLayout *pGroupBoxLayout = new QGridLayout;
-              pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
-            }
+            QGroupBox *pGroupBox = new QGroupBox(groupBox);
+            QGridLayout *pGroupBoxLayout = new QGridLayout;
+            pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
           }
         }
       }
@@ -431,17 +433,15 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
       i++;
       continue;
     }
-    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || !mParametersOnly)
+    QString tab = QString("General");
+    QString groupBox = QString("Parameters");
+    QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
+    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
     {
-      QString tab = QString("General");
-      QString groupBox = QString("Parameters");
-      QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
-      if (dialogAnnotation.size() > 0)
-      {
-        tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
-        // get the group value
-        groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
-      }
+      // get the tab value
+      tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
+      // get the group value
+      groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
       i++;
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
