@@ -122,11 +122,11 @@ private:
   QAction *mpCancelConnectionAction;
   QAction *mpDeleteConnectionAction;
   QAction *mpDeleteAction;
+  QAction *mpDuplicateAction;
   QAction *mpRotateClockwiseAction;
   QAction *mpRotateAntiClockwiseAction;
   QAction *mpFlipHorizontalAction;
   QAction *mpFlipVerticalAction;
-  void createActions();
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
   bool mSkipBackground; /* Do not draw the background rectangle */
@@ -155,17 +155,20 @@ public:
   bool isMovingComponentsAndShapes();
   QAction* getDeleteConnectionAction();
   QAction* getDeleteAction();
+  QAction* getDuplicateAction();
   QAction* getRotateClockwiseAction();
   QAction* getRotateAntiClockwiseAction();
   QAction* getFlipHorizontalAction();
-  QAction* getFlipVerticalAAction();
+  QAction* getFlipVerticalAction();
+  bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, StringHandler::ModelicaClasses type,
                           bool addObject = true, bool openingClass = false);
   void addComponentObject(Component *pComponent);
-  Component* getComponentObject(QString componentName);
   void deleteComponentObject(Component *pComponent);
+  Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
+  QList<Component*> getComponentList();
   void createConnection(QString startComponentName, QString endComponentName);
   void deleteConnection(QString startComponentName, QString endComponentName);
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
@@ -182,6 +185,8 @@ public:
   void createTextShape(QPointF point);
   void createBitmapShape(QPointF point);
   QRectF itemsBoundingRect();
+private:
+  void createActions();
 signals:
   void keyPressDelete();
   void keyPressRotateClockwise();
@@ -204,6 +209,7 @@ signals:
   void keyReleaseRight();
   void keyPressShiftRight();
   void keyReleaseShiftRight();
+  void keyPressDuplicate();
 public slots:
   void addConnection(Component *pComponent);
   void removeConnection();

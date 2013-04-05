@@ -148,6 +148,7 @@ private:
   QList<ShapeAnnotation*> mpShapesList;
   QList<Component*> mpComponentsList;
   QPointF mOldPosition;
+  void duplicateHelper(GraphicsView *pGraphicsView);
 signals:
   void componentDisplayTextChanged();
   void componentClicked(Component*);
@@ -160,6 +161,7 @@ public slots:
   void resizeComponent(int index, QPointF newPosition);
   void finishResizeComponent();
   void deleteMe();
+  void duplicate();
   void rotateClockwise();
   void rotateAntiClockwise();
   void flipHorizontal();

@@ -118,5 +118,6 @@
         <file>Resources/icons/down.png</file>
         <file>Resources/icons/up.png</file>
         <file>Resources/icons/print.png</file>
+        <file>Resources/icons/duplicate.png</file>
     </qresource>
 </RCC>

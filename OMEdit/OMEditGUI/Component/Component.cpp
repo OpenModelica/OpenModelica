@@ -767,6 +767,64 @@ QString Component::getParameterDisplayString(QString parameterName)
   return result;
 }
 
+void Component::duplicateHelper(GraphicsView *pGraphicsView)
+{
+  Component *pComponent = pGraphicsView->getComponentList().last();
+  if (pComponent)
+  {
+    /* set the original component transformation to the duplicated one. */
+    pComponent->getTransformation()->setExtent1(mpTransformation->getExtent1());
+    pComponent->getTransformation()->setExtent2(mpTransformation->getExtent2());
+    pComponent->getTransformation()->setRotateAngle(mpTransformation->getRotateAngle());
+    pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
+    /* get the original component attributes */
+    QString className = pGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+    QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(className);
+    foreach (ComponentInfo *pComponentInfo, componentInfoList)
+    {
+      if (pComponentInfo->getName() == mName)
+      {
+        QString isFinal = pComponentInfo->getFinal() ? "true" : "false";
+        QString isFlow = pComponentInfo->getFlow() ? "true" : "false";
+        QString isProtected = pComponentInfo->getProtected() ? "true" : "false";
+        QString isReplaceAble = pComponentInfo->getReplaceable() ? "true" : "false";
+        QString variability = pComponentInfo->getVariablity();
+        QString isInner = pComponentInfo->getInner() ? "true" : "false";
+        QString isOuter = pComponentInfo->getOuter() ? "true" : "false";
+        QString causality = pComponentInfo->getCasuality();
+        // update duplicated component attributes
+        if (!mpOMCProxy->setComponentProperties(className, pComponent->getName(), isFinal, isFlow, isProtected, isReplaceAble,
+                                                variability, isInner, isOuter, causality))
+        {
+          QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
+                                QString(Helper::applicationName).append(" - ").append(Helper::error), mpOMCProxy->getResult(),
+                                Helper::ok);
+          mpOMCProxy->printMessagesStringInternal();
+        }
+        break;
+      }
+    }
+    /* get original component modifiers and apply them to duplicated one. */
+    QStringList componentModifiersList = mpOMCProxy->getComponentModifierNames(className, mName);
+    bool modifierValueChanged = false;
+    foreach (QString componentModifier, componentModifiersList)
+    {
+      QString originalModifierName = QString(mName).append(".").append(componentModifier);
+      QString duplicatedModifierName = QString(pComponent->getName()).append(".").append(componentModifier);
+      if (mpOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
+                                            mpOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
+        modifierValueChanged = true;
+
+    }
+    if (modifierValueChanged)
+    {
+      pComponent->componentParameterHasChanged();
+      pComponent->update();
+    }
+    pGraphicsView->getModelWidget()->setModelModified();
+  }
+}
+
 void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
@@ -941,6 +999,32 @@ void Component::deleteMe()
   {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
     pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+  }
+}
+
+void Component::duplicate()
+{
+  QPointF position(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  if (mpGraphicsView->addComponent(mClassName, scenePos() + position))
+  {
+    if (mType == StringHandler::Connector)
+    {
+      if (mpGraphicsView->getViewType() == StringHandler::Diagram)
+      {
+        duplicateHelper(mpGraphicsView);
+        duplicateHelper(mpGraphicsView->getModelWidget()->getIconGraphicsView());
+      }
+      else
+      {
+        duplicateHelper(mpGraphicsView);
+        duplicateHelper(mpGraphicsView->getModelWidget()->getDiagramGraphicsView());
+      }
+    }
+    else
+    {
+      duplicateHelper(mpGraphicsView);
+    }
   }
 }
 
@@ -1258,11 +1342,12 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
   menu.addAction(mpGraphicsView->getDeleteAction());
+  menu.addAction(mpGraphicsView->getDuplicateAction());
   menu.addSeparator();
   menu.addAction(mpGraphicsView->getRotateClockwiseAction());
   menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
   menu.addAction(mpGraphicsView->getFlipHorizontalAction());
-  menu.addAction(mpGraphicsView->getFlipVerticalAAction());
+  menu.addAction(mpGraphicsView->getFlipVerticalAction());
   menu.exec(event->screenPos());
 }
 
@@ -1279,13 +1364,15 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
       {
         connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
         connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), SLOT(flipHorizontal()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getFlipVerticalAAction(), SIGNAL(triggered()), SLOT(flipVertical()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), SLOT(flipVertical()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
@@ -1323,13 +1410,15 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
       {
         disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
+        disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()));
-        disconnect(mpGraphicsView->getFlipVerticalAAction(), SIGNAL(triggered()), this, SLOT(flipVertical()));
+        disconnect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+        disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
