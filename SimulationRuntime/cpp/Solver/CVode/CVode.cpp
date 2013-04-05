@@ -2,8 +2,8 @@
 #include "CVode.h"
 #include "CVodeSettings.h"
 #include <Math/Functions.h>
-#include <System/ISystemProperties.h>  
-#include <System/ISystemProperties.h>  
+#include <System/ISystemProperties.h>
+#include <System/ISystemProperties.h>
  #include <System/IStepEvent.h>  
 
 

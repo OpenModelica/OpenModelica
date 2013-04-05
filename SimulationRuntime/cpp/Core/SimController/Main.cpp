@@ -47,7 +47,7 @@ int main(int argc, const char* argv[])
             //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;
             runtime_lib_path = vm["runtime-libray"].as<string>();
         
-		}
+        }
         else
         {
             cerr << "runtime  libraries path is not set";
