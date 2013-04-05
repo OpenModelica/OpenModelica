@@ -95,20 +95,20 @@ void Kinsol::init()
 
       //idid = KINDense(_kinMem, _dimSys);
       int maxl = 15; 
-	   int maxlrst = 2;
-	   int mset = 2;
-	  idid = KINSpgmr(_kinMem,maxl);
-	  if (check_flag(&idid, "KINSpgmr", 1)) 
+       int maxlrst = 2;
+       int mset = 2;
+      idid = KINSpgmr(_kinMem,maxl);
+      if (check_flag(&idid, "KINSpgmr", 1)) 
 
         throw std::invalid_argument("Kinsol::init()");
 
-	   //idid = KINSpilsSetMaxRestarts(_kinMem, maxlrst);
-	   if (check_flag(&idid, "KINSpilsSetMaxRestarts", 1)) 
+       //idid = KINSpilsSetMaxRestarts(_kinMem, maxlrst);
+       if (check_flag(&idid, "KINSpilsSetMaxRestarts", 1)) 
          throw std::invalid_argument("Kinsol::init()");
-	    //KINSetMaxSetupCalls(_kinMem, mset);
-		KINSetFuncNormTol(_kinMem, fnormtol);
-		KINSetScaledStepTol(_kinMem, scsteptol);
-		KINSetNumMaxIters(_kinMem, 2000);
+        //KINSetMaxSetupCalls(_kinMem, mset);
+        KINSetFuncNormTol(_kinMem, fnormtol);
+        KINSetScaledStepTol(_kinMem, scsteptol);
+        KINSetNumMaxIters(_kinMem, 2000);
     }
     else
     {

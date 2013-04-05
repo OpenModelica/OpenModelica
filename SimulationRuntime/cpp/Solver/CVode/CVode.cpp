@@ -414,11 +414,11 @@ void Cvode::CVodeCore()
         _idid = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
         
         //Complete the step
-		/*if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
-		{
-			continous_system->giveVars(_z);
-			_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
-		}*/
+        /*if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
+        {
+            continous_system->giveVars(_z);
+            _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
+        }*/
         // Check, ob Schritt erfolgreich
         if(check_flag(&_idid, "CVode", 1))
         {
