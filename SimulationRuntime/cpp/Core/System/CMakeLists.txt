@@ -6,7 +6,7 @@ add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverF
 target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 
 # add a static library with the system default implementation for generating c++ fmu targets
-add_library(${SystemName}_static STATIC ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
+add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
 target_link_libraries (${SystemName}_static ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 if (UNIX)
 set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
