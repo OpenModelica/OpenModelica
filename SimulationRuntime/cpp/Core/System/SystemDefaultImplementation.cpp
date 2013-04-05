@@ -1,7 +1,8 @@
+
 #include "stdafx.h"
 #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
-
+ 
 #include <System/SystemDefaultImplementation.h>
 #include "AlgLoopSolverFactory.h"
 #include <System/EventHandling.h>
@@ -16,14 +17,14 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 
 {
 
-  fs::path newton_name(NEWTON_LIB);
+ /* fs::path newton_name(NEWTON_LIB);
   fs::path newton_path = globalSettings.getRuntimeLibrarypath();
   newton_path/=newton_name;
 
   newton_path.make_preferred();
   type_map types;
   if(!load_single_library(types,  newton_path.string()))
-     throw std::invalid_argument("Newton library could not be loaded");
+     throw std::invalid_argument("Newton library could not be loaded");*/
 
 }
 
@@ -43,7 +44,7 @@ void SystemDefaultImplementation::Terminate(string msg)
     throw std::runtime_error(msg);
 }
 
-int SystemDefaultImplementation::getDimVars() const
+int SystemDefaultImplementation::getDimVars() const    
 {
   return _dimVars;
 };
@@ -60,12 +61,12 @@ int SystemDefaultImplementation::getDimRHS() const
 /// (Re-) initialize the system of equations
  void SystemDefaultImplementation::init()
 {
-
-
+   
+    
     if((_dimVars) > 0)
     {
         // Initialize "extended state vector"
-    if(__z) delete [] __z ;
+    if(__z) delete [] __z ; 
     if(__zDot) delete [] __zDot;
 
     __z = new double[_dimVars];
@@ -76,12 +77,12 @@ int SystemDefaultImplementation::getDimRHS() const
   }
   if(_dimZeroFunc > 0)
   {
-    if(_conditions) delete [] _conditions ;
-
+    if(_conditions) delete [] _conditions ; 
+   
     _conditions = new bool[_dimZeroFunc];
-
+  
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
-
+  
   }
 };
 
@@ -95,9 +96,9 @@ void SystemDefaultImplementation::setTime(const double& t)
 
 /// Provide variables with given index to the system
 void SystemDefaultImplementation::giveVars(double* z)
-{
-
-
+{ 
+  
+ 
     for(int i=0; i< _dimVars; ++i)
     {
       z[i] = __z[i];
@@ -109,8 +110,8 @@ void SystemDefaultImplementation::giveVars(double* z)
 /// Set variables with given index to the system
 void SystemDefaultImplementation::setVars(const double* z)
 {
-
-
+  
+ 
     for(int i=0; i<_dimVars; ++i)
     {
       __z[i] = z[i];
@@ -122,9 +123,13 @@ void SystemDefaultImplementation::setVars(const double* z)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::giveRHS(double* f)
 {
-
+ 
      for(int i=0; i<_dimFunc; ++i)
       f[i] = __zDot[i];
 
 };
+
+
+using boost::extensions::factory;
+
 

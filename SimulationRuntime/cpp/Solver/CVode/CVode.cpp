@@ -2,7 +2,9 @@
 #include "CVode.h"
 #include "CVodeSettings.h"
 #include <Math/Functions.h>
-#include <System/ISystemProperties.h>
+#include <System/ISystemProperties.h>  
+#include <System/ISystemProperties.h>  
+ #include <System/IStepEvent.h>  
 
 
 
@@ -398,34 +400,7 @@ void Cvode::CVodeCore()
     if(_idid <0)
         throw std::runtime_error(/*_idid,_tCurrent,*/"CVode::ReInit");
 
-    /*event_system->giveZeroFunc(_zeroValLastSuccess);
-    event_system->giveConditions(_Cond);
-    for(int i=0;i<_dimZeroFunc;i++)
-    {
-        _Cond[i] = !_Cond[i];
-    }
-    event_system->setConditions(_Cond);
-    event_system->giveZeroFunc(_zeroVal);
-    for(int i=0;i<_dimZeroFunc;i++)
-    {
-        if(_zeroValLastSuccess[i] == _zeroVal[i])
-        {
-            _zeroInit[i] = true;
-        }else
-        {
-            _zeroInit[i] = false;
-        }
-    }
-    for(int i=0;i<_dimZeroFunc;i++)
-    {
-        _Cond[i] = !_Cond[i];
-    }
-    event_system->setConditions(_Cond);
-*/
-    //
-
-
-    //
+        //
     while(_solverStatus & IDAESolver::CONTINUE)
     {
         if(_zeroFound==false)
@@ -437,7 +412,13 @@ void Cvode::CVodeCore()
         _zeroFound = false;
         //CVode für einen Schritt rufen
         _idid = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
-
+        
+        //Complete the step
+		/*if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
+		{
+			continous_system->giveVars(_z);
+			_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
+		}*/
         // Check, ob Schritt erfolgreich
         if(check_flag(&_idid, "CVode", 1))
         {
@@ -445,19 +426,6 @@ void Cvode::CVodeCore()
             break;
         }
 
-
-        //Beachtung von kritischen (mit Null initialisierten) Nullstellen
-        /*if(_tCurrent == 0.0)
-        {
-            for(int i=0;i<_dimZeroFunc;i++)
-            {
-                if(_zeroInit[i])
-                {
-                    event_system->checkConditions(i,false);
-                }
-            }
-            event_system->saveConditions();
-        }*/
 
 
         // A root is found

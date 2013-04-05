@@ -2,13 +2,14 @@
 #pragma once
 
 #include <System/IAlgLoop.h>       // Interface to AlgLoop
-#include <System/IAlgLoopSolver.h>   // Export function from dll
+#include <Solver/IAlgLoopSolver.h>   // Export function from dll
 #include <Solver/INonLinSolverSettings.h>
 #include<kinsol.h>
 #include<nvector_serial.h>
 #include<kinsol_dense.h>
 #include<kinsol_spgmr.h>
-
+#include <kinsol_spbcgs.h>
+#include <kinsol_sptfqmr.h>
 
 
 class Kinsol : public IAlgLoopSolver

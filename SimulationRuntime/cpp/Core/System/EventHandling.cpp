@@ -146,10 +146,7 @@ bool EventHandling::IterateEventQueue(bool* conditions)
     bool drestart=false;
     bool crestart=true;        
     
-    //store conditions before handled
-    int dimf = event_system->getDimZeroFunc(); 
-    bool* conditions_before = new bool[dimf];
-    memcpy(conditions_before,conditions, dimf*sizeof(bool));
+  
     //save discrete varibales
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
@@ -160,11 +157,9 @@ bool EventHandling::IterateEventQueue(bool* conditions)
     drestart= event_system->checkForDiscreteEvents();
 
     //update all conditions    
-    event_system->checkConditions(0,true);
-    event_system->giveConditions(conditions);
+    crestart=event_system->checkConditions(0,true);
+   
   
-    //check if new events occured   
-    crestart = !(std::equal (conditions, conditions+dimf,conditions_before));
     return((drestart||crestart)); //returns true if new events occured
 }
 

@@ -38,6 +38,7 @@ set(IdasName ${LIBPREFIX}Idas)
 set(KinsolName ${LIBPREFIX}Kinsol)
 set(ModelicaName ${LIBPREFIX}Modelica)
 set(NewtonName ${LIBPREFIX}Newton)
+set(HybrjName ${LIBPREFIX}Hybrj)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
@@ -128,7 +129,7 @@ include_directories ("Include/Solver")
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
-
+#add_subdirectory (Solver/Hybrj)
 
 
 if(REDUCE_DAE)
@@ -166,6 +167,8 @@ GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
+#GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
+#GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
 
 
 GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} LOCATION)
@@ -190,6 +193,7 @@ set (NEWTON_LIB ${libNewtonName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 set (MATH_LIB ${libMathName})
+set (HYBRJ_LIB ${libHybrjName})
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
 

@@ -84,10 +84,10 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
 
   // Provides current values of root/zero functions
    virtual void giveZeroFunc(double* f);
-  virtual void giveConditions(bool* c);
+
    //Called to handle all  events occured at same time
    virtual void handleSystemEvents( bool* events);
-   virtual void checkConditions(const bool* events, bool all);
+   virtual bool checkConditions(const bool* events, bool all);
   //Called to handle an event
    virtual void handleEvent(const bool* events);
   virtual IHistory* getHistory();

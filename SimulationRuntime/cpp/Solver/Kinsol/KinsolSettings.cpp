@@ -4,7 +4,7 @@
 #include "KinsolSettings.h"
 
 KinsolSettings::KinsolSettings()
-: iNewt_max         (50)
+: iNewt_max         (700)
 , dRtol           (1e-6)
 , dAtol           (1.0)
 , dDelta          (0.9)

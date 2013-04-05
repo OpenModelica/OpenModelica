@@ -4,6 +4,7 @@
 #include "System/ISystemProperties.h"
 #include "LibrariesConfig.h"
 #include <boost/program_options.hpp>
+#include "System/IAlgLoopSolverFactory.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -45,7 +46,8 @@ int main(int argc, const char* argv[])
         {
             //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;
             runtime_lib_path = vm["runtime-libray"].as<string>();
-        }
+        
+		}
         else
         {
             cerr << "runtime  libraries path is not set";
@@ -142,17 +144,36 @@ int main(int argc, const char* argv[])
         if(!load_single_library(types,  modelica_system_path.string()))
             throw std::invalid_argument("ModelicaSystem library could not be loaded");
 
-        std::map<std::string, factory<IMixedSystem,IGlobalSettings&> >::iterator iter;
-        std::map<std::string, factory<IMixedSystem,IGlobalSettings&> >& factories(types.get());
-        iter = factories.find("ModelicaSystem");
-        if (iter ==factories.end())
+
+         //Load Algloopsolver library
+      
+
+       
+        fs::path algsolver_name(SYSTEM_LIB);
+        fs::path algsolver_path = libraries_path;
+        algsolver_path/=algsolver_name;
+
+        if(!load_single_library(types, algsolver_path.string()))
+            throw std::invalid_argument("Algsolver library could not be loaded");
+        std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >::iterator iter;
+        std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >& algloopsolver_factory(types.get());
+        iter = algloopsolver_factory.find("AlgLoopSolverFactory");
+        if (iter ==algloopsolver_factory.end()) 
+         {
+            throw std::invalid_argument("No AlgLoopSolverFactory  found");
+        }
+        boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create(*global_settings));
+        std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory> > >::iterator system_iter;
+        std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory> > >& factories(types.get());
+        system_iter = factories.find("ModelicaSystem");
+        if (system_iter ==factories.end()) 
         {
             throw std::invalid_argument("No Modelica system found");
         }
 
 
         //create Modelica system
-        boost::shared_ptr<IMixedSystem> system(iter->second.create(*global_settings));
+        boost::shared_ptr<IMixedSystem> system(system_iter->second.create(global_settings,algLoopSolverFactory));
 
         //create selected solver
         boost::shared_ptr<IDAESolver> solver = config.createSolver(system.get());

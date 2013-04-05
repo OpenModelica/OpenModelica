@@ -49,7 +49,8 @@ void Kinsol::init()
     dimDouble  = _algLoop->getDimVars(),
     dimInt    = 0,
     dimBool    = 0;
-
+   double fnormtol  = 1.e-12;     /* function tolerance */
+   double scsteptol = 1.e-12;     /* step tolerance */
   // Check system dimension
   if (dimDouble != _dimSys)
   {
@@ -91,10 +92,23 @@ void Kinsol::init()
       idid = KINSetUserData(_kinMem, _data);
       if (check_flag(&idid, "KINSetUserData", 1))
          throw std::invalid_argument("Kinsol::init()");
-      idid = KINDense(_kinMem, _dimSys);
-      //idid = KINSpgmr(_kinMem,0);
-      if (check_flag(&idid, "KINSpgmr", 1))
+
+      //idid = KINDense(_kinMem, _dimSys);
+      int maxl = 15; 
+	   int maxlrst = 2;
+	   int mset = 2;
+	  idid = KINSpgmr(_kinMem,maxl);
+	  if (check_flag(&idid, "KINSpgmr", 1)) 
+
         throw std::invalid_argument("Kinsol::init()");
+
+	   //idid = KINSpilsSetMaxRestarts(_kinMem, maxlrst);
+	   if (check_flag(&idid, "KINSpilsSetMaxRestarts", 1)) 
+         throw std::invalid_argument("Kinsol::init()");
+	    //KINSetMaxSetupCalls(_kinMem, mset);
+		KINSetFuncNormTol(_kinMem, fnormtol);
+		KINSetScaledStepTol(_kinMem, scsteptol);
+		KINSetNumMaxIters(_kinMem, 2000);
     }
     else
     {
@@ -111,6 +125,8 @@ void Kinsol::solve(const IContinuous::UPDATE command)
     dimRHS  = 1,          // Dimension of right hand side of linear system (=b)
     irtrn  = 0;          // Retrun-flag of Fortran code
   int idid;
+    if (_firstCall)
+        init();    
   if(_algLoop->isLinear())
   {
     //calcFunction(_yHelp,_fHelp);
@@ -124,7 +140,7 @@ void Kinsol::solve(const IContinuous::UPDATE command)
   {
 
 
-    idid = KINSol(_kinMem, _Kin_y, KIN_LINESEARCH, _Kin_yScale, _Kin_yScale);
+    idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_yScale);
     if (check_flag(&idid, "KINSol", 1))
       throw std::invalid_argument("Kinsol::solve()");
   }

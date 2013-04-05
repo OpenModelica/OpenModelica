@@ -1,20 +1,20 @@
-#include "stdafx.h"
+#include "stdafx.h" 
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "GlobalSettings.h"
-
+ 
 
 GlobalSettings::GlobalSettings()
 : _startTime            (0.0)
 , _endTime            (5.0)
 , _hOutput            (0.001)
-, _resultsOutput        (true)
+, _resultsOutput        (true)    
 , _infoOutput        (true)
 , _selected_solver("Euler")
 ,_selected_nonlin_solver("Newton")
 ,_resultsfile_name("results.csv")
 ,_endless_sim(false)
 {
-
+    
 }
 
 GlobalSettings::~GlobalSettings()
@@ -122,7 +122,7 @@ void GlobalSettings::load(std::string xml_file)
     else
     {
     boost::archive::xml_iarchive xml(ifs);
-    xml >>boost::serialization::make_nvp("GlobalSettings", *this);
+    xml >>boost::serialization::make_nvp("GlobalSettings", *this); 
     ifs.close();
     }
     }
@@ -131,7 +131,7 @@ void GlobalSettings::load(std::string xml_file)
     std::string error = ex.what();
     cout<< error <<std::endl;
     }
-
+  
 }
   void GlobalSettings::setRuntimeLibrarypath(string path)
   {
@@ -144,5 +144,5 @@ void GlobalSettings::load(std::string xml_file)
  /* std::fstream ofs;
     ofs.open("C:\\Temp\\GlobalSettings.xml", ios::out);
     boost::archive::xml_oarchive xml(ofs);
-    xml << boost::serialization::make_nvp("GlobalSettings", *this);
+    xml << boost::serialization::make_nvp("GlobalSettings", *this); 
     ofs.close();*/

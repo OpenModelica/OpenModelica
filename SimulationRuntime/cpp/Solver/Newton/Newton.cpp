@@ -1,6 +1,7 @@
+
 #include "stdafx.h"
 #include "Newton.h"
-
+ 
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Math/Constants.h>        // definition of constants like uround
 
@@ -20,11 +21,11 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 }
 
 Newton::~Newton()
-{
+{    
     if(_y)         delete []    _y;
     if(_yHelp)    delete []    _yHelp;
-    if(_f)        delete []    _f;
-    if(_fHelp)    delete []    _fHelp;
+    if(_f)        delete []    _f;    
+    if(_fHelp)    delete []    _fHelp;    
     if(_jac)    delete []    _jac;
 }
 
@@ -36,10 +37,10 @@ void Newton::init()
     _algLoop->init();
 
     // Dimension of the system (number of variables)
-    int
+    int 
         dimDouble    = _algLoop->getDimVars(),
         dimInt        = 0,
-        dimBool        = 0;
+        dimBool        = 0; 
 
     // Check system dimension
     if (dimDouble != _dimSys)
@@ -50,13 +51,13 @@ void Newton::init()
         {
             // Initialization of vector of unknowns
             if(_y)         delete []    _y;
-            if(_f)        delete []    _f;
+            if(_f)        delete []    _f;    
             if(_yHelp)    delete []    _yHelp;
-            if(_fHelp)    delete []    _fHelp;
+            if(_fHelp)    delete []    _fHelp;    
             if(_jac)    delete []    _jac;
-
+            
             _y            = new double[_dimSys];
-            _f            = new double[_dimSys];
+            _f            = new double[_dimSys];    
             _yHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
@@ -73,21 +74,21 @@ void Newton::init()
         }
     }
 
-
+    
 }
 
-void Newton::solve()
+void Newton::solve(const IContinuous::UPDATE command)
 {
     long int
         dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)
         irtrn    = 0;                    // Retrun-flag of Fortran code
 
-    int
+    int 
         totStps    = 0;                    // Total number of steps
 
     // If init() was not called yet
     if (_firstCall)
-        init();
+        init();    
 
     // Get initial values from system
     _algLoop->giveVars(_y);
@@ -145,7 +146,7 @@ void Newton::solve()
 
                 if(irtrn!=0)
                 {
-                    // TODO: Throw an error message here.
+                    // TODO: Throw an error message here. 
                     _iterationStatus = SOLVERERROR;
                     break;
                 }
@@ -156,9 +157,9 @@ void Newton::solve()
                 // New solution
                 for(int i=0; i<_dimSys; ++i)
                     _y[i] -= _newtonSettings->getDelta() * _f[i];
-
+                
             }
-            else
+            else 
                 _iterationStatus = SOLVERERROR;
         }
     }

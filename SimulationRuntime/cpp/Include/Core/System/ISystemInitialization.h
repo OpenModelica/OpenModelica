@@ -31,7 +31,7 @@ public:
     virtual unsigned int getDimIntialResiduals() /*const*/ = 0;
 
     /// (Re-) initialize the system of equations and bounded parameters
-    virtual void init(double ts,double te) = 0;
+    virtual void init() = 0;
     //sets the initial status
     virtual void setInitial(bool) = 0;
     //returns the intial status

@@ -211,6 +211,7 @@ package SimCode
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
     record ALGLOOP_CONTEXT
+       Boolean genInitialisation;
     end ALGLOOP_CONTEXT;
     record OTHER
     end OTHER;
@@ -546,6 +547,8 @@ package SimCode
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloop;             
+   constant Context contextAlgloopInitialisation;             
+
   constant Context contextParallelFunction;
   constant Context contextZeroCross;
   constant list<DAE.Exp> listExpLength1;

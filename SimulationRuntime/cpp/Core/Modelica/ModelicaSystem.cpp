@@ -73,10 +73,7 @@ int Modelica::getDimVars() const
 {
   return(SystemDefaultImplementation::getDimVars());
 }
-  void Modelica::giveConditions(bool* c)
-   {
-     memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
-   }
+  
 
 // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int Modelica::getDimRHS() const
@@ -127,8 +124,9 @@ bool Modelica::checkForDiscreteEvents()
   return restart;
 }
 
- void Modelica::checkConditions(const bool* events, bool all)
+ bool Modelica::checkConditions(const bool* events, bool all)
  {
+ return false;
  }
 
 void Modelica::giveJacobianSparsityPattern(SparcityPattern pattern)

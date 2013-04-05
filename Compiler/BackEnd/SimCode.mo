@@ -532,7 +532,9 @@ uniontype Context
   end SIMULATION;
   record FUNCTION_CONTEXT
   end FUNCTION_CONTEXT;
+  
   record ALGLOOP_CONTEXT
+     Boolean genInitialisation;
   end ALGLOOP_CONTEXT;
   record OTHER
   end OTHER;
@@ -549,7 +551,8 @@ public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
-public constant Context contextAlgloop                = ALGLOOP_CONTEXT();
+public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true);
+public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false);
 public constant Context contextOther                  = OTHER();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();

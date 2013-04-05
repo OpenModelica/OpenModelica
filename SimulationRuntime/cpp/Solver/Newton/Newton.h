@@ -1,6 +1,7 @@
 
-#pragma once
 
+#pragma once
+ 
 #include <System/IAlgLoop.h>                // Interface to AlgLoo
 #include <Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Solver/INonLinSolverSettings.h>
@@ -14,7 +15,7 @@
 
 Damped Newton-Raphson Method
 
-The purpose of Newton is to find a zero of a system F of n nonlinear functions in n
+The purpose of Newton is to find a zero of a system F of n nonlinear functions in n 
 variables y of the form
 
 F(t,y_1,...,y_n) = 0,                (1)
@@ -25,15 +26,15 @@ f_1(t,y_1,...,y_n) = 0
 ...                   ...
 f_n(t,y_1,...,y_n) = 0
 
-by the use of an iterative Newton method. The solution of the linear system is done
+by the use of an iterative Newton method. The solution of the linear system is done 
 by Lapack/DGESV, which computes the solution to a real system of linear equations
 
 A * y = B,                            (2)
 
-where A is an n-by-n matrix and y and B are n-by-n(right hand side) matrices.
+where A is an n-by-n matrix and y and B are n-by-n(right hand side) matrices. 
 
 \date     2008, September, 16th
-\author
+\author   
 
 */
 /*****************************************************************************
@@ -51,18 +52,18 @@ public:
     virtual void init();
 
     /// Solution of a (non-)linear system of equations
-    virtual void solve();
+    virtual void solve(const IContinuous::UPDATE command = IContinuous::UNDEF_UPDATE);
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
-
+    
 
 private:
     /// Encapsulation of determination of residuals to given unknowns
     void calcFunction(const double* y, double* residual);
 
     /// Encapsulation of determination of Jacobian
-    void calcJacobian();
+    void calcJacobian(); 
 
 
     // Member variables
@@ -73,10 +74,10 @@ private:
     IAlgLoop
         *_algLoop;                    ///< Algebraic loop to be solved
 
-    ITERATIONSTATUS
+    ITERATIONSTATUS        
         _iterationStatus;            ///< Output        - Denotes the status of iteration
 
-    long int
+    long int            
         _dimSys;                    ///< Temp        - Number of unknowns (=dimension of system of equations)
 
     bool
