@@ -12,6 +12,8 @@ $ autoconf
 $ ./configure --with-omniORB
 $ make # or make omc if you only want the omc core and not the qtclients
 
+
+
 How to compile on Linux/BSD (all from source)
 ===================================================
 
@@ -34,7 +36,7 @@ But first you need to install dependencies:
           Note: for newer gcc compilers you might need to add
             #include <limits.h> in orb/fast_array.cc
     java     version > 1.4
-    gcc      (tested with most of the versions; 4.4 is preferred over 4.5, 4.6 or 4.7 because the newer compilers are *much* slower)
+    gcc      (tested with most of the versions; 4.4 is preferred over 4.5, 4.6, 4.7 and 4.8 because the newer compilers are *much* slower at compiling code)
     readline & libreadlineX-dev, currently X=5
     liblpsolve: http://www.cs.sunysb.edu/~algorith/implement/lpsolve/distrib/lp_solve_5.5.0.11_source.tar.gz
     sqlite3
