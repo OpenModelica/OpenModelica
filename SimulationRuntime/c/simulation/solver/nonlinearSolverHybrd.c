@@ -43,6 +43,7 @@
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"
+extern doublereal enorm_(integer *n, doublereal *x);
 
 typedef struct DATA_HYBRD
 {

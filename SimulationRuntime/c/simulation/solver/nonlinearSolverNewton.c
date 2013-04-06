@@ -44,6 +44,7 @@
 #include "nonlinearSystem.h"
 #include "nonlinearSolverNewton.h"
 #include "f2c.h"
+extern doublereal enorm_(integer *n, doublereal *x);
 
 typedef struct DATA_NEWTON
 {

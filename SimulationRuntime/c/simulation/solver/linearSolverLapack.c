@@ -43,6 +43,10 @@
 
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
+#include "blaswrap.h"
+#include "f2c.h"
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
+                  integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 typedef struct DATA_LAPACK
 {

@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <setjmp.h>
+#include <unistd.h>
 
 /* Really 64kB memory for this? Oh well... */
 #define TRACE_NFRAMES 65536
@@ -113,13 +114,10 @@ static void getStackBase() {
    */
   pthread_t self = pthread_self();
 #if !defined(__APPLE_CC__)
-  struct rlimit rl;
   size_t size = 0;
   pthread_attr_t sattr;
   pthread_attr_init(&sattr);
   pthread_getattr_np(self, &sattr);
-  /* assert(0==getrlimit(RLIMIT_STACK,&rl));
-  stackSize = rl.rlim_cur; */
   assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
   assert(stackBottom);
   pthread_attr_destroy(&sattr);
