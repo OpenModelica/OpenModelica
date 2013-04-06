@@ -42,9 +42,6 @@
 extern "C" {
 #endif
 
-#include "blaswrap.h"
-#include "f2c.h"
-
 #ifdef VOID
 #undef VOID
 #endif

@@ -43,6 +43,7 @@
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverNewton.h"
+#include "f2c.h"
 
 typedef struct DATA_NEWTON
 {

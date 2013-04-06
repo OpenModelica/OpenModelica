@@ -41,6 +41,7 @@
 #include "model_help.h"
 
 #include "dassl.h"
+#include "f2c.h"
 
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                           "dassl",

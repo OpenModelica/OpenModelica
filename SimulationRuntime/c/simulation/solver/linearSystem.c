@@ -37,6 +37,8 @@
 #include "omc_error.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
+#include "blaswrap.h"
+#include "f2c.h"
 
 /*! \fn int allocatelinearSystem(DATA *data)
  *

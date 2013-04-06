@@ -39,6 +39,10 @@
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "blaswrap.h"
+#include "f2c.h"
+
+extern doublereal enorm_(integer *n, doublereal *x);
 
 /*! \fn int allocateNonlinearSystem(DATA *data)
  *
