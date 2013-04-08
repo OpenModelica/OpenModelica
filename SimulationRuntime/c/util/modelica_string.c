@@ -53,7 +53,7 @@ modelica_string_const modelica_real_to_modelica_string_format(modelica_real r,mo
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
-  sprintf(&formatStr[1], "%s", format);
+  strcpy(&formatStr[1], format);
   sprintf(buf,formatStr,r);
   return init_modelica_string(buf);
 }
@@ -63,7 +63,7 @@ modelica_string_const modelica_integer_to_modelica_string_format(modelica_intege
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
-  sprintf(&formatStr[1], "%s", format);
+  strcpy(&formatStr[1], format);
   sprintf(buf,formatStr,i);
   return init_modelica_string(buf);
 }
@@ -73,14 +73,14 @@ modelica_string_const modelica_string_to_modelica_string_format(modelica_string_
   char formatStr[40];
   char buf[4000];
   formatStr[0]='%';
-  sprintf(&formatStr[1], "%s", format);
+  strcpy(&formatStr[1], format);
   sprintf(buf,formatStr,s);
   return init_modelica_string(buf);
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
-modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)
+modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
 {
   char formatStr[40];
   char buf[400];
@@ -134,9 +134,7 @@ modelica_string_const init_modelica_string(modelica_string_const str)
   int i;
   int length = strlen(str);
   modelica_string_t dest = alloc_modelica_string(length);
-  for(i = 0; i<length; ++i) {
-    dest[i] = str[i];
-  }
+  memcpy(dest, str, length);
   return dest;
 }
 
@@ -151,19 +149,20 @@ modelica_string_t alloc_modelica_string(int length)
 
 void free_modelica_string(modelica_string_t* a)
 {
-    int length;
+    /* int length; */
 
     assert(modelica_string_ok(a));
 
-    length = modelica_string_length(*a);
+    /* length = modelica_string_length(*a); */
     /* Free also null terminator.*/
     /* free(a); */ /* char_free(length+1); */
 }
 
 modelica_string_const copy_modelica_string(modelica_string_const source)
 {
-  modelica_string_t dest = alloc_modelica_string(modelica_string_length(source));
-  memcpy(dest, source, modelica_string_length(source)+1);
+  int len = strlen(source);
+  modelica_string_t dest = alloc_modelica_string(len);
+  memcpy(dest, source, len);
   return dest;
 }
 
@@ -174,7 +173,7 @@ modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_str
   int len2 = modelica_string_length(s2);
   dest = alloc_modelica_string(len1+len2);
   memcpy(dest, s1, len1);
-  memcpy(dest + len1, s2, len2 + 1);
+  memcpy(dest + len1, s2, len2);
   return dest;
 }
 
@@ -188,11 +187,12 @@ extern int omc__escapedStringLength(const char* str, int nl)
       case '\a':
       case '\b':
       case '\f':
-      case '\v': i++;
-      case '\r': i++; if(nl && str[1] == '\n') str++;
-      case '\n': i++; if(nl && str[1] == '\r') str++;
-      default: i++;
+      case '\v': i++; break;
+      case '\r': if(nl) {i++; if(str[1] == '\n') str++;} break;
+      case '\n': if(nl) {i++; if(str[1] == '\r') str++;} break;
+      default: break;
     }
+    i++;
     str++;
   }
   return i;

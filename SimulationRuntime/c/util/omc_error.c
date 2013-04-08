@@ -75,7 +75,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information about dassl solver",          /* LOG_DDASRT */
   "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
-  "outputs jacobain of the dynamic state selection",    /* LOG_DSS_JAC */
+  "outputs jacobian of the dynamic state selection",    /* LOG_DSS_JAC */
   "additional information during event iteration",      /* LOG_EVENTS */
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
