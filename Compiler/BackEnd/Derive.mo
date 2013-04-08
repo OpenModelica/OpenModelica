@@ -270,16 +270,14 @@ algorithm
         DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(Absyn.IDENT("sin"),{e},DAE.callAttrBuiltinReal)));
 
-    // der(tan(x)) = ...
+    // der(tan(x)) = der(x) / cos(x)^2
     case (DAE.CALL(path = Absyn.IDENT("tan"),expLst = {e}),_)
       equation
         e1 = differentiateExpTime(e, inVariables);
         e2 = Expression.makeBuiltinCall("cos",{e},DAE.T_REAL_DEFAULT);
       then
-        DAE.BINARY(
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
-          DAE.BINARY(e2,DAE.POW(DAE.T_REAL_DEFAULT),
-          DAE.RCONST(2.0))),DAE.MUL(DAE.T_REAL_DEFAULT),e1);
+        DAE.BINARY(e1,DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(e2,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(2.0)));
 
     // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),_)
@@ -299,7 +297,7 @@ algorithm
          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},
                   DAE.callAttrBuiltinReal));
 
-    // der(arctan(x)) = der(x)/1+x^2
+    // der(arctan(x)) = der(x)/(1+x^2)
     case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables)  ;
@@ -330,6 +328,31 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(fname,{e},DAE.callAttrBuiltinReal));
+
+    // der(sinh(x)) = der(x)cosh(x)
+    case (DAE.CALL(path = Absyn.IDENT("sinh"),expLst = {e}),_)
+      equation
+        e_1 = differentiateExpTime(e, inVariables);
+      then
+        DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
+          DAE.CALL(Absyn.IDENT("cosh"),{e},DAE.callAttrBuiltinReal));
+
+    // der(cosh(x)) = der(x)sinh(x)
+    case (DAE.CALL(path = Absyn.IDENT("cosh"),expLst = {e}),_)
+      equation
+        e_1 = differentiateExpTime(e, inVariables);
+      then
+        DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
+          DAE.CALL(Absyn.IDENT("sinh"),{e},DAE.callAttrBuiltinReal));
+
+    // der(tanh(x)) = der(x) / cosh(x)^2
+    case (DAE.CALL(path = Absyn.IDENT("tanh"),expLst = {e}),_)
+      equation
+        e1 = differentiateExpTime(e, inVariables);
+        e2 = Expression.makeBuiltinCall("cosh",{e},DAE.T_REAL_DEFAULT);
+      then
+        DAE.BINARY(e1,DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(e2,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(2.0)));
 
     // der(log(x)) = der(x)/x
     case (DAE.CALL(path = Absyn.IDENT("log"),expLst = {e}),_)
@@ -1458,12 +1481,13 @@ algorithm
   outExp := match (name,exp,tv,differentiateIfExp,inFuncs)
     local
       DAE.Exp exp_1,exp_2;
-    // der(tanh(x)) = der(x) / cosh(x)
+    // der(tanh(x)) => der(x) / cosh(x)^2
     case ("tanh",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cosh",{exp},DAE.T_REAL_DEFAULT);
-      then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp_2);
+      then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),
+             DAE.BINARY(exp_2,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(2.0)));
 
     // der(cosh(x)) => der(x)sinh(x)
     case ("cosh",_,_,_,_)
@@ -1479,13 +1503,14 @@ algorithm
         exp_2 = Expression.makeBuiltinCall("cosh",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),exp_2);
 
-    // sin(x)
+    // der(sin(x)) => der(x)cos(x)
     case ("sin",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cos",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_2,DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
 
+    // der(cos(x)) => -der(x)sin(x)
     case ("cos",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
@@ -1506,54 +1531,51 @@ algorithm
         exp_2 = Expression.makeBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp))},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp_2);
 
-    // der(arctan(x)) = der(x)/1+x^2
+    // der(arctan(x)) = der(x)/(1+x^2)
     case ("atan",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp)));
 
+    // der(exp(x)) = der(x)exp(x)
     case ("exp",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("exp",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_2,DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
 
+    // der(log(x)) = der(x) / x
     case ("log",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then
-        DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),exp));
+        DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp);
 
     case ("log10",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("log",{DAE.RCONST(10.0)},DAE.T_REAL_DEFAULT);
       then
-        DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
-          DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),
-          exp_2)));
+        DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp_2));
 
     case ("sqrt",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt",{exp},DAE.T_REAL_DEFAULT);
       then
-        DAE.BINARY(
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
+        DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.T_REAL_DEFAULT),
-          exp_2)),DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
+          exp_2));
 
+    // der(tan(x)) => der(x) / cos(x)^2
     case ("tan",_,_,_,_)
       equation
         exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cos",{exp},DAE.T_REAL_DEFAULT);
       then
-        DAE.BINARY(
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
-          DAE.BINARY(exp_2,DAE.POW(DAE.T_REAL_DEFAULT),
-          DAE.RCONST(2.0))),DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
+        DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(exp_2,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(2.0)));
 
     // abs(x)
     /* Why do we have two rules for abs(x)?
