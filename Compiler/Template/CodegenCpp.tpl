@@ -1602,9 +1602,9 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
     ;separator="\n")  
   <<
     <%varDecls%>
-  /*Initial equations
+  /*Initial equations*/
     <%body%>
-   Initial equations end*/
+   /*Initial equations end*/
    
  
   >>
@@ -3889,6 +3889,10 @@ end tempDecl;
 template contextCref(ComponentRef cr, Context context,SimCode simCode)
   "Generates code for a component reference depending on which context we're in."
 ::=
+match cr
+case CREF_QUAL(ident = "$PRE") then 
+   '_event_handling.pre(<%contextCref(componentRef,context,simCode)%>,"<%cref(componentRef)%>")'
+ else
   match context
   case FUNCTION_CONTEXT(__) then crefStr(cr)
   else cref1(cr,simCode,context)
@@ -4460,7 +4464,7 @@ case SES_SIMPLE_ASSIGN(__) then
   case CREF_QUAL(ident = "$PRE")  then 
   << 
     <%preExp%>
-      _event_handling.save(<%expPart%>,"<%expPart%>");
+      _event_handling.save(<%expPart%>,"<%cref(componentRef)%>");
   >>
   else
   <<
@@ -5402,13 +5406,15 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
  expression."
 ::=
   match exp
-  // A record cref without subscripts (i.e. a record instance) is handled
+  
+   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
