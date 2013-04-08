@@ -1991,7 +1991,7 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
       .append("<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>")
       .append("<li>Haris Kapidzic</li>")
       .append("<li>Abhinn Kothari</li>")
-      .append("<li>Dr. Henning Kiel - <u><a href=\"mailto:h.kiel@kostal.com\">h.kiel@kostal.com</a></u></li>")
+      .append("<li>Dr. Henning Kiel</li>")
       .append("<li>Alachew Shitahun</li>")
       .append("</ul>");
   Label *pContributorsLabel = new Label;
