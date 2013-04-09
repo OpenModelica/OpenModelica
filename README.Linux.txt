@@ -207,6 +207,7 @@ WARNING: The bootstrapped compiler has not been tested on all combinations of co
 CentOS 6 Hints (RPM, command-line only; for clients, add CORBA, readline)
 =========================================================================
 yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
+also needs cmake > 2.8; not in default repos; try http://dl.atrpms.net/el6-x86_64/atrpms/testing/cmake-2.8.8-4.el6.x86_64.rpm
 ./configure --without-rml --disable-omshell-terminal --disable-modelica3d
 make -j8 bootstrap-from-tarball
 
