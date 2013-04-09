@@ -204,6 +204,9 @@ $ make bootstrap-from-compiled
 
 WARNING: The bootstrapped compiler has not been tested on all combinations of compilers and operating systems. It did work on 64-bit Ubuntu with GCC 4.4, but not on 64-bit Fedora Core with GCC 4.7.
 
+CentOS 6 Notes
+==============
+
 GENERAL NOTES:
 ==============
 - Fedora Core 4 has a missing symlink. To fix it, in /usr/lib do:
