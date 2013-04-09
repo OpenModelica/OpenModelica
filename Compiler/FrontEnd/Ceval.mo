@@ -4925,10 +4925,11 @@ algorithm
     // A variable with a binding -> constant evaluate the binding
     case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _)
       equation
-        // Do not check this; it is needed for some reason :(
-        // true = SCode.isParameterOrConst(variability);
+        // We might try to ceval variables in reduction scope... but it can't be helped since we do things in a ***** way in Inst/Static
+        true = SCode.isParameterOrConst(variability) or inImpl or Env.inForLoopScope(inEnv);
         false = crefEqualValue(inCref, inBinding);
         (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+        // print("Eval cref: " +& ComponentReference.printComponentRefStr(inCref) +& "\n  in scope " +& Env.printEnvPathStr(inEnv) +& "\n");
         cache = Env.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
       then
         (cache, v);

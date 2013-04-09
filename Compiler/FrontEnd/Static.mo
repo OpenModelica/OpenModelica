@@ -8521,7 +8521,7 @@ algorithm
           SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()),
           SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
         // Create an environment with the needed parameters.
-        env = Env.newEnvironment(NONE());
+        env = Env.newEnvironment(SOME("dummyFunction"));
         env = makeDummyFuncEnv(env, vars, dummy_var);
 
         // Evaluate the dimensions in the types.
@@ -8639,12 +8639,13 @@ algorithm
     // constant evaluate it.
     case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
       equation
+        false = Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
         ty = Expression.typeof(exp);
         true = Types.dimensionsKnown(ty);
         binding = DAE.EQBOUND(exp, NONE(), DAE.C_CONST(),
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, binding, NONE());
+        DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
     // Otherwise, try to constant evaluate the expression.
     case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
@@ -8657,10 +8658,10 @@ algorithm
         binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(),
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, binding, NONE());
+        DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
     case (SLOT(an = (name, ty, _, _)), _, _)
-      then DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, DAE.UNBOUND(), NONE());
+      then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE());
 
   end matchcontinue;
 end makeVarFromSlot;
@@ -8722,6 +8723,7 @@ algorithm
       Integer n;
       DAE.Dimension dim;
       list<DAE.Type> tys;
+      Env.Env env;
 
     // Array type, evaluate the dimension.
     case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
