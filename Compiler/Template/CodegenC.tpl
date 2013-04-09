@@ -6792,8 +6792,14 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'sub_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
-  case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'
-  case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'
+  case MUL_ARR(__) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFD*/)
+    let &preExp += 'mul_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
+  case DIV_ARR(__) then  error(sourceInfo(),'Code generation does not support DIV_ARR <%printExpStr(exp)%>')
   case MUL_ARRAY_SCALAR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
@@ -6801,8 +6807,8 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
-  case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
-  case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
+  case ADD_ARRAY_SCALAR(__) then error(sourceInfo(),'Code generation does not support ADD_ARRAY_SCALAR <%printExpStr(exp)%>')
+  case SUB_SCALAR_ARRAY(__) then error(sourceInfo(),'Code generation does not support SUB_SCALAR_ARRAY <%printExpStr(exp)%>')
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"

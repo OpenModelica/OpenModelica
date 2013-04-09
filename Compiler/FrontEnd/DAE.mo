@@ -1529,7 +1529,7 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     Type ty;
   end SUB_ARR;
 
-  record MUL_ARR
+  record MUL_ARR "Element-wise array multiplication"
     Type ty;
   end MUL_ARR;
 

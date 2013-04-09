@@ -974,6 +974,24 @@ void mul_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_arr
     mul_real_array_scalar(a,b,dest);
 }
 
+void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest)
+{
+  size_t nr_of_elements;
+  size_t i;
+  /* Assert that a,b have same sizes? */
+  nr_of_elements = base_array_nr_of_elements(a);
+  for(i=0; i < nr_of_elements; ++i) {
+    real_set(dest, i, real_get(a, i) * real_get(b, i));
+  }
+}
+
+void mul_alloc_real_array(const real_array_t *a,const real_array_t *b,real_array_t *dest)
+{
+    clone_real_array_spec(a,dest);
+    alloc_real_array_data(dest);
+    mul_real_array(a,b,dest);
+}
+
 modelica_real mul_real_scalar_product(const real_array_t * a, const real_array_t * b)
 {
     size_t nr_of_elements;

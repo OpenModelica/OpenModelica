@@ -167,6 +167,9 @@ extern void mul_real_array_scalar(const real_array_t * a,modelica_real b,real_ar
 extern void mul_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
                                  real_array_t* dest);
 
+void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest);
+void mul_alloc_real_array(const real_array_t *a,const real_array_t *b,real_array_t *dest);
+
 extern modelica_real mul_real_scalar_product(const real_array_t * a, const real_array_t * b);
 
 extern void mul_real_matrix_product(const real_array_t *a,const real_array_t *b,real_array_t*dest);
