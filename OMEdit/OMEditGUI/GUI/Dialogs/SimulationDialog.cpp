@@ -585,6 +585,18 @@ void SimulationDialog::simulate()
 }
 
 /*!
+  #2145 A hack to handle the QProcess status.
+  We check QProcess::status() while the process is running but some versions of Qt doesn't set that value properly.\n
+  So this extra flag is used within that loop to get out that infinite loop.
+  */
+void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  Q_UNUSED(exitCode);
+  Q_UNUSED(exitStatus);
+  mIsSimulationProcessFinished = true;
+}
+
+/*!
   Slot activated when mpCancelSimulationButton clicked signal is raised.\n
   Cancels a running simulation by killing the simulation executable.
   */
@@ -660,6 +672,7 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     SimulationOutputDialog *pSimulationOutputDialog = new SimulationOutputDialog(mpLibraryTreeNode->getNameStructure(), mpSimulationProcess, mpMainWindow);
     connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(writeSimulationOutput()));
     connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(showSimulationOutputDialog()));
+    connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
     mpProgressDialog->setText(tr("Running Simulation.\nPlease wait for a while."));
     // set progress bar range
@@ -675,9 +688,12 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     QStringList args(QString("-port=").append(QString::number(server.serverPort())));
     args << simulationFlags;
     // start the executable
+    mIsSimulationProcessFinished = false;
     mpSimulationProcess->start(file,args);
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {
+      if (mIsSimulationProcessFinished)
+        break;
       if (!sock && server.hasPendingConnections()) {
         sock = server.nextPendingConnection();
       } else if (!sock) {

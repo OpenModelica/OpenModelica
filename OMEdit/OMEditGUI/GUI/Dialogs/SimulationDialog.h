@@ -136,12 +136,14 @@ private:
   QDialogButtonBox *mpButtonBox;
   ProgressDialog *mpProgressDialog;
   QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessFinished;
   bool mIsInteractive;
   LibraryTreeNode *mpLibraryTreeNode;
 public slots:
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void simulate();
+  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
 };
 
