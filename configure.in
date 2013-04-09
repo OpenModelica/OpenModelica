@@ -184,8 +184,7 @@ if java -cp $omc_antlr_jar antlr.Tool $$grammar.g ; then
   AC_MSG_RESULT([yes])
 else
   rm -f $$grammar.g
-#  AC_MSG_ERROR([no antlr.Tool support])
-  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([no antlr.Tool support])
 fi
 
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
