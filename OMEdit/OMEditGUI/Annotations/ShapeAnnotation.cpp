@@ -1502,7 +1502,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         if (lineType == LineAnnotation::ConnectionType)
         {
           disconnect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), this, SLOT(deleteConnection()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));
         }
         else
         {

@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
         {
           fileName.prepend(QString(QDir::currentPath()).append("/"));
         }
+        fileName = fileName.replace("\\", "/");
         mainwindow.getLibraryTreeWidget()->openFile(fileName);
       }
     }

@@ -439,12 +439,19 @@ void LineAnnotation::updateStartPoint(QPointF point)
     mPoints.push_back(point);
   else
     mPoints[0] = point;
+  /* update the 1st CornerItem */
+  if (mCornerItemsList.size() > 0)
+    mCornerItemsList[0]->setPos(point);
+  /* update the 2nd point */
   if (mPoints.size() != 1)
   {
     if (mGeometries[0] == LineAnnotation::Horizontal)
       mPoints[1] = QPointF(mPoints[1].x(),mPoints[0].y());
     else if (mGeometries[0] == LineAnnotation::Vertical)
       mPoints[1] = QPointF(mPoints[0].x(),mPoints[1].y());
+    /* updated the 2nd CornerItem */
+    if (mCornerItemsList.size() > 1)
+      mCornerItemsList[1]->setPos(mPoints[1]);
   }
 }
 
@@ -454,10 +461,17 @@ void LineAnnotation::updateEndPoint(QPointF point)
   switch (mLineType)
   {
     case LineAnnotation::ConnectionType:
+      /* updated the last CornerItem */
+      if (mCornerItemsList.size() > (mPoints.size() - 1))
+        mCornerItemsList[mPoints.size() - 1]->setPos(point);
+      /* update the 2nd last point */
       if (mGeometries.back() == LineAnnotation::Horizontal)
-        mPoints[mPoints.size()-2] = QPointF(mPoints[mPoints.size()-2].x(),point.y());
+        mPoints[mPoints.size() - 2] = QPointF(mPoints[mPoints.size() - 2].x(),point.y());
       else if (mGeometries.back() == LineAnnotation::Vertical)
-        mPoints[mPoints.size()-2] = QPointF(point.x(),mPoints[mPoints.size()-2].y());
+        mPoints[mPoints.size() - 2] = QPointF(point.x(),mPoints[mPoints.size() - 2].y());
+      /* updated the 2nd last CornerItem */
+      if (mCornerItemsList.size() > (mPoints.size() - 2))
+        mCornerItemsList[mPoints.size() - 2]->setPos(mPoints[mPoints.size() - 2]);
       break;
     default:
       break;
@@ -466,9 +480,12 @@ void LineAnnotation::updateEndPoint(QPointF point)
 
 void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
 {
-  for(int i=0; i != mPoints.size(); ++i)
+  for(int i = 0 ; i < mPoints.size() ; i++)
   {
     mPoints[i] = QPointF(mPoints[i].x()+offsetX, mPoints[i].y()+offsetY);
+    /* updated the corresponding the CornerItem */
+    if (mCornerItemsList.size() > i)
+      mCornerItemsList[i]->setPos(mPoints[i]);
   }
 }
 
