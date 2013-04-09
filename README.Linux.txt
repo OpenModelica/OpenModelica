@@ -196,7 +196,7 @@ Bootstrapped compiler
 
 To compile OpenModelica without the use of rml-mmc:
 $ autoconf
-$ ./configure --with-CORBA --without-rml
+$ ./configure --without-rml
 $ make bootstrap-from-tarball
 
 To recompile (once you have a working build/bin/omc)
@@ -204,8 +204,11 @@ $ make bootstrap-from-compiled
 
 WARNING: The bootstrapped compiler has not been tested on all combinations of compilers and operating systems. It did work on 64-bit Ubuntu with GCC 4.4, but not on 64-bit Fedora Core with GCC 4.7.
 
-CentOS 6 Notes
-==============
+CentOS 6 Hints (RPM, command-line only; for clients, add CORBA, readline)
+=========================================================================
+yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
+./configure --without-rml --disable-omshell-terminal --disable-modelica3d
+make -j8 bootstrap-from-tarball
 
 GENERAL NOTES:
 ==============
