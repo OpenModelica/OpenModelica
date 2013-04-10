@@ -9038,7 +9038,11 @@ algorithm
   strs := matchcontinue exp
     local
       String str;
-      
+    
+    // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
+    case Absyn.STRING("lapack")
+      then getLibraryStringInMSVCFormat(Absyn.STRING("Lapack"));
+     
     // Lapack on MinGW/Windows is linked against f2c
     case Absyn.STRING("Lapack")
       then {"lapack_win32_MT.lib", "f2c.lib"};
@@ -9087,6 +9091,10 @@ algorithm
   strs := matchcontinue exp
     local
       String str;
+      
+    // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
+    case Absyn.STRING("lapack")
+      then getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
       
     // Lapack on MinGW/Windows is linked against f2c
     case Absyn.STRING("Lapack")
