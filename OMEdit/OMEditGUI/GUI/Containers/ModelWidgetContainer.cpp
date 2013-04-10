@@ -1363,12 +1363,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         pShapeAnnotation->setPos(0, 0);
         pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
         pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getOrigin());
-        /*
-          Hide and show the corner items otherwise Qt stacks the corner items behind the shape.
-          Selecting the CornerItem will not be possible then.
-          */
-        pShapeAnnotation->setCornerItemsPassive();
-        pShapeAnnotation->setCornerItemsActive();
         hasMoved = true;
       }
     }

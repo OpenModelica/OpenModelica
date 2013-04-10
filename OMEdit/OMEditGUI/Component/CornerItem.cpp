@@ -48,7 +48,7 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mItemClicked(false), mConnectedPointIndex(connectedPointIndex)
+  : QGraphicsItem(pParent), mConnectedPointIndex(connectedPointIndex)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
            | QGraphicsItem::ItemSendsGeometryChanges);
@@ -137,10 +137,6 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       emit cornerItemPositionChanged();
       mpShapeAnnotation->getGraphicsView()->setCanAddClassAnnotation(true);
     }
-    if (mpShapeAnnotation->isSelected())
-      mpShapeAnnotation->setCornerItemsActive();
-    else
-      mpShapeAnnotation->setSelected(true);
   }
 }
 

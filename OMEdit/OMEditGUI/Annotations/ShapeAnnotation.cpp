@@ -1347,6 +1347,7 @@ void ShapeAnnotation::moveShiftRight()
 void ShapeAnnotation::cornerItemPressed()
 {
   mIsCornerItemClicked = true;
+  setSelected(false);
 }
 
 /*!
@@ -1355,6 +1356,10 @@ void ShapeAnnotation::cornerItemPressed()
 void ShapeAnnotation::cornerItemReleased()
 {
   mIsCornerItemClicked = false;
+  if (isSelected())
+    setCornerItemsActive();
+  else
+    setSelected(true);
 }
 
 /*!
