@@ -749,11 +749,16 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
       QList<QString> list;
       QString resultFileName = QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText());
+      if (mpMainWindow->getDebugApplication()) qDebug() << "readSimulationResultVars";
       list = pOMCProxy->readSimulationResultVars(resultFileName);
       // close the simulation result file.
+      if (mpMainWindow->getDebugApplication()) qDebug() << "closeSimulationResultFile";
       pOMCProxy->closeSimulationResultFile();
+      if (mpMainWindow->getDebugApplication()) qDebug() << "switchToPlottingView";
       mpMainWindow->switchToPlottingView();
+      if (mpMainWindow->getDebugApplication()) qDebug() << "addPlotVariablestoTree";
       pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
+      if (mpMainWindow->getDebugApplication()) qDebug() << "show variables widget";
       mpMainWindow->getVariablesDockWidget()->show();
     }
   }
