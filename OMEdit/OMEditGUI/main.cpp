@@ -139,6 +139,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
   // if user has requested to open the file by passing it in argument then,
+  bool OMCLogger = false;
   if (a.arguments().size() > 1)
   {
     for (int i = 1; i < a.arguments().size(); i++)
@@ -148,9 +149,9 @@ int main(int argc, char *argv[])
         QString omcLoggerArg = a.arguments().at(i);
         omcLoggerArg.remove("--OMCLogger=");
         if (0 == strcmp("true", omcLoggerArg.toStdString().c_str()))
-          mainwindow.getOMCProxy()->enableCustomExpression(true);
+          OMCLogger = true;
         else
-          mainwindow.getOMCProxy()->enableCustomExpression(false);
+          OMCLogger = false;
       }
       else if (strncmp(a.arguments().at(i).toStdString().c_str(), "--debug=",8) == 0)
       {
@@ -178,6 +179,8 @@ int main(int argc, char *argv[])
       }
     }
   }
+  // hide OMCLogger send custom expression feature if OMCLogger is false
+  mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);
   // finally show the main window
   mainwindow.show();
   // hide the splash screen
