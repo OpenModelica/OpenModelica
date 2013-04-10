@@ -41,7 +41,7 @@
 #include "Helper.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
-  : QMainWindow(parent), mExitApplicationStatus(false)
+  : QMainWindow(parent), mExitApplicationStatus(false), mDebugApplication(false)
 {
   // This is a very convoluted way of asking for the default system font in Qt
   QFont systmFont("Monospace");
@@ -232,6 +232,16 @@ void MainWindow::setExitApplicationStatus(bool status)
 bool MainWindow::getExitApplicationStatus()
 {
   return mExitApplicationStatus;
+}
+
+void MainWindow::setDebugApplication(bool debug)
+{
+  mDebugApplication = debug;
+}
+
+bool MainWindow::getDebugApplication()
+{
+  return mDebugApplication;
 }
 
 OptionsDialog* MainWindow::getOptionsDialog()

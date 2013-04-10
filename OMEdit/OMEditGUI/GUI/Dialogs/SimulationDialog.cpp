@@ -593,6 +593,7 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
+  if (mpMainWindow->getDebugApplication()) qDebug() << "simulationProcessFinished slot is called";
   mIsSimulationProcessFinished = true;
 }
 
@@ -689,9 +690,12 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     args << simulationFlags;
     // start the executable
     mIsSimulationProcessFinished = false;
+    if (mpMainWindow->getDebugApplication()) qDebug() << "starting the simulation process";
     mpSimulationProcess->start(file,args);
+    if (mpMainWindow->getDebugApplication()) qDebug() << "started the simulation process";
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {
+      if (mpMainWindow->getDebugApplication()) qDebug() << "running the simulation process";
       if (mIsSimulationProcessFinished)
         break;
       if (!sock && server.hasPendingConnections()) {
@@ -720,6 +724,7 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       }
       qApp->processEvents();
     }
+    if (mpMainWindow->getDebugApplication()) qDebug() << "simulation process finished";
     if (sock) delete sock;
     server.close();
     // show simulation process error if any

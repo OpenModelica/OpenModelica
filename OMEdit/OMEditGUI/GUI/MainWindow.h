@@ -87,6 +87,8 @@ public:
   OMCProxy* getOMCProxy();
   void setExitApplicationStatus(bool status);
   bool getExitApplicationStatus();
+  void setDebugApplication(bool debug);
+  bool getDebugApplication();
   OptionsDialog* getOptionsDialog();
   MessagesWidget* getMessagesWidget();
   LibraryTreeWidget* getLibraryTreeWidget();
@@ -151,6 +153,7 @@ public:
 private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
+  bool mDebugApplication;
   OptionsDialog *mpOptionsDialog;
   MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;

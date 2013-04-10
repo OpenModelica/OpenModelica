@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
     a.quit();
     exit(1);
   }
-  bool OMCLogger = false;
   // if user has requested to open the file by passing it in argument then,
   if (a.arguments().size() > 1)
   {
@@ -149,32 +148,36 @@ int main(int argc, char *argv[])
         QString omcLoggerArg = a.arguments().at(i);
         omcLoggerArg.remove("--OMCLogger=");
         if (0 == strcmp("true", omcLoggerArg.toStdString().c_str()))
-        {
-          OMCLogger = true;
-          continue;
-        }
-        else if (0 == strcmp("false", omcLoggerArg.toStdString().c_str()))
-        {
-          OMCLogger = false;
-          continue;
-        }
+          mainwindow.getOMCProxy()->enableCustomExpression(true);
+        else
+          mainwindow.getOMCProxy()->enableCustomExpression(false);
       }
-      fileName = a.arguments().at(i);
-      if (!fileName.isEmpty())
+      else if (strncmp(a.arguments().at(i).toStdString().c_str(), "--debug=",8) == 0)
       {
-        // if path is relative make it absolute
-        QFileInfo file (fileName);
-        if (file.isRelative())
+        QString debugArg = a.arguments().at(i);
+        debugArg.remove("--debug=");
+        if (0 == strcmp("true", debugArg.toStdString().c_str()))
+          mainwindow.setDebugApplication(true);
+        else
+          mainwindow.setDebugApplication(false);
+      }
+      else
+      {
+        fileName = a.arguments().at(i);
+        if (!fileName.isEmpty())
         {
-          fileName.prepend(QString(QDir::currentPath()).append("/"));
+          // if path is relative make it absolute
+          QFileInfo file (fileName);
+          if (file.isRelative())
+          {
+            fileName.prepend(QString(QDir::currentPath()).append("/"));
+          }
+          fileName = fileName.replace("\\", "/");
+          mainwindow.getLibraryTreeWidget()->openFile(fileName);
         }
-        fileName = fileName.replace("\\", "/");
-        mainwindow.getLibraryTreeWidget()->openFile(fileName);
       }
     }
   }
-  // hide OMCLogger send custom expression feature if OMCLogger is false
-  mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);
   // finally show the main window
   mainwindow.show();
   // hide the splash screen
