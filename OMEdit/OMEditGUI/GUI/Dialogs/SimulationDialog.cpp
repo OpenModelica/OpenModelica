@@ -755,7 +755,7 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       if (mpMainWindow->getDebugApplication()) qDebug() << "closeSimulationResultFile";
       pOMCProxy->closeSimulationResultFile();
       if (mpMainWindow->getDebugApplication()) qDebug() << "switchToPlottingView";
-      mpMainWindow->switchToPlottingView();
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       if (mpMainWindow->getDebugApplication()) qDebug() << "addPlotVariablestoTree";
       pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
       if (mpMainWindow->getDebugApplication()) qDebug() << "show variables widget";

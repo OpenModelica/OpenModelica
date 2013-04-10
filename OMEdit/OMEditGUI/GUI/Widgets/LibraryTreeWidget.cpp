@@ -1463,7 +1463,7 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
 void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool newClass)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  mpMainWindow->switchToModelingView();
+  mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(1);
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
   if (pLibraryTreeNode == 0)
   {

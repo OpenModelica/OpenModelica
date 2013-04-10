@@ -104,6 +104,7 @@ public:
   QProgressBar* getProgressBar();
   Label* getPointerXPositionLabel();
   Label* getPointerYPositionLabel();
+  QTabBar* getPerspectiveTabBar();
   QAction* getSaveAction();
   QAction* getSaveAsAction();
   QAction* getPrintModelAction();
@@ -146,10 +147,6 @@ public:
   void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
-  void switchToWelcomeView();
-  void switchToModelingView();
-  void switchToPlottingView();
-  void switchToInteractiveSimulationView();
 private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
@@ -262,7 +259,6 @@ public slots:
   void zoomOut();
   void instantiatesModel();
   void checkModel();
-  void perspectiveTabChanged(int tabIndex);
   void openSimulationDialog();
   void openInteractiveSimulation();
   void showFindReplaceDialog();
@@ -285,10 +281,16 @@ public slots:
   void showProgressBar();
   void hideProgressBar();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
+private slots:
+  void perspectiveTabChanged(int tabIndex);
 private:
   void createActions();
   void createToolbars();
   void createMenus();
+  void switchToWelcomePerspective();
+  void switchToModelingPerspective();
+  void switchToPlottingPerspective();
+  void switchToInteractiveSimulationPerspective();
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);

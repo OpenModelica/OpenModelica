@@ -208,7 +208,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     if (mpMessagesWidget->getMessagesTreeWidget()->topLevelItemCount() > 0) restoreMessagesWidget = true;
     restoreState(settings.value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
-    perspectiveTabChanged(0);
+    mpPerspectiveTabbar->setCurrentIndex(0);
   }
   // read last Open Directory location
   if (settings.contains("lastOpenDirectory"))
@@ -317,6 +317,11 @@ Label* MainWindow::getPointerXPositionLabel()
 Label* MainWindow::getPointerYPositionLabel()
 {
   return mpPointerYPositionLabel;
+}
+
+QTabBar* MainWindow::getPerspectiveTabBar()
+{
+  return mpPerspectiveTabbar;
 }
 
 QAction* MainWindow::getSaveAction()
@@ -590,7 +595,7 @@ void MainWindow::openResultFiles(QStringList fileNames)
     QList<QString> list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
-    switchToPlottingView();
+    mpPerspectiveTabbar->setCurrentIndex(2);
     mpVariablesWidget->addPlotVariablestoTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list);
     mpVariablesDockWidget->show();
   }
@@ -843,69 +848,6 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDo
   textCellElement.appendChild(outputElement);
 }
 
-void MainWindow::switchToWelcomeView()
-{
-  mpPerspectiveTabbar->blockSignals(true);
-  mpPerspectiveTabbar->setCurrentIndex(0);
-  mpPerspectiveTabbar->blockSignals(false);
-  mpWelcomePageWidget->setVisible(true);
-  mpModelWidgetContainer->setVisible(false);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
-  mpModelSwitcherToolButton->setEnabled(false);
-  mpPlotWindowContainer->setVisible(false);
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
-}
-
-void MainWindow::switchToModelingView()
-{
-  mpPerspectiveTabbar->blockSignals(true);
-  mpPerspectiveTabbar->setCurrentIndex(1);
-  mpPerspectiveTabbar->blockSignals(false);
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(true);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  mpModelSwitcherToolButton->setEnabled(true);
-  mpPlotWindowContainer->setVisible(false);
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
-}
-
-void MainWindow::switchToPlottingView()
-{
-  mpPerspectiveTabbar->blockSignals(true);
-  mpPerspectiveTabbar->setCurrentIndex(2);
-  mpPerspectiveTabbar->blockSignals(false);
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(false);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
-  mpModelSwitcherToolButton->setEnabled(false);
-  // if not plotwindow is opened then open one for user
-  if (mpPlotWindowContainer->subWindowList().size() == 0)
-    mpPlotWindowContainer->addPlotWindow();
-  mpPlotWindowContainer->setVisible(true);
-  mpVariablesDockWidget->show();
-  mpPlotToolBar->setEnabled(true);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
-}
-
-void MainWindow::switchToInteractiveSimulationView()
-{
-  mpPerspectiveTabbar->blockSignals(true);
-  mpPerspectiveTabbar->setCurrentIndex(3);
-  mpPerspectiveTabbar->blockSignals(false);
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(false);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
-  mpModelSwitcherToolButton->setEnabled(false);
-  mpPlotWindowContainer->setVisible(false);
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(true);
-}
-
 //! Opens the new model widget.
 void MainWindow::createNewModelicaClass()
 {
@@ -1072,28 +1014,6 @@ void MainWindow::checkModel()
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                     .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
                                                     0, mpMessagesWidget->getMessagesTreeWidget()));
-  }
-}
-
-void MainWindow::perspectiveTabChanged(int tabIndex)
-{
-  switch (tabIndex)
-  {
-    case 0:
-      switchToWelcomeView();
-      break;
-    case 1:
-      switchToModelingView();
-      break;
-    case 2:
-      switchToPlottingView();
-      break;
-    case 3:
-      switchToInteractiveSimulationView();
-      break;
-    default:
-      switchToWelcomeView();
-      break;
   }
 }
 
@@ -1414,6 +1334,28 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
   int numRecentModels = qMin(subWindowsList.size(), (int)MaxRecentFiles);
   for (j = numRecentModels ; j < MaxRecentFiles ; j++)
     mpModelSwitcherActions[j]->setVisible(false);
+}
+
+void MainWindow::perspectiveTabChanged(int tabIndex)
+{
+  switch (tabIndex)
+  {
+    case 0:
+      switchToWelcomePerspective();
+      break;
+    case 1:
+      switchToModelingPerspective();
+      break;
+    case 2:
+      switchToPlottingPerspective();
+      break;
+    case 3:
+      switchToInteractiveSimulationPerspective();
+      break;
+    default:
+      switchToWelcomePerspective();
+      break;
+  }
 }
 
 //! Defines the actions used by the toolbars
@@ -1784,6 +1726,57 @@ void MainWindow::createMenus()
   pMenuBar->addAction(pHelpMenu->menuAction());
   // set menubar
   setMenuBar(pMenuBar);
+}
+
+void MainWindow::switchToWelcomePerspective()
+{
+  mpWelcomePageWidget->setVisible(true);
+  mpModelWidgetContainer->setVisible(false);
+  mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpModelSwitcherToolButton->setEnabled(false);
+  mpPlotWindowContainer->setVisible(false);
+  mpVariablesDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
+  //mpInteractiveSimualtionTabWidget->setVisible(false);
+}
+
+void MainWindow::switchToModelingPerspective()
+{
+  mpWelcomePageWidget->setVisible(false);
+  mpModelWidgetContainer->setVisible(true);
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  mpModelSwitcherToolButton->setEnabled(true);
+  mpPlotWindowContainer->setVisible(false);
+  mpVariablesDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
+  //mpInteractiveSimualtionTabWidget->setVisible(false);
+}
+
+void MainWindow::switchToPlottingPerspective()
+{
+  mpWelcomePageWidget->setVisible(false);
+  mpModelWidgetContainer->setVisible(false);
+  mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpModelSwitcherToolButton->setEnabled(false);
+  // if not plotwindow is opened then open one for user
+  if (mpPlotWindowContainer->subWindowList().size() == 0)
+    mpPlotWindowContainer->addPlotWindow();
+  mpPlotWindowContainer->setVisible(true);
+  mpVariablesDockWidget->show();
+  mpPlotToolBar->setEnabled(true);
+  //mpInteractiveSimualtionTabWidget->setVisible(false);
+}
+
+void MainWindow::switchToInteractiveSimulationPerspective()
+{
+  mpWelcomePageWidget->setVisible(false);
+  mpModelWidgetContainer->setVisible(false);
+  mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpModelSwitcherToolButton->setEnabled(false);
+  mpPlotWindowContainer->setVisible(false);
+  mpVariablesDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
+  //mpInteractiveSimualtionTabWidget->setVisible(true);
 }
 
 //! Creates the toolbars
