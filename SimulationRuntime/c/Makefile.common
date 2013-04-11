@@ -144,8 +144,8 @@ endif
 
 install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
 	# copy libraries
+	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) install
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
-	   ./ModelicaExternalC/libModelicaExternalC.a \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	# copy interactive sample client

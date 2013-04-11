@@ -1055,6 +1055,12 @@ external "builtin";
 annotation(preferredView="text");
 end setLinker;
 
+function getLinkerFlags
+  output String linkerFlags;
+external "builtin";
+annotation(preferredView="text");
+end getLinkerFlags;
+
 function setLinkerFlags
   input String linkerFlags;
   output Boolean success;

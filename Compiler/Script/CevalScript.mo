@@ -1649,6 +1649,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
+    case (cache,env,"getLinkerFlags",{},st,_)
+      equation
+        str = System.getLDFlags();
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,env,"setLinkerFlags",{Values.STRING(str)},st,_)
       equation
         System.setLDFlags(str);

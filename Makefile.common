@@ -208,6 +208,7 @@ build/lib/omlibrary/stamp: libraries/README
 omlibrary-internal:
 	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
 	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type f -not -path "*svn*" -exec install -p -m644 {} ../build/lib/omlibrary/{} \;)
+	cp -rp libraries//OpenSourceTables/Modelica/NewTables build/lib/omlibrary/
 
 omlibrary-222:
 	(cd "libraries/Modelica 2.2.2" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../build/lib/omlibrary/Modelica 2.2.2/{}" \;)

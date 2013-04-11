@@ -6,10 +6,16 @@
 
 CC = @CC@
 CXX = @CXX@
-CFLAGS   := @CFLAGS@ -I../util
-CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux
+CFLAGS = @CFLAGS@ -I../util -Wno-unused-result
+CPPFLAGS = @CPPFLAGS@ -I.. -Dlinux
+TABLESCPPFLAGS = @LIBMODELICATABLESCPPFLAGS@ -DDUMMY_FUNCTION_USERTAB
+
+LIBMODELICATABLES = @LIBMODELICATABLES@
 
 include Makefile.common
+
+libModelicaTables.so : $(TABLEOBJS)
+	$(CC) -o $@ -shared $(LDFLAGS) $(TABLEOBJS) -lz -lhdf5 -lm
 
 Makefile: Makefile.in
 	cd ../../../; ./config.status

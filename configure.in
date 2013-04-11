@@ -58,6 +58,8 @@ AC_SUBST(LIBGC)
 AC_SUBST(LIBSIMULATION)
 AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
+AC_SUBST(LIBMODELICATABLESCPPFLAGS)
+AC_SUBST(LIBMODELICATABLES)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -360,23 +362,41 @@ fi
 
 AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
 
-LIBS=""
+LIBS="-lz -lhdf5 -lm"
 
-AC_MSG_CHECKING([gettext linking])
-AC_TRY_LINK([
-#include <libintl.h>
-], [
-  gettext("");
-], [AC_MSG_RESULT([in C-library])],
-  [
-  LIBS="-lintl";
-  AC_TRY_LINK([
-    #include <libintl.h>
-  ], [
-      gettext("");
-  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
-      [AC_MSG_ERROR([no])])
+#AC_CHECK_HEADERS(hdf5.h,[HDF5="1"],[HDF5=""])
+CPPFLAGS_BAK=$CPPFLAGS
+ZLIB=1
+HDF5=1
+MPI_CPPFLAGS=""
+AC_MSG_CHECKING([hdf5.h])
+AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],[])],AC_MSG_RESULT([OK]),[
+  MPI_CPPFLAGS=`OMPI_CC=$CC mpicc -showme:compile`
+  CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
+  AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],[])],AC_MSG_RESULT([[OK, needs mpi.h]]),[HDF5="";AC_MSG_RESULT([failed])])
 ])
+CPPFLAGS=$CPPFLAGS_BAK
+AC_CHECK_HEADERS(zlib.h,[],[ZLIB=""])
+
+if test -z "$HDF5" || test -z "$ZLIB"; then
+WITH_HDF5=no
+else
+
+AC_MSG_CHECKING([hdf5 linking])
+AC_LINK_IFELSE([AC_LANG_CALL([], [H5Fopen])],
+  [AC_MSG_RESULT([ok]); WITH_HDF5="yes"],
+  [AC_MSG_RESULT([failed to link H5Fopen]); WITH_HDF5="no"])
+
+fi
+
+if test "$WITH_HDF5" = "yes"; then
+FINAL_MESSAGES="$FINAL_MESSAGES\nModelica Tables may use HDF5,ZLIB,MAT 7.3: Yes"
+LIBMODELICATABLES=libModelicaTables.so
+LIBMODELICATABLESCPPFLAGS="-DHAVE_HDF5=1 -DMAT73=1 -DHAVE_ZLIB=1 $MPI_CPPFLAGS"
+else
+FINAL_MESSAGES="$FINAL_MESSAGES\nModelica Tables may use HDF5,ZLIB,MAT 7.3: No"
+LIBMODELICATABLES=libModelicaTables.a
+fi
 
 LIBS=""
 
