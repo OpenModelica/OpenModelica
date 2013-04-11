@@ -363,6 +363,24 @@ fi
 
 AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
 
+LIBS=""
+
+AC_MSG_CHECKING([gettext linking])
+AC_TRY_LINK([
+#include <libintl.h>
+], [
+  gettext("");
+], [AC_MSG_RESULT([in C-library])],
+  [
+  LIBS="-lintl";
+  AC_TRY_LINK([
+    #include <libintl.h>
+  ], [
+      gettext("");
+  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
+      [AC_MSG_ERROR([no])])
+])
+
 LIBS="-lz -lhdf5 -lm"
 
 CPPFLAGS_BAK=$CPPFLAGS
