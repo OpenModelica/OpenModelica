@@ -15,7 +15,7 @@ all: libModelicaExternalC.a ModelicaTables
 ModelicaTables : $(TABLEBUILDDIR)/Makefile
 	$(MAKE) -C $(TABLEBUILDDIR)
 $(TABLEBUILDDIR)/Makefile : $(TABLEBUILDDIR)/configure $(REGEN)
-	cd $(TABLEBUILDDIR) && ./configure CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="-Wno-unused-result $(CPPFLAGS)"
+	cd $(TABLEBUILDDIR) && ./configure $(PREFIX) CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="-Wno-unused-result $(CPPFLAGS)"
 	make -C $(TABLEBUILDDIR) clean
 $(TABLEBUILDDIR)/configure : $(TABLEBUILDDIR)/autogen.sh
 	cd $(TABLEBUILDDIR) && ./autogen.sh
