@@ -30,4 +30,5 @@ install : all ModelicaTables
 	cp -Pp $(TABLEBUILDDIR)/.libs/$(MODELICATABLES) $(builddir)/lib/omc
 clean:
 	rm -f libModelicaExternalC.a $(MOEXTC_OBJS) $(TABLEOBJS)
-	(! test -f $(TABLEBUILDDIR)/Makefile) || make -C $(TABLEBUILDDIR) clean
+	(! test -f $(TABLEBUILDDIR)/Makefile) || make -C $(TABLEBUILDDIR) distclean
+	rm -f $(TABLEBUILDDIR)/Makefile $(TABLEBUILDDIR)/configure
