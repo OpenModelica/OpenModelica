@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(SimulationRuntime/c/util/boolean_array.c)
+AC_INIT([OpenModelica],[dev],[https://trac.modelica.org/Modelica],[openmodelica],[https://trac.openmodelica.org/OpenModelica])
 AC_SUBST(date)
 AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
@@ -58,9 +58,7 @@ AC_SUBST(LIBGC)
 AC_SUBST(LIBSIMULATION)
 AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
-AC_SUBST(LIBMODELICATABLESCPPFLAGS)
-AC_SUBST(LIBMODELICATABLESLDFLAGS)
-AC_SUBST(LIBMODELICATABLES)
+AC_SUBST(SHREXT)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -77,6 +75,7 @@ AC_PREFIX_DEFAULT($PREFIX)
 prefix=$PREFIX
 
 dnl Checks for programs.
+AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CPP
@@ -381,44 +380,6 @@ AC_TRY_LINK([
       [AC_MSG_ERROR([no])])
 ])
 
-LIBS="-lz -lhdf5 -lm"
-
-CPPFLAGS_BAK=$CPPFLAGS
-ZLIB=1
-HDF5=1
-MPI_CPPFLAGS=""
-AC_MSG_CHECKING([hdf5.h])
-AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],[])],AC_MSG_RESULT([OK]),[
-  MPI_CPPFLAGS=`OMPI_CC=$CC mpicc -showme:compile`
-  CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
-  AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],[])],AC_MSG_RESULT([[OK, needs mpi.h]]),[HDF5="";AC_MSG_RESULT([failed])])
-])
-CPPFLAGS=$CPPFLAGS_BAK
-AC_CHECK_HEADERS(zlib.h,[],[ZLIB=""])
-
-if test -z "$HDF5" || test -z "$ZLIB"; then
-WITH_HDF5=no
-else
-
-AC_MSG_CHECKING([hdf5 linking])
-AC_LINK_IFELSE([AC_LANG_CALL([], [H5Fopen])],
-  [AC_MSG_RESULT([ok]); WITH_HDF5="yes"],
-  [AC_MSG_RESULT([failed to link H5Fopen]); WITH_HDF5="no"])
-
-fi
-
-if test "$WITH_HDF5" = "yes"; then
-FINAL_MESSAGES="$FINAL_MESSAGES\nModelica Tables may use HDF5,ZLIB,MAT 7.3: Yes"
-LIBMODELICATABLES=libModelicaTables.so
-LIBMODELICATABLESCPPFLAGS="-DHAVE_HDF5=1 -DMAT73=1 -DHAVE_ZLIB=1 -DDUMMY_FUNCTION_USERTAB $MPI_CPPFLAGS"
-LIBMODELICATABLESLDFLAGS="$LIBS"
-else
-FINAL_MESSAGES="$FINAL_MESSAGES\nModelica Tables may use HDF5,ZLIB,MAT 7.3: No"
-LIBMODELICATABLES=libModelicaTables.a
-LIBMODELICATABLESCPPFLAGS="-DDUMMY_FUNCTION_USERTAB"
-LIBMODELICATABLESLDFLAGS=""
-fi
-
 LIBS=""
 
 dnl should we use ipopt?
@@ -681,22 +642,20 @@ fi
 
 if test "Darwin" = `uname`; then
   EXE=".app"
+  SHREXT=".dylib"
   LIBGC="build/lib/omc/libgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+  RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc $OPENMP"
 else
   EXE=""
+  SHREXT=".so"
   LIBGC="build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
-fi
-
-if test "Darwin" != `uname`; then
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc $OPENMP"
-else
-  RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc $OPENMP"
 fi
 
 dnl should we compile modpar

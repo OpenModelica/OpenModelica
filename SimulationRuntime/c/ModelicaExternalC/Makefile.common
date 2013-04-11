@@ -7,29 +7,27 @@
 AR = ar -ru
 
 MOEXTC_OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o tables.o
-TABLESOURCEDIR = ../../../libraries/OpenSourceTables/Modelica/NewTables/Resources/C-Sources
+TABLEBUILDDIR = ../../../libraries/OpenSourceTables/unix
 builddir = ../../../build
-TABLEOBJS = ModelicaTables.o ModelicaMatIO.o
 
-all: libModelicaExternalC.a $(LIBMODELICATABLES)
+all: libModelicaExternalC.a ModelicaTables
 
-ModelicaTables.o : $(TABLESOURCEDIR)/ModelicaTables.c
-	$(CC) $(CPPFLAGS) $(TABLESCPPFLAGS) $(CFLAGS) -o $@ -c $<
-ModelicaMatIO.o : $(TABLESOURCEDIR)/ModelicaMatIO.c
-	$(CC) $(CPPFLAGS) $(TABLESCPPFLAGS) $(CFLAGS) -o $@ -c $<
-
-libModelicaTables.a : $(TABLEOBJS)
-	@rm -f $@
-	$(AR) $@ $(TABLEOBJS)
-	ranlib $@
-
+ModelicaTables : $(TABLEBUILDDIR)/Makefile
+	$(MAKE) -C $(TABLEBUILDDIR)
+$(TABLEBUILDDIR)/Makefile : $(TABLEBUILDDIR)/configure $(REGEN)
+	cd $(TABLEBUILDDIR) && ./configure CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="-Wno-unused-result $(CPPFLAGS)"
+	make -C $(TABLEBUILDDIR) clean
+$(TABLEBUILDDIR)/configure : $(TABLEBUILDDIR)/autogen.sh
+	cd $(TABLEBUILDDIR) && ./autogen.sh
+	
 libModelicaExternalC.a : $(MOEXTC_OBJS)
 	@rm -f $@
 	$(AR) $@ $(MOEXTC_OBJS)
 	ranlib $@
 
-install : all
-	cp libModelicaExternalC.a $(LIBMODELICATABLES) $(builddir)/lib/omc
+install : all ModelicaTables
+	cp libModelicaExternalC.a $(builddir)/lib/omc
+	cp -Pp $(TABLEBUILDDIR)/.libs/$(MODELICATABLES) $(builddir)/lib/omc
 clean:
 	rm -f libModelicaExternalC.a $(MOEXTC_OBJS) $(TABLEOBJS)
-
+	(! test -f $(TABLEBUILDDIR)/Makefile) || make -C $(TABLEBUILDDIR) clean
