@@ -6801,7 +6801,7 @@ algorithm
         annotation_ = SOME(SCode.ANNOTATION(mod)))))))
       equation
         SCode.MOD(binding = SOME((lib, _))) = Mod.getUnelabedSubMod(mod, "Library");
-        true = checkLibraryUsage("Lapack", lib);
+        true = checkLibraryUsage("Lapack", lib) or checkLibraryUsage("lapack", lib);
         isCevaluableFunction2(fid);
       then
         ();
