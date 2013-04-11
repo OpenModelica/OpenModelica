@@ -261,15 +261,6 @@ struct type_desc_s {
 #define trunc(a) ((double)((int)(a)))
 #endif
 
-/* Define _OMC_(s)random.*/
-#if defined (__MINGW32__) || defined(_MSC_VER)
-  #define _OMC_srandom srand
-  #define _OMC_random rand
-#else
-  #define _OMC_srandom srandom
-  #define _OMC_random random
-#endif
-
 /* initial and terminal function calls */
 #define initial() data->simulationInfo.initial
 #define terminal() data->simulationInfo.terminal

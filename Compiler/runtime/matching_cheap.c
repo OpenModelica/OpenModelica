@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <tinymt64.h>
 
 #include "matchmaker.h"
 
@@ -199,7 +200,11 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     int* match, int* row_match, int n, int m) {
   int i;
   /* initialize seed */
-  srand(1);
+  tinymt64_t random_seed;
+  random_seed.mat1 = 0x8f7011ee;
+  random_seed.mat2 = 0xfc78ff1f;
+  random_seed.tmat = 0x3793fdff;
+  tinymt64_init(&random_seed,1);
   int* col_stack = (int*)malloc(n * sizeof(int));
   int* col_degrees = (int*)malloc(n * sizeof(int));
 
@@ -226,7 +231,7 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   for(i = 0; i < n; i++){randarr[i] = i;}
   int temp;
   for(i = n-1; i >= 0; i--) {
-    int z = rand() % (i+1);
+    int z = omc_tinymt64_generate_fast_int_range(&random_seed,i+1);
     temp = randarr[i]; randarr[i] = randarr[z]; randarr[z] = temp;
   }
 
@@ -301,7 +306,7 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       c_degree = col_degrees[c_id];
 
       if(match[c_id] == -1 && c_degree != 0) {
-        e_id = rand() % c_degree;
+        e_id = omc_tinymt64_generate_fast_int_range(&random_seed,c_degree);
 
         sptr = col_ptrs[c_id];
         eptr = col_ptrs[c_id + 1];

@@ -1793,6 +1793,10 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   return buf;
 }
 
+#include <tinymt64.h>
+
+static tinymt64_t system_random_seed = {0};
+
 /* NOTES: Randomness provided by random() is guaranteed to be uniform
  * (high and low bits are the same).
  * rand() does not produce good results and should be avoided. */
@@ -1800,23 +1804,13 @@ static void seed(void)
 {
   static int init = 0;
   if (!init) {
-    /* /dev/random is usually a good seed; abuse it! */
-    const char *devrandom = "/dev/random";
-    if (SystemImpl__regularFileExists(devrandom)) {
-      int seed=0;
-      FILE *f = fopen(devrandom, "r");
-      if (f && (sizeof(int)==fread(&seed,1,sizeof(int),f))) {
-        _OMC_srandom(seed);
-        init = 1;
-      }
-      if (f) {
-        fclose(f);
-      }
-    }
-    if (!init) /* /dev/random failed; use crappy seed */ {
-      _OMC_srandom(time(NULL));
-      init = 1;
-    }
+  /* Skip /dev/random stuff since we want this predictable */
+    // set parameters
+    system_random_seed.mat1 = 0x8f7011ee;
+    system_random_seed.mat2 = 0xfc78ff1f;
+    system_random_seed.tmat = 0x3793fdff;
+    tinymt64_init(&system_random_seed,1);
+    init = 1;
   }
 }
 
@@ -1824,25 +1818,14 @@ static void seed(void)
 double SystemImpl__realRand()
 {
   seed();
-  return _OMC_random() / (((double)RAND_MAX)+1);
+  return tinymt64_generate_double(&system_random_seed);
 }
 
 /* Returns an integer (0,n] (i.e. the highest value is n-1) */
 int SystemImpl__intRand(int n)
 {
-  unsigned int r;
-  int m = RAND_MAX % n;
-  if (n<0 || n>RAND_MAX) return -1 /* Garbage in, garbage out */;
   seed();
-  /*
-   * Loop until we get something in a uniform range.
-   * Otherwise some values are more probable than others
-   */
-  while (1) {
-    r = _OMC_random();
-    if (RAND_MAX-(long)r >= m) break;
-  }
-  return r % n;
+  return omc_tinymt64_generate_fast_int_range(&system_random_seed, n);
 }
 
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
