@@ -45,7 +45,7 @@ typedef struct TINYMT64_T tinymt64_t;
 
 void tinymt64_init(tinymt64_t * random, uint64_t seed);
 void tinymt64_init_by_array(tinymt64_t * random, const uint64_t init_key[],
-			    int key_length);
+                            int key_length);
 
 #if defined(__GNUC__)
 /**
@@ -110,8 +110,8 @@ inline static uint64_t tinymt64_temper(tinymt64_t * random) {
 inline static double tinymt64_temper_conv(tinymt64_t * random) {
     uint64_t x;
     union {
-	uint64_t u;
-	double d;
+        uint64_t u;
+        double d;
     } conv;
 #if defined(LINEARITY_CHECK)
     x = random->status[0] ^ random->status[1];
@@ -120,7 +120,7 @@ inline static double tinymt64_temper_conv(tinymt64_t * random) {
 #endif
     x ^= random->status[0] >> TINYMT64_SH8;
     conv.u = ((x ^ (-((int64_t)(x & 1)) & random->tmat)) >> 12)
-	| UINT64_C(0x3ff0000000000000);
+        | UINT64_C(0x3ff0000000000000);
     return conv.d;
 }
 
@@ -133,8 +133,8 @@ inline static double tinymt64_temper_conv(tinymt64_t * random) {
 inline static double tinymt64_temper_conv_open(tinymt64_t * random) {
     uint64_t x;
     union {
-	uint64_t u;
-	double d;
+        uint64_t u;
+        double d;
     } conv;
 #if defined(LINEARITY_CHECK)
     x = random->status[0] ^ random->status[1];
@@ -143,7 +143,7 @@ inline static double tinymt64_temper_conv_open(tinymt64_t * random) {
 #endif
     x ^= random->status[0] >> TINYMT64_SH8;
     conv.u = ((x ^ (-((int64_t)(x & 1)) & random->tmat)) >> 12)
-	| UINT64_C(0x3ff0000000000001);
+        | UINT64_C(0x3ff0000000000001);
     return conv.d;
 }
 
