@@ -6513,7 +6513,7 @@ algorithm
         Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
         Config.setEvaluateParametersInAnnotations(false);
       then version;
-    else "(version unknown)";
+    else "";
   end matchcontinue;
 end getPackageVersion;
 
