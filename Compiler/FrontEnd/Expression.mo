@@ -779,7 +779,7 @@ end expStripLastSubs;
 
 public function expStripLastIdent
 "function: expStripLastIdent
-  Strips the last subscripts of a Exp"
+  Strips the last identifier of a cref Exp"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -2693,8 +2693,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
         tExisting = ComponentReference.crefLastType(cref);
-        failure(equality(tGiven = tExisting)); // false = valueEq(tGiven, tExisting);
-        Debug.traceln("Warning: Expression.makeCrefExp: given type DAE.CREF.ty: " +&
+        failure(equality(tGiven = tExisting)); 
+        Debug.traceln("Warning: Expression.makeCrefExp: cref " +& ComponentReference.printComponentRefStr(cref) +& " was given type DAE.CREF.ty: " +&
                       Types.unparseType(tGiven) +&
                       " is different from existing DAE.CREF.componentRef.ty: " +&
                       Types.unparseType(tExisting));
@@ -8303,6 +8303,18 @@ algorithm
     case _ then true;
   end matchcontinue;
 end dimensionKnown;
+
+public function dimensionUnknownOrExp
+  "Checks whether a dimensions is known or not."
+  input DAE.Dimension dim;
+  output Boolean known;
+algorithm
+  known := matchcontinue(dim)
+    case DAE.DIM_UNKNOWN() then true;
+    case DAE.DIM_EXP(exp = _) then true;
+    case _ then false;
+  end matchcontinue;
+end dimensionUnknownOrExp;
 
 public function subscriptEqual
 "function: subscriptEqual

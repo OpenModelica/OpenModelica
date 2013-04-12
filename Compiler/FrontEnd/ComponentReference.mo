@@ -1533,7 +1533,11 @@ algorithm
 end crefType;
 
 public function crefLastType "returns the 'last' type of a cref.
-For instance, for the cref 'a.b' it returns the type in identifier 'b'"
+For instance, for the cref 'a.b' it returns the type in identifier 'b'
+adrpo:
+  NOTE THAT THIS WILL BE AN ARRAY TYPE IF THE LAST CREF IS AN ARRAY TYPE
+  If you want to get the component reference type considering subscripts use:
+  crefTypeConsiderSubs"
   input ComponentRef inRef;
   output DAE.Type res;
 algorithm

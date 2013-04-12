@@ -2039,7 +2039,7 @@ algorithm
       then
         (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE() */,NONE(),NONE(),graph);
 
-    /* Instantiate a class definition made of parts */
+    // Instantiate a class definition made of parts 
     case (cache,env,ih,store,mods,pre,ci_state,
           c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info,partialPrefix = partialPrefix,encapsulatedPrefix = encapsulatedPrefix),
           vis,inst_dims,impl,callscope,graph,_,_)
@@ -3975,7 +3975,7 @@ algorithm
       equation
         s1 = Mod.prettyPrintMod(inmod,0);
         s2 = s1 +& " not found in <" +& callingScope +& ">";
-        // Line below can be used for testing test-suite for dangeling modifiers when getErrorString() is not called.
+        // Line below can be used for testing test-suite for dangling modifiers when getErrorString() is not called.
         //print(" *** ERROR Unused modifer...: " +& s2 +& "\n");
         Error.addMessage(Error.UNUSED_MODIFIER,{s2});
       then
@@ -10717,6 +10717,7 @@ algorithm
       SCode.Element cl;
       SCode.Attributes attr;
       Integer i,stop,i_1;
+      DAE.Dimension dim;
       DAE.Dimensions dims;
       list<DAE.Subscript> idxs;
       InstDims inst_dims;
@@ -10739,12 +10740,13 @@ algorithm
       SCode.Prefixes pf;
       UnitAbsyn.InstStore store;
 
-    /* component environment If is a function var. */
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,attr),pf,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    // component environment If is a function var.
+    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,attr),pf,i,dim,dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
+        true = Expression.dimensionUnknownOrExp(dim);
         SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,_,ty,st,_,graph) =
-          instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, INNER_CALL(),graph, csets) "Which has an expression binding";
+          instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, INNER_CALL(), graph, csets) "Which has an expression binding";
         ty_1 = Types.simplifyType(ty);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
         (rhs,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
@@ -10769,7 +10771,7 @@ algorithm
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
-    /* Special case when instantiating Real[0]. We need to know the type */
+    // Special case when instantiating Real[0]. We need to know the type
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
@@ -10780,7 +10782,7 @@ algorithm
       then
         (cache,compenv,ih,store,DAEUtil.emptyDae,csets,ty,graph);
 
-    /* Keep the errors if we somehow fail */
+    // Keep the errors if we somehow fail
     case (_, _, _, _, _, _, _, _, _, _, _, DAE.DIM_INTEGER(0), _, _, _, _, _, _, _, _)
       equation
         ErrorExt.delCheckpoint("instArray Real[0]");
@@ -10794,7 +10796,7 @@ algorithm
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
 
-    /* adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!! */
+    // adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!!
     case (cache,env,ih,store,ci_state,mod,pre,n,
           (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
                                                     modifications=scodeMod,attributes=absynAttr)),
@@ -11086,18 +11088,19 @@ algorithm
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
     // variables here.
-    case (cache, env, cref, _, ad, _, impl, st, doVect, true,pre,info,_)
+    case (cache, env, cref, _, ad, _, impl, st, doVect, true, pre, info, _)
       equation
-        (cache, dim) = Static.elabArrayDims(cache, env, cref, ad, true, st, doVect,pre,info);
+        (cache, dim) = Static.elabArrayDims(cache, env, cref, ad, true, st, doVect, pre, info);
       then
         (cache, dim);
 
-    case (cache,env,cref,_,ad,NONE(),impl,st,doVect, _,pre,info,_) /* impl */
+    case (cache,env,cref,_,ad,NONE(),impl,st,doVect,_,pre,info,_) /* impl */
       equation
         (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
         (cache,dim);
-    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_,info)),impl,st,doVect, _ ,pre,_,inst_dims) /* Untyped expressions must be elaborated. */
+    
+    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_,info)),impl,st,doVect,_ ,pre,_,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
@@ -11106,6 +11109,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
+    
     case (cache,env,cref,_,ad,SOME(DAE.UNTYPED(aexp,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
@@ -11117,6 +11121,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
+    
     case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         // adrpo: do not display error when running checkModel
@@ -11131,6 +11136,7 @@ algorithm
         Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info);
       then
         fail();
+    
     // print some failures
     case (_,_,cref,_,ad,eq,_,_,_,_,_,_,_)
       equation
@@ -13161,7 +13167,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,_)
       equation
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
-        (cache,extargs) = instExtGetFargs2(cache,env, exps, props);
+        (cache,extargs) = instExtGetFargs2(cache, env, exps, props);
       then
         (cache,extargs);
     case (_,_,_,impl,_,_)
@@ -13196,8 +13202,8 @@ algorithm
     case (cache,_,{},_) then (cache,{});
     case (cache,env,(e :: exps),(p :: props))
       equation
-        (cache,extargs) = instExtGetFargs2(cache,env, exps, props);
-        (cache,extarg) = instExtGetFargsSingle(cache,env, e, p);
+        (cache,extargs) = instExtGetFargs2(cache, env, exps, props);
+        (cache,extarg) = instExtGetFargsSingle(cache, env, e, p);
       then
         (cache,extarg :: extargs);
   end match;
@@ -13227,12 +13233,31 @@ algorithm
       DAE.Exp dim,exp;
       DAE.Properties prop;
       Env.Cache cache;
+      SCode.Variability variability;
+      Values.Value val;
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        (cache,attr,ty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,ty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref);
       then
         (cache,DAE.EXTARG(cref,attr,ty));
+
+    // adrpo: these can be non-local if they are constants or parameters!
+    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+      equation
+        (cache,attr as DAE.ATTR(variability = variability),ty,bnd,_,_,_,_,_) = Lookup.lookupVar(cache,env,cref);
+        true = SCode.isConstant(variability);
+        (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, Absyn.dummyInfo);
+      then
+        (cache,DAE.EXTARGEXP(exp, ty));
+
+    // adrpo: these can be non-local if they are constants or parameters!
+    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+      equation
+        (cache,attr as DAE.ATTR(variability = variability),ty,bnd,_,_,_,_,_) = Lookup.lookupVar(cache,env,cref);
+        true = SCode.isParameterOrConst(variability);
+      then
+        (cache,DAE.EXTARG(cref, attr, ty));
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation

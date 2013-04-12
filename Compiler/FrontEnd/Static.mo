@@ -3444,7 +3444,7 @@ algorithm
         c1 = Types.constAnd(c1,Types.propAllConst(prop));
         sty = Types.getPropType(prop);
         (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Ceval.NO_MSG());
-        (cache,exp,prop) = elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre);
+        (cache,exp,prop) = elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre, dims, info);
       then
         (cache, exp, prop);
 
@@ -3481,6 +3481,15 @@ algorithm
 
     case (cache,env,dims,_,impl,pre,_)
       equation
+        str = "Static.elabBuiltinFill failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
+              " and scope: " +& Env.printEnvPathStr(env) +& 
+              " for expression: fill(" +& Dump.printExpLstStr(dims) +& ")";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then
+        fail();
+
+    case (cache,env,dims,_,impl,pre,_)
+      equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE,
           "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
@@ -3509,11 +3518,13 @@ public function elabBuiltinFill2
   input list<Values.Value> inValuesValueLst;
   input DAE.Const constVar;
   input Prefix.Prefix inPrefix;
+  input list<Absyn.Exp> inDims;
+  input Absyn.Info inInfo;  
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inExp,inType,inValuesValueLst,constVar,inPrefix)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inExp,inType,inValuesValueLst,constVar,inPrefix,inDims,inInfo)
     local
       list<DAE.Exp> arraylist;
       DAE.Type at;
@@ -3529,7 +3540,19 @@ algorithm
       Prefix.Prefix pre;
       String str;
 
-    case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_)
+    // we might get here negative integers!
+    case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_,_,_)
+      equation
+        true = intLt(v, 0); // fill with 0 then!
+        v = 0;
+        arraylist = List.fill(s, v);
+        sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
+        at = Types.simplifyType(sty2);
+        a = Types.isArray(sty2, {});
+      then
+        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+
+    case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_,_,_)
       equation
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
@@ -3538,20 +3561,22 @@ algorithm
       then
         (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
 
-    case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest),c1,pre)
+    case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest),c1,pre,_,_)
       equation
-        (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre);
+        (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre,inDims,inInfo);
         arraylist = List.fill(exp, v);
         sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
         at = Types.simplifyType(sty2);
         a = Types.isArray(sty2, {});
       then
         (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
-
-    case (_,_,_,_,_,_,pre)
+        
+    case (cache,env,s,sty,_,c1,_,_,_)
       equation
-        str = "Static.elabBuiltinFill2 failed in component" +& PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        str = "Static.elabBuiltinFill2 failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
+              " and scope: " +& Env.printEnvPathStr(env) +& 
+              " for expression: fill(" +& Dump.printExpLstStr(inDims) +& ")";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
       then
         fail();
   end matchcontinue;
@@ -14100,7 +14125,10 @@ algorithm
     // bug #2113, seems that there is nothing in the specs 
     // that requires that fill arguments are of parameter/constant 
     // variability, so allow it.
-    else DAE.C_UNKNOWN();
+    else
+      equation
+        true = Config.splitArrays();
+      then DAE.C_UNKNOWN();
   end matchcontinue;
 end unevaluatedFunctionVariability;
 
@@ -14407,6 +14435,15 @@ algorithm
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         (inCache, SOME(DAE.DIM_UNKNOWN()));
+
+    // an integer parameter with no binding
+    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
+      equation
+        true = Types.isParameterOrConstant(cnst);
+        e_str = ExpressionDump.printExpStr(inExp);
+        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING, {e_str}, inInfo);
+      then
+        (inCache, NONE());
 
     case (_, _, _, DAE.PROP(ty, _), _, _, _, _, _)
       equation
