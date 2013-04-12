@@ -3436,25 +3436,25 @@ algorithm
     // try to constant evaluate dimensions
     case (cache,env,(s :: dims),_,impl,pre,_)
       equation
-        (cache,s_1,prop,_) = elabExp(cache, env, s, impl,NONE(),true,pre,info);
-        (cache,dims_1,dimprops,_) = elabExpList(cache,env, dims, impl,NONE(),true,pre,info);
+        (cache,s_1,prop,_) = elabExp(cache, env, s, impl,NONE(), true, pre, info);
+        (cache,dims_1,dimprops,_) = elabExpList(cache, env, dims, impl, NONE(), true, pre, info);
         (dims_1,_) = Types.matchTypes(dims_1, List.map(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
         c1 = Types.propertiesListToConst(dimprops);
         failure(DAE.C_VAR() = c1);
         c1 = Types.constAnd(c1,Types.propAllConst(prop));
         sty = Types.getPropType(prop);
-        (cache,dimvals,_) = Ceval.cevalList(cache,env, dims_1, impl, NONE(), Ceval.NO_MSG());
-        (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals,c1,pre);
+        (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Ceval.NO_MSG());
+        (cache,exp,prop) = elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre);
       then
-        (cache,exp,prop);
+        (cache, exp, prop);
 
     // If the previous case failed we probably couldn't constant evaluate the
     // dimensions. Create a function call to fill instead, and let the compiler sort it out later.
-    case (cache, env, (s :: dims), _, impl,pre,_)
+    case (cache, env, (s :: dims), _, impl, pre, _)
       equation
         c1 = unevaluatedFunctionVariability(env);
-        (cache, s_1, prop, _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
-        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl, NONE(), true,pre,info);
+        (cache, s_1, prop, _) = elabExp(cache, env, s, impl,NONE(), true, pre, info);
+        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl, NONE(), true, pre, info);
         (dims_1,_) = Types.matchTypes(dims_1, List.map(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
         sty = Types.getPropType(prop);
         sty = makeFillArgListType(sty, dimprops);
@@ -3466,11 +3466,11 @@ algorithm
 
     // Non-constant dimensons are also allowed in the case of non-expanded arrays
     // TODO: check that the diemnsions are parametric?
-    case (cache, env, (s :: dims), _, impl,pre,_)
+    case (cache, env, (s :: dims), _, impl, pre, _)
       equation
         false = Config.splitArrays();
-        (cache, s_1, DAE.PROP(sty, c1), _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
-        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true,pre,info);
+        (cache, s_1, DAE.PROP(sty, c1), _) = elabExp(cache, env, s, impl,NONE(), true, pre, info);
+        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true, pre, info);
         sty = makeFillArgListType(sty, dimprops);
         exp_type = Types.simplifyType(sty);
         c1 = Types.constAnd(c1, DAE.C_PARAM());
@@ -4378,7 +4378,7 @@ algorithm
 
     case (cache,env,args,_,impl,pre,_)
       equation
-        (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(0) :: args),{}, impl,pre,info);
+        (cache,e,p) = elabBuiltinFill(cache, env, (Absyn.INTEGER(0) :: args), {}, impl, pre, info);
       then
         (cache,e,p);
   end match;
@@ -4389,7 +4389,6 @@ protected function sameDimensions
   dimensions, otherwise false."
   input list<DAE.Properties> inProps;
   output Boolean res;
-
 protected
   list<DAE.Type> types;
   list<DAE.Dimensions> dims;
@@ -4405,7 +4404,6 @@ protected function sameDimensionsExceptionDimX
   input list<DAE.Properties> inProps;
   input Integer dimException;
   output Boolean res;
-
 protected
   list<DAE.Type> types;
   list<DAE.Dimensions> dims;
@@ -14099,6 +14097,10 @@ algorithm
   outConst := matchcontinue(inEnv)
     case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR();
     case _ equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then DAE.C_UNKNOWN();
+    // bug #2113, seems that there is nothing in the specs 
+    // that requires that fill arguments are of parameter/constant 
+    // variability, so allow it.
+    else DAE.C_UNKNOWN();
   end matchcontinue;
 end unevaluatedFunctionVariability;
 
