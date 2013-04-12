@@ -1892,7 +1892,7 @@ algorithm
         if isMatch then
           /* We already have a match for the first part. The full name was e.g. Modelica.Blocks, so we now see if the Blocks directory exists, and so on */
           if directoryExists(filename + "/" + matches2[2]) then
-            filename := filename + "/" + matches2[2];
+            filename := realpath(filename + "/" + matches2[2]);
           else
             break;
           end if;
@@ -1912,7 +1912,7 @@ algorithm
           end if;
         end if;
       end while;
-      filename := if isMatch then realpath(filename + "/" + matches[3]) else filename;
+      filename := if isMatch then filename + matches[3] else filename;
     elseif isFileUriAbsolute then
       (,matches) := regex(uri,"file://(/.*)?",2);
       filename := matches[2];
