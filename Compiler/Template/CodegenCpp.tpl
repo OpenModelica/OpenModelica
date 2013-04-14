@@ -4484,7 +4484,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   match exp
   case e as ICONST(__)          then '<%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
-  case e as BCONST(__)          then if bool then "(1)" else "(0)"
+  case e as BCONST(__)          then if bool then "true" else "false"
   case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
