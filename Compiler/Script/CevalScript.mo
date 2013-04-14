@@ -871,7 +871,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime;
+             systemPath, gccVersion, gd, strlinearizeTime, direction;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
@@ -1458,6 +1458,43 @@ algorithm
           "Simulation failed for model: " +& str +&
           "\nEnvironment variable OPENMODELICAHOME not set.",
           simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+
+    // adrpo: see if the model exists before moving!
+    case (cache,env,"moveClass",vals as {Values.CODE(Absyn.C_TYPENAME(className)),
+                                         Values.STRING(direction)},
+          st as Interactive.SYMBOLTABLE(ast = p),_)
+      equation
+        crefCName = Absyn.pathToCref(className);
+        false = Interactive.existClass(crefCName, p);
+        simValue = Values.BOOL(false);
+      then
+        (cache,simValue,st);
+    
+    // everything should work fine here
+    case (cache,env,"moveClass",vals as {Values.CODE(Absyn.C_TYPENAME(className)),
+                                        Values.STRING(direction)},
+          st as Interactive.SYMBOLTABLE(ast = p),_)
+      equation
+        crefCName = Absyn.pathToCref(className);
+        true = Interactive.existClass(crefCName, p);
+        p = moveClass(className, direction, p);
+        st = Interactive.setSymbolTableAST(st, p);
+        simValue = Values.BOOL(true);
+      then
+        (cache,simValue,st);
+    
+    // adrpo: some error happened!
+    case (cache,env,"moveClass",vals as {Values.CODE(Absyn.C_TYPENAME(className)),
+                                        Values.STRING(direction)},
+          st as Interactive.SYMBOLTABLE(ast = p),_)
+      equation
+        crefCName = Absyn.pathToCref(className);
+        true = Interactive.existClass(crefCName, p);
+        errMsg = "moveClass Error: Could not move the model " +& Absyn.pathString(className) +& ". Unknown error.";
+        Error.addMessage(Error.INTERNAL_ERROR, {errMsg});
+        simValue = Values.BOOL(false);
       then
         (cache,simValue,st);
 
@@ -3391,6 +3428,55 @@ algorithm
 
   end matchcontinue;
 end getListNthShowError;
+
+protected function moveClass
+  input Absyn.Path inClassName;
+  input String inDirection;
+  input Absyn.Program inProg;
+  output Absyn.Program outProg;
+algorithm
+  outProg := matchcontinue(inClassName, inDirection, inProg)
+    local 
+      Absyn.Path c, parent; 
+      Absyn.Program p;
+      list<Absyn.Class>  cls;
+      Absyn.Within       w;
+      Absyn.TimeStamp    gbt;
+      String name;
+      Absyn.Class parentClass;
+      
+    case (Absyn.FULLYQUALIFIED(c), _, _)
+      equation
+        p = moveClass(c, inDirection, inProg);
+      then
+        p;
+    
+    case (Absyn.IDENT(name), _, Absyn.PROGRAM(cls, w, gbt))
+      equation
+        cls = moveClassInList(name, cls, inDirection);
+        p = Absyn.PROGRAM(cls, w, gbt);
+      then
+        p;
+        
+    case (Absyn.QUALIFIED(_, _), _, p)
+      equation
+        name = Absyn.pathLastIdent(inClassName);
+        parent = Absyn.stripLast(inClassName);
+        parentClass = Interactive.getPathedClassInProgram(parent, p);
+      then
+        p;
+  
+  end matchcontinue;
+end moveClass;
+
+protected function moveClassInList
+  input String inClassName;
+  input list<Absyn.Class> inCls;
+  input String inDirection;
+  output list<Absyn.Class> outCls;
+algorithm
+  outCls := inCls;
+end moveClassInList;
 
 protected function buildModel "function buildModel
  author: x02lucpo
@@ -6953,6 +7039,13 @@ algorithm
      Env.Cache cache;
      Env.Env env;
      Absyn.Path fpath;
+
+   // external functions are complete :)
+   case (cache, env, fpath)
+     equation
+       (_, SCode.CLASS(classDef = SCode.PARTS(externalDecl = SOME(_))), _) = Lookup.lookupClass(cache, env, fpath, false);
+     then
+       true;
 
    // if is partial instantiation no function evaluation/generation
    case (cache, env, fpath)

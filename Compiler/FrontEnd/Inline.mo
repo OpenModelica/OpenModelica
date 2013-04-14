@@ -1522,6 +1522,7 @@ algorithm
       VarTransform.VariableReplacements repl;
       Boolean generateEvents,b;
       Option<SCode.Comment> comment;
+    
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1545,6 +1546,7 @@ algorithm
         ((newExp1,(fns1,b))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
         ((newExp1,(fns,b)));
+    
     else inTuple;
   end matchcontinue;
 end forceInlineCall;
@@ -2032,7 +2034,7 @@ algorithm
       list<DAE.Subscript> subs;
     case({},_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
       then
         fail();
     case((cref,exp) :: cdr,key)

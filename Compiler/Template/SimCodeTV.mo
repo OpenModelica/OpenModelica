@@ -2372,6 +2372,11 @@ package ComponentReference
     input DAE.ComponentRef inRef;
     output DAE.Type res;
   end crefLastType;
+  
+  function crefTypeConsiderSubs
+    input DAE.ComponentRef cr;
+    output DAE.Type res;
+  end crefTypeConsiderSubs;
 
   function appendStringCref
     input String str;

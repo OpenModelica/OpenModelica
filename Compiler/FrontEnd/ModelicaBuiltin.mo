@@ -2028,6 +2028,15 @@ external "builtin";
 annotation(preferredView="text");
 end simulate;
 
+function moveClass 
+"moves a class up or down depending on the given direction,
+ it returns true if the move was performed or false if we
+ could not move the class"
+ input TypeName className "the class that should be moved";
+ input String direction "up or down";
+ output Boolean result;
+end moveClass;
+
 function linearize "creates a model with the symbolic linearization matrixes.
 At stopTime the linearization matrixes are evaluated and a modelica model is created.
  The only required argument is the className, while all others have some efault values.
