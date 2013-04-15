@@ -1850,6 +1850,7 @@ algorithm
   outInnerCref := matchcontinue(inFullCref, inOuterCrefPrefix, inInnerCrefPrefix)
     local
       DAE.ComponentRef ifull, ocp, icp, ic;
+      list<DAE.ComponentRef> eifull, eicp, epre, erest;
 
     // handle the case where full cref is larger than outer prefix
     case (ifull, ocp, icp)
@@ -1861,15 +1862,29 @@ algorithm
       then
         ic;
 
-    // handle the case where full cref is equal to outer prefix
+    // Handle the case where the full cref is the same length as the outer
+    // prefix. In this case we need to preserve the subscripts from the full
+    // cref in case it references an array element, so we use the inner prefix
+    // to extract the needed parts of the full cref.
+    // 
+    // E.g. if we have a full cref a.b.c.d.e and an inner prefix a.d.e, then we
+    // extract the a and the d.e from the full cref and construct a new cref.
     case (ifull, ocp, icp)
       equation
-        // test cref equality
-        true = ComponentReference.crefEqualNoStringCompare(ifull, ocp);
-        // the inner cref is the inner prefix!
-        ic = icp;
+        eifull = ComponentReference.explode(ifull);
+        eicp = ComponentReference.explode(icp);
+        // Extract the common prefix of the full cref and the inner prefix.
+        (epre, erest) = List.splitEqualPrefix(eifull, eicp,
+          ComponentReference.crefFirstIdentEqual);
+        // Extract the common suffix of the full cref and inner prefix.
+        (erest, _) = List.splitEqualPrefix(listReverse(erest), listReverse(eicp),
+          ComponentReference.crefFirstIdentEqual);
+        // Combine the prefix and suffix into a new cref.
+        eifull = listAppend(epre, listReverse(erest));
+        ic = ComponentReference.implode(eifull);
       then
         ic;
+
   end matchcontinue;
 end changeOuterReferenceToInnerReference;
 

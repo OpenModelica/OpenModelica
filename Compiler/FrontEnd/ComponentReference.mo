@@ -825,6 +825,19 @@ algorithm
   equal := crefEqual(pcr1,pcr2);
 end crefFirstCrefLastCrefEqual;
 
+public function crefFirstIdentEqual
+  "Returns true if the first identifier in both crefs are the same, otherwise false."
+  input ComponentRef inCref1;
+  input ComponentRef inCref2;
+  output Boolean outEqual;
+protected
+  DAE.Ident id1, id2;
+algorithm
+  id1 := crefFirstIdent(inCref1);
+  id2 := crefFirstIdent(inCref2);
+  outEqual := stringEq(id1, id2);
+end crefFirstIdentEqual;
+ 
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
   input ComponentRef cr1;
   input ComponentRef cr2;
@@ -2972,6 +2985,70 @@ algorithm
 
   end match;
 end expandArrayCref1;
+
+public function explode
+  "Explodes a cref into a list of CREF_IDENTs."
+  input DAE.ComponentRef inCref;
+  output list<DAE.ComponentRef> outParts;
+algorithm
+  outParts := listReverse(explode_tail(inCref, {}));
+end explode;
+
+protected function explode_tail
+  input DAE.ComponentRef inCref;
+  input list<DAE.ComponentRef> inParts;
+  output list<DAE.ComponentRef> outParts;
+algorithm
+  outParts := match(inCref, inParts)
+    local
+      DAE.ComponentRef first_cr, rest_cr;
+
+    case (DAE.CREF_QUAL(componentRef = rest_cr), _)
+      equation
+        first_cr = crefFirstCref(inCref);
+      then
+        explode_tail(rest_cr, first_cr :: inParts);
+
+    else inCref :: inParts;
+
+  end match;
+end explode_tail;
+
+public function implode
+  "Constructs a cref from a list of CREF_IDENTs."
+  input list<DAE.ComponentRef> inParts;
+  output DAE.ComponentRef outCref;
+protected
+  DAE.ComponentRef first;
+  list<DAE.ComponentRef> rest;
+algorithm
+  first :: rest := listReverse(inParts);
+  outCref := implode_tail(rest, first);
+end implode;
+
+protected function implode_tail
+  input list<DAE.ComponentRef> inParts;
+  input DAE.ComponentRef inAccumCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inParts, inAccumCref)
+    local
+      DAE.Ident id;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      list<DAE.ComponentRef> rest;
+      DAE.ComponentRef cr;
+
+    case (DAE.CREF_IDENT(id, ty, subs) :: rest, _)
+      equation
+        cr = DAE.CREF_QUAL(id, ty, subs, inAccumCref);
+      then
+        implode_tail(rest, cr);
+
+    case ({}, _) then inAccumCref;
+
+  end match;
+end implode_tail;
 
 end ComponentReference;
 

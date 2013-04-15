@@ -8714,4 +8714,54 @@ algorithm
   end match;
 end findMap3_tail;
 
+public function splitEqualPrefix
+  input list<ElementType1> inFullList;
+  input list<ElementType2> inPrefixList;
+  input EqFunc inEqFunc;
+  output list<ElementType1> outPrefix;
+  output list<ElementType1> outRest;
+
+  partial function EqFunc
+    input ElementType1 inElem1;
+    input ElementType2 inElem2;
+    output Boolean outIsEqual;
+  end EqFunc;
+algorithm
+  (outPrefix, outRest) :=
+    splitEqualPrefix_tail(inFullList, inPrefixList, inEqFunc, {});
+end splitEqualPrefix;
+
+public function splitEqualPrefix_tail
+  input list<ElementType1> inFullList;
+  input list<ElementType2> inPrefixList;
+  input EqFunc inEqFunc;
+  input list<ElementType1> inAccum;
+  output list<ElementType1> outPrefix;
+  output list<ElementType1> outRest;
+
+  partial function EqFunc
+    input ElementType1 inElem1;
+    input ElementType2 inElem2;
+    output Boolean outIsEqual;
+  end EqFunc;
+algorithm
+  (outPrefix, outRest) := matchcontinue(inFullList, inPrefixList, inEqFunc, inAccum)
+    local
+      ElementType1 e1;
+      ElementType2 e2;
+      list<ElementType1> rest_e1, prefix, rest;
+      list<ElementType2> rest_e2;
+
+    case (e1 :: rest_e1, e2 :: rest_e2, _, _)
+      equation
+        true = inEqFunc(e1, e2);
+        (prefix, rest) = splitEqualPrefix_tail(rest_e1, rest_e2, inEqFunc, e1 :: inAccum);
+      then
+        (prefix, rest);
+
+    else (listReverse(inAccum), inFullList);
+
+  end matchcontinue;
+end splitEqualPrefix_tail;
+
 end List;
