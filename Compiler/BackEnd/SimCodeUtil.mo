@@ -1507,7 +1507,7 @@ algorithm
       System.tmpTickReset(0);
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
-      //Debug.fcall(Flags.CPP_VAR, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+      //Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
       cname = Absyn.pathStringNoQual(class_);
       
       // generate initalsystem before replacing pre(alias)!
@@ -7094,22 +7094,22 @@ algorithm
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
         (dim_1, dim_2)= dimensions(dlow);
-        Debug.fcall(Flags.CPP, print, "create varinfo \n");
+        Debug.fcall(Flags.FAILTRACE, print, "create varinfo \n");
         varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, 
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, dim_1, dim_2, numStateSets);
-         Debug.fcall(Flags.CPP, print, "create state index \n");
+         Debug.fcall(Flags.FAILTRACE, print, "create state index \n");
          states1 = stateindex1(stateVars, dlow);
-          Debug.fcall(Flags.CPP, print, "set state index \n");
+          Debug.fcall(Flags.FAILTRACE, print, "set state index \n");
          states_lst= setStatesVectorIndex(states1);
-         Debug.fcall(Flags.CPP, print, "gernerate der states  \n");
+         Debug.fcall(Flags.FAILTRACE, print, "gernerate der states  \n");
          der_states_lst = generateDerStates(states_lst);
          states_lst2 =listAppend(states_lst, der_states_lst);
-         Debug.fcall(Flags.CPP, print, "replace index in states \n");
+         Debug.fcall(Flags.FAILTRACE, print, "replace index in states \n");
          states_2 = replaceindex1(stateVars, states_lst);
-         // Debug.fcall(Flags.CPP_VAR, print, " replace der varibales: \n " +&dumpVarinfoList(states_lst2));
-          Debug.fcall(Flags.CPP, print, "replace index in der states  \n");
+         // Debug.fcall(Flags.FAILTRACE, print, " replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+          Debug.fcall(Flags.FAILTRACE, print, "replace index in der states  \n");
          derivatives_2=replaceindex1(derivativeVars, der_states_lst);
-         //Debug.fcall(Flags.CPP_VAR, print, "state varibales: \n " +&dumpVarinfoList(states_lst2));
+         //Debug.fcall(Flags.FAILTRACE, print, "state varibales: \n " +&dumpVarinfoList(states_lst2));
       then
         SimCode.MODELINFO(class_, directory, varInfo, SimCode.SIMVARS(states_2, derivatives_2, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, 
                   intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars), 
@@ -10388,7 +10388,7 @@ algorithm outOrder := matchcontinue(inDlow, inEqSystems)
      {};
  case(_, syst::systs)
     equation
-      Debug.fcall(Flags.CPP_VAR, print, " set  variabale der index for eqsystem"+& "\n");
+      Debug.fcall(Flags.FAILTRACE, print, " set  variabale der index for eqsystem"+& "\n");
      variableIndex =  setVariableDerIndex2(inDlow, syst);
       variableIndex2 = setVariableDerIndex(inDlow, systs);
     variableIndex3 = listAppend(variableIndex, variableIndex2);
@@ -10422,22 +10422,22 @@ algorithm outOrder := matchcontinue(inDlow, syst)
     list<DAE.ComponentRef> firstOrderVarsFiltered;
   case(_, _)
     equation
-      Debug.fcall(Flags.CPP_VAR, print, " set variabale der index"+& "\n");
+      Debug.fcall(Flags.FAILTRACE, print, " set variabale der index"+& "\n");
       dovars = BackendVariable.daeVars(syst);
       deqns = BackendEquation.daeEqns(syst);
       vars = BackendVariable.varList(dovars);
       eqns = BackendEquation.equationList(deqns);
       derExps = makeCallDerExp(vars);
-      Debug.fcall(Flags.CPP_VAR, print, " possible der exp: " +& stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
+      Debug.fcall(Flags.FAILTRACE, print, " possible der exp: " +& stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
       eqns = flattenEqns(eqns, inDlow);
      // eq_str=dumpEqLst(eqns);
-      // Debug.fcall(Flags.CPP_VAR, print, "filtered eq's " +& eq_str +& "\n");
+      // Debug.fcall(Flags.FAILTRACE, print, "filtered eq's " +& eq_str +& "\n");
       (variableIndex, firstOrderVars) = List.map2_2(derExps, locateDerAndSerachOtherSide, eqns, eqns);
-       Debug.fcall(Flags.CPP_VAR, print, "united variables \n");
+       Debug.fcall(Flags.FAILTRACE, print, "united variables \n");
       firstOrderVarsFiltered = List.fold(firstOrderVars, List.union, {});
-      Debug.fcall(Flags.CPP_VAR, print, "list fold variables \n");
+      Debug.fcall(Flags.FAILTRACE, print, "list fold variables \n");
       variableIndex = setFirstOrderInSecondOrderVarIndex(variableIndex, firstOrderVarsFiltered);
-     // Debug.fcall(Flags.CPP_VAR, print, "Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
+     // Debug.fcall(Flags.FAILTRACE, print, "Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
      then
       variableIndex;
   case(_, _)
@@ -10471,7 +10471,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
      case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=_))) ::rest , _)
      equation
        str = BackendDump.equationString(eq);
-       Debug.fcall(Flags.CPP_VAR, print, "Found When eq " +& str +& "\n");
+       Debug.fcall(Flags.FAILTRACE, print, "Found When eq " +& str +& "\n");
        rec = flattenEqns(rest, dlow);
        //rec = List.unionElt(eq, rec);
       then
@@ -10500,7 +10500,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
   case(_::rest, _)
     equation 
      // str = BackendDAE.equationStr(eq);
-      Debug.fcall(Flags.CPP_VAR, print, " FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
+      Debug.fcall(Flags.FAILTRACE, print, " FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
     then
       fail();
    end matchcontinue;
@@ -10564,7 +10564,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
     equation
       true = Expression.expEqual(e1, derExp);
       eqsOrg = List.removeOnTrue(eq, Util.isEqual, inEqnsOrg);
-      Debug.fcall(Flags.CPP_VAR, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
+      Debug.fcall(Flags.FAILTRACE, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec, crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"), {e2}, DAE.callAttrBuiltinReal), eqsOrg);
       (highestIndex as (_, i1), _) = locateDerAndSerachOtherSide(derExp, eqs, eqsOrg);
       rec = rec+1;
@@ -10576,7 +10576,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
     equation
       true = Expression.expEqual(e2, derExp);
       eqsOrg = List.removeOnTrue(eq, Util.isEqual, inEqnsOrg);
-      Debug.fcall(Flags.CPP_VAR, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
+      Debug.fcall(Flags.FAILTRACE, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec, crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"), {e1}, DAE.callAttrBuiltinReal), eqsOrg);
       (highestIndex as (_, i1), _) = locateDerAndSerachOtherSide(derExp, eqs, eqsOrg);
       rec = rec+1;
@@ -10607,13 +10607,13 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
       (highestIndex, crefs);             
   case(_, (eq as BackendDAE.IF_EQUATION(conditions=_))::eqs, _)
     equation
-      Debug.fcall(Flags.CPP_VAR, print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
+      Debug.fcall(Flags.FAILTRACE, print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
       (highestIndex, crefs);
  case(_, (eq as BackendDAE.ALGORITHM(alg=_))::eqs, _)
     equation
-      Debug.fcall(Flags.CPP_VAR, print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
+      Debug.fcall(Flags.FAILTRACE, print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
       (highestIndex, crefs);
@@ -10658,19 +10658,19 @@ algorithm (oi, firstOrderDers) := matchcontinue(inDer, inEqns)
     equation
       true = Expression.expEqual(inDer, e1);
       {cr} = Expression.extractCrefsFromExp(e1);
-      Debug.fcall(Flags.CPP_VAR, BackendDump.debugStrExpStrExpStrExpStr, (" found derivative for ", inDer, " in equation ", e1, " = ", e2, "\n"));
+      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrExpStrExpStrExpStr, (" found derivative for ", inDer, " in equation ", e1, " = ", e2, "\n"));
     then
       (1, {cr});
   case(_, (BackendDAE.EQUATION(exp=e1, scalar=e2)::rest))
     equation
       true = Expression.expEqual(inDer, e2);
       {cr} = Expression.extractCrefsFromExp(e2);
-      Debug.fcall(Flags.CPP_VAR, BackendDump.debugStrExpStrExpStrExpStr, (" found derivative for ", inDer, " in equation ", e1, " = ", e2, "\n"));
+      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrExpStrExpStrExpStr, (" found derivative for ", inDer, " in equation ", e1, " = ", e2, "\n"));
     then
       (1, {cr});
   case(_, (BackendDAE.EQUATION(exp=e1, scalar=e2)::rest))
     equation
-      Debug.fcall(Flags.CPP_VAR, BackendDump.debugExpStrExpStrExpStr, (inDer, " NOT contained in ", e1, " = ", e2, "\n"));
+      Debug.fcall(Flags.FAILTRACE, BackendDump.debugExpStrExpStrExpStr, (inDer, " NOT contained in ", e1, " = ", e2, "\n"));
       (oi, firstOrderDers) = locateDerAndSerachOtherSide22(inDer, rest);
     then
       (oi, firstOrderDers);
@@ -10776,17 +10776,17 @@ algorithm (new_index) := matchcontinue(var, odered_vars)
   case (_, ((cr, i)::_))    
     equation
       true = ComponentReference.crefEqual(var, cr);
-    Debug.fcall(Flags.CPP_VAR_INDEX, BackendDump.debugStrCrefStrIntStr, (" found state variable ", var, " with index: ", i, "\n"));
-  // Debug.fcall(Flags.CPP_VAR, print, +& " with index: " +& intString(i) +& "\n");
+    Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrIntStr, (" found state variable ", var, " with index: ", i, "\n"));
+  // Debug.fcall(Flags.FAILTRACE, print, +& " with index: " +& intString(i) +& "\n");
     then 
       (i);
   case(_, _::rest)
     equation
      
       (i)=stateindex(var, rest);
-       Debug.fcall(Flags.CPP_VAR_INDEX, BackendDump.debugStrCrefStrIntStr, (" state variable ", var, " with index: ", i, "\n"));
+       Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrIntStr, (" state variable ", var, " with index: ", i, "\n"));
   
-   //  Debug.fcall(Flags.CPP_VAR, print, +& " with index: " +& intString(i) +& "\n");
+   //  Debug.fcall(Flags.FAILTRACE, print, +& " with index: " +& intString(i) +& "\n");
     then (i);
 end matchcontinue;
 end stateindex;
@@ -10850,7 +10850,7 @@ algorithm (outSimVar):= match(stateVars, dae_low)
     BackendDAE.EqSystems eqsystems;
   case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement), BackendDAE.DAE(eqs=eqsystems))
      equation
-      Debug.fcall(Flags.CPP_VAR_INDEX, BackendDump.debugStrCrefStr, (" search index for state variable ", name, "\n"));
+      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStr, (" search index for state variable ", name, "\n"));
       ordered_states=setVariableDerIndex(dae_low, eqsystems);
       new_index=stateindex(name, ordered_states);
            
@@ -10990,7 +10990,7 @@ algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
     equation
       dv = generateDerStates2(v);
      // s= dumpVarInfo(dv);
-      //Debug.fcall(Flags.CPP_VAR, print, "Generate der state" +& s +& "\n" );
+      //Debug.fcall(Flags.FAILTRACE, print, "Generate der state" +& s +& "\n" );
       dv_list = generateDerStates(rest);
      then
        dv::dv_list;
@@ -11068,7 +11068,7 @@ algorithm
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = intString(i);
-        Debug.fcall(Flags.CPP, print, "generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
+        Debug.fcall(Flags.FAILTRACE, print, "generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
         Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates2 failed " });
       then
         fail();
@@ -11109,7 +11109,7 @@ algorithm
       list<String> numArrayElement;
   case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)), SimCode.SIMVAR(name=name1, index=index1, variable_index=SOME(variable_index1))::_)    
     equation
-      Debug.fcall(Flags.CPP_VAR_INDEX, BackendDump.debugStrCrefStrCrefStr, (" compare variable ", name, "with ", name1, "\n"));
+      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrCrefStr, (" compare variable ", name, "with ", name1, "\n"));
       true = ComponentReference.crefEqual(name, name1);
     then 
       SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, variable_index1, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index1), numArrayElement);
@@ -11172,13 +11172,13 @@ algorithm
     case (DAE.INDEX(exp = DAE.ICONST(integer = i)))
       equation
         res = intString(i);
-        Debug.fcall(Flags.CPP_SIM1, print, "arraydim1: " +& res  +& "\n" );
+        Debug.fcall(Flags.FAILTRACE, print, "arraydim1: " +& res  +& "\n" );
       then
         res;
     case (DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit)))
       equation
         res = Absyn.pathString(enum_lit);
-        Debug.fcall(Flags.CPP_SIM1, print, "arraydim2: " +& res  +& "\n" );
+        Debug.fcall(Flags.FAILTRACE, print, "arraydim2: " +& res  +& "\n" );
       then
         res;
   end match;

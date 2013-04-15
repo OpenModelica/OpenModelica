@@ -3461,7 +3461,7 @@ protected
   Integer len;
 algorithm
   len := stringLength(inString);
-  outRest := System.substring(inString, 1, len);
+  outRest := System.substring(inString, 2, len);
 end stringRest;
 
 public function intProduct
