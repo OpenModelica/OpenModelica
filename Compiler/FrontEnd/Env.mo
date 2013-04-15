@@ -1538,7 +1538,7 @@ algorithm
     // +d=noCache
     case (_,_,_)
       equation
-        true = Flags.isSet(Flags.NO_CACHE);
+        false = Flags.isSet(Flags.CACHE);
       then
         inCache;
 

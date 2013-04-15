@@ -179,7 +179,7 @@ algorithm
     // only continues part of a mixed system
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
       equation
-        true = Flags.isSet(Flags.NO_MIXED_TEARING);
+        false = Flags.isSet(Flags.MIXED_TEARING);
         (comp1::{},true) = traverseComponents({comp1},isyst,ishared,method,{},false);
         (acc,b1) = traverseComponents(comps,isyst,ishared,method,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc,true);
       then
@@ -187,7 +187,7 @@ algorithm
     // mixed and continues part
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
       equation
-        false = Flags.isSet(Flags.NO_MIXED_TEARING);
+        true = Flags.isSet(Flags.MIXED_TEARING);
         (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         (comp1,true) = method(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);

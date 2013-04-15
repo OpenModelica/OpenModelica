@@ -1698,7 +1698,7 @@ algorithm
         c as SCode.CLASS(name = className, restriction=r), vis, inst_dims, impl,
         _, graph, csets, _)
       equation
-        false = Flags.isSet(Flags.NO_CACHE);
+        true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
@@ -2684,7 +2684,7 @@ algorithm
     // see if we find a partial class inst
     case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
       equation
-        false = Flags.isSet(Flags.NO_CACHE);
+        true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
@@ -2713,7 +2713,7 @@ algorithm
             Option<SCode.Attributes>, DAE.EqualityConstraint,
             ConnectionGraph.ConnectionGraph> outputs;
       equation
-        false = Flags.isSet(Flags.NO_CACHE);
+        true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
@@ -17216,7 +17216,7 @@ algorithm
     // nothing is we have +d=noCache
     case (_, _, _)
       equation
-        true = Flags.isSet(Flags.NO_CACHE);
+        false = Flags.isSet(Flags.CACHE);
        then
          ();
 

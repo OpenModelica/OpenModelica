@@ -4649,7 +4649,7 @@ algorithm
     // template based translation
     case (cache, env, _, path)
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         false = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
 
         (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
@@ -4667,7 +4667,7 @@ algorithm
     // * Don't compile the generated files
     case (cache, env, _, path)
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         true = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
         funcs = Env.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
@@ -4681,7 +4681,7 @@ algorithm
 
     case (cache, env, _, path)
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         pathstr = generateFunctionName(path);
         pathstr = stringAppend("/*- CevalScript.cevalGenerateFunction failed(", pathstr);
@@ -6689,7 +6689,7 @@ algorithm
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
-        false = boolOr(Flags.isSet(Flags.NO_EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
+        true = boolOr(Flags.isSet(Flags.EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
         (cache,
@@ -6717,7 +6717,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
@@ -6740,7 +6740,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
@@ -6765,7 +6765,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
           SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));
@@ -6815,7 +6815,7 @@ algorithm
     // no symtab, WE SHOULD NOT EVALUATE!
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,NONE(),msg) // crap! we have no symboltable!
       equation
-        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));
@@ -6843,7 +6843,7 @@ algorithm
         error_Str = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
-        true = Flags.isSet(Flags.NO_GEN);
+        false = Flags.isSet(Flags.GEN);
         Debug.fprint(Flags.FAILTRACE, "- codegeneration is turned off. switch \"nogen\" flag off\n");
       then
         fail();

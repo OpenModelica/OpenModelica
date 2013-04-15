@@ -8613,11 +8613,8 @@ end filterNg;
 
 protected function useZerocrossing
   output Boolean res;
-protected
-  Boolean flagSet;
 algorithm
-  flagSet := Flags.isSet(Flags.NO_EVENTS);
-  res := boolNot(flagSet);
+  res := Flags.isSet(Flags.EVENTS);
 end useZerocrossing;
 
 protected function getCrefFromExp "function getCrefFromExp

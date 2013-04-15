@@ -181,13 +181,13 @@ constant DebugFlag OPENMP = DEBUG_FLAG(7, "openmp", false,
   Util.notrans(""));
 constant DebugFlag PTHREADS = DEBUG_FLAG(8, "pthreads", false,
   Util.notrans(""));
-constant DebugFlag NO_EVENTS = DEBUG_FLAG(9, "events", true,
+constant DebugFlag EVENTS = DEBUG_FLAG(9, "events", true,
   Util.notrans(""));
-constant DebugFlag EVAL_FUNC = DEBUG_FLAG(10, "evalfuncFailtrace", false,
-  Util.gettext("Prints extra failtrace from CevalFunction."));
-constant DebugFlag NO_EVAL_FUNC = DEBUG_FLAG(11, "evalfunc", true,
+constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(10, "dumpInlineSolver", false,
+    Util.gettext("dumps the inline solver equation system"));
+constant DebugFlag EVAL_FUNC = DEBUG_FLAG(11, "evalfunc", true,
   Util.gettext("Turns on/off symbolic function evaluation."));
-constant DebugFlag NO_GEN = DEBUG_FLAG(12, "gen", true,
+constant DebugFlag GEN = DEBUG_FLAG(12, "gen", false,
   Util.gettext("Turns on/off dynamic loading of functions that are compiled during translation. Only enable this if external functions are needed to calculate structural parameters or constants."));
 constant DebugFlag DYN_LOAD = DEBUG_FLAG(13, "dynload", false,
   Util.gettext("Display debug information about dynamic loading of compiled functions."));
@@ -209,7 +209,7 @@ constant DebugFlag CHECK_ASUB = DEBUG_FLAG(21, "checkASUB", false,
   Util.gettext("Prints out a warning if an ASUB is created from a CREF expression."));
 constant DebugFlag INSTANCE = DEBUG_FLAG(22, "instance", false,
   Util.gettext("Prints extra failtrace from InstanceHierarchy."));
-constant DebugFlag NO_CACHE = DEBUG_FLAG(23, "Cache", true,
+constant DebugFlag CACHE = DEBUG_FLAG(23, "Cache", true,
   Util.gettext("Turns off the instantiation cache."));
 constant DebugFlag RML = DEBUG_FLAG(24, "rml", false,
   Util.gettext("Turns on extra RML checks."));
@@ -360,7 +360,7 @@ constant DebugFlag DUMP_DAE= DEBUG_FLAG(96, "daeunparser", false,
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(97, "showStartOrigin", false,
   Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
-constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(98, "noMixedTearing", false,
+constant DebugFlag MIXED_TEARING = DEBUG_FLAG(98, "MixedTearing", false,
   Util.gettext("Disables tearing of mixed system."));
 constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(99, "doLinearTearing", false,
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
@@ -384,8 +384,6 @@ constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(108, "NLSanalyticJacobian"
     Util.gettext("generates analytical jacobian for non-linear algebraic loops"));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(109, "inlineSolver", false,
     Util.gettext("generates code for inline solver"));
-constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(110, "dumpInlineSolver", false,
-    Util.gettext("dumps the inline solver equation system"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -400,10 +398,10 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_INIT,
   OPENMP,
   PTHREADS,
-  NO_EVENTS,
+  EVENTS,
+  DUMP_INLINE_SOLVER,
   EVAL_FUNC,
-  NO_EVAL_FUNC,
-  NO_GEN,
+  GEN,
   DYN_LOAD,
   GENERATE_CODE_CHEAT,
   CGRAPH_GRAPHVIZ_FILE,
@@ -414,7 +412,7 @@ constant list<DebugFlag> allDebugFlags = {
   CHECK_DAE_CREF_TYPE,
   CHECK_ASUB,
   INSTANCE,
-  NO_CACHE,
+  CACHE,
   RML,
   TAIL,
   LOOKUP,
@@ -489,7 +487,7 @@ constant list<DebugFlag> allDebugFlags = {
   UNCERTAINTIES,
   DUMP_DAE,
   SHOW_START_ORIGIN,
-  NO_MIXED_TEARING,
+  MIXED_TEARING,
   LINEAR_TEARING,
   DUMP_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
@@ -500,8 +498,7 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_PROGRAM_CHANGES,
   SHOW_EQUATION_SOURCE,
   NLS_ANALYTIC_JACOBIAN,
-  INLINE_SOLVER,
-  DUMP_INLINE_SOLVER
+  INLINE_SOLVER
 };
 
 // CONFIGURATION FLAGS
