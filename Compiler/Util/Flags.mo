@@ -360,7 +360,7 @@ constant DebugFlag DUMP_DAE= DEBUG_FLAG(96, "daeunparser", false,
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(97, "showStartOrigin", false,
   Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
-constant DebugFlag MIXED_TEARING = DEBUG_FLAG(98, "MixedTearing", false,
+constant DebugFlag MIXED_TEARING = DEBUG_FLAG(98, "MixedTearing", true,
   Util.gettext("Disables tearing of mixed system."));
 constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(99, "doLinearTearing", false,
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));

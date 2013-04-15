@@ -6689,7 +6689,7 @@ algorithm
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
-        true = boolOr(Flags.isSet(Flags.EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
+        true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
         (cache,
