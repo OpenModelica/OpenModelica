@@ -4876,5 +4876,75 @@ algorithm
   end match;
 end setElementVisibility;
 
+public function isClassNamed
+  "Returns true if the given element is a class with the given name, otherwise false."
+  input Ident inName;
+  input Element inClass;
+  output Boolean outIsNamed;
+algorithm
+  outIsNamed := match(inName, inClass)
+    local
+      Ident name;
+
+    case (_, CLASS(name = name)) then stringEq(inName, name);
+    else false;
+  end match;
+end isClassNamed;
+
+public function getElementComment
+  "Returns the comment of an element."
+  input Element inElement;
+  output Option<Comment> outComment;
+algorithm
+  outComment := match(inElement)
+    local
+      Option<Comment> cmt;
+      ClassDef cdef;
+
+    case COMPONENT(comment = cmt) then cmt;
+    case CLASS(classDef = cdef) then getClassDefComment(cdef);
+    else NONE();
+
+  end match;
+end getElementComment;
+
+public function getClassDefComment
+  "Returns the comment of a class definition."
+  input ClassDef inClassDef;
+  output Option<Comment> outComment;
+algorithm
+  outComment := match(inClassDef)
+    local
+      Option<Comment> cmt;
+      ClassDef cdef;
+
+    case PARTS(comment = cmt) then cmt;
+    case CLASS_EXTENDS(composition = cdef) then getClassDefComment(cdef);
+    case DERIVED(comment = cmt) then cmt;
+    case ENUMERATION(comment = cmt) then cmt;
+    case OVERLOAD(comment = cmt) then cmt;
+    case PDER(comment = cmt) then cmt;
+    else NONE();
+
+  end match;
+end getClassDefComment;
+
+public function stripAnnotationFromComment
+  "Removes the annotation from a comment."
+  input Option<Comment> inComment;
+  output Option<Comment> outComment;
+algorithm
+  outComment := match(inComment)
+    local
+      Option<String> str;
+      Option<Comment> cmt;
+
+    case SOME(COMMENT(_, str)) then SOME(COMMENT(NONE(), str));
+    case SOME(CLASS_COMMENT(_, cmt)) then SOME(CLASS_COMMENT({}, cmt));
+    else NONE();
+
+  end match;
+end stripAnnotationFromComment;
+
 end SCode;
 

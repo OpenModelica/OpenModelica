@@ -2853,9 +2853,10 @@ Earlier these cases were directly in simplify1, but now they are here so simplif
 the subexpression"
   input DAE.Exp ie;
   input Integer sub;
+  input DAE.Exp inSubExp;
   output DAE.Exp res;
 algorithm
-  res := match(ie,sub)
+  res := match(ie, sub, inSubExp)
     local
       Type t,t1;
       Boolean b, bstart, bstop;
@@ -2869,44 +2870,44 @@ algorithm
       Integer n;
 
     // subscript of an array
-    case(DAE.ARRAY(t,b,exps),_)
+    case(DAE.ARRAY(t,b,exps),_, _)
       equation
         exp = listNth(exps, sub - 1);
       then
         exp;
 
-    case (DAE.RANGE(DAE.T_BOOL(varLst = _), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop)), _)
+    case (DAE.RANGE(DAE.T_BOOL(varLst = _), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop)), _, _)
       equation
         b = listGet(simplifyRangeBool(bstart, bstop), sub);
       then
         DAE.BCONST(b);
 
-    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),_)
+    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),_, _)
       equation
         ival = listGet(simplifyRange(istart,1,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
 
-    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop)),_)
+    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop)),_, _)
       equation
         ival = listGet(simplifyRange(istart,istep,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
 
-    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop)),_)
+    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop)),_, _)
       equation
         rval = listGet(simplifyRangeReal(rstart,1.0,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
 
-    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop)),_)
+    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop)),_, _)
       equation
         rval = listGet(simplifyRangeReal(rstart,rstep,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
 
     // subscript of a matrix
-    case(DAE.MATRIX(t,n,mexps),_)
+    case(DAE.MATRIX(t,n,mexps), _, _)
       equation
         t1 = Expression.unliftArray(t);
         (mexpl) = listNth(mexps, sub - 1);
@@ -2914,19 +2915,19 @@ algorithm
         DAE.ARRAY(t1,true,mexpl);
 
     // subscript of an if-expression
-    case(DAE.IFEXP(cond,e1,e2),_)
+    case(DAE.IFEXP(cond,e1,e2), _, _)
       equation
-        e1 = Expression.makeASUB(e1,{DAE.ICONST(sub)});
-        e2 = Expression.makeASUB(e2,{DAE.ICONST(sub)});
+        e1 = Expression.makeASUB(e1,{inSubExp});
+        e2 = Expression.makeASUB(e2,{inSubExp});
         e = DAE.IFEXP(cond,e1,e2);
       then
         e;
 
     // name subscript
-    case(DAE.CREF(c,t),_)
+    case(DAE.CREF(c,t), _, _)
       equation
         t = Expression.unliftArray(t);
-        c_1 = simplifyAsubCref(c,sub);
+        c_1 = simplifyAsubCref(c, inSubExp);
         exp = Expression.makeCrefExp(c_1, t);
       then
         exp;
@@ -2936,7 +2937,7 @@ end simplifyAsub0;
 
 protected function simplifyAsubCref
   input DAE.ComponentRef cr;
-  input Integer sub;
+  input DAE.Exp sub;
   output DAE.ComponentRef res;
 algorithm
   res := matchcontinue (cr,sub)
@@ -2951,7 +2952,7 @@ algorithm
     case (DAE.CREF_IDENT(idn,t2,s),_)
       equation
         /* TODO: Make sure that the IDENT has enough dimensions? */
-        s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
+        s_1 = Expression.subscriptsAppend(s, sub);
         c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
       then
         c_1;
@@ -2960,7 +2961,7 @@ algorithm
     case (DAE.CREF_QUAL(idn,t2 as DAE.T_ARRAY(dims=dims),s,c),_)
       equation
         true = listLength(dims) > listLength(s);
-        s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
+        s_1 = Expression.subscriptsAppend(s, sub);
         c_1 = ComponentReference.makeCrefQual(idn,t2,s_1,c);
       then
         c_1;
@@ -2994,7 +2995,7 @@ algorithm
 
     case (e,sub)
       equation
-        exp = simplifyAsub0(e,Expression.expInt(sub));
+        exp = simplifyAsub0(e,Expression.expInt(sub), inSub);
       then
         exp;
 

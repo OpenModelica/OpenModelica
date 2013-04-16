@@ -211,6 +211,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
+      Option<SCode.Comment> cmt;
 
      // top level class
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2)))
@@ -219,14 +220,13 @@ algorithm
         cdecls = scodeFlatten(cdecls, inPath);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
-        (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
+
+        // set the source of this element
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
-        // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
-        daeElts = DAEUtil.daeElements(dae2);
-        dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
 
         // let the GC collect these as they are used only by Inst!
         setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
@@ -282,7 +282,8 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE())});
+        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cdef));
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
         //System.stopTimer();
         //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
 
@@ -553,6 +554,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
       DAE.FunctionTree funcs;
+      Option<SCode.Comment> cmt;
 
     case (cache,ih,{},cr)
       equation
@@ -565,12 +567,8 @@ algorithm
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         cdecls = List.map1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
-        (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
-
-        // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
-        daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
+        (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
       then
         (cache,env_2,ih,dae);
 
@@ -588,7 +586,8 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE())});
+        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cdef));
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
       then
         (cache,env_2,ih,dae);
 
@@ -723,80 +722,89 @@ algorithm
   end matchcontinue;
 end instantiateFunctionImplicit;
 
+protected function lookupTopLevelClass
+  "Looks up a top level class with the given name."
+  input String inName;
+  input SCode.Program inProgram;
+  input Boolean inPrintError;
+  output SCode.Element outClass;
+algorithm
+  outClass := matchcontinue(inName, inProgram, inPrintError)
+    local
+      SCode.Element cls;
+
+    case (_, _, _)
+      equation
+        cls = List.getMemberOnTrue(inName, inProgram, SCode.isClassNamed);
+      then
+        cls;
+
+    case (_, _, true)
+      equation
+        Error.addMessage(Error.LOAD_MODEL_ERROR, {inName});
+      then
+        fail();
+
+  end matchcontinue;
+end lookupTopLevelClass;
+
 protected function instClassInProgram
-"function: instClassInProgram
-  Instantitates a specifc class in a Program.
-  The class must reside on top level."
+  "Instantiates a specific top level class in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
+  input DAE.ElementSource inSource;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
+  (outCache, outEnv, outIH, outDae) :=
+  matchcontinue(inCache, inEnv, inIH, inProgram, inPath, inSource)
     local
-      DAE.DAElist dae;
-      list<Env.Frame> env_1,env;
-      SCode.Element c;
-      String name,name2;
-      list<SCode.Element> cs;
-      Absyn.Path path;
+      String name;
+      SCode.Element cls;
       Env.Cache cache;
+      Env.Env env;
       InstanceHierarchy ih;
-      ConnectionGraph.ConnectionGraph graph;
+      DAE.DAElist dae;
+      list<DAE.Element> elts;
+      Option<SCode.Comment> cmt;
 
-    // The class and the path match => instantiate the class.
-    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
+    case (_, _, _, {}, _, _)
+      then (inCache, inEnv, inIH, DAEUtil.emptyDae);
+
+    case (_, _, _, _, Absyn.IDENT(name = ""), _)
+      then (inCache, inEnv, inIH, DAEUtil.emptyDae);
+
+    case (_, _, _, _, Absyn.IDENT(name = name), _)
       equation
-        true = stringEq(name, name2);
-        (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih,
-          UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
-          c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
-        //print(" ********************** backpatch 2 **********************\n");
-        dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
+        cls = lookupTopLevelClass(name, inProgram, true);
+        (cache, env, ih, _, dae, _, _, _, _, _) = instClass(inCache, inEnv,
+          inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
+          cls, {}, false, TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
-        // check the models for balancing
-        // Debug.fcall2(Flags.CHECK_MODEL_BALANCE,checkModelBalancing,SOME(inPath),dae);
+        dae = reEvaluateInitialIfEqns(cache, env, dae, true);
+        elts = DAEUtil.daeElements(dae);
+
+        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cls));
+        dae = DAE.DAE({DAE.COMP(name, elts, inSource, cmt)});
       then
-        (cache,env_1,ih,dae);
+        (cache, env, ih, dae);
 
-    // The class does not match the path, and no more classes left => error.
-    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: {}),(path as Absyn.IDENT(name = name2)))
-      equation
-        false = stringEq(name, name2);
-        false = stringEq(name2, "");
-        Error.addMessage(Error.LOAD_MODEL_ERROR, {name2});
-      then
-        fail();
-
-    // The class does not match the path, but there are more classes left => continue searching for a matching class.
-    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
-      equation
-        false = stringEq(name, name2);
-        _::_ = cs; // non empty list
-        (cache,env,ih,dae) = instClassInProgram(cache, env, ih, cs, path);
-      then
-        (cache,env,ih,dae);
-
-    case (cache,env,ih,{},_)
-      then (cache,env,ih,DAEUtil.emptyDae);
-
-    case (cache,env,ih,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "Inst.instClassInProgram failed");
       then
         fail();
+
   end matchcontinue;
 end instClassInProgram;
 
 protected function instClassInProgramImplicit
-"function: instClassInProgramImplicit
-  Instantitates a specifc class in a Program using implicit instatiation.
-  The class must reside on top level."
+  "Implicitly instantitates a specific top level class in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
@@ -807,46 +815,39 @@ protected function instClassInProgramImplicit
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
+  (outCache, outEnv, outIH, outDae) :=
+  matchcontinue(inCache, inEnv, inIH, inProgram, inPath)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       DAE.DAElist dae;
       SCode.Element c;
-      String name,name2;
-      list<SCode.Element> cs;
-      Absyn.Path path;
+      String name;
       Env.Cache cache;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
+    case (_, _, _, {}, _)
+      then (inCache, inEnv, inIH, DAEUtil.emptyDae);
+
+    case (cache, env, ih, _, Absyn.IDENT(name = name))
       equation
-        true = stringEq(name, name2);
+        c = lookupTopLevelClass(name, inProgram, false);
         env = Env.extendFrameC(env, c);
-        (cache,env_1,ih,dae) = implicitInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {}) ;
+        (cache, env, ih, dae) = implicitInstantiation(cache, env, ih,
+          DAE.NOMOD(), Prefix.NOPRE(), c, {});
       then
-        (cache,env_1,ih,dae);
+        (cache, env, ih, dae);
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
-      equation
-        false = stringEq(name, name2);
-        (cache,env,ih,dae) = instClassInProgramImplicit(cache, env, ih, cs, path);
-      then
-        (cache,env,ih,dae);
-
-    case (cache,env,ih,{},_)
-      then (cache,env,ih,DAEUtil.emptyDae);
-
-    case (_,env,ih,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "Inst.instClassInProgramImplicit failed");
-      then fail();
+      then
+        fail();
+
   end matchcontinue;
 end instClassInProgramImplicit;
 
 protected function instFunctionInProgramImplicit
-"function: instFunctionInProgramImplicit
-  Instantitates a specific function in a Program using implicit instatiation.
-  The class must reside on top level."
+  "Implicitly instantiates a specific top level function in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
@@ -858,31 +859,23 @@ protected function instFunctionInProgramImplicit
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       SCode.Element c;
-      String name1,name2;
-      list<SCode.Element> cs;
-      Absyn.Path path;
+      String name;
       Env.Cache cache;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),Absyn.IDENT(name = name2))
+    case (_, _, _, {}, _) then (inCache, inEnv, inIH);
+
+    case (cache, env, ih, _, Absyn.IDENT(name = name))
       equation
-        true = stringEq(name1, name2);
+        c = lookupTopLevelClass(name, inProgram, false);
         env = Env.extendFrameC(env, c);
-        (cache,env_1,ih) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {});
+        (cache, env, ih) = implicitFunctionInstantiation(cache, env, ih,
+          DAE.NOMOD(), Prefix.NOPRE(), c, {});
       then
-        (cache,env_1,ih);
+        (cache, env, ih);
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(path as Absyn.IDENT(name = name2)))
-      equation
-        false = stringEq(name1, name2);
-        (cache,env,ih) = instFunctionInProgramImplicit(cache,env,ih, cs, path);
-      then
-        (cache,env,ih);
-
-    case (cache,env,ih,{},_) then (cache,env,ih);
-    case (cache,env,ih,_,_)  then fail();
   end matchcontinue;
 end instFunctionInProgramImplicit;
 
@@ -6095,8 +6088,6 @@ algorithm
 
         // Add the deleted component to the connection set, so that we know
         // which connections to ignore.
-        //comp_cr = ComponentReference.makeCrefIdent(comp_name, DAE.T_UNKNOWN_DEFAULT, {});
-        //(cache, comp_cr) = PrefixUtil.prefixCref(cache, env, ih, pre, comp_cr);
         csets = ConnectUtil.addDeletedComponent(comp_name, inSets);
       then
         (cache, env, ih, store, {}, csets, ci_state, {}, graph);
