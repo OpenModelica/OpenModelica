@@ -46,6 +46,9 @@ loadModel(ModelicaReference);
 loadModel(ObsoleteModelica3);
 loadModel(ModelicaTest);
 loadModel(Modelica_LinearSystems2);
+loadModel(Modelica_DeviceDrivers);
+loadModel(Modelica_Synchronous);
+loadModel(Spot);
 loadModel(BioChem);
 getErrorString();
 
