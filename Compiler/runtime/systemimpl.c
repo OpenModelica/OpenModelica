@@ -1403,10 +1403,11 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   return info;
 }
 
+#define MODELICAPATH_LEVELS 6
 typedef struct {
   const char *dir;
   char *file;
-  long version;
+  long version[MODELICAPATH_LEVELS];
   char *versionExtra;
   int fileIsDir;
 } modelicaPathEntry;
@@ -1416,19 +1417,19 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
   const char *buf = version;
   char *next;
   long l;
-  int cont,i=3,len;
-  *versionNum = 0;
+  int cont,i=0,len;
+  memset(versionNum,0,sizeof(long)*MODELICAPATH_LEVELS);
   do {
     /* fprintf(stderr, "look versionNum %s\n", buf); */
     l = strtol(buf,&next,10);
-    cont = buf != next && l < 255 && l >= 0;
+    cont = buf != next && l >= 0;
     if (cont) {
-      *versionNum = *versionNum + (l << (i*8));
+      versionNum[i] = l;
       /* fprintf(stderr, "versionNum %lx\n", *versionNum); */
       if (*next == '.') next++;
     }
     buf = next;
-  } while (cont && i-- > 0);
+  } while (cont && ++i < MODELICAPATH_LEVELS);
   if (*buf == ' ') buf++;
   *versionExtra = strdup(buf);
   len = strlen(*versionExtra);
@@ -1516,9 +1517,9 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
         res[i].dir = mp;
         res[i].file = strdup(ent->d_name);
         if (res[i].file[nlen] == ' ') {
-          splitVersion(res[i].file+nlen+1, &res[i].version, &res[i].versionExtra);
+          splitVersion(res[i].file+nlen+1, res[i].version, &res[i].versionExtra);
         } else {
-          res[i].version = 0;
+          memset(res[i].version,0,sizeof(long)*MODELICAPATH_LEVELS);
           res[i].versionExtra = strdup("");
         }
         assert(i<*numMatches);
@@ -1540,52 +1541,64 @@ static void freeAllModelicaPaths(modelicaPathEntry *entries, int numEntries)
   free(entries);
 }
 
+static int modelicaPathEntryVersionEqual(long *ver1, long *ver2, int numToTest)
+{
+  int i;
+  for (i=0; i<numToTest; i++) {
+    if (ver1[i] != ver2[i]) return 0;
+  }
+  return 1;
+}
+
+static int modelicaPathEntryVersionGreater(long *ver1, long *ver2, int numToTest)
+{
+  int i;
+  for (i=0; i<numToTest; i++) {
+    if (ver1[i] > ver2[i]) return 1;
+    if (ver1[i] < ver2[i]) return 0;
+  }
+  return 1;
+}
+
 static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPathEntry *entries, int numEntries, const char **outDir, char **outName, int *isDir)
 {
-  int i, foundIndex = -1;
-  long version, foundVersion = 0;
+  int i, j, foundIndex = -1;
+  long version[MODELICAPATH_LEVELS] = {0}, foundVersion[MODELICAPATH_LEVELS] = {0};
   char *versionExtra;
-  splitVersion(searchTarget,&version,&versionExtra);
-  /* fprintf(stderr, "expected %lx %s\n", version, versionExtra); */
+  splitVersion(searchTarget,version,&versionExtra);
+  /* fprintf(stderr, "expected %ld.%ld.%ld.%ld %s\n", version[0], version[1], version[2], version[3], versionExtra); */
   if (version > 0 && !*versionExtra) {
-    for (i=0; i<numEntries; i++) {
+    /* Makes us load 3.2.1 if 3.2.0.0 is not available.
+     * Note that all 4 levels are present and 3.2 is equivalent to 3.2.0.0
+     * Search one additional level for each time we fail.
+     */
+    for (j=MODELICAPATH_LEVELS; j>0; j--) {
+      for (i=0; i<numEntries; i++) {
+        /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
+         fprintf(stderr, "expected %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
 
-      /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
-      fprintf(stderr, "entry version %lx expected %lx extra=%s\n", entries[i].version, version, entries[i].versionExtra); */
-
-      if (entries[i].version == version && entries[i].versionExtra[0] == '\0') {
-        *outDir = entries[i].dir;
-        *outName = entries[i].file;
-        *isDir = entries[i].fileIsDir;
+        if (modelicaPathEntryVersionEqual(entries[i].version,version,j) && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,j+1)) && entries[i].versionExtra[0] == '\0') {
+          if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS)) {
+            memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
+            foundIndex = i;
+          }
+        }
+      }
+      if (foundIndex >= 0) {
+        *outDir = entries[foundIndex].dir;
+        *outName = entries[foundIndex].file;
+        *isDir = entries[foundIndex].fileIsDir;
         free(versionExtra);
         return 0;
       }
     }
   }
-  if (version > 0 && !*versionExtra) {
-    for (i=0; i<numEntries; i++) {
-      /* Makes us load 3.2.1 if 3.2.0.0 is not available.
-       * Note that all 4 levels are present and 3.2 is equivalent to 3.2.0.0
-       */
-      if ((entries[i].version & 0xFFFF0000) == version && entries[i].versionExtra[0] == '\0') {
-        if (entries[i].version > foundVersion) {
-          foundVersion = entries[i].version;
-          foundIndex = i;
-        }
-      }
-    }
-  }
-  if (foundIndex >= 0) {
-    *outDir = entries[foundIndex].dir;
-    *outName = entries[foundIndex].file;
-    *isDir = entries[foundIndex].fileIsDir;
-    free(versionExtra);
-    return 0;
-  }
   if (*versionExtra) {
     /* fprintf(stderr, "Look for version %lx versionExtra: %s\n", version, versionExtra); */
     for (i=0; i<numEntries; i++) {
-      if (entries[i].version == version && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
+      /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
+      fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
+      if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
         *outDir = entries[i].dir;
         *outName = entries[i].file;
         *isDir = entries[i].fileIsDir;
@@ -1601,21 +1614,21 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
 static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry *entries, int numEntries, const char **outDir, char **outName, int *isDir)
 {
   const char *foundExtra = 0;
-  long foundVersion = -1;
+  long foundVersion[MODELICAPATH_LEVELS] = {-1,-1,-1,0};
   int i,foundIndex = -1;
 
   /* Look for best release version */
   for (i=0; i<numEntries; i++) {
-    if (entries[i].version > foundVersion && entries[i].versionExtra[0] == '\0') {
-      foundVersion = entries[i].version;
+    if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS) && entries[i].versionExtra[0] == '\0') {
+      memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
       foundIndex = i;
     }
   }
   /* Look for best pre-release/named version */
   if (foundIndex == -1) {
     for (i=0; i<numEntries; i++) {
-      if (entries[i].version > foundVersion || (entries[i].version == foundVersion && strcmp(entries[i].versionExtra,foundExtra) > 0)) {
-        foundVersion = entries[i].version;
+      if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS) || (entries[i].version == foundVersion && strcmp(entries[i].versionExtra,foundExtra) > 0)) {
+        memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
         foundExtra = entries[i].versionExtra;
         foundIndex = i;
       }

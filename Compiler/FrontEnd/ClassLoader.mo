@@ -324,7 +324,7 @@ algorithm
         cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
         prio = stringDelimitList(rest, " ");
         prio = Util.if_(stringEq(prio,""), "default", prio);
-        mp = dir +& "/../";
+        mp = System.realpath(dir +& "/../");
         p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
       then p1;
 
