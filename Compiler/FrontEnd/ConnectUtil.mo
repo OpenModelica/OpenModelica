@@ -854,10 +854,13 @@ protected function isDeletedComponent
   "Checks if the given component is deleted or not."
   input DAE.ComponentRef inComponent;
   input SetTrie inSets;
+protected
+  DAE.ComponentRef cr;
 algorithm
   // Send true as last argument to setTrieGet, so that it also matches any
   // prefix of the cref in case the cref is a subcomponent of a deleted component.
-  Connect.SET_TRIE_DELETED(name = _) := setTrieGet(inComponent, inSets, true);
+  cr := ComponentReference.crefStripSubs(inComponent);
+  Connect.SET_TRIE_DELETED(name = _) := setTrieGet(cr, inSets, true);
 end isDeletedComponent;
 
 public function connectionContainsDeletedComponents
@@ -884,7 +887,7 @@ algorithm
       then
         true;
 
-    // Check if the false component is deleted.
+    // Check if the second component is deleted.
     case (_, _, Connect.SETS(sets = sets))
       equation
         isDeletedComponent(inComponent2, sets);
