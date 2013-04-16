@@ -749,7 +749,7 @@ algorithm
   outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
 end propagateAttributesClass;
 
-protected function propagatePrefixes
+public function propagatePrefixes
   input SCode.Prefixes inOriginalPrefixes;
   input SCode.Prefixes inNewPrefixes;
   output SCode.Prefixes outNewPrefixes;
@@ -777,7 +777,7 @@ algorithm
   end match;
 end propagatePrefixInnerOuter;
 
-protected function propagateAttributes
+public function propagateAttributes
   input SCode.Attributes inOriginalAttributes;
   input SCode.Attributes inNewAttributes;
   output SCode.Attributes outNewAttributes;

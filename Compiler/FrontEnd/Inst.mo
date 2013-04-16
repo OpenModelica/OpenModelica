@@ -7211,7 +7211,7 @@ algorithm
 
         // print("Before selectModifiers:\n\tmod: " +& Mod.printModStr(mod) +& "\n\t" +&"mod_1: " +& Mod.printModStr(mod_1) +& "\n\t" +&"comp: " +& SCodeDump.unparseElementStr(comp) +& "\n");
 
-        (mod, mod_1) = selectModifiers(mod, mod_1);
+        (mod, mod_1) = selectModifiers(mod, mod_1, t);
 
         // print("After selectModifiers:\n\tmod: " +& Mod.printModStr(mod) +& "\n\t" +&"mod_1: " +& Mod.printModStr(mod_1) +& "\n");
 
@@ -12481,8 +12481,8 @@ algorithm
       equation
         stripped_elts = List.map(elts,stripFuncOutputsMod);
         stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl,annotationLst,NONE()),info);
-        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {},true);
-        /* Only external functions are valid without an algorithm section... */
+        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
+        // Only external functions are valid without an algorithm section... 
         cache = Env.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
@@ -17744,21 +17744,22 @@ protected function selectModifiers
  Weird Modelica.Media stuff"
   input DAE.Mod fromMerging;
   input DAE.Mod fromRedeclareType;
+  input Absyn.Path typePath;
   output DAE.Mod bindingMod;
   output DAE.Mod classMod;
 algorithm
-  (bindingMod, classMod) := matchcontinue(fromMerging, fromRedeclareType)
+  (bindingMod, classMod) := matchcontinue(fromMerging, fromRedeclareType, typePath)
 
     // if the thing we got from merging is a redeclare
     // for a component of a basic type, skip it!
-    case (_, _)
+    case (_, _, _)
       equation
         true = redeclareBasicType(fromMerging);
       then
         (fromRedeclareType, DAE.NOMOD());
 
     // any other is fine!
-    case (_,_)
+    case (_,_, _)
       then
         (fromMerging, fromRedeclareType);
   end matchcontinue;

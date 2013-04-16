@@ -156,8 +156,8 @@ algorithm
         (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache, env, tp, false);
 
         //print("Found " +& cn +& "\n");
-        outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
-        // outermod = mod;
+        // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
+        outermod = mod;
 
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);

@@ -77,6 +77,8 @@ protected import Values;
 protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
+protected import FFlattenRedeclare;
+protected import FSCodeCheck;
 
 protected
 uniontype FullMod "used for error reporting"
@@ -1613,8 +1615,9 @@ algorithm
     case (DAE.NOMOD(),DAE.NOMOD(),_,_) then DAE.NOMOD();
     case (DAE.NOMOD(),m,_,_) then m;
     case (m,DAE.NOMOD(),_,_) then m;
-      /* That's a NOMOD() if I ever saw one... */
-    case (m,DAE.MOD(subModLst={},eqModOption=NONE()),_,_) then m;
+    // That's a NOMOD() if I ever saw one...
+    case (m,DAE.MOD(subModLst={},eqModOption=NONE()),_,_) then m; 
+    case (DAE.MOD(subModLst={},eqModOption=NONE()),m,_,_) then m;
 
     case(_,_,_,_)
       equation
@@ -1676,7 +1679,6 @@ algorithm
 end merge2;
 
 // - Merging
-
 protected function doMerge "function: merge
   This function merges two modifications into one.
   The first argument is the *outer* modification that
@@ -1689,16 +1691,16 @@ protected function doMerge "function: merge
 algorithm
   outMod := match (inModOuter,inModInner,inEnv3,inPrefix4)
     local
-      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,mm1,mm2,mm3,cm,icm;
+      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,mm1,mm2,mm3,cm,icm,emod1,emod2,emod;
       SCode.Visibility vis;
       SCode.Final finalPrefix,f,f1,f2;
       SCode.Replaceable r;
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       Ident id1,id2;
-      SCode.Attributes attr;
+      SCode.Attributes attr1, attr2, attr;
       Absyn.TypeSpec tp;
-      SCode.Mod m1,m2;
+      SCode.Mod m1,m2,sm;
       Option<SCode.Comment> comment,comment2;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -1707,57 +1709,101 @@ algorithm
       Option<DAE.EqMod> ass,ass1,ass2;
       SCode.Each each1,each2;
       Option<Absyn.Exp> cond;
-      Absyn.Info info;
-      SCode.Element celm,elementOne;
+      Absyn.Info info, info1, info2;
+      SCode.Element celm,elementOne,el;
       SCode.ClassDef cdef;
       SCode.Encapsulated ep;
       SCode.Partial pp;
-      SCode.Restriction res;
-      SCode.Prefixes pf;
+      SCode.Restriction res1, res2, res;
+      SCode.Prefixes pf1, pf2, pf;
 
-    //case (inModOuter,inModInner,_,_)
-    //  equation
-    //    print("Merging: " +& printModStr(inModOuter) +& " with " +& printModStr(inModInner) +& "\n");
-    //  then
-    //    fail();
+    /*
+    case (inModOuter,inModInner,_,_)
+      equation
+        print("Merging: " +& printModStr(inModOuter) +& " with " +& printModStr(inModInner) +& "\n");
+      then
+        fail();*/
 
     case (m,DAE.NOMOD(),_,_) then m;
 
     // redeclaring same component
     case (DAE.REDECL(finalPrefix = f1,eachPrefix = each1, tplSCodeElementModLst =
-    {(SCode.COMPONENT(name = id1,
-      prefixes =  SCode.PREFIXES(vis, redecl, f, io, r),
-      attributes = attr,typeSpec = tp,modifications = m1,comment=comment,condition=cond,info=info),_)}),
-      DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
-      {(SCode.COMPONENT(
-        name = id2,
-        modifications = m2,
-        comment = comment2),_)}),env,pre)
+            {(SCode.COMPONENT(
+                name = id1,
+                prefixes = pf1,
+                attributes = attr1,
+                typeSpec = tp,
+                modifications = m1,
+                comment=comment,
+                condition=cond,
+                info=info1),
+                emod1)}),
+          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
+            {(SCode.COMPONENT(
+                name = id2,
+                prefixes = pf2,
+                attributes = attr2,
+                modifications = m2,
+                comment = comment2,
+                info=info2),
+                emod2)}),env,pre)
       equation
         true = stringEq(id1, id2);
         m1_1 = elabUntypedMod(m1, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
+        // if we have a constraint class we don't need the mod
+        sm = unelabMod(m_2);
+        emod = merge(emod1, emod2, env, pre);
+        pf = FFlattenRedeclare.propagatePrefixes(pf2, pf1);
+        attr = FFlattenRedeclare.propagateAttributes(attr2, attr1);
       then
-        DAE.REDECL(f1,each1,{(SCode.COMPONENT(id1,SCode.PREFIXES(vis, redecl, f, io, r),attr,tp,SCode.NOMOD(),comment,cond,info),m_2)});
+        DAE.REDECL(f1,each1,
+          {(SCode.COMPONENT(id1,
+              pf,
+              attr,
+              tp,
+              sm,
+              comment,cond,info1),emod)});
 
     // Redeclaring same class.
-    case (DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst =
-            {(SCode.CLASS(name = id1, prefixes = pf, encapsulatedPrefix = ep,
-            partialPrefix = pp, restriction = res, classDef = cdef, info = info),
-            m1_1)}),
-          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
-            {(SCode.CLASS(name = id2), m2_1)}), env, pre)
+    case (DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst = 
+            {(SCode.CLASS(name = id1,
+                prefixes = pf1, 
+                restriction = res1, 
+                classDef = cdef, 
+                info = info1), 
+                m1_1)}), 
+          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst = 
+            {(SCode.CLASS(name = id2, 
+                prefixes = pf2,
+                restriction = res2,
+                encapsulatedPrefix = ep, 
+                partialPrefix = pp,
+                info = info2), 
+                m2_1)}), env, pre)
       equation
         true = stringEq(id1, id2);
         m = merge(m1_1, m2_1, env, pre);
+        pf = FFlattenRedeclare.propagatePrefixes(pf2, pf1);
+        (res, info) = FSCodeCheck.checkSameRestriction(res1, res2, info1, info2);
       then
         DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, info), m)});
 
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
-    case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(name = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;
+    case (mod as DAE.REDECL(finalPrefix = f1,eachPrefix = each1,
+                       tplSCodeElementModLst = {(el as SCode.COMPONENT(name = id1),cm)}),
+          mods as DAE.MOD(subModLst = subs),env,pre) 
+      equation
+        //mod = merge(cm,mods,env,pre);
+      then 
+        mod; //DAE.REDECL(f1,each1,{(el,mod)});
 
-    case ((icm as DAE.MOD(subModLst = subs)),DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(name = id1)),cm)})),env,pre)
+    case ((icm as DAE.MOD(subModLst = subs)),
+          DAE.REDECL(
+            finalPrefix = f1, 
+            eachPrefix = each1, 
+            tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(name = id1)),cm)})),env,pre)
       equation
         cm = merge(icm,cm,env,pre);
       then
@@ -1773,12 +1819,15 @@ algorithm
       then
         mm2;
 
-    /* Case when we have a modifier on a redeclared class
-     * This is of current date BZ:2008-03-04 not completly working.
-     * see testcase mofiles/Modification14.mo
-     */
+    // Case when we have a modifier on a redeclared class
+    // This is of current date BZ:2008-03-04 not completly working.
+    // see testcase mofiles/Modification14.mo
     case (mm1 as DAE.MOD(subModLst = subs),
-          mm2 as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),env,pre)
+          mm2 as DAE.REDECL(
+                  finalPrefix = finalPrefix,eachPrefix = each1, 
+                  tplSCodeElementModLst = (els as 
+                  {((elementOne as SCode.CLASS(name = id1)),mm3)})),
+                  env,pre)
       equation
         mm1 = merge(mm1,mm3,env,pre);
       then
@@ -2574,6 +2623,7 @@ algorithm
       Values.Value e_val;
       DAE.Properties prop;
       Absyn.Exp ae;
+    
     case NONE() then "";
 
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_,_))
@@ -2584,6 +2634,7 @@ algorithm
         res = stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
       then
         res;
+    
     case SOME(DAE.TYPED(e,NONE(),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
@@ -2591,12 +2642,14 @@ algorithm
         res = stringAppendList({" = (typed)",str, ", type:\n", str2});
       then
         res;
+    
     case SOME(DAE.UNTYPED(exp=ae))
       equation
         str = Dump.printExpStr(ae);
         res = stringAppend(" =(untyped) ", str);
       then
         res;
+    
     case(_)
       equation
         res = "---Mod.printEqmodStr FAILED---";

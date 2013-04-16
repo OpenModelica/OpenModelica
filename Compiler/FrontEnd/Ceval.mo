@@ -93,6 +93,7 @@ protected import Types;
 protected import Util;
 protected import ValuesUtil;
 protected import ClassInf;
+protected import DAEUtil;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -4966,8 +4967,19 @@ algorithm
       Absyn.Info info;
       DAE.Binding binding;
 
-    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg)
+    /*
+    case (cache,env,cr,_,impl,msg)
       equation
+        print("Ceval: " +& 
+          ComponentReference.printComponentRefStr(cr) +& " | " +&
+          Env.printEnvPathStr(env) +& " | " +&
+          DAEUtil.printBindingExpStr(inBinding) +&
+          "\n"); 
+      then
+        fail();*/
+
+    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
+      equation 
         Debug.fprint(Flags.TCVT, "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);

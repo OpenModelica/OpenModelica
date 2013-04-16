@@ -4433,6 +4433,39 @@ algorithm
   COMPONENT(typeSpec = outTypeSpec) := inE;
 end getComponentTypeSpec;
 
+public function setComponentMod 
+"@auhtor: adrpo
+ set the modification in component"
+  input Element inE;
+  input Mod inMod;
+  output Element outE;
+protected
+  Ident n;
+  Prefixes pr;
+  Attributes atr;
+  Absyn.TypeSpec ts;
+  Option<Comment> cmt;
+  Option<Absyn.Exp> cnd;
+  Path bc;
+  Visibility v;
+  Mod m;
+  Option<Annotation> a;
+  Absyn.Info i;
+algorithm 
+  COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
+  outE := COMPONENT(n, pr, atr, ts, inMod, cmt, cnd, i);
+end setComponentMod;
+
+public function getComponentMod 
+"@auhtor: adrpo
+ get the modification in component"
+  input Element inE;
+  output Mod outMod;
+protected
+algorithm 
+  COMPONENT(modifications = outMod) := inE;
+end getComponentMod;
+
 public function isDerivedClass
   input Element inClass;
   output Boolean isDerived;
@@ -4477,6 +4510,16 @@ protected
 algorithm
   CLASS(classDef=DERIVED(typeSpec = outTypeSpec)) := inE;
 end getDerivedTypeSpec;
+
+public function getDerivedMod 
+"@auhtor: adrpo
+ set the base class path in extends"
+  input Element inE;
+  output Mod outMod;
+protected
+algorithm 
+  CLASS(classDef=DERIVED(modifications = outMod)) := inE;
+end getDerivedMod;
 
 public function setClassPrefixes
   input Prefixes inPrefixes;

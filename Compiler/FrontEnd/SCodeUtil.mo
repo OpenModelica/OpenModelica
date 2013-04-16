@@ -1969,12 +1969,15 @@ algorithm
         {elem} = translateElementspec(cc, fp, Absyn.NOT_INNER_OUTER(),
           SOME(rk), SCode.PUBLIC(), spec, info);
         (elem, opt_mod) = splitModInElement(elem);
-        accum = List.consOption(opt_mod, accum);
         sfp = SCode.boolFinal(fp);
         sep = translateEach(ep);
         sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
+        // first put the redeclare
+        accum = sub :: accum;
+        // then the split modifiers
+        accum = List.consOption(opt_mod, accum);
       then
-        translateArgs_tail(rest_args, sub :: accum);
+        translateArgs_tail(rest_args, accum);
 
     case ({}, _) then listReverse(inAccumSubs);
 
@@ -2041,7 +2044,7 @@ protected function splitRedeclareMod
   output SCode.Mod outRedeclares;
   output Option<SCode.SubMod> outMod;
 algorithm
-  (outRedeclares, outMod) := match(inMod, inName)
+  (outRedeclares, outMod) := matchcontinue(inMod, inName)
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -2049,6 +2052,15 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> binding;
       Option<SCode.SubMod> opt_mod;
       Absyn.Info info;
+      Absyn.Exp e;
+
+    // do not split constant bindings!
+    case (SCode.MOD(fp, ep, submods, binding as SOME((e, _)), info), _)
+      equation
+        // no crefs means constant binding!
+        {} = Absyn.getCrefFromExp(e, true);
+      then
+        (inMod, NONE());
 
     case (SCode.MOD(fp, ep, submods, binding, info), _)
       equation
@@ -2059,7 +2071,7 @@ algorithm
 
     else (inMod, NONE());
 
-  end match;
+  end matchcontinue;
 end splitRedeclareMod;
 
 protected function makeSubMod

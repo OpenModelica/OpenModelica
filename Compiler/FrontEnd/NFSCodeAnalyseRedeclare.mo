@@ -967,8 +967,9 @@ algorithm
       Element c, e;
       Env env;
       Absyn.TypeSpec ts;
-
-
+      SCode.Mod mNew, mOld, m;
+      
+    
     case ({}, _) then (listReverse(inIScopesAcc), false);
 
     // extends with no kids has no meaning
@@ -990,7 +991,13 @@ algorithm
         EI(e, env) = getEIFromInfos(i1);
         EI(c, _) = getEIFromInfos(i2);
         ts = SCode.getDerivedTypeSpec(c);
+        mNew = SCode.getDerivedMod(c);
+        mOld = SCode.getComponentMod(e);
+        // in this case we merge component modifiers as NEW
+        // and type modifiers as OLD
+        m = mergeModifiers(mOld, mNew);
         e = SCode.setComponentTypeSpec(e, ts);
+        e = SCode.setComponentMod(e, m);
         i1 = listAppend(i1, i2);
         i1 = {EI(e, env)}; //::i1;
         s = IS(k, i1, p2);
@@ -1004,7 +1011,7 @@ algorithm
         i = replaceCompEIwithRI(i);
         (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
       then
-        (acc, false);
+        (acc, b);
 
     // class with no kids, check the redeclares
     case (IS(k as CL(_), i, {})::rest, acc)
@@ -1012,15 +1019,7 @@ algorithm
         i = replaceClassEIwithRI(i);
         (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
       then
-        (acc, false);
-
-    /*/ classes with no kids, and no redeclares have no meaning
-    case (IS(k as CL(_), i, {})::rest, acc)
-      equation
-        {} = getRIsFromInfos(i, {});
-        (acc, b) = cleanRedeclareIScopes(rest, acc);
-      then
-        (acc, true);*/
+        (acc, b);
 
     // the kids got cleaned, try the parent again
     case (IS(k, i, p)::rest, acc)
@@ -1070,6 +1069,7 @@ algorithm
       Env env, denv;
       Element e,c,o;
       Absyn.TypeSpec ts;
+      SCode.Mod mNew, mOld, m;
     // use the component from the redeclare
     case (_)
       equation
@@ -1085,10 +1085,21 @@ algorithm
       equation
         EI(e, env) = getEIFromInfos(inInfos);
         RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(c, _, _), denv), _) = getRIFromInfos(inInfos);
+        
         ts = SCode.getDerivedTypeSpec(c);
+        
         (_, ts, denv) = NFSCodeLookup.lookupTypeSpec(ts, denv, SCode.elementInfo(e));
         ts = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, denv);
+        
+        mNew = SCode.getDerivedMod(c);
+        mOld = SCode.getComponentMod(e);
+        // in this case we merge component modifiers as NEW
+        // and type modifiers as OLD
+        m = mergeModifiers(mOld, mNew);
+        
         e = SCode.setComponentTypeSpec(e, ts);
+        e = SCode.setComponentMod(e, m);
+        
         infos = EI(e, env)::inInfos;
       then
         infos;

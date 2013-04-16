@@ -772,6 +772,7 @@ algorithm
       SCode.Restriction res;
       String errorMessage;
       list<Extends> exts;
+      list<NFSCodeEnv.Redeclaration> redecls;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -796,14 +797,17 @@ algorithm
     case (SCode.COMPONENT(name = name, attributes = attr, typeSpec = ty,
         modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _, _)
       equation
+        // *always* keep constants and parameters!
+        // markAsUsedOnConstant(name, attr, inEnv, info);
         markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
         analyseTypeSpec(ty, inEnv, info);
         (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, inEnv, info);
         (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
-        NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env,
-          ty_item, inEnv);
+        NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env, ty_item, inEnv);
+        redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (ty_item, ty_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));        
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
@@ -893,6 +897,31 @@ algorithm
     else inExtends;
   end match;
 end analyseElement;
+
+protected function markAsUsedOnConstant
+  input SCode.Ident inName;
+  input SCode.Attributes inAttr;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inAttr, inEnv, inInfo)
+    local
+      NFSCodeEnv.AvlTree cls_and_vars;
+      Util.StatefulBoolean is_used;
+      SCode.Variability var;
+
+    case (_, SCode.ATTR(variability = var), NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
+      equation
+        true = SCode.isParameterOrConst(var);
+        NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
+          NFSCodeEnv.avlTreeGet(cls_and_vars, inName);
+        Util.setStatefulBoolean(is_used, true);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end markAsUsedOnConstant;
 
 protected function markAsUsedOnRestriction
   input SCode.Ident inName;
