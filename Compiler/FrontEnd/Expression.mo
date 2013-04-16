@@ -9488,5 +9488,36 @@ algorithm
   end match;
 end getCrefFromCrefOrAsub;
 
+public function arrayElements
+  "Returns the array elements of an expression."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExp;
+algorithm
+  outExp := match(inExp)
+    local
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crl;
+      list<list<DAE.Exp>> mat;
+
+    case DAE.CREF(componentRef = cr)
+      equation
+        crl = ComponentReference.expandCref(cr, false);
+        expl = List.map(crl, crefExp);
+      then
+        expl;
+        
+    case DAE.ARRAY(array = expl, ty = DAE.T_ARRAY(ty = _))
+      then List.mapFlat(expl, arrayElements);
+
+    case DAE.ARRAY(array = expl) then expl;
+
+    case DAE.MATRIX(matrix = mat) then List.flatten(mat);
+
+    else {inExp};
+
+  end match;
+end arrayElements;
+
 end Expression;
 

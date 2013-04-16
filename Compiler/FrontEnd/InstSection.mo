@@ -4102,6 +4102,7 @@ algorithm
       DAE.Dimensions dims,dims2;
       list<DAE.ComponentRef> crefs1, crefs2;
       DAE.Const const1,const2;
+      list<DAE.Exp> lhsl, rhsl;
 
     // connections to outer components
     case(cache,env,ih,sets,pre,c1,f1,t1,_,c2,f2,t2,_,ct,_,_,graph,_)
@@ -4134,8 +4135,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,f1,t1,_,c2,f2,t2,_,SCode.POTENTIAL(),_,_,graph,_)
       equation
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
-        true = Types.basicType(t1);
-        true = Types.basicType(t2);
+        true = Types.basicType(Types.arrayElementType(t1));
+        true = Types.basicType(Types.arrayElementType(t2));
 
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -4150,8 +4151,10 @@ algorithm
         const2 = NFInstUtil.toConst(vt2);
         (cache, crefExp1, _) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
         (cache, crefExp2, _) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
-        (exp,_) = ExpressionSimplify.simplify(DAE.RELATION(crefExp1,DAE.EQUAL(DAE.T_BOOL_DEFAULT),crefExp2,-1,NONE()));
-        elts = DAE.ASSERT(exp,DAE.SCONST("automatically generated from connect"),DAE.ASSERTIONLEVEL_ERROR,source)::{};
+        
+        lhsl = Expression.arrayElements(crefExp1);
+        rhsl = Expression.arrayElements(crefExp2);
+        elts = List.threadMap1(lhsl, rhsl, generateConnectAssert, source);
       then
         (cache,env,ih,sets,DAE.DAE(elts),graph);
 
@@ -4305,6 +4308,20 @@ algorithm
   end matchcontinue;
 end connectComponents;
 
+protected function generateConnectAssert
+  input DAE.Exp inLhsExp;
+  input DAE.Exp inRhsExp;
+  input DAE.ElementSource inSource;
+  output DAE.Element outAssert;
+protected
+  DAE.Exp exp;
+algorithm
+  exp := DAE.RELATION(inLhsExp, DAE.EQUAL(DAE.T_BOOL_DEFAULT), inRhsExp, -1, NONE());
+  (exp, _) := ExpressionSimplify.simplify(exp);
+  outAssert := DAE.ASSERT(exp, DAE.SCONST("automatically generated from connect"),
+    DAE.ASSERTIONLEVEL_ERROR, inSource);
+end generateConnectAssert;
+  
 protected function connectArrayComponents
   input Env.Cache inCache;
   input Env.Env inEnv;
