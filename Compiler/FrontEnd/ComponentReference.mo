@@ -3050,5 +3050,28 @@ algorithm
   end match;
 end implode_tail;
 
+public function identifierCount
+  input ComponentRef inCref;
+  output Integer outIdCount;
+algorithm
+  outIdCount := identifierCount_tail(inCref, 0);
+end identifierCount;
+
+protected function identifierCount_tail
+  input ComponentRef inCref;
+  input Integer inAccumCount;
+  output Integer outIdCount;
+algorithm
+  outIdCount := match(inCref, inAccumCount)
+    local
+      ComponentRef cr;
+
+    case (DAE.CREF_QUAL(componentRef = cr), _)
+      then identifierCount_tail(cr, inAccumCount + 1);
+     
+    else inAccumCount + 1;
+  end match;
+end identifierCount_tail;
+
 end ComponentReference;
 

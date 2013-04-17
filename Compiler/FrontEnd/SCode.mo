@@ -4710,6 +4710,22 @@ algorithm
   end match;
 end componentMod;
 
+public function elementMod
+  input Element inElement;
+  output Mod outMod;
+algorithm
+  outMod := match(inElement)
+    local
+      Mod mod;
+
+    case COMPONENT(modifications = mod) then mod;
+    case CLASS(classDef = DERIVED(modifications = mod)) then mod;
+    case CLASS(classDef = CLASS_EXTENDS(modifications = mod)) then mod;
+    case EXTENDS(modifications = mod) then mod;
+
+  end match;
+end elementMod;
+
 public function isBuiltinElement
   input Element inElement;
   output Boolean outIsBuiltin;
