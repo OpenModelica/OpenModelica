@@ -109,6 +109,7 @@ protected
 algorithm
   head :=
 \"<head>
+  <meta http-equiv=\\\"Content-Type\\\" content=\\\"text/html; charset=utf-8\\\" />
   <link href=\\\"style.css\\\" rel=\\\"stylesheet\\\" type=\\\"text/css\\\" />
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
   </head>
@@ -188,7 +189,7 @@ echo(false);
 dirs := "";
 replaceCommands := "";
 filetmp := "index.html";
-writeFile(filetmp, "<html><head><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
+writeFile(filetmp, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, libraries shipped with OpenModelica and the documentation for OpenModelica-specific scripting.</p>\n", append = true);
 writeFile(filetmp, "<h2>Libraries</h2>\n", append = true);
 writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
