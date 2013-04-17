@@ -325,6 +325,7 @@ static int freeKinsol(void * kOde)
   N_VDestroy_Serial(kData->sEqns);
   N_VDestroy_Serial(kData->c);
   KINFree(&kData->kmem);
+  return 0;
 }
 
 static int initKinsol(KINODE *kinOde)
@@ -414,6 +415,8 @@ static int initKinsol(KINODE *kinOde)
 
   return 0;
 }
+
+extern int functionODE(DATA *data);
 
 static int refreshModell(DATA* data, double* x, double time)
 {
@@ -740,6 +743,13 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
+#ifdef __cplusplus  /* wrapper to enable C++ usage */
+extern "C" {
+#endif
+int KINSpbcg(void *kinmem, int maxl);
+#ifdef __cplusplus
+}
+#endif
 
 int kinsolOde(void* ode)
 {

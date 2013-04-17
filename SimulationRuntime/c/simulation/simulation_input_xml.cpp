@@ -346,7 +346,7 @@ void read_input_xml(int argc, char **argv,
   {
     WARNING(LOG_SIMULATION, "Error, input data file does not match model.");
     INDENT(LOG_SIMULATION);
-    WARNING2(LOG_SIMULATION, "nx in setup file: %ld from model code: %d", nxchk, modelData->nStates);
+    WARNING2(LOG_SIMULATION, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
     WARNING2(LOG_SIMULATION, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
     WARNING2(LOG_SIMULATION, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
     WARNING2(LOG_SIMULATION, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);

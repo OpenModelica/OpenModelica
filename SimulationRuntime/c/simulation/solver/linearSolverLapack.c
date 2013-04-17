@@ -97,7 +97,7 @@ int solveLapack(DATA *data, int sysNumber)
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
-  int eqSystemNumber = systemData->equationIndex;
+  // int eqSystemNumber = systemData->equationIndex;
   int success = 1;
 
   /* reset matrix A */
@@ -119,14 +119,14 @@ int solveLapack(DATA *data, int sysNumber)
 
   if(solverData->info < 0)
   {
-    WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info);
+    WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
     success = 0;
   }
   else if(solverData->info > 0)
   {
     WARNING4(LOG_STDOUT,
         "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
-        (int)systemData->equationIndex, data->localData[0]->timeValue, solverData->info+1, solverData->info+1);
+        (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
     /* debug output */
     if (ACTIVE_STREAM(LOG_LS))

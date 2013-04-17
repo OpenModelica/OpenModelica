@@ -33,13 +33,14 @@
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 static void XMLCALL startElement(void *userData, const char *name, const char **attr) {
   MODEL_DATA_XML* xml = (MODEL_DATA_XML*) ((void**)userData)[0];
   long curIndex = (long) ((void**)userData)[1];
-  long curProfileIndex = (long) ((void**)userData)[2];
+  //long curProfileIndex = (long) ((void**)userData)[2];
   long curFunctionIndex = (long) ((void**)userData)[3];
-  int i;
+
   if (0==strcmp("equation",name)) {
     long ix;
     if (curIndex > xml->nEquations) {
@@ -154,14 +155,14 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
     modelInfoXmlInit(xml);
   }
   if (ix < 0 || ix > xml->nProfileBlocks) {
-    THROW2("Requested equation with profiler index %ld, but we only have %ld such blocks", ix, xml->nProfileBlocks);
+    THROW2("Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
   }
   for (i=0; i<xml->nEquations; i++) {
     if (xml->equationInfo[i].profileBlockIndex == ix) {
       return xml->equationInfo[i];
     }
   }
-  THROW1("Requested equation with profiler index %ld, but could not find it!", ix);
+  THROW1("Requested equation with profiler index %ld, but could not find it!", (long int)ix);
 }
 
 void freeModelInfoXml(MODEL_DATA_XML* xml) {

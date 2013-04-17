@@ -288,10 +288,10 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
-  INFO2(LOG_DDASRT, "Calling DDASRT from %.10f to %.10f", solverInfo->currentTime, tout);
+  INFO2(LOG_DDASRT, "Calling DDASRT from %.15g to %.15g", solverInfo->currentTime, tout);
   do
   {
-    INFO2(LOG_SOLVER, "Start step %.10f to %.10f", solverInfo->currentTime, tout);
+    INFO2(LOG_SOLVER, "Start step %.15g to %.15g", solverInfo->currentTime, tout);
     if(dasslData->idid == 1)
     {
       /* rotate RingBuffer before step is calculated */
@@ -399,16 +399,16 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   {
     INFO(LOG_DDASRT, "dassl call staistics: ");
     INDENT(LOG_DDASRT);
-    INFO1(LOG_DDASRT, "value of idid: %d", dasslData->idid);
+    INFO1(LOG_DDASRT, "value of idid: %d", (int)dasslData->idid);
     INFO1(LOG_DDASRT, "current time value: %0.4g", solverInfo->currentTime);
     INFO1(LOG_DDASRT, "current integration time value: %0.4g", dasslData->rwork[3]);
     INFO1(LOG_DDASRT, "step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
     INFO1(LOG_DDASRT, "step size used on last successful step: %0.4g", dasslData->rwork[6]);
-    INFO1(LOG_DDASRT, "number of steps taken so far: %d", dasslData->iwork[10]);
-    INFO1(LOG_DDASRT, "number of calls of functionODE() : %d", dasslData->iwork[11]);
-    INFO1(LOG_DDASRT, "number of calculation of jacobian : %d", dasslData->iwork[12]);
-    INFO1(LOG_DDASRT, "total number of convergence test failures: %d", dasslData->iwork[13]);
-    INFO1(LOG_DDASRT, "total number of error test failures: %d", dasslData->iwork[14]);
+    INFO1(LOG_DDASRT, "number of steps taken so far: %d", (int)dasslData->iwork[10]);
+    INFO1(LOG_DDASRT, "number of calls of functionODE() : %d", (int)dasslData->iwork[11]);
+    INFO1(LOG_DDASRT, "number of calculation of jacobian : %d", (int)dasslData->iwork[12]);
+    INFO1(LOG_DDASRT, "total number of convergence test failures: %d", (int)dasslData->iwork[13]);
+    INFO1(LOG_DDASRT, "total number of error test failures: %d", (int)dasslData->iwork[14]);
     RELEASE(LOG_DDASRT);
   }
 

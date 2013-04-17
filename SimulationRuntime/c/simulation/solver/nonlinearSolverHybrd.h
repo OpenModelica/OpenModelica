@@ -48,19 +48,19 @@ extern "C" {
 #endif
 
 extern
-void * _omc_hybrj_(void(*) (integer*, double*, double*, double *, int*, int*, void* data),
-      integer *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
-      double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
-      double* r,int *lr,double*qtf,double*wa1,double*wa2,
+int _omc_hybrj_(int(*) (integer*, double*, double*, double *, integer*, integer*, void* data),
+      integer *n,double*x,double*fvec,double*fjac,integer *ldfjac,double*xtol,integer* maxfev,
+      double* diag,integer *mode,double*factor, integer *nprint,integer* info, integer* nfev, integer* njev,
+      double* r, integer *lr,double*qtf,double*wa1,double*wa2,
       double* wa3,double* wa4, void* userdata);
 
 extern
-void _omc_hybrd_(void (*) (integer*, double *, double*, int*, void*),
+int _omc_hybrd_(int (*) (integer*, double *, double*, integer*, void*),
       integer* n, double* x ,double* fvec, double* xtol,
-      int* maxfev, int* ml, int* mu, double* epsfcn, double* diag,
-      int* mode, double* factor, int* nprint, int* info, int* nfev,
-      double* fjac, double* fjacobian, int* ldfjac, double* r__,
-      int* lr, double* qtf, double* wa1, double* wa2, double* wa3,
+      integer* maxfev, integer* ml, integer* mu, double* epsfcn, double* diag,
+      integer* mode, double* factor, integer* nprint, integer* info, integer* nfev,
+      double* fjac, double* fjacobian, integer* ldfjac, double* r__,
+      integer* lr, double* qtf, double* wa1, double* wa2, double* wa3,
       double* wa4, void* userdata);
 
 #ifdef __cplusplus

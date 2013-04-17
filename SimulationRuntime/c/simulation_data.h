@@ -40,6 +40,7 @@
 #include "openmodelica.h"
 #include "ringbuffer.h"
 #include "omc_error.h"
+#include "f2c.h"
 
 #define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
@@ -257,7 +258,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   int (*initialAnalyticalJacobian)(void*);
   modelica_integer jacobianIndex;
 
-  void (*residualFunc)(void*, double*, double*, int*);
+  void (*residualFunc)(void*, double*, double*, integer*);
   void (*initializeStaticNLSData)(void*, void*);
 
   void *solverData;

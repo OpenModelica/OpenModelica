@@ -131,7 +131,6 @@ modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer n
 
 modelica_string_const init_modelica_string(modelica_string_const str)
 {
-  int i;
   int length = strlen(str);
   modelica_string_t dest = alloc_modelica_string(length);
   memcpy(dest, str, length);

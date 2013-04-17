@@ -57,9 +57,9 @@ typedef struct DATA_NEWTON
   double* fvec;
   double xtol;
   double ftol;
-  int nfev;
-  int maxfev;
-  int info;
+  integer nfev;
+  integer maxfev;
+  integer info;
   double epsfcn;
   double* fjac;
   double* rwork;
@@ -67,10 +67,10 @@ typedef struct DATA_NEWTON
 } DATA_NEWTON;
 
 
-static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
-                  int* nfev, void(*f)(integer*, double*, double*, int*, void*),
+static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
+                  integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
                   double* fjac, double* rwork, integer* iwork,
-                  int* info, void* userdata);
+                  integer* info, void* userdata);
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,14 +193,15 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac)
  *
  *
  */
-static void wrapper_fvec_newton(integer* n, double* x, double* f, int* iflag, void* data){
+static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag, void* data){
 
-  int i,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
-  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
-  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  int currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+  //NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
+  //DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
 
   (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data,
       x, f, iflag);
+  return 0;
 }
 
 
@@ -224,7 +225,7 @@ int solveNewton(DATA *data, int sysNumber) {
    */
   int eqSystemNumber = systemData->equationIndex;
 
-  int i, iflag=0;
+  int i;
   double xerror, xerror_scaled;
   char success = 0;
   int nfunc_evals = 0;
@@ -368,12 +369,12 @@ int solveNewton(DATA *data, int sysNumber) {
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
-static int fdjac(integer* n, void(*f)(integer*, double*, double*, int*, void*), double *x,
-       double* fvec, double *fjac, double* eps, int* iflag, double* wa,
+static int fdjac(integer* n, int(*f)(integer*, double*, double*, integer*, void*), double *x,
+       double* fvec, double *fjac, double* eps, integer* iflag, double* wa,
        void* userdata)
 {
   double delta_h = sqrt(*eps);
-  double delta_hh,delta_hhh;
+  double delta_hh;
   double xsave;
 
   int i,j,l;
@@ -418,16 +419,16 @@ static int fdjac(integer* n, void(*f)(integer*, double*, double*, int*, void*), 
  *                [info]
  *
  */
-static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
-                  int* nfev, void(*f)(integer*, double*, double*, int*, void*),
-                  double* fjac, double* work, integer* iwork, int* info, void* userdata)
+static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
+                  integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
+                  double* fjac, double* work, integer* iwork, integer* info, void* userdata)
 {
   int currentSys = ((DATA*)userdata)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
 
-  int i, j, l, k;
-  int iflag;
+  int i, j, l;
+  integer iflag;
   double error_x, error_f, scaledError_f;
   double tol_x = *eps, tol_f = solverData->ftol;
   double *wa;
@@ -441,7 +442,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
   scaledError_f = 1.0 + tol_f;
 
   if (ACTIVE_STREAM(LOG_NLS_V)) {
-    INFO1(LOG_NLS_V,"######### Start Newton maxfev :%d #########", *maxfev);
+    INFO1(LOG_NLS_V,"######### Start Newton maxfev :%d #########", (int)*maxfev);
     for(i=0;i<*n;i++)
       INFO2(LOG_NLS_V,"x[%d] : %e ", i, x[i]);
   }
@@ -474,7 +475,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     {
       char buffer[4096];
 
-      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", *n, *n);
+      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", (int)*n, (int)*n);
       INDENT(LOG_NLS_JAC);
       for(i=0; i<solverData->n;i++)
       {
@@ -522,7 +523,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
       WARNING(LOG_NLS,"Jacobian Matrix singular!");
     }else if (lapackinfo < 0){
       *info = -1;
-      WARNING1(LOG_NLS,"illegal  input in argument %d", lapackinfo);
+      WARNING1(LOG_NLS,"illegal  input in argument %d", (int)lapackinfo);
     }else{
       /* if no error occurs update x vector */
       for (i = 0; i < *n; i++){

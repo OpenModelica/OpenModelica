@@ -80,7 +80,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   double fxr;
   double fxe;
-  double fxk;
+  double fxk = 0;
 
   long xb = 0;        /* best vertex */
   long xs = 0;        /* worst vertex */

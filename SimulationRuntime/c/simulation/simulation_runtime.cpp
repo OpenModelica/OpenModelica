@@ -474,7 +474,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   const char* lintime = omc_flagValue[FLAG_L];
 
   /* activated measure time option with LOG_STATS */
-  if(ACTIVE_STREAM(LOG_STATS) || omc_flag[FLAG_CPU] && !measure_time_flag)
+  if(ACTIVE_STREAM(LOG_STATS) || (omc_flag[FLAG_CPU] && !measure_time_flag))
   {
     measure_time_flag = 1;
     measureSimTime = 1;
@@ -486,7 +486,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
     const char *clockName;
-    if (clockName=omc_flagValue[FLAG_CLOCK]) {
+    if ((clockName = omc_flagValue[FLAG_CLOCK]) != NULL) {
       if (0==strcmp(clockName, "CPU")) {
         clock = OMC_CLOCK_CPUTIME;
       } else if (0==strcmp(clockName, "RT")) {
@@ -496,7 +496,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
       }
     }
     if (rt_set_clock(clock)) {
-      WARNING1(LOG_STDOUT, "Chosen clock-type not available for the current platform. Defaulting to real-time.", clockName);
+      WARNING1(LOG_STDOUT, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
     }
   }
 

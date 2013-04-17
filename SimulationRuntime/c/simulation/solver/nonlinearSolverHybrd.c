@@ -57,23 +57,23 @@ typedef struct DATA_HYBRD
   double* x;
   double* fvec;
   double xtol;
-  int maxfev;
+  integer maxfev;
   int ml;
   int mu;
   double epsfcn;
   double* diag;
   double* diagres;
-  int mode;
+  integer mode;
   double factor;
-  int nprint;
-  int info;
-  int nfev;
-  int njev;
+  integer nprint;
+  integer info;
+  integer nfev;
+  integer njev;
   double* fjac;
   double* fjacobian;
-  int ldfjac;
+  integer ldfjac;
   double* r__;
-  int lr;
+  integer lr;
   double* qtf;
   double* wa1;
   double* wa2;
@@ -81,7 +81,7 @@ typedef struct DATA_HYBRD
   double* wa4;
 } DATA_HYBRD;
 
-static void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, int* iflag, void* data);
+static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data);
 
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
@@ -165,7 +165,7 @@ int freeHybrdData(void **voiddata)
  *
  *  \author wbraun
  */
-static void printVector(const double *vector, const int *size, const int logLevel, const char *name)
+static void printVector(const double *vector, integer *size, const int logLevel, const char *name)
 {
   int i;
 
@@ -319,14 +319,14 @@ static int getAnalyticalJacobian(DATA* data, double* jac)
  *
  *
  */
-static void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* ldjac, int* iflag, void* data){
+static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data){
 
   int i, currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
 
   /* debug output */
-  INFO1(LOG_NLS_V, "# Call wrapper function with mode %d", *iflag);
+  INFO1(LOG_NLS_V, "# Call wrapper function with mode %d", (int)*iflag);
   INDENT(LOG_NLS_V);
 
   switch(*iflag)
@@ -371,6 +371,7 @@ static void wrapper_fvec_hybrj(int* n, double* x, double* f, double* fjac, int* 
       break;
   }
   RELEASE(LOG_NLS_V);
+  return 0;
 }
 
 /*! \fn solve non-linear system with hybrd method
@@ -390,7 +391,8 @@ int solveHybrd(DATA *data, int sysNumber)
    */
   int eqSystemNumber = systemData->equationIndex;
 
-  int i, j, iflag=1;
+  int i, j;
+  integer iflag = 1;
   double xerror, xerror_scaled;
   int success = 0;
   double local_tol = 1e-12;
@@ -542,7 +544,7 @@ int solveHybrd(DATA *data, int sysNumber)
     {
       char buffer[4096];
 
-      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", solverData->n, solverData->n);
+      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", (int)solverData->n, (int)solverData->n);
       INDENT(LOG_NLS_JAC);
       for(i=0; i<solverData->n; i++)
       {
