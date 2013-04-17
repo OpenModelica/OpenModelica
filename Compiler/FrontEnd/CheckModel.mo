@@ -243,6 +243,13 @@ algorithm
       then
         (varSize,eqnSize,eqns,hs);
 
+    // if equation with condition false and no else
+    case (DAE.IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})::rest,_,_,_,_)
+      equation
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize,ieqnslst,ihs);
+      then
+        (varSize,eqnSize,eqns,hs);
+
     // if equation that cannot be translated to if expression but have initial() as condition
     case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))})::rest,_,_,_,_)
       equation
@@ -257,6 +264,14 @@ algorithm
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);
+    
+    // initial if equation with condition false and no else
+    case (DAE.INITIAL_IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})::rest,_,_,_,_)
+      equation
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize,ieqnslst,ihs);
+      then
+        (varSize,eqnSize,eqns,hs);
+    
     // initial if equation
     case (DAE.INITIAL_IF_EQUATION(condition1 = _)::rest,_,_,_,_)
       equation
