@@ -109,6 +109,59 @@ public function ceval "
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter "Maximum recursion depth";
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache,outValue,outST) := cevalWork1(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,numIter > 100);
+end ceval;
+
+protected function cevalWork1
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input Boolean inBoolean "impl";
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  input Integer numIter "Maximum recursion depth";
+  input Boolean iterReached;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache,outValue,outST) := match (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,iterReached)
+    local
+      Absyn.Info info;
+      String str1,str2;
+    case (_,_,_,_,_,_,_,false)
+      equation
+        (outCache,outValue,outST) = cevalWork2(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter);
+      then (outCache,outValue,outST);
+    case (_,_,_,_,_,MSG(info=info),_,true)
+      equation
+        str1 = ExpressionDump.printExpStr(inExp);
+        str2 = Env.printEnvPathStr(inEnv);
+        Error.addSourceMessage(Error.RECURSION_DEPTH_WARNING, {str1,str2}, info);
+      then fail();
+  end match;
+end cevalWork1;
+
+protected function cevalWork2 "
+  This function is used when the value of a constant expression is
+  needed.  It takes an environment and an expression and calculates
+  its value.
+  The third argument indicates whether the evaluation is performed in the
+  interactive environment (implicit instantiation), in which case function
+  calls are evaluated.
+  The last argument is an optional dimension."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input Boolean inBoolean "impl";
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
@@ -120,7 +173,7 @@ public function ceval "
   end ReductionOperator;
 algorithm
   (outCache,outValue,outST):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter)
     local
       Integer start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<Interactive.SymbolTable> stOpt;
@@ -162,87 +215,87 @@ algorithm
     //   equation print("Ceval.ceval: " +& ExpressionDump.printExpStr(inExp) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
     //   then fail();
 
-    case (cache,_,DAE.ICONST(integer = i),_,stOpt,_) then (cache,Values.INTEGER(i),stOpt);
+    case (cache,_,DAE.ICONST(integer = i),_,stOpt,_,_) then (cache,Values.INTEGER(i),stOpt);
 
-    case (cache,_,DAE.RCONST(real = r),_,stOpt,_) then (cache,Values.REAL(r),stOpt);
+    case (cache,_,DAE.RCONST(real = r),_,stOpt,_,_) then (cache,Values.REAL(r),stOpt);
 
-    case (cache,_,DAE.SCONST(string = s),_,stOpt,_) then (cache,Values.STRING(s),stOpt);
+    case (cache,_,DAE.SCONST(string = s),_,stOpt,_,_) then (cache,Values.STRING(s),stOpt);
 
-    case (cache,_,DAE.BCONST(bool = b),_,stOpt,_) then (cache,Values.BOOL(b),stOpt);
+    case (cache,_,DAE.BCONST(bool = b),_,stOpt,_,_) then (cache,Values.BOOL(b),stOpt);
 
-    case (cache,_,DAE.ENUM_LITERAL(name = name, index = i),_,stOpt,_)
+    case (cache,_,DAE.ENUM_LITERAL(name = name, index = i),_,stOpt,_,_)
       then (cache, Values.ENUM_LITERAL(name, i), stOpt);
 
-    case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,stOpt,msg)
+    case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,stOpt,msg,_)
       equation
         (cache,exp_1) = cevalAstExp(cache,env, exp, impl, stOpt, msg, Absyn.dummyInfo);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),stOpt);
 
-    case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,stOpt,msg)
+    case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,stOpt,msg,_)
       equation
         (cache,exp_1) = cevalAstExp(cache,env, exp, impl, stOpt, msg, Absyn.dummyInfo);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),stOpt);
 
-    case (cache,env,DAE.CODE(code = Absyn.C_ELEMENT(element = elt)),impl,stOpt,msg)
+    case (cache,env,DAE.CODE(code = Absyn.C_ELEMENT(element = elt)),impl,stOpt,msg,_)
       equation
-        (cache,elt_1) = cevalAstElt(cache,env, elt, impl, stOpt, msg);
+        (cache,elt_1) = cevalAstElt(cache,env, elt, impl, stOpt,msg);
       then
         (cache,Values.CODE(Absyn.C_ELEMENT(elt_1)),stOpt);
 
-    case (cache,env,DAE.CODE(code = c),_,stOpt,_) then (cache,Values.CODE(c),stOpt);
+    case (cache,env,DAE.CODE(code = c),_,stOpt,_,_) then (cache,Values.CODE(c),stOpt);
 
-    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg)
+    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg,_)
       equation
         dims = List.map(arrayDims, Expression.dimensionSize);
-        (cache,es_1, stOpt) = cevalList(cache,env, es, impl, stOpt, msg);
+        (cache,es_1, stOpt) = cevalList(cache,env, es, impl, stOpt,msg,numIter);
       then
         (cache,Values.ARRAY(es_1,dims),stOpt);
 
-    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg)
+    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg,_)
       equation
         failure(_ = List.map(arrayDims, Expression.dimensionSize));
-        (cache,es_1,stOpt) = cevalList(cache,env, es, impl, stOpt, msg);
+        (cache,es_1,stOpt) = cevalList(cache,env, es, impl, stOpt,msg,numIter);
       then
         (cache,ValuesUtil.makeArray(es_1),stOpt);
 
-    case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg)
+    case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg,_)
       equation
         dims = List.map(arrayDims, Expression.dimensionSize);
-        (cache,elts) = cevalMatrixElt(cache, env, expll, impl, msg);
+        (cache,elts) = cevalMatrixElt(cache, env, expll, impl,msg,numIter+1);
       then
         (cache,Values.ARRAY(elts,dims),stOpt);
 
     // MetaModelica List. sjoelund
-    case (cache,env,DAE.LIST(valList = expl),impl,stOpt,msg)
+    case (cache,env,DAE.LIST(valList = expl),impl,stOpt,msg,_)
       equation
-        (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
+        (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt,msg,numIter);
       then
         (cache,Values.LIST(es_1),stOpt);
 
-    case (cache,env,DAE.BOX(exp=e1),impl,stOpt,msg)
+    case (cache,env,DAE.BOX(exp=e1),impl,stOpt,msg,_)
       equation
-        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,msg);
+        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
 
-    case (cache,env,DAE.UNBOX(exp=e1),impl,stOpt,msg)
+    case (cache,env,DAE.UNBOX(exp=e1),impl,stOpt,msg,_)
       equation
-        (cache,Values.META_BOX(v),stOpt) = ceval(cache,env,e1,impl,stOpt,msg);
+        (cache,Values.META_BOX(v),stOpt) = ceval(cache,env,e1,impl,stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
 
-    case (cache,env,DAE.CONS(car=e1,cdr=e2),impl,stOpt,msg)
+    case (cache,env,DAE.CONS(car=e1,cdr=e2),impl,stOpt,msg,_)
       equation
-        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,msg);
-        (cache,Values.LIST(vallst),stOpt) = ceval(cache,env,e2,impl,stOpt,msg);
+        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,msg,numIter+1);
+        (cache,Values.LIST(vallst),stOpt) = ceval(cache,env,e2,impl,stOpt,msg,numIter+1);
       then
         (cache,Values.LIST(v::vallst),stOpt);
 
     // MetaModelica Partial Function. sjoelund
     case (cache,env,DAE.CREF(componentRef = cr,
-        ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)),impl,stOpt,MSG(info = info))
+        ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)),impl,stOpt,MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
         Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
@@ -250,7 +303,7 @@ algorithm
         fail();
 
     case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)),
-        impl, stOpt, MSG(info = info))
+        impl, stOpt, MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
         Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
@@ -258,74 +311,74 @@ algorithm
         fail();
 
     // MetaModelica Uniontype Constructor. sjoelund 2009-05-18
-    case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,stOpt,msg)
+    case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,stOpt,msg,_)
       equation
-        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
+        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
       then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),stOpt);
 
     // MetaModelica Option type. sjoelund 2009-07-01
-    case (cache,env,DAE.META_OPTION(NONE()),impl,stOpt,msg)
+    case (cache,env,DAE.META_OPTION(NONE()),impl,stOpt,msg,_)
       then (cache,Values.OPTION(NONE()),stOpt);
-    case (cache,env,DAE.META_OPTION(SOME(expExp)),impl,stOpt,msg)
+    case (cache,env,DAE.META_OPTION(SOME(expExp)),impl,stOpt,msg,_)
       equation
-        (cache,value,stOpt) = ceval(cache,env,expExp,impl,stOpt,msg);
+        (cache,value,stOpt) = ceval(cache,env,expExp,impl,stOpt,msg,numIter+1);
       then (cache,Values.OPTION(SOME(value)),stOpt);
 
     // MetaModelica Tuple. sjoelund 2009-07-02
-    case (cache,env,DAE.META_TUPLE(expl),impl,stOpt,msg)
+    case (cache,env,DAE.META_TUPLE(expl),impl,stOpt,msg,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
+        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
       then (cache,Values.META_TUPLE(vallst),stOpt);
 
-    case (cache,env,DAE.TUPLE(expl),impl,stOpt,msg)
+    case (cache,env,DAE.TUPLE(expl),impl,stOpt,msg,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
+        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
       then (cache,Values.TUPLE(vallst),stOpt);
 
-    case (cache,env,DAE.CREF(componentRef = cr),(impl as false),SOME(st),msg)
+    case (cache,env,DAE.CREF(componentRef = cr),(impl as false),SOME(st),msg,_)
       equation
-        (cache,v) = cevalCref(cache, env, cr, false, msg) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
+        (cache,v) = cevalCref(cache, env, cr, false, msg, numIter+1) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
         //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
-    case (cache,env,DAE.CREF(componentRef = cr),impl,stOpt,msg)
+    case (cache,env,DAE.CREF(componentRef = cr),impl,stOpt,msg,_)
       equation
-        (cache,v) = cevalCref(cache,env, cr, impl, msg);
+        (cache,v) = cevalCref(cache,env, cr, impl,msg,numIter+1);
         //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,stOpt);
 
     // Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
-    case (cache,env,expExp,impl,stOpt,msg)
+    case (cache,env,expExp,impl,stOpt,msg,_)
       equation
-        (cache,v,stOpt) = cevalBuiltin(cache,env, expExp, impl, stOpt, msg);
+        (cache,v,stOpt) = cevalBuiltin(cache,env, expExp, impl, stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
     // lochel: do not evaluate impure function calls
-    case (cache, env, (e as DAE.CALL(path=funcpath, expLst=expl, attr=DAE.CALL_ATTR(isImpure=false))), impl, stOpt, msg)
+    case (cache, env, (e as DAE.CALL(path=funcpath, expLst=expl, attr=DAE.CALL_ATTR(isImpure=false))), impl, stOpt, msg,_)
       equation
         // do not handle Connection.isRoot here!
         false = stringEq("Connection.isRoot", Absyn.pathString(funcpath));
         // do not roll back errors generated by evaluating the arguments
-        (cache, vallst, stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
+        (cache, vallst, stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
 
-        (cache, newval, stOpt)= CevalScript.cevalCallFunction(cache, env, e, vallst, impl, stOpt, msg);
+        (cache, newval, stOpt)= CevalScript.cevalCallFunction(cache, env, e, vallst, impl, stOpt,msg,numIter+1);
       then
         (cache, newval, stOpt);
 
     // Try Interactive functions last
-    case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),msg)
+    case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),msg,_)
       equation
-        (cache,value,st) = CevalScript.cevalInteractiveFunctions(cache, env, e, st, msg);
+        (cache,value,st) = CevalScript.cevalInteractiveFunctions(cache, env, e, st,msg,numIter+1);
       then
         (cache,value,SOME(st));
 
-    case (_,_,e as DAE.CALL(path = _),_,_,_)
+    case (_,_,e as DAE.CALL(path = _),_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Ceval.ceval DAE.CALL failed: ");
@@ -335,145 +388,145 @@ algorithm
         fail();
 
     // Strings
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING(varLst = _)),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.STRING(lhvStr),_) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.STRING(rhvStr),_) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.STRING(lhvStr),_) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.STRING(rhvStr),_) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         str = stringAppend(lhvStr, rhvStr);
       then
         (cache,Values.STRING(str),stOpt);
 
     // Numerical
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_REAL(varLst = _)),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_REAL(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         sum = lhvReal +. rhvReal;
       then
         (cache,Values.REAL(sum),stOpt);
 
     // Array addition
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.addElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array subtraction
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.subElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array multiplication
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.mulElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array division
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.divElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.powElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array multipled scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.multScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array add scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.addScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array subtract scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.subScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.powScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.powArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // scalar div array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.divScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // array div scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         reslst = ValuesUtil.divArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // scalar multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = rhvals),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(valueLst = lhvals),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,Values.ARRAY(valueLst = rhvals),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(valueLst = lhvals),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.multScalarProduct(rhvals, lhvals);
       then
         (cache,resVal,stOpt);
 
     // array multipled array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = (lhvals as (elt1 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt, msg) "{{..}..{..}}  {...}" ;
-        (cache,Values.ARRAY(valueLst = (rhvals as (elt2 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.ARRAY(valueLst = (lhvals as (elt1 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1) "{{..}..{..}}  {...}" ;
+        (cache,Values.ARRAY(valueLst = (rhvals as (elt2 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         true = ValuesUtil.isArray(elt1);
         false = ValuesUtil.isArray(elt2);
         resVal = ValuesUtil.multScalarProduct(lhvals, rhvals);
@@ -481,10 +534,10 @@ algorithm
         (cache,resVal,stOpt);
 
     // array multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = (rhvals as (elt1 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt, msg) "{...}  {{..}..{..}}" ;
-        (cache,Values.ARRAY(valueLst = (lhvals as (elt2 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,Values.ARRAY(valueLst = (rhvals as (elt1 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1) "{...}  {{..}..{..}}" ;
+        (cache,Values.ARRAY(valueLst = (lhvals as (elt2 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         true = ValuesUtil.isArray(elt1);
         false = ValuesUtil.isArray(elt2);
         resVal = ValuesUtil.multScalarProduct(lhvals, rhvals);
@@ -492,10 +545,10 @@ algorithm
         (cache,resVal,stOpt);
 
     // array multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY((rhvals as (elt1 :: _)),dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg) "{{..}..{..}}  {{..}..{..}}" ;
-        (cache,Values.ARRAY((lhvals as (elt2 :: _)),_),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,Values.ARRAY((rhvals as (elt1 :: _)),dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1) "{{..}..{..}}  {{..}..{..}}" ;
+        (cache,Values.ARRAY((lhvals as (elt2 :: _)),_),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
         true = ValuesUtil.isArray(elt1);
         true = ValuesUtil.isArray(elt2);
         vallst = ValuesUtil.multMatrix(lhvals, rhvals);
@@ -503,37 +556,37 @@ algorithm
         (cache,ValuesUtil.makeArray(vallst),stOpt);
 
     //POW (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(ty=_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
       then
         (cache,resVal,stOpt);
 
     //MUL (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(ty=_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
       then
         (cache,resVal,stOpt);
 
     //DIV (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty=_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
       then
         (cache,resVal,stOpt);
 
     //DIV (handle div by zero)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_), exp2 = rh),
-        impl, stOpt, msg as MSG(info = info))
+        impl, stOpt, msg as MSG(info = info),_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         true = ValuesUtil.isZero(lhvVal);
         lhvStr = ExpressionDump.printExpStr(lh);
         rhvStr = ExpressionDump.printExpStr(rh);
@@ -542,35 +595,35 @@ algorithm
         fail();
 
     //ADD (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty=_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
       then
         (cache,resVal,stOpt);
 
     //SUB (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(ty=_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
       then
         (cache,resVal,stOpt);
 
     //  unary minus of array
-    case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = daeExp),impl,stOpt,msg)
+    case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = daeExp),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(arr,dims),stOpt) = ceval(cache,env, daeExp, impl, stOpt, msg);
+        (cache,Values.ARRAY(arr,dims),stOpt) = ceval(cache,env, daeExp, impl, stOpt,msg,numIter+1);
         arr_1 = List.map(arr, ValuesUtil.valueNeg);
       then
         (cache,Values.ARRAY(arr_1,dims),stOpt);
 
     // unary minus of expression
-    case (cache,env,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = daeExp),impl,stOpt,msg)
+    case (cache,env,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = daeExp),impl,stOpt,msg,_)
       equation
-        (cache,v,stOpt) = ceval(cache,env, daeExp, impl, stOpt, msg);
+        (cache,v,stOpt) = ceval(cache,env, daeExp, impl, stOpt,msg,numIter+1);
         v_1 = ValuesUtil.valueNeg(v);
       then
         (cache,v_1,stOpt);
@@ -579,33 +632,33 @@ algorithm
     // special case when leftside is false...
     // We allow errors on right hand side. and even if there is no errors, the performance
     // will be better.
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(false),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,Values.BOOL(false),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
       then
         (cache,Values.BOOL(false),stOpt);
 
     // Logical lhs AND rhs
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resBool = boolAnd(rhvBool, rhvBool);
       then
         (cache,Values.BOOL(resBool),stOpt);
 
     // true OR rhs
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(true),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
+        (cache,Values.BOOL(true),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
       then
         (cache,Values.BOOL(true),stOpt);
 
     // lhs OR rhs
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
+        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         resBool = boolOr(lhvBool, rhvBool);
       then
         (cache,Values.BOOL(resBool),stOpt);
@@ -613,72 +666,72 @@ algorithm
     // Special case for a boolean expression like if( expression or ARRAY_IDEX_OUT_OF_BOUNDS_ERROR)
     // "expression" in this case we return the lh expression to be equall to
     // the previous c-code generation.
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,v as Values.BOOL(rhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        failure((_,_,_) = ceval(cache,env, rh, impl, stOpt, msg));
+        (cache,v as Values.BOOL(rhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        failure((_,_,_) = ceval(cache,env, rh, impl, stOpt, msg, numIter+1));
       then
         (cache,v,stOpt);
 
     // NOT
-    case (cache,env,DAE.LUNARY(operator = DAE.NOT(_),exp = e),impl,stOpt,msg)
+    case (cache,env,DAE.LUNARY(operator = DAE.NOT(_),exp = e),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(b),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
+        (cache,Values.BOOL(b),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         b_1 = boolNot(b);
       then
         (cache,Values.BOOL(b_1),stOpt);
 
     // relations <, >, <=, >=, <>
-    case (cache,env,DAE.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,stOpt,msg)
+    case (cache,env,DAE.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,stOpt,msg,_)
       equation
-        (cache,lhs_1,stOpt) = ceval(cache,env, lhs, impl, stOpt, msg);
-        (cache,rhs_1,stOpt) = ceval(cache,env, rhs, impl, stOpt, msg);
+        (cache,lhs_1,stOpt) = ceval(cache,env, lhs, impl, stOpt,msg,numIter+1);
+        (cache,rhs_1,stOpt) = ceval(cache,env, rhs, impl, stOpt,msg,numIter+1);
         v = cevalRelation(lhs_1, relop, rhs_1);
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.RANGE(ty = DAE.T_INTEGER(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg)
+    case (cache, env, DAE.RANGE(ty = DAE.T_INTEGER(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg,_)
       equation
-        (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt, msg);
-        (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt, msg);
+        (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt,msg,numIter+1);
+        (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt,msg,numIter+1);
         arr = List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop),
           ValuesUtil.makeBoolean);
       then
         (cache, ValuesUtil.makeArray(arr), stOpt);
 
     // range first:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
-        (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
-        (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
+        (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
+        (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
         arr = List.map(ExpressionSimplify.simplifyRange(start_1, 1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:step:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
       equation
-        (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
-        (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
-        (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
+        (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
+        (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt,msg,numIter+1);
+        (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
         arr = List.map(ExpressionSimplify.simplifyRange(start_1, step_1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:last for enumerations.
-    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(path = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(path = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
-        (cache,Values.ENUM_LITERAL(index = start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
-        (cache,Values.ENUM_LITERAL(index = stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
+        (cache,Values.ENUM_LITERAL(index = start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
+        (cache,Values.ENUM_LITERAL(index = stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
         arr = cevalRangeEnum(start_1, stop_1, t);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
-        (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
-        (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
+        (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
+        (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
         // diff = realStop1 -. realStart1;
         realStep1 = intReal(1);
         arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
@@ -686,98 +739,98 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:step:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
       equation
-        (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
-        (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
-        (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
+        (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
+        (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt,msg,numIter+1);
+        (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
         arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // cast integer to real
-    case (cache,env,DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = e),impl,stOpt,msg)
+    case (cache,env,DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = e),impl,stOpt,msg,_)
       equation
-        (cache,Values.INTEGER(i),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
+        (cache,Values.INTEGER(i),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         r = intReal(i);
       then
         (cache,Values.REAL(r),stOpt);
 
     // cast real to integer
-    case (cache,env,DAE.CAST(ty = DAE.T_INTEGER(varLst = _), exp = e),impl,stOpt,msg)
+    case (cache,env,DAE.CAST(ty = DAE.T_INTEGER(varLst = _), exp = e),impl,stOpt,msg,_)
       equation
-        (cache,Values.REAL(r),stOpt) = ceval(cache, env, e, impl, stOpt, msg);
+        (cache,Values.REAL(r),stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
         i = realInt(r);
       then
         (cache,Values.INTEGER(i),stOpt);
 
     // cast integer to enum
-    case (cache,env,DAE.CAST(ty = DAE.T_ENUMERATION(path = path, names = n), exp = e), impl, stOpt, msg)
+    case (cache,env,DAE.CAST(ty = DAE.T_ENUMERATION(path = path, names = n), exp = e), impl, stOpt, msg,_)
       equation
-        (cache, Values.INTEGER(i), stOpt) = ceval(cache, env, e, impl, stOpt, msg);
+        (cache, Values.INTEGER(i), stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
         str = listNth(n, i - 1);
         path = Absyn.joinPaths(path, Absyn.IDENT(str));
       then
         (cache, Values.ENUM_LITERAL(path, i), stOpt);
 
     // cast integer array to real array
-    case (cache,env,DAE.CAST(ty = DAE.T_ARRAY(ty = DAE.T_REAL(varLst = _)),exp = e),impl,stOpt,msg)
+    case (cache,env,DAE.CAST(ty = DAE.T_ARRAY(ty = DAE.T_REAL(varLst = _)),exp = e),impl,stOpt,msg,_)
       equation
-        (cache,v as Values.ARRAY(ivals,dims),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
+        (cache,v as Values.ARRAY(ivals,dims),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         rvals = ValuesUtil.typeConvert(DAE.T_INTEGER_DEFAULT, DAE.T_REAL_DEFAULT, ivals);
       then
         (cache,Values.ARRAY(rvals,dims),stOpt);
 
     // if expressions, select then branch if condition is true
-    case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg)
+    case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(true),stOpt) = ceval(cache, env, cond, impl, stOpt, msg) "Ifexp, true branch" ;
-        (cache,v,stOpt) = ceval(cache,env, e1, impl, stOpt, msg);
+        (cache,Values.BOOL(true),stOpt) = ceval(cache, env, cond, impl, stOpt, msg, numIter+1) "Ifexp, true branch";
+        (cache,v,stOpt) = ceval(cache,env, e1, impl, stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
 
     // if expressions, select else branch if condition is false
-    case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg)
+    case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(false),stOpt) = ceval(cache, env, cond, impl, stOpt, msg) "Ifexp, false branch" ;
-        (cache,v,stOpt) = ceval(cache,env, e2, impl, stOpt, msg);
+        (cache,Values.BOOL(false),stOpt) = ceval(cache, env, cond, impl, stOpt,msg,numIter+1) "Ifexp, false branch" ;
+        (cache,v,stOpt) = ceval(cache,env, e2, impl, stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
 
     // indexing for array[integer index]
-    case (cache,env,DAE.ASUB(exp = e,sub = ((e1 as DAE.ICONST(indx))::{})),impl,stOpt,msg)
+    case (cache,env,DAE.ASUB(exp = e,sub = ((e1 as DAE.ICONST(indx))::{})),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vals,_),stOpt) = ceval(cache,env, e, impl, stOpt, msg) "asub" ;
+        (cache,Values.ARRAY(vals,_),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1) "asub" ;
         indx_1 = indx - 1;
         v = listNth(vals, indx_1);
       then
         (cache,v,stOpt);
 
     // indexing for array[subscripts]
-    case (cache, env, DAE.ASUB(exp = e,sub = expl ), impl, stOpt, msg)
+    case (cache, env, DAE.ASUB(exp = e,sub = expl ), impl, stOpt, msg,_)
       equation
-        (cache,Values.ARRAY(vals,dims),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
-        (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
+        (cache,Values.ARRAY(vals,dims),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
+        (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt,msg,numIter);
         v = List.first(es_1);
         v = ValuesUtil.nthnthArrayelt(es_1,Values.ARRAY(vals,dims),v);
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg)
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
-        (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt, msg);
+        (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
         // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
-        (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt, msg);
+        (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
         value = backpatchArrayReduction(path, value, dims);
       then (cache, value, stOpt);
 
     // ceval can fail and that is ok, caught by other rules...
-    case (cache,env,e,_,_,_) // MSG())
+    case (cache,env,e,_,_,_,_) // MSG())
       equation
         true = Flags.isSet(Flags.CEVAL);
         Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
@@ -786,7 +839,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end ceval;
+end cevalWork2;
 
 public function cevalIfConstant
   "This function constant evaluates an expression if the expression is constant,
@@ -815,7 +868,7 @@ algorithm
     case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(dims = _))),
         DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
       equation
-        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo);
+        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo, 0);
       then
         (inCache, e, prop);
 
@@ -827,7 +880,7 @@ algorithm
 
     case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG(), 0);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -835,7 +888,7 @@ algorithm
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG(), 0);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -864,10 +917,11 @@ protected function cevalWholedimRetCall
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Info inInfo;
+  input Integer numIter;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo)
+  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo, numIter)
     local
       DAE.Exp e;
       Absyn.Path p;
@@ -880,10 +934,10 @@ algorithm
       DAE.TailCall tc;
 
      case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, isImpure=isImpure,
-           ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _)
+           ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), MSG(inInfo));
+         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), MSG(inInfo), numIter+1);
          ty = Types.typeOfValue(v);
          cevalType = Types.simplifyType(ty);
        then
@@ -930,6 +984,7 @@ protected function cevalBuiltin
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -940,13 +995,14 @@ protected function cevalBuiltin
     input Boolean inBoolean;
     input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
     input Msg inMsg;
+    input Integer numIter;
     output Env.Cache outCache;
     output Values.Value outValue;
     output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
   end HandlerFunc;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v,newval;
       Option<Interactive.SymbolTable> st;
@@ -961,27 +1017,27 @@ algorithm
       Absyn.Path funcpath,path;
       Env.Cache cache;
 
-    case (cache,env,DAE.SIZE(exp = exp,sz = SOME(dim)),impl,st,msg)
+    case (cache,env,DAE.SIZE(exp = exp,sz = SOME(dim)),impl,st,msg,_)
       equation
-        (cache,v,st) = cevalBuiltinSize(cache,env, exp, dim, impl, st, msg) "Handle size separately" ;
+        (cache,v,st) = cevalBuiltinSize(cache,env, exp, dim, impl, st, msg, numIter+1) "Handle size separately" ;
       then
         (cache,v,st);
-    case (cache,env,DAE.SIZE(exp = exp,sz = NONE()),impl,st,msg)
+    case (cache,env,DAE.SIZE(exp = exp,sz = NONE()),impl,st,msg,_)
       equation
-        (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
+        (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st,msg,numIter+1);
       then
         (cache,v,st);
-    case (cache,env,DAE.CALL(path = path,expLst = args,attr = DAE.CALL_ATTR(builtin = true)),impl,st,msg)
+    case (cache,env,DAE.CALL(path = path,expLst = args,attr = DAE.CALL_ATTR(builtin = true)),impl,st,msg,_)
       equation
         id = Absyn.pathString(path);
         handler = cevalBuiltinHandler(id);
-        (cache,v,st) = handler(cache, env, args, impl, st, msg);
+        (cache,v,st) = handler(cache, env, args, impl, st,msg,numIter+1);
       then
         (cache,v,st);
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg,_)
       equation
-        (cache,vallst,st) = cevalList(cache, env, expl, impl, st, msg);
-        (cache,newval,st) = CevalScript.cevalCallFunction(cache, env, e, vallst, impl, st, msg);
+        (cache,vallst,st) = cevalList(cache, env, expl, impl, st,msg,numIter);
+        (cache,newval,st) = CevalScript.cevalCallFunction(cache, env, e, vallst, impl, st,msg,numIter+1);
       then
         (cache,newval,st);
   end matchcontinue;
@@ -1004,6 +1060,7 @@ protected function cevalBuiltinHandler
     input Boolean inBoolean;
     input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
     input Msg inMsg;
+    input Integer numIter;
     output Env.Cache outCache;
     output Values.Value outValue;
     output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -1117,7 +1174,7 @@ algorithm
   // oid=NONE() is more safe, but most of the functions are declared is a certain way =/
   id := Util.getOptionOrDefault(oid,fid);
   isKnownExternalFunc(id);
-  res := cevalKnownExternalFuncs2(id, vals, msg);
+  res := cevalKnownExternalFuncs2(id,vals,msg);
 end cevalKnownExternalFuncs;
 
 public function isKnownExternalFunc "function isKnownExternalFunc
@@ -1309,11 +1366,12 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst "matrix constr. elts";
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst) :=
-  match (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg)
+  match (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg,numIter)
     local
       Values.Value v;
       list<Values.Value> vl;
@@ -1323,14 +1381,14 @@ algorithm
       Boolean impl;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,(expl :: expll),impl,msg)
+    case (cache,env,(expl :: expll),impl,msg,_)
       equation
-        (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg);
+        (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg,numIter);
         v = ValuesUtil.makeArray(vl);
-        (cache,vl)= cevalMatrixElt(cache,env, expll, impl, msg);
+        (cache,vl)= cevalMatrixElt(cache,env, expll, impl,msg,numIter);
       then
         (cache,v :: vl);
-    case (cache,_,{},_,msg) then (cache,{});
+    case (cache,_,{},_,msg,_) then (cache,{});
   end match;
 end cevalMatrixElt;
 
@@ -1343,12 +1401,13 @@ protected function cevalBuiltinSize "function: cevalBuiltinSize
   input Boolean inBoolean4;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption5;
   input Msg inMsg6;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv1,inExp2,inDimExp,inBoolean4,inInteractiveInteractiveSymbolTableOption5,inMsg6)
+  matchcontinue (inCache,inEnv1,inExp2,inDimExp,inBoolean4,inInteractiveInteractiveSymbolTableOption5,inMsg6,numIter)
     local
       DAE.Attributes attr;
       DAE.Type tp;
@@ -1371,40 +1430,40 @@ algorithm
       Absyn.Info info;
       DAE.Dimension ddim;
 
-    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(1),_,st,_)
+    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(1),_,st,_,_)
       equation
         i = listLength(mat);
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(2),_,st,_)
+    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(2),_,st,_,_)
       equation
         i = listLength(List.first(mat));
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,env,DAE.MATRIX(matrix=mat),DAE.ICONST(dim),impl,st,msg)
+    case (cache,env,DAE.MATRIX(matrix=mat),DAE.ICONST(dim),impl,st,msg,_)
       equation
         bl = (dim>2);
         true = bl;
         dim_1 = dim-2;
         e = List.first(List.first(mat));
-        (cache,Values.INTEGER(i),st_1)=cevalBuiltinSize(cache,env,e,DAE.ICONST(dim_1),impl,st,msg);
+        (cache,Values.INTEGER(i),st_1)=cevalBuiltinSize(cache,env,e,DAE.ICONST(dim_1),impl,st,msg,numIter+1);
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,env,DAE.CREF(componentRef = cr),dimExp,impl,st,msg)
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,impl,st,msg,_)
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
         (sizelst as (_ :: _)) = Types.getDimensionSizes(tp);
-        (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dimExp, impl, st, msg);
+        (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dimExp, impl, st,msg,numIter+1);
         dim_1 = dim - 1;
         i = listNth(sizelst, dim_1);
       then
         (cache,Values.INTEGER(i),st_1);
 
-    case (cache,env,DAE.CREF(componentRef = cr,ty = expTp),dimExp,(impl as false),st,msg)
+    case (cache,env,DAE.CREF(componentRef = cr,ty = expTp),dimExp,(impl as false),st,msg,_)
       equation
         (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo)
         "If component not instantiated yet, recursive definition.
@@ -1413,21 +1472,14 @@ algorithm
          When size(x,1) should be determined, x must be instantiated, but
          that is not done yet. Solution: Examine Element to find modifier
          which will determine dimension size.";
-        (cache,Values.INTEGER(dimv),st_1) = ceval(cache, env, dimExp, impl, st, msg);
+        (cache,Values.INTEGER(dimv),st_1) = ceval(cache, env, dimExp, impl, st,msg,numIter+1);
         ddim = listGet(dims, dimv);
-        (cache, v2, st_1) = cevalDimension(cache, env, ddim, impl, st, msg);
+        (cache, v2, st_1) = cevalDimension(cache, env, ddim, impl, st,msg,numIter+1);
       then
         (cache,v2,st_1);
 
-    case (cache,env,DAE.CREF(componentRef = cr,ty = expTp),dimExp,(impl as true),st,msg)
-      equation
-        (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=true, just silently fail";
-        false = Types.dimensionsKnown(tp);
-      then
-        fail();
-
-    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,
-        MSG(info = info))
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,false,st,
+        MSG(info = info),_)
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         false = Types.dimensionsKnown(tp);
@@ -1438,15 +1490,8 @@ algorithm
       then
         fail();
 
-    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,NO_MSG())
-      equation
-        (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr);
-        false = Types.dimensionsKnown(tp);
-      then
-        fail();
-
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,
-        (impl as false),st,MSG(info = info))
+        (impl as false),st,MSG(info = info),_)
       equation
         (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "For crefs without value binding" ;
         expstr = ExpressionDump.printExpStr(exp);
@@ -1454,47 +1499,35 @@ algorithm
       then
         fail();
 
-    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,(impl as false),st,NO_MSG())
-      equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache, env, cr);
-      then
-        fail();
-
-    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,(impl as true),st,msg)
-      equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "For crefs without value binding. If impl=true just silently fail" ;
-      then
-        fail();
-
     // For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
-    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,impl,st,msg)
+    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,impl,st,msg,_)
       equation
         (cache,attr,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;
-        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg);
-        (cache,val) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
+        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
+        (cache,val) = cevalCrefBinding(cache,env, cr, binding, impl,msg,numIter+1);
         v2 = cevalBuiltinSize2(val, dimv);
       then
         (cache,v2,st_1);
 
-    case (cache,env,DAE.ARRAY(array = (exp :: es)),dimExp,impl,st,msg)
+    case (cache,env,DAE.ARRAY(array = (exp :: es)),dimExp,impl,st,msg,_)
       equation
         expTp = Expression.typeof(exp) "Special case for array expressions with nonconstant
                                         values For now: only arrays of scalar elements:
                                         TODO generalize to arbitrary dimensions";
         true = Expression.typeBuiltin(expTp);
-        (cache,Values.INTEGER(1),st_1) = ceval(cache, env, dimExp, impl, st, msg);
+        (cache,Values.INTEGER(1),st_1) = ceval(cache, env, dimExp, impl, st,msg,numIter+1);
         len = listLength((exp :: es));
       then
         (cache,Values.INTEGER(len),st_1);
 
     // adrpo 2009-06-08: it doen't need to be a builtin type as long as the dimension is an integer!
-    case (cache,env,DAE.ARRAY(array = (exp :: es)),dimExp,impl,st,msg)
+    case (cache,env,DAE.ARRAY(array = (exp :: es)),dimExp,impl,st,msg,_)
       equation
         expTp = Expression.typeof(exp) "Special case for array expressions with nonconstant values
                                         For now: only arrays of scalar elements:
                                         TODO generalize to arbitrary dimensions" ;
         false = Expression.typeBuiltin(expTp);
-        (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dimExp, impl, st,msg);
+        (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dimExp, impl, st,msg,numIter+1);
         len = listLength((exp :: es));
       then
         (cache,Values.INTEGER(len),st_1);
@@ -1502,23 +1535,23 @@ algorithm
     // For expressions with value binding that can not determine type
     // e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of
     // knowing that from the value. Must investigate the expression itself.
-    case (cache,env,exp,dimExp,impl,st,msg)
+    case (cache,env,exp,dimExp,impl,st,msg,_)
       equation
-        (cache,Values.ARRAY({},adims),st_1) = ceval(cache,env,exp,impl,st,msg) "try to ceval expression, for constant expressions" ;
-        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg);
+        (cache,Values.ARRAY({},adims),st_1) = ceval(cache,env,exp,impl,st,msg,numIter+1) "try to ceval expression, for constant expressions" ;
+        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
         i = listNth(adims,dimv-1);
       then
         (cache,Values.INTEGER(i),st_1);
 
-    case (cache,env,exp,dimExp,impl,st,msg)
+    case (cache,env,exp,dimExp,impl,st,msg,_)
       equation
-        (cache,val,st_1) = ceval(cache, env,exp,impl,st,msg) "try to ceval expression, for constant expressions" ;
-        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg);
+        (cache,val,st_1) = ceval(cache, env,exp,impl,st,msg,numIter+1) "try to ceval expression, for constant expressions" ;
+        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
         v2 = cevalBuiltinSize2(val, dimv);
       then
         (cache,v2,st_1);
 
-    case (cache,env,exp,dimExp,impl,st,MSG(info = _))
+    case (cache,env,exp,dimExp,impl,st,MSG(info = _),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
@@ -1595,12 +1628,13 @@ protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -1610,15 +1644,15 @@ algorithm
       Msg msg;
       Integer iv;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         rv_1 = realAbs(rv);
       then
         (cache,Values.REAL(rv_1),st);
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(iv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.INTEGER(iv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         iv = intAbs(iv);
       then
         (cache,Values.INTEGER(iv),st);
@@ -1634,12 +1668,13 @@ protected function cevalBuiltinSign "function: cevalBuiltinSign
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv;
       Boolean b1,b2,b3,impl;
@@ -1649,18 +1684,18 @@ algorithm
       Msg msg;
       Integer iv,iv_1;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         b1 = (rv >. 0.0);
         b2 = (rv <. 0.0);
         b3 = (rv ==. 0.0);
         {(_,iv_1)} = List.select({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
       then
         (cache,Values.INTEGER(iv_1),st);
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(iv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.INTEGER(iv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         b1 = (iv > 0);
         b2 = (iv < 0);
         b3 = (iv == 0);
@@ -1679,12 +1714,13 @@ protected function cevalBuiltinExp "function: cevalBuiltinExp
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -1693,9 +1729,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         rv_1 = realExp(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -1713,12 +1749,13 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v;
       list<Env.Frame> env;
@@ -1727,9 +1764,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,v,_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,v,_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
       then
         (cache,v,st);
   end match;
@@ -1746,6 +1783,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
@@ -1852,12 +1890,13 @@ protected function cevalBuiltinCat "function: cevalBuiltinCat
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Integer dim_int;
       list<Values.Value> mat_lst;
@@ -1870,10 +1909,10 @@ algorithm
       Msg msg;
       Env.Cache cache;
 
-    case (cache,env,(dim :: matrices),impl,st,msg)
+    case (cache,env,(dim :: matrices),impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg);
-        (cache,mat_lst,st) = cevalList(cache,env, matrices, impl, st, msg);
+        (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg,numIter+1);
+        (cache,mat_lst,st) = cevalList(cache,env, matrices, impl, st,msg,numIter);
         v = cevalCat(mat_lst, dim_int);
       then
         (cache,v,st);
@@ -1889,12 +1928,13 @@ protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Integer dim_int,dim_int_1;
       list<DAE.Exp> expl;
@@ -1906,13 +1946,13 @@ algorithm
       Msg msg;
        Env.Cache cache;
 
-    case (cache,env,{dim},impl,st,msg)
+    case (cache,env,{dim},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg);
+        (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg,numIter+1);
         dim_int_1 = dim_int + 1;
         expl = List.fill(DAE.ICONST(1), dim_int);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, DAE.ARRAY(DAE.T_INTEGER_DEFAULT,true,expl), impl, st, dim_int_1,
-          1, {}, msg);
+          1, {},msg,numIter+1);
       then
         (cache,ValuesUtil.makeArray(retExp),st);
   end match;
@@ -1927,12 +1967,13 @@ protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value arr_val,res;
       Integer dim_val;
@@ -1943,10 +1984,10 @@ algorithm
       Msg msg;
       Env.Cache cache;
 
-    case (cache,env,{arr,dim},impl,st,msg)
+    case (cache,env,{arr,dim},impl,st,msg,_)
       equation
-        (cache,arr_val,_) = ceval(cache,env, arr, impl, st, msg);
-        (cache,Values.INTEGER(dim_val),_) = ceval(cache,env, dim, impl, st, msg);
+        (cache,arr_val,_) = ceval(cache,env, arr, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(dim_val),_) = ceval(cache,env, dim, impl, st,msg,numIter+1);
         res = cevalBuiltinPromote2(arr_val, dim_val);
       then
         (cache,res,st);
@@ -1990,12 +2031,13 @@ protected function cevalBuiltinSubstring "
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp str_exp, start_exp, stop_exp;
@@ -2006,11 +2048,11 @@ algorithm
       String str;
       Integer start, stop;
 
-    case (cache,env,{str_exp, start_exp, stop_exp},impl,st,msg)
+    case (cache,env,{str_exp, start_exp, stop_exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),_) = ceval(cache,env, str_exp, impl, st, msg);
-        (cache,Values.INTEGER(start),_) = ceval(cache,env, start_exp, impl, st, msg);
-        (cache,Values.INTEGER(stop),_) = ceval(cache,env, stop_exp, impl, st, msg);
+        (cache,Values.STRING(str),_) = ceval(cache,env, str_exp, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(start),_) = ceval(cache,env, start_exp, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(stop),_) = ceval(cache,env, stop_exp, impl, st,msg,numIter+1);
         str = System.substring(str, start, stop);
       then
         (cache,Values.STRING(str),st);
@@ -2027,12 +2069,13 @@ protected function cevalBuiltinString "
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp, len_exp, justified_exp, sig_dig;
@@ -2044,38 +2087,38 @@ algorithm
       Integer i,len,sig; Real r; Boolean b, left_just;
       Absyn.Path p;
 
-    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         str = intString(i);
-        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st,msg,numIter+1);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,{exp, len_exp, justified_exp, sig_dig},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp, sig_dig},impl,st,msg,_)
       equation
-        (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st,msg);
-        (cache,Values.INTEGER(len),_) = ceval(cache,env, len_exp, impl, st,msg);
-        (cache,Values.BOOL(left_just),_) = ceval(cache,env, justified_exp, impl, st,msg);
-        (cache,Values.INTEGER(sig),_) = ceval(cache,env, sig_dig, impl, st,msg);
+        (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(len),_) = ceval(cache,env, len_exp, impl, st,msg,numIter+1);
+        (cache,Values.BOOL(left_just),_) = ceval(cache,env, justified_exp, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(sig),_) = ceval(cache,env, sig_dig, impl, st,msg,numIter+1);
         format = "%"+&Util.if_(left_just,"-","") +& intString(len) +& "." +& intString(sig) +& "g";
         str = System.snprintff(format,len+20,r);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg,_)
       equation
-        (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         str = boolString(b);
-        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st,msg,numIter+1);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg,_)
       equation
-        (cache,Values.ENUM_LITERAL(name = p),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.ENUM_LITERAL(name = p),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         str = Absyn.pathLastIdent(p);
-        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st,msg,numIter+1);
       then
         (cache,Values.STRING(str),st);
 
@@ -2093,22 +2136,23 @@ protected function cevalBuiltinStringFormat
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output String outString;
 algorithm
   (outCache, outString) := match(inCache, inEnv, inString, lengthExp,
-      justifiedExp, inBoolean, inST, inMsg)
+      justifiedExp, inBoolean, inST, inMsg, numIter)
     local
       Env.Cache cache;
       Integer min_length;
       Boolean left_justified;
       String str;
-    case (cache, _, _, _, _, _, _, _)
+    case (cache, _, _, _, _, _, _, _, _)
       equation
         (cache, Values.INTEGER(integer = min_length), _) =
-          ceval(cache, inEnv, lengthExp, inBoolean, inST,inMsg);
+          ceval(cache, inEnv, lengthExp, inBoolean, inST,inMsg,numIter+1);
         (cache, Values.BOOL(boolean = left_justified), _) =
-          ceval(cache, inEnv, justifiedExp, inBoolean, inST,inMsg);
+          ceval(cache, inEnv, justifiedExp, inBoolean, inST,inMsg,numIter+1);
         str = ExpressionSimplify.cevalBuiltinStringFormat(inString, stringLength(inString), min_length, left_justified);
       then
         (cache, str);
@@ -2123,12 +2167,13 @@ protected function cevalBuiltinPrint
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2137,9 +2182,9 @@ algorithm
       Msg msg;
       Env.Cache cache;
       String str;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         print(str);
       then
         (cache,Values.NORETCALL(),st);
@@ -2153,12 +2198,13 @@ protected function cevalIntString
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2168,9 +2214,9 @@ algorithm
       Env.Cache cache;
       String str;
       Integer i;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         str = intString(i);
       then
         (cache,Values.STRING(str),st);
@@ -2184,12 +2230,13 @@ protected function cevalRealString
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2200,9 +2247,9 @@ algorithm
       String str;
       Real r;
       Values.Value v;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,v,st) = ceval(cache,env, exp, impl, st, msg);
+        (cache,v,st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         Values.REAL(r) = v;
         str = realString(r);
       then
@@ -2217,12 +2264,13 @@ protected function cevalStringCharInt
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2232,9 +2280,9 @@ algorithm
       Env.Cache cache;
       String str;
       Integer i;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         i = stringCharInt(str);
       then
         (cache,Values.INTEGER(i),st);
@@ -2248,12 +2296,13 @@ protected function cevalIntStringChar
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2263,9 +2312,9 @@ algorithm
       Env.Cache cache;
       String str;
       Integer i;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         str = intStringChar(i);
       then
         (cache,Values.STRING(str),st);
@@ -2279,12 +2328,13 @@ protected function cevalStringInt
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2294,9 +2344,9 @@ algorithm
       Env.Cache cache;
       String str;
       Integer i;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         i = stringInt(str);
       then
         (cache,Values.INTEGER(i),st);
@@ -2311,12 +2361,13 @@ protected function cevalStringLength
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2326,9 +2377,9 @@ algorithm
       Env.Cache cache;
       String str;
       Integer i;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         i = stringLength(str);
       then
         (cache,Values.INTEGER(i),st);
@@ -2342,12 +2393,13 @@ protected function cevalStringReal
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2358,9 +2410,9 @@ algorithm
       String str;
       Integer i;
       Real r;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         print("stringReal?");
         // TODO: FIXME: When bootstrapping is done
         // r = stringReal(str);
@@ -2376,12 +2428,13 @@ protected function cevalStringListStringChar
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2392,9 +2445,9 @@ algorithm
       String str;
       list<String> chList;
       list<Values.Value> valList;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         chList = stringListStringChar(str);
         valList = List.map(chList, generateValueString);
       then
@@ -2417,12 +2470,13 @@ protected function cevalListStringCharString
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2433,9 +2487,9 @@ algorithm
       String str;
       list<String> chList;
       list<Values.Value> valList;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl,st,msg);
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl,st,msg,numIter+1);
         // Note that the RML version of the function has a weird name, but is also not implemented yet!
         // The work-around is to check that each String has length 1 and append all the Strings together
         // WARNING: This can be very, very slow for long lists - it grows as O(n^2)
@@ -2454,12 +2508,13 @@ protected function cevalStringAppendList
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2470,9 +2525,9 @@ algorithm
       String str;
       list<String> chList;
       list<Values.Value> valList;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         chList = List.map(valList, ValuesUtil.extractValueString);
         str = stringAppendList(chList);
       then
@@ -2487,12 +2542,13 @@ protected function cevalStringDelimitList
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1,exp2;
@@ -2503,10 +2559,10 @@ algorithm
       String str;
       list<String> chList;
       list<Values.Value> valList;
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList),st) = ceval(cache,env, exp1, impl, st,msg);
-        (cache,Values.STRING(str),st) = ceval(cache,env, exp2, impl, st,msg);
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         chList = List.map(valList, ValuesUtil.extractValueString);
         str = stringDelimitList(chList,str);
       then
@@ -2521,12 +2577,13 @@ protected function cevalListLength
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2536,9 +2593,9 @@ algorithm
       Env.Cache cache;
       Integer i;
       list<Values.Value> valList;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st, msg);
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         i = listLength(valList);
       then
         (cache,Values.INTEGER(i),st);
@@ -2552,12 +2609,13 @@ protected function cevalListAppend
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1,exp2;
@@ -2566,10 +2624,10 @@ algorithm
       Msg msg;
       Env.Cache cache;
       list<Values.Value> valList,valList1,valList2;
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,msg);
-        (cache,Values.LIST(valList2),st) = ceval(cache,env, exp2, impl, st,msg);
+        (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.LIST(valList2),st) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         valList = listAppend(valList1, valList2);
       then
         (cache,Values.LIST(valList),st);
@@ -2583,12 +2641,13 @@ protected function cevalListReverse
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1;
@@ -2597,9 +2656,9 @@ algorithm
       Msg msg;
       Env.Cache cache;
       list<Values.Value> valList,valList1;
-    case (cache,env,{exp1},impl,st,msg)
+    case (cache,env,{exp1},impl,st,msg,_)
       equation
-        (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         valList = listReverse(valList1);
       then
         (cache,Values.LIST(valList),st);
@@ -2613,12 +2672,13 @@ protected function cevalListRest
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1;
@@ -2627,9 +2687,9 @@ algorithm
       Msg msg;
       Env.Cache cache;
       list<Values.Value> valList1;
-    case (cache,env,{exp1},impl,st,msg)
+    case (cache,env,{exp1},impl,st,msg,_)
       equation
-        (cache,Values.LIST(_::valList1),st) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,Values.LIST(_::valList1),st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
       then
         (cache,Values.LIST(valList1),st);
   end match;
@@ -2642,12 +2702,13 @@ protected function cevalAnyString
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1;
@@ -2657,9 +2718,9 @@ algorithm
       Env.Cache cache;
       Values.Value v;
       String s;
-    case (cache,env,{exp1},impl,st,msg)
+    case (cache,env,{exp1},impl,st,msg,_)
       equation
-        (cache,v,st) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,v,st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         s = ValuesUtil.valString(v);
       then
         (cache,Values.STRING(s),st);
@@ -2673,14 +2734,15 @@ protected function cevalNumBits
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer i;
-    case (_,_,{},_,_,_)
+    case (_,_,{},_,_,_,_)
       equation
          i = System.numBits();
       then
@@ -2695,14 +2757,15 @@ protected function cevalIntegerMax
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer i;
-    case (_,_,{},_,_,_)
+    case (_,_,{},_,_,_,_)
       equation
          i = System.intMaxLit();
       then
@@ -2717,11 +2780,12 @@ protected function cevalGetLoadedLibraries
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Cache cache;
       Env.Env env;
@@ -2729,11 +2793,11 @@ algorithm
       list<SCode.Element> classes;
       list<Absyn.Class> absynclasses;
       Values.Value v;
-    case (cache,env,{},_,SOME(Interactive.SYMBOLTABLE(ast=Absyn.PROGRAM(classes=absynclasses))),_)
+    case (cache,env,{},_,SOME(Interactive.SYMBOLTABLE(ast=Absyn.PROGRAM(classes=absynclasses))),_,_)
       equation
         v = ValuesUtil.makeArray(List.fold(absynclasses,makeLoadLibrariesEntryAbsyn,{}));
       then (cache,v,inST);
-    case (cache,env,{},_,_,_)
+    case (cache,env,{},_,_,_,_)
       equation
         fr::_ = listReverse(env);
         classes = Env.getClassesInFrame(fr);
@@ -2793,12 +2857,13 @@ protected function cevalListFirst
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp1;
@@ -2807,9 +2872,9 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Values.Value v;
-    case (cache,env,{exp1},impl,st,msg)
+    case (cache,env,{exp1},impl,st,msg,_)
       equation
-        (cache,Values.LIST(v::_),st) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,Values.LIST(v::_),st) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
       then
         (cache,ValuesUtil.boxIfUnboxedVal(v),st);
   end match;
@@ -2914,12 +2979,13 @@ protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -2928,9 +2994,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realFloor(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -2946,12 +3012,13 @@ protected function cevalBuiltinCeil "function cevalBuiltinCeil
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1,rvt,realRet;
       Integer ri,ri_1;
@@ -2961,18 +3028,18 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
         rvt = intReal(ri);
         (rvt ==. rv) = true;
       then
         (cache,Values.REAL(rvt),st);
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
         ri_1 = ri + 1;
@@ -2991,12 +3058,13 @@ protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3007,16 +3075,16 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp},impl,st, msg as MSG(info = info))
+    case (cache,env,{exp},impl,st, msg as MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         (rv <. 0.0) = true;
         Error.addSourceMessage(Error.NEGATIVE_SQRT, {}, info);
       then
         fail();
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realSqrt(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3032,12 +3100,13 @@ protected function cevalBuiltinSin "function cevalBuiltinSin
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3046,9 +3115,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realSin(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3064,12 +3133,13 @@ protected function cevalBuiltinSinh "function cevalBuiltinSinh
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3078,9 +3148,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realSinh(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3096,12 +3166,13 @@ protected function cevalBuiltinCos "function cevalBuiltinCos
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3110,9 +3181,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realCos(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3128,12 +3199,13 @@ protected function cevalBuiltinCosh "function cevalBuiltinCosh
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3142,9 +3214,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realCosh(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3160,12 +3232,13 @@ protected function cevalBuiltinLog "function cevalBuiltinLog
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3174,9 +3247,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realLn(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3190,12 +3263,13 @@ protected function cevalBuiltinLog10
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3204,9 +3278,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realLog10(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3222,12 +3296,13 @@ protected function cevalBuiltinTan "function cevalBuiltinTan
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,sv,cv,rv_1;
       list<Env.Frame> env;
@@ -3236,9 +3311,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
+    case (cache,env,{exp},impl,st,msg,_) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         sv = realSin(rv);
         cv = realCos(rv);
         rv_1 = sv /. cv;
@@ -3256,12 +3331,13 @@ protected function cevalBuiltinTanh "function cevalBuiltinTanh
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3270,9 +3346,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
+    case (cache,env,{exp},impl,st,msg,_) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
          rv_1 = realTanh(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3288,12 +3364,13 @@ protected function cevalBuiltinAsin "function cevalBuiltinAsin
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3302,9 +3379,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realAsin(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3320,12 +3397,13 @@ protected function cevalBuiltinAcos "function cevalBuiltinAcos
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3334,9 +3412,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realAcos(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3352,12 +3430,13 @@ protected function cevalBuiltinAtan "function cevalBuiltinAtan
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3366,9 +3445,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
+    case (cache,env,{exp},impl,st,msg,_) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         rv_1 = realAtan(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3382,12 +3461,13 @@ protected function cevalBuiltinAtan2
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1,rv_2;
       list<Env.Frame> env;
@@ -3396,10 +3476,10 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv_1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.REAL(rv_2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv_1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.REAL(rv_2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv = realAtan2(rv_1,rv_2);
       then
         (cache,Values.REAL(rv),st);
@@ -3415,12 +3495,13 @@ protected function cevalBuiltinDiv "function cevalBuiltinDiv
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv1,rv2,rv_1,rv_2;
       Integer ri,ri_1,ri1,ri2;
@@ -3433,69 +3514,69 @@ algorithm
       Env.Cache cache; Boolean b;
       Absyn.Info info;
 
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
       then
         (cache,Values.REAL(rv_2),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, msg);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         rv1 = intReal(ri);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv_1 = rv1/. rv2;
          b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
       then
         (cache,Values.REAL(rv_2),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
         rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
       then
         (cache,Values.REAL(rv_2),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         ri_1 = intDiv(ri1,ri2);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
+    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG());
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
         lh_str = ExpressionDump.printExpStr(exp1);
         rh_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
+    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG());
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3511,12 +3592,13 @@ protected function cevalBuiltinMod "function cevalBuiltinMod
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
       list<Env.Frame> env;
@@ -3529,31 +3611,31 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rva = rv1/. rv2;
         rvb = realFloor(rva);
         rvc = rvb*. rv2;
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, msg);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         rv1 = intReal(ri);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rva = rv1 /. rv2;
         rvb = realFloor(rva);
         rvc = rvb *. rv2;
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
         rva = rv1 /. rv2;
         rvb = realFloor(rva);
@@ -3561,10 +3643,10 @@ algorithm
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, msg);
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, msg);
+        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv1 = intReal(ri1);
         rv2 = intReal(ri2);
         rva = rv1 /. rv2;
@@ -3574,33 +3656,33 @@ algorithm
         ri_1 = realInt(rvd);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
+    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG());
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
+    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG());
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3616,12 +3698,13 @@ protected function cevalBuiltinMax "function cevalBuiltinMax
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
@@ -3630,16 +3713,16 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{arr},impl,st,msg)
+    case (cache,env,{arr},impl,st,msg,_)
       equation
-        (cache,v,_) = ceval(cache,env, arr, impl, st, msg);
+        (cache,v,_) = ceval(cache,env, arr, impl, st,msg,numIter+1);
         (v_1) = cevalBuiltinMaxArr(v);
       then
         (cache,v_1,st);
-    case (cache,env,{s1,s2},impl,st,msg)
+    case (cache,env,{s1,s2},impl,st,msg,_)
       equation
-        (cache,v1,_) = ceval(cache,env, s1, impl, st, msg);
-        (cache,v2,_) = ceval(cache,env, s2, impl, st, msg);
+        (cache,v1,_) = ceval(cache,env, s1, impl, st,msg,numIter+1);
+        (cache,v2,_) = ceval(cache,env, s2, impl, st,msg,numIter+1);
         v = cevalBuiltinMax2(v1,v2);
       then
         (cache,v,st);
@@ -3726,12 +3809,13 @@ protected function cevalBuiltinMin "function: cevalBuiltinMin
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
@@ -3740,17 +3824,17 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{arr},impl,st,msg)
+    case (cache,env,{arr},impl,st,msg,_)
       equation
-        (cache,v,_) = ceval(cache,env, arr, impl, st,msg);
+        (cache,v,_) = ceval(cache,env, arr, impl, st,msg,numIter+1);
         (v_1) = cevalBuiltinMinArr(v);
       then
         (cache,v_1,st);
-    case (cache,env,{s1,s2},impl,st,msg)
+    case (cache,env,{s1,s2},impl,st,msg,_)
       equation
-        (cache,v1,_) = ceval(cache,env, s1, impl, st,msg);
-        (cache,v2,_) = ceval(cache,env, s2, impl, st,msg);
-        v = cevalBuiltinMin2(v1, v2, msg);
+        (cache,v1,_) = ceval(cache,env, s1, impl, st,msg,numIter+1);
+        (cache,v2,_) = ceval(cache,env, s2, impl, st,msg,numIter+1);
+        v = cevalBuiltinMin2(v1, v2,msg);
       then
         (cache,v,st);
   end match;
@@ -3841,12 +3925,13 @@ protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
       String ret_val;
@@ -3857,7 +3942,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
       DAE.FunctionTree ft;
-    case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg)
+    case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg,_)
       equation
         ft = Env.getFunctionTree(cache);
         differentiated_exp = Derive.differentiateExpCont(exp1, cr,SOME(ft));
@@ -3869,7 +3954,7 @@ algorithm
         ret_val = ExpressionDump.printExpStr(differentiated_exp_1);
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,msg) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    case (_,_,_,_,st,msg,_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
       equation
         print("#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed.\n");
       then
@@ -3886,12 +3971,13 @@ protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       DAE.Exp exp1_1,exp1;
       String ret_val;
@@ -3902,13 +3988,13 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp1},impl,st,msg)
+    case (cache,env,{exp1},impl,st,msg,_)
       equation
         (exp1_1,_) = ExpressionSimplify.simplify(exp1);
         ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,MSG(info = info)) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    case (_,_,_,_,st,MSG(info = info),_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR,
           {"Simplification failed. Ceval.cevalBuiltinSimplify failed."}, info);
@@ -3926,12 +4012,13 @@ protected function cevalBuiltinRem "function cevalBuiltinRem
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv1,rv2,rvd,dr;
       Integer ri,ri1,ri2,ri_1,di;
@@ -3944,74 +4031,58 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg);
-        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
         rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         rv1 = intReal(ri);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg);
-        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
         rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg);
-        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg);
+        (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
-        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
         rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
-    case (cache,env,{exp1,exp2},impl,st,msg)
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,msg);
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,msg);
-        (cache,Values.INTEGER(di),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
+        (cache,Values.INTEGER(di),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
         ri_1 = ri1 - ri2 * di;
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
-        /*
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl,st,NO_MSG());
-        (rv2 ==. 0.0) = true;
-      then
-        fail();
-        */
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
-      equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,inMsg);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,inMsg,numIter+1);
         (ri2 == 0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
-        /*
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG());
-        (ri2 == 0) = true;
-      then
-        fail();
-        */
   end matchcontinue;
 end cevalBuiltinRem;
 
@@ -4024,12 +4095,13 @@ protected function cevalBuiltinInteger "function cevalBuiltinInteger
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv;
       Integer ri;
@@ -4039,9 +4111,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         ri = realInt(rv);
       then
         (cache,Values.INTEGER(ri),st);
@@ -4057,12 +4129,13 @@ protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv;
       Integer iv;
@@ -4075,25 +4148,25 @@ algorithm
       Env.Cache cache;
 
     // real -> bool
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st,msg,numIter+1);
         bv = Util.if_(realEq(rv, 0.0), false, true);
       then
         (cache,Values.BOOL(bv),st);
 
     // integer -> bool
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.INTEGER(iv),_) = ceval(cache, env, exp, impl, st, msg);
+        (cache,Values.INTEGER(iv),_) = ceval(cache, env, exp, impl, st,msg,numIter+1);
         bv = Util.if_(intEq(iv, 0), false, true);
       then
         (cache,Values.BOOL(bv),st);
 
     // bool -> bool
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.BOOL(bv),_) = ceval(cache, env, exp, impl, st, msg);
+        (cache,Values.BOOL(bv),_) = ceval(cache, env, exp, impl, st,msg,numIter+1);
       then
         (cache,Values.BOOL(bv),st);
   end matchcontinue;
@@ -4109,12 +4182,13 @@ protected function cevalBuiltinRooted
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -4122,9 +4196,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,_,_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,_,_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
       then
         (cache,Values.BOOL(true),st);
   end match;
@@ -4139,12 +4213,13 @@ protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerE
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Integer ri;
       list<Env.Frame> env;
@@ -4153,9 +4228,9 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.ENUM_LITERAL(index = ri),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.ENUM_LITERAL(index = ri),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
       then
         (cache,Values.INTEGER(ri),st);
   end match;
@@ -4171,12 +4246,13 @@ protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Values.Value> rv2,retExp;
       Integer dimension,correctDimension;
@@ -4189,15 +4265,15 @@ algorithm
       Values.Value res;
       Absyn.Info info;
 
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.ARRAY(rv2,{dimension}),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.ARRAY(rv2,{dimension}),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         correctDimension = dimension + 1;
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, exp, impl, st, correctDimension, 1, {}, msg);
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, exp, impl, st, correctDimension, 1, {},msg,numIter+1);
         res = Values.ARRAY(retExp,{dimension,dimension});
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG(info = info))
+    case (_,_,_,_,_,MSG(info = info),_)
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR,
           {"Could not evaluate diagonal. Ceval.cevalBuiltinDiagonal failed."}, info);
@@ -4219,11 +4295,12 @@ protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
   input Integer inInteger6 "row";
   input list<Values.Value> inValuesValueLst7;
   input Msg inMsg8;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst) :=
-  matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inInteger5,inInteger6,inValuesValueLst7,inMsg8)
+  matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inInteger5,inInteger6,inValuesValueLst7,inMsg8,numIter)
     local
       Real rv2;
       Integer correctDim,correctPlace,newRow,matrixDimension,row,iv2;
@@ -4238,24 +4315,24 @@ algorithm
       Absyn.Info info;
       String str;
 
-    case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
+    case (cache,env,s1,impl,st,matrixDimension,row,{},msg,_)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
         listWithElement = List.replaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v}, msg);
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
       then
         (cache,retExp);
 
-    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
+    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg,_)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
 
         false = intEq(matrixDimension, row);
 
@@ -4266,28 +4343,28 @@ algorithm
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});
-        (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, msg);
+        (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList,msg,numIter);
       then
         (cache,retExp);
 
-    case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
+    case (cache,env,s1,impl,st,matrixDimension,row,{},msg,_)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
+        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
         listWithElement = List.replaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v}, msg);
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
       then
         (cache,retExp);
 
-    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
+    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg,_)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
+        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
 
         false = intEq(matrixDimension, row);
 
@@ -4298,18 +4375,17 @@ algorithm
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList,
-          msg);
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, msg, numIter);
       then
         (cache,retExp);
 
-    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
+    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg,_)
       equation
         true = intEq(matrixDimension, row);
       then
         (cache,listIN);
 
-    case (_,_,_,_,_,matrixDimension,row,list_,MSG(info = info))
+    case (_,_,_,_,_,matrixDimension,row,list_,MSG(info = info),_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         str = Error.infoStr(info);
@@ -4327,12 +4403,13 @@ protected function cevalBuiltinCross "
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Values.Value> xv,yv;
       Values.Value res;
@@ -4345,14 +4422,14 @@ algorithm
       String str;
       Absyn.Info info;
 
-    case (cache,env,{xe,ye},impl,st,msg)
+    case (cache,env,{xe,ye},impl,st,msg,_)
       equation
-        (cache,Values.ARRAY(xv,{3}),_) = ceval(cache,env,xe,impl,st,msg);
-        (cache,Values.ARRAY(yv,{3}),_) = ceval(cache,env,ye,impl,st,msg);
+        (cache,Values.ARRAY(xv,{3}),_) = ceval(cache,env,xe,impl,st,msg,numIter+1);
+        (cache,Values.ARRAY(yv,{3}),_) = ceval(cache,env,ye,impl,st,msg,numIter+1);
         res = ValuesUtil.crossProduct(xv,yv);
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG(info = info))
+    case (_,_,_,_,_,MSG(info = info),_)
       equation
         str = "cross" +& ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
         Error.addSourceMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str}, info);
@@ -4369,12 +4446,13 @@ protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Values.Value> vlst,vlst2,vlst_1;
       Integer i1,i2;
@@ -4387,14 +4465,14 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp},impl,st,msg)
+    case (cache,env,{exp},impl,st,msg,_)
       equation
-        (cache,Values.ARRAY(vlst,i1::_),_) = ceval(cache,env,exp,impl,st,msg);
+        (cache,Values.ARRAY(vlst,i1::_),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         (Values.ARRAY(valueLst = vlst2, dimLst = i2::il) :: _) = vlst;
         vlst_1 = cevalBuiltinTranspose2(vlst, 1, i2::i1::il);
       then
         (cache,Values.ARRAY(vlst_1,i2::i1::il),st);
-    case (_,_,_,_,_,MSG(info = info))
+    case (_,_,_,_,_,MSG(info = info),_)
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR,
           {"Could not evaluate transpose. Celab.cevalBuildinTranspose failed."}, info);
@@ -4436,12 +4514,13 @@ protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       DAE.Type tp;
       list<Integer> sizelst;
@@ -4456,7 +4535,7 @@ algorithm
       DAE.Dimensions dims;
 
     // size(cr)
-    case (cache,env,DAE.CREF(componentRef = cr),impl,st,msg)
+    case (cache,env,DAE.CREF(componentRef = cr),impl,st,msg,_)
       equation
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
@@ -4465,7 +4544,7 @@ algorithm
         (cache,v,st);
 
     // For matrix expressions: [1,2;3,4]
-    case (cache, env, DAE.MATRIX(ty = DAE.T_ARRAY(dims = dims)), impl, st, msg)
+    case (cache, env, DAE.MATRIX(ty = DAE.T_ARRAY(dims = dims)), impl, st, msg, _)
       equation
         sizelst = List.map(dims, Expression.dimensionSize);
         v = ValuesUtil.intlistToValue(sizelst);
@@ -4473,9 +4552,9 @@ algorithm
         (cache, v, st);
 
     // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
-    case (cache,env,exp,impl,st,msg)
+    case (cache,env,exp,impl,st,msg,_)
       equation
-        (cache,Values.ARRAY(dimLst=sizelst),st) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.ARRAY(dimLst=sizelst),st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
@@ -4490,23 +4569,23 @@ protected function cevalBuiltinFill
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outValue, outST) :=
-  match (inCache, inEnv, inExpl, inImpl, inST, inMsg)
+  match (inCache, inEnv, inExpl, inImpl, inST, inMsg, numIter)
     local
       DAE.Exp fill_exp;
       list<DAE.Exp> dims;
       Values.Value fill_val;
       Env.Cache cache;
       Option<Interactive.SymbolTable> st;
-    case (cache, _, fill_exp :: dims, _, st, _)
+    case (cache, _, fill_exp :: dims, _, st, _, _)
       equation
-        (cache, fill_val, st) = ceval(cache, inEnv, fill_exp, inImpl, st, inMsg);
-        (cache, fill_val, st) = cevalBuiltinFill2(cache, inEnv, fill_val, dims,
-          inImpl, inST, inMsg);
+        (cache, fill_val, st) = ceval(cache, inEnv, fill_exp, inImpl, st, inMsg, numIter+1);
+        (cache, fill_val, st) = cevalBuiltinFill2(cache, inEnv, fill_val, dims, inImpl, inST, inMsg, numIter);
       then
         (cache, fill_val, st);
   end match;
@@ -4520,12 +4599,13 @@ protected function cevalBuiltinFill2
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outValue, outST) :=
-  match (inCache, inEnv, inFillValue, inDims, inImpl, inST, inMsg)
+  match (inCache, inEnv, inFillValue, inDims, inImpl, inST, inMsg, numIter)
     local
       DAE.Exp dim;
       list<DAE.Exp> rest_dims;
@@ -4536,13 +4616,13 @@ algorithm
       Env.Cache cache;
       Option<Interactive.SymbolTable> st;
 
-    case (cache, _, _, {}, _, st, _) then (cache, inFillValue, st);
+    case (cache, _, _, {}, _, st, _, _) then (cache, inFillValue, st);
 
-    case (cache, _, _, dim :: rest_dims, _, st, _)
+    case (cache, _, _, dim :: rest_dims, _, st, _, _)
       equation
         (cache, fill_value, st) = cevalBuiltinFill2(cache, inEnv, inFillValue,
-          rest_dims, inImpl, inST, inMsg);
-        (cache, Values.INTEGER(int_dim), st) = ceval(cache, inEnv, dim, inImpl, st, inMsg);
+          rest_dims, inImpl, inST, inMsg, numIter);
+        (cache, Values.INTEGER(int_dim), st) = ceval(cache, inEnv, dim, inImpl, st, inMsg, numIter+1);
         fill_vals = List.fill(fill_value, int_dim);
         array_dims = ValuesUtil.valueDimensions(fill_value);
         array_dims = int_dim :: array_dims;
@@ -4789,12 +4869,13 @@ public function cevalList "function: cevalList
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
       Msg msg;
@@ -4805,11 +4886,11 @@ algorithm
       list<Values.Value> vs;
       list<DAE.Exp> exps;
       Env.Cache cache;
-    case (cache,env,{},_,st,msg) then (cache,{},st);
-    case (cache,env,(exp :: exps ),impl,st,msg)
+    case (cache,env,{},_,st,msg,_) then (cache,{},st);
+    case (cache,env,(exp :: exps ),impl,st,msg,_)
       equation
-        (cache,v,st) = ceval(cache,env, exp, impl, st, msg);
-        (cache,vs,st) = cevalList(cache,env, exps, impl, st, msg);
+        (cache,v,st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        (cache,vs,st) = cevalList(cache,env, exps, impl, st,msg,numIter);
       then
         (cache,v :: vs,st);
   end match;
@@ -4823,11 +4904,12 @@ public function cevalCref "function: cevalCref
   input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inMsg)
+  matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inMsg,numIter)
     local
       DAE.Binding binding;
       Values.Value v;
@@ -4844,16 +4926,16 @@ algorithm
       Absyn.Info info;
 
     // Try to lookup the variables binding and constant evaluate it.
-    case (cache, env, c, impl, msg)
+    case (cache, env, c, impl, msg, _)
       equation
         (cache,attr,ty,binding,const_for_range,splicedExpData,classEnv,componentEnv,name) = Lookup.lookupVar(cache, env, c);
          // send the entire shebang to cevalCref2 so we don't have to do lookup var again!
-        (cache, v) = cevalCref_dispatch(cache, env, c, attr, ty, binding, const_for_range, splicedExpData, classEnv, componentEnv, name, impl, msg);
+        (cache, v) = cevalCref_dispatch(cache, env, c, attr, ty, binding, const_for_range, splicedExpData, classEnv, componentEnv, name, impl,msg,numIter);
       then
         (cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
-    case (cache,env,c,(impl as false),MSG(info = info))
+    case (cache,env,c,(impl as false),MSG(info = info),_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
@@ -4863,7 +4945,7 @@ algorithm
         fail();
 
     // failure in lookup but NO_MSG, silently fail and move along
-    /*case (cache,env,c,(impl as false),NO_MSG())
+    /*case (cache,env,c,(impl as false),NO_MSG(),_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
@@ -4886,10 +4968,11 @@ public function cevalCref_dispatch
   input String  inFQName;
   input Boolean inImpl;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache, outValue) := match (inCache, inEnv, inCref, inAttr, inType, inBinding, constForRange, inSplicedExpData, inClassEnv, inComponentEnv, inFQName, inImpl, inMsg)
+  (outCache, outValue) := match (inCache, inEnv, inCref, inAttr, inType, inBinding, constForRange, inSplicedExpData, inClassEnv, inComponentEnv, inFQName, inImpl, inMsg, numIter)
     local
       Env.Cache cache;
       Values.Value v;
@@ -4898,11 +4981,11 @@ algorithm
       SCode.Variability variability;
 
     // A variable with no binding and SOME for range constness -> a for iterator
-    case (_, _, _, _, _, DAE.UNBOUND(), SOME(_), _, _, _, _, _, _) then fail();
+    case (_, _, _, _, _, DAE.UNBOUND(), SOME(_), _, _, _, _, _, _, _) then fail();
 
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
-    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, MSG(info = info))
+    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, MSG(info = info), _)
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
@@ -4924,12 +5007,12 @@ algorithm
         (inCache, v);
 
     // A variable with a binding -> constant evaluate the binding
-    case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _)
+    case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _, _)
       equation
         // We might try to ceval variables in reduction scope... but it can't be helped since we do things in a ***** way in Inst/Static
         true = SCode.isParameterOrConst(variability) or inImpl or Env.inForLoopScope(inEnv);
         false = crefEqualValue(inCref, inBinding);
-        (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+        (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg, numIter);
         // print("Eval cref: " +& ComponentReference.printComponentRefStr(inCref) +& "\n  in scope " +& Env.printEnvPathStr(inEnv) +& "\n");
         cache = Env.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
       then
@@ -4946,10 +5029,11 @@ public function cevalCrefBinding "function: cevalCrefBinding
   input DAE.Binding inBinding;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg,numIter)
     local
       DAE.ComponentRef cr,e1;
       list<DAE.Subscript> subsc;
@@ -4978,83 +5062,83 @@ algorithm
       then
         fail();*/
 
-    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
+    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg,_) 
       equation 
         Debug.fprint(Flags.TCVT, "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl,msg,numIter+1);
       then
         (cache,res);
 
     // take the bindings form the cref type if is a record that has bindings for everything!
-    case (cache,env,DAE.CREF_IDENT(id, ty, {}),DAE.UNBOUND(),_,MSG(info))
+    case (cache,env,DAE.CREF_IDENT(id, ty, {}),DAE.UNBOUND(),_,MSG(info),_)
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = vl)) = Types.arrayElementType(ty);
         true = Types.allHaveBindings(vl);
         binding = Inst.makeRecordBinding(cache, env, tpath, ty, vl, {}, info);
-        (cache, res) = cevalCrefBinding(cache, env, inComponentRef, binding, inBoolean, inMsg);
+        (cache, res) = cevalCrefBinding(cache, env, inComponentRef, binding, inBoolean, inMsg, numIter+1);
       then
         (cache, res);
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG(_)) then fail();
+    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG(_),_) then fail();
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG(_))
+    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG(_),_)
       equation
         Debug.fprint(Flags.CEVAL, "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
 
     // REDUCTION bindings
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg,_)
       equation
         DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = rfn)),expr = elexp, iterators = {DAE.REDUCTIONITER(id=iter,exp=iterexp)}) = exp;
-        (cache,v,_) = ceval(cache, env, exp, impl,NONE(), msg);
+        (cache,v,_) = ceval(cache, env, exp, impl,NONE(),msg,numIter+1);
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl,msg,numIter+1);
       then
         (cache,res);
 
     // arbitrary expressions, C_VAR, value exists.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg,_)
       equation
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
       then
         (cache,res);
 
     // arbitrary expressions, C_PARAM, value exists.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg,_)
       equation
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, impl, msg);
+        (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
       then
         (cache,res);
 
     // arbitrary expressions. When binding has optional value.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg,_)
       equation
-        (cache,v,_) = ceval(cache, env, exp, impl, NONE(), msg);
+        (cache,v,_) = ceval(cache, env, exp, impl, NONE(),msg,numIter+1);
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, impl,msg,numIter+1);
       then
         (cache,res);
 
     // arbitrary expressions. When binding has optional value.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg,_)
       equation
         // TODO: Ugly hack to prevent infinite recursion. If we have a binding r = r that
         // can for instance come from a modifier, this can cause an infinite loop here if r has no value.
         false = isRecursiveBinding(cr,exp);
 
-        (cache,v,_) = ceval(cache, env, exp, impl, NONE(), msg);
+        (cache,v,_) = ceval(cache, env, exp, impl, NONE(),msg,numIter+1);
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl,msg,numIter+1);
       then
         (cache,res);
 
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
-    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG(_))
+    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG(_),_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         Debug.trace("#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
@@ -5064,7 +5148,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,e1,_,_,_)
+    case (cache,env,e1,_,_,_,_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         s1 = ComponentReference.printComponentRefStr(e1);
@@ -5102,10 +5186,11 @@ public function cevalSubscriptValue "function: cevalSubscriptValue
   input Values.Value inValue;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg)
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Integer n,n_1;
       Values.Value subval,res,v;
@@ -5119,48 +5204,48 @@ algorithm
       Env.Cache cache;
 
     // we have a subscript which is an index, try to constant evaluate it
-    case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg)
+    case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg,_)
       equation
-        (cache,Values.INTEGER(n),_) = ceval(cache, env, exp, impl, NONE(), msg);
+        (cache,Values.INTEGER(n),_) = ceval(cache, env, exp, impl, NONE(),msg,numIter+1);
         n_1 = n - 1;
         subval = listNth(lst, n_1);
-        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
       then
         (cache,res);
 
     // ceval gives us a enumeration literal scalar
-    case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg)
+    case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg,_)
       equation
-        (cache,Values.ENUM_LITERAL(index = n),_) = ceval(cache, env, exp, impl, NONE(), msg);
+        (cache,Values.ENUM_LITERAL(index = n),_) = ceval(cache, env, exp, impl, NONE(),msg,numIter+1);
         n_1 = n - 1;
         subval = listNth(lst, n_1); // listNth indexes from 0!
-        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
       then
         (cache,res);
 
     // slices
-    case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg)
+    case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg,_)
       equation
-        (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl,NONE(), msg);
+        (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl,NONE(),msg,numIter+1);
         slice = List.map(sliceLst, ValuesUtil.valueIntegerMinusOne);
         subvals = List.map1r(slice, listNth, lst);
-        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl, msg);
+        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl,msg,numIter);
         res = ValuesUtil.makeArray(lst);
       then
         (cache,res);
 
     // we have a wholedim, so just pass the whole array on.
-    case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(valueLst = _), impl, msg)
+    case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(valueLst = _), impl, msg,_)
       equation
-        (cache, res) = cevalSubscriptValue(cache, env, subs, subval, impl, msg);
+        (cache, res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
       then
         (cache, res);
 
     // we have no subscripts but we have a value, return it
-    case (cache,env,{},v,_,_) then (cache,v);
+    case (cache,env,{},v,_,_,_) then (cache,v);
 
     /*// failtrace
-    case (cache, env, subs, inValue, dims, _, _)
+    case (cache, env, subs, inValue, dims, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +&
@@ -5181,11 +5266,12 @@ protected function cevalSubscriptValueList "Applies subscripts to array values t
   input list<Values.Value> inValue;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValue;
 algorithm
   (outCache,outValue) :=
-  match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg)
+  match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Values.Value subval,res;
       list<Env.Frame> env;
@@ -5194,11 +5280,11 @@ algorithm
       Msg msg;
       list<DAE.Subscript> subs;
       Env.Cache cache;
-    case (cache,env,subs,{},impl,msg) then (cache,{});
-    case (cache,env,subs,subval::subvals,impl,msg)
+    case (cache,env,subs,{},impl,msg,_) then (cache,{});
+    case (cache,env,subs,subval::subvals,impl,msg,_)
       equation
-        (cache,res) = cevalSubscriptValue(cache,env, subs, subval, impl, msg);
-        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache,env, subs, subval, impl,msg,numIter+1);
+        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl,msg,numIter);
       then
         (cache,res::lst);
   end match;
@@ -5216,11 +5302,12 @@ public function cevalSubscripts "function: cevalSubscripts
   input list<Integer> inIntegerLst;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
   (outCache,outExpSubscriptLst) :=
-  match (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg)
+  match (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg,numIter)
     local
       DAE.Subscript sub_1,sub;
       list<DAE.Subscript> subs_1,subs;
@@ -5232,13 +5319,13 @@ algorithm
       Env.Cache cache;
 
     // empty case
-    case (cache,_,{},_,_,_) then (cache,{});
+    case (cache,_,{},_,_,_,_) then (cache,{});
 
     // we have subscripts
-    case (cache,env,(sub :: subs),(dim :: dims),impl,msg)
+    case (cache,env,(sub :: subs),(dim :: dims),impl,msg,_)
       equation
-        (cache,sub_1) = cevalSubscript(cache, env, sub, dim, impl, msg);
-        (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl, msg);
+        (cache,sub_1) = cevalSubscript(cache, env, sub, dim, impl,msg,numIter+1);
+        (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl,msg,numIter);
       then
         (cache,sub_1 :: subs_1);
   end match;
@@ -5253,11 +5340,12 @@ public function cevalSubscript "function: cevalSubscript
   input Integer inInteger;
   input Boolean inBoolean "impl";
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache,outSubscript) :=
-  matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg)
+  matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg,numIter)
     local
       list<Env.Frame> env;
       Values.Value v1;
@@ -5269,34 +5357,34 @@ algorithm
       Integer indx;
 
     // the entire dimension, nothing to do
-    case (cache,env,DAE.WHOLEDIM(),_,_,_) then (cache,DAE.WHOLEDIM());
+    case (cache,env,DAE.WHOLEDIM(),_,_,_,_) then (cache,DAE.WHOLEDIM());
 
     // An enumeration literal is already constant
-    case (cache, _, DAE.INDEX(exp = DAE.ENUM_LITERAL(name = _)), _, _, _)
+    case (cache, _, DAE.INDEX(exp = DAE.ENUM_LITERAL(name = _)), _, _, _, _)
       then (cache, inSubscript);
 
     // an expression index that can be constant evaluated
-    case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
+    case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg,_)
       equation
-        (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl,NONE(), msg);
+        (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
         e1_1 = ValuesUtil.valueExp(v1);
         true = (indx <= dim) and (indx > 0);
       then
         (cache,DAE.INDEX(e1_1));
 
     // indexing using enum!
-    case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
+    case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg,_)
       equation
-        (cache,v1 as Values.ENUM_LITERAL(index = indx),_) = ceval(cache,env, e1, impl,NONE(), msg);
+        (cache,v1 as Values.ENUM_LITERAL(index = indx),_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
         e1_1 = ValuesUtil.valueExp(v1);
         true = (indx <= dim) and (indx > 0);
       then
         (cache,DAE.INDEX(e1_1));
 
     // an expression slice that can be constant evaluated
-    case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg)
+    case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg,_)
       equation
-        (cache,v1,_) = ceval(cache,env, e1, impl,NONE(), msg);
+        (cache,v1,_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
         e1_1 = ValuesUtil.valueExp(v1);
         true = dimensionSliceInRange(v1,dim);
       then
@@ -5317,15 +5405,13 @@ algorithm
 
     case(e)
       equation
-        (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(), Env.emptyEnv,
-            e, true, NONE(), MSG(Absyn.dummyInfo));
+        (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(), MSG(Absyn.dummyInfo), 0);
       then
         ret;
 
     case(e)
       equation
-        (_,val,_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(),
-            MSG(Absyn.dummyInfo));
+        (_,val,_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(), MSG(Absyn.dummyInfo), 0);
         ret = ValuesUtil.printValStr(val);
       then
         ret;
@@ -5393,11 +5479,12 @@ protected function cevalReduction
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg)
+  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
     local
       list<Values.Value> vals;
       Env.Env new_env,env;
@@ -5407,25 +5494,25 @@ algorithm
       list<list<Values.Value>> valueMatrix;
       Option<Values.Value> curValue;
 
-    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, {}, _, _, st, _)
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, {}, _, _, st, _, _)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, _, _, st, _)
+    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, _, _, st, _, _)
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
-    case (cache, _, _, curValue, _, _, _, _, {}, _, _, st, _)
+    case (cache, _, _, curValue, _, _, _, _, {}, _, _, st, _, _)
       then (cache, curValue, st);
 
-    case (cache, env, _, curValue, _, _, _, _, vals :: valueMatrix, _, _, st, _)
+    case (cache, env, _, curValue, _, _, _, _, vals :: valueMatrix, _, _, st, _, _)
       equation
         // Bind the iterator
         // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
         new_env = extendFrameForIterators(env, iteratorNames, vals, iterTypes);
         // Calculate var1 of the folding function
-        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, impl, st, msg);
+        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, impl, st,msg,numIter+1);
         // Fold the rest of the reduction
-        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st, msg);
+        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st,msg,numIter);
       then (cache, curValue, st);
   end matchcontinue;
 end cevalReduction;
@@ -5437,18 +5524,19 @@ protected function cevalReductionEvalGuard "Evaluate the guard-expression (if an
   input Boolean impl;
   input Option<Interactive.SymbolTable> st;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache newCache;
   output Boolean guardFilter;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache,guardFilter,newSymbolTable) := match (cache,env,guardExp,impl,st,msg)
+  (newCache,guardFilter,newSymbolTable) := match (cache,env,guardExp,impl,st,msg,numIter)
     local
       DAE.Exp exp;
-    case (cache,_,NONE(),_,_,_) then (cache,true,st);
-    case (cache,_,SOME(exp),_,_,_)
+    case (cache,_,NONE(),_,_,_,_) then (cache,true,st);
+    case (cache,_,SOME(exp),_,_,_,_)
       equation
         // print("guardFilter eval: " +& ExpressionDump.printExpStr(exp) +& "\n");
-        (cache, Values.BOOL(guardFilter), st) = ceval(cache, env, exp, impl, st, msg);
+        (cache, Values.BOOL(guardFilter), st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
       then (cache,guardFilter,st);
   end match;
 end cevalReductionEvalGuard;
@@ -5464,11 +5552,12 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache,result,newSymbolTable) := match (inCache,inEnv,opPath,inCurValue,exp,exprType,foldExp,impl,inSt,msg)
+  (newCache,result,newSymbolTable) := match (inCache,inEnv,opPath,inCurValue,exp,exprType,foldExp,impl,inSt,msg,numIter)
     local
       Values.Value value;
       Option<Values.Value> curValue;
@@ -5476,11 +5565,11 @@ algorithm
       Env.Env env;
       Option<Interactive.SymbolTable> st;
 
-    case (cache,env,_,curValue,_,_,_,_,st,_)
+    case (cache,env,_,curValue,_,_,_,_,st,_,_)
       equation
-        (cache, value, st) = ceval(cache, env, exp, impl, st, msg);
+        (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
         // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
-        (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldExp, exprType, impl, st, msg);
+        (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldExp, exprType, impl, st,msg,numIter);
       then (cache, result, st);
   end match;
 end cevalReductionEvalAndFold;
@@ -5496,12 +5585,13 @@ protected function cevalReductionFold "Fold the reduction body"
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
   (newCache,result,newSymbolTable) :=
-  match (inCache,inEnv,opPath,inCurValue,inValue,foldExp,exprType,impl,inSt,msg)
+  match (inCache,inEnv,opPath,inCurValue,inValue,foldExp,exprType,impl,inSt,msg,numIter)
     local
       DAE.Exp exp;
       Values.Value value;
@@ -5509,28 +5599,28 @@ algorithm
       Env.Env env;
       Option<Interactive.SymbolTable> st;
 
-    case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,st,_)
+    case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,st,_,_)
       equation
         value = valueArrayCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,_,Absyn.IDENT("list"),SOME(value),_,_,_,_,st,_)
+    case (cache,_,Absyn.IDENT("list"),SOME(value),_,_,_,_,st,_,_)
       equation
         value = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,_,Absyn.IDENT("listReverse"),SOME(value),_,_,_,_,st,_)
+    case (cache,_,Absyn.IDENT("listReverse"),SOME(value),_,_,_,_,st,_,_)
       equation
         value = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,env,_,NONE(),_,_,_,_,st,_)
+    case (cache,env,_,NONE(),_,_,_,_,st,_,_)
       then (cache,SOME(inValue),st);
 
-    case (cache,env,_,SOME(value),_,SOME(exp),_,_,st,_)
+    case (cache,env,_,SOME(value),_,SOME(exp),_,_,st,_,_)
       equation
         // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& ", " +& ValuesUtil.valString(value) +& "\n");
         /* TODO: Store the actual types somewhere... */
         env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache, value, st) = ceval(cache, env, exp, impl, st, msg);
+        (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
       then (cache, SOME(value), st);
   end match;
 end cevalReductionFold;
@@ -6119,6 +6209,7 @@ protected function cevalReductionIterators
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<list<Values.Value>> vals;
   output list<String> names;
@@ -6126,7 +6217,7 @@ protected function cevalReductionIterators
   output list<DAE.Type> tys;
   output Option<Interactive.SymbolTable> outSt;
 algorithm
-  (outCache,vals,names,dims,tys,outSt) := match (inCache,inEnv,inIterators,impl,inSt,msg)
+  (outCache,vals,names,dims,tys,outSt) := match (inCache,inEnv,inIterators,impl,inSt,msg,numIter)
     local
       Values.Value val;
       list<Values.Value> iterVals;
@@ -6140,14 +6231,14 @@ algorithm
       Option<Interactive.SymbolTable> st;
       list<DAE.ReductionIterator> iterators;
 
-    case (cache,env,{},_,st,_) then (cache,{},{},{},{},st);
-    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,_,st,_)
+    case (cache,env,{},_,st,_,_) then (cache,{},{},{},{},st);
+    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,_,st,_,_)
       equation
-        (cache,val,st) = ceval(cache,env,exp,impl,st,msg);
+        (cache,val,st) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         iterVals = ValuesUtil.arrayOrListVals(val,true);
-        (cache,iterVals,st) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,st,msg);
+        (cache,iterVals,st) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,st,msg,numIter+1);
         dim = listLength(iterVals);
-        (cache,vals,names,dims,tys,st) = cevalReductionIterators(cache,env,iterators,impl,st,msg);
+        (cache,vals,names,dims,tys,st) = cevalReductionIterators(cache,env,iterators,impl,st,msg,numIter+1);
       then (cache,iterVals::vals,id::names,dim::dims,ty::tys,st);
   end match;
 end cevalReductionIterators;
@@ -6162,11 +6253,12 @@ protected function filterReductionIterator
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
+  input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outVals;
   output Option<Interactive.SymbolTable> outSt;
 algorithm
-  (outCache,outVals,outSt) := match (inCache,inEnv,id,ty,inVals,guardExp,impl,inSt,msg)
+  (outCache,outVals,outSt) := match (inCache,inEnv,id,ty,inVals,guardExp,impl,inSt,msg,numIter)
     local
       DAE.Exp exp;
       Values.Value val;
@@ -6176,15 +6268,15 @@ algorithm
       list<Values.Value> vals;
       Option<Interactive.SymbolTable> st;
 
-   case (cache,env,_,_,{},_,_,st,_) then (cache,{},st);
-    case (cache,env,_,_,val::vals,SOME(exp),_,st,_)
+   case (cache,env,_,_,{},_,_,st,_,_) then (cache,{},st);
+    case (cache,env,_,_,val::vals,SOME(exp),_,st,_,_)
       equation
         new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg);
-        (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg);
+        (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg,numIter+1);
+        (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg,numIter+1);
         vals = Util.if_(b, val::vals, vals);
       then (cache,vals,st);
-    case (cache,env,_,_,vals,NONE(),_,st,_) then (cache,vals,st);
+    case (cache,env,_,_,vals,NONE(),_,st,_,_) then (cache,vals,st);
   end match;
 end filterReductionIterator;
 
@@ -6265,7 +6357,7 @@ public function cevalSimple
   input DAE.Exp exp;
   output Values.Value val;
 algorithm
-  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),MSG(Absyn.dummyInfo));
+  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),MSG(Absyn.dummyInfo),0);
 end cevalSimple;
 
 public function cevalAstExp
@@ -6354,7 +6446,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg,_)
       equation
         (cache,daeExp,_,_) = Static.elabExp(cache, env, e, impl, st, true, Prefix.NOPRE(), info);
-        (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = ceval(cache, env, daeExp, impl, st, msg);
+        (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = ceval(cache, env, daeExp, impl, st,msg,0);
       then
         (cache,exp);
 
@@ -6741,12 +6833,13 @@ public function cevalDimension
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outValue, outST) :=
-  match(inCache, inEnv, inDimension, inImpl, inST, inMsg)
+  match(inCache, inEnv, inDimension, inImpl, inST, inMsg, numIter)
     local
       Integer dim_int;
       DAE.Exp exp;
@@ -6755,17 +6848,17 @@ algorithm
       Option<Interactive.SymbolTable> st;
 
     // Integer dimension, already constant.
-    case (_, _, DAE.DIM_INTEGER(integer = dim_int), _, _, _)
+    case (_, _, DAE.DIM_INTEGER(integer = dim_int), _, _, _, _)
       then (inCache, Values.INTEGER(dim_int), inST);
 
     // Enumeration dimension, already constant.
-    case (_, _, DAE.DIM_ENUM(size = dim_int), _, _, _)
+    case (_, _, DAE.DIM_ENUM(size = dim_int), _, _, _, _)
       then (inCache, Values.INTEGER(dim_int), inST);
 
     // Dimension given by expression, evaluate the expression.
-    case (_, _, DAE.DIM_EXP(exp = exp), _, _, _)
+    case (_, _, DAE.DIM_EXP(exp = exp), _, _, _, _)
       equation
-        (cache, res, st) = ceval(inCache, inEnv, exp, inImpl, inST, inMsg);
+        (cache, res, st) = ceval(inCache, inEnv, exp, inImpl, inST, inMsg, numIter+1);
       then
         (cache, res, st);
 

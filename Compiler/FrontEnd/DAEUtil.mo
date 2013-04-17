@@ -2021,7 +2021,7 @@ algorithm
       equation
         // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Ceval.MSG(info));
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Ceval.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
@@ -3058,7 +3058,7 @@ algorithm
         true = intEq(i,0);
         // evalute expression
         ((e1,(ht,_,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
-        (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Ceval.NO_MSG(),0);
          e1 = ValuesUtil.valueExp(value);
         // e1 = e;
         ht1 = BaseHashTable.add((cr,e1),ht);

@@ -82,8 +82,8 @@ protected import Debug;
 protected import Dump;
 protected import DynLoad;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import ExpressionDump;
 protected import Flags;
 protected import Inst;
 protected import InnerOuter;
@@ -349,7 +349,7 @@ algorithm
     local Env.Cache cache;
     case (cache,_,"<default>",_,_)
       equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),msg);
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),msg,0);
       then (cache,filename);
     else (inCache,inputFilename);
   end match;
@@ -810,11 +810,12 @@ public function cevalInteractiveFunctions
   input DAE.Exp inExp "expression to evaluate";
   input Interactive.SymbolTable inSymbolTable;
   input Ceval.Msg msg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inExp,inSymbolTable,msg)
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inExp,inSymbolTable,msg,numIter)
     local
       Env.Cache cache;
       Env.Env env;
@@ -828,18 +829,18 @@ algorithm
       Option<Interactive.SymbolTable> stOpt;
 
       // This needs to be first because otherwise it takes 0 time to get the value :)
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,_)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,_,_)
       equation
         t1 = System.time();
-        (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg);
+        (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg,numIter+1);
         t2 = System.time();
         t = t2 -. t1;
       then
         (cache,Values.REAL(t),st);
 
-    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,_)
+    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,_,_)
       equation
-        (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
+        (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg,numIter);
         valLst = List.map1(valLst,evalCodeTypeName,env);
         st = Util.getOptionOrDefault(stOpt, st);
         (cache,value,st) = cevalInteractiveFunctions2(cache,env,name,valLst,st,msg);
@@ -2555,7 +2556,7 @@ algorithm
 
     case (cache,env,"val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)},st,_)
       equation
-        (cache,Values.STRING(str),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg);
+        (cache,Values.STRING(str),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg, 0);
         filename = Util.if_(stringEq(filename,"<default>"),str,filename);
         varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
@@ -3962,20 +3963,6 @@ algorithm
     case () then "";
   end matchcontinue;
 end winCitation;
-
-protected function extractFilePrefix "function extractFilePrefix
-  author: x02lucpo
-  extracts the file prefix from DAE.Exp as string"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Exp filenameprefix;
-  input Interactive.SymbolTable st;
-  input Ceval.Msg msg;
-  output Env.Cache outCache;
-  output String outString;
-algorithm
-  (outCache,Values.STRING(outString),_) := Ceval.ceval(cache, env, filenameprefix, true, SOME(st),msg);
-end extractFilePrefix;
 
 public function checkModel "function: checkModel
  checks a model and returns number of variables and equations"
@@ -6934,11 +6921,12 @@ public function cevalCallFunction "function: cevalCallFunction
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSymTab;
   input Ceval.Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outSymTab;
 algorithm
-  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg)
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,numIter)
     local
       Values.Value newval;
       list<Env.Frame> env;
@@ -6957,27 +6945,27 @@ algorithm
       String str;
 
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg,_)
       equation
         (cache,newval) = Ceval.cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
       then
         (cache,newval,st);
 
     // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
+    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg,_)
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env,msg);
       then
         fail();
 
     // Record constructors
-    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),pubVallst,_,st,msg)
+    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),pubVallst,_,st,msg,_)
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
         (pubVarLst,proVarLst) = List.splitOnTrue(varLst,Types.isPublicVar);
         expl = List.map1(proVarLst, Types.getBindingExp, funcpath);
-        (cache,proVallst,st) = cevalList(cache, env, expl, impl, st, msg);
+        (cache,proVallst,st) = Ceval.cevalList(cache, env, expl, impl, st, msg, numIter);
         pubVarNames = List.map(pubVarLst,Expression.varName);
         proVarNames = List.map(proVarLst,Expression.varName);
         varNames = listAppend(pubVarNames, proVarNames);
@@ -6987,7 +6975,7 @@ algorithm
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
     // evaluate or generate non-partial and non-replaceable functions
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg, _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
@@ -7003,7 +6991,7 @@ algorithm
         (cache, newval, st);
 
     // partial and replaceable functions should not be evaluated!
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg, _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         false = isCompleteFunction(cache, env, funcpath);
@@ -7012,7 +7000,7 @@ algorithm
       then
         fail();
 
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg as Ceval.MSG(info))
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg as Ceval.MSG(info), _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);
@@ -7137,6 +7125,7 @@ public function ceval "
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
   input Ceval.Msg inMsg;
+  input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outST;
@@ -7148,7 +7137,7 @@ public function ceval "
   end ReductionOperator;
 algorithm
   (outCache,outValue,outST):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter)
     local
       Option<Interactive.SymbolTable> stOpt;
       Boolean impl;
@@ -7163,65 +7152,31 @@ algorithm
       Interactive.SymbolTable st;
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),impl,stOpt,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),impl,stOpt,msg,_)
       equation
         // do not handle Connection.isRoot here!
         false = stringEq("Connection.isRoot", Absyn.pathString(funcpath));
         // do not roll back errors generated by evaluating the arguments
-        (cache,vallst,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
+        (cache,vallst,stOpt) = Ceval.cevalList(cache,env, expl, impl, stOpt, msg, numIter);
 
-        (cache,newval,stOpt)= cevalCallFunction(cache, env, e, vallst, impl, stOpt, msg);
+        (cache,newval,stOpt)= cevalCallFunction(cache, env, e, vallst, impl, stOpt, msg, numIter+1);
       then
         (cache,newval,stOpt);
 
     // Try Interactive functions last
-    case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),msg)
+    case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),msg,_)
       equation
-        (cache,value,st) = cevalInteractiveFunctions(cache, env, e, st, msg);
+        (cache,value,st) = cevalInteractiveFunctions(cache, env, e, st, msg, numIter+1);
       then
         (cache,value,SOME(st));
-    case (cache,env,e,impl,stOpt,msg)
+    case (cache,env,e,impl,stOpt,msg,_)
       equation
-        (cache,value,stOpt) = Ceval.ceval(cache,env,e,impl,stOpt,msg);
+        (cache,value,stOpt) = Ceval.ceval(cache,env,e,impl,stOpt,msg,numIter+1);
       then
          (cache,value,stOpt);
   end matchcontinue;
 end ceval;
 
-public function cevalList "function: cevalList
-  This function does constant
-  evaluation on a list of expressions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  output Env.Cache outCache;
-  output list<Values.Value> outValuesValueLst;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      list<Env.Frame> env;
-      Ceval.Msg msg;
-      Values.Value v;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      list<Values.Value> vs;
-      list<DAE.Exp> exps;
-      Env.Cache cache;
-    case (cache,env,{},_,st,msg) then (cache,{},st);
-    case (cache,env,(exp :: exps ),impl,st,msg)
-      equation
-        (cache,v,st) = ceval(cache,env, exp, impl, st, msg);
-        (cache,vs,st) = cevalList(cache,env, exps, impl, st, msg);
-      then
-        (cache,v :: vs,st);
-  end match;
-end cevalList;
 
 public function cevalIfConstant
   "This function constant evaluates an expression if the expression is constant,
@@ -7234,12 +7189,13 @@ public function cevalIfConstant
   input DAE.Properties inProp;
   input Boolean impl;
   input Absyn.Info inInfo;
+  input Integer numIter;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
-  matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo)
+  matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo, numIter)
     local
         DAE.Exp e;
         Values.Value v;
@@ -7248,34 +7204,34 @@ algorithm
       DAE.Type tp;
 
     case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(dims = _))),
-        DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
+        DAE.PROP(constFlag = DAE.C_PARAM()), _, _, _)
       equation
-        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo);
+        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo, numIter);
       then
         (inCache, e, prop);
 
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _) // BoschRexroth specifics
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _, _) // BoschRexroth specifics
       equation
         false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
       then
         (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
 
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _)
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _, _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG(), numIter+1);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
 
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG(), numIter+1);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
 
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _) // BoschRexroth specifics
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _, _) // BoschRexroth specifics
       equation
         false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
         DAE.C_PARAM() = Types.propAllConst(inProp);
@@ -7283,7 +7239,7 @@ algorithm
       then
         fail();
 
-    case (_, _, _, _, _, _)
+    else
       equation
         // If we fail to evaluate, at least we should simplify the expression
         (e,_) = ExpressionSimplify.simplify1(inExp);
@@ -7299,10 +7255,11 @@ protected function cevalWholedimRetCall
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Info inInfo;
+  input Integer numIter;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo)
+  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo, numIter)
     local
       DAE.Exp e;
       Absyn.Path p;
@@ -7315,10 +7272,10 @@ algorithm
       DAE.TailCall tc;
 
      case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, isImpure=isImpure,
-           ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _)
+           ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Ceval.MSG(inInfo));
+         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Ceval.MSG(inInfo), numIter+1);
          ty = Types.typeOfValue(v);
          cevalType = Types.simplifyType(ty);
        then

@@ -1257,7 +1257,7 @@ algorithm
         //         much faster at runtime.
         //((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr_orign));
         true = Expression.isConst(e);
-        (_, v, _) = Ceval.ceval(cache, env, e, false, NONE(), Ceval.NO_MSG());
+        (_, v, _) = Ceval.ceval(cache, env, e, false, NONE(), Ceval.NO_MSG(),0);
       then
         BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, c, ct);
     else inVar;

@@ -476,7 +476,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Ceval.MSG(info));
+        (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Ceval.MSG(info), 0);
       then
         ("",st_2);
 
@@ -486,7 +486,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Ceval.MSG(info));
+        (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Ceval.MSG(info), 0);
       then
         (str,st_2);
 
@@ -495,7 +495,7 @@ algorithm
         (env,st) = buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
         (cache,sexp,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info));
+        (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info), 0);
       then
         ("",st_2);
 
@@ -521,7 +521,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info));
+        (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info),0);
         (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
         
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
@@ -541,7 +541,7 @@ algorithm
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
-        (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info));
+        (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info),0);
         newst = addVarsToSymboltable(crefs, values, env, st_2);
       then
         ("",newst);
@@ -874,7 +874,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info));
+        (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info),0);
       then
         (value,st_2);
 
@@ -897,7 +897,7 @@ protected
 algorithm
   (env,st) := buildEnvFromSymboltable(ist);
   (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
-  (_, sexp, prop) := CevalScript.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
+  (_, sexp, prop) := CevalScript.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo, 0);
   estr := ExpressionDump.printExpStr(sexp);
 end stringRepresOfExpr;
 
@@ -2324,7 +2324,7 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         _ = Flags.enableDebug(Flags.WRITE_TO_BUFFER);
         (cache,simOptions) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG());
+        (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG(),0);
       then
         ("true",st);
 
@@ -14474,7 +14474,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), info) "impl" ;
-        (cache, newexp, prop) = CevalScript.cevalIfConstant(cache, env, newexp, prop, false, info);
+        (cache, newexp, prop) = CevalScript.cevalIfConstant(cache, env, newexp, prop, false, info, 0);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = ExpressionDump.printExpStr(newexp);
         res = getConnectionAnnotationStrElArgs(rest, info, inClass, inFullProgram, inModelPath);
@@ -15239,7 +15239,7 @@ algorithm
         // print("Env: " +& Env.printEnvStr(env) +& "\n");
 
         (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
-        (cache, graphicexp2, prop) = CevalScript.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo);
+        (cache, graphicexp2, prop) = CevalScript.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo, 0);
         (graphicexp2,_) = ExpressionSimplify.simplify1(graphicexp2);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations.";
         gexpstr = ExpressionDump.printExpStr(graphicexp2);

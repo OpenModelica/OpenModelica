@@ -526,7 +526,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
-        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG());
+        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
         // check if valList contains Values.EMPTY()
         containsEmpty = ValuesUtil.containsEmpty(valList);
         generateNoConstantBindingError(containsEmpty, info);
@@ -557,7 +557,7 @@ algorithm
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
-        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG());
+        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
@@ -660,7 +660,7 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) =
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.MSG(info)) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.MSG(info), 0) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -671,7 +671,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.NO_MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.NO_MSG(), 0) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -1906,7 +1906,7 @@ algorithm
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(connectorType = SCode.POTENTIAL(), parallelism = SCode.NON_PARALLEL()),_,DAE.UNBOUND(),_,_,_,_,_)
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info)) "FIXME: Check bounds";
+        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info), 0) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, ci_state, i, v, sl, source, initial_, impl, unrollForLoops);
       then
         (cache,stmts);

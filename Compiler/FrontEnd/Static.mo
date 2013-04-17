@@ -868,7 +868,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP:HACK") "Extra rollback point so we get the regular error message only once if the hack fails";
         true = Types.isParameterOrConstant(Types.propAllConst(condProp));
-        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),Ceval.MSG(info));
+        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),Ceval.MSG(info),0);
         (cache,outExp,prop,st) = elabExp(cache,env,Util.if_(b,trueExp,falseExp),impl,st,vect,pre,info);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
         ErrorExt.rollBack("Static.elabExp:IFEXP");
@@ -2121,8 +2121,8 @@ algorithm
     // No step value.
     case (_, _, _, NONE(), _, _, _, _, _)
       equation
-        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG());
-        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG());
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG(), 0);
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG(), 0);
         dim = elabRangeSize(start_val, NONE(), stop_val);
       then
         (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
@@ -2130,9 +2130,9 @@ algorithm
     // Some step value.
     case (_, _, _, SOME(step_exp), _, _, _, _, _)
       equation
-        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG());
-        (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), Ceval.NO_MSG());
-        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG());
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG(), 0);
+        (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), Ceval.NO_MSG(), 0);
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG(), 0);
         dim = elabRangeSize(start_val, SOME(step_val), stop_val);
       then
         (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
@@ -3443,7 +3443,7 @@ algorithm
         failure(DAE.C_VAR() = c1);
         c1 = Types.constAnd(c1,Types.propAllConst(prop));
         sty = Types.getPropType(prop);
-        (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Ceval.NO_MSG());
+        (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Ceval.NO_MSG(),0);
         (cache,exp,prop) = elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre, dims, info);
       then
         (cache, exp, prop);
@@ -5329,7 +5329,7 @@ algorithm
       equation
         // Evaluate the dimension expression and elaborate the rest of the arguments.
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info),0);
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
 
         // Type check the arguments and check that all dimensions except the one
@@ -5363,7 +5363,7 @@ algorithm
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,_)
       equation
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info),0);
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         false = sameDimensionsExceptionDimX(props,dim_int);
         lst = List.map((dim_aexp :: matrices), Dump.printExpStr);
@@ -5450,7 +5450,7 @@ algorithm
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),c),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
         msg = Util.if_(Flags.getConfigBool(Flags.CHECK_MODEL), Ceval.NO_MSG(), Ceval.MSG(info));
-        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg);
+        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg,0);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
         ety = Types.simplifyType(ty);
@@ -7087,7 +7087,7 @@ algorithm
       Env.Env env;
     case (DAE.DIM_EXP(exp),(cache,env))
       equation
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG());
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG(),0);
       then (DAE.DIM_INTEGER(i),(cache,env));
     else (inDim,inTpl);
   end matchcontinue;
@@ -8674,7 +8674,7 @@ algorithm
     case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
       equation
         // Constant evaluate the bound expression.
-        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Ceval.NO_MSG());
+        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Ceval.NO_MSG(), 0);
         exp = ValuesUtil.valueExp(val);
         ty = Expression.typeof(exp);
         // Create a binding from the evaluated expression.
@@ -8751,8 +8751,7 @@ algorithm
     // Array type, evaluate the dimension.
     case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
       equation
-        (_, Values.INTEGER(n), _) =
-          Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Ceval.NO_MSG());
+        (_, Values.INTEGER(n), _) = Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Ceval.NO_MSG(), 0);
         ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
         DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)}, ts);
@@ -10552,7 +10551,7 @@ algorithm
         cr2 = ComponentReference.crefStripLastSubs(cr);
         subsc = ComponentReference.crefLastSubs(cr);
         // print(ComponentReference.printComponentRefStr(cr) +& " is a constant with variable subscript and binding: " +& DAEUtil.printBindingExpStr(binding) +& "\n");
-        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info));
+        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info),0);
         // print("Got value: " +& ValuesUtil.valString(v) +& "\n");
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
@@ -10565,7 +10564,7 @@ algorithm
       equation
         cr2 = ComponentReference.crefStripLastSubs(cr);
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info));
+        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info),0);
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
       then
@@ -10575,7 +10574,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
+        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0);
         e = ValuesUtil.valueExp(v);
         const = DAE.C_CONST(); //Types.constAnd(DAE.C_CONST(), constSubs);
       then
@@ -10585,7 +10584,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info)));
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0));
         // constant binding
         DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
         // adrpo: todo -> subscript the binding expression
@@ -10599,7 +10598,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info)));
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0));
         // constant binding
         DAE.VALBOUND(valBound = v) = binding;
         e = ValuesUtil.valueExp(v);
@@ -10629,7 +10628,7 @@ algorithm
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
         e = ValuesUtil.valueExp(v);
       then
         (cache,e,DAE.C_PARAM(),attr);
@@ -10647,7 +10646,7 @@ algorithm
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
         e = ValuesUtil.valueExp(v);
       then
         (cache,e,DAE.C_PARAM(),attr);
@@ -10672,7 +10671,7 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e = Expression.makeCrefExp(cr_1,expTy);
         e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
         e_1 = ValuesUtil.valueExp(v);
       then
         (cache,e_1,DAE.C_CONST(),attr);
@@ -11774,17 +11773,15 @@ algorithm
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
-        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
-          int_dim, inImpl, Ceval.MSG(inInfo));
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Ceval.MSG(inInfo), 0);
       then
         (cache, sub);
 
     case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
       equation
         true = Types.isParameterOrConstant(inConst);
-        (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo));
-        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
-          int_dim, inImpl, Ceval.MSG(inInfo));
+        (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo),0);
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Ceval.MSG(inInfo), 0);
       then
         (cache, sub);
 
@@ -12143,7 +12140,7 @@ algorithm
       equation
         false = valueEq(Types.getDimensionSizes(trueType),Types.getDimensionSizes(falseType));
         // We have different dimensions in the branches, so we should consider the condition structural in order to handle more models
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Ceval.NO_MSG());
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Ceval.NO_MSG(),0);
         res = Util.if_(cond, e2, e3);
         ty = Util.if_(cond, trueType, falseType);
       then (cache,res,ty);
@@ -12151,7 +12148,7 @@ algorithm
     case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
         msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg);
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg,0);
         res = Util.if_(cond, e2, e3);
         ty = Util.if_(cond, trueType, falseType);
       then
@@ -12219,7 +12216,7 @@ algorithm
         cr = ComponentReference.crefPrependIdent(prefixCr,n,{},ty2);
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.NO_MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.NO_MSG(),0);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
   end matchcontinue;
@@ -12260,7 +12257,7 @@ algorithm
       equation
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG(),0);
         ty2 = Types.simplifyType(t);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
@@ -12271,7 +12268,7 @@ algorithm
         (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
         ty2 = Types.simplifyType(t);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG(),0);
        //(cache,c_1) = canonCref2(cache, env, c, ComponentReference.makeCrefIdent(n,ty2,ss), impl);
        (cache, c_1) = canonCref(cache, componentEnv, c, impl);
       then
@@ -14395,8 +14392,7 @@ algorithm
     case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(cnst);
-        (cache, Values.INTEGER(i), _) =
-          Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, Ceval.NO_MSG());
+        (cache, Values.INTEGER(i), _) = Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, Ceval.NO_MSG(), 0);
       then
         (cache, SOME(DAE.DIM_INTEGER(i)));
 

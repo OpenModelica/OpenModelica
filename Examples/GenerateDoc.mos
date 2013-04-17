@@ -261,7 +261,7 @@ for filepath in sorted(glob.glob('*.html')):
   tag = '[Checking file %s]:\\n' % filepath
 #  sys.stdout.write(tag)  # not much point in writing the tags to stdout
   sys.stderr.write(tag)
-  pid = sub.call(['tidy', '-utf8', '-modify', '-quiet', filepath])
+  pid = sub.call(['tidy', '-utf8', '-modify', '-asxhtml', '--add-xml-decl', 'yes', '-quiet', filepath])
   if pid <> 2:
     with open(filepath,'r') as html_file:
       soup = BeautifulSoup(html_file, fromEncoding='utf-8')

@@ -474,7 +474,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, e1);
@@ -504,7 +504,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, e1);
@@ -537,7 +537,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setVarStartValue(var,e1);
@@ -593,7 +593,7 @@ algorithm
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
@@ -616,7 +616,7 @@ algorithm
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG());
+        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());

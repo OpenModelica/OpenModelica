@@ -1474,7 +1474,7 @@ protected function cevalExp
   output Values.Value outValue;
   output SymbolTable outST;
 algorithm
-  (outCache, outValue, outST) := Ceval.ceval(inCache, inEnv, inExp, true, inST, Ceval.NO_MSG());
+  (outCache, outValue, outST) := Ceval.ceval(inCache, inEnv, inExp, true, inST, Ceval.NO_MSG(), 0);
 end cevalExp;
 
 protected function cevalExpList
@@ -1487,7 +1487,7 @@ protected function cevalExpList
   output list<Values.Value> outValue;
   output SymbolTable outST;
 algorithm
-  (outCache, outValue, outST) := Ceval.cevalList(inCache, inEnv, inExpLst, true, inST, Ceval.NO_MSG());
+  (outCache, outValue, outST) := Ceval.cevalList(inCache, inEnv, inExpLst, true, inST, Ceval.NO_MSG(), 0);
 end cevalExpList;
 
 // [EENV]  Environment extension functions (add variables).
