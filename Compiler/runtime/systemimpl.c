@@ -1466,7 +1466,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
         int entlen,mightbedir;
 #ifdef DT_DIR
-        mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
+        mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
         mightbedir = 1;
 #endif
@@ -1485,6 +1485,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     closedir(dir);
   }
   /* fprintf(stderr, "numMatches: %ld\n", *numMatches); */
+  /*** NOTE: Doing the same thing again. It is very important the same (number of) entries are match as in the loop above ***/
   res = (modelicaPathEntry*) malloc(*numMatches*sizeof(modelicaPathEntry));
   mps = save_mps;
   while (RML_NILHDR != RML_GETHDR(mps)) {
@@ -1497,7 +1498,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
         int entlen,ok=0,maybeDir;
 #ifdef DT_DIR
-        maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
+        maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
         maybeDir = 1;
 #endif
