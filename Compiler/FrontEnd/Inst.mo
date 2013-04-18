@@ -11164,98 +11164,28 @@ protected function compatibleArraydim
   input DAE.Dimension inDimension2;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := matchcontinue(inDimension1, inDimension2)
+  outDimension := match(inDimension1, inDimension2)
     local
       DAE.Dimension x, y;
     case (DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()) then DAE.DIM_UNKNOWN();
-    case (x, DAE.DIM_UNKNOWN()) then x;
-    case (DAE.DIM_UNKNOWN(), y) then y;
-    case (x, DAE.DIM_EXP(exp = _)) then x;
-    case (DAE.DIM_EXP(exp = _), y) then y;
-    case (x, y)
-      equation
-        // Convert dimensions given by enumerations to integers, to keep the
-        // complexity of compareArraydim down.
-        x = enumToIntDimExpTry(x);
-        y = enumToIntDimExpTry(y);
-        x = compareArraydim(x, y);
-      then
-        x;
+    case (_, DAE.DIM_UNKNOWN()) then inDimension1;
+    case (DAE.DIM_UNKNOWN(), y) then inDimension2;
+    case (_, DAE.DIM_EXP(exp = _)) then inDimension1;
+    case (DAE.DIM_EXP(exp = _), y) then inDimension2;
     case (_, _)
+      equation
+        true = intEq(Expression.dimensionSize(inDimension1),
+                     Expression.dimensionSize(inDimension2));
+      then
+        inDimension1;
+
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.compatibleArraydim failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end compatibleArraydim;
-
-protected function compareArraydim
-  "Helper function to compatibleArraydim. Checks that two array dimensions are
-  compatible."
-  input DAE.Dimension inDimension1;
-  input DAE.Dimension inDimension2;
-  output DAE.Dimension outDimension;
-algorithm
-  outDimension := matchcontinue(inDimension1, inDimension2)
-    local
-      Integer xI, yI;
-      DAE.Dimension de;
-    case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_INTEGER(integer = yI))
-      equation
-        true = intEq(xI, yI); // equality(xI = yI);
-      then
-        inDimension1;
-    case (DAE.DIM_UNKNOWN(), de) then de;
-    case (de, DAE.DIM_UNKNOWN()) then de;
-    /*case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_SUBSCRIPT(subscript = _))
-      equation
-        de = arraydimCondition(
-          DAE.DIM_SUBSCRIPT(DAE.INDEX(DAE.ICONST(xI))),
-          inDimension2);
-      then
-        de;
-    case (DAE.DIM_SUBSCRIPT(subscript = _), DAE.DIM_INTEGER(integer = yI))
-      equation
-        de = arraydimCondition(
-          DAE.DIM_SUBSCRIPT(DAE.INDEX(DAE.ICONST(yI))),
-          inDimension1);
-      then
-        de;
-    case (DAE.DIM_SUBSCRIPT(subscript = _), DAE.DIM_SUBSCRIPT(subscript = _))
-      equation
-        de = arraydimCondition(inDimension1, inDimension2);
-      then
-        de;*/
-  end matchcontinue;
-end compareArraydim;
-
-protected function enumToIntDimExpTry
-  "Tries to convert a dimension given by an enumeration to an integer, or
-  returns the unchanged dimension if it's not possible."
-  input DAE.Dimension enumDimension;
-  output DAE.Dimension intDimension;
-algorithm
-  intDimension := matchcontinue(enumDimension)
-    local
-      Integer n;
-    case (DAE.DIM_ENUM(size = n)) then DAE.DIM_INTEGER(n);
-    case _ then enumDimension;
-  end matchcontinue;
-end enumToIntDimExpTry;
-
-protected function arraydimCondition
-"function arraydimCondition
-  This function checks that the two arraydim expressions have the same dimension.
-  FIXME: no check performed yet, just return first DAE.Dimension."
-  input DAE.Dimension inDimension1;
-  input DAE.Dimension inDimension2;
-  output DAE.Dimension outDimension;
-algorithm
-  outDimension := matchcontinue (inDimension1,inDimension2)
-    local DAE.Dimension de;
-    case (de,_) then de;
-  end matchcontinue;
-end arraydimCondition;
 
 protected function elabArraydimType
 "function: elabArraydimType
