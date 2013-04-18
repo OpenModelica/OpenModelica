@@ -6236,9 +6236,9 @@ algorithm
       equation
         (cache,val,st) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         iterVals = ValuesUtil.arrayOrListVals(val,true);
-        (cache,iterVals,st) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,st,msg,numIter+1);
+        (cache,iterVals,st) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,st,msg,numIter);
         dim = listLength(iterVals);
-        (cache,vals,names,dims,tys,st) = cevalReductionIterators(cache,env,iterators,impl,st,msg,numIter+1);
+        (cache,vals,names,dims,tys,st) = cevalReductionIterators(cache,env,iterators,impl,st,msg,numIter);
       then (cache,iterVals::vals,id::names,dim::dims,ty::tys,st);
   end match;
 end cevalReductionIterators;
@@ -6273,7 +6273,7 @@ algorithm
       equation
         new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg,numIter+1);
-        (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg,numIter+1);
+        (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg,numIter);
         vals = Util.if_(b, val::vals, vals);
       then (cache,vals,st);
     case (cache,env,_,_,vals,NONE(),_,st,_,_) then (cache,vals,st);
