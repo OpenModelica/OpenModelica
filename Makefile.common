@@ -195,7 +195,7 @@ susan: all sustst
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
-OMLIBRARY_INTERNAL_DIRS=BioChem?1.0 Modelica?1.6 ModelicaAdditions Modelica?3.1 ModelicaServices?1.0 ModelicaServices?1.0?modelica3d Modelica_LinearSystems2?2.3 SimpleFluid
+OMLIBRARY_INTERNAL_DIRS=BioChem?1.0.1 Modelica?1.6 ModelicaAdditions Modelica?3.1 ModelicaServices?1.0 ModelicaServices?1.0?modelica3d Modelica_LinearSystems2?2.3 SimpleFluid
 
 omlibrary: build/lib/omlibrary/stamp modelica3d
 	echo "Windows-1252" > "build/lib/omlibrary/Modelica 2.2.2/package.encoding"
