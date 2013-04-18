@@ -1931,6 +1931,30 @@ const char* SystemImpl__gettext(const char *msgid)
 
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+
+#ifdef __MINGW32__
+
+char *realpath(const char *path, char resolved_path[PATH_MAX])
+{
+  if (!_fullpath(resolved_path, path, PATH_MAX))
+  {
+    const char *c_tokens[0]={};
+    const char* fmt = "System.realpath failed on %s with errno: %d";
+    char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
+    sprintf(msg, fmt, path, errno);
+    c_add_message(6000, 
+      ErrorType_scripting,
+      ErrorLevel_warning,
+      msg,
+      c_tokens,
+      0);
+    resolved_path = (char*)path;
+  }
+  return resolved_path;
+}
+
+#else 
+
 /*
 realpath() Win32 implementation, supports non standard glibc extension
 This file has no copyright assigned and is placed in the Public Domain.
@@ -2063,9 +2087,27 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     errno = EINVAL;
   }
 
+  if (return_path == NULL)
+  {
+    const char *c_tokens[0]={};
+    const char* fmt = "System.realpath failed on %s with errno: %d";
+    char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
+    sprintf(msg, fmt, path, errno);
+    c_add_message(6000, 
+      ErrorType_scripting,
+      ErrorLevel_warning,
+      msg,
+      c_tokens,
+      0);
+    resolved_path = (char*)path;
+    return_path = (char*)path;
+  }
+
   return return_path;
 }
-#endif
+#endif /* mingw */
+
+#endif /* mingw and msvc */
 
 int System_getTerminalWidth()
 {
