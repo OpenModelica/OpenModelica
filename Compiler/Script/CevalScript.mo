@@ -922,6 +922,7 @@ algorithm
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps;
       list<tuple<Absyn.Path,list<String>>> uses;
+      Config.LanguageStandard oldLanguageStd;
 
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -1919,7 +1920,7 @@ algorithm
     case (cache,env,"generateSeparateCode",{},st,_)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},
+    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
@@ -1929,8 +1930,13 @@ algorithm
       equation
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
         strings = List.map(cvars, ValuesUtil.extractValueString);
+        /* If the user requests a custom version to parse as, set it up */
+        oldLanguageStd = Config.getLanguageStandard();
+        b = not stringEq(str,"");
+        Debug.bcall1(b,Config.setLanguageStandard,Debug.bcallret1(b,Config.versionStringToStd,str,Config.MODELICA_LATEST() /* Unused */));
         (p,b) = loadModel({(path,strings)},mp,p,true,b);
-        str = Print.getString();
+        Config.setLanguageStandard(oldLanguageStd);
+        _ = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
         (Env.emptyCache(),Values.BOOL(b),newst);

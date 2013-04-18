@@ -504,7 +504,7 @@ algorithm
   end matchcontinue;
 end hasLanguageStandardChanged;
 
-protected function versionStringToStd
+public function versionStringToStd
   input String inVersion;
   output LanguageStandard outStandard;
 protected

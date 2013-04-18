@@ -1695,6 +1695,7 @@ function loadModel "Loads the Modelica Standard Library."
   input TypeName className;
   input String[:] priorityVersion := {"default"};
   input Boolean notify := false "Give a notification of the libraries and versions that were loaded";
+  input String languageStandard := "" "Override the set language standard. Parse with the given setting, but do not change it permanently.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1727,7 +1728,6 @@ You are recommended to convert your files to UTF-8 without byte-order mark.
 
 <h4>Bugs</h4>
 <p>If loadModel(Modelica.XXX) is called, loadModel(Modelica) is executed instead, loading the complete library.</p>
-<p>There is a special exception that prefers Modelica 3.1 over any other MSL version since this is the preferred version for OpenModelica.</p>
 </html>"),
 preferredView="text");
 end loadModel;
