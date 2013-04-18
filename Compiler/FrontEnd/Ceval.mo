@@ -289,7 +289,7 @@ algorithm
     case (cache,env,DAE.CONS(car=e1,cdr=e2),impl,stOpt,msg,_)
       equation
         (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,msg,numIter+1);
-        (cache,Values.LIST(vallst),stOpt) = ceval(cache,env,e2,impl,stOpt,msg,numIter+1);
+        (cache,Values.LIST(vallst),stOpt) = ceval(cache,env,e2,impl,stOpt,msg,numIter);
       then
         (cache,Values.LIST(v::vallst),stOpt);
 
@@ -390,8 +390,8 @@ algorithm
     // Strings
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.STRING(lhvStr),_) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.STRING(rhvStr),_) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.STRING(lhvStr),_) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.STRING(rhvStr),_) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         str = stringAppend(lhvStr, rhvStr);
       then
         (cache,Values.STRING(str),stOpt);
@@ -399,8 +399,8 @@ algorithm
     // Numerical
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_REAL(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         sum = lhvReal +. rhvReal;
       then
         (cache,Values.REAL(sum),stOpt);
@@ -408,8 +408,8 @@ algorithm
     // Array addition
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.addElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -417,8 +417,8 @@ algorithm
     // Array subtraction
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.subElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -426,8 +426,8 @@ algorithm
     // Array multiplication
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.mulElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -435,8 +435,8 @@ algorithm
     // Array division
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.divElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -444,8 +444,8 @@ algorithm
     // Array power
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.powElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -453,8 +453,8 @@ algorithm
     // Array multipled scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.multScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -462,8 +462,8 @@ algorithm
     // Array add scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.addScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -471,8 +471,8 @@ algorithm
     // Array subtract scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.subScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -480,8 +480,8 @@ algorithm
     // Array power scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.powScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -489,8 +489,8 @@ algorithm
     // Array power scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.powArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -498,8 +498,8 @@ algorithm
     // scalar div array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.divScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -508,7 +508,7 @@ algorithm
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         reslst = ValuesUtil.divArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
@@ -516,8 +516,8 @@ algorithm
     // scalar multiplied array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = rhvals),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
-        (cache,Values.ARRAY(valueLst = lhvals),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(valueLst = rhvals),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
+        (cache,Values.ARRAY(valueLst = lhvals),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.multScalarProduct(rhvals, lhvals);
       then
         (cache,resVal,stOpt);
@@ -525,8 +525,8 @@ algorithm
     // array multipled array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = (lhvals as (elt1 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1) "{{..}..{..}}  {...}" ;
-        (cache,Values.ARRAY(valueLst = (rhvals as (elt2 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(valueLst = (lhvals as (elt1 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter) "{{..}..{..}}  {...}" ;
+        (cache,Values.ARRAY(valueLst = (rhvals as (elt2 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         true = ValuesUtil.isArray(elt1);
         false = ValuesUtil.isArray(elt2);
         resVal = ValuesUtil.multScalarProduct(lhvals, rhvals);
@@ -536,8 +536,8 @@ algorithm
     // array multiplied array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.ARRAY(valueLst = (rhvals as (elt1 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1) "{...}  {{..}..{..}}" ;
-        (cache,Values.ARRAY(valueLst = (lhvals as (elt2 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.ARRAY(valueLst = (rhvals as (elt1 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter) "{...}  {{..}..{..}}" ;
+        (cache,Values.ARRAY(valueLst = (lhvals as (elt2 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         true = ValuesUtil.isArray(elt1);
         false = ValuesUtil.isArray(elt2);
         resVal = ValuesUtil.multScalarProduct(lhvals, rhvals);
@@ -558,8 +558,8 @@ algorithm
     //POW (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
       then
         (cache,resVal,stOpt);
@@ -567,8 +567,8 @@ algorithm
     //MUL (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
       then
         (cache,resVal,stOpt);
@@ -576,8 +576,8 @@ algorithm
     //DIV (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
       then
         (cache,resVal,stOpt);
@@ -586,7 +586,7 @@ algorithm
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_), exp2 = rh),
         impl, stOpt, msg as MSG(info = info),_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         true = ValuesUtil.isZero(lhvVal);
         lhvStr = ExpressionDump.printExpStr(lh);
         rhvStr = ExpressionDump.printExpStr(rh);
@@ -597,8 +597,8 @@ algorithm
     //ADD (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
       then
         (cache,resVal,stOpt);
@@ -606,8 +606,8 @@ algorithm
     //SUB (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(ty=_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
       then
         (cache,resVal,stOpt);
@@ -634,15 +634,15 @@ algorithm
     // will be better.
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(false),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(false),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
       then
         (cache,Values.BOOL(false),stOpt);
 
     // Logical lhs AND rhs
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resBool = boolAnd(rhvBool, rhvBool);
       then
         (cache,Values.BOOL(resBool),stOpt);
@@ -650,15 +650,15 @@ algorithm
     // true OR rhs
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(true),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(true),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
       then
         (cache,Values.BOOL(true),stOpt);
 
     // lhs OR rhs
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
+        (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         resBool = boolOr(lhvBool, rhvBool);
       then
         (cache,Values.BOOL(resBool),stOpt);
@@ -668,8 +668,8 @@ algorithm
     // the previous c-code generation.
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,msg,_)
       equation
-        (cache,v as Values.BOOL(rhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
-        failure((_,_,_) = ceval(cache,env, rh, impl, stOpt, msg, numIter+1));
+        (cache,v as Values.BOOL(rhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
+        failure((_,_,_) = ceval(cache,env, rh, impl, stOpt, msg, numIter));
       then
         (cache,v,stOpt);
 
@@ -684,8 +684,8 @@ algorithm
     // relations <, >, <=, >=, <>
     case (cache,env,DAE.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,stOpt,msg,_)
       equation
-        (cache,lhs_1,stOpt) = ceval(cache,env, lhs, impl, stOpt,msg,numIter+1);
-        (cache,rhs_1,stOpt) = ceval(cache,env, rhs, impl, stOpt,msg,numIter+1);
+        (cache,lhs_1,stOpt) = ceval(cache,env, lhs, impl, stOpt,msg,numIter);
+        (cache,rhs_1,stOpt) = ceval(cache,env, rhs, impl, stOpt,msg,numIter);
         v = cevalRelation(lhs_1, relop, rhs_1);
       then
         (cache,v,stOpt);
@@ -785,7 +785,7 @@ algorithm
     case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg,_)
       equation
         (cache,Values.BOOL(true),stOpt) = ceval(cache, env, cond, impl, stOpt, msg, numIter+1) "Ifexp, true branch";
-        (cache,v,stOpt) = ceval(cache,env, e1, impl, stOpt,msg,numIter+1);
+        (cache,v,stOpt) = ceval(cache,env, e1, impl, stOpt,msg,numIter);
       then
         (cache,v,stOpt);
 
@@ -793,7 +793,7 @@ algorithm
     case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,msg,_)
       equation
         (cache,Values.BOOL(false),stOpt) = ceval(cache, env, cond, impl, stOpt,msg,numIter+1) "Ifexp, false branch" ;
-        (cache,v,stOpt) = ceval(cache,env, e2, impl, stOpt,msg,numIter+1);
+        (cache,v,stOpt) = ceval(cache,env, e2, impl, stOpt,msg,numIter);
       then
         (cache,v,stOpt);
 

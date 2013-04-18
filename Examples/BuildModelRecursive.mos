@@ -102,11 +102,12 @@ getErrorString();
 results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
 getErrorString();
 
-echo(false);
 system("rm -f " + log);
+nsucceeded := String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1));
+nsimsucceeded := String(sum(if OpenModelica.Scripting.regularFileExists(s + ".simsuccess") then 1 else 0 for s in a)) + "/" + String(size(a,1));
 str:="<h1>Recursive BuildModel Test</h1>
-<p>BuildModel Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
-<p>Simulation Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s + ".simsuccess") then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
+<p>BuildModel Results: " + nsucceeded + " succeeded</p>
+<p>Simulation Results: " + nsimsucceeded + " succeeded</p>
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+getVersion()+"</p>
 <p>Test started: "+dateAndTime+"</p>
