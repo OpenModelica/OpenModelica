@@ -1932,10 +1932,10 @@ algorithm
         strings = List.map(cvars, ValuesUtil.extractValueString);
         /* If the user requests a custom version to parse as, set it up */
         oldLanguageStd = Config.getLanguageStandard();
-        b = not stringEq(str,"");
-        Debug.bcall1(b,Config.setLanguageStandard,Debug.bcallret1(b,Config.versionStringToStd,str,Config.MODELICA_LATEST() /* Unused */));
+        b1 = not stringEq(str,"");
+        Debug.bcall1(b1,Config.setLanguageStandard,Debug.bcallret1(b1,Config.versionStringToStd,str,Config.MODELICA_LATEST() /* Unused */));
         (p,b) = loadModel({(path,strings)},mp,p,true,b);
-        Config.setLanguageStandard(oldLanguageStd);
+        Debug.bcall1(b1,Config.setLanguageStandard,oldLanguageStd);
         _ = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
