@@ -5034,6 +5034,7 @@ algorithm
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
           re,partialPrefix,vis,inst_dims,className,_)
       equation
+        false = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
 
         // if is not a basic type
@@ -5770,7 +5771,8 @@ algorithm
         // Try and delete the element with the given name from the list of all
         // elements. If this succeeds, add it to the list of elements. This
         // ensures that we don't add any dependency more than once.
-        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
+        (all_el, SOME(e as (SCode.COMPONENT(name = _), _))) =
+          List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
         ((exp, (all_el, e :: accum_el)));
 
@@ -5787,7 +5789,7 @@ algorithm
       then
         ((exp, (all_el, e :: accum_el)));*/
 
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end getElementDependenciesTraverserEnter;
 
