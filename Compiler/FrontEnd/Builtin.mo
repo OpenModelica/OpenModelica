@@ -574,26 +574,11 @@ algorithm
 end isDer;
 
 public function simpleInitialEnv "
-val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},
-              (DAE.T_ARRAY),NONE())
-val array_array2array=
-val int2array= (DAE.T_FUNCTION(\"x\",(DAE.T_ARRAY(1,_)),NONE())
-  Specifierar en vector, array of dimension one
-  zeroes, ones, fill?
-
-val real_real_int2array
-val array2real
-val array_array2int
-
-  - Initial environment
   function: simpleInitialEnv
-
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in types to it.
-
-  This only creates a minimal environment, useful for debugging purposes.
-"
+  This only creates a minimal environment, useful for debugging purposes."
   output list<Env.Frame> env;
 algorithm
   env := Env.newEnvironment(NONE());
@@ -637,6 +622,12 @@ algorithm
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);
+
+    case (cache)
+      equation
+        env = getSetInitialEnv(NONE());
+      then 
+        (cache, env);
 
     // if no cached version found create initial env.
     case (cache) equation
@@ -718,6 +709,7 @@ algorithm
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
       env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
       cache = Env.setCachedInitialEnv(cache,env);
+      _ = getSetInitialEnv(SOME(env));
     then (cache,env);
   end matchcontinue;
 end initialEnv;
@@ -805,6 +797,58 @@ algorithm
       then fail();
   end matchcontinue;
 end getInitialFunctions;
+
+protected function getSetInitialEnv
+"gets/sets the initial environment depending on grammar flags"
+  input Option<Env.Env> inEnvOpt;
+  output Env.Env initialEnv;
+algorithm
+  initialEnv := matchcontinue (inEnvOpt)
+    local
+      list<tuple<Integer,Env.Env>> assocLst;
+      Env.Env env;
+    
+    // nothing there
+    case (_)
+      equation
+        failure(_ = getGlobalRoot(Global.builtinEnvIndex));
+        setGlobalRoot(Global.builtinEnvIndex,{});
+      then 
+        fail();
+    
+    // return the correct env depending on flags
+    case (NONE())
+      equation
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+      then 
+        Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.METAMODELICA,env)::assocLst);
+      then 
+        env;
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.PARMODELICA,env)::assocLst);
+      then 
+        env;
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.MODELICA,env)::assocLst);
+      then 
+        env;    
+  
+  end matchcontinue;
+end getSetInitialEnv;
 
 end Builtin;
 

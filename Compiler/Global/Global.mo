@@ -44,6 +44,7 @@ constant Integer instHashIndex = 0;
 constant Integer typesIndex = 1;
 constant Integer crefIndex = 2;
 constant Integer builtinIndex = 3;
+constant Integer builtinEnvIndex = 4;
 constant Integer profilerTime1Index = 5;
 constant Integer profilerTime2Index = 6;
 constant Integer flagsIndex = 7;
