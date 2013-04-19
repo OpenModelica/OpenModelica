@@ -1748,7 +1748,7 @@ algorithm
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes = DAE.ATTR(visibility=SCode.PROTECTED()),ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
-        s1 ="  protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  protected "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +&s2;
       then
@@ -1757,7 +1757,7 @@ algorithm
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
-        s1 ="  constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  constant "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
       then
@@ -1765,7 +1765,7 @@ algorithm
 
     case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,ec,lstPath))
       equation
-        s1 ="  input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  input "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
       then
@@ -2984,16 +2984,30 @@ protected function unparseType "wrapper function for Types.unparseType, so recor
 algorithm
   str := matchcontinue(tp)
     local
-      String name; Absyn.Path path;
-      Types.Type bc_tp;
+      String name, dim_str;
+      Absyn.Path path;
+      Types.Type bc_tp, ty;
+      list<DAE.Dimension> dims;
 
-    case(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),source = {path})) equation
-      name = Absyn.pathStringNoQual(path);
-    then name;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path})
+      equation
+        name = Absyn.pathStringNoQual(path);
+      then
+        name;
 
-    case(DAE.T_SUBTYPE_BASIC(complexType = bc_tp)) then Types.unparseType(bc_tp);
-
-    case _ then Types.unparseType(tp);
+    case DAE.T_ARRAY(ty = ty)
+      equation
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path}) =
+          Types.arrayElementType(ty);
+        (_, dims) = Types.flattenArrayTypeOpt(tp); 
+        name = Absyn.pathStringNoQual(path);
+        dim_str = List.toString(dims, ExpressionDump.dimensionString, "", "[",
+            ", ", "]", false);
+      then
+        name +& dim_str;
+        
+    case DAE.T_SUBTYPE_BASIC(complexType = bc_tp) then Types.unparseType(bc_tp);
+    else Types.unparseType(tp);
   end matchcontinue;
 end unparseType;
 
