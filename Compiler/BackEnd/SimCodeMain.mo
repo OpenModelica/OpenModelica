@@ -451,6 +451,7 @@ algorithm
 
     case (_,"C")
       equation
+        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
         Tpl.tplNoret(CodegenFMU.translateModel, simCode);
       then ();
     case (_,"Cpp")
