@@ -8517,7 +8517,7 @@ algorithm
         Error.updateCurrentComponent(str,info);
         // print("instVar: " +& str +& " in scope " +& Env.printEnvPathStr(env) +& "\t mods: " +& Mod.printModStr(mod) +& "\n");
 
-        attr = propagateClassPrefix(attr,pre);
+        // The prefix is handled in other parts of the code. Applying it too soon gives wrong results: // attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
