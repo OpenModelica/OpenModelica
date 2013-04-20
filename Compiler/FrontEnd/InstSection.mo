@@ -556,7 +556,8 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
+        true = Types.isParameterOrConstant(cnst);
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
@@ -568,7 +569,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_VAR()) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
@@ -584,7 +585,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_VAR()) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
