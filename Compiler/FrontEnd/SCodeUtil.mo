@@ -2052,19 +2052,10 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> binding;
       Option<SCode.SubMod> opt_mod;
       Absyn.Info info;
-      Absyn.Exp e;
-
-    // do not split constant bindings!
-    case (SCode.MOD(fp, ep, submods, binding as SOME((e, _)), info), _)
-      equation
-        // no crefs means constant binding!
-        {} = Absyn.getCrefFromExp(e, true);
-      then
-        (inMod, NONE());
 
     case (SCode.MOD(fp, ep, submods, binding, info), _)
       equation
-        (redecl, submods) = List.splitOnTrue(submods, SCode.isRedeclareSubMod);
+        (redecl, submods) = List.split1OnTrue(submods, isRedeclareOrConstant, inName);
         opt_mod = makeSubMod(inName, submods, binding, fp, ep, info);
       then
         (SCode.MOD(fp, ep, redecl, binding, info), opt_mod);
@@ -2073,6 +2064,48 @@ algorithm
 
   end matchcontinue;
 end splitRedeclareMod;
+
+protected function isRedeclareOrConstant
+  input SCode.SubMod inSubMod;
+  input SCode.Ident inName;
+  output Boolean isOk;
+algorithm
+  isOk := matchcontinue(inSubMod, inName)
+    local
+      Absyn.Exp e;
+      SCode.Ident i;
+
+    // keep the redeclare as it is
+    case (_, _)
+      equation
+        true = SCode.isRedeclareSubMod(inSubMod);
+      then
+        true;
+
+    // keep the constant bindings
+    case (SCode.NAMEMOD(A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
+      equation
+        // no crefs means constant binding!
+        {} = Absyn.getCrefFromExp(e, true);
+      then
+        true;
+
+    /*/ do not keep the non constant bindings
+    case (SCode.NAMEMOD(ident=i, A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
+      equation
+        // no crefs means constant binding!
+        _::_ = Absyn.getCrefFromExp(e, true);
+        print("Ignoring class modifier: " +& inName +& "(" +& i +& " = " +& Dump.printExpStr(e) +& ")\n");
+      then
+        false;*/
+
+
+    // move the others to the class modification
+    else false;
+
+  end matchcontinue;
+end isRedeclareOrConstant;
+
 
 protected function makeSubMod
   input SCode.Ident inName;

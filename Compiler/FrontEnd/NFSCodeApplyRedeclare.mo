@@ -113,17 +113,36 @@ algorithm
       Program classes;
       IScopes iscopes;
 
-    // no redeclares
-    case (_, _, _)
-      equation
-        {} = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);
-      then
-        inProgram;
-
     // some redeclares
     case (_, _, _)
       equation
         (iscopes as _::_) = NFSCodeAnalyseRedeclare.analyse(inClassPath, inEnv);
+        classes = translate2(inClassPath, inEnv, inProgram, iscopes);
+      then
+        classes;
+    
+    // no redeclares
+    else inProgram;
+  end matchcontinue;
+end translate;
+
+protected function translate2
+"translates a class to a class without redeclarations"
+  input Absyn.Path inClassPath;
+  input Env inEnv;
+  input Program inProgram;
+  input IScopes iscopes;
+  output Program outProg;
+algorithm
+  outProg := matchcontinue(inClassPath, inEnv, inProgram, iscopes)
+    local
+      Changes changes;
+      String name;
+      Program classes;
+
+    // some redeclares
+    case (_, _, _, _)
+      equation
         changes = mkProgramChanges(iscopes, emptyChanges);
         changes = listReverse(changes);
         // print("Changes length: " +& intString(countChanges(changes)) +& "\n");
@@ -144,14 +163,13 @@ algorithm
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
         name = Absyn.pathString(inClassPath);
         Debug.traceln("NFSCodeApplyRedeclare.translate failed on " +& name);
       then
-        fail();
+        inProgram;
 
   end matchcontinue;
-end translate;
+end translate2;
 
 protected function mkProgramChanges
 "analyses the instantiation scopes IScopes and builds
