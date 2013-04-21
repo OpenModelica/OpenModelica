@@ -645,8 +645,10 @@ public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(530, TRANSLATION(), ERR
   Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));
 public constant Message MISSING_INNER_CLASS = MESSAGE(531, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));
-public constant Message RECURSION_DEPTH_WARNING = MESSAGE(526, TRANSLATION(), ERROR(),
+public constant Message RECURSION_DEPTH_WARNING = MESSAGE(532, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
+public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(533, TRANSLATION(), ERROR(),
+  Util.gettext("The maximum recursion depth was reached when instantiating a derived class. Current class %s in scope %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

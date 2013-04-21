@@ -1682,7 +1682,7 @@ algorithm
       c as SCode.CLASS(restriction = SCode.R_PACKAGE(), partialPrefix = SCode.PARTIAL()),
       vis,inst_dims,impl,_,graph,_,_)
       equation
-        (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, ci_state, c, vis, inst_dims);
+        (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, ci_state, c, vis, inst_dims, 0);
       then
         (cache,env,ih,store,DAEUtil.emptyDae, inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
@@ -2640,12 +2640,13 @@ public function partialInstClassIn
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
   input InstDims inInstDims;
+  input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
-  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims)
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,numIter)
     local
       list<Env.Frame> env;
       DAE.Mod mods;
@@ -2675,7 +2676,7 @@ algorithm
       Boolean partialInst;
 
     // see if we find a partial class inst
-    case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
+    case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims,_)
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
@@ -2696,7 +2697,7 @@ algorithm
 
     /*/ adrpo: TODO! FIXME! see if we find a full instantiation!
     // this fails for 2-3 examples, so disable it for now and check it later
-    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims,_)
       local
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Element, Boolean, InstDims, Boolean,
@@ -2725,14 +2726,14 @@ algorithm
         (inCache,env,ih,ci_state_1);*/
 
     /* call the function and then add it in the cache */
-    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims)
+    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims,_)
       equation
-
+        true = numIter < 40;
         partialInst = System.getPartialInstantiation();
         System.setPartialInstantiation(true);
 
         (cache,env,ih,ci_state) =
-           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims,partialInst);
+           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims,partialInst,numIter+1);
 
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
@@ -2749,7 +2750,15 @@ algorithm
       then
         (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims)
+    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims,_)
+      equation
+        false = numIter < 40;
+        n = Env.printEnvPathStr(env);
+        // print("partialInstClassIn recursion depth... " +& n +& "\n");
+        Error.addSourceMessage(Error.RECURSION_DEPTH_REACHED,{n},SCode.elementInfo(c));
+      then fail();
+
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.partialInstClassIn failed on class:" +&
@@ -2774,12 +2783,13 @@ protected function partialInstClassIn_dispatch
   input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   input Boolean partialInst;
+  input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
-  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst)
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst,numIter)
     local
       list<Env.Frame> env,env_1;
       DAE.Mod mods;
@@ -2796,30 +2806,30 @@ algorithm
       InstanceHierarchy ih;
       Absyn.Info info;
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Real")),_,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Real")),_,_,_,_)
       equation
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Integer")),_,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Integer")),_,_,_,_)
       equation
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "String")),_,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "String")),_,_,_,_)
       equation
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,_,_)
       equation
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims,_,_)
       equation
         // t1 = clock();
-        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, ci_state, d, r, partialPrefix, vis, inst_dims, n, info);
+        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, ci_state, d, r, partialPrefix, vis, inst_dims, n, info,numIter);
 
         System.setPartialInstantiation(partialInst);
 
@@ -2838,7 +2848,7 @@ algorithm
       then
         (cache,env_1,ih,ci_state_1);
 
-    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims,_)
+    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims,_,_)
       equation
         System.setPartialInstantiation(partialInst);
       then
@@ -4882,13 +4892,14 @@ protected function partialInstClassdef
   input InstDims inInstDims;
   input String inClassName "the class name that contains the elements we are instanting";
   input Absyn.Info info;
+  input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outState):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClassDef,inRestriction,inPartialPrefix,inVisibility,inInstDims,inClassName,info)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClassDef,inRestriction,inPartialPrefix,inVisibility,inInstDims,inClassName,info,numIter)
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,cdefelts2,classextendselts;
@@ -4921,7 +4932,7 @@ algorithm
           SCode.PARTS(elementLst = els,
             normalEquationLst = eqs, initialEquationLst = initeqs,
             normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-            re,partialPrefix,vis,inst_dims,className,_)
+            re,partialPrefix,vis,inst_dims,className,_,_)
       equation
         isPartialInst = true;
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
@@ -4970,7 +4981,7 @@ algorithm
     // Short class definition, derived from basic types!
     case (cache,env,ih,mods,pre,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,partialPrefix,vis,inst_dims,className,_)
+          re,partialPrefix,vis,inst_dims,className,_,_)
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
 
@@ -4988,14 +4999,14 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims);
+        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims, numIter);
       then
         (cache,env_2,ih,new_ci_state_1);
 
     // Short class definition, not derived from basic types!, empty array dims
     case (cache,env,ih,mods,pre,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod,comment = cmt),
-          re,partialPrefix,vis,inst_dims,className,_)
+          re,partialPrefix,vis,inst_dims,className,_,_)
       equation
         // no meta-modelica
         // false = Config.acceptMetaModelicaGrammar();
@@ -5025,14 +5036,14 @@ algorithm
         (cache, env, ih, ci_state) =
         partialInstClassdef(cache, env, ih, mods_1, pre, ci_state,
            SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE(),{}, cmt),
-           re, partialPrefix, vis, inst_dims, className, info);
+           re, partialPrefix, vis, inst_dims, className, info, numIter);
       then
         (cache, env, ih, ci_state);
 
     // Short class definition, not derived from basic types!, non-empty array dims
     case (cache,env,ih,mods,pre,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,partialPrefix,vis,inst_dims,className,_)
+          re,partialPrefix,vis,inst_dims,className,_,_)
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
 
@@ -5073,7 +5084,7 @@ algorithm
         inst_dims2 = instDimExpLst(dims, false);
         inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
 
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims_1);
+        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims_1, numIter);
       then
         (cache,env_2,ih,new_ci_state_1);
 
@@ -5082,7 +5093,7 @@ algorithm
      */
     case (cache,env,ih,mods,pre,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,partialPrefix,vis,inst_dims,className,_)
+          re,partialPrefix,vis,inst_dims,className,_,_)
       equation
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);

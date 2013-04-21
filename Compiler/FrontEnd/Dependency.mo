@@ -1394,7 +1394,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then
         env_2;
 

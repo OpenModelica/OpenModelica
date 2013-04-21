@@ -834,7 +834,7 @@ algorithm
     case(CLASS(info = i)) then i;
     case(EXTENDS(info = i)) then i;
     case(IMPORT(info = i)) then i;
-    case(DEFINEUNIT(name = _)) then fail();
+    else Absyn.dummyInfo;
 
   end match;
 end elementInfo;

@@ -573,7 +573,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, inC, SCode.PUBLIC(), {});
+          ci_state, inC, SCode.PUBLIC(), {}, 0);
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
         // ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -839,10 +839,8 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-        (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2,
-          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state,
-          c, SCode.PUBLIC(), {}); (cache,_,_) = lookupClass(cache,{f},
-          Absyn.IDENT(ident), false);
+        (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache, true);
 
@@ -905,7 +903,7 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
         (cache,env2,_,cistate1) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
@@ -1486,7 +1484,7 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
         (cache,classEnv,_,_) =
         Inst.partialInstClassIn(cache, cenv_2, InnerOuter.emptyInstHierarchy,
-          dmod, Prefix.NOPRE(), new_ci_state, c, SCode.PUBLIC(), {});
+          dmod, Prefix.NOPRE(), new_ci_state, c, SCode.PUBLIC(), {}, 0);
       then
         (cache,classEnv);
 
@@ -1715,7 +1713,7 @@ algorithm
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, c, SCode.PUBLIC(), {});
+          ci_state, c, SCode.PUBLIC(), {}, 0);
         (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true, info);
       then
         (cache,res);

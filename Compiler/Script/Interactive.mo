@@ -4787,7 +4787,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
     case (_,_) then {};
   end matchcontinue;
@@ -11153,7 +11153,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
         cref = listNth(lst, n_1);
@@ -11349,7 +11349,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
         str = stringAppendList({"{", s1, "}"});
@@ -11434,7 +11434,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-            Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
+            Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, b, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);

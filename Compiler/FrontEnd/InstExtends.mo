@@ -526,8 +526,38 @@ public function instDerivedClasses
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
 algorithm
+  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6) :=
+  instDerivedClassesWork(inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,false,0);
+end instDerivedClasses;
+
+protected function instDerivedClassesWork
+"function: instDerivedClasses
+  author: PA
+  This function takes a class definition and returns the
+  elements and equations and algorithms of the class.
+  If the class is derived, the class is looked up and the
+  derived class parts are fetched."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input SCode.Element inClass;
+  input Boolean inBoolean;
+  input Absyn.Info inInfo "File information of the extends element";
+  input Boolean overflow;
+  input Integer numIter;
+  output Env.Cache outCache;
+  output Env.Env outEnv1;
+  output InstanceHierarchy outIH;
+  output list<SCode.Element> outSCodeElementLst2;
+  output list<SCode.Equation> outSCodeEquationLst3;
+  output list<SCode.Equation> outSCodeEquationLst4;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
+algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,overflow,numIter)
     local
       list<SCode.Element> elt;
       list<Env.Frame> env,cenv;
@@ -542,7 +572,7 @@ algorithm
       InstanceHierarchy ih;
       Option<SCode.Comment> cmt;
       list<SCode.Enum> enumLst;
-      String n,name;
+      String n,name,str1,str2;
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
       Absyn.Info info;
@@ -551,32 +581,41 @@ algorithm
           SCode.PARTS(elementLst = elt,
                       normalEquationLst = eq,initialEquationLst = ieq,
                       normalAlgorithmLst = alg,initialAlgorithmLst = ialg,
-                      externalDecl = extdecl)),_,info)
+                      externalDecl = extdecl)),_,info,_,_)
       equation
         /* elt_1 = noImportElements(elt); */
         Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _)
+    case (cache,env,ih,mod,pre,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
+        // false = Absyn.pathEqual(Env.getEnvName(env),Env.getEnvName(cenv)) and SCode.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
         //(cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, info);
         // merge in the class env
         //mod = Mod.merge(mod, daeDMOD, cenv, pre);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache, cenv, ih, mod, pre, c, impl, info)
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= 40, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_,false,_)
       equation
         c = Inst.instEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache, env, ih, mod, pre, c, impl,info);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= 40, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
+
+    case (_,_,_,_,_,_,_,_,true,_)
+      equation
+        str1 = SCodeDump.printElementStr(inClass);
+        str2 = Env.printEnvPathStr(inEnv);
+        // print("instDerivedClassesWork recursion depth... " +& str1 +& " " +& str2 +& "\n");
+        Error.addSourceMessage(Error.RECURSION_DEPTH_DERIVED,{str1,str2},inInfo);
+      then fail();
 
     else
       equation
@@ -584,7 +623,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end instDerivedClasses;
+end instDerivedClassesWork;
 
 protected function noImportElements
 "function: noImportElements
