@@ -336,7 +336,7 @@ algorithm
   lowlink := arrayCreate(size,0);
   stackflag := arrayCreate(size,false);
   number := setIntArray(residual,number,size);
-  (_,_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, stackflag, size, 0, 1, {}, {});
+  (_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, stackflag, size, 1, {}, {});
   Debug.fcall(Flags.TEARING_DUMP, print, "OtherEquationsOrder:\n");
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps);
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");

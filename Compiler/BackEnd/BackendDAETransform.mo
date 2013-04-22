@@ -1061,7 +1061,7 @@ algorithm
         number = arrayCreate(n,0);
         lowlink = arrayCreate(n,0);
         stackflag = arrayCreate(n,false);
-        (_,_,comps) = strongConnectMain(mt, ass2, number, lowlink, stackflag, n, 0, 1, {}, {});
+        (_,comps) = strongConnectMain(mt, ass2, number, lowlink, stackflag, n, 1, {}, {});
       then
         comps;
     else
@@ -1095,40 +1095,38 @@ public function strongConnectMain "function: strongConnectMain
   input array<Integer> lowlink;
   input array<Boolean> stackflag;
   input Integer n;
-  input Integer i;
   input Integer w;
   input list<Integer> istack;
   input list<list<Integer>> icomps;
-  output Integer oi;
   output list<Integer> ostack;
   output list<list<Integer>> ocomps;
 algorithm
-  (oi,ostack,ocomps):=
-  matchcontinue (mt,a2,number,lowlink,stackflag,n,i,w,istack,icomps)
+  (ostack,ocomps):=
+  matchcontinue (mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
     local
-      Integer i1,num;
+      Integer num;
       list<Integer> stack;
       list<list<Integer>> comps;
 
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation
         (w > n) = true;
       then
-        (i,istack,icomps);
-    case (_,_,_,_,_,_,_,_,_,_)
+        (istack,icomps);
+    case (_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(number[w],0);
-        (i1,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,i,w,istack,icomps);
-        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink,stackflag,n,i,w + 1,stack,comps);
+        (_,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,0,w,istack,icomps);
+        (stack,comps) = strongConnectMain(mt,a2,number,lowlink,stackflag,n,w + 1,stack,comps);
       then
-        (i1,stack,comps);
+        (stack,comps);
     else
       equation
         num = number[w];
         (num == 0) = false;
-        (i1,stack,comps) = strongConnectMain(mt,a2,number,lowlink, stackflag, n, i, w + 1, istack, icomps);
+        (stack,comps) = strongConnectMain(mt,a2,number,lowlink, stackflag, n, w + 1, istack, icomps);
       then
-        (i1,stack,comps);
+        (stack,comps);
   end matchcontinue;
 end strongConnectMain;
 
@@ -1294,8 +1292,7 @@ algorithm
         nv = lowlink[v];
         (nw < nv) = true;
         true = stackflag[w];
-        minv = intMin(nw, nv);
-        _ = arrayUpdate(lowlink,v,minv);
+        _ = arrayUpdate(lowlink,v,nw);
         (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
       then
         (i1,stack,comps);
