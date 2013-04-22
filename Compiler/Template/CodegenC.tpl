@@ -5218,6 +5218,11 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
  "Helper to extFunCall."
 ::=
   match arg
+  case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
+    match expTypeShort(ty)
+    case "integer" then
+      'pack_integer_array(&<%contextCref(c,contextFunction)%>);'
+    else ""
   case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
     match ty case T_STRING(__) then
       ""
@@ -5294,19 +5299,22 @@ template extFunCallVarcopy(SimExtArg arg)
  "Helper to extFunCall."
 ::=
 match arg
+case SIMEXTARG(outputIndex=0) then ""
+case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
+  match expTypeShort(ty)
+  case "integer" then
+  'unpack_integer_array(&out.c<%oi%>);'
+  else ""
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
-  match oi case 0 then
-    ""
-  else
-    let cr = '<%extVarName(c)%>'
-    <<
-    out.c<%oi%> = (<%expTypeModelica(ty)%>)<%
-      if acceptMetaModelicaGrammar() then
-        (match ty
-          case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
-          else cr)
-      else cr %>;
-    >>
+  let cr = '<%extVarName(c)%>'
+  <<
+  out.c<%oi%> = (<%expTypeModelica(ty)%>)<%
+    if acceptMetaModelicaGrammar() then
+      (match ty
+        case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
+        else cr)
+    else cr %>;
+  >>
 end extFunCallVarcopy;
 
 template extFunCallVarcopyF77(SimExtArg arg)

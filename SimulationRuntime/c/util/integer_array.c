@@ -1626,11 +1626,13 @@ void pack_integer_array(integer_array_t *a)
   size_t i, n;
   int *int_data;
 
-  int_data = (int*)a->data;
-  n = integer_array_nr_of_elements(a);
+  if(sizeof(int) != sizeof(modelica_integer)) {
+    int_data = (int*)a->data;
+    n = integer_array_nr_of_elements(a);
 
-  for(i = 0; i < n; ++i) {
-    int_data[i] = (int)integer_get(a, i);
+    for(i = 0; i < n; ++i) {
+      int_data[i] = (int)integer_get(a, i);
+    }
   }
 }
 
@@ -1641,11 +1643,13 @@ void unpack_integer_array(integer_array_t *a)
   long i;
   int *int_data;
 
-  int_data = (int*)a->data;
-  n = integer_array_nr_of_elements(a);
+  if(sizeof(int) != sizeof(modelica_integer)) {
+    int_data = (int*)a->data;
+    n = integer_array_nr_of_elements(a);
 
-  for(i = n - 1; i >= 0; --i) {
-    integer_set(a, i, int_data[i]);
+    for(i = n - 1; i >= 0; --i) {
+      integer_set(a, i, int_data[i]);
+    }
   }
 }
 
@@ -1659,9 +1663,7 @@ void convert_alloc_integer_array_to_f77(const integer_array_t * a,
 
     /* Assume that external fortran functions use int, and pack the array if
      * needed. */
-    if(sizeof(int) != sizeof(modelica_integer)) {
-      pack_integer_array(dest);
-    }
+    pack_integer_array(dest);
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
@@ -1682,9 +1684,7 @@ void convert_alloc_integer_array_from_f77(const integer_array_t * a,
     transpose_integer_array (a,dest);
 
     /* Unpack the array if needed */
-    if(sizeof(int) != sizeof(modelica_integer)) {
-      unpack_integer_array(dest);
-    }
+    unpack_integer_array(dest);
 }
 
 void sizes_of_dimensions_base_array(const base_array_t *a, integer_array_t *dest)

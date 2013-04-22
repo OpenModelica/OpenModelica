@@ -269,23 +269,12 @@ extern void convert_alloc_integer_array_to_f77(const integer_array_t * a,
 extern void convert_alloc_integer_array_from_f77(const integer_array_t * a,
                                                  integer_array_t* dest);
 
+void pack_integer_array(integer_array_t *a);
+void unpack_integer_array(integer_array_t *a);
+
 /* Note: data_of_integer_array converts from integer_array to int*, for external functions only */
 static inline int* data_of_integer_array(const integer_array_t *a)
-{
-  int n,i;
-  int *res;
-  modelica_integer *data;
-  if(sizeof(int) == sizeof(modelica_integer)) {
-    return (int*) a->data;
-  }
-  n=integer_array_nr_of_elements(a);
-  res = (int*) alloc_elements(0,n,sizeof(int));
-  data = (modelica_integer*) a->data;
-  for(i=0; i<n; i++) {
-    res[i] = (int) data[i]; /* TODO: Check int out of range? */
-  }
-  return res;
-}
+{ return (int *) a->data; }
 
 static inline int* data_of_integer_f77_array(const integer_array_t *a)
 { return (int *) a->data; }
