@@ -195,65 +195,7 @@ susan: all sustst
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
-OMLIBRARY_INTERNAL_DIRS=BioChem?1.0.1 Modelica?1.6 ModelicaAdditions Modelica?3.1 ModelicaServices?1.0 ModelicaServices?1.0?modelica3d Modelica_LinearSystems2?2.3 SimpleFluid
-
-omlibrary: build/lib/omlibrary/stamp modelica3d
-	echo "Windows-1252" > "build/lib/omlibrary/Modelica 2.2.2/package.encoding"
-build/lib/omlibrary/stamp: libraries/README
-	rm -rf build/lib/omlibrary
-	install -m755 -d "build/lib/omlibrary/Modelica 3.2.1" "build/lib/omlibrary/ModelicaServices 3.2.1" "build/lib/omlibrary/ModelicaReference 3.2.1" "build/lib/omlibrary/ModelicaTest 1.1"
-	@# services3d target includes the services target
-	$(MAKE) -f $(defaultMakefileTarget) omlibrary-internal omlibrary-32 omlibrary-services3d omlibrary-reference omlibrary-test omlibrary-222
-	touch $@
-omlibrary-internal:
-	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
-	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type f -not -path "*svn*" -exec install -p -m644 {} ../build/lib/omlibrary/{} \;)
-	cp -rp libraries//OpenSourceTables/Modelica/NewTables build/lib/omlibrary/
-
-omlibrary-222:
-	(cd "libraries/Modelica 2.2.2" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../build/lib/omlibrary/Modelica 2.2.2/{}" \;)
-	(cd "libraries/Modelica 2.2.2" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../build/lib/omlibrary/Modelica 2.2.2/{}" \;)
-	patch -d build/lib/omlibrary -p3 < "libraries/Modelica 2.2.2.patch"
-	find "build/lib/omlibrary/Modelica 2.2.2" -name "*.orig" -exec rm -f "{}" ";"
-
-omlibrary-32:
-	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
-	install -p -m644 "libraries/Modelica 3.2.1/Complex.mo" "build/lib/omlibrary/Complex 3.2.1.mo"
-	install -p -m644 "libraries/Modelica 3.2.1/ObsoleteModelica3.mo" "build/lib/omlibrary/ObsoleteModelica3 3.2.1.mo"
-	patch -d build/lib/omlibrary -p3 < "libraries/Modelica 3.2.1.patch"
-	find "build/lib/omlibrary/Modelica 3.2.1" -name "*.orig" -exec rm -f "{}" ";"
-omlibrary-services:
-	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
-	patch -d build/lib/omlibrary -p3 < "libraries/ModelicaServices 3.2.1.patch"
-	find "build/lib/omlibrary/ModelicaServices 3.2.1" -name "*.orig" -exec rm -f "{}" ";"
-omlibrary-reference:
-	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
-omlibrary-test:
-	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaTest 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaTest 3.2.1/{}" \;)
-omlibrary-services3d: omlibrary-services
-	install -m755 -d "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/"
-	install -m755 -d "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/modbus"
-	install -m755 -d "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/modcount"
-	install -m755 -d "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/Modelica3D"
-	install -p -m644 "3rdParty/modelica3d/lib/modbus/src/modelica/modbus/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/modbus/package.mo"
-	install -p -m644 "3rdParty/modelica3d/lib/mod3d/src/modelica/Modelica3D 3.2.1/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/Modelica3D/package.mo"
-	install -p -m644 "3rdParty/modelica3d/lib/modcount/src/modelica/modcount/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/modcount/package.mo"
-	install -p -m644 "build/lib/omlibrary/ModelicaServices 3.2.1/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo"
-	patch "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo" -p3 < "libraries/ModelicaServices 3.2.1 modelica3d.patch"
-	find "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d" -name "*.orig" -exec rm -f "{}" ";"
-
-# Run this command to update the omlibrary patch. Add more libraries as needed
-omlibrary-msl321-diff:
-	diff -u -x .svn -r "libraries/Modelica 3.2.1/Modelica" "build/lib/omlibrary/Modelica 3.2.1" > "libraries/Modelica 3.2.1.patch" || echo "*** Modelica 3.2.1 has patch"
-omlibrary-services321-diff:
-	diff -u -x .svn -r "libraries/Modelica 3.2.1/ModelicaServices/" "build/lib/omlibrary/ModelicaServices 3.2.1" > "libraries/ModelicaServices 3.2.1.patch" || echo "*** ModelicaServices 3.2.1 has patch"
-	diff -u -x .svn -r "build/lib/omlibrary/ModelicaServices 3.2.1/package.mo" "build/lib/omlibrary/ModelicaServices 3.2.1 modelica3d/package.mo" > "libraries/ModelicaServices 3.2.1 modelica3d.patch" || echo "*** ModelicaServices 3.2.1 modelica3d has patch"
-omlibrary-msl222-diff:
-	diff -u -x .svn -r "libraries/Modelica 2.2.2/" "build/lib/omlibrary/Modelica 2.2.2" > "libraries/Modelica 2.2.2.patch" || echo "*** Modelica 2.2.2 has patch"
+include Makefile.libraries
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
