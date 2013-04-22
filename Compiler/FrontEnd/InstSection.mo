@@ -3147,6 +3147,9 @@ algorithm
         f1 = ConnectUtil.componentFace(env,ih,c1_2);
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
 
+        ty1 = sortConnectorType(ty1);
+        ty2 = sortConnectorType(ty2);
+
         checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
         // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
@@ -3182,6 +3185,48 @@ algorithm
         fail();
   end matchcontinue;
 end instConnect;
+
+protected function sortConnectorType
+  input DAE.Type inType;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType)
+    local
+      DAE.Type ty;
+      DAE.Dimensions dims;
+      DAE.TypeSource source;
+      ClassInf.State ci_state;
+      list<DAE.Var> vars;
+      DAE.EqualityConstraint ec;
+
+    case DAE.T_ARRAY(ty, dims, source)
+      equation
+        ty = sortConnectorType(ty);
+      then
+        DAE.T_ARRAY(ty, dims, source);
+
+    case DAE.T_COMPLEX(ci_state, vars, ec, source)
+      equation
+        vars = List.sort(vars, connectorCompGt);
+      then
+        DAE.T_COMPLEX(ci_state, vars, ec, source);
+
+    else inType;
+
+  end match;
+end sortConnectorType;
+
+protected function connectorCompGt
+  input DAE.Var inVar1;
+  input DAE.Var inVar2;
+  output Boolean outGt;
+protected
+  DAE.Ident id1, id2;
+algorithm
+  DAE.TYPES_VAR(name = id1) := inVar1;
+  DAE.TYPES_VAR(name = id2) := inVar2;
+  outGt := (1 == stringCompare(id1, id2));
+end connectorCompGt;
 
 protected function checkConstantVariability "
 Author BZ, 2009-09
