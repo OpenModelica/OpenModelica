@@ -1267,7 +1267,7 @@ algorithm
   (outI,outStack,outComps):=
   matchcontinue (eqns,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
     local
-      Integer i1,lv,lw,minv,w,nw,nv,lowlinkv;
+      Integer i1,lv,lw,minv,w,nw,nv;
       list<Integer> stack,ws;
       list<list<Integer>> comps_1,comps_2,comps;
 
@@ -1294,8 +1294,7 @@ algorithm
         nv = lowlink[v];
         (nw < nv) = true;
         true = stackflag[w];
-        lowlinkv = lowlink[v];
-        minv = intMin(nw, lowlinkv);
+        minv = intMin(nw, nv);
         _ = arrayUpdate(lowlink,v,minv);
         (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
       then
