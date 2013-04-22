@@ -6463,12 +6463,14 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as true),st,pre,_,_)
       equation
         false = hasBuiltInHandler(fn);
+        ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
         Debug.fprintln(Flags.SEI, "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
         Debug.fprint(Flags.SEI, "elab_call 3 succeeded: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln(Flags.SEI, fnstr);
+        ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
 
@@ -6505,8 +6507,14 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = StaticScript.elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        ErrorExt.rollBack("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
+    case(_,_,_,_,_,_,_,_,_,_)
+        equation
+          true=ErrorExt.isTopCheckpoint("elabCall_InteractiveFunction");
+          ErrorExt.delCheckpoint("elabCall_InteractiveFunction");    
+        then fail();    
   end matchcontinue;
 end elabCall;
 
