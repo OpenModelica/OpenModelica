@@ -1,37 +1,34 @@
 // Note: Run with +g=MetaModelica
 
+library:=$TypeName(Modelica);
+libraryVersion:="default";
+
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
-MSLVersion:="3.2";
-runModelicaTest:=false;
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="180";  // 3 minutes to initialize and run the simulation
-loadModel(Modelica,{MSLVersion});
+loadModel(library,{libraryVersion});
 getErrorString();
+libraryVersionTmp:=getVersion(library);
+libraryVersion := if libraryVersionTmp == "" then libraryVersion else libraryVersionTmp;
+libraryString:=typeNameString(library);
 
 system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
-if runModelicaTest then
-  loadModel(ModelicaTest,{"3.2.1"});
-  loadModelicaTest:="\nloadModel(ModelicaTest,{\"3.2.1\"});\n";
-else
-  loadModelicaTest:="";
-end if;
+loadModelCommand:="\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
 
-system("rm -f Modelica");
-system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 
-a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
 
 print("Number of classes to build: " + String(size(a,1)));
-system("rm -f Modelica* " + log);
+system("rm -f "+libraryString+"* " + log);
 
 /*** This is the stuff executed for each model ***/
 
@@ -39,7 +36,7 @@ min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
-loadModel(Modelica,{\""+MSLVersion+"\"});"+loadModelicaTest+"
+"+loadModelCommand+"
 setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+");
 greenColor := \"#00FF00\";
@@ -109,9 +106,9 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel Results: " + nsucceeded + " succeeded</p>
 <p>Simulation Results: " + nsimsucceeded + " succeeded</p>
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
-<p>OpenModelica Version: "+getVersion()+"</p>
+<p>OpenModelica Version: "+OpenModelica.Scripting.getVersion()+"</p>
 <p>Test started: "+dateAndTime+"</p>
-<p>Tested Library: Modelica "+getVersion(Modelica)+"</p>
+<p>Tested Library: "+libraryString+" "+libraryVersion+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
