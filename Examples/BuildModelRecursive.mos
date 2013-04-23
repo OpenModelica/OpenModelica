@@ -11,7 +11,7 @@ ulimitExe:="180";  // 3 minutes to initialize and run the simulation
 loadModel(library,{libraryVersion});
 getErrorString();
 libraryVersionTmp:=getVersion(library);
-libraryVersion := if libraryVersionTmp == "" then libraryVersion else libraryVersionTmp;
+libraryVersionTmp := if libraryVersionTmp == "" then libraryVersion else libraryVersionTmp;
 libraryString:=typeNameString(library);
 
 system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
@@ -108,7 +108,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+OpenModelica.Scripting.getVersion()+"</p>
 <p>Test started: "+dateAndTime+"</p>
-<p>Tested Library: "+libraryString+" "+libraryVersion+"</p>
+<p>Tested Library: "+libraryString+" "+libraryVersionTmp+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>

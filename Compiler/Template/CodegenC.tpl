@@ -1565,8 +1565,12 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
 
   void function_initMemoryState()
   {
-    push_memory_states(<% if Flags.isSet(Flags.OPENMP) then (match noProc() case 0 then "omp_get_max_threads()" else noProc()) else 1 %>);
-    <% if Flags.isSet(Flags.OPENMP) then "get_thread_index = omp_get_thread_num;" %>
+  #ifdef _OPENMP
+    push_memory_states(<% match noProc() case 0 then "omp_get_max_threads()" else noProc() %>);
+    get_thread_index = omp_get_thread_num;
+  #else
+    push_memory_states(1);
+  #endif
   }
 
   int functionODE(DATA *data)
