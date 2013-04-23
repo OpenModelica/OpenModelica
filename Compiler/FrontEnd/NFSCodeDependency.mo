@@ -1245,7 +1245,14 @@ algorithm
       SCode.Annotation ann;
       list<Absyn.Exp> args;
 
-    // An external declaration might have an annotation that we need to analyse.
+    // An external declaration might have arguments that we need to analyse.
+    case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = NONE())), _, _)
+      equation
+        List.map2_0(args, analyseExp, inEnv, inInfo);
+      then
+        ();
+
+    // An external declaration might have arguments and an annotation that we need to analyse.
     case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
       equation
         List.map2_0(args, analyseExp, inEnv, inInfo);
