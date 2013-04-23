@@ -110,8 +110,9 @@ void clear_current_state(void)
 void* alloc_elements(int n, int sz)
 {
   _index_t start,nelem;
+  int ix = 0;
   assert(n>=0);
-  int ix = get_thread_index();
+  ix = get_thread_index();
   start = current_states[ix].current_state.offset;
   nelem = (((n * sz)+(sizeof(int)-1))/sizeof(int));
   assert(nelem <= NR_ELEMENTS);
