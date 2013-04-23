@@ -43,6 +43,7 @@
 #define NR_INDEX_ELEMENTS   1000000
 #define NR_CHAR_ELEMENTS    10000
 
+extern int (*get_thread_index)(void); /* Implemented by generated code; different for each thread implementation */
 extern state get_memory_state(void);
 extern void restore_memory_state(state restore_state);
 extern void clear_memory_state(void);
@@ -53,14 +54,14 @@ extern void print_current_state(void);
 extern void print_state(state s);
 
 /* Allocation functions */
-extern void* alloc_elements(int ix, int n, int sz);
-extern m_real* real_alloc(int ix, int n);
-extern m_integer* integer_alloc(int ix, int n);
-extern m_string* string_alloc(int ix, int n);
-extern m_boolean* boolean_alloc(int ix, int n);
-extern _index_t* size_alloc(int ix, int n);
-extern _index_t** index_alloc(int ix, int n);
-extern char* char_alloc(int ix, int n);
+extern void* alloc_elements(int n, int sz);
+extern m_real* real_alloc(int n);
+extern m_integer* integer_alloc(int n);
+extern m_string* string_alloc(int n);
+extern m_boolean* boolean_alloc(int n);
+extern _index_t* size_alloc(int n);
+extern _index_t** index_alloc(int n);
+extern char* char_alloc(int n);
 
 extern void* push_memory_states(int maxThreads);
 extern void pop_memory_states(void* new_states);

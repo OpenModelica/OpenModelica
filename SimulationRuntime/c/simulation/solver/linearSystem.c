@@ -120,8 +120,6 @@ int solve_linear_system(DATA *data, int sysNumber)
   int success;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
-  data->simulationInfo.currentLinearSystemIndex = sysNumber;
-
   /* for now just use lapack solver as before */
   switch(data->simulationInfo.lsMethod)
   {

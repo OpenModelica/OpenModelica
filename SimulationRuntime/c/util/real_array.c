@@ -97,12 +97,12 @@ void real_array_create(real_array_t *dest, modelica_real *data, int ndims, ...)
 
 void simple_alloc_1d_real_array(real_array_t* dest, int n)
 {
-    simple_alloc_1d_base_array(dest, n, real_alloc(0,n));
+    simple_alloc_1d_base_array(dest, n, real_alloc(n));
 }
 
 void simple_alloc_2d_real_array(real_array_t* dest, int r, int c)
 {
-    simple_alloc_2d_base_array(dest, r, c, real_alloc(0,r * c));
+    simple_alloc_2d_base_array(dest, r, c, real_alloc(r * c));
 }
 
 void alloc_real_array(real_array_t *dest, int ndims, ...)
@@ -112,12 +112,12 @@ void alloc_real_array(real_array_t *dest, int ndims, ...)
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = real_alloc(0,elements);
+    dest->data = real_alloc(elements);
 }
 
 void alloc_real_array_data(real_array_t *a)
 {
-    a->data = real_alloc(0,base_array_nr_of_elements(a));
+    a->data = real_alloc(base_array_nr_of_elements(a));
 }
 
 void copy_real_array_data(const real_array_t *source, real_array_t *dest)
@@ -328,9 +328,9 @@ void indexed_assign_real_array(const real_array_t * source,
     assert(j == source->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,dest->ndims);
-    /* idx_vec2 = size_alloc(0,source->ndims); */
-    idx_size = size_alloc(0,dest_spec->ndims);
+    idx_vec1 = size_alloc(dest->ndims);
+    /* idx_vec2 = size_alloc(source->ndims); */
+    idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -414,9 +414,9 @@ void index_real_array(const real_array_t * source,
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,source->ndims);  /*indices in the source array*/
-    /* idx_vec2 = size_alloc(0,dest->ndims); / * indices in the destination array* / */
-    idx_size = size_alloc(0,source_spec->ndims);
+    idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
+    /* idx_vec2 = size_alloc(dest->ndims); / * indices in the destination array* / */
+    idx_size = size_alloc(source_spec->ndims);
 
     for(i = 0; i < source->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -496,7 +496,7 @@ void index_alloc_real_array(const real_array_t * source,
      * /
     dest->ndims = source->ndims + ndimsdiff;
     assert(dest->ndims > 0); / * dest->ndims <= 0 was happenning ... * /
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0,j = 0; i < dest->ndims; ++i) {
       / * !!! a little bug is here !!!
@@ -522,7 +522,7 @@ void index_alloc_real_array(const real_array_t * source,
          }
     }
     dest->ndims = j;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
         if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
@@ -549,7 +549,7 @@ void simple_index_alloc_real_array1(const real_array_t * source, int i1,
     assert(base_array_ok(source));
 
     dest->ndims = source->ndims - 1;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
     assert(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
@@ -820,9 +820,9 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
         n_sub *= elts[0]->dim_size[i];
     }
     /* allocate dest structure */
-    dest->data = real_alloc(0, n_super * new_k_dim_size * n_sub);
+    dest->data = real_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -1231,7 +1231,7 @@ void promote_real_array(const real_array_t * a, int n,real_array_t* dest)
 {
     int i;
 
-    dest->dim_size = size_alloc(0,n+a->ndims);
+    dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
@@ -1256,10 +1256,10 @@ void promote_scalar_real_array(modelica_real s,int n,real_array_t* dest)
     /* Assert that dest is of correct dimension */
 
     /* Alloc size */
-    dest->dim_size = size_alloc(0,n);
+    dest->dim_size = size_alloc(n);
 
     /* Alloc data */
-    dest->data = real_alloc(0,1);
+    dest->data = real_alloc(1);
 
     dest->ndims = n;
     real_set(dest, 0, s);
@@ -1673,7 +1673,7 @@ void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, .
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = real_alloc(0,elements);
+    dest->data = real_alloc(elements);
 
     for(i = 0; i < elements; ++i) {
         real_set(dest, i, value);

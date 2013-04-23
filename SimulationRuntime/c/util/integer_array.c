@@ -96,12 +96,12 @@ void integer_array_create(integer_array_t *dest, modelica_integer *data,
 
 void simple_alloc_1d_integer_array(integer_array_t* dest, int n)
 {
-    simple_alloc_1d_base_array(dest, n, integer_alloc(0,n));
+    simple_alloc_1d_base_array(dest, n, integer_alloc(n));
 }
 
 void simple_alloc_2d_integer_array(integer_array_t* dest, int r, int c)
 {
-    simple_alloc_2d_base_array(dest, r, c, integer_alloc(0,r * c));
+    simple_alloc_2d_base_array(dest, r, c, integer_alloc(r * c));
 }
 
 void alloc_integer_array(integer_array_t* dest,int ndims,...)
@@ -111,12 +111,12 @@ void alloc_integer_array(integer_array_t* dest,int ndims,...)
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = integer_alloc(0,elements);
+    dest->data = integer_alloc(elements);
 }
 
 void alloc_integer_array_data(integer_array_t* a)
 {
-    a->data = integer_alloc(0,base_array_nr_of_elements(a));
+    a->data = integer_alloc(base_array_nr_of_elements(a));
 }
 
 void copy_integer_array_data(const integer_array_t * source, integer_array_t* dest)
@@ -351,9 +351,9 @@ void indexed_assign_integer_array(const integer_array_t * source,
     assert(j == source->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,dest->ndims);
-    idx_vec2 = size_alloc(0,source->ndims);
-    idx_size = size_alloc(0,dest_spec->ndims);
+    idx_vec1 = size_alloc(dest->ndims);
+    idx_vec2 = size_alloc(source->ndims);
+    idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -419,9 +419,9 @@ void index_integer_array(const integer_array_t * source,
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,source->ndims); /*indices in the source array*/
-    idx_vec2 = size_alloc(0,dest->ndims); /* indices in the destination array*/
-    idx_size = size_alloc(0,source_spec->ndims);
+    idx_vec1 = size_alloc(source->ndims); /*indices in the source array*/
+    idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
+    idx_size = size_alloc(source_spec->ndims);
 
     for(i = 0; i < source->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -487,7 +487,7 @@ void index_alloc_integer_array(const integer_array_t * source,
     }
 
     dest->ndims = source->ndims + ndimsdiff;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0,j = 0; i < dest->ndims; ++i) {
         while(source_spec->index_type[i+j] == 'S') { /* Skip scalars */
@@ -513,7 +513,7 @@ void simple_index_alloc_integer_array1(const integer_array_t * source, int i1,
     assert(base_array_ok(source));
 
     dest->ndims = source->ndims - 1;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -787,9 +787,9 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
         n_sub *= elts[0]->dim_size[i];
     }
     /* allocate dest structure */
-    dest->data = integer_alloc(0, n_super * new_k_dim_size * n_sub);
+    dest->data = integer_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -1196,7 +1196,7 @@ void promote_integer_array(const integer_array_t * a, int n,integer_array_t* des
 {
     int i;
 
-    dest->dim_size = size_alloc(0,n+a->ndims);
+    dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
@@ -1219,10 +1219,10 @@ void promote_scalar_integer_array(modelica_integer s,int n,integer_array_t* dest
     /* Assert that dest is of correct dimension */
 
     /* Alloc size */
-    dest->dim_size = size_alloc(0,n);
+    dest->dim_size = size_alloc(n);
 
     /* Alloc data */
-    dest->data = integer_alloc(0,1);
+    dest->data = integer_alloc(1);
 
     dest->ndims = n;
     integer_set(dest, 0, s);
@@ -1383,7 +1383,7 @@ void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = integer_alloc(0,elements);
+    dest->data = integer_alloc(elements);
 
     for(i = 0; i < elements; ++i) {
         integer_set(dest, i, value);

@@ -39,6 +39,12 @@
 
 static one_state *current_states = NULL;
 
+int get_thread_index_default(void)
+{
+  return 0;
+}
+int (*get_thread_index)(void) = get_thread_index_default;
+
 void* push_memory_states(int maxThreads)
 {
   int i;
@@ -72,7 +78,7 @@ state get_memory_state(void)
   {
     push_memory_states(1);
   }
-  return current_states[0].current_state;
+  return current_states[get_thread_index()].current_state;
 }
 
 void print_current_state(void)
@@ -92,23 +98,20 @@ void print_state(state s)
 
 void restore_memory_state(state restore_state)
 {
-  if(current_states == NULL)
-  {
-    push_memory_states(1);
-  }
-  current_states[0].current_state = restore_state;
+  current_states[get_thread_index()].current_state = restore_state;
 }
 
 void clear_current_state(void)
 {
-  current_states[0].current_state.buffer = 0;
-  current_states[0].current_state.offset = 0;
+  current_states[get_thread_index()].current_state.buffer = 0;
+  current_states[get_thread_index()].current_state.offset = 0;
 }
 
-void* alloc_elements(int ix, int n, int sz)
+void* alloc_elements(int n, int sz)
 {
   _index_t start,nelem;
   assert(n>=0);
+  int ix = get_thread_index();
   start = current_states[ix].current_state.offset;
   nelem = (((n * sz)+(sizeof(int)-1))/sizeof(int));
   assert(nelem <= NR_ELEMENTS);
@@ -130,40 +133,40 @@ void* alloc_elements(int ix, int n, int sz)
 }
 
 /* allocates n reals in the real_buffer */
-m_real* real_alloc(int ix, int n)
+m_real* real_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(m_real));
+  return alloc_elements(n,sizeof(m_real));
 }
 
 /* allocates n integers in the integer_buffer */
-m_integer* integer_alloc(int ix, int n)
+m_integer* integer_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(m_integer));
+  return alloc_elements(n,sizeof(m_integer));
 }
 
 /* allocates n strings in the string_buffer */
-m_string* string_alloc(int ix, int n)
+m_string* string_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(m_string));
+  return alloc_elements(n,sizeof(m_string));
 }
 
 /* allocates n booleans in the boolean_buffer */
-m_boolean* boolean_alloc(int ix, int n)
+m_boolean* boolean_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(m_boolean));
+  return alloc_elements(n,sizeof(m_boolean));
 }
 
-_index_t* size_alloc(int ix, int n)
+_index_t* size_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(_index_t));
+  return alloc_elements(n,sizeof(_index_t));
 }
 
-_index_t** index_alloc(int ix, int n)
+_index_t** index_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(_index_t*));
+  return alloc_elements(n,sizeof(_index_t*));
 }
 
-char* char_alloc(int ix, int n)
+char* char_alloc(int n)
 {
-  return alloc_elements(ix,n,sizeof(char));
+  return alloc_elements(n,sizeof(char));
 }

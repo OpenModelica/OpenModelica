@@ -26,12 +26,12 @@ static logical c_false = FALSE_;
 {
     /* Initialized data */
 
-    static doublereal one = 1.;
-    static doublereal p1 = .1;
-    static doublereal p5 = .5;
-    static doublereal p001 = .001;
-    static doublereal p0001 = 1e-4;
-    static doublereal zero = 0.;
+    const doublereal one = 1.;
+    const doublereal p1 = .1;
+    const doublereal p5 = .5;
+    const doublereal p001 = .001;
+    const doublereal p0001 = 1e-4;
+    const doublereal zero = 0.;
 
     /* System generated locals */
     integer fjac_dim1, fjac_offset, i__1, i__2;

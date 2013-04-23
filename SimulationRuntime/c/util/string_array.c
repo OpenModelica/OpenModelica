@@ -70,12 +70,12 @@ void string_array_create(string_array_t *dest, modelica_string_t *data,
 
 void simple_alloc_1d_string_array(string_array_t* dest, int n)
 {
-    simple_alloc_1d_base_array(dest, n, string_alloc(0,n));
+    simple_alloc_1d_base_array(dest, n, string_alloc(n));
 }
 
 void simple_alloc_2d_string_array(string_array_t* dest, int r, int c)
 {
-    simple_alloc_2d_base_array(dest, r, c, string_alloc(0,r * c));
+    simple_alloc_2d_base_array(dest, r, c, string_alloc(r * c));
 }
 
 void alloc_string_array(string_array_t *dest, int ndims, ...)
@@ -85,12 +85,12 @@ void alloc_string_array(string_array_t *dest, int ndims, ...)
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = string_alloc(0,elements);
+    dest->data = string_alloc(elements);
 }
 
 void alloc_string_array_data(string_array_t* a)
 {
-    a->data = string_alloc(0,base_array_nr_of_elements(a));
+    a->data = string_alloc(base_array_nr_of_elements(a));
 }
 
 void copy_string_array_data(const string_array_t *source, string_array_t *dest)
@@ -268,9 +268,9 @@ void indexed_assign_string_array(const string_array_t * source,
     assert(j == source->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,dest->ndims);
-    idx_vec2 = size_alloc(0,source->ndims);
-    idx_size = size_alloc(0,dest_spec->ndims);
+    idx_vec1 = size_alloc(dest->ndims);
+    idx_vec2 = size_alloc(source->ndims);
+    idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -335,9 +335,9 @@ void index_string_array(const string_array_t * source,
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = size_alloc(0,source->ndims);  /*indices in the source array*/
-    idx_vec2 = size_alloc(0,dest->ndims); /* indices in the destination array*/
-    idx_size = size_alloc(0,source_spec->ndims);
+    idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
+    idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
+    idx_size = size_alloc(source_spec->ndims);
 
     for(i = 0; i < source->ndims; ++i) {
         idx_vec1[i] = 0;
@@ -403,7 +403,7 @@ void index_alloc_string_array(const string_array_t * source,
     }
 
     dest->ndims = source->ndims + ndimsdiff;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0,j = 0; i < dest->ndims; ++i) {
         while(source_spec->index_type[i+j] == 'S') { /* Skip scalars */
@@ -428,7 +428,7 @@ void simple_index_alloc_string_array1(const string_array_t * source, int i1,
     assert(base_array_ok(source));
 
     dest->ndims = source->ndims - 1;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -703,9 +703,9 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
         n_sub *= elts[0]->dim_size[i];
     }
     /* allocate dest structure */
-    dest->data = string_alloc(0, n_super * new_k_dim_size * n_sub);
+    dest->data = string_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
-    dest->dim_size = size_alloc(0,dest->ndims);
+    dest->dim_size = size_alloc(dest->ndims);
     for(j = 0; j < dest->ndims; j++) {
         dest->dim_size[j] = elts[0]->dim_size[j];
     }
@@ -750,7 +750,7 @@ void promote_string_array(const string_array_t * a, int n,string_array_t* dest)
 {
     int i;
 
-    dest->dim_size = size_alloc(0,n+a->ndims);
+    dest->dim_size = size_alloc(n+a->ndims);
     dest->data = a->data;
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
@@ -776,10 +776,10 @@ void promote_scalar_string_array(modelica_string_t s,int n,
     /* Assert that dest is of correct dimension */
 
     /* Alloc size */
-    dest->dim_size = size_alloc(0,n);
+    dest->dim_size = size_alloc(n);
 
     /* Alloc data */
-    dest->data = string_alloc(0,1);
+    dest->data = string_alloc(1);
 
     dest->ndims = n;
     string_set(dest, 0, s);
@@ -946,7 +946,7 @@ void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int 
   va_start(ap, ndims);
   elements = alloc_base_array(dest, ndims, ap);
   va_end(ap);
-  dest->data = string_alloc(0,elements);
+  dest->data = string_alloc(elements);
 
   for(i = 0; i < elements; ++i) {
       string_set(dest, i, value);

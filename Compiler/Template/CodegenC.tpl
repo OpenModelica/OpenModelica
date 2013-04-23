@@ -1508,9 +1508,12 @@ template functionXXX_system(list<SimEqSystem> derivativEquations, String name, I
 ::=
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
   <<
-  static void function<%name%>_system<%n%>(DATA *data,int omc_thread_number)
+  static void function<%name%>_system<%n%>(DATA *data)
   {
+    state mem_state;
+    mem_state = get_memory_state();
     <%odeEqs%>
+    restore_memory_state(mem_state);
   }
   >>
 end functionXXX_system;
@@ -1520,25 +1523,24 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
   let funcs = eqs |> eq hasindex i1 fromindex 0 => functionXXX_system(eq,name,i1) ; separator="\n"
   let nFuncs = listLength(eqs)
   let funcNames = eqs |> e hasindex i1 fromindex 0 => 'function<%name%>_system<%i1%>' ; separator=",\n"
-  let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
-  let &varDecls += 'int id, th_id;<%\n%>'
+  let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+  let &varDecls += 'int id;<%\n%>'
   let &loop +=
   /* Text for the loop body that calls the equations */
   match listLength(eqs)
   case 0 then ""
-  case 1 then 'function<%name%>_systems[0](data,omp_get_thread_num());'
+  case 1 then 'function<%name%>_systems[0](data);'
   else
   <<
   <%head%>
   for(id=0; id<<%nFuncs%>; id++) {
-    th_id = omp_get_thread_num();
-    function<%name%>_systems[id](data,th_id);
+    function<%name%>_systems[id](data);
   }
   >>
   /* Text before the function head */
   <<
   <%funcs%>
-  static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, int) = {
+  static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
     <%funcNames%>
   };
   >>
@@ -1564,6 +1566,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   void function_initMemoryState()
   {
     push_memory_states(<% if Flags.isSet(Flags.OPENMP) then (match noProc() case 0 then "omp_get_max_threads()" else noProc()) else 1 %>);
+    <% if Flags.isSet(Flags.OPENMP) then "get_thread_index = omp_get_thread_num;" %>
   }
 
   int functionODE(DATA *data)
@@ -1626,13 +1629,9 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations)
   /* for continuous time variables */
   int functionAlgebraics(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
     data->simulationInfo.discreteCall = 0;
-    mem_state = get_memory_state();
     <%loop%>
-    restore_memory_state(mem_state);
-
     return 0;
   }
   >>
@@ -3117,10 +3116,9 @@ template commonHeader(String filePrefix)
   <<
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
   <% if acceptMetaModelicaGrammar() then "#include \"meta_modelica.h\"" %>
-  #ifdef _OPENMP_
+  #ifdef _OPENMP
   #include <omp.h>
   #else
-  #define omp_get_thread_num() 0
   #define omp_get_max_threads() 1
   #endif
   #include "modelica.h"
