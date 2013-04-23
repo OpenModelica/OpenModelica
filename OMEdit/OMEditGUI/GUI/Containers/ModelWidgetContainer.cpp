@@ -1615,11 +1615,11 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   // main frame
   mpMainFrame = new QFrame;
   mpMainFrame->setContentsMargins(0, 0, 0, 0);
-  mpMainFrame->setStyleSheet(tr("QFrame{color:gray;}"));
+  mpMainFrame->setStyleSheet("QFrame{color:gray;}");
   // top frame
   mpTopFrame = new QFrame;
   mpTopFrame->setMaximumHeight(95);
-  mpTopFrame->setStyleSheet(tr("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}"));
+  mpTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // top frame pixmap
   mpPixmapLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
@@ -1641,7 +1641,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   // RecentFiles Frame
   mpRecentFilesFrame = new QFrame;
   mpRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
-  mpRecentFilesFrame->setStyleSheet(tr("QFrame{background-color: white;}"));
+  mpRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
   // recent items list
   mpRecentFilesLabel = new Label(tr("Recent Files"));
   mpRecentFilesLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
@@ -1657,7 +1657,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpRecentItemsList->setCurrentRow(0, QItemSelectionModel::Select);
   connect(mpRecentItemsList, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
   mpClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
-  mpClearRecentFilesListButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+  mpClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(mpClearRecentFilesListButton, SIGNAL(clicked()), mpMainWindow, SLOT(clearRecentFilesList()));
   // RecentFiles Frame layout
   QVBoxLayout *recentFilesFrameVBLayout = new QVBoxLayout;
@@ -1672,7 +1672,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
-  mpLatestNewsFrame->setStyleSheet(tr("QFrame{background-color: white;}"));
+  mpLatestNewsFrame->setStyleSheet("QFrame{background-color: white;}");
   // latest news
   mpLatestNewsLabel = new Label(tr("Latest News"));
   mpLatestNewsLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
@@ -1687,7 +1687,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpLatestNewsListWidget->setIconSize(Helper::iconSize);
   mpLatestNewsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
   mpReloadLatestNewsButton = new QPushButton(tr("Reload"));
-  mpReloadLatestNewsButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+  mpReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(mpReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
   mpVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
   mpVisitWebsiteLabel->setTextFormat(Qt::RichText);
@@ -1718,13 +1718,13 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   // bottom frame
   mpBottomFrame = new QFrame;
   mpBottomFrame->setMaximumHeight(50);
-  mpBottomFrame->setStyleSheet(tr("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}"));
+  mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // bottom frame create and open buttons buttons
   mpCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
-  mpCreateModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+  mpCreateModelButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(mpCreateModelButton, SIGNAL(clicked()), mpMainWindow, SLOT(createNewModelicaClass()));
   mpOpenModelButton = new QPushButton(Helper::openModelicaFile);
-  mpOpenModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+  mpOpenModelButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(mpOpenModelButton, SIGNAL(clicked()), mpMainWindow, SLOT(showOpenModelicaFileDialog()));
   // bottom frame layout
   QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
