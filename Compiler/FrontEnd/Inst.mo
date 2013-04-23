@@ -7204,7 +7204,8 @@ algorithm
 
         // If the element is protected, and an external modification
         // is applied, it is an error.
-        checkProt(vis, mm, vn, info);
+        // this does not work as we don't know from where the modification came (component modif or extends modif)
+        // checkProt(vis, mm, vn, info);
 
         //Instantiate the component
         // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
