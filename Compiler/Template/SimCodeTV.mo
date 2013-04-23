@@ -2447,10 +2447,6 @@ package ExpressionDump
     input DAE.Exp e;
     output String s;
   end printExpStr;
-  function printCrefsFromExpStr
-    input DAE.Exp e;
-    output String s;
-  end printCrefsFromExpStr;
 end ExpressionDump;
 
 package Config

@@ -213,35 +213,6 @@ template simulationFile(SimCode simCode, String guid)
     #ifdef __cplusplus
     }
     #endif
-    
-    /*! Moved from Simulation runtime to support openmp properly.
-        This way threads can be launched if neccesary 
-        (i.e. if the generated code linked with openmp).
-        Otherwise normal execution takes place. SimulationruntimeC.lib 
-        doesn't need to be linked with -fopenmp.*/
-    int performSimulation_optional_thread(DATA* data, SOLVER_INFO* solverInfo)
-    {
-
-      SIMULATION_INFO *simInfo = &(data->simulationInfo);
-      solverInfo->currentTime = simInfo->startTime;
-
-      int retValue = 0;
-
-    #ifdef USE_DEBUG_OUTPUT
-      printAllVarsDebug(data, 0);
-    #endif
-
-      omp_set_num_threads(4);
-
-    #pragma omp parallel
-      {
-        retValue = main_simulation_loop(data, solverInfo, simInfo);
-      } /* end #pragma omp parallel*/
-
-      return retValue;
-    }
-    
-    
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
@@ -274,7 +245,6 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation_runtime.h"
     #include "omc_error.h"
     #include "model_help.h"
-    #include "solver_main.h"
 
     #include <assert.h>
     #include <string.h>
@@ -3154,8 +3124,6 @@ template commonHeader(String filePrefix)
   #include <omp.h>
   #else
   #define omp_get_max_threads() 1
-  int omp_get_thread_num() { return 0; }
-  void omp_set_num_threads() {}
   #endif
   #include "modelica.h"
   #include <stdio.h>
