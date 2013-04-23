@@ -8518,7 +8518,7 @@ protected function applyArgTypesToFuncType
   output DAE.Type outResultType;
 algorithm
   (outParameters, outResultType) :=
-  match(inSlots, inParameters, inResultType, inEnv)
+  matchcontinue(inSlots, inParameters, inResultType, inEnv)
     local
       Env.Env env;
       Env.Cache cache;
@@ -8531,6 +8531,11 @@ algorithm
       list<DAE.Dimension> dims;
       list<Slot> used_slots;
 
+    // some optimizations so we don't do all that below
+    case ({}, {}, _, _) then ({}, inResultType);
+
+    // get all the dims, bind the actual params to the formal params
+    // build an new env frame with these bindings and evaluate dimensions
     case (_, _, _, _)
       equation
         // Extract all dimensions from the parameters.
@@ -8551,8 +8556,13 @@ algorithm
         dummy_var = SCode.COMPONENT("dummy", SCode.defaultPrefixes,
           SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()),
           SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
-        // Create an environment with the needed parameters.
-        env = Env.newEnvironment(SOME("dummyFunction"));
+        
+        // Create a new implicit scope with the needed parameters on top 
+        // of the current env so we can find the bindings if needed.
+        // We need an implicit scope so comp1.comp2 can be looked up without package constant restriction 
+        env = Env.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
+        
+        // add variables to the environment
         env = makeDummyFuncEnv(env, vars, dummy_var);
 
         // Evaluate the dimensions in the types.
@@ -8561,7 +8571,7 @@ algorithm
       then
         (params, res_ty);
 
-  end match;
+  end matchcontinue;
 end applyArgTypesToFuncType;
 
 protected function funcArgType
@@ -14354,7 +14364,7 @@ algorithm
       equation
         (cache, e, prop, _) = elabExp(inCache, inEnv, sub, inImpl, inST,
           inDoVect, inPrefix, inInfo);
-        (cache, SOME(dim)) = elabArrayDim2(cache, inEnv, e, prop, inImpl, inST,
+        (cache, SOME(dim)) = elabArrayDim2(cache, inEnv, inCref, e, prop, inImpl, inST,
           inDoVect, inPrefix, inInfo);
       then
         (cache, dim);
@@ -14376,6 +14386,7 @@ protected function elabArrayDim2
   elabArrayDim to avoid unnecessary elaboration."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input Absyn.ComponentRef inCref;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input Boolean inImpl;
@@ -14386,18 +14397,18 @@ protected function elabArrayDim2
   output Env.Cache outCache;
   output Option<DAE.Dimension> outDimension;
 algorithm
-  (outCache, outDimension) := matchcontinue(inCache, inEnv, inExp, inProperties,
+  (outCache, outDimension) := matchcontinue(inCache, inEnv, inCref, inExp, inProperties,
       inImpl, inST, inDoVect, inPrefix, inInfo)
     local
       DAE.Const cnst;
       Env.Cache cache;
       DAE.Exp e;
       DAE.Type ty;
-      String e_str, t_str;
+      String e_str, t_str, a_str;
       Integer i;
 
     // Constant dimension creates DIM_INTEGER.
-    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(cnst);
         (cache, Values.INTEGER(i), _) = Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, Ceval.NO_MSG(), 0);
@@ -14405,14 +14416,14 @@ algorithm
         (cache, SOME(DAE.DIM_INTEGER(i)));
 
     // When arrays are non-expanded, non-constant parametric dimensions are allowed.
-    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), DAE.C_PARAM()), _, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), DAE.C_PARAM()), _, _, _, _, _)
       equation
         false = Config.splitArrays();
       then
         (inCache, SOME(DAE.DIM_EXP(inExp)));
 
     // When not implicit instantiation, array dimension must be constant.
-    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), DAE.C_VAR()), false, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), DAE.C_VAR()), false, _, _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {e_str}, inInfo);
@@ -14420,36 +14431,38 @@ algorithm
         (inCache, NONE());
 
     // Non-constant dimension creates DIM_EXP.
-    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), _), true, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), _), true, _, _, _, _)
       equation
         (cache, e, _) =
           Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl, inInfo);
       then
         (cache, SOME(DAE.DIM_EXP(e)));
 
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _, _)
       equation
         (cache, e as DAE.SIZE(_, _), _) =
           Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl, inInfo);
       then
         (cache, SOME(DAE.DIM_EXP(e)));
 
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _, _)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         (inCache, SOME(DAE.DIM_UNKNOWN()));
 
     // an integer parameter with no binding
-    case (_, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(cnst);
         e_str = ExpressionDump.printExpStr(inExp);
-        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING, {e_str}, inInfo);
+        a_str = Dump.printComponentRefStr(inCref) +& "[" +& e_str +& "]";
+        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING, {e_str, a_str}, inInfo);
+        //(_, _) = elabArrayDim2(inCache, inEnv, inCref, inExp, inProperties, inImpl, inST, inDoVect, inPrefix, inInfo);
       then
         (inCache, NONE());
 
-    case (_, _, _, DAE.PROP(ty, _), _, _, _, _, _)
+    case (_, _, _, _, DAE.PROP(ty, _), _, _, _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(inExp);
         t_str = Types.unparseType(ty);

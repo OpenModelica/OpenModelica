@@ -711,7 +711,7 @@ public constant Message UNSUPPORTED_REDUCTION_TYPE = MESSAGE(5031, TRANSLATION()
 public constant Message FOUND_NON_NUMERIC_TYPES = MESSAGE(5032, TRANSLATION(), ERROR(),
   Util.gettext("Operator %s expects numeric types as operands, but got '%s and %s'."));
 public constant Message STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING = MESSAGE(5033, TRANSLATION(), ERROR(),
-  Util.gettext("Structural parameter (or constant): %s which gives array dimensions has no binding. Array dimensions must be known at compile time."));
+  Util.gettext("Could not evaluate structural parameter (or constant): %s which gives dimensions of array: %s. Array dimensions must be known at compile time."));
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(),
