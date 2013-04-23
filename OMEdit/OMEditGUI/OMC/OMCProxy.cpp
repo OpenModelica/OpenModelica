@@ -863,7 +863,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
         pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(encoding)));
         pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                         .arg(existingmodelsList.join(",")).append("\n")
-                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
+                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(encoding)));
         pMessageBox->setStandardButtons(QMessageBox::Ok);
         pMessageBox->exec();
       }

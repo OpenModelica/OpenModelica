@@ -206,7 +206,7 @@ QStringList ModelicaTextEdit::getClassNames(QString *errorString)
   if (existModel)
   {
     *errorString = QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(existingmodelsList.join(",")).append("\n")
-        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD));
+        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(""));
     return QStringList();
   }
   return classNames;

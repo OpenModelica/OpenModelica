@@ -353,7 +353,7 @@ QString GUIMessages::getMessage(int type)
     case UNABLE_TO_LOAD_MODEL:
       return tr("Error has occurred while loading the model : \n%1.");
     case DELETE_AND_LOAD:
-      return tr("Delete the existing class(es) before loading the file <b>Adeel</b>.");
+      return tr("Delete the existing class(es) before loading the file <b>%1</b>.");
     case REDEFINING_EXISTING_CLASSES:
       return tr("Redefining class(es) <b>%1</b> which already exists.");
     case MULTIPLE_TOP_LEVEL_CLASSES:

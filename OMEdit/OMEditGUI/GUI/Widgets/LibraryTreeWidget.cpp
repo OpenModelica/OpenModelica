@@ -1380,7 +1380,7 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                       .arg(existingmodelsList.join(",")).append("\n")
-                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileName)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     }
@@ -1436,7 +1436,7 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
     pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg("")));
     pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                     .arg(existingmodelsList.join(",")).append("\n")
-                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
+                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg("")));
     pMessageBox->setStandardButtons(QMessageBox::Ok);
     pMessageBox->exec();
   }
