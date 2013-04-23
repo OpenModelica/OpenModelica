@@ -472,6 +472,13 @@ algorithm
   s := Tpl.tplString2(ExpressionDumpTpl.dumpExp, e, "\"");
 end printExpStr;
 
+public function printCrefsFromExpStr
+  input DAE.Exp e;
+  output String s;
+algorithm
+  s := Tpl.tplString2(ExpressionDumpTpl.dumpExpCrefs, e, "");
+end printCrefsFromExpStr;
+
 public function printExp2Str
 "function: printExp2Str
   Helper function to printExpStr."
