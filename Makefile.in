@@ -31,7 +31,7 @@ settings:
 
 omc: omc-diff interactive docs fmi fmil opencl_rt
 	(cd Compiler && $(MAKE) -f Makefile release)
-
+	$(MAKE) omlibrary
 omcd: omc-diff interactive docs fmi fmil opencl_rt
 	(cd Compiler && $(MAKE) -f Makefile debug)
 

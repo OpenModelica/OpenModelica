@@ -51,7 +51,7 @@ interactive: .testvariables mkbuilddirs boehm-gc fmil
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
-docs: mkbuilddirs omlibrary
+docs: mkbuilddirs
 	make -C Compiler/Translation release
 	(cp -p doc/*.pdf doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
