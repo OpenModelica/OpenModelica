@@ -393,15 +393,11 @@ static int initKinsol(KINODE *kinOde)
   {
     for(i=0;i<nStates;i++,k++)
     {
-      if(nlp->a != NULL)
-        xeq[k] = nlp->x0[i] + nlp->a[j]*nlp->f0[i]*h;
-      else
-        xeq[k] = nlp->x0[i] + nlp->f0[i]*h;
-
+      xeq[k] = nlp->x0[i];
+      seq[k] = 1.0/(fabs(xeq[k]) + 1e-6);
       xlow[k] = xeq[k] - nlp->min[i];
       xup[k] = xeq[k] - nlp->max[i];
-      tmp = 1.0/(fabs(nlp->x0[i] - xeq[k]) + 1e-6);
-      seq[k] = tmp;
+
     }
   }
 
