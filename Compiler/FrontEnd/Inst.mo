@@ -3475,7 +3475,7 @@ algorithm
         // checkRestrictionsOnTheKindOfBaseClass(cache, env, ih, re, extendselts);
 
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
-        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, ci_state, className, impl, false)
+        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
 
         //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS:\n" +& Debug.fcallret1(Flags.INST_EXT_TRACE, printElementAndModList, extcomps, "") +& "\n");
@@ -3525,18 +3525,13 @@ algorithm
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
         //on components that are inherited.
-        (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, extcomps, ci_state, impl);
+        (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, compelts_1, ci_state, impl);
         //compelts_2 = extcomps;
         //env4 = env3;
 
-        compelts_1 = addNomod(compelts);
-        cdefelts_1 = addNomod(cdefelts);
-        compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
-
-        // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
-        // TODO! FIXME! CHECKME! join this function with splitElts to make it faster
-        // do not bother to sort here, do it in sortElementList in instElementList!
-        // compelts_2 =  sortInnerFirstTplLstElementMod(compelts_2);
+        //compelts_1 = addNomod(compelts);
+        //cdefelts_1 = addNomod(cdefelts);
+        //compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
 
         //Instantiate components
         compelts_2_elem = List.map(compelts_2,Util.tuple21);
@@ -4942,7 +4937,7 @@ algorithm
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
-        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, isPartialInst)
+        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, els, ci_state, className, true, isPartialInst)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
 
         // this does not work, see Modelica.Media SingleGasNasa!
@@ -5104,7 +5099,7 @@ algorithm
   end matchcontinue;
 end partialInstClassdef;
 
-protected function constantEls
+public function constantEls
 "Returns only elements that are constants or have annotation(Evaluate = true)!
  author: PA & adrpo
  Used buy partialInstClassdef to instantiate constants in packages."
@@ -5141,7 +5136,7 @@ algorithm
   end matchcontinue;
 end constantEls;
 
-protected function constantAndParameterEls
+public function constantAndParameterEls
 "Returns only elements that are constants.
  author: @adrpo
  Used by partialInstClassdef to instantiate constants and parameters in packages."
@@ -5459,6 +5454,7 @@ algorithm
   //Debug.fprintln(Flags.IDEP, "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
   //System.startTimer();
   el := sortElementList(inElements, inEnv, Env.inFunctionScope(inEnv));
+  // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
   //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
@@ -8071,7 +8067,7 @@ algorithm
       equation
         (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))), _) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
         (_,classextendselts,extendselts,compelts) = splitElts(selems);
-        (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
+        (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, selems, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
         extcompelts = List.map(extcomps,Util.tuple21);
         compelts = listAppend(compelts,extcompelts);
       then
@@ -13045,7 +13041,7 @@ algorithm
       Absyn.Exp absynExp;
       Prefix.Prefix pre;
 
-    /* special case for  size */
+    // special case for  size
     case (cache,env,(call as Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = (args as {arraycr,dim}),argNames = nargs))),impl,st,pre,_)
       equation
@@ -13056,7 +13052,7 @@ algorithm
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),st);
-    /* For all other expressions, use normal elaboration */
+    // For all other expressions, use normal elaboration
     case (cache,env,absynExp,impl,st,pre,_)
       equation
         (cache,e,prop,st) = Static.elabExp(cache, env, absynExp, impl, st,false,pre,info);

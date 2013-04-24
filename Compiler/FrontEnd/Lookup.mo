@@ -1136,7 +1136,7 @@ algorithm
     // look into the current frame
     case (cache, Env.FRAME(name = sid,clsAndVars = ht)::fs, ref, _)
       equation
-          (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref);
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,inEnv,componentEnv,name);
 
@@ -2095,14 +2095,14 @@ algorithm
       Env.Cache cache;
       Env.Env env,env1;
 
-    /* a class with parts */
+    // a class with parts
     case (cache,env,SCode.CLASS(name = name,info = info),_)
       equation
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
-        (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
+        (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         // print("Record Elements: " +&
         //   stringDelimitList(

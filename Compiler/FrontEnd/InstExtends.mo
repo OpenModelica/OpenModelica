@@ -83,6 +83,7 @@ protected function instExtendsList "
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
+  input list<SCode.Element> inElementsFromExtendsScope;
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImplicit;
@@ -98,7 +99,7 @@ protected function instExtendsList "
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst7;
 algorithm
   (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSCodeElementLst,inState,inClassName,inImplicit,isPartialInst)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSCodeElementLst,inElementsFromExtendsScope,inState,inClassName,inImplicit,isPartialInst)
     local
       SCode.Element c;
       String cn,s,scope_str,className;
@@ -107,7 +108,7 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mods,mods_1,emod_1,mod;
-      list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts;
+      list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts, elsExtendsScope;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
@@ -126,11 +127,11 @@ algorithm
       Option<SCode.Comment> cmt;
       SCode.Visibility vis;
 
-    /* no further elements to instantiate */
-    case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
+    // no further elements to instantiate
+    case (cache,env,ih,mod,pre,{},_,ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
 
-    /* instantiate a base class */
-    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,ci_state,className,impl,_)
+    // instantiate a base class
+    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));
         //print("EXTENDS: " +& Env.printEnvPathStr(env) +& "/" +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ") outemod: " +& Mod.printModStr(mod) +& "\n");
@@ -147,9 +148,11 @@ algorithm
         //print("Type: " +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ")\n");
 
         emod = Inst.chainRedeclares(mod, emod);
-
-        // fully qualify modifiers in extends in this environment!
-        (cache, emod) = fixModifications(cache, env, emod, HashTableStringToPath.emptyHashTable());
+        
+        // build a ht with the constant elements from the extends scope
+        ht = getLocalIdentList(Inst.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
+        // fully qualify modifiers in extends in the extends environment!
+        (cache, emod) = fixModifications(cache, env, emod, ht);
 
         // Debug.fprintln(Flags.INST_TRACE, "EXTENDS (FULLY QUAL): " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.printModStr(emod));
 
@@ -162,7 +165,7 @@ algorithm
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
 
-        (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
+        //(cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
 
         eq1_1 = Util.if_(isPartialInst, {}, eq1);
         ieq1_1 = Util.if_(isPartialInst, {}, ieq1);
@@ -178,7 +181,7 @@ algorithm
 
         els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, SCodeUtil.getRedeclareAsElements(els_1));
 
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,ci_state,className,impl,isPartialInst)
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,els,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
 
         ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
@@ -193,7 +196,7 @@ algorithm
         (cache,ialg1_1) = fixList(cache, cenv3, ialg1_1, ht,fixAlgorithm);
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,ci_state,className,impl,isPartialInst)
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
         "continue with next element in list" ;
         /*
         corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod)
@@ -220,7 +223,7 @@ algorithm
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 
     // base class was not found
-    case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = emod) :: rest),_,ci_state,className,impl,_)
       equation
         failure((_,c,cenv) = Lookup.lookupClass(cache, env, tp, false));
         s = Absyn.pathString(tp);
@@ -229,17 +232,17 @@ algorithm
       then
         fail();
 
-    // Extending a component means copying it. It might fail above, try again
+    // extending a component means copying it. It might fail above, try again
     case (cache,env,ih,mod,pre,
          (elt as SCode.COMPONENT(name = s, attributes =
           SCode.ATTR(variability = var),
           modifications = scodeMod,
           prefixes = SCode.PREFIXES(finalPrefix=finalPrefix),
-          comment = cmt)) :: rest,
+          comment = cmt)) :: rest,elsExtendsScope,
           ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache, env, ih, mod, pre, rest, elsExtendsScope, ci_state, className, impl, isPartialInst);
         // Filter out non-constants or parameters if partial inst
         notConst = not SCode.isConstant(var); // not (SCode.isConstant(var) or SCode.getEvaluateAnnotation(cmt));
         // we should always add it as the class that variable represents might contain constants!
@@ -248,24 +251,24 @@ algorithm
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
     // Classdefs
-    case (cache,env,ih,mod,pre,(elt as SCode.CLASS(name = cn)) :: rest,
+    case (cache,env,ih,mod,pre,(elt as SCode.CLASS(name = cn)) :: rest, elsExtendsScope,
           ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache, env, ih, mod, pre, rest, elsExtendsScope, ci_state, className, impl, isPartialInst);
       then
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
-    /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,_)
+    // instantiate elements that are not extends
+    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest, elsExtendsScope, ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache,env,ih, mod, pre, rest, elsExtendsScope, ci_state, className, impl, isPartialInst);
       then
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     /* instantiation failed */
-    case (cache,env,ih,mod,pre,rest,ci_state,className,_,_)
+    case (cache,env,ih,mod,pre,rest, elsExtendsScope, ci_state,className,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instExtendsList failed on:\n\t" +&
@@ -302,6 +305,7 @@ public function instExtendsAndClassExtendsList "
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
+  input list<SCode.Element> inElementsFromExtendsScope;
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImpl;
@@ -321,7 +325,7 @@ protected
 algorithm
   //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
   outTplSCodeElementModLst := List.map(outTplSCodeElementModLstTpl3, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call
@@ -344,6 +348,7 @@ protected function instExtendsAndClassExtendsList2 "
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
+  input list<SCode.Element> inElementsFromExtendsScope;  
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImpl;
@@ -359,7 +364,7 @@ protected function instExtendsAndClassExtendsList2 "
   output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
 algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst, inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end instExtendsAndClassExtendsList2;
 
@@ -800,13 +805,12 @@ end getLocalIdentElementTpl;
 
 protected function getLocalIdentElement
 " Analyzes an element of a class and fetches a list of components and classdefs,
-  as well as aliases from imports to paths.
-"
+  as well as aliases from imports to paths."
   input SCode.Element elt;
   input HashTableStringToPath.HashTable inHt;
   output HashTableStringToPath.HashTable outHt;
 algorithm
-  (outHt) := match (elt,inHt)
+  (outHt) := matchcontinue (elt,inHt)
     local
       String id;
       Absyn.Path p;
@@ -843,8 +847,9 @@ algorithm
         failure(_ = BaseHashTable.get(id, ht));
         ht = BaseHashTable.add((id,p), ht);
       then ht;
-
-  end match;
+    
+    else inHt; 
+  end matchcontinue;
 end getLocalIdentElement;
 
 protected function fixLocalIdents
@@ -1403,8 +1408,7 @@ end fixTypeSpec;
 protected function fixPath
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
+  local lookup or fully qualified in the environment."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -1508,6 +1512,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
       Absyn.ComponentRef cref;
+      SCode.Element c;
 
     case (cache,env,cref,ht)
       equation
@@ -1554,7 +1559,9 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         //Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
-        (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
+        (_,c,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
+        // id might come from named import, make sure you use the actual class name!
+        id = SCode.getElementName(c);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
