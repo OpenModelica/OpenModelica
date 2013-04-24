@@ -17,7 +17,7 @@ mkdir -p "$OLD"
 
 # Build the mos-files
 if test -z "$PLOTONLY"; then
-for lib in "$*"; do
+for lib in "$@"; do
 SHORTNAME=`echo $lib | cut -d, -f1`
 NAME=`echo $lib | cut -d, -f2`
 VERSION=`echo $lib | cut -d, -f3`
@@ -26,13 +26,13 @@ if test -z "$VERSION"; then
 fi
 mkdir -p "$PUB/$SHORTNAME"
 
-sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$VERSION\";/" "$TRUNK/Examples/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($NAME);/" > "$NAME.mos"
+sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$VERSION\";/" "$TRUNK/Examples/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($NAME);/" > "$SHORTNAME.mos"
 
 rm -f *.err BuildModelRecursive.html
-if $OMC +g=MetaModelica "$NAME.mos" > log 2>&1; then
-  rm -f "$PUB/$NAME/"*.err "$PUB/$NAME/"*.sim
+if $OMC +g=MetaModelica "$SHORTNAME.mos" > log 2>&1; then
+  rm -f "$PUB/$SHORTNAME/"*.err "$PUB/$SHORTNAME/"*.sim
   cp BuildModelRecursive.html "$OLD/$SHORTNAME-`date +%Y-%m-%d`.html"
-  for f in *.err *.sim BuildModelRecursive.html; do mv "$f" "$PUB/$NAME/"; done
+  for f in *.err *.sim BuildModelRecursive.html; do mv "$f" "$PUB/$SHORTNAME/"; done
 else
   cat log
   echo "Subject: BuildModelTest $NAME $VERSION Failed"
