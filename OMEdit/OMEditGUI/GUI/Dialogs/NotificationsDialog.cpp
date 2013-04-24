@@ -156,6 +156,7 @@ QString NotificationsDialog::getNotificationTitleString()
   */
 QString NotificationsDialog::getNotificationLabelString()
 {
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   switch (mNotificationType)
   {
     case NotificationsDialog::QuitApplication:
@@ -171,15 +172,11 @@ QString NotificationsDialog::getNotificationLabelString()
       return tr("Welcome to new enhanced OMEdit - OpenModelica Connection Editor.\n"
                 "This version includes a lot of improvements and bug fixes. Check release notes for more details.\n\n"
                 "It is highly recommended to delete the old OMEdit settings file. The settings file is located at,\n\n"
-                "Windows:\n"
-                "%APPDATA%/openmodelica/omedit.ini\n\n"
-                "Unix and Mac OS X:\n"
-                "$HOME/.config/openmodelica/omedit.ini\n"
-                "/etc/xdg/openmodelica/omedit.ini\n\n"
+                "%1\n\n"
                 "Close OMEdit before deleting the file and then start it again. You will see this message again, "
-                "just check \"Don't show this message again\" and click \"OK\"\n\n"
+                "just check \"Don't show this message again\" and click \"OK\".\n"
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] "
-                "with any comments, suggestions or problems.");
+                "with any comments, suggestions or problems.").arg(settings.fileName());
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
