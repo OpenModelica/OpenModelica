@@ -11,7 +11,7 @@ ulimitExe:="180";  // 3 minutes to initialize and run the simulation
 loadModel(library,{libraryVersion});
 getErrorString();
 libraryVersionRevision:=getVersion(library);
-libraryVersionRevision := (if libraryVersionRevision == "" then libraryVersion else libraryVersionRevision) + (if regularFileExists(dirname(getSourceFile(library))+".last_change") then (" revision " + readFile(dirname(getSourceFile(Modelica))+".last_change")) else "");
+libraryVersionRevision := (if libraryVersionRevision == "" then libraryVersion else libraryVersionRevision) + (if regularFileExists(dirname(getSourceFile(library))+".last_change") then (" revision " + readFile(dirname(getSourceFile(library))+".last_change")) else "");
 libraryString:=typeNameString(library);
 
 system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
