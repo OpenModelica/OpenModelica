@@ -2575,7 +2575,7 @@ algorithm
   outCref := match(inCref,expandRecord)
     local
       DAE.Ident id;
-      DAE.Type ty;
+      DAE.Type ty,correctTy;
       list<DAE.Dimension> dims;
       list<DAE.Subscript> subs;
       ComponentRef cref;
@@ -2601,26 +2601,26 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
       then
-        expandCref2(id, ty, subs, dims);
+        expandCref2(id, Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
       equation
         // Use the subscripts to generate only the wanted elements.
-        crefs = expandCref2(id, ty, subs, dims);
+         crefs = expandCref2(id, Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
       then
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
         // Use the subscripts to generate only the wanted elements.
       then
-        expandCref2(id, ty, subs, dims);
+        expandCref2(id,  Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
 
 
     // A qualified cref with array type.

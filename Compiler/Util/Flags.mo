@@ -762,6 +762,9 @@ constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
 constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(48, "wsm-testsuite",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used when running the WSM testsuite."));
+constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(49, "correctCrefTypes",
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica backend."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -814,7 +817,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DELAY_BREAK_LOOP,
   TEARING_METHOD,
   SCALARIZE_MINMAX,
-  RUNNING_WSM_TESTSUITE
+  RUNNING_WSM_TESTSUITE,
+  CORRECT_CREF_TYPES
 };
 
 public function new
