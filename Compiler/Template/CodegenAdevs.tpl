@@ -1722,36 +1722,46 @@ template declareSetMethod(SimVar var)
  "Declares a C++ method for setting a component reference."
 ::=
   match var
-    case SIMVAR(arrayCref=SOME(_),numArrayElement=num) then
-      if num then
-        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-        let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-        let firstIndex = getFirstArrayIndexIfZero(name)
-        if firstIndex then
-          'void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }'
     case SIMVAR(numArrayElement={}) then
       let &arrayIndices = buffer ""
       let tmp = crefToCStr(name,&arrayIndices)
       if not arrayIndices then
         'void set<%cref(name)%>(<%variableType(type_)%> val) { <%cref(name)%> = val; }'
+    case SIMVAR(numArrayElement=num) then
+      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
+      let firstIndex = getFirstArrayIndexIfZero(name)
+      if firstIndex then
+        <<
+        #ifndef ___<%crefarray(name)%>_set_adevs_modelica
+        #define ___<%crefarray(name)%>_set_adevs_modelica
+        void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }
+        #endif
+
+        >>
 end declareSetMethod;
 
 template declareGetMethod(SimVar var)
  "Declares a C++ method for getting a component reference."
 ::=
   match var
-    case SIMVAR(arrayCref=SOME(_),numArrayElement=num) then
-      if num then
-        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-        let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-        let firstIndex = getFirstArrayIndexIfZero(name)
-        if firstIndex then
-          '<%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }'
     case SIMVAR(numArrayElement={}) then
       let &arrayIndices = buffer ""
       let tmp = crefToCStr(name,&arrayIndices)
       if not arrayIndices then
         '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
+    case SIMVAR(numArrayElement=num) then
+      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
+      let firstIndex = getFirstArrayIndexIfZero(name)
+      if firstIndex then
+        <<
+        #ifndef ___<%crefarray(name)%>_get_adevs_modelica
+        #define ___<%crefarray(name)%>_get_adevs_modelica
+        <%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }
+        #endif
+
+        >>
 end declareGetMethod;
 
 template variableType(DAE.Type type)
@@ -1788,17 +1798,22 @@ template declareCref(SimVar var, String prepend)
  "Declares a C++ name to be used as a component reference."
 ::=
   match var
-    case SIMVAR(arrayCref=SOME(_),numArrayElement=num) then
-      if num then
-        let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
-        let firstIndex = getFirstArrayIndexIfZero(name)
-        if firstIndex then
-          '<%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;'
     case SIMVAR(numArrayElement={}) then
       let &arrayIndices = buffer ""
       let tmp = crefToCStr(name,&arrayIndices)
       if not arrayIndices then
         '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
+    case SIMVAR(numArrayElement=num) then
+      let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
+      let firstIndex = getFirstArrayIndexIfZero(name)
+      if firstIndex then
+        <<
+        #ifndef ___<%prepend%><%crefarray(name)%>_declared_adevs_modelica
+        #define ___<%prepend%><%crefarray(name)%>_declared_adevs_modelica
+        <%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;
+        #endif
+
+        >>
 end declareCref;
 
 template crefarray(ComponentRef cr)
