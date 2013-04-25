@@ -108,11 +108,18 @@ void updateDiscreteSystem(DATA *data)
  */
 void updateContinuousSystem(DATA *data)
 {
-  functionODE(data);
-  functionAlgebraics(data);
-  output_function(data);
-  function_storeDelayed(data);
-  storePreValues(data);
+
+  // printf("continuous %d \n", omp_get_thread_num());
+  // fflush(stdout);
+
+if(omp_get_thread_num() == 0)
+  {
+    functionODE(data);
+    functionAlgebraics(data);
+    output_function(data);
+    function_storeDelayed(data);
+    storePreValues(data);
+  }
 }
 
 /*! \fn saveZeroCrossings

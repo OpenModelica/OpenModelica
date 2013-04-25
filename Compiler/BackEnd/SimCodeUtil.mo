@@ -11937,6 +11937,7 @@ algorithm
       PriorityQueue.T q;
       list<tuple<Integer, list<SimCode.SimEqSystem>>> prios;
       list<list<SimCode.SimEqSystem>> lst;
+      String eq_str;
 
     case (lst, _)
       equation
@@ -11947,6 +11948,8 @@ algorithm
     case (lst, 1)
       equation
         l = List.flatten(lst);
+        eq_str = Tpl.tplString2(SimCodeDump.dumpEqsSys, l, false);
+        print(eq_str);
       then l::{};
     case (lst, _)
       equation

@@ -365,6 +365,95 @@ template printEquationExpStrEscaped(EquationExp eq)
     '<%printExpStrEscaped(lhs)%> = <%printExpStrEscaped(rhs)%>'
 end printEquationExpStrEscaped;
 
+
+template dumpEqsSys(list<SimEqSystem> eqs, Boolean withOperations)
+::= eqs |> eq hasindex i0 =>
+  match eq
+    case e as SES_RESIDUAL(__) then
+      <<
+      <equation index="<%eqIndex(eq)%>">
+        <residual><%printExpStrEscaped(e.exp)%></residual>
+      </equation><%\n%>
+      >>
+    case e as SES_SIMPLE_ASSIGN(__) then
+      '<%eqIndex(eq)%> simple_assign <%crefStr(e.cref)%> : <%printCrefsFromExpStr(e.exp)%><%\n%>'
+    case e as SES_ARRAY_CALL_ASSIGN(__) then
+      <<
+      <equation index="<%eqIndex(eq)%>">
+        <assign type="array">
+          <lhs><%crefStr(e.componentRef)%></lhs>
+          <rhs><%printExpStrEscaped(e.exp)%></rhs>
+        </assign>
+      </equation><%\n%>
+      >>
+    case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
+    case e as SES_ALGORITHM(statements=first::_)
+      then
+      <<
+      <equation index="<%eqIndex(eq)%>">
+        <statement>
+          <%e.statements |> stmt => escapeModelicaStringToXmlString(ppStmtStr(stmt,2)) %>
+        </statement>
+      </equation><%\n%>
+      >>
+    case e as SES_LINEAR(__) then
+        '<%eqIndex(eq)%> linear <%e.vars |> SIMVAR(name=cr) => '<%crefStr(cr)%>' ; separator = " " %> : <%beqs |> exp => '<%printExpStrEscaped(exp)%>' ; separator = " " %><%\n%>'
+    case e as SES_NONLINEAR(__) then
+      <<
+      <%dumpEqsSys(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
+      <%eqIndex(eq)%> non_linear <%e.eqs |> eq => '<%eqIndex(eq)%>' ; separator = " " %><%\n%>
+      >>
+      /*
+      <<
+      <%dumpEqsSys(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
+      <%eqIndex(eq)%>     
+          <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+        </nonlinear>
+      </equation><%\n%>
+      >>
+      */
+    case e as SES_MIXED(__) then
+      <<
+      <%dumpEqs(fill(e.cont,1),withOperations)%>
+      <%dumpEqs(e.discEqs,withOperations)%><%\n%>
+      <equation index="<%eqIndex(eq)%>">
+        <mixed>
+          <continuous index="<%eqIndex(e.cont)%>" />
+          <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+          <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
+        </mixed>
+      </equation>
+      >>
+    case e as SES_WHEN(__) then
+      <<
+      <equation index="<%eqIndex(eq)%>">
+      <when>
+        <%conditions |> cond => '<cond><%crefStr(cond)%></cond>' ; separator="\n" %>
+        <lhs><%crefStr(e.left)%></lhs>
+        <rhs><%printExpStrEscaped(e.right)%></rhs>
+      </when>
+      </equation><%\n%>
+      >>
+    case e as SES_IFEQUATION(__) then
+      let branches = ifbranches |> (_,eqs) => dumpEqsSys(eqs,withOperations)
+      let elsebr = dumpEqsSys(elsebranch,withOperations)
+      <<
+      <%branches%>
+      <%elsebr%>
+      <equation index="<%eqIndex(eq)%>">
+      <ifequation /> <!-- TODO: Fix me -->
+      </equation><%\n%>
+      >>
+    else error(sourceInfo(),"dumpEqs: Unknown equation")
+end dumpEqsSys;
+
+
+
+
+
+
+
 end SimCodeDump;
 
 // vim: filetype=susan sw=2 sts=2

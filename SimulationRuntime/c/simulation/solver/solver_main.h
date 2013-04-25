@@ -82,7 +82,14 @@ extern int initializeModel(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
     int lambda_steps);
 
-extern int performSimulation(DATA* data, SOLVER_INFO* solverInfo);
+/*! 
+   Not used anymore. Moved to generated code so that it can be parallelized
+   with openmp with out the need to link the simulationRuntime lib with openmp.
+ */
+// extern int performSimulation(DATA* data, SOLVER_INFO* solverInfo);
+extern int performSimulation_optional_thread(DATA* data, SOLVER_INFO* solverInfo);
+
+extern int main_simulation_loop(DATA* data, SOLVER_INFO* solverInfo, SIMULATION_INFO *simInfo);
 
 extern int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
 
