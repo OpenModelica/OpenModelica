@@ -55,6 +55,13 @@ algorithm
   outString := Tpl.tplString(SCodeDumpTpl.dumpProgram, inProgram);
 end programStr;
 
+public function classDefStr
+  input SCode.ClassDef cd;
+  output String outString;
+algorithm
+  outString := Tpl.tplString(SCodeDumpTpl.dumpClassDef, cd);
+end classDefStr;
+
 public function statementStr
   input SCode.Statement stmt;
   output String outString;

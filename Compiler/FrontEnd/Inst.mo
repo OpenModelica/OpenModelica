@@ -12402,14 +12402,15 @@ algorithm
       SCode.Element c;
       DAE.Type ty1,ty;
       SCode.Prefixes prefixes;
+      Option<SCode.Comment> comment;
 
     // The function type can be determined without the body. Annotations need to be preserved though.
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
                                    encapsulatedPrefix = e,partialPrefix = p,restriction = r,
-                                   classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info))
+                                   classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl,comment=comment),info = info))
       equation
         stripped_elts = List.map(elts,stripFuncOutputsMod);
-        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl,annotationLst,NONE()),info);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl,annotationLst,comment),info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section... 
         cache = Env.addDaeExtFunction(cache, funs);
