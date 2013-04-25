@@ -491,7 +491,7 @@ msgstr ""
 #: ../Util/Error.mo:294
 #, c-format
 msgid "Assertion triggered during translation: %s"
-msgstr "Assertion utöst under översättningen: %s"
+msgstr "Assertion utlöst under översättningen: %s"
 
 #: ../Util/Error.mo:296
 #, c-format
