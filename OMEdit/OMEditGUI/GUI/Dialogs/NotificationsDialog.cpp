@@ -156,7 +156,6 @@ QString NotificationsDialog::getNotificationTitleString()
   */
 QString NotificationsDialog::getNotificationLabelString()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   switch (mNotificationType)
   {
     case NotificationsDialog::QuitApplication:
@@ -171,16 +170,21 @@ QString NotificationsDialog::getNotificationLabelString()
     case NotificationsDialog::ReleaseInformation:
       return tr("Welcome to new enhanced OMEdit - OpenModelica Connection Editor.\n"
                 "This version includes a lot of improvements and bug fixes. Check release notes for more details.\n\n"
-                "It is highly recommended to delete the old OMEdit settings file. The settings file is located at,\n\n"
-                "%1\n\n"
-                "Close OMEdit before deleting the file and then start it again. You will see this message again, "
-                "just check \"Don't show this message again\" and click \"OK\".\n"
-                "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] "
-                "with any comments, suggestions or problems.").arg(settings.fileName());
+                "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.\n"
+                "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
   }
+}
+
+/*!
+  Returns the notification dialog checkbox.
+  \return the checkbox.
+  */
+QCheckBox* NotificationsDialog::getNotificationCheckBox()
+{
+  return mpNotificationCheckBox;
 }
 
 /*!
@@ -264,6 +268,7 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 void NotificationsDialog::saveReleaseInformationNotificationSettings()
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.clear();
   settings.setValue("notifications/releaseInformation", false);
 }
 
@@ -292,6 +297,18 @@ void NotificationsDialog::saveNotification()
       case NotificationsDialog::SaveModelForBitmapInsertion:
         saveModelForBitmapInsertionNotificationSettings();
         break;
+      case NotificationsDialog::ReleaseInformation:
+        saveReleaseInformationNotificationSettings();
+        break;
+      default:
+        // should never be reached
+        break;
+    }
+  }
+  else
+  {
+    switch (mNotificationType)
+    {
       case NotificationsDialog::ReleaseInformation:
         saveReleaseInformationNotificationSettings();
         break;

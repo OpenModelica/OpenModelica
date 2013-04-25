@@ -195,6 +195,7 @@ int main(int argc, char *argv[])
   {
     NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReleaseInformation,
                                                                         NotificationsDialog::InformationIcon, &mainwindow);
+    pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
     pNotificationsDialog->exec();
   }
   return a.exec();
