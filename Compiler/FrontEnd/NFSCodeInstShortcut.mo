@@ -245,10 +245,10 @@ algorithm
       list<Absyn.NamedArg> clsattr;
       Option<SCode.ExternalDecl> ed;
       list<SCode.Annotation> al;
-      Option<SCode.Comment> cmt;
       InstInfo ii;
       Boolean isBasic, isChain;
       list<NFSCodeEnv.Redeclaration> redeclares;
+      SCode.Comment cmt;
 
 
     case (NFSCodeEnv.CLASS(
@@ -274,7 +274,7 @@ algorithm
     case (NFSCodeEnv.CLASS(
             cls = SCode.CLASS(
                     name, sprefs, ep, pp, res,
-                    SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt), info),
+                    SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed), cmt, info),
         env = {NFSCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, _)
       equation
         // Enter the class scope and look up all class elements.
@@ -292,8 +292,8 @@ algorithm
 
         scls = SCode.CLASS(
                name, sprefs, ep, pp, res,
-               SCode.PARTS(elems, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt),
-               info);
+               SCode.PARTS(elems, eq, ieq, alg, ialg, cs, clsattr, ed),
+               cmt, info);
       then
         ({scls}, NFInstTypes.NO_PREFIXES(), ii);
 
@@ -301,7 +301,7 @@ algorithm
     case (NFSCodeEnv.CLASS(cls = scls as
             SCode.CLASS(
                     name, sprefs, ep, pp, res,
-                    SCode.DERIVED(dty, smod, attr, cmt), info)),
+                    SCode.DERIVED(dty, smod, attr), _, info)),
           _, _, _, _, _)
       equation
         // Look up the inherited class.
@@ -318,7 +318,7 @@ algorithm
     case (NFSCodeEnv.CLASS(cls = scls as
             SCode.CLASS(
                     name, sprefs, ep, pp, res,
-                    SCode.DERIVED(dty as Absyn.TPATH(path, ad), smod, attr, cmt), info),
+                    SCode.DERIVED(dty as Absyn.TPATH(path, ad), smod, attr), cmt, info),
                     env = envDerived),
           _, _, _, _, _)
       equation
@@ -360,7 +360,7 @@ algorithm
 
         scls  = SCode.CLASS(
                   name, sprefs, ep, pp, res,
-                  SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(tname), ad), smod, attr, cmt), info);
+                  SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(tname), ad), smod, attr), cmt, info);
 
         cls = SCode.setClassName(tname, cls);
         classes = cls::classes;
@@ -649,7 +649,7 @@ algorithm
       SCode.Prefixes sprefixes;
       SCode.Attributes attributes;
       Absyn.TypeSpec typeSpec;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       Option<Absyn.Exp> condition;
       InstInfo ii;
       Boolean sameEnv, isBasic, isCompInsideType;

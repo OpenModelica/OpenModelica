@@ -132,7 +132,7 @@ algorithm
       SCode.Ident bc;
       SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl, annl, cmt), _, _)
+    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
       equation
         // Lookup elements.
         el = List.filter(el, isNotImport);
@@ -145,7 +145,7 @@ algorithm
         ial = List.map1(ial, flattenAlgorithm, env);
         nco = List.map2(nco, flattenConstraints, env, inInfo);
       then
-        (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl, annl, cmt), env);
+        (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
       equation
@@ -154,7 +154,7 @@ algorithm
       then
         (SCode.CLASS_EXTENDS(bc, mods, cdef), env);
 
-    case (SCode.DERIVED(ty, mods, attr, cmt), env, _)
+    case (SCode.DERIVED(ty, mods, attr), env, _)
       equation
         mods = flattenModifier(mods, env, inInfo);
         // Remove the extends from the local scope before flattening the derived
@@ -162,7 +162,7 @@ algorithm
         env = FEnv.removeExtendsFromLocalScope(env);
         ty = flattenTypeSpec(ty, env, inInfo);
       then
-        (SCode.DERIVED(ty, mods, attr, cmt), inEnv);
+        (SCode.DERIVED(ty, mods, attr), inEnv);
 
     else then (inClassDef, inEnv);
   end match;
@@ -179,10 +179,10 @@ protected
   SCode.Attributes attr;
   Option<SCode.Comment> cmt;
 algorithm
-  SCode.DERIVED(ty, mods, attr, cmt) := inClassDef;
+  SCode.DERIVED(ty, mods, attr) := inClassDef;
   ty := flattenTypeSpec(ty, inEnv, inInfo);
   mods := flattenModifier(mods, inEnv, inInfo);
-  outClassDef := SCode.DERIVED(ty, mods, attr, cmt);
+  outClassDef := SCode.DERIVED(ty, mods, attr);
 end flattenDerivedClassDef;
 
 protected function isNotImport
@@ -242,7 +242,7 @@ protected
   SCode.Attributes attr;
   Absyn.TypeSpec type_spec;
   SCode.Mod mod;
-  Option<SCode.Comment> cmt;
+  SCode.Comment cmt;
   Option<Absyn.Exp> cond;
   Option<Absyn.ConstrainClass> cc;
   Absyn.Info info;
@@ -347,7 +347,7 @@ algorithm
       Env env;
       Absyn.Info info;
       Absyn.ComponentRef cref;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       Absyn.Exp exp;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
@@ -547,13 +547,14 @@ algorithm
       Absyn.Info info;
       SCode.Element element;
       SCode.ClassDef cdef;
+      SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes, ep, pp, res,
-          cdef as SCode.DERIVED(typeSpec = _), info), _)
+          cdef as SCode.DERIVED(typeSpec = _), cmt, info), _)
       equation
         cdef = flattenDerivedClassDef(cdef, inEnv, info);
       then
-        SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
+        SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
 
     case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
       then

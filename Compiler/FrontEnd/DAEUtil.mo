@@ -2866,14 +2866,6 @@ algorithm
         ht1 = BaseHashTable.add((cr,e1),ht);
       then
         ((ht1,true));
-    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
-      equation
-        SCode.CLASS_COMMENT(annotations=annos) = comment;
-        true = SCode.hasBooleanNamedAnnotation(annos,"Evaluate");
-        e1 = evaluateParameter(e,pv);
-        ht1 = BaseHashTable.add((cr,e1),ht);
-      then
-        ((ht1,true));
     case (tpl,_,_) then tpl;
   end matchcontinue;
 end evaluateAnnotation1Fold;

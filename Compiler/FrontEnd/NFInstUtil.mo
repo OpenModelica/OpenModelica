@@ -891,7 +891,7 @@ algorithm
       SCode.Attributes attr;
       Prefixes prefs;
       Absyn.Info info;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       String err_str;
 
     case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, comment = comment, info = info), _)
@@ -917,7 +917,7 @@ protected function makePrefixes
   "Creates an NFInstTypes.Prefixes record from SCode.Prefixes and SCode.Attributes."
   input SCode.Prefixes inPrefixes;
   input SCode.Attributes inAttributes;
-  input Option<SCode.Comment> inComment;
+  input SCode.Comment inComment;
   input Absyn.Info inInfo;
   output Prefixes outPrefixes;
 algorithm
@@ -952,14 +952,14 @@ end makePrefixes;
 
 protected function makeVarArg "Checks if the component might be a varargs type of component"
   input Absyn.Direction inDir;
-  input Option<SCode.Comment> inComment;
+  input SCode.Comment inComment;
   output NFInstTypes.VarArgs varArgs;
 algorithm
   varArgs := match (inDir,inComment)
     case (Absyn.INPUT(),_)
       then
-        Util.if_(SCode.optCommentHasBooleanNamedAnnotation(inComment,"__OpenModelica_varArgs"),NFInstTypes.IS_VARARG(),NFInstTypes.NO_VARARG());
-    else NFInstTypes.NO_VARARG();
+        Util.if_(SCode.optCommentHasBooleanNamedAnnotation(SOME(inComment),"__OpenModelica_varArgs"),NFInstTypes.IS_VARARG(),NFInstTypes.NO_VARARG());
+      else NFInstTypes.NO_VARARG();
   end match;
 end makeVarArg;
 

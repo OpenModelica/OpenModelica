@@ -251,31 +251,13 @@ protected function hasEvaluateAnnotation
 algorithm
   select := match(inVar)
     local
-      SCode.Comment comment;
+      SCode.Annotation anno;
     // Parameter with evaluate=true
-    case BackendDAE.VAR(comment=SOME(comment))
-      then hasEvaluateAnnotation1(comment);
+    case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(anno))))
+      then SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
     else then false;
   end match;
 end hasEvaluateAnnotation;
-
-protected function hasEvaluateAnnotation1
-  input SCode.Comment comment;
-  output Boolean select;
-algorithm
-  select := match(comment)
-    local
-      SCode.Annotation anno;
-      list<SCode.Annotation> annos;
-    case (SCode.COMMENT(annotation_=SOME(anno)))
-      then
-        SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
-    case(SCode.CLASS_COMMENT(annotations=annos))
-      then
-        SCode.hasBooleanNamedAnnotation(annos,"Evaluate");
-    else then false;
-  end match;
-end hasEvaluateAnnotation1;
 
 protected function getParameterIncidenceMatrix
   input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT>> inTp;

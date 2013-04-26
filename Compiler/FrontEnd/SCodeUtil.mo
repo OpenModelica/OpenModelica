@@ -153,13 +153,13 @@ algorithm
       SCode.Final sFin;
       SCode.Encapsulated sEnc;
       SCode.Partial sPar;
-
+      SCode.Comment cmt;
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
         // Debug.fprint(Flags.TRANSLATE, "Translating class:" +& n +& "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
-        d_1 = translateClassdef(d,file_info);
+        (d_1,cmt) = translateClassdef(d,file_info);
         sFin = SCode.boolFinal(f);
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(p);
@@ -176,6 +176,7 @@ algorithm
              sPar,
              r_1,
              d_1,
+             cmt,
              file_info);
       then
         scodeClass;
@@ -200,8 +201,9 @@ public function translateOperatorDef
   input Absyn.Ident operatorName;
   input Absyn.Info info;
   output SCode.ClassDef outOperDef;
+  output SCode.Comment cmt;
 algorithm
-  outOperDef := match (inClassDef,operatorName,info)
+  (outOperDef,cmt) := match (inClassDef,operatorName,info)
     local
       Option<String> cmtString;
       list<SCode.Element> els;
@@ -209,14 +211,15 @@ algorithm
       list<Absyn.ClassPart> parts;
       Option<SCode.Comment> scodeCmt;
       SCode.Ident opName;
+      list<Absyn.Annotation> aann;
+      Option<SCode.Annotation> ann;
 
-  case (Absyn.PARTS(classParts = parts,comment = cmtString),opName,_)
+  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),opName,_)
       equation
         els = translateClassdefElements(parts);
-        anns = translateClassdefAnnotations(parts);
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        cmt = translateCommentList(aann,cmtString);
       then
-        SCode.PARTS(els,{},{},{},{},{},{},NONE(),anns,scodeCmt);
+        (SCode.PARTS(els,{},{},{},{},{},{},NONE()),cmt);
   end match;
 end translateOperatorDef;
 
@@ -227,7 +230,7 @@ algorithm
   outName := match (inOperatorFunction)
     local
       SCode.Ident name;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_,_))
     then Absyn.IDENT(name);
 
   end match;
@@ -241,7 +244,7 @@ algorithm
   outName := match (inOperatorFunction,operName)
     local
       SCode.Ident name,opname;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_),opname)
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_,_),opname)
     then Absyn.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
 
   end match;
@@ -259,14 +262,14 @@ algorithm
       list<SCode.Path> names;
 
       //If operator get the list of functions in it.
-    case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR() ,SCode.PARTS(elementLst = els),_))
+    case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR() ,SCode.PARTS(elementLst = els),_,_))
       equation
         names = List.map1(els,getOperatorQualName,opername);
       then
         names;
 
       //If operator function return its name
-    case (SCode.CLASS(opername,_,_,_, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))
+    case (SCode.CLASS(opername,_,_,_, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_,_))
       equation
         names = {Absyn.IDENT(opername)};
       then
@@ -354,23 +357,18 @@ algorithm
       list<Absyn.ClassPart> rest;
       Option<String> cmt;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
-      equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info));
-      then
-        res;
+                      body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt,ann=ann),info = file_info))
+      then containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info));
     /* adrpo: handling also the case model extends X external ... end X; */
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
     /* adrpo: handling also the case model extends X external ... end X; */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt,ann=ann),
                       info = file_info))
-      equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info));
-      then
-        res;
+      then containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info));
     else false;
   end match;
 end containsExternalFuncDecl;
@@ -435,8 +433,9 @@ protected function translateClassdef
   input Absyn.ClassDef inClassDef;
   input Absyn.Info info;
   output SCode.ClassDef outClassDef;
+  output SCode.Comment outComment;
 algorithm
-  outClassDef := match (inClassDef,info)
+  (outClassDef,outComment) := match (inClassDef,info)
     local
       SCode.Mod mod;
       Absyn.TypeSpec t;
@@ -454,13 +453,14 @@ algorithm
       list<String> vars;
       list<SCode.Enum> lst_1;
       list<Absyn.EnumLiteral> lst;
-      Option<SCode.Comment> scodeCmt;
+      SCode.Comment scodeCmt;
       String name;
       Absyn.Path path;
       list<Absyn.Path> pathLst;
       list<String> typeVars;
       SCode.Attributes scodeAttr;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
@@ -469,25 +469,24 @@ algorithm
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
       then
-        SCode.DERIVED(t,mod,scodeAttr,scodeCmt);
+        (SCode.DERIVED(t,mod,scodeAttr), scodeCmt);
 
-    case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmtString),_)
+    case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating class parts");
         tvels = List.map1(typeVars, makeTypeVarElement, info);
         els = translateClassdefElements(parts);
         els = listAppend(tvels,els);
-        anns = translateClassdefAnnotations(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
         cos = translateClassdefConstraints(parts);
+        scodeCmt = translateCommentList(ann, cmtString);
         decl = translateClassdefExternaldecls(parts);
-        decl = translateAlternativeExternalAnnotation(decl,parts);
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
       then
-        SCode.PARTS(els,eqs,initeqs,als,initals,cos,classAttrs,decl,anns,scodeCmt);
+        (SCode.PARTS(els,eqs,initeqs,als,initals,cos,classAttrs,decl),scodeCmt);
 
     case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
@@ -495,45 +494,44 @@ algorithm
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
       then
-        SCode.ENUMERATION(lst_1, scodeCmt);
+        (SCode.ENUMERATION(lst_1), scodeCmt);
 
     case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating enumeration of ':'");
         scodeCmt = translateComment(cmt);
       then
-        SCode.ENUMERATION({},scodeCmt);
+        (SCode.ENUMERATION({}),scodeCmt);
 
     case (Absyn.OVERLOAD(pathLst,cmt),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating overloaded");
         scodeCmt = translateComment(cmt);
       then
-        SCode.OVERLOAD(pathLst,scodeCmt);
+        (SCode.OVERLOAD(pathLst),scodeCmt);
 
-    case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,comment = cmtString,parts = parts),_)
+    case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE "translating model extends " +& name +& " ... end " +& name +& ";");
         els = translateClassdefElements(parts);
-        anns = translateClassdefAnnotations(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
         cos = translateClassdefConstraints(parts);
-        decl = translateClassdefExternaldecls(parts);
-        decl = translateAlternativeExternalAnnotation(decl,parts);
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        scodeCmt = translateCommentList(ann, cmtString);
+        decl = translateClassdefExternaldecls(parts);
+        decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
       then
-        SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl,anns,scodeCmt));
+        (SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl)),scodeCmt);
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating pder( " +& Absyn.pathString(path) +& ", vars)");
         scodeCmt = translateComment(cmt);
       then
-        SCode.PDER(path,vars,scodeCmt);
+        (SCode.PDER(path,vars),scodeCmt);
 
     else
       equation
@@ -551,10 +549,10 @@ protected function translateAlternativeExternalAnnotation
   For instance, instead of external \"C\" annotation(Library=\"foo.lib\";
   it says external \"C\" ; annotation(Library=\"foo.lib\";"
 input Option<SCode.ExternalDecl> decl;
-input list<Absyn.ClassPart> parts;
+input SCode.Comment comment;
 output Option<SCode.ExternalDecl> outDecl;
 algorithm
-  outDecl := match (decl,parts)
+  outDecl := match (decl,comment)
     local
       Option<SCode.Ident> name ;
       Option<String> l ;
@@ -563,12 +561,9 @@ algorithm
       Option<SCode.Annotation> ann1,ann2,ann;
     // none
     case (NONE(),_) then NONE();
-    // Already filled.
-    case (SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
-    // EXTERNALDECL.
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),_)
+    // Else, merge
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),SCode.COMMENT(annotation_=ann2))
       equation
-        ann2 = List.fold(parts, mergeSCodeAnnotationsFromParts, NONE());
         ann = mergeSCodeOptAnn(ann1, ann2);
       then SOME(SCode.EXTERNALDECL(name,l,out,a,ann));
   end match;
@@ -590,18 +585,8 @@ algorithm
         ann1 = translateAnnotation(aann);
         ann = mergeSCodeOptAnn(SOME(ann1), inMod);
       then ann;
-    case (Absyn.PUBLIC(Absyn.ANNOTATIONITEM(aann)::rest),_)
-      equation
-        ann1 = translateAnnotation(aann);
-        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
-      then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),ann);
     case (Absyn.PUBLIC(_::rest),_)
       then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),inMod);
-    case (Absyn.PROTECTED(Absyn.ANNOTATIONITEM(aann)::rest),_)
-      equation
-        ann1 = translateAnnotation(aann);
-        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
-      then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),ann);
     case (Absyn.PROTECTED(_::rest),_)
       then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),inMod);
 
@@ -621,16 +606,16 @@ algorithm
       list<SCode.Enum> res;
       String id;
       Option<Absyn.Comment> cmtOpt;
-      Option<SCode.Comment> scodeCmtOpt;
+      SCode.Comment cmt;
       list<Absyn.EnumLiteral> rest;
 
     case ({}) then {};
     case ((Absyn.ENUMLITERAL(id, cmtOpt) :: rest))
       equation
-        scodeCmtOpt = translateComment(cmtOpt);
+        cmt = translateComment(cmtOpt);
         res = translateEnumlist(rest);
       then
-        (SCode.ENUM(id, scodeCmtOpt) :: res);
+        (SCode.ENUM(id, cmt) :: res);
   end match;
 end translateEnumlist;
 
@@ -669,72 +654,6 @@ algorithm
 
   end match;
 end translateClassdefElements;
-
-// stefan
-protected function translateClassdefAnnotations
-"function: translateClassdefAnnotations
-  turns a list of Absyn.ClassPart into a list of Annotations"
-  input list<Absyn.ClassPart> inClassPartList;
-  output list<SCode.Annotation> outAnnotationList;
-algorithm
-  outAnnotationList := match (inClassPartList)
-    local
-      list<SCode.Annotation> anns,anns1,anns2;
-      list<Absyn.ElementItem> eilst;
-      list<Absyn.ClassPart> cdr;
-      list<Absyn.EquationItem> eqilst;
-      list<Absyn.AlgorithmItem> algilst;
-
-    case({}) then {};
-    case(Absyn.PUBLIC(eilst) :: cdr)
-      equation
-        anns = translateAnnotations(eilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(Absyn.PROTECTED(eilst) :: cdr)
-      equation
-        anns = translateAnnotations(eilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(Absyn.EQUATIONS(eqilst) :: cdr)
-      equation
-        anns = translateAnnotationsEq(eqilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(Absyn.INITIALEQUATIONS(eqilst) :: cdr)
-      equation
-        anns = translateAnnotationsEq(eqilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(Absyn.ALGORITHMS(algilst) :: cdr)
-      equation
-        anns = translateAnnotationsAlg(algilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(Absyn.INITIALALGORITHMS(algilst) :: cdr)
-      equation
-        anns = translateAnnotationsAlg(algilst);
-        anns1 = translateClassdefAnnotations(cdr);
-        anns2 = listAppend(anns,anns1);
-      then
-        anns2;
-    case(_ :: cdr)
-      equation
-        anns = translateClassdefAnnotations(cdr);
-      then
-        anns;
-  end match;
-end translateClassdefAnnotations;
 
 protected function translateClassdefEquations
 "function: translateClassdefEquations
@@ -897,7 +816,7 @@ algorithm
       Absyn.Algorithm alg;
       SCode.Statement stmt;
       Option<Absyn.Comment> comment;
-      Option<SCode.Comment> scomment;
+      SCode.Comment scomment;
       Absyn.Info info;
     case {} then {};
     case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = comment, info = info) :: rest)
@@ -918,7 +837,7 @@ end translateClassdefAlgorithmitems;
 protected function translateClassdefAlgorithmItem
 "Translates an Absyn algorithm (statement) into SCode statement"
   input Absyn.Algorithm alg;
-  input Option<SCode.Comment> comment;
+  input SCode.Comment comment;
   input Absyn.Info info;
   output SCode.Statement stmt;
 algorithm
@@ -1095,11 +1014,6 @@ algorithm
       Absyn.Element e;
 
     case ({},_) then {};
-    case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: es),vis)
-      equation
-        l = translateEitemlist(es, vis);
-      then
-        l;
     case ((Absyn.ELEMENTITEM(element = e) :: es),vis)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating element: " +& Dump.unparseElementStr(1, e));
@@ -1117,109 +1031,6 @@ algorithm
       then translateEitemlist(es, vis);
   end match;
 end translateEitemlist;
-
-// stefan
-protected function translateAnnotations
-"function: translateAnnotations
-  turns a list of Absyn.ElementItem into a list of Annotations"
-  input list<Absyn.ElementItem> inElementItemList;
-  output list<SCode.Annotation> outAnnotationList;
-algorithm
-  outAnnotationList := match (inElementItemList)
-    local
-      list<Absyn.ElementItem> cdr;
-      Absyn.Annotation ann;
-      SCode.Annotation res;
-      list<SCode.Annotation> anns,anns_1;
-    case({}) then {};
-    case(Absyn.ANNOTATIONITEM(ann) :: cdr)
-      equation
-        res = translateAnnotation(ann);
-        anns = translateAnnotations(cdr);
-        anns_1 = res :: anns;
-      then
-        anns_1;
-    case(_ :: cdr)
-      equation
-        anns = translateAnnotations(cdr);
-      then
-        anns;
-    else
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"SCode.translateAnnotations failed");
-      then
-        fail();
-  end match;
-end translateAnnotations;
-
-protected function translateAnnotationsEq
-"@author: stefan
-  function: translateAnnotationsEq
-  turns a list of Absyn.EquationItem into a list of Annotations"
-  input list<Absyn.EquationItem> inEquationItemList;
-  output list<SCode.Annotation> outAnnotationList;
-algorithm
-  outAnnotationList := match (inEquationItemList)
-    local
-      list<Absyn.EquationItem> cdr;
-      Absyn.Annotation ann;
-      SCode.Annotation res;
-      list<SCode.Annotation> anns,anns_1;
-    case({}) then {};
-    case (Absyn.EQUATIONITEMANN(ann) :: cdr)
-      equation
-        res = translateAnnotation(ann);
-        anns = translateAnnotationsEq(cdr);
-        anns_1 = res :: anns;
-      then
-        anns_1;
-    case(_ :: cdr)
-      equation
-        anns = translateAnnotationsEq(cdr);
-      then
-        anns;
-    case(_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"SCode.translateAnnotationsEq failed");
-      then
-        fail();
-  end match;
-end translateAnnotationsEq;
-
-
-protected function translateAnnotationsAlg
-"@author: adrpo
-  function: translateAnnotationsAlg
-  turns a list of Absyn.AlgorithmItem into a list of Annotations"
-  input list<Absyn.AlgorithmItem> inAlgorithmItemList;
-  output list<SCode.Annotation> outAnnotationList;
-algorithm
-  outAnnotationList := match (inAlgorithmItemList)
-    local
-      list<Absyn.AlgorithmItem> cdr;
-      Absyn.Annotation ann;
-      SCode.Annotation res;
-      list<SCode.Annotation> anns,anns_1;
-    case({}) then {};
-    case(Absyn.ALGORITHMITEMANN(ann) :: cdr)
-      equation
-        res = translateAnnotation(ann);
-        anns = translateAnnotationsAlg(cdr);
-        anns_1 = res :: anns;
-      then
-        anns_1;
-    case(_ :: cdr)
-      equation
-        anns = translateAnnotationsAlg(cdr);
-      then
-        anns;
-    case(_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"SCode.translateAnnotationsAlg failed");
-      then
-        fail();
-  end match;
-end translateAnnotationsAlg;
 
 // stefan
 public function translateAnnotation
@@ -1350,13 +1161,14 @@ algorithm
       Absyn.TypeSpec t;
       Option<Absyn.Modification> m;
       Option<Absyn.Comment> comment;
-      Option<SCode.Comment> comment_1;
+      SCode.Comment cmt;
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
       Absyn.Path path;
       Absyn.Annotation absann;
       SCode.Annotation ann;
+      Option<SCode.Annotation> sann;
       Absyn.Variability variability;
       Absyn.Parallelism parallelism;
       Absyn.Info i,info;
@@ -1373,7 +1185,7 @@ algorithm
 
     case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
       equation
-        de_1 = translateOperatorDef(de,n,i);
+        (de_1,cmt) = translateOperatorDef(de,n,i);
         (_, redecl) = translateRedeclarekeywords(repl);
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);
@@ -1384,7 +1196,7 @@ algorithm
         cls = SCode.CLASS(
           n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          sEnc, sPar, SCode.R_OPERATOR(), de_1, i);
+          sEnc, sPar, SCode.R_OPERATOR(), de_1, cmt, i);
       then
         {cls};
 
@@ -1393,7 +1205,7 @@ algorithm
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
-        de_1 = translateClassdef(de,i);
+        (de_1,cmt) = translateClassdef(de,i);
         (_, redecl) = translateRedeclarekeywords(repl);
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);
@@ -1404,7 +1216,7 @@ algorithm
         cls = SCode.CLASS(
           n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          sEnc, sPar, re_1, de_1, i);
+          sEnc, sPar, re_1, de_1, cmt, i);
       then
         {cls};
 
@@ -1440,7 +1252,7 @@ algorithm
         // PR. This adds the arraydimension that may be specified together with the type of the component.
         tot_dim = listAppend(d, ad);
         (repl_1, redecl) = translateRedeclarekeywords(repl);
-        comment_1 = translateComment(comment);
+        cmt = translateComment(comment);
         sFin = SCode.boolFinal(finalPrefix);
         sRed = SCode.boolRedeclare(redecl);
         scc = translateConstrainClass(cc);
@@ -1450,7 +1262,7 @@ algorithm
         (SCode.COMPONENT(n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
           SCode.ATTR(tot_dim,ct,prl1,var1,di),
-          t,mod,comment_1,cond,info) :: xs_1);
+          t,mod,cmt,cond,info) :: xs_1);
 
     case (_,_,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
@@ -1570,7 +1382,7 @@ algorithm
       Absyn.Path cc_path;
       list<Absyn.ElementArg> eltargs;
       Option<Absyn.Comment> cmt;
-      Option<SCode.Comment> cc_cmt;
+      SCode.Comment cc_cmt;
       Absyn.Modification mod;
       SCode.Mod cc_mod;
 
@@ -1630,7 +1442,7 @@ algorithm
       Absyn.Equation e;
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
-      Option<SCode.Comment> com;
+      SCode.Comment com;
       Absyn.Info info;
 
     case ({}, _) then {};
@@ -1667,7 +1479,7 @@ algorithm
       Absyn.Equation e;
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
-      Option<SCode.Comment> com;
+      SCode.Comment com;
       Absyn.Info info;
 
     case ({}, _) then {};
@@ -1681,42 +1493,83 @@ algorithm
       then
         (e_1 :: es_1);
 
-    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: es), _)
-      equation
-        es_1 = translateEEquations(es, inIsInitial);
-      then
-        es_1;
   end match;
 end translateEEquations;
 
-// stefan
 protected function translateComment
 "function: translateComment
   turns an Absyn.Comment into an SCode.Comment"
   input Option<Absyn.Comment> inComment;
-  output Option<SCode.Comment> outComment;
+  output SCode.Comment outComment;
 algorithm
   outComment := match (inComment)
+    local
+      Option<Absyn.Annotation> absann;
+      Option<SCode.Annotation> ann;
+      Option<String> ostr;
+
+    case(NONE()) then SCode.noComment;
+    case(SOME(Absyn.COMMENT(absann,ostr)))
+      equation
+        ann = Util.applyOption(absann,translateAnnotation);
+      then SCode.COMMENT(ann,ostr);
+  end match;
+end translateComment;
+
+protected function translateCommentList
+  "turns an Absyn.Comment into an SCode.Comment"
+  input list<Absyn.Annotation> inAnns;
+  input Option<String> inString;
+  output SCode.Comment outComment;
+algorithm
+  outComment := match (inAnns,inString)
+    local
+      Absyn.Annotation absann;
+      list<Absyn.Annotation> anns;
+      SCode.Annotation ann;
+      Option<String> ostr;
+
+    case ({},_) then SCode.COMMENT(NONE(),inString);
+    case ({absann},_)
+      equation
+        ann = translateAnnotation(absann);
+      then SCode.COMMENT(SOME(ann),inString);
+    case (absann::anns,_)
+      equation
+        absann = List.fold(anns, Absyn.mergeAnnotations, absann);
+        ann = translateAnnotation(absann);
+      then SCode.COMMENT(SOME(ann),inString);
+  end match;
+end translateCommentList;
+
+protected function translateCommentSeparate
+"function: translateComment
+  turns an Absyn.Comment into an SCode.Annotation + string"
+  input Option<Absyn.Comment> inComment;
+  output Option<SCode.Annotation> outAnn;
+  output Option<String> outStr;
+algorithm
+  (outAnn,outStr) := match (inComment)
     local
       Absyn.Annotation absann;
       SCode.Annotation ann;
       String str;
 
-    case(NONE()) then NONE();
-    case(SOME(Absyn.COMMENT(NONE(),NONE()))) then SOME(SCode.COMMENT(NONE(),NONE()));
-    case(SOME(Absyn.COMMENT(NONE(),SOME(str)))) then SOME(SCode.COMMENT(NONE(),SOME(str)));
+    case(NONE()) then (NONE(),NONE());
+    case(SOME(Absyn.COMMENT(NONE(),NONE()))) then (NONE(),NONE());
+    case(SOME(Absyn.COMMENT(NONE(),SOME(str)))) then (NONE(),SOME(str));
     case(SOME(Absyn.COMMENT(SOME(absann),NONE())))
       equation
         ann = translateAnnotation(absann);
       then
-        SOME(SCode.COMMENT(SOME(ann),NONE()));
+        (SOME(ann),NONE());
     case(SOME(Absyn.COMMENT(SOME(absann),SOME(str))))
       equation
         ann = translateAnnotation(absann);
       then
-        SOME(SCode.COMMENT(SOME(ann),SOME(str)));
+        (SOME(ann),SOME(str));
   end match;
-end translateComment;
+end translateCommentSeparate;
 
 protected function translateEquation
 "function: translateEquation
@@ -1724,7 +1577,7 @@ protected function translateEquation
   If clauses are translated so that the SCode only contains simple if-else constructs, and no elseif.
   PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
-  input Option<SCode.Comment> inComment;
+  input SCode.Comment inComment;
   input Absyn.Info inInfo;
   input Boolean inIsInitial;
   output SCode.EEquation outEEquation;
@@ -1742,7 +1595,7 @@ algorithm
       Absyn.ComponentRef fname;
       Absyn.FunctionArgs fargs;
       list<Absyn.ForIterator> restIterators;
-      Option<SCode.Comment> com;
+      SCode.Comment com;
       list<Absyn.Exp> conditions;
       list<list<Absyn.EquationItem>> trueBranches;
       list<list<SCode.EEquation>> trueEEquations;
@@ -1870,7 +1723,7 @@ algorithm
       SCode.Attributes a6;
       Absyn.TypeSpec a7;
       SCode.Mod a8;
-      Option<SCode.Comment> a10;
+      SCode.Comment a10;
       Option<Absyn.Exp> a11;
       Option<Absyn.ConstrainClass> a13;
       SCode.Prefixes p;
@@ -1999,7 +1852,7 @@ algorithm
       SCode.Restriction res;
       Absyn.Info info;
       Absyn.TypeSpec ty;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       Option<Absyn.Exp> cond;
       SCode.Mod mod, redecl;
       Option<SCode.SubMod> opt_mod;
@@ -2021,7 +1874,7 @@ algorithm
     //       instantiation doesn't handle class modifications yet. Enable this
     //       when it does.
     /*************************************************************************/
-    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
+    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr), cmt, info)
       equation
         true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         // do not split for functions and records!
@@ -2032,7 +1885,7 @@ algorithm
         (redecl, opt_mod) = splitRedeclareMod(mod, name);
       then
         (SCode.CLASS(name, prefs, ep, pp, res,
-          SCode.DERIVED(ty, redecl, attr, cmt), info), opt_mod);
+          SCode.DERIVED(ty, redecl, attr), cmt, info), opt_mod);
 
     else (inElement, NONE());
   end matchcontinue;
@@ -2451,8 +2304,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
-                      SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()),
-                      NONE());
+                      SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()));
   elt := SCode.CLASS(
            str,
            SCode.PREFIXES(
@@ -2461,7 +2313,7 @@ algorithm
              SCode.FINAL(),
              Absyn.NOT_INNER_OUTER(),
              SCode.NOT_REPLACEABLE()),
-           SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_TYPE(),cd,info);
+           SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_TYPE(),cd,SCode.noComment,info);
 end makeTypeVarElement;
 
 protected function translateEach

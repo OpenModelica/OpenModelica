@@ -205,6 +205,7 @@ algorithm
       Absyn.Path path;
       Absyn.Within w2;
       list<PackageOrder> reverseOrder;
+      list<Absyn.Annotation> ann;
     case (_,pack,mp,_,within_,_)
       equation
         pd = System.pathDelimiter();
@@ -212,12 +213,12 @@ algorithm
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
-        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
+        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
         reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
         path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
         w2 = Absyn.WITHIN(path);
         cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, encoding, w2, {});
-      then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,cmt),info);
+      then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
     case (_,pack,mp,_,within_,_)
       equation
         true = numError == Error.getNumErrorMessages();

@@ -267,7 +267,6 @@ algorithm
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       SCode.Ident cn,compname;
-      Option<SCode.Comment> cmt;
       SCode.Restriction restr;
       Absyn.TypeSpec tp,tp1;
       DAE.Mod emod;
@@ -278,7 +277,7 @@ algorithm
       InstanceHierarchy ih;
       SCode.Attributes attr1;
       list<SCode.Enum> enumLst;
-      Option<SCode.Comment> comment;
+      SCode.Comment cmt,comment;
       SCode.Element element;
 
     // Only derived classdefinitions supported in redeclares for now.
@@ -287,19 +286,19 @@ algorithm
     //       replacing entire functions with PARTS and everything, so i added the case below
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),_,_)
+        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
       equation
        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),emod));
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
 
     // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i),_,_)
+        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_)
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i),DAE.NOMOD()));
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),DAE.NOMOD()));
 
     // redeclare of component declaration
     case(cache,env,ih,pre,f,SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
@@ -1701,7 +1700,8 @@ algorithm
       SCode.Attributes attr1, attr2, attr;
       Absyn.TypeSpec tp;
       SCode.Mod m1,m2,sm;
-      Option<SCode.Comment> comment,comment2;
+      SCode.Comment comment,comment2;
+      Option<SCode.Annotation> ann;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<tuple<SCode.Element, DAE.Mod>> els;
@@ -1771,7 +1771,8 @@ algorithm
             {(SCode.CLASS(name = id1,
                 prefixes = pf1, 
                 restriction = res1, 
-                classDef = cdef, 
+                classDef = cdef,
+                cmt = comment,
                 info = info1), 
                 m1_1)}), 
           DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst = 
@@ -1788,7 +1789,7 @@ algorithm
         pf = FFlattenRedeclare.propagatePrefixes(pf2, pf1);
         (res, info) = FSCodeCheck.checkSameRestriction(res1, res2, info1, info2);
       then
-        DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, info), m)});
+        DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, comment, info), m)});
 
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
     case (mod as DAE.REDECL(finalPrefix = f1,eachPrefix = each1,

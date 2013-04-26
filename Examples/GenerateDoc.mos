@@ -187,7 +187,7 @@ dirs := "";
 replaceCommands := "";
 filetmp := "index.html";
 writeFile(filetmp, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
-writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, <a href=\"https://openmodelica.org/git/OpenModelicaLibraries.git\">miscellaneous Modelica libraries</a>, and the documentation for OpenModelica-specific scripting.</p>\n", append = true);
+writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, miscellaneous Modelica libraries stored in a <a href=\"https://openmodelica.org/git/OpenModelicaLibraries.git\">git</a> repository. There is also documentation for OpenModelica-specific <a href=\"OpenModelica.Scripting.html\">scripting</a>.</p>\n", append = true);
 writeFile(filetmp, "<p>Note that not all libraries are supported or have been tested. Feel free to add bug reports either to <a href=\"https://trac.openmodelica.org/OpenModelica/newticket\">OpenModelica</a> (for compiler bugs) or to the <a href=\"https://github.com/modelica-3rdparty\">GitHub projects</a> for enhancements or bugs in the libraries. Older libraries may contain broken links and images (only libraries with modelica:// links produce good documentation). The Modelica Standard Library is best supported package in OpenModelica.</p>\n", append = true);
 writeFile(filetmp, "<h2>Libraries</h2>\n", append = true);
 writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);

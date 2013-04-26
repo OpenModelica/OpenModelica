@@ -199,12 +199,6 @@ algorithm
 
     case {} then {};
 
-    case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: el))
-      equation
-        nl = printElementitems(el);
-      then
-        nl;
-
     case ((Absyn.ELEMENTITEM(element = e) :: el))
       equation
         node = printElement(e);

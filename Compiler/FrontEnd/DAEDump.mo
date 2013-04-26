@@ -1150,26 +1150,7 @@ algorithm
         str = dumpAnnotationOptionStr(annopt);
       then
         str;
-    // Class comment, show annotations enabled.
-    case (SOME(SCode.CLASS_COMMENT(annotations = annl, comment = cmtopt)))
-      equation
-        true = Config.showAnnotations();
-        str = dumpCommentOptionStr(cmtopt);
-        ann_strl = List.map1(List.map(annl, dumpAnnotationStr),
-          stringAppend, ";");
-        // If there is only one annotations, print it immediately after the
-        // class name, otherwise print them in a list below the class name.
-        str = str +& Util.if_((listLength(ann_strl) > 1), "\n ", "");
-        str = str +& stringDelimitList(ann_strl, "\n ");
-      then
-        str;
-    // Class comment, show annotations disabled.
-    case (SOME(SCode.CLASS_COMMENT(comment = cmtopt)))
-      equation
-        str = dumpCommentOptionStr(cmtopt);
-      then
-        str;
-      end matchcontinue;
+  end matchcontinue;
 end dumpCommentOptionStr;
 
 protected function dumpAnnotationOptionStr

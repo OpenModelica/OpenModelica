@@ -2065,7 +2065,7 @@ algorithm
       equation
         (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env,info);
-        cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE(),{},NONE()),info);
+        cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE()),SCode.noComment,info);
       then
         (cache,env,cl);
     case (cache,env,cl)
@@ -2167,7 +2167,7 @@ algorithm
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       Option<Absyn.Exp> cond;
       SCode.Mod mod,umod;
       DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
@@ -2305,7 +2305,6 @@ protected function buildRecordConstructorResultElt
   input Env.Env env;
   input Absyn.Info info;
   output SCode.Element outElement;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   //print(" creating element of type: " +& id +& "\n");
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
@@ -2314,7 +2313,8 @@ algorithm
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
           SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
-          SCode.NOMOD(),NONE(),NONE(),info);
+          SCode.NOMOD(),SCode.noComment,NONE(),info);
+  annotation(__OpenModelica_EarlyInline = true);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

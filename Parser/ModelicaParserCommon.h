@@ -44,6 +44,7 @@ extern void *ModelicaParser_filename_RML;
 extern const char *ModelicaParser_filename_C;
 extern const char *ModelicaParser_filename_C_testsuiteFriendly;
 extern int ModelicaParser_lexerError;
+extern int ModelicaParser_langStd;
 extern const char *ModelicaParser_encoding;
 
 #define PARSE_MODELICA        0

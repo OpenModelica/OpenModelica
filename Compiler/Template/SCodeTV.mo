@@ -404,8 +404,8 @@ package SCode
 
   uniontype Enum
     record ENUM
-      Ident           literal;
-      Option<Comment> comment;
+      Ident   literal;
+      Comment comment;
     end ENUM;
   end Enum;
 
@@ -417,8 +417,6 @@ package SCode
       list<AlgorithmSection> normalAlgorithmLst;
       list<AlgorithmSection> initialAlgorithmLst;
       Option<ExternalDecl> externalDecl;
-      list<Annotation> annotationLst;
-      Option<Comment> comment;
     end PARTS;
 
     record CLASS_EXTENDS
@@ -431,23 +429,19 @@ package SCode
       Absyn.TypeSpec typeSpec;
       Mod modifications;
       Attributes attributes;
-      Option<Comment> comment;
     end DERIVED;
 
     record ENUMERATION
       list<Enum> enumLst;
-      Option<Comment> comment;
     end ENUMERATION;
 
     record OVERLOAD
       list<Absyn.Path> pathLst;
-      Option<Comment> comment;
     end OVERLOAD;
 
     record PDER
       Absyn.Path functionPath;
       list<Ident> derivedVariables;
-      Option<Comment> comment;
     end PDER;
 
   end ClassDef;
@@ -457,11 +451,6 @@ package SCode
       Option<Annotation> annotation_;
       Option<String> comment;
     end COMMENT;
-
-    record CLASS_COMMENT
-      list<Annotation> annotations;
-      Option<Comment> comment;
-    end CLASS_COMMENT;
   end Comment;
 
   uniontype Annotation
@@ -492,21 +481,21 @@ package SCode
       list<Absyn.Exp> condition;
       list<list<EEquation>> thenBranch;
       list<EEquation>       elseBranch;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_IF;
 
     record EQ_EQUALS
       Absyn.Exp expLeft;
       Absyn.Exp expRight;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_EQUALS;
 
     record EQ_CONNECT
       Absyn.ComponentRef crefLeft;
       Absyn.ComponentRef crefRight;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_CONNECT;
 
@@ -514,7 +503,7 @@ package SCode
       Ident index;
       Option<Absyn.Exp> range;
       list<EEquation> eEquationLst;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_FOR;
 
@@ -522,33 +511,33 @@ package SCode
       Absyn.Exp condition;
       list<EEquation> eEquationLst;
       list<tuple<Absyn.Exp, list<EEquation>>> elseBranches;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_WHEN;
 
     record EQ_ASSERT
       Absyn.Exp condition;
       Absyn.Exp message;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_ASSERT;
 
     record EQ_TERMINATE
       Absyn.Exp message;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_TERMINATE;
 
     record EQ_REINIT
       Absyn.ComponentRef cref;
       Absyn.Exp expReinit;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_REINIT;
 
     record EQ_NORETCALL
       Absyn.Exp exp;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end EQ_NORETCALL;
 
@@ -565,7 +554,7 @@ package SCode
     record ALG_ASSIGN
       Absyn.Exp assignComponent;
       Absyn.Exp value;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_ASSIGN;
 
@@ -574,7 +563,7 @@ package SCode
       list<Statement> trueBranch;
       list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
       list<Statement> elseBranch;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_IF;
 
@@ -582,59 +571,59 @@ package SCode
       String index;
       Option<Absyn.Exp> range;
       list<Statement> forBody;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_FOR;
 
     record ALG_WHILE
       Absyn.Exp boolExpr;
       list<Statement> whileBody;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_WHILE;
 
     record ALG_WHEN_A
       list<tuple<Absyn.Exp, list<Statement>>> branches;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_WHEN_A;
 
     record ALG_NORETCALL
       Absyn.Exp exp;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_NORETCALL;
 
     record ALG_RETURN
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_RETURN;
 
     record ALG_BREAK
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_BREAK;
 
     record ALG_TRY
       list<Statement> tryBody;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_TRY;
 
     record ALG_CATCH
       list<Statement> catchBody;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_CATCH;
 
     record ALG_THROW
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_THROW;
 
     record ALG_FAILURE
       list<Statement> stmts;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
     end ALG_FAILURE;
   end Statement;
@@ -731,7 +720,7 @@ package SCode
       Attributes attributes;
       Absyn.TypeSpec typeSpec;
       Mod modifications;
-      Option<Comment> comment;
+      Comment comment;
       Option<Absyn.Exp> condition;
       Absyn.Info info;
     end COMPONENT;

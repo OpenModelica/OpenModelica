@@ -289,7 +289,7 @@ algorithm
 
     // a derived class from basic type.
     case (NFSCodeEnv.CLASS(
-            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr, cmt), info = info)),
+            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info)),
           _, _, _, _, _)
       equation
         // Look up the inherited class.
@@ -304,7 +304,7 @@ algorithm
 
     // a derived class, look up the inherited class and instantiate it.
     case (NFSCodeEnv.CLASS(
-            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr, cmt), info = info),
+            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info),
             env = envDerived),
           _, _, _, _, _)
       equation
@@ -1119,7 +1119,7 @@ algorithm
       SCode.Attributes a1,a2;
       Absyn.TypeSpec t1,t2;
       SCode.Mod m1,m2,m;
-      Option<SCode.Comment> c1,c2;
+      SCode.Comment c1,c2;
       Option<Absyn.Exp> cnd1,cnd2;
       Absyn.Info i1,i2;
       SCode.Element c;
@@ -1442,11 +1442,12 @@ protected
   SCode.Restriction res;
   SCode.ClassDef cdef1, cdef2, cdef;
   Absyn.Info info;
+  SCode.Comment cmt;
 algorithm
   SCode.CLASS(classDef=cdef1) := inOriginalClass;
-  SCode.CLASS(name, pref2, ep, pp, res, cdef2, info) := inNewClass;
+  SCode.CLASS(name, pref2, ep, pp, res, cdef2, cmt, info) := inNewClass;
   cdef := mergeCdefs(cdef1, cdef2);
-  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
+  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info);
 end propagateModifiersAndArrayDims;
 
 public function mergeCdefs
@@ -1464,10 +1465,10 @@ algorithm
       Option<SCode.Comment> cmt1, cmt2;
       SCode.Mod m1, m2;
 
-    case (SCode.DERIVED(ts1, m1, atr1, cmt1), SCode.DERIVED(ts2, m2, atr2, cmt2))
+    case (SCode.DERIVED(ts1, m1, atr1), SCode.DERIVED(ts2, m2, atr2))
       equation
         m2 = mergeModifiers(m2, m1);
-        cd = SCode.DERIVED(ts2, m2, atr2, cmt2);
+        cd = SCode.DERIVED(ts2, m2, atr2);
       then
         cd;
 
@@ -1491,18 +1492,18 @@ algorithm
       SCode.Attributes a;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       Option<Absyn.Exp> cnd;
       SCode.Visibility v;
       Option<SCode.Annotation> ann;
       Absyn.Path bcp;
 
-    case (SCode.CLASS(n, p, ep, pp, rp, cd, i))
+    case (SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i))
       equation
         //p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
         //p = SCode.prefixesSetReplaceable(p, SCode.NOT_REPLACEABLE());
         cd = removeRedeclareModsFromClassDef(cd);
-        e = SCode.CLASS(n, p, ep, pp, rp, cd, i);
+        e = SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i);
       then
         e;
 
@@ -1547,11 +1548,8 @@ algorithm
       SCode.Attributes a;
       String n;
 
-    case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt))
-      equation
-        cd = SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt);
-      then
-        cd;
+    case (cd as SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed))
+      then cd;
 
     case (SCode.CLASS_EXTENDS(n, m, cd))
       equation
@@ -1561,10 +1559,10 @@ algorithm
       then
         cd;
 
-    case (SCode.DERIVED(t, m, a, cmt))
+    case (SCode.DERIVED(t, m, a))
       equation
         m = NFSCodeMod.removeRedeclaresFromMod(m);
-        cd = SCode.DERIVED(t, m, a, cmt);
+        cd = SCode.DERIVED(t, m, a);
       then
         cd;
 

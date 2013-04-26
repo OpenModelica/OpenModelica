@@ -1082,7 +1082,7 @@ algorithm
     Absyn.QUALIFIED(index, inEnumPath)), NONE());
   enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
     SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
-    SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
 
@@ -1112,7 +1112,7 @@ algorithm
   iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    NONE(), NONE(), Absyn.dummyInfo);
+    SCode.noComment, NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
@@ -1734,7 +1734,7 @@ protected
   SCode.Element cls;
 algorithm
   cls := SCode.CLASS(inName, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
   outTree := avlTreeAdd(inTree, inName, CLASS(cls, emptyEnv, BUILTIN()));
 end addDummyClassToTree;
 

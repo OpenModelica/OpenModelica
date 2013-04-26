@@ -137,6 +137,7 @@ algorithm
       Absyn.Program p;
       Absyn.ClassDef cd;
       list<Absyn.ClassPart> cp,resultPart;
+      list<Absyn.Annotation> ann;
       Option<String> cmt;
       Absyn.ElementAttributes attrs;
       list<Absyn.ElementArg> args,annList,resAnnList;
@@ -146,23 +147,17 @@ algorithm
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
 
-    case(Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = cp, comment = cmt),p,cPath,env)
+    case(Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = cp, ann = ann, comment = cmt),p,cPath,env)
       equation
         resultPart = refactorGraphAnnInClassParts(cp,p,cPath,env);
       then
-        Absyn.PARTS(typeVars,classAttrs,resultPart,cmt);
+        Absyn.PARTS(typeVars,classAttrs,resultPart,ann,cmt);
 
     case(Absyn.DERIVED(typeSpec = ts, attributes = attrs,arguments = args, comment = SOME(Absyn.COMMENT(annotation_=SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = cmt))),p,cPath,env)
       equation
         resAnnList = transformClassAnnList(annList,{"Class"},{},p);
       then
         Absyn.DERIVED(ts,attrs,args,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(resAnnList)),cmt)));
- /*   case(Absyn.CLASS_EXTENDS(name = n,arguments = annList, comment = cmt,parts = cp),p,cPath,env)
-      equation
-        resultPart = refactorGraphAnnInClassParts(cp,p,cPath,env);
-        resAnnList = transformClassAnnList(annList,{"Class"},{},p);
-      then
-        Absyn.CLASS_EXTENDS(n,resAnnList,cmt,resultPart);                */
 
     case(cd,p,_,_) then cd;
 
@@ -312,12 +307,6 @@ algorithm
       Absyn.Path cPath;
       Env.Env env;
 
-    case(Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annList)),p,_,env)
-      equation
-        annList = transformClassAnnList(annList,{"Class"},{},p);
-      then
-        Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(annList));
-
     case(Absyn.ELEMENTITEM(element = el) ,p,cPath,env)
       equation
         resultElement = refactorGraphAnnInElement(el,p,cPath,env);
@@ -347,11 +336,6 @@ algorithm
       list<Absyn.ElementArg> annList;
       Absyn.Info info;
 
-    case(Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)),p,_,_)
-      equation
-        annList = transformClassAnnList(annList,{"Class"},{},p); //ClasS!??!
-      then Absyn.EQUATIONITEMANN(Absyn.ANNOTATION(annList));
-
     case(Absyn.EQUATIONITEM(equation_ = e, info = info, comment =
       SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = com))),p,_,_)
       equation
@@ -379,12 +363,6 @@ algorithm
       Option<String> com;
       list<Absyn.ElementArg> annList;
       Absyn.Info info;
-    case(Absyn.ALGORITHMITEMANN(annotation_ =  Absyn.ANNOTATION(elementArgs = annList) ),p,_,_)
-      equation
-        annList = transformClassAnnList(annList,{"Class"},{},p);
-      then
-        Absyn.ALGORITHMITEMANN(Absyn.ANNOTATION(annList));
-
     case(Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
       SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),p,_,_)
       equation
@@ -1067,213 +1045,39 @@ algorithm
 
 end getCoordsInPath;
 
-protected function getCoordsInClass"function: getCoordsInClass
+protected function getCoordsInClass "function: getCoordsInClass
 
   Helper function to getCoordsInPath. This function takes a class and a program
   as arguments and then returns the diagram or icon coordinates in that class.
 "
-
   input Absyn.Class inClass;
   input Context contextToGetCoordsFrom;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := match (inClass,contextToGetCoordsFrom)
-
     local
-      list<Absyn.ClassPart> parts1;
-      list<Absyn.ElementArg> annlist;
+      list<Absyn.Annotation> ann;
+      list<Absyn.ElementArg> annlst;
       Context context;
 
-    case(Absyn.CLASS(body = Absyn.PARTS(classParts = parts1)),context)
-
+    case(Absyn.CLASS(body = Absyn.PARTS(ann = ann)),context)
       equation
-
-        (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
-
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+        (x1,y1,x2,y2) = getCoordsInAnnList(annlst,context);
       then
         (x1,y1,x2,y2);
-    case(Absyn.CLASS(body = Absyn.DERIVED(comment =  SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annlist)))))),context)
 
+    case(Absyn.CLASS(body = Absyn.DERIVED(comment =  SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annlst)))))),context)
         equation
-
-          (x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
-
+          (x1,y1,x2,y2) = getCoordsInAnnList(annlst,context);
       then
         (x1,y1,x2,y2);
-/*      case(Absyn.CLASS(body = Absyn.CLASS_EXTENDS(arguments = annlist,parts = parts1)),context)
 
-        equation
-
-          //(x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
-          (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
-      then
-        (x1,y1,x2,y2);   */
   end match;
-
 end getCoordsInClass;
-
-protected function getCoordsFromParts"function: getCoordsFromParts
-
-  Helper function to getCoordsInClass.
-"
-  input list<Absyn.ClassPart> inParts;
-  input Context contextToGetCoordsFrom;
-  output Absyn.Exp x1;
-  output Absyn.Exp y1;
-  output Absyn.Exp x2;
-  output Absyn.Exp y2;
-algorithm
-  (x1,y1,x2,y2) := matchcontinue(inParts,contextToGetCoordsFrom)
-    local
-      list<Absyn.ClassPart> rest;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.EquationItem> eqns;
-      list<Absyn.AlgorithmItem> algs;
-      Context context;
-    case(Absyn.PUBLIC(contents = elts) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromElts(elts,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(Absyn.PROTECTED(contents = elts) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromElts(elts,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(Absyn.EQUATIONS(contents = eqns) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromEqns(eqns,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(Absyn.INITIALEQUATIONS(contents = eqns) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromEqns(eqns,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(Absyn.ALGORITHMS(contents = algs) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromAlgs(algs,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(Absyn.INITIALALGORITHMS(contents = algs) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromAlgs(algs,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(_ :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromParts(rest,context);
-      then
-        (x1,y1,x2,y2);
-  end matchcontinue;
-end getCoordsFromParts;
-
-protected function getCoordsFromElts"function: getCoordsFromElts
-
-  Helper function to getCoordsFromParts.
-"
-  input list<Absyn.ElementItem> inElts;
-  input Context contextToGetCoordsFrom;
-  output Absyn.Exp x1;
-  output Absyn.Exp y1;
-  output Absyn.Exp x2;
-  output Absyn.Exp y2;
-algorithm
-  (x1,y1,x2,y2) := matchcontinue(inElts,contextToGetCoordsFrom)
-    local
-      list<Absyn.ElementItem> rest;
-      list<Absyn.ElementArg> annList;
-      Context context;
-
-    case(Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(_ :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromElts(rest,context);
-      then
-        (x1,y1,x2,y2);
-  end matchcontinue;
-end getCoordsFromElts;
-
-protected function getCoordsFromEqns"function: getCoordsFromEqns
-
-  Helper function to getCoordsFromParts.
-"
-
-  input list<Absyn.EquationItem> inEqns;
-  input Context contextToGetCoordsFrom;
-  output Absyn.Exp x1;
-  output Absyn.Exp y1;
-  output Absyn.Exp x2;
-  output Absyn.Exp y2;
-algorithm
-  (x1,y1,x2,y2) := matchcontinue(inEqns,contextToGetCoordsFrom)
-    local
-      list<Absyn.EquationItem> rest;
-      list<Absyn.ElementArg> annList;
-      Context context;
-
-    case(Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(_ :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromEqns(rest,context);
-      then
-        (x1,y1,x2,y2);
-
-  end matchcontinue;
-end getCoordsFromEqns;
-
-protected function getCoordsFromAlgs"function: getCoordsFromAlgs
-
-  Helper function to getCoordsFromParts.
-"
-  input list<Absyn.AlgorithmItem> inAlgs;
-  input Context contextToGetCoordsFrom;
-  output Absyn.Exp x1;
-  output Absyn.Exp y1;
-  output Absyn.Exp x2;
-  output Absyn.Exp y2;
-algorithm
-  (x1,y1,x2,y2) := matchcontinue(inAlgs,contextToGetCoordsFrom)
-    local
-      list<Absyn.AlgorithmItem> rest;
-      list<Absyn.ElementArg> annList;
-      Context context;
-
-    case(Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-      then
-        (x1,y1,x2,y2);
-
-    case(_ :: rest,context)
-      equation
-        (x1,y1,x2,y2) = getCoordsFromAlgs(rest,context);
-      then
-        (x1,y1,x2,y2);
-
-  end matchcontinue;
-end getCoordsFromAlgs;
 
 protected function getCoordsInAnnList"function: getCoordsInAnnList
 

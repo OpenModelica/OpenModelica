@@ -275,6 +275,7 @@ algorithm
       Absyn.Info info;
       SCode.Restriction res;
       SCode.Element cls;
+      SCode.Comment cmt;
 
     // Check if the item is already marked as used, then we can stop here.
     case (_, _)
@@ -296,12 +297,13 @@ algorithm
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
     case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
-        restriction = res, info = info), env = {cls_env}), env)
+        restriction = res, info = info, cmt = cmt), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
         env = NFSCodeEnv.enterFrame(cls_env, env);
         analyseClassDef(cdef, res, env, false, info);
         analyseMetaType(res, env, info);
+        analyseComment(cmt, env, info);
         _ :: env = env;
         analyseRedeclaredClass(cls, env);
       then
@@ -429,7 +431,7 @@ algorithm
       Absyn.TypeSpec ty;
       list<SCode.Equation> nel, iel;
       list<SCode.AlgorithmSection> nal, ial;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       list<SCode.Annotation> annl;
       Option<SCode.ExternalDecl> ext_decl;
       Env ty_env, env;
@@ -440,8 +442,7 @@ algorithm
     // A class made of parts, analyse elements, equation, algorithms, etc.
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel,
         initialEquationLst = iel, normalAlgorithmLst = nal,
-        initialAlgorithmLst = ial, externalDecl = ext_decl,
-        annotationLst = annl, comment = cmt), _, _, _, _)
+        initialAlgorithmLst = ial, externalDecl = ext_decl), _, _, _, _)
       equation
         analyseElements(el, inEnv, inRestriction);
         List.map1_0(nel, analyseEquation, inEnv);
@@ -449,8 +450,6 @@ algorithm
         List.map1_0(nal, analyseAlgorithm, inEnv);
         List.map1_0(ial, analyseAlgorithm, inEnv);
         analyseExternalDecl(ext_decl, inEnv, inInfo);
-        List.map2_0(annl, analyseAnnotation, inEnv, inInfo);
-        analyseComment(cmt, inEnv, inInfo);
       then
         ();
 
@@ -474,7 +473,7 @@ algorithm
         fail();
 
     // A derived class definition.
-    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr, comment = cmt),
+    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr),
         _, _ :: env, _, _)
       equation
         env = Util.if_(inInModifierScope, inEnv, env);
@@ -484,7 +483,6 @@ algorithm
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         // TODO! Analyse array dimensions from attributes!
         analyseModifier(mods, inEnv, ty_env, inInfo);
-        analyseComment(cmt, inEnv, inInfo);
       then
         ();
 
@@ -1266,7 +1264,7 @@ end analyseExternalDecl;
 
 protected function analyseComment
   "Analyses an optional comment."
-  input Option<SCode.Comment> inComment;
+  input SCode.Comment inComment;
   input Env inEnv;
   input Absyn.Info inInfo;
 algorithm
@@ -1275,7 +1273,7 @@ algorithm
       SCode.Annotation ann;
 
     // A comment might have an annotation that we need to analyse.
-    case (SOME(SCode.COMMENT(annotation_ = SOME(ann))), _, _)
+    case (SCode.COMMENT(annotation_ = SOME(ann)), _, _)
       equation
         analyseAnnotation(ann, inEnv, inInfo);
       then
@@ -1847,9 +1845,10 @@ algorithm
       Env class_env, env, enclosing_env;
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
+      SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
-        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _, _)
+        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, cmt, info), _, _, _, _, _)
       equation
         /*********************************************************************/
         // TODO: Fix the usage of alias items in this case.
@@ -1866,7 +1865,7 @@ algorithm
 
         //Fix operator record restriction to record
         res = fixRestrictionOfOperatorRecord(res);
-        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
+        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
         resolved_item = updateItemEnv(resolved_item, cls, class_env);
         basename = name +& NFSCodeEnv.BASE_CLASS_SUFFIX;
         env = NFSCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
@@ -1874,7 +1873,7 @@ algorithm
       then
         (cls, env);
 
-    case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, info), _, _, _, _, _)
+    case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info), _, _, _, _, _)
       equation
         // TODO! FIXME! add cc to the used classes!
         cc = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
@@ -1889,7 +1888,7 @@ algorithm
         //Fix operator record restriction to record
         res = fixRestrictionOfOperatorRecord(res);
         // Add the class to the new environment.
-        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
+        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
         item = updateItemEnv(item, cls, class_env);
         env = NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
@@ -1971,21 +1970,21 @@ algorithm
       Env env;
       list<Absyn.NamedArg> clats;
 
-    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), _, _, _, _)
+    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl), _, _, _, _)
       equation
         (el, env) =
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
-        (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), env);
+        (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods,
-        SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), _, _, _, _)
+        SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl)), _, _, _, _)
       equation
         (el, env) =
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
         (SCode.CLASS_EXTENDS(bc, mods,
-          SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), env);
+          SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl)), env);
 
     case (SCode.ENUMERATION(enumLst = _), _, _, _, _)
       then (inClassDef, {inClassEnv});

@@ -47,38 +47,42 @@ public function parse "Parse a mo-file"
   input String infoFilename;
   input Integer acceptedGram;
   input String encoding;
+  input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
   input String infoFilename;
   input Integer acceptedGram;
+  input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Interactive.Statements outStatements;
 
-  external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
   input Integer acceptedGram;
+  input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
-  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
   input Integer acceptedGram;
+  input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Interactive.Statements outStatements;
-  external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestringexp;
 end ParserExt;
 

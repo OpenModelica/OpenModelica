@@ -1009,7 +1009,7 @@ algorithm
             SCode.defaultPrefixes,
             SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-            NONE(), NONE(), Absyn.dummyInfo),
+            SCode.noComment, NONE(), Absyn.dummyInfo),
           DAE.NOMOD(),
           VAR_UNTYPED(),
           {});

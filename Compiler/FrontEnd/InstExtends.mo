@@ -124,7 +124,7 @@ algorithm
       SCode.Mod scodeMod;
       SCode.Final finalPrefix;
       Absyn.Info info;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       SCode.Visibility vis;
 
     // no further elements to instantiate
@@ -457,7 +457,8 @@ algorithm
       String name1,name2,env_path;
       Option<SCode.ExternalDecl> externalDecl1,externalDecl2;
       list<SCode.Annotation> annotationLst1,annotationLst2;
-      Option<SCode.Comment> comment1,comment2;
+      SCode.Comment comment1,comment2;
+      Option<SCode.Annotation> ann1,ann2;
       list<SCode.Element> els1,els2;
       list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
       list<SCode.AlgorithmSection> nAlg1,nAlg2,inAlg1,inAlg2;
@@ -476,17 +477,17 @@ algorithm
 
         env_path = Absyn.pathString(Env.getEnvName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2,annotationLst2,comment2),info2) = cl;
+        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
 
-        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1,annotationLst1,comment1)) = classExtendsCdef;
+        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
+        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
 
-        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2,annotationLst2,comment2);
-        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,info2);
+        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
+        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
         vis2 = SCode.prefixesVisibility(prefixes2);
         elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1,annotationLst1,comment1);
-        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, info1);
+        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1);
+        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         //Debug.traceln("class extends: " +& SCodeDump.unparseElementStr(compelt) +& "  " +& SCodeDump.unparseElementStr(elt));
       then
@@ -575,7 +576,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       InstanceHierarchy ih;
-      Option<SCode.Comment> cmt;
+      SCode.Comment cmt;
       list<SCode.Enum> enumLst;
       String n,name,str1,str2;
       Option<SCode.ExternalDecl> extdecl;
@@ -607,7 +608,7 @@ algorithm
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_,false,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
       equation
         c = Inst.instEnumeration(n, enumLst, cmt, info);
         (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= 40, numIter+1);
@@ -916,7 +917,7 @@ algorithm
       SCode.Partial partialPrefix;
       Absyn.TypeSpec typeSpec;
       SCode.Mod modifications;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       Option<Absyn.Exp> condition;
       Absyn.Info info;
       SCode.ClassDef classDef;
@@ -943,20 +944,20 @@ algorithm
       then
         (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, info),ht)
+    case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, info));
+        (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, info),ht)
+    case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, info));
+        (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
     case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
@@ -1006,7 +1007,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
       SCode.ClassDef cd;
 
-    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c),ht)
+    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),ht)
       equation
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
@@ -1014,9 +1015,9 @@ algorithm
         (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
         (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
         (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c));
+      then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed));
 
-    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c)),ht)
+    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),ht)
       equation
         (cache,mod) = fixModifications(cache,env,mod,ht);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
@@ -1025,17 +1026,17 @@ algorithm
         (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
         (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
         (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c)));
+      then (cache,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)));
 
-    case (cache,env,SCode.DERIVED(ts,mod,attr,c),ht)
+    case (cache,env,SCode.DERIVED(ts,mod,attr),ht)
       equation
         (cache,ts) = fixTypeSpec(cache,env,ts,ht);
         (cache,mod) = fixModifications(cache,env,mod,ht);
-      then (cache,SCode.DERIVED(ts,mod,attr,c));
+      then (cache,SCode.DERIVED(ts,mod,attr));
 
-    case (cache,env,cd as SCode.ENUMERATION(comment = _),ht) then (cache,cd);
-    case (cache,env,cd as SCode.OVERLOAD(comment = _),ht) then (cache,cd);
-    case (cache,env,cd as SCode.PDER(comment = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.ENUMERATION(enumLst = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.OVERLOAD(pathLst = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.PDER(functionPath = _),ht) then (cache,cd);
 
     case (cache,env,cd,ht)
       equation
@@ -1099,7 +1100,7 @@ algorithm
       list<SCode.EEquation> eql;
       list<list<SCode.EEquation>> eqll;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       Option<Absyn.Exp> optExp;
       Absyn.Info info;
       Env.Cache cache;
@@ -1256,7 +1257,7 @@ algorithm
       String iter;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
       list<SCode.Statement> truebranch,elsebranch,forbody,whilebody;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       Absyn.Info info;
       Env.Cache cache;
       Env.Env env;

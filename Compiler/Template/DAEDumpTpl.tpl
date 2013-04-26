@@ -934,9 +934,6 @@ template dumpComment(SCode.Comment comment)
     case COMMENT(__) then
       let cmt_str = dumpCommentStr(comment)
       '<%cmt_str%>'
-    case CLASS_COMMENT(__) then
-      let cmt_str = dumpCommentOpt(comment)
-      '<%cmt_str%>'
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)

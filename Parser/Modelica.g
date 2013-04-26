@@ -95,7 +95,7 @@ goto rule ## func ## Ex; }}
 #endif
   #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define PARSER_INFO(start) (void*)Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0))))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
@@ -113,6 +113,7 @@ goto rule ## func ## Ex; }}
   const char* ModelicaParser_filename_C_testsuiteFriendly = 0;
   int ModelicaParser_readonly = 0;
   int ModelicaParser_flags = 0;
+  int ModelicaParser_langStd = 0;
   int isReadOnly;
   long omc_first_comment;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
@@ -196,7 +197,7 @@ class_specifier returns [void* ast, void* name] :
       {
         modelicaParserAssert(!strcmp(s1,(char*)$s2.text->chars), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
-        $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
+        $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), $comp.ast, $comp.ann);
       }
     )  
     ;
@@ -210,15 +211,15 @@ class_specifier2 returns [void* ast, const char *s2] @init {
       $s2 = (char*)$id.text->chars;
       if (lt != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
-        $ast = Absyn__PARTS(ids, mk_nil(), c, mk_some_or_none(cmt));
+        $ast = Absyn__PARTS(ids, mk_nil(), $c.ast, $c.ann, mk_some_or_none(cmt));
       } else {
-        $ast = Absyn__PARTS(mk_nil(), mk_nil(), c, mk_some_or_none(cmt));
+        $ast = Absyn__PARTS(mk_nil(), mk_nil(), $c.ast, $c.ann, mk_some_or_none(cmt));
       }
     }
 | (lp = LPAR na=named_arguments rp=RPAR) cmt=string_comment c=composition id=END_IDENT
     {
       modelicaParserAssert(optimica_enabled(),"Class attributes are currently allowed only for Optimica. Use +g=Optimica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
-      $ast = Absyn__PARTS(mk_nil(), na, c, mk_some_or_none(cmt));
+      $ast = Absyn__PARTS(mk_nil(), na, $c.ast, $c.ann, mk_some_or_none(cmt));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {
@@ -287,20 +288,22 @@ enumeration_literal returns [void* ast] :
   i1=IDENT c1=comment { ast = Absyn__ENUMLITERAL(token_to_scon(i1),mk_some_or_none(c1)); }
   ;
 
-composition returns [void* ast] :
-  el=element_list els=composition2 { ast = mk_cons(Absyn__PUBLIC(el),els); }
+composition returns [void* ast, void* ann] @init {
+  $ann = mk_nil();
+} :
+  el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)? { $ast = mk_cons(Absyn__PUBLIC(el),els); $ann = a ? mk_cons(a,$ann) : $ann; }
   ;
 
-composition2 returns [void* ast] :
+composition2 [void **ann] returns [void* ast] :
   ( ext=external_clause? { ast = or_nil(ext); }
-  | ( el=public_element_list
-    | el=protected_element_list
-    | el=initial_equation_clause
-    | el=initial_algorithm_clause
-    | el=equation_clause
-    | el=constraint_clause
-    | el=algorithm_clause
-    ) els=composition2 {ast = mk_cons(el,els);}
+  | ( el=public_element_list[ann]
+    | el=protected_element_list[ann]
+    | el=initial_equation_clause[ann]
+    | el=initial_algorithm_clause[ann]
+    | el=equation_clause[ann]
+    | el=constraint_clause[ann]
+    | el=algorithm_clause[ann]
+    ) els=composition2[ann] {ast = mk_cons(el,els);}
   )
   ;
 
@@ -312,10 +315,9 @@ external_clause returns [void* ast] @init {
         ( ( retexp=component_reference EQUALS )?
           funcname=IDENT LPAR ( expl=expression_list )? RPAR )?
         ( ann1 = annotation )? SEMICOLON
-        ( ann2 = external_annotation )?
           {
             ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp.ast), or_nil(expl), mk_some_or_none(ann1));
-            ast = mk_cons(Absyn__EXTERNAL(ast, mk_some_or_none(ann2)), mk_nil());
+            ast = mk_cons(Absyn__EXTERNAL(ast, mk_none()), mk_nil());
           }
         ;
 
@@ -323,19 +325,19 @@ external_annotation returns [void* ast] :
   ann=annotation SEMICOLON {ast = ann;}
   ;
 
-public_element_list returns [void* ast] :
-  PUBLIC es=element_list {ast = Absyn__PUBLIC(es);}
+public_element_list [void **ann] returns [void* ast] :
+  PUBLIC es=element_list[ann] {ast = Absyn__PUBLIC(es);}
   ;
 
-protected_element_list returns [void* ast] :
-  PROTECTED es=element_list {ast = Absyn__PROTECTED(es);}
+protected_element_list [void **ann] returns [void* ast] :
+  PROTECTED es=element_list[ann] {ast = Absyn__PROTECTED(es);}
   ;
 
 language_specification returns [void* ast] :
   id=STRING {ast = token_to_scon(id);}
   ;
 
-element_list returns [void* ast] @init {
+element_list [void **ann] returns [void* ast] @init {
   int first,last;
   e.ast = 0;
   $ast = 0;
@@ -343,14 +345,15 @@ element_list returns [void* ast] @init {
   last = LT(1)->getTokenIndex(LT(1));
   omc_first_comment = last;
 } :
-  (((e=element | a=annotation) s=SEMICOLON) es=element_list)?
+  (((e=element | ({ ModelicaParser_langStd < 31 || 1}? a=annotation {*ann = mk_cons(a, *ann);})) s=SEMICOLON) es=element_list[ann])?
     {
       if (e.ast) {
         ast = mk_cons(Absyn__ELEMENTITEM(e.ast), es);
-      } else if (a)
-        ast = mk_cons(Absyn__ANNOTATIONITEM(a), es);
-      else
+      } else if (a) {
+        ast = es;
+      } else {
         ast = mk_nil();
+      }
       for (;first<last;last--) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
@@ -625,20 +628,20 @@ component_declaration1 returns [void* ast] :
  * 2.2.6 Equations
  */
 
-initial_equation_clause returns [void* ast] :
+initial_equation_clause [void **ann] returns [void* ast] :
   { LA(2)==EQUATION }?
-  INITIAL EQUATION es=equation_annotation_list {ast = Absyn__INITIALEQUATIONS(es);}
+  INITIAL EQUATION es=equation_annotation_list[ann] {ast = Absyn__INITIALEQUATIONS(es);}
   ;
 
-equation_clause returns [void* ast] :
-  EQUATION es=equation_annotation_list {ast = Absyn__EQUATIONS(es);}
+equation_clause [void **ann] returns [void* ast] :
+  EQUATION es=equation_annotation_list[ann] {ast = Absyn__EQUATIONS(es);}
     ;
 
-constraint_clause returns [void* ast] :
-  CONSTRAINT cs=constraint_annotation_list {ast = Absyn__CONSTRAINTS(cs);}
+constraint_clause [void **ann] returns [void* ast] :
+  CONSTRAINT cs=constraint_annotation_list[ann] {ast = Absyn__CONSTRAINTS(cs);}
   ;
 
-equation_annotation_list returns [void* ast]  @init {
+equation_annotation_list [void **ann] returns [void* ast]  @init {
   int first,last;
   $ast = 0;
   first = omc_first_comment;
@@ -656,9 +659,9 @@ equation_annotation_list returns [void* ast]  @init {
       }
     }
   |
-  ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=equation_annotation_list
+  ( eq=equation SEMICOLON | ea=annotation SEMICOLON {*ann = mk_cons(ea,*ann);}) es=equation_annotation_list[ann]
     {
-      ast = mk_cons(e,es);
+      ast = ea ? es : mk_cons(eq.ast,es);
       for (;first<last;last--) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
@@ -668,23 +671,23 @@ equation_annotation_list returns [void* ast]  @init {
     }
   ;
 
-constraint_annotation_list returns [void* ast] :
+constraint_annotation_list [void **ann] returns [void* ast] :
   { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
-  ( co=constraint SEMICOLON {c = co;} | c=annotation SEMICOLON {c = Absyn__ALGORITHMITEMANN(c);}) cs=constraint_annotation_list {ast = mk_cons(c,cs);}
+  ( co=constraint SEMICOLON {c = co;} | c=annotation SEMICOLON {*ann = mk_cons(c,ann);}) cs=constraint_annotation_list[ann] {ast = c ? mk_cons(c,cs) : cs;}
   ;
 
-algorithm_clause returns [void* ast] :
-  T_ALGORITHM as=algorithm_annotation_list {ast = Absyn__ALGORITHMS(as);}
+algorithm_clause [void **ann] returns [void* ast] :
+  T_ALGORITHM as=algorithm_annotation_list[ann] {ast = Absyn__ALGORITHMS(as);}
   ;
 
-initial_algorithm_clause returns [void* ast] :
+initial_algorithm_clause [void **ann] returns [void* ast] :
   { LA(2)==T_ALGORITHM }?
-  INITIAL T_ALGORITHM as=algorithm_annotation_list {ast = Absyn__INITIALALGORITHMS(as);}
+  INITIAL T_ALGORITHM as=algorithm_annotation_list[ann] {ast = Absyn__INITIALALGORITHMS(as);}
   ;
 
-algorithm_annotation_list returns [void* ast]   @init {
-  int first,last;
+algorithm_annotation_list [void **ann] returns [void* ast]   @init {
+  int first,last,isalg = 0;
   $ast = 0;
   first = omc_first_comment;
   last = LT(1)->getTokenIndex(LT(1));
@@ -701,9 +704,13 @@ algorithm_annotation_list returns [void* ast]   @init {
       }
     }
   |
-  ( al=algorithm SEMICOLON {a = al.ast;} | a=annotation SEMICOLON {a = Absyn__ALGORITHMITEMANN(a);}) as=algorithm_annotation_list
+  ( al=algorithm SEMICOLON | a=annotation SEMICOLON {*ann = mk_cons(a,*ann);}) as=algorithm_annotation_list[ann]
   {
-    ast = mk_cons(a,as);
+    if (a) {
+      ast = as;
+    } else {
+      ast = mk_cons(al.ast,as);
+    }
     for (;first<last;last--) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
@@ -1364,35 +1371,21 @@ code_equation_clause returns [void* ast] :
     {
       ast = mk_cons(e.ast,or_nil(as));
     }
-  | a=annotation SEMICOLON as=code_equation_clause?
-    {
-      ast = mk_cons(Absyn__EQUATIONITEMANN(a),or_nil(as));
-    }
   )
   ;
 
 code_constraint_clause returns [void* ast] :
-  ( e=equation SEMICOLON as=code_constraint_clause?
+  e=equation SEMICOLON as=code_constraint_clause?
     {
       ast = mk_cons(e.ast,or_nil(as));
     }
-  | a=annotation SEMICOLON as=code_constraint_clause?
-    {
-      ast = mk_cons(Absyn__EQUATIONITEMANN(a),or_nil(as));
-    }
-  )
   ;
 
 code_algorithm_clause returns [void* ast] :
-  ( al=algorithm SEMICOLON as=code_algorithm_clause?
+  al=algorithm SEMICOLON as=code_algorithm_clause?
     {
       ast = mk_cons(al.ast,or_nil(as));
     }
-  | a=annotation SEMICOLON as=code_algorithm_clause?
-    {
-      ast = mk_cons(Absyn__ALGORITHMITEMANN(a),or_nil(as));
-    }
-  )
   ;
 
 /* End Code quotation mechanism */
@@ -1466,7 +1459,7 @@ match_expression returns [void* ast] :
   ;
 
 local_clause returns [void* ast] :
-  (LOCAL el=element_list)?
+  (LOCAL el=element_list[0])?
     {
       ast = el;
     }

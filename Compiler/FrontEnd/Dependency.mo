@@ -1225,11 +1225,6 @@ algorithm
     equation
       table1 = createLocalVariableStruct2(elemis,inTable);
     then table1;
-  case((Absyn.ANNOTATIONITEM(_))::elemis,_)
-    equation
-      table1 = createLocalVariableStruct2(elemis,inTable);
-    then
-      table1;
   case((Absyn.LEXER_COMMENT(_))::elemis,_)
     equation
       table1 = createLocalVariableStruct2(elemis,inTable);
@@ -1453,7 +1448,9 @@ protected function createTopLevelTotalClass "Creates a top level total class"
   input Absyn.Path modelName;
   output Absyn.Class cl;
 protected
-  String classStr,classStr2; Absyn.Info info; Absyn.ElementSpec elementspec;
+  String classStr,classStr2;
+  Absyn.Info info;
+  Absyn.ElementSpec elementspec;
 algorithm
   classStr:= Absyn.pathString(modelName);
   classStr2 := System.stringReplace(classStr,".","_");
@@ -1462,7 +1459,7 @@ algorithm
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
     Absyn.PARTS({},{},{Absyn.PUBLIC({Absyn.ELEMENTITEM(
       Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),elementspec,info,NONE())
-    )})},NONE()),info);
+    )})},{},NONE()),info);
 end createTopLevelTotalClass;
 
 end Dependency;

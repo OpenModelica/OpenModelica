@@ -178,6 +178,7 @@ uniontype ClassDef
     list<NamedArg> classAttrs "optimization Op (objective=...) end Op. A list arguments attributing a
     class declaration. Currently used only for Optimica extensions";
     list<ClassPart> classParts;
+    list<Annotation> ann "Modelica2 allowed multiple class-annotations";
     Option<String>  comment;
   end PARTS;
 
@@ -199,10 +200,11 @@ uniontype ClassDef
   end OVERLOAD;
 
   record CLASS_EXTENDS
-    Ident            baseClassName  "name of class to extend" ;
-    list<ElementArg> modifications  "modifications to be applied to the base class";
-    Option<String>   comment        "comment";
-    list<ClassPart>  parts          "class parts";
+    Ident              baseClassName  "name of class to extend" ;
+    list<ElementArg>   modifications  "modifications to be applied to the base class";
+    Option<String>     comment        "comment";
+    list<ClassPart>    parts          "class parts";
+    list<Annotation> ann;
   end CLASS_EXTENDS;
 
   record PDER
@@ -295,10 +297,6 @@ uniontype ElementItem "An element item is either an element or an annotation"
   record ELEMENTITEM
     Element  element;
   end ELEMENTITEM;
-
-  record ANNOTATIONITEM
-    Annotation  annotation_ ;
-  end ANNOTATIONITEM;
 
   record LEXER_COMMENT
     String comment;
@@ -457,10 +455,6 @@ uniontype EquationItem "Several component declarations can be grouped together i
     Info info "line number" ;
   end EQUATIONITEM;
 
-  record EQUATIONITEMANN
-    Annotation annotation_ "annotation" ;
-  end EQUATIONITEMANN;
-
   record EQUATIONITEMCOMMENT
     String comment;
   end EQUATIONITEMCOMMENT;
@@ -474,10 +468,6 @@ uniontype AlgorithmItem "Info specific for an algorithm item."
     Option<Comment> comment "comment" ;
     Info info "line number" ;
   end ALGORITHMITEM;
-
-  record ALGORITHMITEMANN
-    Annotation annotation_ "annotation" ;
-  end ALGORITHMITEMANN;
 
   record ALGORITHMITEMCOMMENT "A comment from the lexer"
     String comment;
@@ -1128,6 +1118,7 @@ protected import Error;
 
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 
+public constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
 public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
 public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
 
@@ -1135,9 +1126,9 @@ public function getNewTimeStamp
 "function: getNewTimeStamp
 generate a new timestamp with edittime>buildtime."
 output TimeStamp ts;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   ts := newTimeStamp;
+annotation(__OpenModelica_EarlyInline = true);
 end getNewTimeStamp;
 
 public function setTimeStampBool ""
@@ -2336,9 +2327,6 @@ algorithm
       then
         (EQUATIONITEM(eq, cmt, info), tup);
 
-    case (EQUATIONITEMANN(annotation_ = _), _)
-      then (inEquationItem, inTuple);
-
   end match;
 end traverseEquationItemBidir;
 
@@ -2451,18 +2439,18 @@ end traverseEquationBidirElse;
 public function makeIdentPathFromString ""
   input String s;
   output Path p;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   p := IDENT(s);
+annotation(__OpenModelica_EarlyInline = true);
 end makeIdentPathFromString;
 
 public function makeQualifiedPathFromStrings ""
   input String s1;
   input String s2;
   output Path p;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   p := QUALIFIED(s1,IDENT(s2));
+annotation(__OpenModelica_EarlyInline = true);
 end makeQualifiedPathFromStrings;
 
 public function setTimeStampEdit "Function: getNewTimeStamp
@@ -2570,9 +2558,9 @@ end expCref;
 public function crefExp "returns the componentRef of an expression if matches."
  input ComponentRef cr;
  output Exp exp;
- annotation(__OpenModelica_EarlyInline = true);
 algorithm
   exp := CREF(cr);
+annotation(__OpenModelica_EarlyInline = true);
 end crefExp;
 
 public function expComponentRefStr ""
@@ -5358,9 +5346,9 @@ public function makeCons
   input Exp e1;
   input Exp e2;
   output Exp e;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   e := CONS(e1,e2);
+annotation(__OpenModelica_EarlyInline = true);
 end makeCons;
 
 public function crefIdent
@@ -5682,8 +5670,9 @@ algorithm
       list<ElementArg> modifications;
       list<ClassPart> parts;
       list<NamedArg> classAttrs;
-    case PARTS(typeVars,classAttrs,parts,_) then PARTS(typeVars,classAttrs,parts,NONE());
-    case CLASS_EXTENDS(baseClassName,modifications,_,parts) then CLASS_EXTENDS(baseClassName,modifications,NONE(),parts);
+      list<Annotation> ann;
+    case PARTS(typeVars,classAttrs,parts,ann,_) then PARTS(typeVars,classAttrs,parts,ann,NONE());
+    case CLASS_EXTENDS(baseClassName,modifications,_,parts,ann) then CLASS_EXTENDS(baseClassName,modifications,NONE(),parts,ann);
     case DERIVED(typeSpec,attributes,arguments,_) then DERIVED(typeSpec,attributes,arguments,NONE());
     case ENUMERATION(enumLiterals,_) then ENUMERATION(enumLiterals,NONE());
     case OVERLOAD(functionNames,_) then OVERLOAD(functionNames,NONE());
@@ -5706,10 +5695,10 @@ algorithm
       list<ElementItem> elts;
       FunctionRestriction funcRest;
       list<NamedArg> classAttr;
-    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,classParts,_),info)
+    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,classParts,_,_),info)
       equation
         (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
-      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,PUBLIC(elts)::{},NONE()),info);
+      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,PUBLIC(elts)::{},{},NONE()),info);
   end match;
 end getFunctionInterface;
 
@@ -5916,5 +5905,95 @@ algorithm
 
   end match;
 end importName;
+
+public function mergeAnnotations
+"function: mergeAnnotations
+   This function takes an old annotation as first argument and a new
+   annotation as  second argument and merges the two.
+   Annotation \"parts\" that exist in both the old and the new annotation
+   will be changed according to the new definition. For instance,
+   merge_annotations(annotation(x=1,y=2),annotation(x=3))
+   => annotation(x=3,y=2)"
+  input Annotation inAnnotation1;
+  input Annotation inAnnotation2;
+  output Annotation outAnnotation;
+algorithm
+  outAnnotation:=
+  matchcontinue (inAnnotation1,inAnnotation2)
+    local
+      list<ElementArg> neweltargs,oldrest,eltargs,eltargs_1;
+      ElementArg mod;
+      Annotation a;
+      Path p;
+    case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
+      equation
+        failure(_ = removeModificationInElementargs(eltargs, p));
+        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
+      then
+        ANNOTATION((mod :: neweltargs));
+    case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
+      equation
+        eltargs_1 = removeModificationInElementargs(eltargs, p);
+        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
+      then ANNOTATION(neweltargs);
+    case (ANNOTATION(elementArgs = {}),a) then a;
+  end matchcontinue;
+end mergeAnnotations;
+
+protected function removeModificationInElementargs
+"function: removeModificationInElementargs
+   This function removes the class modification named by the second argument.
+   If no such class modification is found thefunction fails.
+   Currently, only identifiers are allowed as class modifiers,
+   i.e. a(...) and not a.b(...)"
+  input list<ElementArg> inAbsynElementArgLst;
+  input Path inPath;
+  output list<ElementArg> outAbsynElementArgLst;
+algorithm
+  outAbsynElementArgLst := matchcontinue (inAbsynElementArgLst,inPath)
+    local
+      String id1,id2;
+      ElementArg m;
+      list<ElementArg> res,xs;
+
+    case ({MODIFICATION(path = IDENT(name = id1))},IDENT(name = id2))
+      equation
+        true = stringEq(id1, id2);
+      then {};
+
+    case ({(m as MODIFICATION(path = IDENT(name = id1)))},IDENT(name = id2))
+      equation
+        false = stringEq(id1, id2);
+      then
+        fail();
+
+    case ((MODIFICATION(path = IDENT(name = id1)) :: xs),IDENT(name = id2))
+      equation
+        true = stringEq(id1, id2);
+        res = removeModificationInElementargs(xs, inPath);
+      then
+        res;
+
+    case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
+      equation
+        false = stringEq(id1, id2);
+        res = removeModificationInElementargs(xs, inPath);
+      then
+        (m :: res);
+
+    case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
+      equation
+        res = removeModificationInElementargs(xs, inPath);
+      then
+        (m :: res);
+  end matchcontinue;
+end removeModificationInElementargs;
+
+public function annotationToElementArgs
+  input Annotation ann;
+  output list<ElementArg> args;
+algorithm
+  ANNOTATION(args) := ann;
+end annotationToElementArgs;
 
 end Absyn;

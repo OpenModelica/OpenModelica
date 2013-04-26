@@ -150,8 +150,8 @@ As in the AST, a program is simply a list of class definitions.";
 public
 uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
   record ENUM
-    Ident           literal;
-    Option<Comment> comment;
+    Ident   literal;
+    Comment comment;
   end ENUM;
 end Enum;
 
@@ -183,8 +183,6 @@ uniontype ClassDef
     list<ConstraintSection>    constraintLst       "the list of constraints";
     list<Absyn.NamedArg>       clsattrs            "the list of class attributes. Currently for Optimica extensions";
     Option<ExternalDecl>       externalDecl        "used by external functions";
-    list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
-    Option<Comment>            comment             "the class comment";
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
@@ -197,28 +195,25 @@ uniontype ClassDef
     Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
     Mod modifications       "the modifications";
     Attributes attributes   "the element attributes";
-    Option<Comment> comment "the translated comment from the Absyn";
   end DERIVED;
 
   record ENUMERATION "an enumeration"
     list<Enum> enumLst      "if the list is empty it means :, the supertype of all enumerations";
-    Option<Comment> comment "the translated comment from the Absyn";
   end ENUMERATION;
 
   record OVERLOAD "an overloaded function"
     list<Absyn.Path> pathLst "the path lists";
-    Option<Comment> comment  "the translated comment from the Absyn";
   end OVERLOAD;
 
   record PDER "the partial derivative"
     Absyn.Path  functionPath     "function name" ;
     list<Ident> derivedVariables "derived variables" ;
-    Option<Comment> comment      "the Absyn comment";
   end PDER;
 
 end ClassDef;
 
-// stefan
+public constant Comment noComment = COMMENT(NONE(),NONE());
+
 public
 uniontype Comment
 
@@ -227,10 +222,6 @@ uniontype Comment
     Option<String> comment;
   end COMMENT;
 
-  record CLASS_COMMENT
-    list<Annotation> annotations;
-    Option<Comment> comment;
-  end CLASS_COMMENT;
 end Comment;
 
 // stefan
@@ -272,21 +263,21 @@ uniontype EEquation
     list<Absyn.Exp> condition "conditional" ;
     list<list<EEquation>> thenBranch "the true (then) branch" ;
     list<EEquation>       elseBranch "the false (else) branch" ;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_IF;
 
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_EQUALS;
 
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
     Absyn.ComponentRef crefRight "the connector/component reference on the right side";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_CONNECT;
 
@@ -294,7 +285,7 @@ uniontype EEquation
     Ident index "the index name";
     Option<Absyn.Exp> range "the range of the index";
     list<EEquation> eEquationLst "the equation list";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_FOR;
 
@@ -302,7 +293,7 @@ uniontype EEquation
     Absyn.Exp        condition "the when condition";
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> elseBranches "the elsewhen expression and equation list";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_WHEN;
 
@@ -310,26 +301,26 @@ uniontype EEquation
     Absyn.Exp condition "the assert condition";
     Absyn.Exp message   "the assert message";
     Absyn.Exp level;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_ASSERT;
 
   record EQ_TERMINATE "the terminate equation"
     Absyn.Exp message "the terminate message";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_TERMINATE;
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
     Absyn.Exp          expReinit "the new value" ;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_REINIT;
 
   record EQ_NORETCALL "function calls without return value"
     Absyn.Exp exp;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end EQ_NORETCALL;
 
@@ -356,7 +347,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
   record ALG_ASSIGN
     Absyn.Exp assignComponent "assignComponent" ;
     Absyn.Exp value "value" ;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_ASSIGN;
 
@@ -365,7 +356,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
     list<Statement> trueBranch;
     list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
     list<Statement> elseBranch;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_IF;
 
@@ -373,7 +364,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Ident index "the index name";
     Option<Absyn.Exp> range "the range of the index";
     list<Statement> forBody "forBody";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_FOR;
 
@@ -381,60 +372,60 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Ident index "the index name";
     Option<Absyn.Exp> range "the range of the index";
     list<Statement> parforBody "parallel for loop body";
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_PARFOR;
 
   record ALG_WHILE
     Absyn.Exp boolExpr "boolExpr" ;
     list<Statement> whileBody "whileBody" ;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_WHILE;
 
   record ALG_WHEN_A
     list<tuple<Absyn.Exp, list<Statement>>> branches;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_WHEN_A;
 
   record ALG_NORETCALL
     Absyn.Exp exp;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_NORETCALL;
 
   record ALG_RETURN
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_RETURN;
 
   record ALG_BREAK
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_BREAK;
 
   // Part of MetaModelica extension. KS
   record ALG_TRY
     list<Statement> tryBody;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_TRY;
 
   record ALG_CATCH
     list<Statement> catchBody;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_CATCH;
 
   record ALG_THROW
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_THROW;
 
   record ALG_FAILURE
     list<Statement> stmts;
-    Option<Comment> comment;
+    Comment comment;
     Absyn.Info info;
   end ALG_FAILURE;
   //-------------------------------
@@ -458,7 +449,7 @@ public uniontype ConstrainClass
   record CONSTRAINCLASS
     Absyn.Path constrainingClass;
     Mod modifier;
-    Option<Comment> comment;
+    Comment comment;
   end CONSTRAINCLASS;
 end ConstrainClass;
 
@@ -542,6 +533,7 @@ uniontype Element "- Elements
     Partial partialPrefix            "the partial prefix";
     Restriction restriction          "the restriction of the class";
     ClassDef classDef                "the class specification";
+    Comment cmt                      "the class annotation and string-comment";
     Absyn.Info info                  "the class information";
   end CLASS;
 
@@ -551,7 +543,7 @@ uniontype Element "- Elements
     Attributes attributes           "the component attributes";
     Absyn.TypeSpec typeSpec         "the type specification";
     Mod modifications               "the modifications to be applied to the component";
-    Option<Comment> comment         "this if for extraction of comments and annotations from Absyn";
+    Comment comment                 "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition     "the conditional declaration of a component";
     Absyn.Info info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
@@ -902,11 +894,11 @@ algorithm
       Attributes attr;
       Absyn.TypeSpec ty;
       Mod mod;
-      Option<Comment> cmt;
+      Comment cmt;
       Option<Absyn.Exp> cond;
 
-    case (CLASS(_, pf, ep, pp, res, cdef, i), _)
-      then CLASS(inName, pf, ep, pp, res, cdef, i);
+    case (CLASS(_, pf, ep, pp, res, cdef, cmt, i), _)
+      then CLASS(inName, pf, ep, pp, res, cdef, cmt, i);
 
     case (COMPONENT(_, pf, attr, ty, mod, cmt, cond, i), _)
       then COMPONENT(inName, pf, attr, ty, mod, cmt, cond, i);
@@ -1003,8 +995,8 @@ public function isOperator
   output Boolean res;
 algorithm
   res := matchcontinue(el)
-    case (CLASS(_,_,_,_,R_OPERATOR(),_,_)) then true;
-    case (CLASS(_,_,_,_,R_FUNCTION(FR_OPERATOR_FUNCTION()),_,_)) then true;
+    case (CLASS(restriction=R_OPERATOR())) then true;
+    case (CLASS(restriction=R_FUNCTION(FR_OPERATOR_FUNCTION()))) then true;
     case(_) then false;
   end matchcontinue;
  end isOperator;
@@ -1039,14 +1031,16 @@ algorithm
       ClassDef def;
       Absyn.Info info;
       Prefixes prefixes;
+      Comment cmt;
 
     case (CLASS(name = id,
                 prefixes = prefixes,
                 encapsulatedPrefix = enc,
                 restriction = restr,
                 classDef = def,
+                cmt = cmt,
                 info = info),partialPrefix)
-      then CLASS(id,prefixes,enc,partialPrefix,restr,def,info);
+      then CLASS(id,prefixes,enc,partialPrefix,restr,def,cmt,info);
   end match;
 end classSetPartial;
 
@@ -1076,7 +1070,7 @@ public function elementEqual
       Option<Absyn.Exp> cond1, cond2;
       ClassDef cd1,cd2;
 
-    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,_),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_))
+    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,_,_),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
        equation
          true = stringEq(name1,name2);
          true = prefixesEqual(prefixes1,prefixes2);
@@ -1222,7 +1216,6 @@ protected function classDefEqual
    equal := match(cdef1,cdef2)
      local
        list<Element> elts1,elts2;
-       list<Annotation> anns1,anns2;
        list<Equation> eqns1,eqns2;
        list<Equation> ieqns1,ieqns2;
        list<AlgorithmSection> algs1,algs2;
@@ -1237,21 +1230,18 @@ protected function classDefEqual
        String bcName1, bcName2;
        list<Absyn.NamedArg> clsttrs1,clsttrs2;
 
-     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_))
+     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_),
+          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
          List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
          List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
          List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-         // adrpo: ignore annotations!
-         // blst6 = List.threadMap(anns1,anns2,annotationEqual);
-       then
-         true;
+       then true;
 
-     case (DERIVED(tySpec1,mod1,attr1,_),
-           DERIVED(tySpec2,mod2,attr2,_))
+     case (DERIVED(tySpec1,mod1,attr1),
+           DERIVED(tySpec2,mod2,attr2))
        equation
          true = Absyn.typeSpecEqual(tySpec1, tySpec2);
          true = modEqual(mod1,mod2);
@@ -1259,14 +1249,14 @@ protected function classDefEqual
        then
          true;
 
-     case (ENUMERATION(elst1,_),ENUMERATION(elst2,_))
+     case (ENUMERATION(elst1),ENUMERATION(elst2))
        equation
          List.threadMapAllValue(elst1,elst2,enumEqual,true);
        then
          true;
 
-     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_)),
-           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_)))
+     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_)),
+           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1275,12 +1265,10 @@ protected function classDefEqual
          List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
          true = stringEq(bcName1,bcName2);
          true = modEqual(mod1,mod2);
-         // adrpo: ignore annotations!
-         // blst6 = List.threadMap(anns1,anns2,annotationEqual);
        then
          true;
 
-     case (PDER(p1,ilst1,_),PDER(p2,ilst2,_))
+     case (PDER(p1,ilst1),PDER(p2,ilst2))
        equation
          List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then
@@ -1763,6 +1751,7 @@ algorithm
       Absyn.Info info;
       Prefixes prefixes;
       Restriction oldR;
+      Comment cmt;
 
     // check if restrictions are equal, so you can return the same thing!
     case(r, CLASS(restriction = oldR))
@@ -1772,8 +1761,8 @@ algorithm
         cl;
 
     // not equal, change
-    case(r, CLASS(id,prefixes,e,p,_,parts,info))
-      then CLASS(id,prefixes,e,p,r,parts,info);
+    case(r, CLASS(id,prefixes,e,p,_,parts,cmt,info))
+      then CLASS(id,prefixes,e,p,r,parts,cmt,info);
   end matchcontinue;
 end setClassRestriction;
 
@@ -1791,6 +1780,7 @@ algorithm
       Prefixes prefixes;
       Restriction r;
       Ident id;
+      Comment cmt;
 
     // check if restrictions are equal, so you can return the same thing!
     case(_, CLASS(name = id))
@@ -1800,8 +1790,8 @@ algorithm
         cl;
 
     // not equal, change
-    case(_, CLASS(_,prefixes,e,p,r,parts,info))
-      then CLASS(name,prefixes,e,p,r,parts,info);
+    case(_, CLASS(_,prefixes,e,p,r,parts,cmt,info))
+      then CLASS(name,prefixes,e,p,r,parts,cmt,info);
   end matchcontinue;
 end setClassName;
 
@@ -1819,6 +1809,7 @@ algorithm
       Restriction restriction;
       Prefixes prefixes;
       Partial oldPartialPrefix;
+      Comment cmt;
 
     // check if partial prefix are equal, so you can return the same thing!
     case(_,CLASS(partialPrefix = oldPartialPrefix))
@@ -1828,8 +1819,8 @@ algorithm
         cl;
 
     // not the same, change
-    case(_,CLASS(id,prefixes,e,_,restriction,parts,info))
-      then CLASS(id,prefixes,e,partialPrefix,restriction,parts,info);
+    case(_,CLASS(id,prefixes,e,_,restriction,parts,cmt,info))
+      then CLASS(id,prefixes,e,partialPrefix,restriction,parts,cmt,info);
   end matchcontinue;
 end setClassPartialPrefix;
 
@@ -2044,7 +2035,7 @@ public function makeEnumType
   output Element outEnumType;
 protected
   String literal;
-  Option<Comment> comment;
+  Comment comment;
 algorithm
   ENUM(literal = literal, comment = comment) := inEnum;
   NFSCodeCheck.checkValidEnumLiteral(literal, inInfo);
@@ -2095,10 +2086,10 @@ algorithm
       list<list<Absyn.AlgorithmItem>> algsLst;
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> abranches;
 
-    case ALG_ASSIGN(assignComponent,value,comment,info)
+    case ALG_ASSIGN(assignComponent,value,_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent,value),NONE(),info);
 
-    case ALG_IF(boolExpr,trueBranch,branches,elseBranch,comment,info)
+    case ALG_IF(boolExpr,trueBranch,branches,elseBranch,_,info)
       equation
         algs1 = List.map(trueBranch,statementToAlgorithmItem);
 
@@ -2110,22 +2101,22 @@ algorithm
         algs2 = List.map(elseBranch,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
 
-    case ALG_FOR(iterator,range,body,comment,info)
+    case ALG_FOR(iterator,range,body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
-    case ALG_PARFOR(iterator,range,body,comment,info)
+    case ALG_PARFOR(iterator,range,body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
-    case ALG_WHILE(boolExpr,body,comment,info)
+    case ALG_WHILE(boolExpr,body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr,algs1),NONE(),info);
 
-    case ALG_WHEN_A(branches,comment,info)
+    case ALG_WHEN_A(branches,_,info)
       equation
         (boolExpr::conditions) = List.map(branches, Util.tuple21);
         stmtsList = List.map(branches, Util.tuple22);
@@ -2133,29 +2124,29 @@ algorithm
         abranches = List.threadTuple(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
-    case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),comment,info)
+    case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall,functionArgs),NONE(),info);
 
-    case ALG_RETURN(comment,info)
+    case ALG_RETURN(_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_RETURN(),NONE(),info);
 
-    case ALG_BREAK(comment,info)
+    case ALG_BREAK(_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE(),info);
 
-    case ALG_TRY(body,comment,info)
+    case ALG_TRY(body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs1),NONE(),info);
 
-    case ALG_CATCH(body,comment,info)
+    case ALG_CATCH(body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_CATCH(algs1),NONE(),info);
 
-    case ALG_THROW(comment,info)
+    case ALG_THROW(_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE(),info);
 
-    case ALG_FAILURE(body,comment,info)
+    case ALG_FAILURE(body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
@@ -2424,7 +2415,7 @@ algorithm
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
       Ident index;
 
@@ -2523,7 +2514,7 @@ algorithm
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
       Absyn.ComponentRef cr1, cr2;
       Ident index;
@@ -2838,7 +2829,7 @@ algorithm
       Absyn.Exp e;
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
       String iter;
       Option<Absyn.Exp> range;
@@ -2967,7 +2958,7 @@ algorithm
       Absyn.Exp e1, e2;
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
-      Option<Comment> comment;
+      Comment comment;
       Absyn.Info info;
 
     case (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg))
@@ -3174,12 +3165,10 @@ protected
   list<AlgorithmSection> nal, ial;
   list<ConstraintSection> nco;
   Option<ExternalDecl> ed;
-  list<Annotation> annl;
-  Option<Comment> c;
   list<Absyn.NamedArg> clsattrs;
 algorithm
-  PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed, annl, c) := inClassDef;
-  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, nco, clsattrs, ed, annl, c);
+  PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed) := inClassDef;
+  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, nco, clsattrs, ed);
 end addElementToCompositeClassDef;
 
 public function setElementClassDefinition
@@ -3193,9 +3182,10 @@ protected
   Encapsulated ep;
   Restriction r;
   Absyn.Info i;
+  Comment cmt;
 algorithm
-  CLASS(n, pf, ep, pp, r, _, i) := inElement;
-  outElement := CLASS(n, pf, ep, pp, r, inClassDef, i);
+  CLASS(n, pf, ep, pp, r, _, cmt, i) := inElement;
+  outElement := CLASS(n, pf, ep, pp, r, inClassDef, cmt, i);
 end setElementClassDefinition;
 
 public function visibilityBool
@@ -3829,13 +3819,9 @@ public function hasBooleanNamedAnnotationInClass
 algorithm
   hasAnn := matchcontinue(inClass,namedAnnotation)
     local
-      list<Annotation> anns;
-
-    case(CLASS(classDef = PARTS(annotationLst = anns)),_)
-      then hasBooleanNamedAnnotation(anns,namedAnnotation);
-
-    case(CLASS(classDef = CLASS_EXTENDS(composition = PARTS(annotationLst = anns))),_)
-      then hasBooleanNamedAnnotation(anns,namedAnnotation);
+      Annotation ann;
+    case(CLASS(cmt=COMMENT(annotation_=SOME(ann))),_)
+      then hasBooleanNamedAnnotation(ann::{},namedAnnotation);
     else false;
   end matchcontinue;
 end hasBooleanNamedAnnotationInClass;
@@ -3874,9 +3860,7 @@ algorithm
     case (ANNOTATION(modification = mod) :: rest,_)
       equation
         false = hasBooleanNamedAnnotation2(mod,annotationName);
-        b = hasBooleanNamedAnnotation(rest,annotationName);
-      then
-        b;
+      then hasBooleanNamedAnnotation(rest,annotationName);
     case ({}, _) then false;
   end matchcontinue;
 end hasBooleanNamedAnnotation;
@@ -3889,13 +3873,9 @@ protected function hasBooleanNamedAnnotation2
 algorithm
   (outB) := match (inMod,annotationName)
     local
-      Boolean b;
       list<SubMod> subModLst;
     case (MOD(subModLst=subModLst),_)
-      equation
-        b = hasBooleanNamedAnnotation3(subModLst,annotationName);
-      then
-        b;
+      then hasBooleanNamedAnnotation3(subModLst,annotationName);
   end match;
 end hasBooleanNamedAnnotation2;
 
@@ -3932,15 +3912,13 @@ public function getEvaluateAnnotation
   input Option<Comment> inCommentOpt;
   output Boolean evalIsTrue;
 algorithm
-  evalIsTrue := matchcontinue(inCommentOpt)
-    local Annotation ann;
+  evalIsTrue := match (inCommentOpt)
+    local
+      Annotation ann;
     case (SOME(COMMENT(annotation_ = SOME(ann))))
-      equation
-         true = hasBooleanNamedAnnotation({ann}, "Evaluate");
-      then
-        true;
+      then hasBooleanNamedAnnotation({ann}, "Evaluate");
     case (_) then false;
-  end matchcontinue;
+  end match;
 end getEvaluateAnnotation;
 
 public function getModifierInfo
@@ -3980,7 +3958,7 @@ protected
   Attributes attr;
   Absyn.TypeSpec ty;
   Mod mod;
-  Option<Comment> cmt;
+  Comment cmt;
   Absyn.Info info;
 algorithm
   COMPONENT(name, pf, attr, ty, mod, cmt, _, info) := inElement;
@@ -4015,7 +3993,7 @@ algorithm
       Attributes attr;
       Absyn.TypeSpec ty;
       Mod mod;
-      Option<Comment> cmt;
+      Comment cmt;
       Option<Absyn.Exp> cnd;
       Absyn.Info info;
       Redeclare rdp;
@@ -4258,13 +4236,14 @@ algorithm
       Restriction restriction "the restriction of the class";
       ClassDef classDef "the class specification";
       Absyn.Info info "the class information";
+      Comment cmt;
 
     // a class with parts, non derived
-    case (_, CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info), _)
+    case (_, CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)
       equation
         (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements);
       then
-        CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
+        CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
 
     // a class derived
     case (_, CLASS(classDef = classDef), _)
@@ -4301,7 +4280,6 @@ algorithm
       list<Absyn.NamedArg> clsattrs "the list of class attributes. Currently for Optimica extensions";
       Option<ExternalDecl> externalDecl "used by external functions";
       list<Annotation> annotationLst "the list of annotations found in between class elements, equations and algorithms";
-      Option<Comment> comment "the class comment";
       Ident baseClassName "the name of the base class we have to extend";
       Mod modifications "the modifications that need to be applied to the base class";
       ClassDef composition;
@@ -4324,9 +4302,7 @@ algorithm
             initialAlgorithmLst,
             constraintLst,
             clsattrs,
-            externalDecl,
-            annotationLst,
-            comment),
+            externalDecl),
           _)
       then
         (PARTS(inElements,
@@ -4336,9 +4312,7 @@ algorithm
                initialAlgorithmLst,
                constraintLst,
                clsattrs,
-               externalDecl,
-               annotationLst,
-               comment), NONE());
+               externalDecl), NONE());
 
     // a class extends, non derived
     case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
@@ -4411,7 +4385,7 @@ protected
   Prefixes pr;
   Attributes atr;
   Absyn.TypeSpec ts;
-  Option<Comment> cmt;
+  Comment cmt;
   Option<Absyn.Exp> cnd;
   Path bc;
   Visibility v;
@@ -4444,7 +4418,7 @@ protected
   Prefixes pr;
   Attributes atr;
   Absyn.TypeSpec ts;
-  Option<Comment> cmt;
+  Comment cmt;
   Option<Absyn.Exp> cnd;
   Path bc;
   Visibility v;
@@ -4492,13 +4466,14 @@ protected
   ClassDef cd;
   Absyn.Info i;
   Absyn.TypeSpec ts;
-  Option<Comment> cmt;
+  Option<Annotation> ann;
+  Comment cmt;
   Mod m;
 algorithm
-  CLASS(n, pr, ep, pp, res, cd, i) := inE;
-  DERIVED(ts, m, atr, cmt) := cd;
-  cd := DERIVED(inTypeSpec, m, atr, cmt);
-  outE := CLASS(n, pr, ep, pp, res, cd, i);
+  CLASS(n, pr, ep, pp, res, cd, cmt, i) := inE;
+  DERIVED(ts, m, atr) := cd;
+  cd := DERIVED(inTypeSpec, m, atr);
+  outE := CLASS(n, pr, ep, pp, res, cd, cmt, i);
 end setDerivedTypeSpec;
 
 public function getDerivedTypeSpec
@@ -4535,10 +4510,11 @@ algorithm
       Restriction restriction;
       Prefixes prefixes;
       Partial pp;
+      Comment cmt;
 
     // not the same, change
-    case(_,CLASS(id,prefixes,e,pp,restriction,parts,info))
-      then CLASS(id,inPrefixes,e,pp,restriction,parts,info);
+    case(_,CLASS(id,prefixes,e,pp,restriction,parts,cmt,info))
+      then CLASS(id,inPrefixes,e,pp,restriction,parts,cmt,info);
   end match;
 end setClassPrefixes;
 
@@ -4855,7 +4831,7 @@ algorithm
       Attributes attr;
       Absyn.TypeSpec ty;
       Mod mod;
-      Option<Comment> cmt;
+      Comment cmt;
       Option<Absyn.Exp> cond;
       Absyn.Info info;
       Encapsulated ep;
@@ -4874,11 +4850,11 @@ algorithm
       then
         COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
 
-    case (CLASS(name, prefs, ep, pp, res, cdef, info), _)
+    case (CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)
       equation
         prefs = prefixesSetVisibility(prefs, inVisibility);
       then
-        CLASS(name, prefs, ep, pp, res, cdef, info);
+        CLASS(name, prefs, ep, pp, res, cdef, cmt, info);
 
     case (EXTENDS(bc, _, mod, ann, info), _)
       then EXTENDS(bc, inVisibility, mod, ann, info);
@@ -4914,36 +4890,15 @@ public function getElementComment
 algorithm
   outComment := match(inElement)
     local
-      Option<Comment> cmt;
+      Comment cmt;
       ClassDef cdef;
 
-    case COMPONENT(comment = cmt) then cmt;
-    case CLASS(classDef = cdef) then getClassDefComment(cdef);
+    case COMPONENT(comment = cmt) then SOME(cmt);
+    case CLASS(cmt = cmt) then SOME(cmt);
     else NONE();
 
   end match;
 end getElementComment;
-
-public function getClassDefComment
-  "Returns the comment of a class definition."
-  input ClassDef inClassDef;
-  output Option<Comment> outComment;
-algorithm
-  outComment := match(inClassDef)
-    local
-      Option<Comment> cmt;
-      ClassDef cdef;
-
-    case PARTS(comment = cmt) then cmt;
-    case CLASS_EXTENDS(composition = cdef) then getClassDefComment(cdef);
-    case DERIVED(comment = cmt) then cmt;
-    case ENUMERATION(comment = cmt) then cmt;
-    case OVERLOAD(comment = cmt) then cmt;
-    case PDER(comment = cmt) then cmt;
-    else NONE();
-
-  end match;
-end getClassDefComment;
 
 public function stripAnnotationFromComment
   "Removes the annotation from a comment."
@@ -4956,7 +4911,6 @@ algorithm
       Option<Comment> cmt;
 
     case SOME(COMMENT(_, str)) then SOME(COMMENT(NONE(), str));
-    case SOME(CLASS_COMMENT(_, cmt)) then SOME(CLASS_COMMENT({}, cmt));
     else NONE();
 
   end match;

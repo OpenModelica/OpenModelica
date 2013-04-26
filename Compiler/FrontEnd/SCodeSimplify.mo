@@ -82,12 +82,13 @@ algorithm
       SCode.Encapsulated ecpf;
       SCode.Partial ppf;
       SCode.Restriction res;
+      SCode.Comment cmt;
 
-    case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, info))
+    case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, cmt, info))
       equation
         ncDef = simplifyClassDef(cDef);
       then
-        SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, info);
+        SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, cmt, info);
 
   end match;
 end simplifyClass;
@@ -117,11 +118,11 @@ algorithm
       Absyn.TypeSpec typeSpec;
 
     // handle parts
-    case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c))
+    case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed))
       equation
         els = simplifyElements(els);
       then
-        SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c);
+        SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed);
 
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
@@ -131,7 +132,7 @@ algorithm
         SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
 
     // handle derived!
-    case (SCode.DERIVED(typeSpec, mod, attr, cmt))
+    case (SCode.DERIVED(typeSpec, mod, attr))
       then
         inClassDef;
 

@@ -42,6 +42,8 @@ encapsulated package Parser
 public import Absyn;
 public import Interactive;
 protected import Config;
+protected import Dump;
+protected import Flags;
 protected import ParserExt;
 protected import SCodeUtil;
 protected import System;
@@ -52,7 +54,7 @@ public function parse "Parse a mo-file"
   input String encoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parse(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Config.getRunningTestsuite());
+  outProgram := ParserExt.parse(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
@@ -61,7 +63,7 @@ public function parseexp "Parse a mos-file"
   input String filename;
   output Interactive.Statements outStatements;
 algorithm
-  outStatements := ParserExt.parseexp(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Config.getRunningTestsuite());
+  outStatements := ParserExt.parseexp(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
@@ -80,7 +82,7 @@ public function parsebuiltinstring "Parse a string as if it were a stored defini
   output Absyn.Program outProgram;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outProgram := ParserExt.parsestring(str,infoFilename, Config.acceptedGrammar(), Config.getRunningTestsuite());
+  outProgram := ParserExt.parsestring(str,infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsebuiltinstring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -89,7 +91,7 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   output Interactive.Statements outStatements;
 algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
-    Config.acceptedGrammar(), Config.getRunningTestsuite());
+    Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsestringexp;
 end Parser;
 

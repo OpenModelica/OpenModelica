@@ -52,10 +52,6 @@ end dumpElementSpacing;
 template dumpClassDefSpacing(SCode.ClassDef classDef)
 ::=
 match classDef
-  case PARTS(elementLst = {}, normalEquationLst = {}, initialEquationLst = {},
-      normalAlgorithmLst = {}, initialAlgorithmLst = {}, externalDecl = NONE(),
-      annotationLst = {}) then
-    dumpCommentSpacing(comment)
   case CLASS_EXTENDS(__) then dumpClassDefSpacing(composition)
   case PARTS(__) then '<%\n%>'
 end dumpClassDefSpacing;
@@ -64,7 +60,6 @@ template dumpCommentSpacing(Option<SCode.Comment> comment)
 ::=
 match comment
   case SOME(COMMENT(annotation_ = NONE())) then ""
-  case SOME(CLASS_COMMENT(annotations = {})) then ""
   else '<%\n%>'
 end dumpCommentSpacing;
 
@@ -168,25 +163,16 @@ match classDef
     let nal_str = dumpAlgorithmSections(normalAlgorithmLst, "algorithm")
     let ial_str = dumpAlgorithmSections(initialAlgorithmLst, "initial algorithm")
     let extdecl_str = dumpExternalDeclOpt(externalDecl)
-    let annl_str = (annotationLst |> ann => dumpAnnotationElement(ann) ;separator="\n")
     //let cmt_str = dumpClassComment(comment)
     let cdef_str =
       <<
       <%el_str%>
-        <%annl_str%>
       <%ieq_str%>
       <%ial_str%>
       <%neq_str%>
       <%nal_str%>
         <%extdecl_str%>
       >>
-    let cmt_str = if cdef_str then
-      <<
-
-        <%dumpClassComment(comment)%>
-      >>
-      else
-      dumpClassComment(comment)
     cdef_str
   case CLASS_EXTENDS(__) then
     let mod_str = dumpModifier(modifications)
@@ -198,22 +184,18 @@ match classDef
     let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
     let attr_str = dumpAttributes(attributes)
-    let cmt_str = dumpCommentOpt(comment)
-    '= <%attr_str%><%type_str%><%mod_str%><%cmt_str%>'
+    '= <%attr_str%><%type_str%><%mod_str%>'
   case ENUMERATION(__) then
     let enum_str = if enumLst then
         (enumLst |> enum => dumpEnumLiteral(enum) ;separator=", ")
       else
         ':'
-    let cmt_str = dumpCommentOpt(comment)
-    '= enumeration(<%enum_str%>)<%cmt_str%>'
+    '= enumeration(<%enum_str%>)'
   case PDER(__) then
     let func_str = AbsynDumpTpl.dumpPath(functionPath)
-    let cmt_str = dumpCommentOpt(comment)
-    '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)<%cmt_str%>'
+    '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)'
   case OVERLOAD(__) then
-    let cmt_str = dumpCommentOpt(comment)
-    '= overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)<%cmt_str%>'
+    '= overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)'
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
@@ -239,7 +221,6 @@ end dumpClassFooter;
 template dumpClassComment(Option<SCode.Comment> comment)
 ::=
   match comment
-    case SOME(CLASS_COMMENT(comment = SOME(cmt))) then dumpComment(cmt)
     case SOME(cmt as COMMENT(__)) then dumpComment(cmt)
 end dumpClassComment;
 
@@ -254,7 +235,7 @@ match component
     let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
     let cond_str = match condition case SOME(cond) then ' if <%AbsynDumpTpl.dumpExp(cond)%>'
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cond_str%><%cmt_str%>'
 end dumpComponent;
 
@@ -275,7 +256,7 @@ template dumpEnumLiteral(SCode.Enum enum)
 ::=
 match enum
   case ENUM(__) then
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%literal%><%cmt_str%>'
 end dumpEnumLiteral;
 
@@ -299,32 +280,32 @@ match equation
   case EQ_EQUALS(__) then
     let lhs_str = AbsynDumpTpl.dumpExp(expLeft)
     let rhs_str = AbsynDumpTpl.dumpExp(expRight)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%lhs_str%> = <%rhs_str%><%cmt_str%>;'
   case EQ_CONNECT(__) then
     let lhs_str = AbsynDumpTpl.dumpCref(crefLeft)
     let rhs_str = AbsynDumpTpl.dumpCref(crefRight)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'connect(<%lhs_str%>, <%rhs_str%>)<%cmt_str%>;'
   case EQ_FOR(__) then dumpForEEquation(equation)
   case EQ_WHEN(__) then dumpWhenEEquation(equation)
   case EQ_ASSERT(__) then
     let cond_str = AbsynDumpTpl.dumpExp(condition)
     let msg_str = AbsynDumpTpl.dumpExp(message)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'assert(<%cond_str%>, <%msg_str%>)<%cmt_str%>;'
   case EQ_TERMINATE(__) then
     let msg_str = AbsynDumpTpl.dumpExp(message)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'terminate(<%msg_str%>)<%cmt_str%>;'
   case EQ_REINIT(__) then
     let cref_str = AbsynDumpTpl.dumpCref(cref)
     let exp_str = AbsynDumpTpl.dumpExp(expReinit)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'reinit(<%cref_str%>, <%exp_str%>)<%cmt_str%>;'
   case EQ_NORETCALL(__) then
     let exp_str = AbsynDumpTpl.dumpExp(exp)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%exp_str%><%cmt_str%>;'
   else errorMsg("SCodeDump.dumpEEquation: Unknown EEquation.")
 end dumpEEquation;
@@ -374,7 +355,7 @@ match for_equation
   case EQ_FOR(range=SOME(range)) then
     let range_str = AbsynDumpTpl.dumpExp(range)
     let eq_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     for <%index%> in <%range_str%> loop<%cmt_str%>
       <%eq_str%>
@@ -382,7 +363,7 @@ match for_equation
     >>
   case EQ_FOR(__) then
     let eq_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     for <%index%> loop<%cmt_str%>
       <%eq_str%>
@@ -403,7 +384,7 @@ match when_equation
       elsewhen <%else_cond_str%> then
         <%else_body_str%>
       >> ;separator="\n")
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     when <%cond_str%> then<%cmt_str%>
       <%body_str%>
@@ -436,7 +417,7 @@ match statement
   case ALG_ASSIGN(__) then
     let lhs_str = AbsynDumpTpl.dumpExp(assignComponent)
     let rhs_str = AbsynDumpTpl.dumpExp(value)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%lhs_str%> := <%rhs_str%><%cmt_str%>;'
   case ALG_IF(__) then dumpIfStatement(statement)
   case ALG_FOR(__) then dumpForStatement(statement)
@@ -444,13 +425,13 @@ match statement
   case ALG_WHEN_A(__) then dumpWhenStatement(statement)
   case ALG_NORETCALL(__) then
     let exp_str = AbsynDumpTpl.dumpExp(exp)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     '<%exp_str%><%cmt_str%>;'
   case ALG_RETURN(__) then
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'return<%cmt_str%>;'
   case ALG_BREAK(__) then
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     'break<%cmt_str%>;'
   else errorMsg("SCodeDump.dumpStatement: Unknown statement.")
 end dumpStatement;
@@ -463,7 +444,7 @@ match if_statement
     let true_branch_str = dumpStatements(trueBranch)
     let else_if_str = dumpElseIfStatements(elseIfBranch)
     let else_branch_str = dumpStatements(elseBranch)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     if <%cond_str%> then<%cmt_str%>
       <%true_branch_str%>
@@ -491,7 +472,7 @@ match for_statement
   case ALG_FOR(range=SOME(e)) then
     let range_str = AbsynDumpTpl.dumpExp(e)
     let body_str = dumpStatements(forBody)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     for <%index%> in <%range_str%> loop<%cmt_str%>
       <%body_str%>
@@ -499,7 +480,7 @@ match for_statement
     >>
   case ALG_FOR(__) then
     let body_str = dumpStatements(forBody)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     for <%index%> loop<%cmt_str%>
       <%body_str%>
@@ -513,7 +494,7 @@ match while_statement
   case ALG_WHILE(__) then
     let cond_str = AbsynDumpTpl.dumpExp(boolExpr)
     let body_str = dumpStatements(whileBody)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     while <%cond_str%> loop
       <%body_str%>
@@ -534,7 +515,7 @@ match when_statement
       elsewhen <%ew_cond_str%> then
         <%ew_body_str%>
       >> ;separator="\n")
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpComment(comment)
     <<
     when <%when_cond_str%> then<%cmt_str%>
       <%when_body_str%>
@@ -789,10 +770,6 @@ if Config.showAnnotations() then
       let ann_str = dumpAnnotationOpt(annotation_)
       let cmt_str = dumpCommentStr(comment)
       '<%cmt_str%><%ann_str%>'
-    case CLASS_COMMENT(__) then
-      let annl_str = (annotations |> ann => dumpAnnotation(ann) ;separator="\n")
-      let cmt_str = dumpCommentOpt(comment)
-      '<%cmt_str%><%annl_str%>'
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)

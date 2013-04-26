@@ -162,11 +162,6 @@ package SCode
       Option<Annotation> annotation_;
       Option<String> comment;
     end COMMENT;
-
-    record CLASS_COMMENT
-      list<Annotation> annotations;
-      Option<Comment> comment;
-    end CLASS_COMMENT;
   end Comment;
 
   uniontype Annotation

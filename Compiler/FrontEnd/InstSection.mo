@@ -464,7 +464,7 @@ algorithm
       Real priority;
       DAE.Exp exp;
       Option<Values.Value> containsEmpty;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
 
     // connect statements
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph)
@@ -501,7 +501,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        source = DAEUtil.addCommentToSource(source,comment);
+        source = DAEUtil.addCommentToSource(source,SOME(comment));
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
 
@@ -612,7 +612,7 @@ algorithm
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
         (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state,
-          SCode.EQ_WHEN(ee,eel,eex,NONE(),info), initial_, impl, graph);
+          SCode.EQ_WHEN(ee,eel,eex,SCode.noComment,info), initial_, impl, graph);
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
         lhsCrefs = List.unionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
@@ -1918,7 +1918,7 @@ algorithm
         // only report errors for when in for loops
         // true = containsWhenStatements(sl);
         str = Dump.unparseAlgorithmStr(0,
-               SCode.statementToAlgorithmItem(SCode.ALG_FOR(iterator, range, sl,NONE(),info)));
+               SCode.statementToAlgorithmItem(SCode.ALG_FOR(iterator, range, sl,SCode.noComment,info)));
         Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.unrollForLoop failed on: " +& str);
       then
@@ -2497,7 +2497,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
-      Option<SCode.Comment> comment;
+      SCode.Comment comment;
       Absyn.Info info;
       list<DAE.Exp> eexpl;
       Absyn.Path ap;
@@ -2617,9 +2617,9 @@ algorithm
 
     // assert(cond,msg,level)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {Absyn.NAMEDARG("level",level)})), info = info),source,_,impl,_,_)
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {Absyn.NAMEDARG("level",level)})), comment = comment, info = info),source,_,impl,_,_)
       equation
-        (cache,stmts) = instStatement2(cache,env,ih,pre,ci_state,SCode.ALG_NORETCALL(Absyn.CALL(Absyn.CREF_IDENT("assert",{}),Absyn.FUNCTIONARGS({cond,msg,level},{})),NONE(),info),source,initial_,impl,unrollForLoops,numErrorMessages);
+        (cache,stmts) = instStatement2(cache,env,ih,pre,ci_state,SCode.ALG_NORETCALL(Absyn.CALL(Absyn.CREF_IDENT("assert",{}),Absyn.FUNCTIONARGS({cond,msg,level},{})),comment,info),source,initial_,impl,unrollForLoops,numErrorMessages);
       then
         (cache,stmts);
 
@@ -3459,7 +3459,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            NONE(), NONE(), Absyn.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           Env.VAR_TYPED(),
           // add empty here to connect individual components!
@@ -3541,7 +3541,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            NONE(), NONE(), Absyn.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           Env.VAR_TYPED(),
                           envComponent);

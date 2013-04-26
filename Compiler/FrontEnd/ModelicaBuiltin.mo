@@ -40,18 +40,18 @@ end der;
 
 function initial
   output Boolean isInitial;
+external "builtin";
 annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
-external "builtin";
 end initial;
 
 function terminal
   output Boolean isTerminal;
+external "builtin";
 annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
-external "builtin";
 end terminal;
 
 type AssertionLevel = enumeration(error, warning) annotation(Documentation(info="<html>
@@ -1943,7 +1943,7 @@ end uriToFilename;
 function getLoadedLibraries
   output String [:,2] libraries;
 external "builtin";
-annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+annotation(Documentation(info="<html>
 Returns a list of names of libraries and their path on the system, for example:
 <pre>{{\"Modelica\",\"/usr/lib/omlibrary/Modelica 3.2.1\"},{\"ModelicaServices\",\"/usr/lib/omlibrary/ModelicaServices 3.2.1\"}}</pre>
 </html>"));

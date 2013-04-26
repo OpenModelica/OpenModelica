@@ -1483,9 +1483,6 @@ algorithm
     case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
       then
         SCode.hasBooleanNamedAnnotation({anno},"GenerateEvents");
-    case(SOME(SCode.CLASS_COMMENT(annotations=annos)))
-      then
-        SCode.hasBooleanNamedAnnotation(annos,"GenerateEvents");
     else then false;
   end match;
 end hasGenerateEventsAnnotation;

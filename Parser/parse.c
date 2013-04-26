@@ -264,7 +264,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
 }
 
-static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
+static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTestsuite)
 {
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
@@ -279,6 +279,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   if (!*ModelicaParser_filename_C) return NULL;
   ModelicaParser_filename_C = strdup(ModelicaParser_filename_C);
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
+  ModelicaParser_langStd = langStd;
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
@@ -351,7 +352,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   return res;
 }
 
-static void* parseString(const char* data, const char* interactiveFilename, int flags, int runningTestsuite)
+static void* parseString(const char* data, const char* interactiveFilename, int flags, int langStd, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
@@ -375,10 +376,10 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
     fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C); fflush(stderr);
     return NULL;
   }
-  return parseStream(input, runningTestsuite);
+  return parseStream(input, langStd, runningTestsuite);
 }
 
-static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int runningTestsuite)
+static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
@@ -407,12 +408,12 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    */
   struct stat st;
   stat(ModelicaParser_filename_C, &st);
-  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags, runningTestsuite);
+  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
     return NULL;
   }
-  return parseStream(input, runningTestsuite);
+  return parseStream(input, langStd, runningTestsuite);
 }

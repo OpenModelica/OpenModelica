@@ -1689,7 +1689,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  NONE(), NONE(), Absyn.dummyInfo),
+                  SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
                 Env.VAR_TYPED(),
                 record_env);
@@ -1711,7 +1711,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  NONE(), NONE(), Absyn.dummyInfo),
+                  SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
                 Env.VAR_TYPED(),
                 {});

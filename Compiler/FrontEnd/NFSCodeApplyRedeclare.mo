@@ -670,10 +670,10 @@ algorithm
       SCode.Attributes a;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      Option<SCode.Comment> cmt;
+      Option<SCode.Annotation> ann;
+      SCode.Comment cmt;
       Option<Absyn.Exp> cnd;
       SCode.Visibility v;
-      Option<SCode.Annotation> ann;
       Scope scope;
       Absyn.Path bcp;
       Changes clones, changes;
@@ -681,13 +681,13 @@ algorithm
       Boolean b;
 
     // any other class
-    case (SCode.CLASS(n, p, ep, pp, rp, cd, i), _, _, _, _)
+    case (SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i), _, _, _, _)
       equation
         scope = openScope(n, inScope);
         (clones, changes) = getClonesByScope(scope, inChanges, {}, {});
 
         cd = applyChangesToClassDef(cd, inPrefix, scope, inClassPath, changes);
-        e = SCode.CLASS(n, p, ep, pp, rp, cd, i);
+        e = SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i);
         e = replaceClass(e, inPrefix, inScope, inClassPath, changes);
         (classes, b) = cloneAndChange(e, inPrefix, inScope, inClassPath, clones);
         classes = Util.if_(b, classes, e::classes);
@@ -811,11 +811,11 @@ algorithm
       String n;
       list<Program> els;
 
-    case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt), _, _, _, _)
+    case (SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed), _, _, _, _)
       equation
         els = List.map4(el, applyChangesToElement, inPrefix, inScope, inClassPath, inChanges);
         el = List.flatten(els);
-        cd = SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed, al, cmt);
+        cd = SCode.PARTS(el, eq, ieq, alg, ialg, cs, clsattr, ed);
       then
         cd;
 
@@ -823,26 +823,19 @@ algorithm
       equation
         cd = applyChangesToClassDef(cd, inPrefix, inScope, inClassPath, inChanges);
         cd = SCode.CLASS_EXTENDS(n, m, cd);
-      then
-        cd;
+      then cd;
 
-    case (SCode.DERIVED(t, m, a, cmt), _, _, _, _)
-      equation
-        cd = SCode.DERIVED(t, m, a, cmt);
-      then
-        cd;
+    case (cd as SCode.DERIVED(t, m, a), _, _, _, _)
+      then cd;
 
     case (cd as SCode.ENUMERATION(enumLst = _), _, _, _, _)
-      then
-        cd;
+      then cd;
 
     case (cd as SCode.OVERLOAD(pathLst = _), _, _, _, _)
-      then
-        cd;
+      then cd;
 
     case (cd as SCode.PDER(functionPath = _), _, _, _, _)
-      then
-        cd;
+      then cd;
   end match;
 end applyChangesToClassDef;
 

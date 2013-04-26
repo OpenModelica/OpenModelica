@@ -719,7 +719,7 @@ protected
   SCode.Attributes attr1, attr2;
   Absyn.TypeSpec ty;
   SCode.Mod mod;
-  Option<SCode.Comment> cmt;
+  SCode.Comment cmt;
   Option<Absyn.Exp> cond;
   Absyn.Info info;
 algorithm
@@ -741,12 +741,13 @@ protected
   SCode.Partial pp;
   SCode.Restriction res;
   SCode.ClassDef cdef;
+  SCode.Comment cmt;
   Absyn.Info info;
 algorithm
   SCode.CLASS(prefixes = pref1) := inOriginalClass;
-  SCode.CLASS(name, pref2, ep, pp, res, cdef, info) := inNewClass;
+  SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info) := inNewClass;
   pref2 := propagatePrefixes(pref1, pref2);
-  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
+  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info);
 end propagateAttributesClass;
 
 public function propagatePrefixes

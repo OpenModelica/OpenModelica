@@ -6963,7 +6963,7 @@ algorithm
       Absyn.Path extendsPath, newExtendsPath;
       SCode.Mod modifications ;
       SCode.Attributes attributes ;
-      Option<SCode.Comment> comment "the translated comment from the Absyn" ;
+      SCode.Comment cmt,comment "the translated comment from the Absyn" ;
       Option<Absyn.ArrayDim> arrayDim;
       Absyn.Info info;
       SCode.Prefixes prefixes;
@@ -6971,7 +6971,7 @@ algorithm
     // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes
     case(cache, env,
          sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef as
-         SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes, comment),info),
+         SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes),comment,info),
          classEnv, cn)
       equation
         // enableTrace();
@@ -6982,23 +6982,23 @@ algorithm
         extendsCn = componentName +& "__" +& Absyn.pathString(extendsPath);
         newExtendsPath = Absyn.IDENT(extendsCn);
         sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction,
-               SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes, comment),info);
+               SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes), comment,info);
         // add the class function to the environment
         env = Env.extendFrameC(env, sc);
         // lookup the derived class
         (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
         // construct the extended class gravityAccelerationType
         // with a different name: world.gravityAccelerationType
-        SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info) = extendedClass;
+        SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info) = extendedClass;
         // change the class name from gravityAccelerationTypes to be world.gravityAccelerationTypes
         name = componentName +& "__" +& name;
         // construct the extended class world.gravityAccelerationType
-        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
+        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
         // add the extended class function to the environment
         env = Env.extendFrameC(env, sc);
       then (cache, env);
     // handle component functions made of parts
-    case(cache, env, sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef as _, info),
+    case(cache, env, sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info),
          classEnv, cn)
       equation
         // enableTrace();
@@ -7006,7 +7006,7 @@ algorithm
         name = componentName +& "__" +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
         // also change extendsPath to world.gravityAccelerationTypes
-        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
+        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
         // add the class function to the environment
         env = Env.extendFrameC(env, sc);
       then (cache, env);
@@ -8555,7 +8555,7 @@ algorithm
         // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
         dummy_var = SCode.COMPONENT("dummy", SCode.defaultPrefixes,
           SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()),
-          SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+          SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
         
         // Create a new implicit scope with the needed parameters on top 
         // of the current env so we can find the bindings if needed.

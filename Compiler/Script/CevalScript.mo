@@ -4304,7 +4304,7 @@ algorithm
       equation
       then {};
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts)),b)
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)),b)
       equation
         strlist = Interactive.getClassnamesInParts(parts,b);
       then strlist;
@@ -5885,160 +5885,16 @@ protected function getAnnotationCount
 algorithm
   outInteger := match (inClass)
     local
-      list<Absyn.ClassPart> parts;
+      list<Absyn.Annotation> ann;
       Integer count;
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getAnnotationsInClassParts(parts);
-      then
-        count;
+    case Absyn.CLASS(body = Absyn.PARTS(ann = ann))
+      then listLength(ann);
     // check also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getAnnotationsInClassParts(parts);
-      then
-        count;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann))
+      then listLength(ann);
     case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then 0;
   end match;
 end getAnnotationCount;
-
-protected function getAnnotationsInClassParts
-"function: getAnnotationsInClassParts
-  Helper function to getAnnotationCount"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynClassPartLst)
-    local
-      list<Absyn.ElementItem> els;
-      list<Absyn.EquationItem> eqs;
-      list<Absyn.AlgorithmItem> algs;
-      list<Absyn.ClassPart> xs;
-      Integer c1, c2, res;
-    case (Absyn.PUBLIC(contents = els) :: xs)
-      equation
-        c1 = getAnnotationsInElementItems(els);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-    case (Absyn.PROTECTED(contents = els) :: xs)
-      equation
-        c1 = getAnnotationsInElementItems(els);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-/*
-    case (Absyn.CONSTRAINTS(contents = eqs) :: xs)
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-*/
-    case (Absyn.EQUATIONS(contents = eqs) :: xs)
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-    case (Absyn.INITIALEQUATIONS(contents = eqs) :: xs)
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-    case (Absyn.ALGORITHMS(contents = algs) :: xs)
-      equation
-        c1 = getAnnotationsInAlgorithmsItems(algs);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-    case (Absyn.INITIALALGORITHMS(contents = algs) :: xs)
-      equation
-        c1 = getAnnotationsInAlgorithmsItems(algs);
-        c2 = getAnnotationsInClassParts(xs);
-      then
-        c1 + c2;
-    case ((_ :: xs))
-      equation
-        res = getAnnotationsInClassParts(xs);
-      then
-        res;
-    case ({}) then 0;
-  end matchcontinue;
-end getAnnotationsInClassParts;
-
-protected function getAnnotationsInElementItems
-"function: getAnnotationsInElementItems
-  Helper function to getAnnotationCount"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynElementItemLst)
-    local
-      list<Absyn.ElementItem> xs;
-      Integer c1, res;
-    case (Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs)
-      equation
-        c1 = getAnnotationsInElementItems(xs);
-      then
-        c1 + 1;
-    case ((_ :: xs))
-      equation
-        res = getAnnotationsInElementItems(xs);
-      then
-        res;
-    case ({}) then 0;
-  end matchcontinue;
-end getAnnotationsInElementItems;
-
-protected function getAnnotationsInEquationsItems
-"function: getAnnotationsInEquationsItems
-  Helper function to getAnnotationCount"
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynEquationItemLst)
-    local
-      list<Absyn.EquationItem> xs;
-      Integer c1, res;
-    case (Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs)
-      equation
-        c1 = getAnnotationsInEquationsItems(xs);
-      then
-        c1 + 1;
-    case ((_ :: xs))
-      equation
-        res = getAnnotationsInEquationsItems(xs);
-      then
-        res;
-    case ({}) then 0;
-  end matchcontinue;
-end getAnnotationsInEquationsItems;
-
-protected function getAnnotationsInAlgorithmsItems
-"function: getAnnotationsInAlgorithmsItems
-  Helper function to getAnnotationCount"
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynAlgorithmItemLst)
-    local
-      list<Absyn.AlgorithmItem> xs;
-      Integer c1, res;
-    case (Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs)
-      equation
-        c1 = getAnnotationsInAlgorithmsItems(xs);
-      then
-        c1 + 1;
-    case ((_ :: xs))
-      equation
-        res = getAnnotationsInAlgorithmsItems(xs);
-      then
-        res;
-    case ({}) then 0;
-  end matchcontinue;
-end getAnnotationsInAlgorithmsItems;
 
 protected function getNthAnnotationString
 "function: getNthAnnotationString
@@ -6049,245 +5905,29 @@ protected function getNthAnnotationString
 algorithm
   outString := match (inClass,inInteger)
     local
-      list<Absyn.ClassPart> parts;
+      list<Absyn.Annotation> anns;
+      Absyn.Annotation ann;
       String str;
       Integer n;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.PARTS(ann = anns)),n)
       equation
-        str = getNthAnnotationStringInClassParts(parts,n);
+        ann = listGet(anns,n);
+        str = Dump.unparseAnnotation(ann, 0);
+        str = stringAppend(str, ";");
+        str = System.trim(str, " ");
       then
         str;
     // check also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = anns)),n)
       equation
-        str = getNthAnnotationStringInClassParts(parts,n);
+        ann = listGet(anns,n);
+        str = Dump.unparseAnnotation(ann,0);
+        str = stringAppend(str, ";");
+        str = System.trim(str, " ");
       then
         str;
   end match;
 end getNthAnnotationString;
-
-protected function getNthAnnotationStringInClassParts
-"function: getNthAnnotationStringInClassParts
-  Helper function to getNthAnnotationString"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynClassPartLst,inInteger)
-    local
-      String str;
-      list<Absyn.ElementItem> els;
-      list<Absyn.EquationItem> eqs;
-      list<Absyn.AlgorithmItem> algs;
-      list<Absyn.ClassPart> xs;
-      Integer n,c1,newn;
-    case ((Absyn.PUBLIC(contents = els) :: xs),n)
-      equation
-        str = getNthAnnotationStringInElements(els, n);
-      then
-        str;
-    case ((Absyn.PUBLIC(contents = els) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInElementItems(els);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-    case ((Absyn.PROTECTED(contents = els) :: xs),n)
-      equation
-        str = getNthAnnotationStringInElements(els, n);
-      then
-        str;
-    case ((Absyn.PROTECTED(contents = els) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInElementItems(els);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-/*
-    case ((Absyn.CONSTRAINTS(contents = eqs) :: xs),n)
-      equation
-        str = getNthAnnotationStringInEquations(eqs, n);
-      then
-        str;
-    case ((Absyn.CONSTRAINTS(contents = eqs) :: xs),n) // The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-*/
-    case ((Absyn.EQUATIONS(contents = eqs) :: xs),n)
-      equation
-        str = getNthAnnotationStringInEquations(eqs, n);
-      then
-        str;
-    case ((Absyn.EQUATIONS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-    case ((Absyn.INITIALEQUATIONS(contents = eqs) :: xs),n)
-      equation
-        str = getNthAnnotationStringInEquations(eqs, n);
-      then
-        str;
-    case ((Absyn.INITIALEQUATIONS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInEquationsItems(eqs);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-    case ((Absyn.ALGORITHMS(contents = algs) :: xs),n)
-      equation
-        str = getNthAnnotationStringInAlgorithms(algs, n);
-      then
-        str;
-    case ((Absyn.ALGORITHMS(contents = algs) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInAlgorithmsItems(algs);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-    case ((Absyn.INITIALALGORITHMS(contents = algs) :: xs),n)
-      equation
-        str = getNthAnnotationStringInAlgorithms(algs, n);
-      then
-        str;
-    case ((Absyn.INITIALALGORITHMS(contents = algs) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAnnotationsInAlgorithmsItems(algs);
-        newn = n - c1;
-        str = getNthAnnotationStringInClassParts(xs, newn);
-      then
-        str;
-    case ((_ :: xs),n)
-      equation
-        str = getNthAnnotationStringInClassParts(xs, n);
-      then
-        str;
-  end matchcontinue;
-end getNthAnnotationStringInClassParts;
-
-protected function getNthAnnotationStringInElements
-"function: getNthAnnotationStringInElements
-   This function takes an Element list and an int
-   and returns the nth annotation as string.
-   If the number is larger than the number of annotations
-   in the list, the function fails. Helper function to getNthAnnotationString."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynElementItemLst,inInteger)
-    local
-      String str;
-      Absyn.Annotation ann;
-      list<Absyn.ElementItem> xs;
-      Integer newn,n;
-    case ((Absyn.ANNOTATIONITEM(annotation_ = ann) :: xs), 1)
-      equation
-        str = Dump.unparseAnnotationOption(0, SOME(ann));
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
-      then
-        str;
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs),n)
-      equation
-        newn = n - 1;
-        str = getNthAnnotationStringInElements(xs, newn);
-      then
-        str;
-    case ((_ :: xs),n)
-      equation
-        str = getNthAnnotationStringInElements(xs, n);
-      then
-        str;
-    case ({},_) then fail();
-  end matchcontinue;
-end getNthAnnotationStringInElements;
-
-protected function getNthAnnotationStringInEquations
-"function: getNthConnectionitemInEquations
-   This function takes  an Equation list and an int
-   and returns the nth connection as an Equation.
-   If the number is larger than the number of connections
-   in the list, the function fails. Helper function to getNthAnnotationString."
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynEquationItemLst,inInteger)
-    local
-      String str;
-      Absyn.Annotation ann;
-      list<Absyn.EquationItem> xs;
-      Integer newn,n;
-    case ((Absyn.EQUATIONITEMANN(annotation_ = ann) :: xs), 1)
-      equation
-        str = Dump.unparseAnnotationOption(0, SOME(ann));
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
-      then
-        str;
-    case ((Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs),n)
-      equation
-        newn = n - 1;
-        str = getNthAnnotationStringInEquations(xs, newn);
-      then
-        str;
-    case ((_ :: xs),n)
-      equation
-        str = getNthAnnotationStringInEquations(xs, n);
-      then
-        str;
-    case ({},_) then fail();
-  end matchcontinue;
-end getNthAnnotationStringInEquations;
-
-protected function getNthAnnotationStringInAlgorithms
-"function: getNthAnnotationStringInAlgorithms
-   This function takes an Algorithm list and an int
-   and returns the nth annotation as String.
-   If the number is larger than the number of annotations
-   in the list, the function fails. Helper function to getNthAnnotationString."
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynAlgorithmItemLst,inInteger)
-    local
-      String str;
-      Absyn.Annotation ann;
-      list<Absyn.AlgorithmItem> xs;
-      Integer newn,n;
-    case ((Absyn.ALGORITHMITEMANN(annotation_ = ann) :: xs), 1)
-      equation
-        str = Dump.unparseAnnotationOption(0, SOME(ann));
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
-      then
-        str;
-    case ((Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = _)) :: xs),n)
-      equation
-        newn = n - 1;
-        str = getNthAnnotationStringInAlgorithms(xs, newn);
-      then
-        str;
-    case ((_ :: xs),n)
-      equation
-        str = getNthAnnotationStringInAlgorithms(xs, n);
-      then
-        str;
-    case ({},_) then fail();
-  end matchcontinue;
-end getNthAnnotationStringInAlgorithms;
 
 protected function getImportCount
 "function: getImportCount

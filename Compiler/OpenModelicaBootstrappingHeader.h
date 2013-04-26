@@ -1189,7 +1189,7 @@ extern struct record_description Absyn_Class_CLASS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_PARTS__desc_added
 #define Absyn_ClassDef_PARTS__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_PARTS__desc__fields[4] = {"typeVars","classAttrs","classParts","comment"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_PARTS__desc__fields[5] = {"typeVars","classAttrs","classParts","ann","comment"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_PARTS__desc = {
   "Absyn_ClassDef_PARTS",
   "Absyn.ClassDef.PARTS",
@@ -1199,8 +1199,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_PARTS__desc =
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ClassDef_PARTS__desc;
 #endif
-#define Absyn__PARTS_3dBOX4 3
-#define Absyn__PARTS(typeVars,classAttrs,classParts,comment) (mmc_mk_box5(3,&Absyn_ClassDef_PARTS__desc,typeVars,classAttrs,classParts,comment))
+#define Absyn__PARTS_3dBOX5 3
+#define Absyn__PARTS(typeVars,classAttrs,classParts,ann,comment) (mmc_mk_box6(3,&Absyn_ClassDef_PARTS__desc,typeVars,classAttrs,classParts,ann,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_DERIVED__desc_added
 #define Absyn_ClassDef_DERIVED__desc_added
@@ -1249,7 +1249,7 @@ extern struct record_description Absyn_ClassDef_OVERLOAD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_CLASS__EXTENDS__desc_added
 #define Absyn_ClassDef_CLASS__EXTENDS__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_CLASS__EXTENDS__desc__fields[4] = {"baseClassName","modifications","comment","parts"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_CLASS__EXTENDS__desc__fields[5] = {"baseClassName","modifications","comment","parts","ann"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc = {
   "Absyn_ClassDef_CLASS__EXTENDS",
   "Absyn.ClassDef.CLASS_EXTENDS",
@@ -1259,8 +1259,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_CLASS__EXTEND
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc;
 #endif
-#define Absyn__CLASS_5fEXTENDS_3dBOX4 7
-#define Absyn__CLASS_5fEXTENDS(baseClassName,modifications,comment,parts) (mmc_mk_box5(7,&Absyn_ClassDef_CLASS__EXTENDS__desc,baseClassName,modifications,comment,parts))
+#define Absyn__CLASS_5fEXTENDS_3dBOX5 7
+#define Absyn__CLASS_5fEXTENDS(baseClassName,modifications,comment,parts,ann) (mmc_mk_box6(7,&Absyn_ClassDef_CLASS__EXTENDS__desc,baseClassName,modifications,comment,parts,ann))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_PDER__desc_added
 #define Absyn_ClassDef_PDER__desc_added
@@ -1488,21 +1488,6 @@ extern struct record_description Absyn_ElementItem_ELEMENTITEM__desc;
 #define Absyn__ELEMENTITEM_3dBOX1 3
 #define Absyn__ELEMENTITEM(element) (mmc_mk_box2(3,&Absyn_ElementItem_ELEMENTITEM__desc,element))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_ElementItem_ANNOTATIONITEM__desc_added
-#define Absyn_ElementItem_ANNOTATIONITEM__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_ElementItem_ANNOTATIONITEM__desc__fields[1] = {"annotation_"};
-ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc = {
-  "Absyn_ElementItem_ANNOTATIONITEM",
-  "Absyn.ElementItem.ANNOTATIONITEM",
-  Absyn_ElementItem_ANNOTATIONITEM__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc;
-#endif
-#define Absyn__ANNOTATIONITEM_3dBOX1 4
-#define Absyn__ANNOTATIONITEM(annotation_) (mmc_mk_box2(4,&Absyn_ElementItem_ANNOTATIONITEM__desc,annotation_))
-#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementItem_LEXER__COMMENT__desc_added
 #define Absyn_ElementItem_LEXER__COMMENT__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_ElementItem_LEXER__COMMENT__desc__fields[1] = {"comment"};
@@ -1515,8 +1500,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementItem_LEXER__COM
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementItem_LEXER__COMMENT__desc;
 #endif
-#define Absyn__LEXER_5fCOMMENT_3dBOX1 5
-#define Absyn__LEXER_5fCOMMENT(comment) (mmc_mk_box2(5,&Absyn_ElementItem_LEXER__COMMENT__desc,comment))
+#define Absyn__LEXER_5fCOMMENT_3dBOX1 4
+#define Absyn__LEXER_5fCOMMENT(comment) (mmc_mk_box2(4,&Absyn_ElementItem_LEXER__COMMENT__desc,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
@@ -1837,21 +1822,6 @@ extern struct record_description Absyn_EquationItem_EQUATIONITEM__desc;
 #define Absyn__EQUATIONITEM_3dBOX3 3
 #define Absyn__EQUATIONITEM(equation_,comment,info) (mmc_mk_box4(3,&Absyn_EquationItem_EQUATIONITEM__desc,equation_,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_EquationItem_EQUATIONITEMANN__desc_added
-#define Absyn_EquationItem_EQUATIONITEMANN__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_EquationItem_EQUATIONITEMANN__desc__fields[1] = {"annotation_"};
-ADD_METARECORD_DEFINTIONS struct record_description Absyn_EquationItem_EQUATIONITEMANN__desc = {
-  "Absyn_EquationItem_EQUATIONITEMANN",
-  "Absyn.EquationItem.EQUATIONITEMANN",
-  Absyn_EquationItem_EQUATIONITEMANN__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_EquationItem_EQUATIONITEMANN__desc;
-#endif
-#define Absyn__EQUATIONITEMANN_3dBOX1 4
-#define Absyn__EQUATIONITEMANN(annotation_) (mmc_mk_box2(4,&Absyn_EquationItem_EQUATIONITEMANN__desc,annotation_))
-#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EquationItem_EQUATIONITEMCOMMENT__desc_added
 #define Absyn_EquationItem_EQUATIONITEMCOMMENT__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_EquationItem_EQUATIONITEMCOMMENT__desc__fields[1] = {"comment"};
@@ -1864,8 +1834,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_EquationItem_EQUATIONI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_EquationItem_EQUATIONITEMCOMMENT__desc;
 #endif
-#define Absyn__EQUATIONITEMCOMMENT_3dBOX1 5
-#define Absyn__EQUATIONITEMCOMMENT(comment) (mmc_mk_box2(5,&Absyn_EquationItem_EQUATIONITEMCOMMENT__desc,comment))
+#define Absyn__EQUATIONITEMCOMMENT_3dBOX1 4
+#define Absyn__EQUATIONITEMCOMMENT(comment) (mmc_mk_box2(4,&Absyn_EquationItem_EQUATIONITEMCOMMENT__desc,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_AlgorithmItem_ALGORITHMITEM__desc_added
 #define Absyn_AlgorithmItem_ALGORITHMITEM__desc_added
@@ -1882,21 +1852,6 @@ extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEM__desc;
 #define Absyn__ALGORITHMITEM_3dBOX3 3
 #define Absyn__ALGORITHMITEM(algorithm_,comment,info) (mmc_mk_box4(3,&Absyn_AlgorithmItem_ALGORITHMITEM__desc,algorithm_,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_AlgorithmItem_ALGORITHMITEMANN__desc_added
-#define Absyn_AlgorithmItem_ALGORITHMITEMANN__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_AlgorithmItem_ALGORITHMITEMANN__desc__fields[1] = {"annotation_"};
-ADD_METARECORD_DEFINTIONS struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc = {
-  "Absyn_AlgorithmItem_ALGORITHMITEMANN",
-  "Absyn.AlgorithmItem.ALGORITHMITEMANN",
-  Absyn_AlgorithmItem_ALGORITHMITEMANN__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc;
-#endif
-#define Absyn__ALGORITHMITEMANN_3dBOX1 4
-#define Absyn__ALGORITHMITEMANN(annotation_) (mmc_mk_box2(4,&Absyn_AlgorithmItem_ALGORITHMITEMANN__desc,annotation_))
-#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc_added
 #define Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc__fields[1] = {"comment"};
@@ -1909,8 +1864,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_AlgorithmItem_ALGORITH
 #else /* Only use the file as a header */
 extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc;
 #endif
-#define Absyn__ALGORITHMITEMCOMMENT_3dBOX1 5
-#define Absyn__ALGORITHMITEMCOMMENT(comment) (mmc_mk_box2(5,&Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc,comment))
+#define Absyn__ALGORITHMITEMCOMMENT_3dBOX1 4
+#define Absyn__ALGORITHMITEMCOMMENT(comment) (mmc_mk_box2(4,&Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__IF__desc_added
 #define Absyn_Equation_EQ__IF__desc_added

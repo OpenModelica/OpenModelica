@@ -203,7 +203,6 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Variability var;
       Absyn.TypeSpec tySpec;
-      Option<SCode.Comment> comment;
       Absyn.Import imp;
       SCode.Prefixes pref;
 
@@ -222,7 +221,7 @@ algorithm
                      visibility = vis,
                      redeclarePrefix = red),
                      attributes = SCode.ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod,comment = comment)
+                   modifications = mod)
       equation
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
@@ -412,19 +411,19 @@ algorithm
         res = stringAppendList({"DERIVED(",s2,",",s3,")"});
       then
         res;
-    case (SCode.ENUMERATION(enumLst, _))
+    case (SCode.ENUMERATION(enumLst))
       equation
         s1 = stringDelimitList(List.map(enumLst, printEnumStr), ", ");
         res = stringAppendList({"ENUMERATION(", s1, ")"});
       then
         res;
-    case (SCode.OVERLOAD(plst, _))
+    case (SCode.OVERLOAD(plst))
       equation
         s1 = stringDelimitList(List.map(plst, Absyn.pathString), ", ");
         res = stringAppendList({"OVERLOAD(", s1, ")"});
       then
         res;
-    case (SCode.PDER(path, slst, _))
+    case (SCode.PDER(path, slst))
       equation
         s1 = Absyn.pathString(path);
         s2 = stringDelimitList(slst, ", ");

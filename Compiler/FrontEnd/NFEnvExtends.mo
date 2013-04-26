@@ -1310,6 +1310,7 @@ algorithm
       SCode.ClassDef cdef;
       SCode.Element cls, ext;
       String el_str, env_str, err_msg;
+      SCode.Comment cmt;
 
     // When a 'class extends X' is encountered we insert a 'class X extends
     // BaseClass.X' into the environment, with the same elements as the class
@@ -1328,10 +1329,10 @@ algorithm
           baseClassName = bc,
           modifications = mods,
           composition = cdef),
-        info = info), _)
+        cmt=cmt, info = info), _)
       equation
         // Construct a new PARTS class with the data from the class extends.
-        cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, info);
+        cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, cmt, info);
 
         // Construct the class environment and add the new extends to it.
         cls_env = NFSCodeEnv.makeClassEnvironment(cls, false);

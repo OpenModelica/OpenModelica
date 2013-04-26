@@ -127,8 +127,6 @@ uniontype Section
     list<SCode.AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
     list<SCode.ConstraintSection>    constraintLst       "the list of constraints for optimization";
     Option<SCode.ExternalDecl>       externalDecl        "used by external functions";
-    list<SCode.Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
-    Option<SCode.Comment>            comment             "the class comment";
   end SECTION;
 end Section;
 
@@ -479,12 +477,12 @@ algorithm
       FlatStructure structure;
 
     // handle parts
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed, al, c), env, hashTable, seqNumber, info)
+    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed), env, hashTable, seqNumber, info)
       equation
         modifiers = addRedeclaresAndClassExtendsToModifiers(modifiers, els);
         (hashTable, seqNumber) = hashTableAddElements(inParentCref, parentElement, modifiers, baseClassOpt, els, env, hashTable, seqNumber);
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT("$sections", {}));
-        structure = createSectionStructure(modifiers, parentElement, SECTION(ne, ie, na, ia, co, ed, al, c));
+        structure = createSectionStructure(modifiers, parentElement, SECTION(ne, ie, na, ia, co, ed));
         hashTable = add((fullCref, VALUE({seqNumber}, {structure}, NONE())), hashTable);
       then
         (hashTable, seqNumber + 1);
@@ -590,7 +588,7 @@ algorithm
               SCode.defaultConstAttr,
               Absyn.TPATH(Absyn.IDENT("$noType"), NONE()),
               SCode.NOMOD(),
-              NONE(),
+              SCode.noComment,
               NONE(),
               info));
 
@@ -922,7 +920,7 @@ algorithm
       list<SCode.Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment>            comment             "the class comment";
 
-    case (SECTION(normalEquationLst, initialEquationLst, normalAlgorithmLst, initialAlgorithmLst, constraintLst, externalDecl, annotationLst, comment))
+    case (SECTION(normalEquationLst, initialEquationLst, normalAlgorithmLst, initialAlgorithmLst, constraintLst, externalDecl))
       equation
         str = "$section";
       then

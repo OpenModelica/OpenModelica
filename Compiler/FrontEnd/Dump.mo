@@ -230,13 +230,14 @@ algorithm
       list<Ident> vars,typeVars;
       tuple<String,String> re;
       list<Absyn.Path> paths;
-      String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs, finalStr;
+      String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs, finalStr, annStr;
+      list<Absyn.Annotation> ann;
 
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
     // if the order is not the one above the parser will give errors!
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                        body = Absyn.PARTS(typeVars = typeVars,classParts = parts,comment = optcmt)),fi,re,io)
+                        body = Absyn.PARTS(typeVars = typeVars,classParts = parts,ann = ann,comment = optcmt)),fi,re,io)
       equation
         is = indentStr(i);
         encapsulatedStr = selectString(e, "encapsulated ", "");
@@ -246,10 +247,11 @@ algorithm
         i_1 = i + 1;
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseStringCommentOption(optcmt);
+        annStr = stringAppendList(List.map1(List.map1Reverse(ann,unparseAnnotation,i_1),stringAppend,";\n"));
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         tvs = Util.if_(List.isEmpty(typeVars),"","<"+&stringDelimitList(typeVars,",")+&">");
-        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,tvs,s5,"\n",s4,is,"end ",n});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,tvs,s5,"\n",s4,annStr,is,"end ",n});
       then
         str;
 
@@ -303,7 +305,7 @@ algorithm
         str;
 
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                        body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
+                        body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,ann = ann,comment = optcmt,parts = parts)),fi,re,io)
       equation
         is = indentStr(i);
         partialStr = selectString(p, "partial ", "");
@@ -314,9 +316,10 @@ algorithm
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseMod1Str(cmod);
         s6 = unparseStringCommentOption(optcmt);
+        annStr = stringAppendList(List.map1(List.map1Reverse(ann,unparseAnnotation,i_1),stringAppend,";\n"));
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,annStr,is,"end ",baseClassName});
       then
         str;
 
@@ -1406,25 +1409,10 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case ({Absyn.ANNOTATIONITEM(annotation_ = a)})
-      equation
-        Print.printBuf("Absyn.ANNOTATIONITEM(");
-        printAnnotation(a);
-        Print.printBuf(")");
-      then
-        ();
     case (Absyn.ELEMENTITEM(element = e) :: els)
       equation
         Print.printBuf("Absyn.ELEMENTITEM(");
         printElement(e);
-        Print.printBuf("), ");
-        printElementitems2(els);
-      then
-        ();
-    case (Absyn.ANNOTATIONITEM(annotation_ = a) :: els)
-      equation
-        Print.printBuf("Absyn.ANNOTATIONITEM(");
-        printAnnotation(a);
         Print.printBuf("), ");
         printElementitems2(els);
       then
@@ -1496,12 +1484,6 @@ algorithm
         str = unparseElementStr(i, e);
       then
         str;
-    case (i,Absyn.ANNOTATIONITEM(annotation_ = a))
-      equation
-        s1 = unparseAnnotationOption(i, SOME(a));
-        str = stringAppend(s1, ";");
-      then
-        str;
     case (i,Absyn.LEXER_COMMENT(comment=str))
       equation
         str = System.trimWhitespace(str);
@@ -1521,45 +1503,59 @@ algorithm
     local
       Ident s,res;
       Integer i;
-      Option<Absyn.Annotation> ann;
+      Absyn.Annotation ann;
     case (_,NONE()) then "";
-    case (i,ann)
+    case (i,SOME(ann))
       equation
-        s = unparseAnnotationOption(i, ann);
+        s = unparseAnnotation(ann,i);
         res = stringAppend(s, ";");
       then
         res;
   end matchcontinue;
 end unparseAnnotationOptionSemi;
 
-public function unparseAnnotationOption
-"function: unparseAnnotationOption
+public function unparseAnnotation
+"function: unparseAnnotation
   Prettyprint an annotation."
+  input Absyn.Annotation inAbsynAnnotation;
   input Integer inInteger;
-  input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inAbsynAnnotationOption)
+  outString := matchcontinue (inAbsynAnnotation,inInteger)
     local
       Ident s1,s2,str,is;
       list<Absyn.ElementArg> mod;
       Integer i;
-    case (0,SOME(Absyn.ANNOTATION(mod)))
+    case (Absyn.ANNOTATION(mod),0)
       equation
         s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
         s2 = stringAppend(" annotation", s1);
-        str = s2; // stringAppend(s2, "");
+        str = s2;
       then
         str;
-    case (i,SOME(Absyn.ANNOTATION(mod)))
+    case (Absyn.ANNOTATION(mod),i)
       equation
         s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
         is = indentStr(i);
         str = stringAppendList({is,"annotation",s1});
       then
         str;
-    case (_,NONE()) then "";
   end matchcontinue;
+end unparseAnnotation;
+
+public function unparseAnnotationOption
+"function: unparseAnnotation
+  Prettyprint an annotation."
+  input Integer i;
+  input Option<Absyn.Annotation> inAbsynAnnotation;
+  output String outString;
+algorithm
+  outString := match (i,inAbsynAnnotation)
+    local
+      Absyn.Annotation ann;
+    case (_,SOME(ann)) then unparseAnnotation(ann,i);
+    else "";
+  end match;
 end unparseAnnotationOption;
 
 protected function printElement "function: printElement
@@ -2746,11 +2742,6 @@ algorithm
       then
         ();
 
-    case Absyn.EQUATIONITEMANN(annotation_ = _)
-      equation
-        Print.printBuf("EQUATIONITEMANN(<annotation>)\n");
-      then
-        ();
   end match;
 end printEquationitem;
 
@@ -2907,12 +2898,6 @@ algorithm
       then
         str +& ";";
 
-    case (i,Absyn.EQUATIONITEMANN(annotation_ = ann))
-      equation
-        str = unparseAnnotationOption(i, SOME(ann));
-      then
-        str +& ";";
-
     case (i,Absyn.EQUATIONITEMCOMMENT(str))
       then indentStr(i) +& System.trimWhitespace(str);
 
@@ -3022,11 +3007,6 @@ algorithm
       then
         ();
 
-    case (Absyn.ALGORITHMITEMANN(annotation_ = ann))
-      equation
-        Print.printBuf("ALGORITHMITEMANN(<annotation>)\n");
-      then
-        ();
   end match;
 end printAlgorithmitem;
 
@@ -3366,13 +3346,6 @@ algorithm
           {is,"catch\n",is,s2,is,"end catch",s3,";"});
       then
         str;
-
-    case (i,Absyn.ALGORITHMITEMANN(annotation_ = ann))
-      equation
-        str = unparseAnnotationOption(i, SOME(ann));
-        str_1 = stringAppend(str, ";");
-      then
-        str_1;
 
     case (i,Absyn.ALGORITHMITEMCOMMENT(comment = str))
       then indentStr(i) +& System.trimWhitespace(str);
@@ -5633,12 +5606,15 @@ algorithm
       Absyn.Path functionName;
       list<String> typeVars,vars;
       list<Absyn.NamedArg> classAttrs;
-    case Absyn.PARTS(typeVars,classAttrs,classParts,optString)
+      list<Absyn.Annotation> ann;
+    case Absyn.PARTS(typeVars,classAttrs,classParts,ann,optString)
       equation
         Print.printBuf("record Absyn.PARTS typeVars = {");
         Print.printBuf(stringDelimitList(typeVars, ","));
         Print.printBuf("}, classParts = ");
         printListAsCorbaString(classParts, printClassPartAsCorbaString, ",");
+        Print.printBuf(", ann = ");
+        printListAsCorbaString(ann, printAnnotationAsCorbaString, ",");
         Print.printBuf(", comment = ");
         printStringCommentOption(optString);
         Print.printBuf(" end Absyn.PARTS;");
@@ -5671,7 +5647,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.OVERLOAD;");
       then ();
-    case Absyn.CLASS_EXTENDS(baseClassName,modifications,optString,classParts)
+    case Absyn.CLASS_EXTENDS(baseClassName,modifications,optString,classParts,ann)
       equation
         Print.printBuf("record Absyn.CLASS_EXTENDS baseClassName = \"");
         Print.printBuf(baseClassName);
@@ -5681,6 +5657,8 @@ algorithm
         printStringCommentOption(optString);
         Print.printBuf(", parts = ");
         printListAsCorbaString(classParts,printClassPartAsCorbaString,",");
+        Print.printBuf(", ann = ");
+        printListAsCorbaString(ann, printAnnotationAsCorbaString, ",");
         Print.printBuf("end Absyn.CLASS_EXTENDS;");
       then ();
     case Absyn.PDER(functionName,vars,comment)
@@ -5999,12 +5977,6 @@ algorithm
         printElementAsCorbaString(element);
         Print.printBuf(" end Absyn.ELEMENTITEM;");
       then ();
-    case Absyn.ANNOTATIONITEM(annotation_)
-      equation
-        Print.printBuf("record Absyn.ANNOTATIONITEM annotation_ = ");
-        printAnnotationAsCorbaString(annotation_);
-        Print.printBuf(" end Absyn.ANNOTATIONITEM;");
-      then ();
     case Absyn.LEXER_COMMENT(cmt)
       equation
         Print.printBuf("record Absyn.ELEMENTITEM element = \"");
@@ -6285,12 +6257,6 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.EQUATIONITEM;");
       then ();
-    case Absyn.EQUATIONITEMANN(annotation_)
-      equation
-        Print.printBuf("\nrecord Absyn.EQUATIONITEMANN annotation_ = ");
-        printAnnotationAsCorbaString(annotation_);
-        Print.printBuf(" end Absyn.EQUATIONITEMANN;");
-      then ();
   end match;
 end printEquationItemAsCorbaString;
 
@@ -6386,12 +6352,6 @@ algorithm
         Print.printBuf(", info = ");
         printInfo(info);
         Print.printBuf(" end Absyn.ALGORITHMITEM;");
-      then ();
-    case Absyn.ALGORITHMITEMANN(annotation_)
-      equation
-        Print.printBuf("\nrecord Absyn.ALGORITHMITEMANN annotation_ = ");
-        printAnnotationAsCorbaString(annotation_);
-        Print.printBuf(" end Absyn.ALGORITHMITEMANN;");
       then ();
   end match;
 end printAlgorithmItemAsCorbaString;

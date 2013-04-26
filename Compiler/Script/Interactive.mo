@@ -1258,7 +1258,7 @@ algorithm
                     SCode.defaultPrefixes,
                     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                    NONE(), NONE(), Absyn.dummyInfo),
+                    SCode.noComment, NONE(), Absyn.dummyInfo),
                   DAE.NOMOD(),
                  Env.VAR_UNTYPED(),
                  {});
@@ -1442,7 +1442,7 @@ algorithm
           getApiFunctionArgs(istmts);
         newp = updateProgram(
           Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                         Absyn.PARTS({},{},{Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
+                         Absyn.dummyParts,Absyn.dummyInfo)},
                          Absyn.TOP(),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
       then
@@ -1459,7 +1459,7 @@ algorithm
         newp = updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                      Absyn.PARTS({},{},{Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
+                      Absyn.dummyParts,Absyn.dummyInfo)},
                       Absyn.WITHIN(wpath),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
       then
@@ -1473,9 +1473,8 @@ algorithm
         path_1 = Absyn.crefToPath(cr);
         newp = updateProgram(
           Absyn.PROGRAM({
-          Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                      Absyn.PARTS({},{},{Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
-                      Absyn.WITHIN(path_1),Absyn.dummyTimeStamp), p);
+          Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),Absyn.dummyParts,Absyn.dummyInfo)
+          }, Absyn.WITHIN(path_1),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
         resstr = stringAppend(name, "\n");
       then
@@ -2675,23 +2674,24 @@ algorithm
       Absyn.Class class_;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     /* the class with the component the old name for the component */
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-          body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = a),info = file_info),old_comp,new_comp)
+          body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = a),info = file_info),old_comp,new_comp)
       equation
         parts_1 = renameComponentInParts(parts, old_comp, new_comp);
       then
-        Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,parts_1,a),file_info);
+        Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,a),file_info);
 
     /* the class with the component the old name for the component for model extends X end X; */
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = b,comment = c,parts = parts),
+                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = b,comment = c,parts = parts,ann=ann),
                       info = file_info),old_comp,new_comp)
       equation
         parts_1 = renameComponentInParts(parts, old_comp, new_comp);
       then
-        Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction, Absyn.CLASS_EXTENDS(baseClassName,b,c,parts_1),file_info);
+        Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction, Absyn.CLASS_EXTENDS(baseClassName,b,c,parts_1,ann),file_info);
 
     case (class_,old_comp,new_comp) then class_;
   end matchcontinue;
@@ -4897,6 +4897,7 @@ algorithm
       list<Absyn.ElementArg> mod;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     /* a class with parts! */
     case (Absyn.CLASS(name = id,
@@ -4904,12 +4905,12 @@ algorithm
                       finalPrefix = f,
                       encapsulatedPrefix = e,
                       restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
                       info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality)
       equation
         parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,cmt),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
 
     /* adrpo: handle also an extended class with parts! */
     case (Absyn.CLASS(name = id,
@@ -4917,12 +4918,12 @@ algorithm
                       finalPrefix = f,
                       encapsulatedPrefix = e,
                       restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname, modifications=mod, parts = parts,comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname, modifications=mod, parts = parts,ann = ann,comment = cmt),
                       info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality)
       equation
         parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,mod,cmt,parts_1),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,mod,cmt,parts_1,ann),file_info);
 
   end match;
 end setComponentPropertiesInClass;
@@ -5793,22 +5794,23 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
           inherit_name,submod,mod,env)
       equation
         parts_1 = setExtendsSubmodifierInClassparts(parts, inherit_name, submod, mod, env);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,cmt),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
     /* adrpo: handle also model extends M end M; */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,comment = cmt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
           inherit_name,submod,mod,env)
       equation
         parts_1 = setExtendsSubmodifierInClassparts(parts, inherit_name, submod, mod, env);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info);
   end match;
 end setExtendsSubmodifierInClass;
 
@@ -6284,22 +6286,23 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
           varname,submodident,mod)
       equation
         parts_1 = setComponentSubmodifierInClassparts(parts, varname, submodident, mod);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,cmt),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
     /* adrpo: handle also model extends M end M; */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),
           varname,submodident,mod)
       equation
         parts_1 = setComponentSubmodifierInClassparts(parts, varname, submodident, mod);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1),file_info);
+        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info);
   end match;
 end setComponentSubmodifierInClass;
 
@@ -7004,24 +7007,25 @@ algorithm
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
       Boolean b;
+      list<Absyn.Annotation> ann;
 
     // a class with parts
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
           id2,exp)
       equation
         (parts_1, b) = setVariableBindingInClassparts(parts, id2, exp);
       then
-        (Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,cmt),file_info), b);
+        (Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info), b);
 
     // adrpo: handle also model extends M end M;
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),
           id2,exp)
       equation
         (parts_1,b) = setVariableBindingInClassparts(parts, id2, exp);
       then
-        (Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1),file_info), b);
+        (Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info), b);
   end match;
 end setVariableBindingInClass;
 
@@ -7427,22 +7431,23 @@ algorithm
       Env.Cache cache;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     /* the class with the component the old name for the component signal if something in class have been changed */
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = comment),info = file_info),old_comp,new_comp,env)
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = comment),info = file_info),old_comp,new_comp,env)
       equation
         (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
       then
-        (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,parts_1,comment),file_info),changed);
+        (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,comment),file_info),changed);
     /* model extends M end M; */
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = modifications,comment = comment,parts = parts),
+                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = modifications,ann=ann,comment = comment,parts = parts),
                       info = file_info),old_comp,new_comp,env)
       equation
         (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
       then
-        (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.CLASS_EXTENDS(baseClassName,modifications,comment,parts_1),file_info),changed);
+        (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.CLASS_EXTENDS(baseClassName,modifications,comment,parts_1,ann),file_info),changed);
     /* a derived class */
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
                       body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
@@ -7870,58 +7875,60 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      Absyn.Comment cmt;
+      list<Absyn.Annotation> ann;
 
     /* a class with parts */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = str_opt),info = file_info),
           SOME(pa),visitor,args,visit_prot)
       equation
         tmp_pa = Absyn.joinPaths(pa, Absyn.IDENT(name));
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,str_opt),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,str_opt),file_info),pa_1,args_1));
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
           NONE(),visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars, classAttrs, parts_1,str_opt),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars, classAttrs, parts_1, ann, str_opt),file_info),pa_1,args_1));
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
           pa_1,visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,str_opt),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,str_opt),file_info),pa_1,args_1));
 
     /* adrpo: handle also an extended class with parts: model extends M end M; */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
           SOME(pa),visitor,args,visit_prot)
       equation
         tmp_pa = Absyn.joinPaths(pa, Absyn.IDENT(name));
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
           NONE(),visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = str_opt),info = file_info),
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt,modifications=modif,parts = parts,ann = ann),info = file_info),
           pa_1,visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1),file_info),pa_1,args_1));
+        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
 
     /* otherwise */
     case (cl,pa_1,_,args,_) then ((cl,pa_1,args));
@@ -8280,8 +8287,9 @@ algorithm
       Option<Absyn.Comment> cmt;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p),"") then Absyn.PARTS(typeVars,classAttrs,p,NONE());
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p),strcmt) then Absyn.PARTS(typeVars,classAttrs,p,SOME(strcmt));
+      list<Absyn.Annotation> ann;
+    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),"") then Absyn.PARTS(typeVars,classAttrs,p,ann,NONE());
+    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),strcmt) then Absyn.PARTS(typeVars,classAttrs,p,ann,SOME(strcmt));
     case (Absyn.DERIVED(typeSpec = Absyn.TPATH(path,ad),attributes = attr,arguments = arg,comment = cmt),strcmt)
       equation
         cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
@@ -8297,8 +8305,8 @@ algorithm
         cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
       then
         Absyn.OVERLOAD(plst,cmt_1);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,parts = p),strcmt) then Absyn.CLASS_EXTENDS(id,args,SOME(strcmt),p);
+    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p,ann);
+    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),strcmt) then Absyn.CLASS_EXTENDS(id,args,SOME(strcmt),p,ann);
     case (c,_) then c;
   end matchcontinue;
 end setClassCommentInClassdef;
@@ -8910,7 +8918,7 @@ algorithm
     case (cr,classname,_)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,_,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(i,_,f,e,r,Absyn.CLASS_EXTENDS(parts=parts),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
@@ -8957,7 +8965,7 @@ algorithm
     case (cr,classname,_)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         _ = getComponentsContainsName(cr, publst);
       then
@@ -8965,7 +8973,7 @@ algorithm
     case (cr,classname,_)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         protlst = getProtectedList(parts);
         _ = getComponentsContainsName(cr, protlst);
       then
@@ -9004,7 +9012,7 @@ algorithm
     case (cr,classname,_)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
@@ -9052,7 +9060,7 @@ algorithm
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         public_res = isReplaceableInElements(public_elementitem_list, str);
         res = Util.if_(public_res, true, false);
@@ -9062,7 +9070,7 @@ algorithm
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
         protected_res = isReplaceableInElements(protected_elementitem_list, str);
         res = Util.if_(protected_res, true, false);
@@ -9072,7 +9080,7 @@ algorithm
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         public_res = isReplaceableInElements(public_elementitem_list, str);
         res = Util.if_(public_res, true, false);
@@ -9082,13 +9090,13 @@ algorithm
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
         protected_res = isReplaceableInElements(protected_elementitem_list, str);
         res = Util.if_(protected_res, true, false);
       then
         res;
-    case (_,_,_) then false;
+    else false;
   end matchcontinue;
 end isReplaceable;
 
@@ -9139,7 +9147,7 @@ algorithm
     /* a class with parts - protected elements */
     case (_,str,p)
       equation
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(path, p);
         protected_elementitem_list = getProtectedList(parts);
         protected_res = isProtectedClassInElements(protected_elementitem_list, str);
         res = Util.if_(protected_res, true, false);
@@ -9148,7 +9156,7 @@ algorithm
     /* an extended class with parts: model extends M end M; protected elements */
     case (_,str,p)
       equation
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         protected_elementitem_list = getProtectedList(parts);
         protected_res = isProtectedClassInElements(protected_elementitem_list, str);
         res = Util.if_(protected_res, true, false);
@@ -9836,16 +9844,16 @@ algorithm
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          Absyn.PARTS({},{},{},NONE()),Absyn.dummyInfo),Absyn.IDENT("Real"));
+          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          Absyn.PARTS({},{},{},NONE()),Absyn.dummyInfo),Absyn.IDENT("Integer"));
+          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          Absyn.PARTS({},{},{},NONE()),Absyn.dummyInfo),Absyn.IDENT("String"));
+          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          Absyn.PARTS({},{},{},NONE()),Absyn.dummyInfo),Absyn.IDENT("Boolean"));
+          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Boolean"));
 
     case (path,inmodel,_)
       equation
@@ -9930,10 +9938,11 @@ algorithm
       list<Absyn.ElementArg> mod;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
      /* Search in public list */
     case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                           body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
                            info = file_info))
       equation
         publst = getPublicList(parts);
@@ -9944,11 +9953,11 @@ algorithm
         true = intEq(l1_1, l2);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
     /* Search in protected list */
     case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                           body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
                            info = file_info))
       equation
         protlst = getProtectedList(parts);
@@ -9959,11 +9968,11 @@ algorithm
         true = intEq(l1_1, l2);
         parts2 = replaceProtectedList(parts, protlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
      /* adrpo search also in model extends X end X */
     case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,comment = cmt),
+                           body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,ann = ann,comment = cmt),
                            info = file_info))
       equation
         publst = getPublicList(parts);
@@ -9974,11 +9983,11 @@ algorithm
         true = intEq(l1_1, l2);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
 
     /* adrpo search also in model extends X end X */
     case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,comment = cmt),
+                           body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,ann = ann,comment = cmt),
                            info = file_info))
       equation
         protlst = getProtectedList(parts);
@@ -9989,7 +9998,7 @@ algorithm
         true = intEq(l1_1, l2);
         parts2 = replaceProtectedList(parts, protlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
 
   end matchcontinue;
 end deleteComponentFromClass;
@@ -10424,402 +10433,26 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
-    /* if annotation is found in public elements then merge it */
     case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
                                info = file_info)),nargs)
       equation
-        publst = getPublicList(parts);
-        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(publst);
         newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        publst2 = replaceElementAnnotationInElements(publst, newann_1);
-        parts2 = replacePublicList(parts, publst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if annotation is found in protected elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        protlst = getProtectedList(parts);
-        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(protlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        protlst2 = replaceElementAnnotationInElements(protlst, newann_1);
-        parts2 = replaceProtectedList(parts, protlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if annotation is found in equation elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        equationlst = getEquationList(parts);
-        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
-        parts2 = replaceEquationList(parts, equationlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if annotation is found in initial equation elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        equationlst = getInitialEquationList(parts);
-        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
-        parts2 = replaceInitialEquationList(parts, equationlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if annotation is found in algorithm elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        algorithmlst = getAlgorithmList(parts);
-        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
-        parts2 = replaceAlgorithmList(parts, algorithmlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if annotation is found in initial algorithm elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        algorithmlst = getInitialAlgorithmList(parts);
-        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
-        parts2 = replaceInitialAlgorithmList(parts, algorithmlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* if no annotation element found in class then add it to the public list*/
-    case ((cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = parts))),nargs)
-      equation
-        publst = getPublicList(parts);
-        annotation_ = annotationListToAbsyn(nargs);
-        cdef_1 = addToPublic(cdef, Absyn.ANNOTATIONITEM(annotation_));
-      then
-        cdef_1;
+        newann_1 = List.fold(ann,Absyn.mergeAnnotations,newann);
+      then Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts,{newann_1},cmt),file_info);
     /* an extended class with parts: model extends M end M; */
-    /* if annotation is found in public elements then merge it */
     case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),
                                info = file_info)),nargs)
       equation
-        publst = getPublicList(parts);
-        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(publst);
         newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        publst2 = replaceElementAnnotationInElements(publst, newann_1);
-        parts2 = replacePublicList(parts, publst2);
+        newann_1 = List.fold(ann,Absyn.mergeAnnotations,newann);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if annotation is found in protected elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        protlst = getProtectedList(parts);
-        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(protlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        protlst2 = replaceElementAnnotationInElements(protlst, newann_1);
-        parts2 = replaceProtectedList(parts, protlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if annotation is found in equation elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        equationlst = getEquationList(parts);
-        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
-        parts2 = replaceEquationList(parts, equationlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if annotation is found in initial equation elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        equationlst = getInitialEquationList(parts);
-        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
-        parts2 = replaceInitialEquationList(parts, equationlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if annotation is found in algorithm elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        algorithmlst = getAlgorithmList(parts);
-        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
-        parts2 = replaceAlgorithmList(parts, algorithmlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if annotation is found in initial algorithm elements then merge it */
-    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        algorithmlst = getInitialAlgorithmList(parts);
-        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = mergeAnnotations(oldann, newann);
-        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
-        parts2 = replaceInitialAlgorithmList(parts, algorithmlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
-    /* if no annotation element found in an extended class then add it to the public list*/
-    case ((cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))),nargs)
-      equation
-        publst = getPublicList(parts);
-        annotation_ = annotationListToAbsyn(nargs);
-        cdef_1 = addToPublic(cdef, Absyn.ANNOTATIONITEM(annotation_));
-      then
-        cdef_1;
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts,{newann_1}),file_info);
   end matchcontinue;
 end addClassAnnotationToClass;
-
-protected function replaceElementAnnotationInElements
-"function: replaceElementAnnotationInElements
-   This function takes an element list and replaces the
-   first annotation with the one given as argument."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.Annotation inAnnotation;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst,inAnnotation)
-    local
-      list<Absyn.ElementItem> xs,res;
-      Absyn.Annotation a,a2;
-      Absyn.ElementItem el;
-    case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: xs),a) then (Absyn.ANNOTATIONITEM(a) :: xs);
-    case ((el :: xs),a2)
-      equation
-        res = replaceElementAnnotationInElements(xs, a2);
-      then
-        (el :: res);
-    case ({},_) then {};
-  end matchcontinue;
-end replaceElementAnnotationInElements;
-
-protected function replaceElementAnnotationInEquations
-"function: replaceElementAnnotationInEquations
-   This function takes an element list and replaces the
-   first annotation with the one given as argument."
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input Absyn.Annotation inAnnotation;
-  output list<Absyn.EquationItem> outAbsynEquationItemLst;
-algorithm
-  outAbsynEquationItemLst:=
-  matchcontinue (inAbsynEquationItemLst,inAnnotation)
-    local
-      list<Absyn.EquationItem> xs,res;
-      Absyn.Annotation a,a2;
-      Absyn.EquationItem el;
-    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: xs),a) then (Absyn.EQUATIONITEMANN(a) :: xs);
-    case ((el :: xs),a2)
-      equation
-        res = replaceElementAnnotationInEquations(xs, a2);
-      then
-        (el :: res);
-    case ({},_) then {};
-  end matchcontinue;
-end replaceElementAnnotationInEquations;
-
-protected function replaceElementAnnotationInAlgorithms
-"function: replaceElementAnnotationInAlgorithms
-   This function takes an element list and replaces the
-   first annotation with the one given as argument."
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input Absyn.Annotation inAnnotation;
-  output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
-algorithm
-  outAbsynAlgorithmItemLst:=
-  matchcontinue (inAbsynAlgorithmItemLst,inAnnotation)
-    local
-      list<Absyn.AlgorithmItem> xs,res;
-      Absyn.Annotation a,a2;
-      Absyn.AlgorithmItem el;
-    case ((Absyn.ALGORITHMITEMANN(annotation_ = _) :: xs),a) then (Absyn.ALGORITHMITEMANN(a) :: xs);
-    case ((el :: xs),a2)
-      equation
-        res = replaceElementAnnotationInAlgorithms(xs, a2);
-      then
-        (el :: res);
-    case ({},_) then {};
-  end matchcontinue;
-end replaceElementAnnotationInAlgorithms;
-
-protected function getElementAnnotationInElements
-"function: getElementAnnotationInElements
-   This function retrieves the first Annotation
-   among the elements taken as argument"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Absyn.ElementItem outElementItem;
-algorithm
-  outElementItem:=
-  matchcontinue (inAbsynElementItemLst)
-    local
-      Absyn.ElementItem a;
-      list<Absyn.ElementItem> xs;
-    case (((a as Absyn.ANNOTATIONITEM(annotation_ = _)) :: xs)) then a;
-    case ((_ :: xs))
-      equation
-        a = getElementAnnotationInElements(xs);
-      then
-        a;
-  end matchcontinue;
-end getElementAnnotationInElements;
-
-protected function getElementAnnotationInEquations
-"function: getElementAnnotationInEquations
-   This function retrieves the first Annotation
-   among the equation taken as argument"
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  output Absyn.EquationItem outEquationItem;
-algorithm
-  outEquationItem:=
-  matchcontinue (inAbsynEquationItemLst)
-    local
-      Absyn.EquationItem a;
-      list<Absyn.EquationItem> xs;
-    case (((a as Absyn.EQUATIONITEMANN(annotation_ = _)) :: xs)) then a;
-    case ((_ :: xs))
-      equation
-        a = getElementAnnotationInEquations(xs);
-      then
-        a;
-  end matchcontinue;
-end getElementAnnotationInEquations;
-
-protected function getElementAnnotationInAlgorithms
-"function: getElementAnnotationInAlgorithms
-   This function retrieves the first Annotation
-   among the equation taken as argument"
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  output Absyn.AlgorithmItem outAlgorithmItem;
-algorithm
-  outAlgorithmItem:=
-  matchcontinue (inAbsynAlgorithmItemLst)
-    local
-      Absyn.AlgorithmItem a;
-      list<Absyn.AlgorithmItem> xs;
-    case (((a as Absyn.ALGORITHMITEMANN(annotation_ = _)) :: xs)) then a;
-    case ((_ :: xs))
-      equation
-        a = getElementAnnotationInAlgorithms(xs);
-      then
-        a;
-  end matchcontinue;
-end getElementAnnotationInAlgorithms;
-
-protected function mergeAnnotations
-"function: mergeAnnotations
-   This function takes an old annotation as first argument and a new
-   annotation as  second argument and merges the two.
-   Annotation \"parts\" that exist in both the old and the new annotation
-   will be changed according to the new definition. For instance,
-   merge_annotations(annotation(x=1,y=2),annotation(x=3))
-   => annotation(x=3,y=2)"
-  input Absyn.Annotation inAnnotation1;
-  input Absyn.Annotation inAnnotation2;
-  output Absyn.Annotation outAnnotation;
-algorithm
-  outAnnotation:=
-  matchcontinue (inAnnotation1,inAnnotation2)
-    local
-      list<Absyn.ElementArg> neweltargs,oldrest,eltargs,eltargs_1;
-      Absyn.ElementArg mod;
-      Absyn.Annotation a;
-      Absyn.Path p;
-    case (Absyn.ANNOTATION(elementArgs = ((mod as Absyn.MODIFICATION(path = p)) :: oldrest)),Absyn.ANNOTATION(elementArgs = eltargs))
-      equation
-        failure(_ = removeModificationInElementargs(eltargs, p));
-        Absyn.ANNOTATION(neweltargs) = mergeAnnotations(Absyn.ANNOTATION(oldrest), Absyn.ANNOTATION(eltargs));
-      then
-        Absyn.ANNOTATION((mod :: neweltargs));
-    case (Absyn.ANNOTATION(elementArgs = ((mod as Absyn.MODIFICATION(path = p)) :: oldrest)),Absyn.ANNOTATION(elementArgs = eltargs))
-      equation
-        eltargs_1 = removeModificationInElementargs(eltargs, p);
-        Absyn.ANNOTATION(neweltargs) = mergeAnnotations(Absyn.ANNOTATION(oldrest), Absyn.ANNOTATION(eltargs));
-      then
-        Absyn.ANNOTATION(neweltargs);
-    case (Absyn.ANNOTATION(elementArgs = {}),a) then a;
-  end matchcontinue;
-end mergeAnnotations;
-
-protected function removeModificationInElementargs
-"function: removeModificationInElementargs
-   This function removes the class modification named by the second argument.
-   If no such class modification is found thefunction fails.
-   Currently, only identifiers are allowed as class modifiers,
-   i.e. a(...) and not a.b(...)"
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Absyn.Path inPath;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynElementArgLst,inPath)
-    local
-      String id1,id2;
-      Absyn.ElementArg m;
-      list<Absyn.ElementArg> res,xs;
-
-    case ({Absyn.MODIFICATION(path = Absyn.IDENT(name = id1))},Absyn.IDENT(name = id2))
-      equation
-        true = stringEq(id1, id2);
-      then
-        {};
-
-    case ({(m as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1)))},Absyn.IDENT(name = id2))
-      equation
-        false = stringEq(id1, id2);
-      then
-        fail();
-
-    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = id1)) :: xs),Absyn.IDENT(name = id2))
-      equation
-        true = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
-      then
-        res;
-
-    case (((m as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1))) :: xs),Absyn.IDENT(name = id2))
-      equation
-        false = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
-      then
-        (m :: res);
-
-    case (((m as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1))) :: xs),Absyn.IDENT(name = id2))
-      equation
-        res = removeModificationInElementargs(xs, inPath);
-      then
-        (m :: res);
-  end matchcontinue;
-end removeModificationInElementargs;
 
 protected function getInheritanceCount
 "function: getInheritanceCount
@@ -11197,58 +10830,56 @@ algorithm
       list<Absyn.ClassPart> lst;
       Option<String> cmt;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
 
     /* a class with parts */
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),info = file_info)
+                     body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
       equation
-        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countComponentsInElts(elt);
       then
         c1 + c2;
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst),comment = cmt),info = file_info)
+                     body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
       equation
-        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countComponentsInElts(elt);
       then
         c1 + c2;
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),info = file_info)
+                     body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),info = file_info)
       equation
-        res = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
-    case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,
-                     restriction = e,body = Absyn.PARTS(classParts = {})) then 0;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = {})) then 0;
 
     /* adrpo: handle also an extended class with parts: model extends M end M; */
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),info = file_info)
+                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
       equation
-        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countComponentsInElts(elt);
       then
         c1 + c2;
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst),comment = cmt),info = file_info)
+                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst),ann=ann,comment = cmt),info = file_info)
       equation
-        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countComponentsInElts(elt);
       then
         c1 + c2;
     case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),info = file_info)
+                     body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),info = file_info)
       equation
-        res = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = countComponents(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
-    case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,
-                     restriction = e,body = Absyn.CLASS_EXTENDS(parts = {})) then 0;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})) then 0;
 
     /* a derived class */
-    case Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.DERIVED(typeSpec = _)) then -1;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then -1;
     /* adrpo: TODO! we should also handle CLASS_EXTENDS(parts), model extends M end M; */
   end matchcontinue;
 end countComponents;
@@ -11853,24 +11484,25 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),info = file_info),c1,c2)
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),c1,c2)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
         parts2 = replaceEquationList(parts, eqlst_1);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
     /* an extended class with parts: model extends M end M;  */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,comment = cmt),info = file_info),c1,c2)
+                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),c1,c2)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
         parts2 = replaceEquationList(parts, eqlst_1);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
   end match;
 end deleteEquationInClass;
 
@@ -12157,20 +11789,21 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = pcmt),info = info),cr1,cmt)
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
       equation
         parts_1 = setComponentCommentInParts(parts, cr1, cmt);
       then
-        Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(typeVars,classAttrs,parts_1,pcmt),info);
+        Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt),info);
     /* an extended class with parts: model extends M end M; */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = pcmt),info = info),cr1,cmt)
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
       equation
         parts_1 = setComponentCommentInParts(parts, cr1, cmt);
       then
-        Absyn.CLASS(name,p,f,e,restr,Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1),info);
+        Absyn.CLASS(name,p,f,e,restr,Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann),info);
   end match;
 end setComponentCommentInClass;
 
@@ -12371,20 +12004,21 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = pcmt),info = info),cr1,cr2,cmt)
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
       equation
         parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
       then
-        Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(typeVars,classAttrs,parts_1,pcmt),info);
+        Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt),info);
     /* an extended class with parts: model extends M end M; */
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = pcmt),info = info),cr1,cr2,cmt)
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
       equation
         parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
       then
-        Absyn.CLASS(name,p,f,e,restr,Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1),info);
+        Absyn.CLASS(name,p,f,e,restr,Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann),info);
   end match;
 end setConnectionCommentInClass;
 
@@ -13359,6 +12993,7 @@ protected function getAnnotationInClass
 algorithm
   annotationStr := match(inClass, annotationType, inProgram, inModelPath)
     local
+      list<Absyn.Annotation> ann;
       list<Absyn.ElementArg> annlst;
       String s1,  str;
       list<Absyn.ClassPart> parts;
@@ -13366,18 +13001,18 @@ algorithm
       Absyn.Path path;
 
     // normal class definitions made of parts
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), _, p, path)
+    case (Absyn.CLASS(body = Absyn.PARTS(ann = ann)), _, p, path)
       equation
-        annlst = getAnnotationFromParts(parts, annotationType);
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
         s1 = getAnnotationStr(annlst, annotationType, inClass, p, path);
         str = stringAppendList({"{", s1, "}"});
       then
         str;
 
     // adrpo: add the case for model extends name annotation ... end name;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)), _, p, path)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann)), _, p, path)
       equation
-        annlst = getAnnotationFromParts(parts, annotationType);
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
         s1 = getAnnotationStr(annlst, annotationType, inClass, p, path);
         str = stringAppendList({"{", s1, "}"});
       then
@@ -13392,108 +13027,6 @@ algorithm
         str;
   end match;
 end getAnnotationInClass;
-
-protected function getAnnotationFromParts
-"function: getAnnotationFromParts
-  Helper function to getAnnotationInClass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input AnnotationType annotationType;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynClassPartLst, annotationType)
-    local
-      list<Absyn.ElementArg> res1, res2, res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> rest;
-      list<Absyn.EquationItem> eqns;
-      list<Absyn.AlgorithmItem> algs;
-
-    case ({}, _) then {};
-
-    case (Absyn.PUBLIC(contents = elts) :: rest, _)
-      equation
-        res1 = getAnnotationFromElts(elts, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (Absyn.PROTECTED(contents = elts) :: rest, _)
-      equation
-        res1 = getAnnotationFromElts(elts, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (Absyn.EQUATIONS(contents = eqns) :: rest, _)
-      equation
-        res1 = getAnnotationFromEqns(eqns, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (Absyn.INITIALEQUATIONS(contents = eqns) :: rest, _)
-      equation
-        res1 = getAnnotationFromEqns(eqns, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (Absyn.ALGORITHMS(contents = algs) :: rest, _)
-      equation
-        res1 = getAnnotationFromAlgs(algs, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (Absyn.INITIALALGORITHMS(contents = algs) :: rest, _)
-      equation
-        res1 = getAnnotationFromAlgs(algs, annotationType);
-        res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case (_ :: rest, _)
-      equation
-        res = getAnnotationFromParts(rest, annotationType);
-      then
-        res;
-  end matchcontinue;
-end getAnnotationFromParts;
-
-protected function getAnnotationFromElts
-"function: getAnnotationFromElts
-  Helper function to getAnnotationFromParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input AnnotationType annotationType;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynElementItemLst, annotationType)
-    local
-      list<Absyn.ElementArg> lst,res;
-      list<Absyn.ElementItem> rest;
-
-    // handle empty
-    case ({}, _) then {};
-
-    case (Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest, _)
-      equation
-        containAnnotation(lst, annotationType);
-      then
-        lst;
-
-    case (_ :: rest, _)
-      equation
-        res = getAnnotationFromElts(rest, annotationType);
-      then
-        res;
-  end matchcontinue;
-end getAnnotationFromElts;
 
 protected function isAnnotationType
   "Checks if the name of an annotation matches the annotation type given."
@@ -13530,62 +13063,6 @@ algorithm
         ();
   end matchcontinue;
 end containAnnotation;
-
-protected function getAnnotationFromEqns
-"function: getAnnotationFromEqns
-  Helper function to getAnnotationFromParts."
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input AnnotationType annotationType;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynEquationItemLst, annotationType)
-    local
-      list<Absyn.ElementArg> lst,res;
-      list<Absyn.EquationItem> rest;
-
-    case ({}, _) then {};
-
-    case ((Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
-      equation
-        containAnnotation(lst, annotationType);
-      then
-        lst;
-
-    case ((_ :: rest), _)
-      equation
-        res = getAnnotationFromEqns(rest, annotationType);
-      then
-        res;
-  end matchcontinue;
-end getAnnotationFromEqns;
-
-protected function getAnnotationFromAlgs
-"function: getIconAnnotationFromAlgs
-  Helper function to getIconAnnotationFromParts"
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input AnnotationType annotationType;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynAlgorithmItemLst, annotationType)
-    local
-      list<Absyn.ElementArg> lst,res;
-      list<Absyn.AlgorithmItem> rest;
-
-    case ({}, _) then {};
-
-    case ((Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
-      equation
-        containAnnotation(lst, annotationType);
-      then
-        lst;
-
-    case ((_ :: rest), _)
-      equation
-        res = getAnnotationFromAlgs(rest, annotationType);
-      then
-        res;
-  end matchcontinue;
-end getAnnotationFromAlgs;
 
 protected function getAnnotationStr
 "function: getIconAnnotationStr
@@ -13642,16 +13119,19 @@ algorithm
       TypeA str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
+      list<Absyn.Annotation> ann;
 
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),_,_)
+    case (Absyn.CLASS(body = Absyn.PARTS(ann = ann)),_,_)
       equation
-        SOME(str) = getNamedAnnotationInParts(parts,id,f);
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+        SOME(str) = getNamedAnnotationStr(annlst,id,f);
       then
         SOME(str);
 
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),_,_)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann)),_,_)
       equation
-        SOME(str) = getNamedAnnotationInParts(parts,id,f);
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+        SOME(str) = getNamedAnnotationStr(annlst,id,f);
       then
         SOME(str);
 
@@ -13677,181 +13157,6 @@ algorithm
 
   end matchcontinue;
 end getNamedAnnotationInClass;
-
-protected function getNamedAnnotationInParts
-"function: getNamedAnnotationInParts
-  Retrieve the into annotation from class parts list passed as argument."
-  input list<Absyn.ClassPart> inAbsynClassPartsLst;
-  input Absyn.Ident id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inAbsynClassPartsLst,id,f)
-    local
-      TypeA str;
-      list<Absyn.ElementItem> contents;
-      list<Absyn.ClassPart> rest;
-      list<Absyn.EquationItem> eqItems;
-      list<Absyn.AlgorithmItem> alItems;
-      list<Absyn.ElementArg> elArgs;
-
-    case ({},_,_) then NONE();
-
-    // search in public
-    case (Absyn.PUBLIC(contents)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInElItems(contents,id,f);
-      then
-        SOME(str);
-
-    // search in protected
-    case (Absyn.PROTECTED(contents)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInElItems(contents,id,f);
-      then
-        SOME(str);
-
-    // search in equations
-    case (Absyn.EQUATIONS(eqItems)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInEquItems(eqItems,id,f);
-      then
-        SOME(str);
-
-    // search in intial equations
-    case (Absyn.INITIALEQUATIONS(eqItems)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInEquItems(eqItems,id,f);
-      then
-        SOME(str);
-
-    // search in algorithms
-    case (Absyn.ALGORITHMS(alItems)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInAlgItems(alItems,id,f);
-      then
-        SOME(str);
-
-    // search in initial algorithms
-    case (Absyn.INITIALALGORITHMS(alItems)::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationInAlgItems(alItems,id,f);
-      then
-        SOME(str);
-
-    // search in exernal declarations
-    case (Absyn.EXTERNAL(annotation_ = SOME(Absyn.ANNOTATION(elArgs)))::rest, _, _)
-      equation
-        SOME(str) = getNamedAnnotationStr(elArgs,id,f);
-      then
-        SOME(str);
-
-    // try next
-    case (_ :: rest,_,_) then getNamedAnnotationInParts(rest,id,f);
-  end matchcontinue;
-end getNamedAnnotationInParts;
-
-
-protected function getNamedAnnotationInElItems
-"function: getNamedAnnotationInElItems
-  Retrieve the into annotation from an
-  element item list passed as argument."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.Ident id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inAbsynElementItemLst,id,f)
-    local
-      TypeA s1;
-      list<Absyn.ElementArg> annlst;
-      list<Absyn.ElementItem> xs;
-
-    case ({},_,_) then NONE();
-
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _),_,_)
-      equation
-        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(s1);
-
-    case ((_ :: xs),_,_) then getNamedAnnotationInElItems(xs,id,f);
-  end matchcontinue;
-end getNamedAnnotationInElItems;
-
-protected function getNamedAnnotationInEquItems
-"@author: adrpo
-  Retrieve the into annotation from an
-  equation item list passed as argument."
-  input list<Absyn.EquationItem> inAbsynEquItemLst;
-  input Absyn.Ident id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inAbsynEquItemLst,id,f)
-    local
-      TypeA s1;
-      list<Absyn.ElementArg> annlst;
-      list<Absyn.EquationItem> xs;
-
-    case ({},_,_) then NONE();
-
-    case (Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _, _, _)
-      equation
-        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(s1);
-
-    case ((_ :: xs),_,_) then getNamedAnnotationInEquItems(xs,id,f);
-  end matchcontinue;
-end getNamedAnnotationInEquItems;
-
-protected function getNamedAnnotationInAlgItems
-"@author: adrpo
-  Retrieve the into annotation from an
-  algorithm item list passed as argument."
-  input list<Absyn.AlgorithmItem> inAbsynAlgItemLst;
-  input Absyn.Ident id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inAbsynAlgItemLst,id,f)
-    local
-      TypeA s1;
-      list<Absyn.ElementArg> annlst;
-      list<Absyn.AlgorithmItem> xs;
-
-    case ({},_,_) then NONE();
-
-    case (Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _, _, _)
-      equation
-        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(s1);
-
-    case ((_ :: xs),_,_) then getNamedAnnotationInAlgItems(xs,id,f);
-  end matchcontinue;
-end getNamedAnnotationInAlgItems;
 
 protected function getDefaultComponentName
 "function getDefaultComponentName
@@ -14132,10 +13437,9 @@ algorithm
       Integer n,c1,c2;
       Option<String> cmt;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
 
-    case (modelpath,
-      Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst))),p,n)
+    case (modelpath,Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst))),p,n)
       equation
         (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
       then
@@ -14147,26 +13451,24 @@ algorithm
      */
     case (modelpath,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),info = file_info),p,n)
+                  body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt),info = file_info),p,n)
       equation
-        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},cmt),file_info));
+        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt),file_info));
         c2 = n - c1;
-        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), p, c2);
+        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), p, c2);
       then
         (str,tp);
 
     case (modelpath,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),info = file_info),p,n)
+                  body = Absyn.PARTS(classParts = (_ :: lst),ann=ann,comment = cmt),info = file_info),p,n)
       equation
-        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), p, n);
+        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), p, n);
       then
         (str,tp);
 
     /***********   adrpo: handle also the case of model extends name end name; **********/
-    case (modelpath,
-      Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst))),p,n)
+    case (modelpath,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst))),p,n)
       equation
         (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
       then
@@ -14178,19 +13480,19 @@ algorithm
      */
     case (modelpath,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),info = file_info),p,n)
+                  body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt),info = file_info),p,n)
       equation
-        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},cmt),file_info));
+        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt),file_info));
         c2 = n - c1;
-        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), p, c2);
+        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), p, c2);
       then
         (str,tp);
 
     case (modelpath,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),info = file_info),p,n)
+                  body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt),info = file_info),p,n)
       equation
-        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), p, n);
+        (str,tp) = getNthPublicConnectorStr(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), p, n);
       then
         (str,tp);
 
@@ -14320,39 +13622,37 @@ algorithm
       Option<String> cmt;
       Absyn.Info file_info;
       Absyn.Class cdef;
+      list<Absyn.Annotation> ann;
 
     case (modelpath,p,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),
+                  body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt),
                   info = file_info))
       equation
-        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countConnectors(modelpath, p, elt);
       then
         c1 + c2;
 
     case (modelpath,p,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),
+                  body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),
                   info = file_info))
       equation
-        res = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
-    case (modelpath,p,
-      Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.PARTS(classParts = {},comment = cmt),
-                  info = file_info))
-    then 0;
+    case (modelpath,p,Absyn.CLASS(body = Absyn.PARTS(classParts = {})))
+      then 0;
 
     // adrpo: handle also the case of model extends name end name;
     case (modelpath,p,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),
+                  body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt),
                   info = file_info))
       equation
-        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        c1 = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         c2 = countConnectors(modelpath, p, elt);
       then
         c1 + c2;
@@ -14360,23 +13660,19 @@ algorithm
     // adrpo: handle also the case of model extends name end name;
     case (modelpath,p,
       Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),
+                  body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt),
                   info = file_info))
       equation
-        res = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = countPublicConnectors(modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
     // adrpo: handle also the case of model extends name end name;
-    case (modelpath,p,
-      Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt),info = file_info))
-    then 0;
+    case (modelpath,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})))
+      then 0;
 
     // the case model name = OtherName;
-    case (modelpath,p,
-      Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                  body = Absyn.DERIVED(typeSpec = Absyn.TPATH(cname, _))))
+    case (modelpath,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(cname, _))))
       equation
         (cdef,newmodelpath) = lookupClassdef(cname, modelpath, p);
         res = countPublicConnectors(newmodelpath, p, cdef);
@@ -15363,7 +14659,7 @@ algorithm
     // if we fail, just return the annotation as it is
     case (_, _, _, _)
       equation
-        str = Dump.unparseAnnotationOption(0, SOME(inAnnotation)) +& " ";
+        str = Dump.unparseAnnotation(inAnnotation,0) +& " ";
       then
         str;
 
@@ -15372,7 +14668,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE,
           "- Interactive.getAnnotationString failed on annotation: " +&
-          Dump.unparseAnnotationOption(0, SOME(inAnnotation)));
+          Dump.unparseAnnotation(inAnnotation,0));
       then
         fail();
   end matchcontinue;
@@ -15438,6 +14734,7 @@ algorithm
       String a;
       Boolean b,c,d;
       Absyn.Restriction e;
+      list<Absyn.Annotation> ann;
       Option<String> cmt;
       list<Absyn.Element> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
@@ -15445,39 +14742,38 @@ algorithm
       Absyn.Info file_info;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = {},comment = cmt))) then {};
+                      body = Absyn.PARTS(classParts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),info = file_info)) /* Search in public list */
+                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in public list */
       equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),info = file_info)) /* Search in protected list */
+                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in protected list */
       equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),info = file_info)) /* Search in public list */
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in public list */
       equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),info = file_info)) /* Search in protected list */
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in protected list */
       equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
@@ -15501,46 +14797,45 @@ algorithm
       Boolean b,c,d;
       Absyn.Restriction e;
       Option<String> cmt;
+      list<Absyn.Annotation> ann;
       list<Absyn.Element> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
       Absyn.Info file_info;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = {},comment = cmt))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),
                       info = file_info)) /* Search in public list */
       equation
-        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt, ann = ann),
                       info = file_info))
       equation
-        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in public list */
       equation
-        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
                       info = file_info))
       equation
-        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
@@ -15565,43 +14860,43 @@ algorithm
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = {},comment = cmt))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
-        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),
                       info = file_info))
       equation
-        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
-        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst2 = getComponentsInElementitems(elts);
         res = listAppend(lst2, lst1);
       then
         res;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
                       info = file_info))
       equation
-        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
       then
         res;
 
@@ -15654,9 +14949,10 @@ algorithm
       list<Absyn.ClassPart> lst,rest;
       Option<String> cmt;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst)),
                       info = file_info),n)
       equation
         count = countComponentsInElts(elt);
@@ -15667,20 +14963,19 @@ algorithm
 
     /* The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: rest),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: rest),ann = ann,comment = cmt),
                       info = file_info),n)
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
         newnstr = intString(newn);
         (newn > 0) = true;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info),
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
           newn);
       then
         res;
 
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst),comment = cmt),
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst)),
                       info = file_info),n)
       equation
         res = getNthComponentInElementitems(elt, n);
@@ -15689,32 +14984,29 @@ algorithm
 
     /* The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: rest),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: rest),comment = cmt,ann = ann),
                       info = file_info),n)
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
         (newn > 0) = true;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info), newn);
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info), newn);
       then
         res;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),
                       info = file_info),n)
       equation
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), n);
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), n);
       then
         res;
 
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = {},comment = cmt),info = file_info),_)
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {})),_)
       then fail();
 
     /* adrpo: handle also the case model extends X end X; */
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),comment = cmt),
-                      info = file_info),n)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst))),n)
       equation
         count = countComponentsInElts(elt);
         (n <= count) = true;
@@ -15725,21 +15017,20 @@ algorithm
     /* adrpo: handle also the case model extends X end X; */
     /* The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: rest),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: rest),ann = ann,comment = cmt),
                       info = file_info),n)
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
         newnstr = intString(newn);
         (newn > 0) = true;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info),
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
           newn);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst),comment = cmt),
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst)),
                       info = file_info),n)
       equation
         res = getNthComponentInElementitems(elt, n);
@@ -15749,33 +15040,31 @@ algorithm
     /* adrpo: handle also the case model extends X end X; */
     /* The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: rest),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: rest),ann = ann,comment = cmt),
                       info = file_info),n)
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
         (newn > 0) = true;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info), newn);
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info), newn);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
                       info = file_info),n)
       equation
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info), n);
+        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), n);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X; */
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt),info = file_info),_)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt),info = file_info),_)
       then fail();
 
 
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.DERIVED(typeSpec = _),info = file_info),_)
+    case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _),info = file_info),_)
       then fail();
   end matchcontinue;
 end getNthComponentInClass;
@@ -15812,44 +15101,44 @@ algorithm
       list<Absyn.ElementItem> lst1,elts;
       list<Absyn.ClassPart> lst;
       Absyn.Info file_info;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = {},comment = cmt)))
        then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in public list */
       equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst1 = listAppend(elts, lst1);
       then
         lst1;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst1 = listAppend(elts, lst1);
       then
         lst1;
 
     /* adrpo: handle also the case model extends X end X; */
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = {},comment = cmt)))
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})))
        then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in public list */
       equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst1 = listAppend(elts, lst1);
       then
         lst1;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
+                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,cmt),file_info));
+        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
         lst1 = listAppend(elts, lst1);
       then
         lst1;
@@ -16451,25 +15740,26 @@ algorithm
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs=classAttrs,classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs=classAttrs,classParts = parts,comment = cmt,ann = ann),
                       info = file_info),eitem)
       equation
         publst = getPublicList(parts);
         publst2 = listAppend(publst, {eitem});
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt,ann=ann),
                       info = file_info),eitem)
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,(Absyn.PUBLIC({eitem}) :: parts),cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,(Absyn.PUBLIC({eitem}) :: parts),ann,cmt),file_info);
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
-                                                 comment = cmt,
+                                                 comment = cmt,ann = ann,
                                                  parts = parts),
                       info = file_info),eitem)
       equation
@@ -16477,16 +15767,16 @@ algorithm
         publst2 = listAppend(publst, {eitem});
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann),file_info);
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
-                                                 comment = cmt,
+                                                 comment = cmt,ann = ann,
                                                  parts = parts),
                       info = file_info),eitem)
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PUBLIC({eitem}) :: parts)),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PUBLIC({eitem}) :: parts),ann),file_info);
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.DERIVED(typeSpec = _),info = file_info),eitem)
       then fail();
@@ -16516,27 +15806,28 @@ algorithm
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt, ann = ann),
                       info = file_info),eitem)
       equation
         protlst = getProtectedList(parts);
         protlst2 = listAppend(protlst, {eitem});
         parts2 = replaceProtectedList(parts, protlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt, ann = ann),
                       info = file_info),eitem)
-      then Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,(Absyn.PROTECTED({eitem}) :: parts),cmt),file_info);
+      then Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,(Absyn.PROTECTED({eitem}) :: parts),ann,cmt),file_info);
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
-                                                 comment = cmt,
+                                                 comment = cmt, ann = ann,
                                                  parts = parts),
                       info = file_info),eitem)
       equation
@@ -16544,16 +15835,16 @@ algorithm
         protlst2 = listAppend(protlst, {eitem});
         parts2 = replaceProtectedList(parts, protlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2, ann),file_info);
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
-                                                 comment = cmt,
+                                                 comment = cmt, ann = ann,
                                                  parts = parts),
                       info = file_info),eitem)
-      then Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PROTECTED({eitem}) :: parts)),file_info);
+      then Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PROTECTED({eitem}) :: parts),ann),file_info);
 
     /* handle the model X = Y case */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -16586,30 +15877,32 @@ algorithm
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
                       info = file_info),eitem)
       equation
         eqlst = getEquationList(parts);
         eqlst2 = (eitem :: eqlst);
         parts2 = replaceEquationList(parts, eqlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
                       info = file_info),eitem)
       equation
         newparts = listAppend(parts, {Absyn.EQUATIONS({eitem})}) "Add the equations last, to make nicer output if public section present" ;
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,newparts,cmt),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,newparts,ann,cmt),file_info);
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
                                                  comment = cmt,
+                                                 ann = ann,
                                                  parts = parts),
                       info = file_info),eitem)
       equation
@@ -16617,19 +15910,20 @@ algorithm
         eqlst2 = (eitem :: eqlst);
         parts2 = replaceEquationList(parts, eqlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann),file_info);
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                                  modifications = modifications,
+                                                 ann = ann,
                                                  comment = cmt,
                                                  parts = parts),
                       info = file_info),eitem)
       equation
         newparts = listAppend(parts, {Absyn.EQUATIONS({eitem})}) "Add the equations last, to make nicer output if public section present" ;
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,newparts),file_info);
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,newparts,ann),file_info);
 
     case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.DERIVED(typeSpec = _),info = file_info),eitem)
@@ -16825,24 +16119,25 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),info = file_info))
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
     /* an extended class with parts: model extends M end M; */
     case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),info = file_info))
+                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
     /* otherwise */
     case (_,_)
       equation
@@ -16866,11 +16161,6 @@ algorithm
       Absyn.ElementItem a1,e1;
       Absyn.Class c,c1,c2;
       String name1,name;
-    case (((a1 as Absyn.ANNOTATIONITEM(annotation_ = _)) :: xs),c)
-      equation
-        res = removeClassInElementitemlist(xs, c);
-      then
-        (a1 :: res);
     case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE()))) :: xs),(c as Absyn.CLASS(name = name)))
       equation
         false = stringEq(name1, name);
@@ -16890,7 +16180,7 @@ algorithm
     case ({},c) then {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),Absyn.CLASSDEF(false,c),
-          Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()))};
+          Absyn.dummyInfo,NONE()))};
   end matchcontinue;
 end removeClassInElementitemlist;
 
@@ -16916,24 +16206,25 @@ algorithm
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     /* a class with parts */
     case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),info = file_info))
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = replaceClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
     /* an extended class with parts: model extends M end M; */
     case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,comment = cmt),info = file_info))
+                         body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = replaceClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
     case (_,_)
       equation
         Print.printBuf("Failed in replaceInnerClass\n");
@@ -16961,11 +16252,6 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> h;
       Absyn.InnerOuter io;
-    case (((a1 as Absyn.ANNOTATIONITEM(annotation_ = _)) :: xs),c)
-      equation
-        res = replaceClassInElementitemlist(xs, c);
-      then
-        (a1 :: res);
     case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE()))) :: xs),(c as Absyn.CLASS(name = name)))
       equation
         false = stringEq(name1, name);
@@ -17400,11 +16686,6 @@ algorithm
       Absyn.Class res,c1;
       list<Absyn.ElementItem> xs;
       String name,name1,name2;
-    case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: xs),name)
-      equation
-        res = getClassFromElementitemlist(xs, name);
-      then
-        res;
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE())) :: xs),name2)
       equation
         true = stringEq(name1, name2);
@@ -18092,22 +17373,24 @@ algorithm
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt),
+                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
                       info = (file_info as Absyn.INFO(fileName = file))))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassDiffFiledInElementitemlist(publst, file);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.CLASS_EXTENDS(baseClassName=baseClassName,
                                                  modifications = modifications,
                                                  parts = parts,
+                                                 ann = ann,
                                                  comment = cmt),
                       info = (file_info as Absyn.INFO(fileName = file))))
       equation
@@ -18115,7 +17398,7 @@ algorithm
         publst2 = removeClassDiffFiledInElementitemlist(publst, file);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2),file_info);
+        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann),file_info);
   end match;
 end removeInnerDiffFiledClass;
 
@@ -18137,12 +17420,6 @@ algorithm
       list<Absyn.ElementItem> res,xs;
       Absyn.ElementItem a1,e1,c1;
       String c,filename2,filename1,filename;
-
-    case (((a1 as Absyn.ANNOTATIONITEM(annotation_ = _)) :: xs),c)
-      equation
-        res = removeClassDiffFiledInElementitemlist(xs, c) "annotations are kept" ;
-      then
-        (a1 :: res);
 
     case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
       Absyn.CLASS(info = Absyn.INFO(fileName = filename2)))))) :: xs),filename1)
@@ -18268,15 +17545,16 @@ algorithm
       Option<String> cmt;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
     case(Absyn.DERIVED(typeSpec=_)) then cdef;
     case(Absyn.ENUMERATION(enumLiterals = _)) then cdef;
     case(Absyn.OVERLOAD(functionNames =_)) then cdef;
     case(Absyn.PDER(functionName=_)) then cdef;
-    case(Absyn.PARTS(typeVars,classAttrs,parts,cmt))
+    case(Absyn.PARTS(typeVars,classAttrs,parts,ann,cmt))
       equation
         partsTransformed = List.map(parts,transformFlatPart);
       then
-        Absyn.PARTS(typeVars,classAttrs,partsTransformed,cmt);
+        Absyn.PARTS(typeVars,classAttrs,partsTransformed,ann,cmt);
     /*
      * adrpo: TODO! are we sure we shouldn't handle also the parts in model extends X parts end X; ??!!
                     how about the modifications also??
@@ -18285,11 +17563,12 @@ algorithm
     case(Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                      modifications = modifications,
                                      comment = cmt,
+                                     ann = ann,
                                      parts = parts))
       equation
         partsTransformed = List.map(parts,transformFlatPart);
       then
-        Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed);
+        Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed, ann);
     case(_) equation print("Interactive.transformFlatClassDef failed\n");
       then fail();
   end matchcontinue;
@@ -18346,7 +17625,6 @@ algorithm
   outEitem := match(eitem)
   local Absyn.Element elt,elt1;
     case(Absyn.ELEMENTITEM(elt)) equation elt1 = transformFlatElement(elt); then (Absyn.ELEMENTITEM(elt1));
-    case(Absyn.ANNOTATIONITEM(_)) then eitem;
   end match;
 end transformFlatElementItem;
 
@@ -18565,8 +17843,6 @@ algorithm
       equation
         eqn1 = transformFlatEquation(eqn);
       then Absyn.EQUATIONITEM(eqn1,cmt,info);
-    case(Absyn.EQUATIONITEMANN(annotation_=_))
-    then eqnitem;
   end match;
 end transformFlatEquationItem;
 
@@ -18733,7 +18009,6 @@ algorithm
       equation
         alg1 = transformFlatAlgorithm(alg);
       then Absyn.ALGORITHMITEM(alg1,cmt,info);
-    case(Absyn.ALGORITHMITEMANN(_)) then algitem;
   end match;
 end transformFlatAlgorithmItem;
 

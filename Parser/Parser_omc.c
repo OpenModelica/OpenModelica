@@ -32,41 +32,41 @@
 #include "rml_compatibility.h"
 #include "parse.c"
 
-void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammer, const char* encoding, int runningTestsuite)
+void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammer, int langStd, const char* encoding, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA; 
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
 
-  void *res = parseFile(filename, infoname, flags, encoding, runningTestsuite);
+  void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
   return res;
 }
 
-void* ParserExt_parseexp(const char* filename, const char* infoname, int acceptedGrammer, int runningTestsuite)
+void* ParserExt_parseexp(const char* filename, const char* infoname, int acceptedGrammer, int langStd, int runningTestsuite)
 {
   int flags = PARSE_EXPRESSION;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
   
-  void *res = parseFile(filename, infoname, flags, "UTF-8", runningTestsuite);
+  void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   return res;
 }
 
-void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammer, int runningTestsuite)
+void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammer, int langStd, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
 
-  void *res = parseString(data, filename, flags, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -74,14 +74,14 @@ void* ParserExt_parsestring(const char* data, const char* filename, int accepted
   }
 }
 
-void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptedGrammer, int runningTestsuite)
+void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptedGrammer, int langStd, int runningTestsuite)
 {
   int flags = PARSE_EXPRESSION;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
 
-  void *res = parseString(data, filename, flags, runningTestsuite);
+  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
