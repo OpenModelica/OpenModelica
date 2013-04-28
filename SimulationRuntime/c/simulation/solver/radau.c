@@ -251,8 +251,6 @@ static int allocateKINSOLODE(KINODE *kinOde)
   int nn = 3*N*n; /* 3*N = N*(subintervalls) * 3*var(eq,low,up) */
   int i, j, k;
   double* ceq,*clow,*cup;
-  double* seq,*slow,*sup;
-  double* sveq,*svlow,*svup;
   KDATAODE * kData = (kinOde)->kData;
   NLPODE *nlp = kinOde->nlp;
   double*s = nlp->s;
@@ -264,12 +262,6 @@ static int allocateKINSOLODE(KINODE *kinOde)
   ceq = NV_DATA_S(kData->c);
   clow = ceq + N*n;
   cup = clow + N*n;
-  sveq = NV_DATA_S(kData->sVars);
-  svlow = sveq + N*n;
-  svup = svlow + N*n;
-  seq = NV_DATA_S(kData->sEqns);
-  slow = seq + N*n;
-  sup = slow + N*n;
 
   for(j=0, k=0; j<N; j++)
   {
@@ -278,11 +270,6 @@ static int allocateKINSOLODE(KINODE *kinOde)
       ceq[k] = 0;
       clow[k] = 1;
       cup[k] = -1;
-      sveq[k] = s[i];
-      svlow[k] = s[i];
-      svup[k] = s[i];
-      slow[k] = s[i];
-      sup[k] = s[i];
     }
   }
   KINSetUserData(kinOde->kData->kmem, (void*) kinOde);
@@ -331,30 +318,34 @@ static int freeKinsol(void * kOde)
 static int initKinsol(KINODE *kinOde)
 {
   int i,j,k;
+  double* seq,*slow,*sup;
+  double* sveq,*svlow,*svup;
   int flag = kinOde->flag;
   int N = kinOde->N;
   int nStates = kinOde->nlp->nStates;
   DATA *data= kinOde->data;
   double* xlow,*xup;
-  double* seq;
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
-  double* derx;
   double tmp,h,hf;
   double* xeq = NV_DATA_S(kData->x);
   short b;
-
+  double *f2 = data->localData[2]->realVars + nStates;
   nlp->currentStep = &kinOde->solverInfo->currentStepSize;
   nlp->derx = data->localData[0]->realVars + nStates;
   nlp->x0 = data->localData[1]->realVars;
   nlp->f0 = data->localData[1]->realVars + nStates;
   nlp->t0 = data->localData[1]->timeValue;
-  derx = nlp->derx;
 
   xlow = xeq + N*nStates;
   xup = xlow + N*nStates;
 
+  sveq = NV_DATA_S(kData->sVars);
+  svlow = sveq + N*nStates;
+  svup = svlow + N*nStates;
   seq = NV_DATA_S(kData->sEqns);
+  slow = seq + N*nStates;
+  sup = slow + N*nStates;
 
   switch(flag)
   {
@@ -388,8 +379,8 @@ static int initKinsol(KINODE *kinOde)
   }
 
   h = nlp->dt;
-
   b = nlp->a != NULL;
+
   for(j=0,k=0;j<N;j++)
   {
     if(b)
@@ -398,11 +389,18 @@ static int initKinsol(KINODE *kinOde)
       tmp = h;
     for(i=0;i<nStates;i++,k++)
     {
-      hf = tmp*nlp->f0[i];
-      xeq[k] = (nlp->x0[i] + hf);
-      seq[k] = 1e-6 + 1.0/(fabs(hf)+fabs(nlp->x0[i]) + 1e-6);
+      hf = 0.5*tmp*(nlp->f0[i] + f2[i]);
+      xeq[k] = nlp->x0[i] + hf;
+      seq[k] = 1e-12 + 1.0/(fabs(hf) + 1e-6);
       xlow[k] = xeq[k] - nlp->min[i];
       xup[k] = xeq[k] - nlp->max[i];
+
+      sveq[k] = 1.0/(fabs(xeq[k])+1e-6) + 1e-6;
+      svlow[k] = sveq[k];
+      svup[k] = sveq[k];
+      slow[k] = seq[k];
+      sup[k] = seq[k];
+
     }
   }
 
@@ -413,7 +411,7 @@ static int initKinsol(KINODE *kinOde)
 
   KINSetFuncNormTol(kData->kmem, kData->fnormtol);
   KINSetScaledStepTol(kData->kmem, kData->scsteptol);
-  KINSetNumMaxIters(kData->kmem, 500);
+  KINSetNumMaxIters(kData->kmem, 10000);
 
   return 0;
 }
@@ -759,27 +757,19 @@ int kinsolOde(void* ode)
   KDATAODE *kData = kinOde->kData;
   NLPODE *nlp = kinOde->nlp;
   int N = kinOde->N;
-  int restart =0;
-  kData->glstr = KIN_NONE;
+  kData->glstr = KIN_LINESEARCH;
   initKinsol(kinOde);
+
   /* Call KINDense to specify the linear solver */
   KINSpbcg(kData->kmem, 3*N*nlp->nStates);
-  do{
-    KINSetMaxSetupCalls(kData->kmem, kData->mset);
+  KINSetMaxSetupCalls(kData->kmem, kData->mset);
 
-    kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
+  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
                                 kData->x,              /* initial guess on input; solution vector */
                                 kData->glstr,          /* global stragegy choice */
                                 kData->sVars,          /* scaling vector, for the variable cc */
                                 kData->sEqns );
 
-    if(kData->error_code < 0 && restart == 0){
-      KINDense(kData->kmem, 3*N*nlp->nStates);
-      restart++;
-    }
-    if(restart == 1)
-      --kData->glstr;
-  }while(kData->error_code < 0 && (++kData->glstr) <= KIN_LINESEARCH);
   refreshModell(kinOde->data, NV_DATA_S(kData->x) + (N-1)*nlp->nStates, nlp->t0 + (nlp->dt));
   return kData->error_code;
 }
