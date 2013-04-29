@@ -178,6 +178,7 @@ private:
   // File Menu
   QAction *mpNewModelicaClassAction;
   QAction *mpOpenModelicaFileAction;
+  QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpOpenResultFileAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -247,6 +248,7 @@ private:
   QToolBar *mpPlotToolBar;
 public slots:
   void createNewModelicaClass();
+  void openModelicaFile();
   void showOpenModelicaFileDialog();
   void showOpenResultFileDialog();
   void focusSearchClassWidget(bool visible);

@@ -1725,7 +1725,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   connect(mpCreateModelButton, SIGNAL(clicked()), mpMainWindow, SLOT(createNewModelicaClass()));
   mpOpenModelButton = new QPushButton(Helper::openModelicaFile);
   mpOpenModelButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpOpenModelButton, SIGNAL(clicked()), mpMainWindow, SLOT(showOpenModelicaFileDialog()));
+  connect(mpOpenModelButton, SIGNAL(clicked()), mpMainWindow, SLOT(openModelicaFile()));
   // bottom frame layout
   QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
   bottomFrameLayout->addWidget(mpCreateModelButton, 0, Qt::AlignLeft);

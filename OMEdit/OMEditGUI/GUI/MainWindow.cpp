@@ -855,6 +855,41 @@ void MainWindow::createNewModelicaClass()
   pModelicaClassDialog->show();
 }
 
+void MainWindow::openModelicaFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
+                                              NULL, Helper::omFileTypes, NULL);
+  if (fileNames.isEmpty())
+    return;
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames)
+  {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file))
+    {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    }
+    else
+    {
+      mpLibraryTreeWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
 void MainWindow::showOpenModelicaFileDialog()
 {
   OpenModelicaFile *pOpenModelicaFile = new OpenModelicaFile(this);
@@ -1371,8 +1406,12 @@ void MainWindow::createActions()
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.png"), Helper::openModelicaFile, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
-  mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file"));
-  connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
+  mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file(s)"));
+  connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(openModelicaFile()));
+  // open Modelica file action
+  mpOpenModelicaFileWithEncodingAction = new QAction(tr("Open Modelica File(s) with Encoding"), this);
+  mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens the Modelica file(s) with encoding"));
+  connect(mpOpenModelicaFileWithEncodingAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
@@ -1608,6 +1647,7 @@ void MainWindow::createMenus()
   // add actions to File menu
   pFileMenu->addAction(mpNewModelicaClassAction);
   pFileMenu->addAction(mpOpenModelicaFileAction);
+  pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
