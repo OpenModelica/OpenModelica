@@ -132,7 +132,7 @@ algorithm
       String cname_str;
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
-      DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime;
+      DAE.Exp fileNamePrefix,options,outputFormat,variableFilter,measureTime;
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
@@ -165,16 +165,6 @@ algorithm
         (cache,fileNamePrefix) =
           Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",  DAE.T_STRING_DEFAULT,
                               args, CevalScript.getSimulationOption(defaulSimOpt, "fileNamePrefix"),
-                              pre, info);
-
-        (cache,storeInTemp) =
-          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "storeInTemp", DAE.T_BOOL_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "storeInTemp"),
-                              pre,info);
-
-        (cache,noClean) =
-          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "noClean"),
                               pre, info);
 
         (cache,options) =
@@ -215,8 +205,6 @@ algorithm
           tolerance,
           method,
           fileNamePrefix,
-          storeInTemp,
-          noClean,
           options,
           outputFormat,
           variableFilter,

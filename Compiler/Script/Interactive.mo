@@ -1798,7 +1798,7 @@ algorithm
         resstr =
           "{" +&
           ExpressionDump.printExpListStr(simOptions) +&
-          "} /* startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat */";
+          "} /* startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, noClean, options, outputFormat */";
         ErrorExt.rollBack("getSimulationOptions");
       then
         (resstr,st);
@@ -2342,7 +2342,7 @@ algorithm
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
         (_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
         Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list)},{}));
-        CevalScript.compileModel(filenameprefix,libs, file_dir,"",method);
+        CevalScript.compileModel(filenameprefix,libs,file_dir,method);
       then
         ("true",st);
 
@@ -2366,7 +2366,7 @@ algorithm
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
         (_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
         Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list), Absyn.ARRAY(exp_list2)}, {}));
-        CevalScript.compileModel(filenameprefix,libs,file_dir,"",method);
+        CevalScript.compileModel(filenameprefix,libs,file_dir,method);
       then
         ("true",st);
 

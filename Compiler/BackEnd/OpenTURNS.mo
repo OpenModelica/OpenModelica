@@ -112,7 +112,7 @@ algorithm
   (_,libs,fileDir,_,_,_) := SimCodeMain.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
 
   //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");
-  CevalScript.compileModel(fileNamePrefix , libs, fileDir, "", "");
+  CevalScript.compileModel(fileNamePrefix , libs, fileDir, "");
 
   generateXMLFile(cname_last_str,strippedDae);
   generateWrapperLibrary(cname_str,cname_last_str);

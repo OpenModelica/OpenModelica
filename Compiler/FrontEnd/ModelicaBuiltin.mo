@@ -1792,7 +1792,6 @@ function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input Boolean addMathMLCode := false;
   input Boolean dumpResiduals := false;
   input String fileNamePrefix := "<default>" "this is the className in string form by default";
-  input Boolean storeInTemp := false;
   output String result[2] "Contents, Message/Filename; why is this an array and not 2 output arguments?";
 external "builtin";
 annotation(preferredView="text");
