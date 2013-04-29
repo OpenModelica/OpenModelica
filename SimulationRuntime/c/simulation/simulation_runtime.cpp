@@ -695,10 +695,9 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   } else if(simData->simulationInfo.solverMethod == std::string("lobatto4")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 10, outVars);
-  /*} else if(simData->simulationInfo.solverMethod == std::string("lobatto6")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("lobatto6")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 11, outVars);
-    */
 #endif
   } else if(simData->simulationInfo.solverMethod == std::string("dassl") ||
               simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
@@ -735,10 +734,9 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 #endif
   } else {
     INFO1(LOG_STDOUT, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
-#ifdef WITH_SUNDIALS
-    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss, radau1, radau3, radau5, lobatto2, lobatto4");
-#else
-    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss.");
+    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss, radau1, radau3, radau5, lobatto2, lobatto4 or lobatto6");
+#ifndef WITH_SUNDIALS
+    INFO(LOG_STDOUT, " |note: radau1, radau3, radau5, lobatto2, lobatto4 and lobatto6 use (KINSOL/SUNDIALS)!!!");
 #endif
     retVal = 1;
   }

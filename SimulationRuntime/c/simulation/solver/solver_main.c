@@ -204,13 +204,13 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == 10)
   {
-    /* Allocate Lobatto2 IIIA work arrays */
+    /* Allocate Lobatto4 IIIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 10, 2);
   }
   else if (solverInfo->solverMethod == 11)
   {
-    /* Allocate Lobatto2 IIIA work arrays */
+    /* Allocate Lobatto6 IIIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 11, 3);
   }
