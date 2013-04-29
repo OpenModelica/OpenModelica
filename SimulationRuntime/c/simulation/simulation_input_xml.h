@@ -41,7 +41,16 @@
 
 #include "simulation_runtime.h"
 
-void read_input_xml(int argc, char **argv,
-                    MODEL_DATA* modelData,
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void read_input_xml(MODEL_DATA* modelData,
                     SIMULATION_INFO* simulationData);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif

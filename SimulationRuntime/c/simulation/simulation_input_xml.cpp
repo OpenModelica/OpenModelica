@@ -207,8 +207,7 @@ static void XMLCALL endElement(void *userData, const char *name)
  *  The textfile should be given as argument to the main function using
  *  the -f file flag.
  */
-void read_input_xml(int argc, char **argv,
-    MODEL_DATA* modelData,
+void read_input_xml(MODEL_DATA* modelData,
     SIMULATION_INFO* simulationInfo)
 {
   omc_ModelInput mi;
@@ -1327,3 +1326,4 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     INFO(LOG_SOLVER, "NO override given on the command line.");
   }
 }
+

@@ -132,6 +132,17 @@ int fmi1EventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, dou
 }
 
 /*
+ * Wrapper for the FMI function fmiEventUpdate.
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
+ * Returns FMI EventInfo nextEventTime
+ */
+double fmi1nextEventTime_OMC(void* fmi, void* eventInfo, double flowStates)
+{
+  fmi1_event_info_t* e = (fmi1_event_info_t*)eventInfo;
+  return e->nextEventTime;
+}
+
+/*
  * Wrapper for the FMI function fmiCompletedIntegratorStep.
  */
 int fmi1CompletedIntegratorStep_OMC(void* fmi, double flowStates)

@@ -1171,10 +1171,11 @@ algorithm
       then
         (cache,ret_val,st_1);*/
 
-    case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
+    case (cache,env,"translateModelFMU", vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
-        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, NONE());
+        simSettings = convertSimulationOptionsToSimCode(defaultSimulationOptions);
+        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
 

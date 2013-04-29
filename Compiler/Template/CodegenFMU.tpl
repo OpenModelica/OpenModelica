@@ -63,6 +63,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
   let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
+  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
   let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
@@ -991,6 +992,8 @@ match platform
   <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
   <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
   <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
+  <%\t%> cp <%fileNamePrefix%>_info.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_info.xml
+  <%\t%> cp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_init.xml
   <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
   <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
@@ -1023,6 +1026,8 @@ match platform
   <%\t%> cp <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
   <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
+  <%\t%> cp <%fileNamePrefix%>_info.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_info.xml
+  <%\t%> cp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_init.xml
   <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
@@ -1100,6 +1105,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       copy <%fileNamePrefix%>.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>.c
       copy <%fileNamePrefix%>_model.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_model.h
       copy <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_FMU.c
+      copy <%fileNamePrefix%>_info.xml <%fileNamePrefix%>\sources\<%fileNamePrefix%>_info.xml
+      copy <%fileNamePrefix%>_init.xml <%fileNamePrefix%>\sources\<%fileNamePrefix%>_init.xml
       copy <%fileNamePrefix%>_functions.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.c
       copy <%fileNamePrefix%>_functions.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.h
       copy <%fileNamePrefix%>_records.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_records.c
@@ -1274,6 +1281,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant Boolean intermediateResults = false;
     Boolean newStatesAvailable;
     Integer fmi_status;
+    Real triggerDSSEvent;
+    Real nextEventTime;
   initial algorithm
     flowInstantiate := fmiFunctions.fmi1InstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
     flowParamsStart := 0;
@@ -1296,6 +1305,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmi_z_positive[i] = if not terminal() then fmi_z[i] > 0 else pre(fmi_z_positive[i]);
     end for;
     callEventUpdate = fmiFunctions.fmi1CompletedIntegratorStep(fmi, flowStatesInputs);
+    triggerDSSEvent = noEvent(if callEventUpdate then flowStatesInputs+1.0 else flowStatesInputs-1.0);
+    nextEventTime = fmiFunctions.fmi1nextEventTime(fmi, eventInfo, flowStatesInputs);
     <%if not boolAnd(stringEq(realVariablesNames, ""), stringEq(realVariablesValueReferences, "")) then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmi1GetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(integerVariablesNames, ""), stringEq(integerVariablesValueReferences, "")) then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmi1GetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(booleanVariablesNames, ""), stringEq(booleanVariablesValueReferences, "")) then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmi1GetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
@@ -1303,11 +1314,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when (<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial() then
+    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
   >>
   else
   <<
-    when not initial() then
+    when {not initial(), triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
   >>
   %>
       (newStatesAvailable) := fmiFunctions.fmi1EventUpdate(fmi, intermediateResults, eventInfo, flowStatesInputs);
@@ -1418,6 +1429,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean outNewStatesAvailable;
         external "C" outNewStatesAvailable = fmi1EventUpdate_OMC(fmi, intermediateResults, inEventInfo, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1EventUpdate;
+
+      function fmi1nextEventTime
+        input fmi1ImportInstance fmi;
+        input fmi1EventInfo inEventInfo;
+        input Real inFlowStates;
+        output Real outNewnextTime;
+        external "C" outNewnextTime = fmi1nextEventTime_OMC(fmi, inEventInfo, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmi1nextEventTime;
 
       function fmi1CompletedIntegratorStep
         input fmi1ImportInstance fmi;

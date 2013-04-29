@@ -538,7 +538,7 @@ if(omp_get_thread_num() == 0)
             /***** End event handling *****/
             
             /***** check state selection *****/
-            if(stateSelection(data, 1))
+            if(stateSelection(data, 1, 1))
             {
                 /* if new set is calculated reinit the solver */
                 solverInfo->didEventStep = 1;

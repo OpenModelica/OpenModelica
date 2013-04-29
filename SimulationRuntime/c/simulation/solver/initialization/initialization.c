@@ -677,7 +677,7 @@ static int symbolic_initialization(DATA *data)
   overwriteOldSimulationData(data);
 
   /* do pivoting for dynamic state selection */
-  stateSelection(data,0);
+  stateSelection(data, 0, 1);
   functionInitialEquations(data);
 
   /* update saved value for
@@ -685,13 +685,13 @@ static int symbolic_initialization(DATA *data)
   updateHysteresis(data);
 
   /* do pivoting for dynamic state selection if selection changed try again an */
-  if(stateSelection(data,1) == 1)
+  if(stateSelection(data, 1, 1) == 1)
   {
     functionInitialEquations(data);
     updateHysteresis(data);
 
     /* report a warning about strange start values */
-    if(stateSelection(data,1) == 1)
+    if(stateSelection(data, 1, 1) == 1)
       WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
   }
 

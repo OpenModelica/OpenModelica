@@ -634,8 +634,11 @@ void updateHysteresis(DATA* data){
  */
 double getNextSampleTimeFMU(DATA *data)
 {
-  if(0 < data->modelData.nSamples)
+  if(0 < data->modelData.nSamples){
+    INFO1(LOG_EVENTS, "Next event time = %f", data->simulationInfo.nextSampleEvent);
     return data->simulationInfo.nextSampleEvent;
+  }
+
 
   return -1;
 }
