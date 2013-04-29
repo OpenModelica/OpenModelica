@@ -301,9 +301,9 @@ static int allocateKINSOLODE(KINODE *kinOde)
   int nn; /* 3*N*n = N*(subintervalls) * 3*var(eq,low,up)*nStates */
   int i, j, k;
   double* ceq,*clow,*cup;
-  m =  kinOde->N*n;
-  nn = 3*m;
   KDATAODE * kData = (kinOde)->kData;
+  m =  kinOde->N*n;
+  nn = 3*m;  
   kData->x = N_VNew_Serial(nn);
   kData->sVars = N_VNew_Serial(nn);
   kData->sEqns = N_VNew_Serial(nn);
