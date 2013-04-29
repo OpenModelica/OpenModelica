@@ -83,7 +83,7 @@ static void XMLCALL endElement(void *userData, const char *name) {
     return;
   }
   if (0==strcmp("nonlinear",name)) {
-    asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%d, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+    asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;
@@ -154,7 +154,7 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
   if (xml->equationInfo == NULL) {
     modelInfoXmlInit(xml);
   }
-  if (ix < 0 || ix > xml->nProfileBlocks) {
+  if (ix > xml->nProfileBlocks) {
     THROW2("Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
   }
   for (i=0; i<xml->nEquations; i++) {
