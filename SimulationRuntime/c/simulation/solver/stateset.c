@@ -280,7 +280,7 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
       if (switchStates){
         INFO1(LOG_DSS, "select new states at time %f", data->localData[0]->timeValue);
         INDENT(LOG_DSS);
-	      setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
+        setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
         RELEASE(LOG_DSS);
       }
       ret = -1;
