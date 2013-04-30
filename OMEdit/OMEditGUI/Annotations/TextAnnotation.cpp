@@ -86,6 +86,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   }
   // 10th item of the list contains the textString.
   mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
+  mTextString = mOriginalTextString;
   if (mpComponent)
   {
     if (mOriginalTextString.contains("%"))
@@ -93,10 +94,6 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
       updateTextString();
       connect(mpComponent->getRootParentComponent(), SIGNAL(componentDisplayTextChanged()), SLOT(updateTextString()));
     }
-  }
-  else
-  {
-    mTextString = mOriginalTextString;
   }
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
@@ -298,7 +295,6 @@ void TextAnnotation::updateTextString()
     - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
     - %class replaced by the name of the class.
   */
-  mTextString = mOriginalTextString;
   mTextString = mTextString.replace("%name", mpComponent->getRootParentComponent()->getName(), Qt::CaseInsensitive);
   mTextString = mTextString.replace("%class", mpComponent->getRootParentComponent()->getClassName(), Qt::CaseInsensitive);
   /* handle variables now */
