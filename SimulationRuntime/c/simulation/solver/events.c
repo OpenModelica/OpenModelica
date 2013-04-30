@@ -70,19 +70,22 @@ void initSample(DATA* data, double startTime, double stopTime)
   data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
   for(i=0; i<data->modelData.nSamples; ++i)
   {
-    if(startTime < data->modelData.samplesInfo[i].start)
+    if(startTime < data->modelData.samplesInfo[i].start) {
       data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start;
-    else
-      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start + ceil((data->modelData.samplesInfo[i].start - startTime) / data->modelData.samplesInfo[i].interval) * data->modelData.samplesInfo[i].interval;
+    } else {
+      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start + ceil((startTime-data->modelData.samplesInfo[i].start) / data->modelData.samplesInfo[i].interval) * data->modelData.samplesInfo[i].interval;
+    }
 
-    if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent))
+    if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent)) {
       data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
+    }
   }
 
-  if(stopTime < data->simulationInfo.nextSampleEvent)
+  if(stopTime < data->simulationInfo.nextSampleEvent) {
     DEBUG(LOG_EVENTS, "there are no sample-events");
-  else
+  } else {
     DEBUG1(LOG_EVENTS, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
+  }
 }
 
 
