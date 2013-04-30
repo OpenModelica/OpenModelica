@@ -58,7 +58,10 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
-./linearization/linearize.h
+./linearization/linearize.h \
+./simulation/solver/perform_simulation.c \
+./simulation/solver/omp_perform_simulation.c \
+./simulation/solver/dassl.h 
 
 RUNTIME_HEADERS_FMU = \
 ./simulation/solver/initialization/initialization.h \

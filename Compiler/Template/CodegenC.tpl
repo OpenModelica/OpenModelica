@@ -139,6 +139,16 @@ template simulationFile(SimCode simCode, String guid)
     #else
     int measure_time_flag = 0;
     #endif
+    
+        
+    #ifdef _OPENMP
+    #include <omp.h>
+    #include <omp_perform_simulation.c>
+    #else
+    #include <perform_simulation.c>
+    #define omp_get_max_threads() 1
+    #endif
+  
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
 
@@ -213,35 +223,6 @@ template simulationFile(SimCode simCode, String guid)
     #ifdef __cplusplus
     }
     #endif
-    
-    /*! Moved from Simulation runtime to support openmp properly.
-        This way threads can be launched if neccesary 
-        (i.e. if the generated code linked with openmp).
-        Otherwise normal execution takes place. SimulationruntimeC.lib 
-        doesn't need to be linked with -fopenmp.*/
-    int performSimulation_optional_thread(DATA* data, SOLVER_INFO* solverInfo)
-    {
-
-      SIMULATION_INFO *simInfo = &(data->simulationInfo);
-      solverInfo->currentTime = simInfo->startTime;
-
-      int retValue = 0;
-
-    #ifdef USE_DEBUG_OUTPUT
-      printAllVarsDebug(data, 0);
-    #endif
-
-      omp_set_num_threads(4);
-
-    #pragma omp parallel
-      {
-        retValue = main_simulation_loop(data, solverInfo, simInfo);
-      } /* end #pragma omp parallel*/
-
-      return retValue;
-    }
-    
-    
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
@@ -274,23 +255,11 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation_runtime.h"
     #include "omc_error.h"
     #include "model_help.h"
-    #include "solver_main.h"
 
     #include <assert.h>
     #include <string.h>
 
     #include "<%fileNamePrefix%>_functions.h"
-    
-    /*! Defintions could not go in header. GNU89 C does't use inline for
-        ODR. can not be static because they are used in SimulationRuntime.lib. 
-        So defined here. Declaration is in _function.h*/
-    #ifdef _OPENMP
-    #include <omp.h>
-    #else
-    #define omp_get_max_threads() 1
-    int omp_get_thread_num() { return 0; }
-    void omp_set_num_threads() {}
-    #endif
 
     >>
   end match
@@ -2907,7 +2876,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #ifdef __cplusplus
   extern "C" {
   #endif
-  <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
+  <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>  
   <%functionHeaders(functions)%>
   #ifdef __cplusplus
   }
@@ -3161,13 +3130,7 @@ template commonHeader(String filePrefix)
   <<
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
   <% if acceptMetaModelicaGrammar() then "#include \"meta_modelica.h\"" %>
-  #ifdef _OPENMP
-  #include <omp.h>
-  #else
-  #define omp_get_max_threads() 1
-  int omp_get_thread_num();
-  void omp_set_num_threads();
-  #endif
+
   #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>

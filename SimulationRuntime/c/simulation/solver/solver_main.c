@@ -78,7 +78,6 @@ static int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo);
 static int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo);
 static int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo);
 
-static void checkTermination(DATA* data);
 static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
@@ -382,296 +381,13 @@ int initializeModel(DATA* data, const char* init_initMethod,
  *
  *  This function performs the simulation controlled by solverInfo.
  */
- 
- /*! 
-   Not used anymore. Moved to generated code so that it can be parallelized
-   with openmp with out the need to link the simulationRuntime lib with openmp.
- */
+
+/*! 
+ *  Moved to perform_simulation.c and omp_perform_simulation.c
+ *  and included in the generrated code. The things we do for
+ *  OPENMP.
+ */ 
 // int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
-// {
-
-  // SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  // solverInfo->currentTime = simInfo->startTime;
-
-  // int retValue = 0;
-
-// #ifdef USE_DEBUG_OUTPUT
-  // printAllVarsDebug(data, 0);
-// #endif
-
-  // omp_set_num_threads(4);
-
-// #pragma omp parallel
-  // {
-    // retValue = main_simulation_loop(data, solverInfo, simInfo);
-  // } /* end #pragma omp parallel*/
-
-  // return retValue;
-// }
-
-
-
-int main_simulation_loop(DATA* data, SOLVER_INFO* solverInfo, SIMULATION_INFO *simInfo) {
-
-    int retValIntegrator = 0;
-    int retValue = 0;
-    int i, ui;
-    
-    FILE *fmt = NULL;
-    unsigned int stepNo = 0;
-
-// #pragma omp master 
-if(omp_get_thread_num() == 0)
-{
-    if(measure_time_flag)
-    {
-      size_t len = strlen(data->modelData.modelFilePrefix);
-      char* filename = (char*) malloc((len+11) * sizeof(char));
-      strncpy(filename,data->modelData.modelFilePrefix,len);
-      strncpy(&filename[len],"_prof.data",11);
-      fmt = fopen(filename, "wb");
-      if(!fmt)
-    {
-      WARNING2(LOG_SOLVER, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
-      fclose(fmt);
-      fmt = NULL;
-    }
-      free(filename);
-    }
-    
-}
-
-
-
-    /***** Start main simulation loop *****/
-    while(solverInfo->currentTime < simInfo->stopTime)
-    {
-        // printf("thread %d in while \n", omp_get_thread_num());
-        // fflush(stdout); 
-// #pragma omp barrier
-
-
-// #pragma omp master
-if(omp_get_thread_num() == 0)
-        {
-
-            if(measure_time_flag)
-            {
-                for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-                rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
-                rt_clear(SIM_TIMER_STEP);
-                rt_tick(SIM_TIMER_STEP);
-            }
-            
-            rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
-            
-            /***** Calculation next step size *****/
-            /* Calculate new step size after an event */
-            if(solverInfo->didEventStep == 1)
-            {
-                solverInfo->offset = solverInfo->currentTime - solverInfo->laststep;
-                if(solverInfo->offset + DBL_EPSILON > simInfo->stepSize)
-                solverInfo->offset = 0;
-                INFO1(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo->offset);
-            }
-            else
-            solverInfo->offset = 0;
-            solverInfo->currentStepSize = simInfo->stepSize - solverInfo->offset;
-            
-            /* adjust final step? */
-            if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime)
-            solverInfo->currentStepSize = simInfo->stopTime - solverInfo->currentTime;
-            /***** End calculation next step size *****/
-            
-            /* check for next sample event */
-            checkForSampleEvent(data, solverInfo);
-            INFO3(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
-            
-            /*
-    * integration step
-    * determine all states by a integration method
-    * update continuous system
-    */
-            INDENT(LOG_SOLVER);
-            communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
-            retValIntegrator = solver_main_step(data, solverInfo);
-            
-        }
-// #pragma omp barrier
-
-        
-        //#pragma omp master
-        {
-            updateContinuousSystem(data);
-        } /* #pragma omp master */
-
-// #pragma omp barrier
-
-
-// #pragma omp master
-if(omp_get_thread_num() == 0)
-        {
-            saveZeroCrossings(data);
-            RELEASE(LOG_SOLVER);
-            
-            /***** Event handling *****/
-            if(measure_time_flag)
-            rt_tick(SIM_TIMER_EVENT);
-            
-            if(checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo))
-            {
-                INFO1(LOG_EVENTS, "event handling at time %g", solverInfo->currentTime);
-                INDENT(LOG_EVENTS);
-                handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-                RELEASE(LOG_EVENTS);
-                
-                solverInfo->didEventStep = 1;
-                overwriteOldSimulationData(data);
-            }
-            else
-            {
-                solverInfo->laststep = solverInfo->currentTime;
-                solverInfo->didEventStep = 0;
-            }
-            if(measure_time_flag)
-            rt_accumulate(SIM_TIMER_EVENT);
-            /***** End event handling *****/
-            
-            /***** check state selection *****/
-            if(stateSelection(data, 1, 1))
-            {
-                /* if new set is calculated reinit the solver */
-                solverInfo->didEventStep = 1;
-                overwriteOldSimulationData(data);
-            }
-            
-            /***** Emit this time step *****/
-            storePreValues(data);
-            storeOldValues(data);
-            saveZeroCrossings(data);
-            
-            if(fmt)
-            {
-                int flag = 1;
-                double tmpdbl;
-                unsigned int tmpint;
-                rt_tick(SIM_TIMER_OVERHEAD);
-                rt_accumulate(SIM_TIMER_STEP);
-                /* Disable time measurements if we have trouble writing to the file... */
-                flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmt);
-                stepNo++;
-                flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmt);
-                tmpdbl = rt_accumulated(SIM_TIMER_STEP);
-                flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-                for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-                {
-                    tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
-                    flag = flag && 1 == fwrite(&tmpint, sizeof(unsigned int), 1, fmt);
-                }
-                for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-                {
-                    tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-                    flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-                }
-                rt_accumulate(SIM_TIMER_OVERHEAD);
-                if(!flag)
-                {
-                    WARNING1(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
-                    fclose(fmt);
-                    fmt = NULL;
-                }
-            }
-            sim_result.emit(&sim_result,data);
-            
-#ifdef USE_DEBUG_OUTPUT
-            printAllVarsDebug(data, 0);
-#endif
-            
-            /***** end of Emit this time step *****/
-            
-            /* save dassl stats before reset */
-            if(solverInfo->didEventStep == 1 && solverInfo->solverMethod == 3)
-            {
-                for(ui = 0; ui < numStatistics; ui++)
-                ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
-            }
-            
-            /* Check for termination of terminate() or assert() */
-            checkForAsserts(data);
-            if(terminationAssert || terminationTerminate)
-            {
-                terminationAssert = 0;
-                checkForAsserts(data);
-                checkTermination(data);
-                if(!terminationAssert && terminationTerminate)
-                {
-                    INFO2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-                    simInfo->stopTime = solverInfo->currentTime;
-                }
-            }
-            
-            /* terminate for some cases:
-    * - integrator fails
-    * - non-linear system failed to solve
-    * - assert was called
-    */
-            if( data->simulationInfo.simulationSuccess != 0
-                    || retValIntegrator != 0
-                    || check_nonlinear_solutions(data)
-                    || check_linear_solutions(data)
-                    || check_mixed_solutions(data)
-                    )
-            {
-                data->simulationInfo.terminal = 1;
-                updateDiscreteSystem(data);
-                data->simulationInfo.terminal = 0;
-                
-                if(data->simulationInfo.simulationSuccess)
-                {
-                    retValue = -1;
-                    INFO1(LOG_STDOUT, "model terminate | Simulation terminated at time %g", solverInfo->currentTime);
-                }
-                else if(retValIntegrator)
-                {
-                    retValue = -1 + retValIntegrator;
-                    INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
-                }
-                else if(check_nonlinear_solutions(data))
-                {
-                    retValue = -2;
-                    INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-                }
-                else if(check_linear_solutions(data))
-                {
-                    retValue = -3;
-                    INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-                }
-                else if(check_mixed_solutions(data))
-                {
-                    retValue = -3;
-                    INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-                }
-                break;
-            }
-
-        } /*#pragma omp master*/
-
-// #pragma omp barrier
-
-    } /* end while solver */
-    
-// #pragma omp master 
-if(omp_get_thread_num() == 0)
-{   
-    if(fmt)
-    fclose(fmt);
-}   
-    return retValue;
-}
-
-
-
-
 
 
 /*! \fn finishSimulation(DATA* data, SOLVER_INFO* solverInfo)
@@ -797,10 +513,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   {
     INFO(LOG_SOLVER, "Performed initialization.");
     INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
-    
-    /*! Looking for this function? See the generated code. It is moved there to allow safe
-    parallelization in case we need to launch and use multiple threads*/
-    retVal = performSimulation_optional_thread(data, &solverInfo);
+    retVal = performSimulation(data, &solverInfo);
   }
   else
     WARNING(LOG_STDOUT, "Initialization failed.");
@@ -933,7 +646,7 @@ int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  function checks if the model should really terminated.
  */
-static void checkTermination(DATA *data)
+void checkTermination(DATA *data)
 {
   if(terminationAssert)
   {

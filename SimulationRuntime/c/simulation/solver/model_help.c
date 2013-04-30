@@ -106,21 +106,24 @@ void updateDiscreteSystem(DATA *data)
  *
  *  \param [ref] [data]
  */
+ 
+/*! 
+ *  Moved to perform_simulation.c and omp_perform_simulation.c
+ *  and included in the generrated code. The things we do for
+ *  OPENMP.
+ */
+
+/* 
 void updateContinuousSystem(DATA *data)
 {
-
-  // printf("continuous %d \n", omp_get_thread_num());
-  // fflush(stdout);
-
-if(omp_get_thread_num() == 0)
-  {
-    functionODE(data);
-    functionAlgebraics(data);
-    output_function(data);
-    function_storeDelayed(data);
-    storePreValues(data);
-  }
+  functionODE(data);
+  functionAlgebraics(data);
+  output_function(data);
+  function_storeDelayed(data);
+  storePreValues(data);
 }
+
+*/
 
 /*! \fn saveZeroCrossings
  *

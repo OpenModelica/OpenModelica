@@ -85,7 +85,8 @@ void deInitializeDataStruc(DATA *data);
 
 void updateDiscreteSystem(DATA *data);
 
-void updateContinuousSystem(DATA *data);
+/* Defined in perform_simulation.c and omp_perform_simulation.c */
+extern void updateContinuousSystem(DATA *data);
 
 void saveZeroCrossings(DATA *data);
 
