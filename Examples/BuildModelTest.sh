@@ -109,3 +109,10 @@ MONTH=`ls "$OLD/${SECTION}"*.html | tail -n28 | head -n1`
 "$TRUNK"/Examples/BuildModelRecursiveDiff.sh "$WEEK" "$CUR" > "$PUB/MSL_old/${SECTION}-diff-week.txt"
 "$TRUNK"/Examples/BuildModelRecursiveDiff.sh "$MONTH" "$CUR" > "$PUB/MSL_old/${SECTION}-diff-month.txt"
 done > "$PUB/MSL_old/history.txt"
+
+(echo "<html><head><title>Coverage trend overview</title><body>";
+for lib in "$@"; do
+  SHORTNAME=`echo $lib | cut -d, -f1`
+  echo "<p><img src=\"MSL_old/$SHORTNAME-trend.svg\" /></p>"
+done;
+echo "</body></html>") > "$PUB/trend.html"
