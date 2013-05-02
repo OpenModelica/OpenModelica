@@ -8993,6 +8993,7 @@ algorithm
     local
       String str, str1, str2, str3, platform1, platform2;
       list<String> libs;
+      Boolean isLinux;
     case (_, _, _, {}) then {};
     case (_, _, _, libs)
       equation
@@ -9001,12 +9002,10 @@ algorithm
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
-        str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
-        str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
-        str3 ="\"-L" +& str +& "\"";
-        libs = List.consOnTrue(System.directoryExists(str), str3, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
+        isLinux = stringEq("linux",System.os());
+        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
       then libs;
     case (_, _, _, libs)
       equation
@@ -9014,16 +9013,34 @@ algorithm
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
-        str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
-        str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
-        str3 ="\"-L" +& str +& "\"";
-        libs = List.consOnTrue(System.directoryExists(str), str3, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform2), str2, libs);
-        libs = List.consOnTrue(System.directoryExists(str +& "/" +& platform1), str1, libs);
+        isLinux = stringEq("linux",System.os());
+        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
       then libs;
     else inLibs;
   end matchcontinue;
 end generateExtFunctionLibraryDirectoryFlags;
+
+protected function generateExtFunctionLibraryDirectoryFlags2
+  input Boolean add;
+  input String dir;
+  input Boolean isLinux;
+  input list<String> inLibs;
+  output list<String> libs;
+algorithm
+  libs := match (add,dir,isLinux,inLibs)
+    local
+      Boolean b;
+    case (true,_,_,libs)
+      equation
+        b = System.directoryExists(dir);
+        libs = List.consOnTrue(b, "\"-L" +& dir +& "\"", libs);
+        libs = List.consOnTrue(b and isLinux, "-Wl,-rpath=\"" +& dir +& "\"", libs);
+      then libs;
+    else inLibs;
+  end match;
+end generateExtFunctionLibraryDirectoryFlags2;
 
 protected function getLibraryStringInMSVCFormat
 "Takes an Absyn.STRING describing a library and outputs a list
@@ -9128,10 +9145,10 @@ algorithm
       then 
         System.getRuntimeLibs();
         
-    // If the string contains a dot, it's a good path that should not be prefix -l
+    // If the string is a file, return it as it is
     case Absyn.STRING(str)
       equation
-        false = -1 == System.stringFind(str, ".");
+        true = System.regularFileExists(str);
       then {str};
         
     // If the string starts with a -, it's probably -l or -L gcc flags
