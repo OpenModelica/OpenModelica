@@ -51,14 +51,14 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 extern void printInfo(FILE *stream, FILE_INFO info);
-extern void (*omc_assert)(const char*, FILE_INFO);
-extern void (*omc_assert_warning)(const char*, FILE_INFO);
-extern void (*omc_terminate)(const char*, FILE_INFO);
+extern void (*omc_assert)(FILE_INFO,const char*,...);
+extern void (*omc_assert_warning)(FILE_INFO,const char*,...);
+extern void (*omc_terminate)(FILE_INFO,const char*,...);
 extern void (*omc_throw)();
 void initDumpSystem();
-void omc_assert_function(const char *msg, FILE_INFO info);
-void omc_assert_warning_function(const char *msg, FILE_INFO info);
-void omc_terminate_function(const char *msg, FILE_INFO info);
+void omc_assert_function(FILE_INFO info, const char *msg,...);
+void omc_assert_warning_function(FILE_INFO info, const char *msg,...);
+void omc_terminate_function(FILE_INFO info, const char *msg,...);
 void omc_throw_function();
 
 /* global JumpBuffer */

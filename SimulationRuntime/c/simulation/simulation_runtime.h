@@ -79,8 +79,6 @@ extern FILE_INFO TermInfo; /* message for termination. */
 
 extern char* TermMsg; /* message for termination. */
 
-void setTermMsg(const char *msg);
-
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
 const char* getNameReal(double* ptr);
 const char* getNameInt(modelica_integer* ptr);

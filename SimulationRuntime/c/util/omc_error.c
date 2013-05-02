@@ -130,18 +130,28 @@ void printInfo(FILE *stream, FILE_INFO info)
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-void omc_assert_function(const char *msg, FILE_INFO info)
+void omc_assert_function(FILE_INFO info, const char *msg, ...)
 {
+  va_list ap;
+  va_start(ap,msg);
   printInfo(stderr, info);
-  fprintf(stderr,"Modelica Assert: %s!\n", msg);
+  fputs("Modelica Assert: ", stderr);
+  vfprintf(stderr,msg,ap);
+  fputs("!\n", stderr);
+  va_end(ap);
   fflush(NULL);
   MMC_THROW();
 }
 
-void omc_assert_warning_function(const char *msg, FILE_INFO info)
+void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
 {
+  va_list ap;
+  va_start(ap,msg);
   printInfo(stderr, info);
-  fprintf(stderr,"Warning, assertion triggered: %s!\n", msg);
+  fputs("Warning, assertion triggered: ", stderr);
+  vfprintf(stderr,msg,ap);
+  fputs("!\n", stderr);
+  va_end(ap);
   fflush(NULL);
 }
 
@@ -150,10 +160,15 @@ void omc_throw_function()
   MMC_THROW();
 }
 
-void omc_terminate_function(const char *msg, FILE_INFO info)
+void omc_terminate_function(FILE_INFO info, const char *msg, ...)
 {
+  va_list ap;
+  va_start(ap,msg);
   printInfo(stderr, info);
-  fprintf(stderr,"Modelica Terminate: %s!\n", msg);
+  fputs("Modelica Terminate: ", stderr);
+  vfprintf(stderr,msg,ap);
+  fputs("!\n", stderr);
+  va_end(ap);
   fflush(NULL);
   MMC_THROW();
 }

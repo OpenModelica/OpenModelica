@@ -46,6 +46,7 @@
 #include <cassert>
 #include <signal.h>
 #include <fstream>
+#include <stdarg.h>
 
 #ifndef _MSC_VER
   #include <regex.h>
@@ -117,33 +118,20 @@ int isInteractiveSimulation();
  *  prints all values as arguments it need data
  *  and which part of the ring should printed.
  */
-void setTermMsg(const char *msg)
+static void setTermMsg(const char *msg, va_list ap)
 {
   size_t i;
-  size_t length = strlen(msg);
-  if(length > 0)
-  {
-    if(TermMsg == NULL)
-    {
-      TermMsg = (char*)malloc((length+1)*sizeof(char));
-    }
-    else
-    {
-      if(strlen(msg) > strlen(TermMsg))
-      {
-        if(TermMsg != NULL)
-        {
-          free(TermMsg);
-        }
-        TermMsg = (char*)malloc((length+1)*sizeof(char));
-      }
-    }
-
-    for(i=0; i<length; i++)
-      TermMsg[i] = msg[i];
-
-    /* set the terminating 0 */
-    TermMsg[i] = '\0';
+  static size_t termMsgSize = 0;
+  if (TermMsg==NULL) {
+    termMsgSize = max(strlen(msg)*2+1,2048);
+    TermMsg = (char*) malloc(termMsgSize);
+  }
+  i = vsnprintf(TermMsg,termMsgSize,msg,ap);
+  if (i >= termMsgSize) {
+    free(TermMsg);
+    termMsgSize = 2*i+1;
+    TermMsg = (char*)malloc(termMsgSize);
+    vsnprintf(TermMsg,termMsgSize,msg,ap);
   }
 }
 
@@ -958,34 +946,46 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   EXIT(retVal);
 }
 
-static void omc_assert_simulation(const char *msg, FILE_INFO info)
+static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
 {
+  va_list ap;
+  va_start(ap,msg);
   terminationAssert = 1;
-  setTermMsg(msg);
+  setTermMsg(msg,ap);
+  va_end(ap);
   TermInfo = info;
 }
 
-static void omc_assert_warning_simulation(const char *msg, FILE_INFO info)
+static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
 {
-  fprintf(stderr, "Warning: %s\n", msg);
+  va_list ap;
+  va_start(ap,msg);
+  fputs("Warning: ",stderr);
+  vfprintf(stderr,msg,ap);
+  fputs("\n",stderr);
+  va_end(ap);
 }
 
-static void omc_terminate_simulation(const char *msg, FILE_INFO info)
+static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
 {
+  va_list ap;
+  va_start(ap,msg);
   modelTermination=1;
   terminationTerminate = 1;
-  setTermMsg(msg);
+  setTermMsg(msg,ap);
+  va_end(ap);
   TermInfo = info;
 }
 
 static void omc_throw_simulation()
 {
+  va_list ap;
   terminationAssert = 1;
-  setTermMsg("Assertion triggered by external C function");
+  setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
 }
 
-void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;
-void (*omc_assert_warning)(const char *msg, FILE_INFO info) = omc_assert_warning_simulation;
-void (*omc_terminate)(const char *msg, FILE_INFO info) = omc_terminate_simulation;
+void (*omc_assert)(FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
+void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
+void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)() = omc_throw_simulation;
