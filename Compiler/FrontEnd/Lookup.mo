@@ -2890,6 +2890,11 @@ algorithm
         expl = List.map(List.intRange(sz), Expression.makeIntegerExp);
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, expl));
+    case DAE.DIM_BOOLEAN()
+      equation
+        expl = DAE.BCONST(false)::DAE.BCONST(true)::{};
+      then
+        DAE.SLICE(DAE.ARRAY(DAE.T_BOOL_DEFAULT, true, expl));
     // Array with enumeration dimension.
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
       equation

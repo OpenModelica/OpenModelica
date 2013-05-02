@@ -4532,6 +4532,11 @@ algorithm
         expl = List.map1(ints, makeAsubIndex, inArray);
       then
         expl;
+    case (DAE.DIM_BOOLEAN(), _)
+      equation
+        expl = DAE.BCONST(false)::DAE.BCONST(true)::{};
+      then
+        expl;
     case (DAE.DIM_ENUM(enumTypeName = name, literals = ls), _)
       equation
         expl = makeEnumLiteralIndices(name, ls, 1, inArray);

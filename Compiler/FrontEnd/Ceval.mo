@@ -5381,6 +5381,12 @@ algorithm
       then
         (cache,DAE.INDEX(e1_1));
 
+    case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg,_)
+      equation
+        (cache,v1 as Values.BOOL(_),_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
+        e1_1 = ValuesUtil.valueExp(v1);
+      then (cache,DAE.INDEX(e1_1));
+
     // an expression slice that can be constant evaluated
     case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg,_)
       equation
@@ -6854,6 +6860,9 @@ algorithm
     // Enumeration dimension, already constant.
     case (_, _, DAE.DIM_ENUM(size = dim_int), _, _, _, _)
       then (inCache, Values.INTEGER(dim_int), inST);
+
+    case (_, _, DAE.DIM_BOOLEAN(), _, _, _, _)
+      then (inCache, Values.INTEGER(2), inST);
 
     // Dimension given by expression, evaluate the expression.
     case (_, _, DAE.DIM_EXP(exp = exp), _, _, _, _)

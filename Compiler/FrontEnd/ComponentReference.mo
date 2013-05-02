@@ -2829,6 +2829,8 @@ algorithm
       then
         List.map(enum_expl, Expression.makeIndexSubscript);
 
+    case DAE.DIM_BOOLEAN() then DAE.INDEX(DAE.BCONST(false))::DAE.INDEX(DAE.BCONST(true))::{};
+
   end match;
 end expandDimension;
 

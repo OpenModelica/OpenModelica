@@ -9380,35 +9380,8 @@ algorithm
       DAE.Dimension dim;
 
     case ({},ty) then ty;
-    case ((DAE.DIM_INTEGER(integer = i) :: xs),tty)
-      equation
-        ty_1 = makeArrayType(xs, tty);
-        ts = Types.getTypeSource(tty);
-      then
-        DAE.T_ARRAY(ty_1,{DAE.DIM_INTEGER(i)},ts);
 
-    case ((DAE.DIM_ENUM(size = i) :: xs), tty)
-      equation
-        ty_1 = makeArrayType(xs, tty);
-        ts = Types.getTypeSource(tty);
-      then
-        DAE.T_ARRAY(ty_1,{DAE.DIM_INTEGER(i)},ts);
-
-    /*case ((DAE.DIM_SUBSCRIPT(subscript = _) :: xs),tty)
-      equation
-        ty_1 = makeArrayType(xs, tty);
-        ts = Types.getTypeSource(tty);
-      then
-        DAE.T_ARRAY(ty_1,{DAE.DIM_UNKNOWN()},ts);*/
-
-    case (DAE.DIM_UNKNOWN() :: xs, tty)
-      equation
-        ty_1 = makeArrayType(xs, tty);
-        ts = Types.getTypeSource(tty);
-      then
-        DAE.T_ARRAY(ty_1, {DAE.DIM_UNKNOWN()}, ts);
-
-    case ((dim as DAE.DIM_EXP(exp = _)) :: xs, tty)
+    case (dim :: xs, tty)
       equation
         ty_1 = makeArrayType(xs, tty);
         ts = Types.getTypeSource(tty);
@@ -10301,6 +10274,7 @@ algorithm
     case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
     case (DAE.DIM_INTEGER(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
     case (DAE.DIM_ENUM(size = i), _) then DAE.INDEX(DAE.ICONST(i));
+    case (DAE.DIM_BOOLEAN(), _) then DAE.INDEX(DAE.ICONST(2));
     case (DAE.DIM_EXP(exp = e), _) then DAE.INDEX(e);
   end match;
 end instDimExp;
@@ -10320,6 +10294,7 @@ algorithm
     case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
     case (DAE.DIM_INTEGER(integer = i),_) then DAE.WHOLE_NONEXP(DAE.ICONST(i));
     case (DAE.DIM_ENUM(size = i), _) then DAE.WHOLE_NONEXP(DAE.ICONST(i));
+    case (DAE.DIM_BOOLEAN(), _) then DAE.WHOLE_NONEXP(DAE.ICONST(2));
     //case (DAE.DIM_EXP(exp = e as DAE.RANGE(exp = _)), _) then DAE.INDEX(e);
     case (DAE.DIM_EXP(exp = e), _) then DAE.WHOLE_NONEXP(e);
   end match;
@@ -10703,13 +10678,13 @@ algorithm
       DAE.Exp e,lhs,rhs;
       DAE.Properties p;
       Env.Cache cache;
-      Env.Env env_1,env,compenv;
+      Env.Env env_1,env_2,env,compenv;
       Connect.Sets csets;
       DAE.Type ty;
       ClassInf.State st,ci_state;
       DAE.ComponentRef cr;
       DAE.Type ty_1;
-      DAE.Mod mod,mod_1;
+      DAE.Mod mod,mod_1,mod_2;
       Prefix.Prefix pre;
       String n, str1, str2, str3, str4;
       SCode.Element cl;
@@ -10864,6 +10839,18 @@ algorithm
       _,graph, csets)
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
+
+    case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, i, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
+      equation
+        mod_1 = Mod.lookupIdxModification(mod, i);
+        mod_2 = Mod.lookupIdxModification(mod, i+1);
+        (cache, env_1, ih, store, dae1, csets, ty, graph) =
+          instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(false)) :: idxs), inst_dims, impl, comment, info, graph, csets);
+        (cache, _, ih, store, dae2, csets, ty, graph) =
+          instVar2(cache, env, ih, store, ci_state, mod_2, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(true))  :: idxs), inst_dims, impl, comment, info, graph, csets);
+        daeLst = DAEUtil.joinDaes(dae1, dae2);
+      then
+        (cache, env_1, ih, store, daeLst, csets, ty, graph);
 
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,_,dims,idxs,inst_dims,impl,comment,_,graph,_)
       equation

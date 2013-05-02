@@ -4978,6 +4978,15 @@ algorithm
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
         DAE.PROP(DAE.T_ARRAY(t,{dim},ts2),c);
+    // match boolean, second
+    case (DAE.PROP(type_ = t1,constFlag = c1),
+          DAE.PROP(type_ = DAE.T_ARRAY(dims = {dim as DAE.DIM_BOOLEAN()},ty = t2, source = ts2),constFlag = c2),
+          havereal)
+      equation
+        false = isArray(t1,{});
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
+      then
+        DAE.PROP(DAE.T_ARRAY(t,{dim},ts2),c);
     // match integer, first
     case (DAE.PROP(type_ = DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(1)},ty = t1, source = ts),constFlag = c1),
           DAE.PROP(type_ = t2,constFlag = c2),havereal)
@@ -4988,6 +4997,14 @@ algorithm
         DAE.PROP(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(1)},ts),c);
     // match enum, first
     case (DAE.PROP(type_ = DAE.T_ARRAY(dims = {dim as DAE.DIM_ENUM(size=1)},ty = t1, source = ts),constFlag = c1),
+          DAE.PROP(type_ = t2,constFlag = c2),havereal)
+      equation
+        false = isArray(t2,{});
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
+      then
+        DAE.PROP(DAE.T_ARRAY(t,{dim},ts),c);
+    // match boolean, first
+    case (DAE.PROP(type_ = DAE.T_ARRAY(dims = {dim as DAE.DIM_BOOLEAN()},ty = t1, source = ts),constFlag = c1),
           DAE.PROP(type_ = t2,constFlag = c2),havereal)
       equation
         false = isArray(t2,{});

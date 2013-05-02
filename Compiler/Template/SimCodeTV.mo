@@ -1579,6 +1579,9 @@ package DAE
       Integer integer;
     end DIM_INTEGER;
 
+    record DIM_BOOLEAN
+    end DIM_BOOLEAN;
+
     record DIM_ENUM
       Absyn.Path enumTypeName;
       list<String> literals;

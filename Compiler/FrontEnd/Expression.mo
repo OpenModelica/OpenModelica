@@ -485,6 +485,7 @@ algorithm
 
     case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
     case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
+    case DAE.DIM_BOOLEAN() then DAE.ICONST(2);
     case DAE.DIM_EXP(exp = e) then e;
   end match;
 end dimensionSizeExp;
@@ -509,6 +510,7 @@ algorithm
 
     case DAE.DIM_INTEGER(integer = i) then DAE.INDEX(DAE.ICONST(i));
     case DAE.DIM_ENUM(size = i) then DAE.INDEX(DAE.ICONST(i));
+    case DAE.DIM_BOOLEAN() then DAE.INDEX(DAE.ICONST(2));
     case DAE.DIM_UNKNOWN() then DAE.WHOLEDIM();
   end match;
 end dimensionSubscript;
@@ -1816,6 +1818,7 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i;
+    case DAE.DIM_BOOLEAN() then 2;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = i)) then i;
     case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL(index = i)) then i;
   end match;
@@ -1826,27 +1829,15 @@ public function addDimensions
   input DAE.Dimension dim2;
   output DAE.Dimension dim;
 algorithm
-  dim := match(dim1,dim2)
+  dim := matchcontinue (dim1,dim2)
     local
       Integer i1,i2,i;
-    case (DAE.DIM_INTEGER(integer = i1),DAE.DIM_INTEGER(integer = i2))
+    case (_,_)
       equation
-        i = i1+i2;
-      then DAE.DIM_INTEGER(i);
-    case (DAE.DIM_ENUM(size = i1),DAE.DIM_INTEGER(integer = i2))
-      equation
-        i = i1+i2;
-      then DAE.DIM_INTEGER(i);
-    case (DAE.DIM_INTEGER(integer = i1),DAE.DIM_ENUM(size = i2))
-      equation
-        i = i1+i2;
-      then DAE.DIM_INTEGER(i);
-    case (DAE.DIM_ENUM(size = i1),DAE.DIM_ENUM(size = i2))
-      equation
-        i = i1+i2;
+        i = dimensionSize(dim1)+dimensionSize(dim2);
       then DAE.DIM_INTEGER(i);
     else DAE.DIM_UNKNOWN();
-  end match;
+  end matchcontinue;
 end addDimensions;
 
 public function dimensionSizeAll
@@ -1861,6 +1852,7 @@ algorithm
       DAE.Exp e;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i;
+    case DAE.DIM_BOOLEAN() then 2;
     case DAE.DIM_EXP(exp = e) then expInt(e);
     case DAE.DIM_EXP(exp = _)
       equation
@@ -8298,6 +8290,7 @@ algorithm
   known := matchcontinue(dim)
     case DAE.DIM_UNKNOWN() then false;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = _)) then true;
+    case DAE.DIM_EXP(exp = DAE.BCONST(bool = _)) then true;
     case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL(index = _)) then true;
     case DAE.DIM_EXP(exp = _) then false;
     case _ then true;
@@ -8875,6 +8868,7 @@ algorithm
   i := match dim
     case DAE.DIM_INTEGER(integer=i) then i;
     case DAE.DIM_ENUM(size=i) then i;
+    case DAE.DIM_BOOLEAN() then 2;
     else complexityDimLarge;
   end match;
 end dimComplexity;

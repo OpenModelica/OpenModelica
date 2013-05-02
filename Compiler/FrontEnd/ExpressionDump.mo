@@ -1636,6 +1636,8 @@ algorithm
       then
         s;
 
+    case DAE.DIM_BOOLEAN() then "Boolean";
+
     case DAE.DIM_INTEGER(integer = x)
       equation
         s = intString(x);

@@ -6524,6 +6524,7 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
           dimrest |> dim =>
           match dim
           case DIM_INTEGER(__) then '*<%integer%>'
+          case DIM_BOOLEAN(__) then '*2'
           case DIM_ENUM(__) then '*<%size%>'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
         %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest,subrest,context,&preExp,&varDecls)%>'%>'

@@ -1021,6 +1021,9 @@ uniontype Dimension
     Integer integer;
   end DIM_INTEGER;
 
+  record DIM_BOOLEAN "Dimension given by Boolean"
+  end DIM_BOOLEAN;
+
   record DIM_ENUM "Dimension given by an enumeration."
     Absyn.Path enumTypeName "The enumeration type name.";
     list<String> literals "A list of the literals in the enumeration.";

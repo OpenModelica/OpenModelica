@@ -11666,8 +11666,7 @@ algorithm
     case (_,_,_,_,_,pre,_)
       equation
         ErrorExt.setCheckpoint("elabSubscriptsDims");
-        (outCache, outSubs, outConst) = elabSubscriptsDims2(cache, env, subs,
-          dims, impl, pre, info, DAE.C_CONST(), {});
+        (outCache, outSubs, outConst) = elabSubscriptsDims2(cache, env, subs, dims, impl, pre, info, DAE.C_CONST(), {});
         ErrorExt.rollBack("elabSubscriptsDims");
       then (outCache,outSubs,outConst);
 
@@ -11718,14 +11717,11 @@ algorithm
 
     case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _)
       equation
-        (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl,
-          inPrefix, inInfo);
+        (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl, inPrefix, inInfo);
         const = Types.constAnd(const, inConst);
-        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim,
-          const, prop, inImpl, inInfo);
+        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim, const, prop, inImpl, inInfo);
         elabed_subs = dsub :: inElabSubscripts;
-        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv,
-          rest_asub, rest_dims, inImpl, inPrefix, inInfo, const, elabed_subs);
+        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv, rest_asub, rest_dims, inImpl, inPrefix, inInfo, const, elabed_subs);
       then
         (cache, elabed_subs, const);
 
@@ -11906,6 +11902,7 @@ algorithm
 
     case (DAE.T_INTEGER(varLst = _),_,sub,_,_) then DAE.INDEX(sub);
     case (DAE.T_ENUMERATION(path = _),_,sub,_,_) then DAE.INDEX(sub);
+    case (DAE.T_BOOL(varLst = _),_,sub,_,_) then DAE.INDEX(sub);
     case (DAE.T_ARRAY(ty = DAE.T_INTEGER(varLst = _)),_,sub,_,_) then DAE.SLICE(sub);
 
     // Modelica.Electrical.Analog.Lines.M_OLine.segment in MSL 3.1 uses a real
@@ -14328,10 +14325,9 @@ algorithm
       then
         (inCache, dim);
 
-    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef =
-        Absyn.CREF_IDENT(name = "Boolean"))), _, _, _, _, _)
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = "Boolean"))), _, _, _, _, _)
       then
-        (inCache, DAE.DIM_INTEGER(2));
+        (inCache, DAE.DIM_BOOLEAN());
 
     // Array dimension from an enumeration.
     case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
