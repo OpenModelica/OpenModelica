@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCodeFlatDump
-" file:  SCodeFlatDump.mo
+" file:        SCodeFlatDump.mo
   package:     SCodeFlatDump
   description: SCodeFlatDump has functionality for printing SCodeFlat
 
@@ -60,17 +60,17 @@ algorithm
 
     case (inFlatProgram)
       equation
-  ios = IOStream.create("flatProgram", IOStream.LIST());
-  ios = printFlatProgramToStream(inFlatProgram, ios);
-  IOStream.print(ios, IOStream.stdOutput);
+        ios = IOStream.create("flatProgram", IOStream.LIST());
+        ios = printFlatProgramToStream(inFlatProgram, ios);
+        IOStream.print(ios, IOStream.stdOutput);
       then
-  ();
+        ();
 
     case (_)
       equation
-  print("SCodeFlatDump.outputFlatProgram: printing of flattened program failed!\n");
+        print("SCodeFlatDump.outputFlatProgram: printing of flattened program failed!\n");
       then
-  ();
+        ();
   end matchcontinue;
 end outputFlatProgram;
 
@@ -91,10 +91,10 @@ algorithm
 
     case (cp::rest, inIOStream)
       equation
-  oIOStream = printCompPathToStream(listReverse(cp), inIOStream);
-  oIOStream = printFlatProgramToStream(rest, oIOStream);
+        oIOStream = printCompPathToStream(listReverse(cp), inIOStream);
+        oIOStream = printFlatProgramToStream(rest, oIOStream);
       then
-  oIOStream;
+        oIOStream;
   end matchcontinue;
 end printFlatProgramToStream;
 
@@ -116,13 +116,13 @@ algorithm
 
     case (inCompPath, oIOStream)
       equation
-  ty = getComponentTypePath(List.last(inCompPath));
-  str = stringDelimitList(List.map(inCompPath, getComponentName), "/");
-  oIOStream = IOStream.appendList(oIOStream, {str, "\n    "});
-  oIOStream = printTypePathToStream(listReverse(ty), oIOStream);
-  oIOStream = IOStream.append(oIOStream, "\n");
+        ty = getComponentTypePath(List.last(inCompPath));
+        str = stringDelimitList(List.map(inCompPath, getComponentName), "/");
+        oIOStream = IOStream.appendList(oIOStream, {str, "\n    "});
+        oIOStream = printTypePathToStream(listReverse(ty), oIOStream);
+        oIOStream = IOStream.append(oIOStream, "\n");
       then
-  oIOStream;
+        oIOStream;
   end matchcontinue;
 end printCompPathToStream;
 
@@ -149,19 +149,19 @@ algorithm
     // handle last
     case ({SCodeFlat.T(name = name, origin = origin, mod = mod, kind = kind)}, inIOStream)
       equation
-  str = printElementStr(name, origin, mod);
-  oIOStream = IOStream.appendList(inIOStream, {name, "[", str, "]"});
+        str = printElementStr(name, origin, mod);
+        oIOStream = IOStream.appendList(inIOStream, {name, "[", str, "]"});
       then
-  oIOStream;
+        oIOStream;
 
     // handle rest
     case (SCodeFlat.T(name = name, origin = origin, mod = mod, kind = kind)::rest, inIOStream)
       equation
-  str = printElementStr(name, origin, mod);
-  oIOStream = IOStream.appendList(inIOStream, {name, "[", str, "]/"});
-  oIOStream = printTypePathToStream(rest, oIOStream);
+        str = printElementStr(name, origin, mod);
+        oIOStream = IOStream.appendList(inIOStream, {name, "[", str, "]/"});
+        oIOStream = printTypePathToStream(rest, oIOStream);
       then
-  oIOStream;
+        oIOStream;
   end matchcontinue;
 end printTypePathToStream;
 
@@ -213,86 +213,86 @@ algorithm
 
     case (_, SCode.EXTENDS(baseClassPath = path,modifications = mod, visibility = vis), inMod)
       equation
-  s1 = visibilityStr(vis);
-  s2 = Absyn.pathString(path);
-  s3 = SCodeDump.printModStr(mod);
-  s4 = SCodeDump.printModStr(inMod);
-  res = stringAppendList({s1, "|", s2, s3, s4});
+        s1 = visibilityStr(vis);
+        s2 = Absyn.pathString(path);
+        s3 = SCodeDump.printModStr(mod);
+        s4 = SCodeDump.printModStr(inMod);
+        res = stringAppendList({s1, "|", s2, s3, s4});
       then
-  res;
+        res;
 
     case (_, SCode.COMPONENT(name = n,
-                       prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
-                       attributes = SCode.ATTR(ad, ct, prl, var, direction),
-                       typeSpec = typath,
-                       modifications = mod,
-                       condition = cond), inMod)
+                             prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
+                             attributes = SCode.ATTR(ad, ct, prl, var, direction),
+                             typeSpec = typath,
+                             modifications = mod,
+                             condition = cond), inMod)
       equation
-  s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
-  s2 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
-  s3 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
-  s4 = Dump.unparseComponentCondition(cond);
-  res = stringAppendList({s1, "|", s2, "|", s3, s4});
+        s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
+        s2 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
+        s3 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
+        s4 = Dump.unparseComponentCondition(cond);
+        res = stringAppendList({s1, "|", s2, "|", s3, s4});
       then
-  res;
+        res;
 
     // derived
     case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, ct, prl, var, direction))), inMod)
       equation
-  true = stringEq(inName, SCodeFlat.derivedName);
-  s1 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
-  s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
-  res = stringAppendList({s1, "|", s2});
+        true = stringEq(inName, SCodeFlat.derivedName);
+        s1 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
+        s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
+        res = stringAppendList({s1, "|", s2});
       then
-  res;
+        res;
 
     // class extends
     case (inName, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(n, modifications = mod)), inMod)
       equation
-  true = stringEq(inName, SCodeFlat.classExName);
-  s1 = SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
-  res = stringAppendList({n, s1});
+        true = stringEq(inName, SCodeFlat.classExName);
+        s1 = SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
+        res = stringAppendList({n, s1});
       then
-  res;
+        res;
 
     // normal class
     case (_, SCode.CLASS(prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
-                   encapsulatedPrefix = ep,
-                   partialPrefix = pp,
-                   restriction = r), inMod)
+                         encapsulatedPrefix = ep,
+                         partialPrefix = pp,
+                         restriction = r), inMod)
       equation
-  s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
-  s2 = encapsulatedStr(ep) +& partialStr(pp);
-  s3 = restrictionStr(r);
-  s4 = SCodeDump.printModStr(inMod);
-  res = stringAppendList({s1, "|", s2, "|", s3, s4});
+        s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
+        s2 = encapsulatedStr(ep) +& partialStr(pp);
+        s3 = restrictionStr(r);
+        s4 = SCodeDump.printModStr(inMod);
+        res = stringAppendList({s1, "|", s2, "|", s3, s4});
       then
-  res;
+        res;
 
     // import, we shouldn't have any!
     case (_, SCode.IMPORT(imp = imp, visibility = vis), inMod)
       equation
-  s1 = visibilityStr(vis);
-  s2 = Dump.unparseImportStr(imp);
-  res = stringAppendList({s1, "|imp:", s2});
+        s1 = visibilityStr(vis);
+        s2 = Dump.unparseImportStr(imp);
+        res = stringAppendList({s1, "|imp:", s2});
       then
-  res;
+        res;
 
     // other?
     case (_, SCode.DEFINEUNIT(n, vis, _, _), _)
       equation
-  s1 = visibilityStr(vis);
-  res = stringAppendList({s1, "|", n});
+        s1 = visibilityStr(vis);
+        res = stringAppendList({s1, "|", n});
       then
-  res;
+        res;
 
     // other?
     case (_, inElement, _)
       equation
-  s1 = SCodeDump.printElementStr(inElement);
-  res = stringAppendList({"FAILED|", s1});
+        s1 = SCodeDump.printElementStr(inElement);
+        res = stringAppendList({"FAILED|", s1});
       then
-  res;
+        res;
 
   end matchcontinue;
 end printElementStr;
@@ -374,8 +374,8 @@ algorithm
 
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, _))))
       equation
-  path_str = Absyn.pathString(cc_path);
-  mod_str = SCodeDump.printModStr(cc_mod);
+        path_str = Absyn.pathString(cc_path);
+        mod_str = SCodeDump.printModStr(cc_mod);
       then "{r:" +& path_str +& "(" +& mod_str +& ")}";
     case (SCode.REPLACEABLE(NONE()))   then "{r:}";
     case (SCode.NOT_REPLACEABLE())     then "{}";

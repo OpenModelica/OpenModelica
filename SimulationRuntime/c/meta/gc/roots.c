@@ -57,7 +57,7 @@ mmc_GC_roots_type roots_create(size_t default_roots_size, size_t default_roots_m
   /* the limit points to the end of the roots array */
   roots.limit = default_roots_size;
 
-  roots.marks      = stack_create(default_roots_mark_size);
+  roots.marks            = stack_create(default_roots_mark_size);
   roots.rootsStackIndex  = 0;  /* set the stack element index to 0 */
 
   return roots;
@@ -218,13 +218,13 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
   if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "stack: UW %ld %ld %s - top stack: %ld %ld %s\n",
-  local_GC_state.rootsStackIndex,
-  local_GC_state.rootsMark,
-  local_GC_state.functionName,
-  roots_index.rootsStackIndex,
-  roots_index.rootsMark,
-  roots_index.functionName
-  );
+        local_GC_state.rootsStackIndex,
+        local_GC_state.rootsMark,
+        local_GC_state.functionName,
+        roots_index.rootsStackIndex,
+        roots_index.rootsMark,
+        roots_index.functionName
+        );
     fflush(NULL);
   }
 
@@ -234,9 +234,9 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
     if (mmc_GC_state->settings.debug)
     {
       fprintf(stderr, "stack: -- %ld %ld %s\n",
-    roots_index.rootsStackIndex,
-    roots_index.rootsMark,
-    roots_index.functionName);
+          roots_index.rootsStackIndex,
+          roots_index.rootsMark,
+          roots_index.functionName);
       fflush(NULL);
     }
 
@@ -246,9 +246,9 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
     if (mmc_GC_state->settings.debug)
     {
       fprintf(stderr, "stack: <- %ld %ld %s\n",
-    roots_index.rootsStackIndex,
-    roots_index.rootsMark,
-    roots_index.functionName);
+          roots_index.rootsStackIndex,
+          roots_index.rootsMark,
+          roots_index.functionName);
       fflush(NULL);
     }
 
@@ -262,14 +262,14 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
   if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "stack: UF %ld %ld %s\n",
-  roots_index.rootsStackIndex,
-  roots_index.rootsMark,
-  roots_index.functionName);
+        roots_index.rootsStackIndex,
+        roots_index.rootsMark,
+        roots_index.functionName);
     fflush(NULL);
   }
 
   /* reset the roots current index */
-  mmc_GC_state->roots.current   = roots_index.rootsMark;
+  mmc_GC_state->roots.current         = roots_index.rootsMark;
   mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
 
   /* decrease the roots size if we can */
@@ -300,13 +300,13 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
   if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "stack: GC %ld %ld %s - top stack: %ld %ld %s\n",
-  local_GC_state.rootsStackIndex,
-  local_GC_state.rootsMark,
-  local_GC_state.functionName,
-  roots_index.rootsStackIndex,
-  roots_index.rootsMark,
-  roots_index.functionName
-  );
+        local_GC_state.rootsStackIndex,
+        local_GC_state.rootsMark,
+        local_GC_state.functionName,
+        roots_index.rootsStackIndex,
+        roots_index.rootsMark,
+        roots_index.functionName
+        );
     fflush(NULL);
   }
 
@@ -316,9 +316,9 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
     if (mmc_GC_state->settings.debug)
     {
       fprintf(stderr, "stack: -- %ld %ld %s\n",
-    roots_index.rootsStackIndex,
-    roots_index.rootsMark,
-    roots_index.functionName);
+          roots_index.rootsStackIndex,
+          roots_index.rootsMark,
+          roots_index.functionName);
       fflush(NULL);
     }
 
@@ -328,9 +328,9 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
     if (mmc_GC_state->settings.debug)
     {
       fprintf(stderr, "stack: <- %ld %ld %s\n",
-    roots_index.rootsStackIndex,
-    roots_index.rootsMark,
-    roots_index.functionName);
+          roots_index.rootsStackIndex,
+          roots_index.rootsMark,
+          roots_index.functionName);
       fflush(NULL);
     }
 
@@ -344,14 +344,14 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
   if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "stack: FI %ld %ld %s\n",
-  roots_index.rootsStackIndex,
-  roots_index.rootsMark,
-  roots_index.functionName);
+        roots_index.rootsStackIndex,
+        roots_index.rootsMark,
+        roots_index.functionName);
     fflush(NULL);
   }
 
   /* reset the roots current index */
-  mmc_GC_state->roots.current   = roots_index.rootsMark;
+  mmc_GC_state->roots.current         = roots_index.rootsMark;
   mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
 
   /* decrease the roots size if we can */

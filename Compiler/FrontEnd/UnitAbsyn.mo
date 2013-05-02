@@ -1,7 +1,7 @@
 encapsulated package UnitAbsyn " Copyright MathCore 2008-2009.
   author Peter Aronsson (peter.aronsson@mathcore.com)
 
-  file:  UnitAbsyn.mo
+  file:        UnitAbsyn.mo
   package:     UnitAbsyn
   description: Physical unit checking.
 

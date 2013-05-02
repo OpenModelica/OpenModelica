@@ -30,7 +30,7 @@
  */
 
 encapsulated package SimulationResults
-" file:   SimulationResults.mo
+" file:         SimulationResults.mo
   package:     SimulationResults
   description: Read simulation results into the Values.Value structure.
 

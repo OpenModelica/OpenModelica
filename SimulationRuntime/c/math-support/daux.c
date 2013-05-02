@@ -86,8 +86,8 @@ L10:
 /* NMES   = The length of MSG (number of characters). */
 /* NERR   = The error number (not used). */
 /* LEVEL  = The error level.. */
-/*    0 or 1 means recoverable (control returns to caller). */
-/*    2 means fatal (run is aborted--see note below). */
+/*          0 or 1 means recoverable (control returns to caller). */
+/*          2 means fatal (run is aborted--see note below). */
 /* NI     = Number of integers (0, 1, or 2) to be printed with message. */
 /* I1,I2  = Integers to be printed, depending on NI. */
 /* NR     = Number of reals (0, 1, or 2) to be printed with message. */
@@ -213,16 +213,16 @@ integer i1mach_(integer *i__)
 /*    I1MACH( 5) = THE NUMBER OF BITS PER INTEGER STORAGE UNIT. */
 
 /*    I1MACH( 6) = THE NUMBER OF CHARACTERS PER CHARACTER STORAGE UNIT. */
-/*           FOR FORTRAN 77, THIS IS ALWAYS 1.  FOR FORTRAN 66, */
-/*           CHARACTER STORAGE UNIT = INTEGER STORAGE UNIT. */
+/*                 FOR FORTRAN 77, THIS IS ALWAYS 1.  FOR FORTRAN 66, */
+/*                 CHARACTER STORAGE UNIT = INTEGER STORAGE UNIT. */
 
 /*  INTEGERS. */
 
 /*    ASSUME INTEGERS ARE REPRESENTED IN THE S-DIGIT, BASE-A FORM */
 
-/*         SIGN ( X(S-1)*A**(S-1) + ... + X(1)*A + X(0) ) */
+/*               SIGN ( X(S-1)*A**(S-1) + ... + X(1)*A + X(0) ) */
 
-/*         WHERE 0 .LE. X(I) .LT. A FOR I=0,...,S-1. */
+/*               WHERE 0 .LE. X(I) .LT. A FOR I=0,...,S-1. */
 
 /*    I1MACH( 7) = A, THE BASE. */
 
@@ -235,10 +235,10 @@ integer i1mach_(integer *i__)
 /*    ASSUME FLOATING-POINT NUMBERS ARE REPRESENTED IN THE T-DIGIT, */
 /*    BASE-B FORM */
 
-/*         SIGN (B**E)*( (X(1)/B) + ... + (X(T)/B**T) ) */
+/*               SIGN (B**E)*( (X(1)/B) + ... + (X(T)/B**T) ) */
 
-/*         WHERE 0 .LE. X(I) .LT. B FOR I=1,...,T, */
-/*         0 .LT. X(1), AND EMIN .LE. E .LE. EMAX. */
+/*               WHERE 0 .LE. X(I) .LT. B FOR I=1,...,T, */
+/*               0 .LT. X(1), AND EMIN .LE. E .LE. EMAX. */
 
 /*    I1MACH(10) = B, THE BASE. */
 
@@ -613,20 +613,20 @@ integer i1mach_(integer *i__)
 /*     WTIH 32-BIT INTEGERS AND 64V MODE INSTRUCTIONS, */
 /*     SUPPLIED BY IGOR BRAY. */
 
-/*      DATA IMACH( 1) /      1 / */
-/*      DATA IMACH( 2) /      1 / */
-/*      DATA IMACH( 3) /      2 / */
-/*      DATA IMACH( 4) /      1 / */
-/*      DATA IMACH( 5) /     32 / */
-/*      DATA IMACH( 6) /      4 / */
-/*      DATA IMACH( 7) /      2 / */
-/*      DATA IMACH( 8) /     31 / */
+/*      DATA IMACH( 1) /            1 / */
+/*      DATA IMACH( 2) /            1 / */
+/*      DATA IMACH( 3) /            2 / */
+/*      DATA IMACH( 4) /            1 / */
+/*      DATA IMACH( 5) /           32 / */
+/*      DATA IMACH( 6) /            4 / */
+/*      DATA IMACH( 7) /            2 / */
+/*      DATA IMACH( 8) /           31 / */
 /*      DATA IMACH( 9) / :17777777777 / */
-/*      DATA IMACH(10) /      2 / */
-/*      DATA IMACH(11) /     23 / */
-/*      DATA IMACH(12) /   -127 / */
-/*      DATA IMACH(13) /   +127 / */
-/*      DATA IMACH(14) /     47 / */
+/*      DATA IMACH(10) /            2 / */
+/*      DATA IMACH(11) /           23 / */
+/*      DATA IMACH(12) /         -127 / */
+/*      DATA IMACH(13) /         +127 / */
+/*      DATA IMACH(14) /           47 / */
 /*      DATA IMACH(15) /       -32895 / */
 /*      DATA IMACH(16) /       +32637 /, SANITY/987/ */
 

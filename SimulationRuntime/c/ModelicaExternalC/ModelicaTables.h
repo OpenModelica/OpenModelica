@@ -12,7 +12,7 @@
 
    Release Notes:
       Jan. 27, 2008: by Martin Otter.
-               Implemented a first version
+                     Implemented a first version
 
    Copyright (C) 2008, Modelica Association and DLR.
 
@@ -26,8 +26,8 @@
 /* A table can be defined in the following ways when initializing the table:
 
      (1) Explicitly supplied in the argument list
-   (= table    is "NoName" or has only blanks AND
-      fileName is "NoName" or has only blanks).
+         (= table    is "NoName" or has only blanks AND
+            fileName is "NoName" or has only blanks).
 
      (2) Read from a file (tableName, fileName have to be supplied).
 
@@ -37,26 +37,26 @@
 */
 
 extern int ModelicaTables_CombiTimeTable_init(
-                const char*   tableName,
-                const char*   fileName,
-                double const* table, int nRow, int nColumn,
-                double        startTime,
-                int           smoothness,
-                int           extrapolation);
+                      const char*   tableName,
+                      const char*   fileName,
+                      double const* table, int nRow, int nColumn,
+                      double        startTime,
+                      int           smoothness,
+                      int           extrapolation);
   /* Initialize 1-dim. table where first column is time
 
       -> tableName : Name of table.
       -> fileName  : Name of file.
       -> table     : If tableName="NoName" or has only blanks AND
-                  fileName ="NoName" or has only blanks, then
-               this pointer points to a 2-dim. array (row-wise storage)
-               in the Modelica environment that holds this matrix.
+                        fileName ="NoName" or has only blanks, then
+                     this pointer points to a 2-dim. array (row-wise storage)
+                     in the Modelica environment that holds this matrix.
       -> nRow      : Number of rows of table
       -> nColumn   : Number of columns of table
       -> startTime : Output = offset for time < startTime
       -> smoothness: Interpolation type
-               = 1: linear
-               = 2: continuous first derivative
+                     = 1: linear
+                     = 2: continuous first derivative
       <- RETURN    : ID of internal memory of table.
   */
 
@@ -84,24 +84,24 @@ extern double ModelicaTables_CombiTimeTable_interpolate(int tableID, int icol, d
 
 
 extern int ModelicaTables_CombiTable1D_init(
-            const  char*  tableName,
-            const  char*  fileName,
-            double const* table, int nRow, int nColumn,
-            int smoothness);
+                  const  char*  tableName,
+                  const  char*  fileName,
+                  double const* table, int nRow, int nColumn,
+                  int smoothness);
   /* Initialize 1-dim. table defined by matrix, where first column
      is x-axis and further columns of matrix are interpolated
 
       -> tableName : Name of table.
       -> fileName  : Name of file.
       -> table     : If tableName="NoName" or has only blanks AND
-                  fileName ="NoName" or has only blanks, then
-               this pointer points to a 2-dim. array (row-wise storage)
-               in the Modelica environment that holds this matrix.
+                        fileName ="NoName" or has only blanks, then
+                     this pointer points to a 2-dim. array (row-wise storage)
+                     in the Modelica environment that holds this matrix.
       -> nRow      : Number of rows of table
       -> nColumn   : Number of columns of table
       -> smoothness: Interpolation type
-               = 1: linear
-               = 2: continuous first derivative
+                     = 1: linear
+                     = 2: continuous first derivative
       <- RETURN    : ID of internal memory of table.
   */
 
@@ -120,28 +120,28 @@ extern double ModelicaTables_CombiTable1D_interpolate(int tableID, int icol, dou
 
 
 extern int ModelicaTables_CombiTable2D_init(
-             const char*   tableName,
-             const char*   fileName,
-             double const* table, int nRow, int nColumn,
-             int smoothness);
+                   const char*   tableName,
+                   const char*   fileName,
+                   double const* table, int nRow, int nColumn,
+                   int smoothness);
   /* Initialize 2-dim. table defined by matrix, where first column
      is x-axis, first row is y-axis and the matrix elements are the
      z-values.
        table[2:end,1    ]: Values of x-axis
-      [1    ,2:end]: Values of y-axis
-      [2:end,2:end]: Values of z-axis
+            [1    ,2:end]: Values of y-axis
+            [2:end,2:end]: Values of z-axis
 
       -> tableName : Name of table.
       -> fileName  : Name of file.
       -> table     : If tableName="NoName" or has only blanks AND
-                  fileName ="NoName" or has only blanks, then
-               this pointer points to a 2-dim. array (row-wise storage)
-               in the Modelica environment that holds this matrix.
+                        fileName ="NoName" or has only blanks, then
+                     this pointer points to a 2-dim. array (row-wise storage)
+                     in the Modelica environment that holds this matrix.
       -> nRow      : Number of rows of table
       -> nColumn   : Number of columns of table
       -> smoothness: Interpolation type
-               = 1: linear
-               = 2: continuous first derivative
+                     = 1: linear
+                     = 2: continuous first derivative
       <- RETURN    : ID of internal memory of table.
   */
 

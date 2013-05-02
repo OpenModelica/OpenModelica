@@ -30,7 +30,7 @@
  */
 
 encapsulated package Scope
-" file:  Scope.mo
+" file:        Scope.mo
   package:     Scope
   description: Scope is a scope in a pool.
   @author:     adrpo
@@ -172,16 +172,16 @@ algorithm
     // fine
     case (names, S(nameId = nameId)::_)
       equation
-  n = Name.get(names, nameId);
+        n = Name.get(names, nameId);
       then
-  n;
+        n;
 
     // failure
     case (names, scope)
       equation
-  print("Failure in Node.lastSegmentName with " +& scopeStr(names, scope) +& "!\n");
+        print("Failure in Node.lastSegmentName with " +& scopeStr(names, scope) +& "!\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end lastSegmentName;
@@ -219,15 +219,15 @@ algorithm
 
     case (names, SOME(s))
       equation
-  lst = List.map1r(listReverse(s), segmentStr, names);
-  print(stringDelimitList(lst, ".") +& "\n");
+        lst = List.map1r(listReverse(s), segmentStr, names);
+        print(stringDelimitList(lst, ".") +& "\n");
       then ();
 
     case (_, _)
       equation
-  print("\n");
+        print("\n");
       then
-  ();
+        ();
   end match;
 end dump;
 
@@ -246,12 +246,12 @@ algorithm
 
     case (names, S(scopeId, parentId, nameId, kind))
       equation
-  n = Name.get(names, nameId);
-  str = kindStr(kind) +&
-    "[" +& n +& "," +&
-    intString(scopeId) +& "," +&
-    intString(parentId) +&
-    "]";
+        n = Name.get(names, nameId);
+        str = kindStr(kind) +&
+          "[" +& n +& "," +&
+          intString(scopeId) +& "," +&
+          intString(parentId) +&
+          "]";
       then str;
   end match;
 end segmentStr;
@@ -287,17 +287,17 @@ algorithm
     // last element
     case (names, {S(nameId = nameId)})
       equation
-  n = Name.get(names, nameId);
+        n = Name.get(names, nameId);
       then
-  n;
+        n;
 
     // rest elements
     case (names, S(nameId = nameId)::rest)
       equation
-  n = Name.get(names, nameId);
-  n = n +& "." +& scopeStr(names, rest);
+        n = Name.get(names, nameId);
+        n = n +& "." +& scopeStr(names, rest);
       then
-  n;
+        n;
   end matchcontinue;
 end scopeStr;
 
@@ -319,12 +319,12 @@ algorithm
     case (_,      NONE()) then false;
     case (SOME(S(_,pID1,nID1,k1)::rest1), SOME(S(_,pID2,nID2,k2)::rest2))
       equation
-  true = intEq(pID1, pID2);
-  true = intEq(nID1, nID2);
-  true = valueEq(k1, k2);
-  true = valueEq(rest1, rest2);
+        true = intEq(pID1, pID2);
+        true = intEq(nID1, nID2);
+        true = valueEq(k1, k2);
+        true = valueEq(rest1, rest2);
       then
-  true;
+        true;
     case (_, _) then false;
   end matchcontinue;
 end scopeEqual;

@@ -32,7 +32,7 @@
 encapsulated package HashTableTypeToExpType "
   This file is an extension to OpenModelica.
 
-  file:  HashTableTypeToExpType.mo
+  file:        HashTableTypeToExpType.mo
   package:     HashTableTypeToExpType
   description: Type to ExpType
 

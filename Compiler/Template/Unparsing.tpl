@@ -61,20 +61,20 @@ match elt
       let ctor=intAdd(3,r.index)
       /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
       let fieldsDescription =
-     match nElts
-     case "0" then
-       'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[1] = {"no fileds"};'
-     case _ then
-       'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
+           match nElts
+           case "0" then
+             'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[1] = {"no fileds"};'
+           case _ then
+             'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
       <<
       #ifdef ADD_METARECORD_DEFINTIONS
       #ifndef <%omcname%>__desc_added
       #define <%omcname%>__desc_added
       <%fieldsDescription%>
       ADD_METARECORD_DEFINTIONS struct record_description <%omcname%>__desc = {
-  "<%omcname%>",
-  "<%pack%>.<%pathString(r.name)%>.<%c.name%>",
-  <%omcname%>__desc__fields
+        "<%omcname%>",
+        "<%pack%>.<%pathString(r.name)%>.<%c.name%>",
+        <%omcname%>__desc__fields
       };
       #endif
       #else /* Only use the file as a header */
@@ -82,14 +82,14 @@ match elt
       #endif
       #define <%fullname%>_3dBOX<%nElts%> <%ctor%>
       <% if p.elementLst then
-  <<
-  #define <%fullname%>(<%fields%>) (mmc_mk_box<%metaHelperBoxStart(intAdd(1,listLength(p.elementLst)))%><%ctor%>,&<%omcname%>__desc,<%fields%>))<%\n%>
-  >>
-  else
-  <<
-  static const MMC_DEFSTRUCTLIT(<%fullname%>__struct,1,<%ctor%>) {&<%omcname%>__desc}};
-  static void *<%fullname%> = MMC_REFSTRUCTLIT(<%fullname%>__struct);<%\n%>
-  >>
+        <<
+        #define <%fullname%>(<%fields%>) (mmc_mk_box<%metaHelperBoxStart(intAdd(1,listLength(p.elementLst)))%><%ctor%>,&<%omcname%>__desc,<%fields%>))<%\n%>
+        >>
+        else
+        <<
+        static const MMC_DEFSTRUCTLIT(<%fullname%>__struct,1,<%ctor%>) {&<%omcname%>__desc}};
+        static void *<%fullname%> = MMC_REFSTRUCTLIT(<%fullname%>__struct);<%\n%>
+        >>
       %>
       >>
   case SCode.CLASS(__) then classExternalHeader(elt,pack)

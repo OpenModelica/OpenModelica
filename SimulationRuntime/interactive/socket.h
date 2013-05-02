@@ -60,7 +60,7 @@ class Socket {
    int recv ( std::string& ) const;
    // Data transmission - UDP
    bool UDP_send( const std::string&, const std::string&,
-            const int port ) const;
+                  const int port ) const;
    int UDP_recv( std::string& ) const;
    //  Close Socket
    bool close() const;

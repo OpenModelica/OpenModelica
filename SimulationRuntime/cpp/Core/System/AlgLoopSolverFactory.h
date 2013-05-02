@@ -1,8 +1,8 @@
 #pragma once
 
-#include <System/IAlgLoop.h>  // Interface for algebraic loops
+#include <System/IAlgLoop.h>        // Interface for algebraic loops
 #include <System/IAlgLoopSolverFactory.h>
-#include <Solver/IAlgLoopSolver.h>  // Interface for algebraic loops
+#include <Solver/IAlgLoopSolver.h>        // Interface for algebraic loops
 #include <Solver/INonLinSolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
 /*****************************************************************************/

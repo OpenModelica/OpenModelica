@@ -5,7 +5,7 @@ encapsulated package HashTableExpToIndex "
 
   All rights reserved.
 
-  file:  HashTableExpToIndex.mo
+  file:        HashTableExpToIndex.mo
   package:     HashTableExpToIndex
   description: DAE.Exp to Integer
 

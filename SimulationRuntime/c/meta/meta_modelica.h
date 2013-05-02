@@ -81,7 +81,7 @@ extern "C" {
 #ifdef _LP64
 #define MMC_MAX_SLOTS (18014398509481984) /* max words slots header */
 #else
-#define MMC_MAX_SLOTS (4194304)     /* max words slots header */
+#define MMC_MAX_SLOTS (4194304)           /* max words slots header */
 #endif
 
 /* max object size on 32/64 bit systems in bytes */
@@ -104,8 +104,8 @@ typedef int mmc_sint_t;
 /* adrpo: circumvent MinGW GCC 4.4.0 bugs with optimization */
 #if defined(__MINGW32__)
 #define GCC_VERSION (__GNUC__ * 10000 \
-                         + __GNUC_MINOR__ * 100 \
-                         + __GNUC_PATCHLEVEL__)
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
 
 /* Test for MinGW GCC = 4.4.0 */
 #if (GCC_VERSION == 40400)
@@ -168,7 +168,7 @@ typedef int mmc_switch_type;
 #define MMC_HDRHASPTRS(hdr)     (!((hdr) & 1))
 /*
  * adrpo: if this object was marked, used by GC!
- * [xxxxxxxx1x]  (used during garbage collection) a marked node;
+ * [xxxxxxxx1x]        (used during garbage collection) a marked node;
  */
 #define MMC_HDRISMARKED(hdr)  ((hdr) &  2)
 #define MMC_HDR_MARK(hdr)     ((hdr) |  2)
@@ -187,7 +187,7 @@ typedef int mmc_switch_type;
 #define MMC_REFSTRUCTLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
 #define MMC_DEFSTRINGLIT(NAME,LEN,VAL)  \
-    struct {  \
+    struct {        \
       mmc_uint_t header;    \
       const char data[LEN+1];    \
     } NAME = { MMC_STRINGHDR(LEN), VAL }

@@ -30,7 +30,7 @@
  */
 
 encapsulated package Corba
-" file:  Corba.mo
+" file:        Corba.mo
   package:     Corba
   description: Modelica Corba communication module
 

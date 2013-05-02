@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeCheck
-" file:  NFSCodeCheck.mo
+" file:        NFSCodeCheck.mo
   package:     NFSCodeCheck
   description: SCode checking
 
@@ -67,19 +67,19 @@ algorithm
 
     case (_, _, _ :: _, _)
       equation
-  ts_path = Absyn.typeSpecPath(inTypeSpec);
-  ty_path = NFSCodeEnv.getEnvPath(inTypeEnv);
-  false = isSelfReference(inTypeName, ty_path, ts_path);
+        ts_path = Absyn.typeSpecPath(inTypeSpec);
+        ty_path = NFSCodeEnv.getEnvPath(inTypeEnv);
+        false = isSelfReference(inTypeName, ty_path, ts_path);
       then
-  ();
+        ();
 
     else
       equation
-  ty = Dump.unparseTypeSpec(inTypeSpec);
-  Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
-    {inTypeName, ty}, inInfo);
+        ty = Dump.unparseTypeSpec(inTypeSpec);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
+          {inTypeName, ty}, inInfo);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkRecursiveShortDefinition;
@@ -113,17 +113,17 @@ algorithm
       String name;
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-  replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _)
+        replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _)
       then ();
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-  replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
+        replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-  Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
-    {name}, info);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
+          {name}, info);
       then
-  fail();
+        fail();
   end match;
 end checkClassExtendsReplaceability;
 
@@ -137,11 +137,11 @@ algorithm
       SCode.Element e;
 
     case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
-  SCode.DERIVED(typeSpec = _))), _, _)
+        SCode.DERIVED(typeSpec = _))), _, _)
       equation
-  checkRedeclareModifier2(e, inBaseClass, inEnv);
+        checkRedeclareModifier2(e, inBaseClass, inEnv);
       then
-  ();
+        ();
 
     else ();
   end match;
@@ -160,21 +160,21 @@ algorithm
       Absyn.Path ty_path;
 
     case (SCode.CLASS(name = name,
-  classDef = SCode.DERIVED(typeSpec = ty)), _, _)
+        classDef = SCode.DERIVED(typeSpec = ty)), _, _)
       equation
-  ty_path = Absyn.typeSpecPath(ty);
-  false = isSelfReference(name, inBaseClass, ty_path);
+        ty_path = Absyn.typeSpecPath(ty);
+        false = isSelfReference(name, inBaseClass, ty_path);
       then
-  ();
+        ();
 
     case (SCode.CLASS(name = name,
-  classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
+        classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
       equation
-  ty_str = Dump.unparseTypeSpec(ty);
-  Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
-    {name, ty_str}, info);
+        ty_str = Dump.unparseTypeSpec(ty);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
+          {name, ty_str}, info);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkRedeclareModifier2;
@@ -190,9 +190,9 @@ algorithm
 
     case (_, SCode.REDECL(element = el), _)
       equation
-  checkRedeclaredElementPrefix(inItem, el, inInfo);
+        checkRedeclaredElementPrefix(inItem, el, inInfo);
       then
-  ();
+        ();
 
     else ();
   end match;
@@ -218,56 +218,56 @@ algorithm
       Integer err_count;
 
     case (NFSCodeEnv.VAR(var =
-  SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
-      visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
-    attributes = SCode.ATTR(variability = var), info = info)),
-  SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = vis2)), _)
+        SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
+            visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
+          attributes = SCode.ATTR(variability = var), info = info)),
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
-  err_count = Error.getNumErrorMessages();
-  ty = "component";
-  checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
-  checkRedeclarationFinal(name, ty, fin, inInfo, info);
-  checkRedeclarationVariability(name, ty, var, inInfo, info);
-  //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
-  true = intEq(err_count, Error.getNumErrorMessages());
+        err_count = Error.getNumErrorMessages();
+        ty = "component";
+        checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        checkRedeclarationFinal(name, ty, fin, inInfo, info);
+        checkRedeclarationVariability(name, ty, var, inInfo, info);
+        //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
+        true = intEq(err_count, Error.getNumErrorMessages());
       then
-  ();
+        ();
 
     case (NFSCodeEnv.CLASS(cls =
-  SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-    visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
-    restriction = res, info = info)),
-  SCode.CLASS(prefixes = SCode.PREFIXES(visibility = vis2)), _)
+        SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
+          visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
+          restriction = res, info = info)),
+        SCode.CLASS(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
-  err_count = Error.getNumErrorMessages();
-  ty = SCodeDump.restrictionStringPP(res);
-  checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
-  checkRedeclarationFinal(name, ty, fin, inInfo, info);
-  //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
-  true = intEq(err_count, Error.getNumErrorMessages());
+        err_count = Error.getNumErrorMessages();
+        ty = SCodeDump.restrictionStringPP(res);
+        checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        checkRedeclarationFinal(name, ty, fin, inInfo, info);
+        //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
+        true = intEq(err_count, Error.getNumErrorMessages());
       then
-  ();
+        ();
 
     case (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)),
-    SCode.CLASS(restriction = res), _)
+          SCode.CLASS(restriction = res), _)
       equation
-  ty = SCodeDump.restrictionStringPP(res);
-  ty = "a " +& ty;
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-    {"component", name, ty}, info);
+        ty = SCodeDump.restrictionStringPP(res);
+        ty = "a " +& ty;
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"component", name, ty}, info);
       then
-  fail();
+        fail();
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
-    SCode.COMPONENT(name = name), _)
+          SCode.COMPONENT(name = name), _)
       equation
-  ty = SCodeDump.restrictionStringPP(res);
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-    {ty, name, "a component"}, info);
+        ty = SCodeDump.restrictionStringPP(res);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {ty, name, "a component"}, info);
       then
-  fail();
+        fail();
 
     else ();
   end match;
@@ -286,11 +286,11 @@ algorithm
 
     case (_, _, SCode.NOT_REPLACEABLE(), _, _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-  Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-    {inType, inName}, inInfo);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+          {inType, inName}, inInfo);
       then
-  ();
+        ();
   end match;
 end checkRedeclarationReplaceable;
 
@@ -306,11 +306,11 @@ algorithm
 
     case (_, _, SCode.FINAL(), _, _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE,
-    {"final", inType, inName}, inInfo);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE,
+          {"final", inType, inName}, inInfo);
       then
-  ();
+        ();
   end match;
 end checkRedeclarationFinal;
 
@@ -324,11 +324,11 @@ algorithm
   _ := match(inName, inType, inVariability, inOriginInfo, inInfo)
     case (_, _, SCode.CONST(), _, _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE,
-    {"constant", inType, inName}, inInfo);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE,
+          {"constant", inType, inName}, inInfo);
       then
-  ();
+        ();
 
     else ();
   end match;
@@ -346,19 +346,19 @@ algorithm
       inOriginInfo, inNewInfo)
     case (_, _, SCode.PUBLIC(), SCode.PROTECTED(), _, _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-    {"public element", inName, "protected"}, inOriginInfo);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"public element", inName, "protected"}, inOriginInfo);
       then
-  fail();
+        fail();
 
     case (_, _, SCode.PROTECTED(), SCode.PUBLIC(), _, _)
       equation
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
-  Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-    {"protected element", inName, "public"}, inOriginInfo);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"protected element", inName, "public"}, inOriginInfo);
       then
-  fail();
+        fail();
 
     else ();
   end match;
@@ -371,14 +371,14 @@ algorithm
   _ := matchcontinue(inLiteral, inInfo)
     case (_, _)
       equation
-  false = listMember(inLiteral, {"quantity", "min", "max", "start", "fixed"});
+        false = listMember(inLiteral, {"quantity", "min", "max", "start", "fixed"});
       then ();
 
     else
       equation
-  Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, {inLiteral}, inInfo);
+        Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, {inLiteral}, inInfo);
       then
-  fail();
+        fail();
   end matchcontinue;
 end checkValidEnumLiteral;
 
@@ -414,17 +414,17 @@ algorithm
 
     case (_, _, redecl :: rest_redecls)
       equation
-  (el_name, el_info) = NFSCodeEnv.getRedeclarationNameInfo(redecl);
-  true = stringEqual(inRedeclareName, el_name);
-  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, el_info);
-  Error.addSourceMessage(Error.DUPLICATE_REDECLARATION,
-    {inRedeclareName}, inRedeclareInfo);
+        (el_name, el_info) = NFSCodeEnv.getRedeclarationNameInfo(redecl);
+        true = stringEqual(inRedeclareName, el_name);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, el_info);
+        Error.addSourceMessage(Error.DUPLICATE_REDECLARATION,
+          {inRedeclareName}, inRedeclareInfo);
       then
-  true;
+        true;
 
     case (_, _, redecl :: rest_redecls)
       then checkDuplicateRedeclarations2(inRedeclareName,
-  inRedeclareInfo, rest_redecls);
+        inRedeclareInfo, rest_redecls);
 
   end matchcontinue;
 end checkDuplicateRedeclarations2;
@@ -434,7 +434,7 @@ public function checkRecursiveComponentDeclaration
    classes, e.g:
      class A
        class B
-   A a;
+         A a;
        end B;
      end A;
   "
@@ -458,26 +458,26 @@ algorithm
     // scope of the component itself.
     case (_, _, _, _, _)
       equation
-  false = NFSCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
+        false = NFSCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
       then
-  ();
+        ();
 
     // Make an exception for components in functions.
     case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
-  NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
+        NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
-  NFSCodeEnv.CLASS(cls = el) = NFSCodeEnv.avlTreeGet(tree, cls_name);
-  true = SCode.isFunction(el);
+        NFSCodeEnv.CLASS(cls = el) = NFSCodeEnv.avlTreeGet(tree, cls_name);
+        true = SCode.isFunction(el);
       then
-  ();
+        ();
 
     else
       equation
-  ty_name = NFSCodeEnv.getItemName(inTypeItem);
-  Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
-    {inComponentName, ty_name}, inComponentInfo);
+        ty_name = NFSCodeEnv.getItemName(inTypeItem);
+        Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
+          {inComponentName, ty_name}, inComponentInfo);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkRecursiveComponentDeclaration;
@@ -495,10 +495,10 @@ algorithm
 
     case (id, Absyn.TPATH(path = Absyn.IDENT(ty)), _)
       equation
-  true = stringEq(id, ty);
-  Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, inInfo);
+        true = stringEq(id, ty);
+        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, inInfo);
       then
-  false;
+        false;
 
     else true;
   end matchcontinue;
@@ -511,9 +511,9 @@ algorithm
   _ := match(inComponent1, inComponent2)
     case (_, _)
       equation
-  print("Found duplicate component\n");
+        print("Found duplicate component\n");
       then
-  ();
+        ();
 
   end match;
 end checkComponentsEqual;
@@ -530,25 +530,25 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
       equation
-  true = isInstantiableClassRestriction(res);
+        true = isInstantiableClassRestriction(res);
       then
-  ();
+        ();
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
       equation
-  res_str = SCodeDump.restrictionStringPP(res);
-  pre_str = NFInstDump.prefixStr(inPrefix);
-  Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
-    {res_str, pre_str}, inInfo);
+        res_str = SCodeDump.restrictionStringPP(res);
+        pre_str = NFInstDump.prefixStr(inPrefix);
+        Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
+          {res_str, pre_str}, inInfo);
       then
-  fail();
+        fail();
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFSCodeCheck.checkInstanceRestriction failed on unknown item.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFSCodeCheck.checkInstanceRestriction failed on unknown item.");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkInstanceRestriction;
@@ -580,11 +580,11 @@ algorithm
       String name;
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, partialPrefix =
-  SCode.PARTIAL())), _)
+        SCode.PARTIAL())), _)
       equation
-  Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
+        Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
       then
-  fail();
+        fail();
 
     else ();
   end match;

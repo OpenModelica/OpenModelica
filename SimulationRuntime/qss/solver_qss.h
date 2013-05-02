@@ -40,6 +40,6 @@
 #define _SOLVER_QSS_H
 
 int qss_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
-          double &tolerance,int flag);
+                double &tolerance,int flag);
 
 #endif

@@ -46,7 +46,7 @@
 #include "blaswrap.h"
 #include "f2c.h"
 extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
-            integer *ipiv, doublereal *b, integer *ldb, integer *info);
+                  integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 typedef struct DATA_LAPACK
 {
@@ -86,7 +86,7 @@ int freeLapackData(void **voiddata)
 /*! \fn solve linear system with lapack method
  *
  *  \param  [in]  [data]
- *          [sysNumber] index of the corresponing non-linear system
+ *                [sysNumber] index of the corresponing non-linear system
  *
  *  \author wbraun
  */
@@ -109,13 +109,13 @@ int solveLapack(DATA *data, int sysNumber)
   systemData->setb(data, systemData);
 
   dgesv_((integer*) &systemData->size,
-   (integer*) &solverData->nrhs,
-   systemData->A,
-   (integer*) &systemData->size,
-   solverData->ipiv,
-   systemData->b,
-   (integer*) &systemData->size,
-   &solverData->info);
+         (integer*) &solverData->nrhs,
+         systemData->A,
+         (integer*) &systemData->size,
+         solverData->ipiv,
+         systemData->b,
+         (integer*) &systemData->size,
+         &solverData->info);
 
   if(solverData->info < 0)
   {
@@ -125,8 +125,8 @@ int solveLapack(DATA *data, int sysNumber)
   else if(solverData->info > 0)
   {
     WARNING4(LOG_STDOUT,
-  "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
-  (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
+        "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
+        (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
     /* debug output */
     if (ACTIVE_STREAM(LOG_LS))
@@ -138,20 +138,20 @@ int solveLapack(DATA *data, int sysNumber)
       DEBUG(LOG_LS, "Matrix U:");
       for(l = 0; l < systemData->size; l++)
       {
-  buffer[0] = 0;
-  for(k = 0; k < systemData->size; k++)
-    sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
-  DEBUG1(LOG_LS, "%s", buffer);
+        buffer[0] = 0;
+        for(k = 0; k < systemData->size; k++)
+          sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
+        DEBUG1(LOG_LS, "%s", buffer);
       }
       DEBUG(LOG_LS, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
-  sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
+        sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
       DEBUG1(LOG_LS, "%s", buffer);
       DEBUG(LOG_LS, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
-  sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
+        sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
       DEBUG1(LOG_LS, "%s", buffer);
       RELEASE(LOG_LS);
     }

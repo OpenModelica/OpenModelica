@@ -118,63 +118,63 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
     /* .. reals .. */
     for(i = 0; i < simData->modelData.nVariablesReal; i++) {
       if(!simData->modelData.realVarsData[i].filterOutput) {
-  data_[pltData->currentPos++] = simData->localData[0]->realVars[i];
+        data_[pltData->currentPos++] = simData->localData[0]->realVars[i];
       }
     }
     /* .. integers .. */
     for(i = 0; i < simData->modelData.nVariablesInteger; i++) {
       if(!simData->modelData.integerVarsData[i].filterOutput) {
-  data_[pltData->currentPos++] = simData->localData[0]->integerVars[i];
+        data_[pltData->currentPos++] = simData->localData[0]->integerVars[i];
       }
     }
     /* .. booleans .. */
     for(i = 0; i < simData->modelData.nVariablesBoolean; i++) {
       if(!simData->modelData.booleanVarsData[i].filterOutput) {
-  data_[pltData->currentPos++] = simData->localData[0]->booleanVars[i];
+        data_[pltData->currentPos++] = simData->localData[0]->booleanVars[i];
       }
     }
     /* .. alias reals .. */
     for(i = 0; i < simData->modelData.nAliasReal; i++) {
       if(!simData->modelData.realAlias[i].filterOutput) {
-  double value;
-  if(simData->modelData.realAlias[i].aliasType == 2)
-    value = (simData->localData[0])->timeValue;
-  else if(simData->modelData.realAlias[i].aliasType == 1)
-    value = simData->simulationInfo.realParameter[simData->modelData.realAlias[i].nameID];
-  else
-    value = (simData->localData[0])->realVars[simData->modelData.realAlias[i].nameID];
-  if(simData->modelData.realAlias[i].negate)
-    data_[pltData->currentPos++] = -value;
-  else
-    data_[pltData->currentPos++] = value;
+        double value;
+        if(simData->modelData.realAlias[i].aliasType == 2)
+          value = (simData->localData[0])->timeValue;
+        else if(simData->modelData.realAlias[i].aliasType == 1)
+          value = simData->simulationInfo.realParameter[simData->modelData.realAlias[i].nameID];
+        else
+          value = (simData->localData[0])->realVars[simData->modelData.realAlias[i].nameID];
+        if(simData->modelData.realAlias[i].negate)
+          data_[pltData->currentPos++] = -value;
+        else
+          data_[pltData->currentPos++] = value;
       }
     }
     /* .. alias integers .. */
     for(i = 0; i < simData->modelData.nAliasInteger; i++) {
       if(!simData->modelData.integerAlias[i].filterOutput) {
-  modelica_integer value;
-  if(simData->modelData.integerAlias[i].aliasType == 1)
-    value = simData->simulationInfo.integerParameter[simData->modelData.realAlias[i].nameID];
-  else
-    value = (simData->localData[0])->integerVars[simData->modelData.realAlias[i].nameID];
-  if(simData->modelData.integerAlias[i].negate)
-    data_[pltData->currentPos++] = -value;
-  else
-    data_[pltData->currentPos++] = value;
+        modelica_integer value;
+        if(simData->modelData.integerAlias[i].aliasType == 1)
+          value = simData->simulationInfo.integerParameter[simData->modelData.realAlias[i].nameID];
+        else
+          value = (simData->localData[0])->integerVars[simData->modelData.realAlias[i].nameID];
+        if(simData->modelData.integerAlias[i].negate)
+          data_[pltData->currentPos++] = -value;
+        else
+          data_[pltData->currentPos++] = value;
       }
     }
     /* .. alias booleans .. */
     for(i = 0; i < simData->modelData.nAliasBoolean; i++) {
       if(!simData->modelData.booleanAlias[i].filterOutput) {
-  modelica_boolean value;
-  if(simData->modelData.integerAlias[i].aliasType == 1)
-    value = simData->simulationInfo.booleanParameter[simData->modelData.realAlias[i].nameID];
-  else
-    value = (simData->localData[0])->booleanVars[simData->modelData.realAlias[i].nameID];
-  if(simData->modelData.booleanAlias[i].negate)
-    data_[pltData->currentPos++] = value==1?0:1;
-  else
-    data_[pltData->currentPos++] = value;
+        modelica_boolean value;
+        if(simData->modelData.integerAlias[i].aliasType == 1)
+          value = simData->simulationInfo.booleanParameter[simData->modelData.realAlias[i].nameID];
+        else
+          value = (simData->localData[0])->booleanVars[simData->modelData.realAlias[i].nameID];
+        if(simData->modelData.booleanAlias[i].negate)
+          data_[pltData->currentPos++] = value==1?0:1;
+        else
+          data_[pltData->currentPos++] = value;
       }
     }
   }
@@ -268,7 +268,7 @@ void plt_free(simulation_result *self,DATA *data)
   {
     fprintf(f, "DataSet: $cpuTime\n");
     for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + 1]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + 1]);
     fprintf(f, "\n");
     varn++;
   }
@@ -278,7 +278,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->realVarsData[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->realVarsData[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }
@@ -289,7 +289,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->integerVarsData[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->integerVarsData[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }
@@ -300,7 +300,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->booleanVarsData[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->booleanVarsData[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }
@@ -311,7 +311,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->realAlias[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->realAlias[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }
@@ -322,7 +322,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->integerAlias[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->integerAlias[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }
@@ -333,7 +333,7 @@ void plt_free(simulation_result *self,DATA *data)
     if(!modelData->booleanAlias[var].filterOutput) {
       fprintf(f, "DataSet: %s\n", modelData->booleanAlias[var].info.name);
       for(i = 0; i < pltData->actualPoints; ++i)
-  printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
+        printPltLine(f, pltData->simulationResultData[i*pltData->num_vars], pltData->simulationResultData[i*pltData->num_vars + varn]);
       fprintf(f, "\n");
       varn++;
     }

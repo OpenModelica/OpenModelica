@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInstDump
-" file:  NFInstDump.mo
+" file:        NFInstDump.mo
   package:     NFInstDump
   description: Dumping functions for the intermediary instantiation structures.
 
@@ -116,10 +116,10 @@ algorithm
 
     case NFInstTypes.UNTYPED_COMPONENT(dimensions = adims)
       equation
-  ldims = arrayList(adims);
-  dims_str = List.toString(ldims, dimensionStr, "", "[", ", ", "]", false);
+        ldims = arrayList(adims);
+        dims_str = List.toString(ldims, dimensionStr, "", "[", ", ", "]", false);
       then
-  dims_str;
+        dims_str;
 
   end match;
 end dumpUntypedComponentDims;

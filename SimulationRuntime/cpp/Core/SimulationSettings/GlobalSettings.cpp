@@ -4,11 +4,11 @@
  
 
 GlobalSettings::GlobalSettings()
-: _startTime      (0.0)
-, _endTime      (5.0)
-, _hOutput      (0.001)
-, _resultsOutput  (true)    
-, _infoOutput  (true)
+: _startTime            (0.0)
+, _endTime            (5.0)
+, _hOutput            (0.001)
+, _resultsOutput        (true)    
+, _infoOutput        (true)
 , _selected_solver("Euler")
 ,_selected_nonlin_solver("Newton")
 ,_resultsfile_name("results.csv")

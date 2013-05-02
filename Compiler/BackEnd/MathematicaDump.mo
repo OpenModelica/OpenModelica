@@ -27,27 +27,27 @@ algorithm
       list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns)) equation
 
-  (states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
-  (params,inputs) = printMmaParamsStr(knvars);
-  //inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
-  s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
-  //print(" states: " +& s1_1 +& "\n");
-  s1_2 = Util.stringDelimitListNonEmptyElts(algs,",");
-  //print(" algs: " +& s1_2 +& "\n");
-  s1_3 = Util.stringDelimitListNonEmptyElts(outputs,",");
-  //print(" outputs: " +& s1_3 +& "\n");
-  s1_4 = Util.stringDelimitListNonEmptyElts(inputs,",");
-  //print(" inputs: " +& s1_4 +& "\n");
-  s1_5 = Util.stringDelimitListNonEmptyElts(params,",");
-  //print(" params: " +& s1_5 +& "\n");
-  allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
-  //print(" vars: " +& allVarStr +& "\n");
+        (states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
+        (params,inputs) = printMmaParamsStr(knvars);
+        //inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
+        s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
+        //print(" states: " +& s1_1 +& "\n");
+        s1_2 = Util.stringDelimitListNonEmptyElts(algs,",");
+        //print(" algs: " +& s1_2 +& "\n");
+        s1_3 = Util.stringDelimitListNonEmptyElts(outputs,",");
+        //print(" outputs: " +& s1_3 +& "\n");
+        s1_4 = Util.stringDelimitListNonEmptyElts(inputs,",");
+        //print(" inputs: " +& s1_4 +& "\n");
+        s1_5 = Util.stringDelimitListNonEmptyElts(params,",");
+        //print(" params: " +& s1_5 +& "\n");
+        allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
+        //print(" vars: " +& allVarStr +& "\n");
 
-  s3 = printMmaEqnsStr(eqns,(vars,knvars));
-  s4 = printMmaEqnsStr(ieqns,(vars,knvars));
-  res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
-  //print(" Eqns-1-: " +& s3 +& "\n");
-  //print(" Eqns-2-: " +& s4 +& "\n");
+        s3 = printMmaEqnsStr(eqns,(vars,knvars));
+        s4 = printMmaEqnsStr(ieqns,(vars,knvars));
+        res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
+        //print(" Eqns-1-: " +& s3 +& "\n");
+        //print(" Eqns-2-: " +& s4 +& "\n");
     then res;
   end match;
 end dumpMmaDAEStr;
@@ -82,9 +82,9 @@ algorithm
     BackendDAE.WhenEquation whenEq;
 
     case(BackendDAE.EQUATION(
-    exp = DAE.CALL( path = Absyn.IDENT("der"),
-    expLst = {DAE.CREF(DAE.CREF_IDENT("$dummy",_,_),_)})
-    ),_) then "";
+          exp = DAE.CALL( path = Absyn.IDENT("der"),
+          expLst = {DAE.CREF(DAE.CREF_IDENT("$dummy",_,_),_)})
+          ),_) then "";
     case(BackendDAE.EQUATION(exp=e1,scalar=e2),(vars,knvars)) equation
       s1 = printExpMmaStr(e1,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
@@ -169,103 +169,103 @@ algorithm
 
     case (DAE.RCONST(real = x),_,_)
       equation
-  s = realString(x);
-  s = stringAppendList({"ToExpression[StringReplace[\"",s,"\",\"e\"->\"*1.0*10^\"]]"});
+        s = realString(x);
+        s = stringAppendList({"ToExpression[StringReplace[\"",s,"\",\"e\"->\"*1.0*10^\"]]"});
       then
-  s;
+        s;
     case (DAE.SCONST(string = s),_,_)
       equation
-  s_1 = stringAppend("\"", s);
-  s_2 = stringAppend(s_1, "\"");
+        s_1 = stringAppend("\"", s);
+        s_2 = stringAppend(s_1, "\"");
       then
-  s_2;
+        s_2;
     case (DAE.BCONST(bool = false),_,_) then "False";
     case (DAE.BCONST(bool = true),_,_) then "True";
 
     case (DAE.CREF(componentRef = cr,ty = tp),_,_) equation
-  s = printComponentRefMmaStr(cr,vars,knvars);
+        s = printComponentRefMmaStr(cr,vars,knvars);
     then s;
 
     case (e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),_,_)
       equation
-  sym = ExpressionDump.binopSymbol(op);
-  s1 = printExp2MmaStr(e1,vars,knvars);
-  s2 = printExp2MmaStr(e2,vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  p1 = ExpressionDump.expPriority(e1);
-  p2 = ExpressionDump.expPriority(e2);
-  s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
-  s2_1 = ExpressionDump.parenthesize(s2, p2, p,true);
-  s = stringAppend(s1_1, sym);
-  s_1 = stringAppend(s, s2_1);
+        sym = ExpressionDump.binopSymbol(op);
+        s1 = printExp2MmaStr(e1,vars,knvars);
+        s2 = printExp2MmaStr(e2,vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        p1 = ExpressionDump.expPriority(e1);
+        p2 = ExpressionDump.expPriority(e2);
+        s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
+        s2_1 = ExpressionDump.parenthesize(s2, p2, p,true);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-  s_1;
+        s_1;
 
     case (e as DAE.UNARY(operator = op,exp = e1),_,_)
       equation
-  sym = ExpressionDump.unaryopSymbol(op);
-  s = printExp2MmaStr(e1, vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  p1 = ExpressionDump.expPriority(e1);
-  s_1 = ExpressionDump.parenthesize(s, p1, p,true);
-  s_2 = stringAppend(sym, s_1);
+        sym = ExpressionDump.unaryopSymbol(op);
+        s = printExp2MmaStr(e1, vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        p1 = ExpressionDump.expPriority(e1);
+        s_1 = ExpressionDump.parenthesize(s, p1, p,true);
+        s_2 = stringAppend(sym, s_1);
       then
-  s_2;
+        s_2;
 
     case (e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),_,_)
       equation
-  sym = lbinopSymbolMma(op);
-  s1 = printExp2MmaStr(e1, vars,knvars);
-  s2 = printExp2MmaStr(e2, vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  p1 = ExpressionDump.expPriority(e1);
-  p2 = ExpressionDump.expPriority(e2);
-  s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
-  s2_1 = ExpressionDump.parenthesize(s2, p2, p,true);
-  s = stringAppend(s1_1, sym);
-  s_1 = stringAppend(s, s2_1);
+        sym = lbinopSymbolMma(op);
+        s1 = printExp2MmaStr(e1, vars,knvars);
+        s2 = printExp2MmaStr(e2, vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        p1 = ExpressionDump.expPriority(e1);
+        p2 = ExpressionDump.expPriority(e2);
+        s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
+        s2_1 = ExpressionDump.parenthesize(s2, p2, p,true);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-  s_1;
+        s_1;
 
     case (e as DAE.LUNARY(operator = op,exp = e1),_,_)
       equation
-  sym = lunaryopSymbolMma(op);
-  s = printExp2MmaStr(e1, vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  p1 = ExpressionDump.expPriority(e1);
-  s_1 = ExpressionDump.parenthesize(s, p1, p,true);
-  s_2 = stringAppend(sym, s_1);
+        sym = lunaryopSymbolMma(op);
+        s = printExp2MmaStr(e1, vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        p1 = ExpressionDump.expPriority(e1);
+        s_1 = ExpressionDump.parenthesize(s, p1, p,true);
+        s_2 = stringAppend(sym, s_1);
       then
-  s_2;
+        s_2;
 
     case (e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),_,_)
       equation
-  sym = relopSymbolMma(op);
-  s1 = printExp2MmaStr(e1,vars,knvars);
-  s2 = printExp2MmaStr(e2,vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  p1 = ExpressionDump.expPriority(e1);
-  p2 = ExpressionDump.expPriority(e2);
-  s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
-  s2_1 = ExpressionDump.parenthesize(s2, p1, p,true);
-  s = stringAppend(s1_1, sym);
-  s_1 = stringAppend(s, s2_1);
+        sym = relopSymbolMma(op);
+        s1 = printExp2MmaStr(e1,vars,knvars);
+        s2 = printExp2MmaStr(e2,vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        p1 = ExpressionDump.expPriority(e1);
+        p2 = ExpressionDump.expPriority(e2);
+        s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
+        s2_1 = ExpressionDump.parenthesize(s2, p1, p,true);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-  s_1;
+        s_1;
 
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),_,_)
 
       equation
-  ifstr = printExp2MmaStr(c,vars,knvars);
-  thenstr = printExp2MmaStr(t,vars,knvars);
-  elsestr = printExp2MmaStr(f,vars,knvars);
-  res = stringAppendList({"If[ ",ifstr,", ",thenstr," ,",elsestr,"]"});
+        ifstr = printExp2MmaStr(c,vars,knvars);
+        thenstr = printExp2MmaStr(t,vars,knvars);
+        elsestr = printExp2MmaStr(f,vars,knvars);
+        res = stringAppendList({"If[ ",ifstr,", ",thenstr," ,",elsestr,"]"});
       then
-  res;
+        res;
     case (DAE.CALL(path = Absyn.IDENT("der"),expLst = {e}),_,_)
       equation
-  s_1 =printExpMmaStr(e,vars,knvars);
-  s_2 = stringAppendList({"D[",s_1,",\\[FormalT]]"});
+        s_1 =printExpMmaStr(e,vars,knvars);
+        s_2 = stringAppendList({"D[",s_1,",\\[FormalT]]"});
       then s_2;
 
     // Math functions in Modelica.Math checked against builtin functions
@@ -278,138 +278,138 @@ algorithm
 
     case (DAE.CALL(path = Absyn.IDENT(fname),expLst = expLst),_,_)
       equation
-  s1 = printBuiltinMmaFunc(fname);
-  s_1 = stringDelimitList(List.map2(expLst,printExpMmaStr,vars,knvars),",");
-  s_2 = stringAppendList({s1,"[",s_1,"]"});
+        s1 = printBuiltinMmaFunc(fname);
+        s_1 = stringDelimitList(List.map2(expLst,printExpMmaStr,vars,knvars),",");
+        s_2 = stringAppendList({s1,"[",s_1,"]"});
       then s_2;
 
-  /* Special case for atan2 */
+        /* Special case for atan2 */
     case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e1,e2}),_,_)
 
       equation
-  s_1 =printExpMmaStr(e1,vars,knvars);
-  s_11 =printExpMmaStr(e2,vars,knvars);
-  s_2 = stringAppendList({"ArcTan[",s_1,",",s_11,"]"});
+        s_1 =printExpMmaStr(e1,vars,knvars);
+        s_11 =printExpMmaStr(e2,vars,knvars);
+        s_2 = stringAppendList({"ArcTan[",s_1,",",s_11,"]"});
       then s_2;
 
     /* Special case for log10 */
     case (DAE.CALL(path = Absyn.IDENT("log10"),expLst = {e1}),_,_)
       equation
-  s_1 =printExpMmaStr(e1,vars,knvars);
-  s_2 = stringAppendList({"Log[",s_1,",10]"});
+        s_1 =printExpMmaStr(e1,vars,knvars);
+        s_2 = stringAppendList({"Log[",s_1,",10]"});
       then s_2;
     case (DAE.CALL(path = fcn,expLst = args),_,_)
       equation
-  fs = Absyn.pathString(fcn);
-  fs = translateKnownMmaFuncs(fs); // can fail
-  argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
-  s = stringAppend(fs, "[");
-  s_1 = stringAppend(s, argstr);
-  s_2 = stringAppend(s_1, "]");
+        fs = Absyn.pathString(fcn);
+        fs = translateKnownMmaFuncs(fs); // can fail
+        argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
+        s = stringAppend(fs, "[");
+        s_1 = stringAppend(s, argstr);
+        s_2 = stringAppend(s_1, "]");
       then
-  s_2;
+        s_2;
 
     case (e as DAE.CALL(path = fcn,expLst = args),_,_)
       equation
-  fs = Absyn.pathString(fcn);
-  argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
-  s_2 = "FunctionCall[\""+& fs +&"\"]["+&argstr+&"]";
+        fs = Absyn.pathString(fcn);
+        argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
+        s_2 = "FunctionCall[\""+& fs +&"\"]["+&argstr+&"]";
       then
-  s_2;
+        s_2;
 
     case (DAE.ARRAY(array = es),_,_)
       equation
-  s = stringDelimitList(List.map2(es, printExpMmaStr,vars,knvars),",");
-  s_1 = stringAppend("{", s);
-  s_2 = stringAppend(s_1, "}");
+        s = stringDelimitList(List.map2(es, printExpMmaStr,vars,knvars),",");
+        s_1 = stringAppend("{", s);
+        s_2 = stringAppend(s_1, "}");
       then
-  s_2;
+        s_2;
     case (DAE.TUPLE(PR = es),_,_)
       equation
-  s = stringDelimitList(List.map2(es, printExpMmaStr,vars,knvars),",");
-  s_1 = stringAppend("{", s);
-  s_2 = stringAppend(s_1, "}");
+        s = stringDelimitList(List.map2(es, printExpMmaStr,vars,knvars),",");
+        s_1 = stringAppend("{", s);
+        s_2 = stringAppend(s_1, "}");
       then
-  s_2;
+        s_2;
     case (DAE.MATRIX(matrix = matrix),_,_)
       equation
-  s = stringDelimitList(List.map2(matrix, printRowMmaStr,vars,knvars), "},{");
-  s_1 = stringAppend("{{", s);
-  s_2 = stringAppend(s_1, "}}");
+        s = stringDelimitList(List.map2(matrix, printRowMmaStr,vars,knvars), "},{");
+        s_1 = stringAppend("{{", s);
+        s_2 = stringAppend(s_1, "}}");
       then
-  s_2;
+        s_2;
     case (e as DAE.RANGE(start = start,step = NONE(),stop = stop),_,_)
       equation
-  s1 = printExp2MmaStr(start, vars,knvars);
-  s3 = printExp2MmaStr(stop, vars,knvars);
-  p = ExpressionDump.expPriority(e);
-  pstart = ExpressionDump.expPriority(start);
-  pstop = ExpressionDump.expPriority(stop);
-  s1_1 = ExpressionDump.parenthesize(s1, pstart, p,false);
-  s3_1 = ExpressionDump.parenthesize(s3, pstop, p,false);
-  s_3 = stringAppendList({"Range[",s1_1,",",s3_1,"]"}); // Range[start,stop]
+        s1 = printExp2MmaStr(start, vars,knvars);
+        s3 = printExp2MmaStr(stop, vars,knvars);
+        p = ExpressionDump.expPriority(e);
+        pstart = ExpressionDump.expPriority(start);
+        pstop = ExpressionDump.expPriority(stop);
+        s1_1 = ExpressionDump.parenthesize(s1, pstart, p,false);
+        s3_1 = ExpressionDump.parenthesize(s3, pstop, p,false);
+        s_3 = stringAppendList({"Range[",s1_1,",",s3_1,"]"}); // Range[start,stop]
       then
-  s_3;
+        s_3;
 
     case (DAE.RANGE(start = start,step = SOME(step),stop = stop),_,_)
       equation
-  s2 = printExp2MmaStr(start, vars,knvars);
-  s3 = printExp2MmaStr(step, vars,knvars);
-  s4 = printExp2MmaStr(stop, vars,knvars);
-  s_5 =  stringAppendList({"Range[",s2,",",s4,",",s3,"]"}); // Range[start,stop,step]
+        s2 = printExp2MmaStr(start, vars,knvars);
+        s3 = printExp2MmaStr(step, vars,knvars);
+        s4 = printExp2MmaStr(stop, vars,knvars);
+        s_5 =  stringAppendList({"Range[",s2,",",s4,",",s3,"]"}); // Range[start,stop,step]
       then
-  s_5;
-  /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
+        s_5;
+        /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
     case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.ICONST(integer = ival)),_,_)
       equation
-  res = intString(ival);
+        res = intString(ival);
       then
-  res;
-  /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
+        res;
+        /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
     case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))),_,_)
       equation
-  res = intString(ival);
-  res2 = stringAppend("-", res);
+        res = intString(ival);
+        res2 = stringAppend("-", res);
       then
-  res2;
+        res2;
     case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = e),_,_)
       equation
-  s = printExpMmaStr(e,vars,knvars);
+        s = printExpMmaStr(e,vars,knvars);
       then
-  s;
+        s;
     case (e as DAE.ASUB(exp = e1,sub = ae1),_,_)
 
       equation
-  p = ExpressionDump.expPriority(e);
-  pe1 = ExpressionDump.expPriority(e1);
-  s1 = printExp2MmaStr(e1,vars,knvars);
-  s1_1 = ExpressionDump.parenthesize(s1, pe1, p,false);
-  s4 = stringDelimitList(List.map2(ae1,printExp2MmaStr,vars,knvars),", ");
-  s_4 ="Index["+& s1_1+&",{" +&s4 +& "}]";
+        p = ExpressionDump.expPriority(e);
+        pe1 = ExpressionDump.expPriority(e1);
+        s1 = printExp2MmaStr(e1,vars,knvars);
+        s1_1 = ExpressionDump.parenthesize(s1, pe1, p,false);
+        s4 = stringDelimitList(List.map2(ae1,printExp2MmaStr,vars,knvars),", ");
+        s_4 ="Index["+& s1_1+&",{" +&s4 +& "}]";
       then
-  s_4;
+        s_4;
 
     case (DAE.SIZE(exp = e,sz = SOME(dim)),_,_)
       equation
-  crstr = printExpMmaStr(e,vars,knvars);
-  dimstr = printExpMmaStr(dim,vars,knvars);
-  str = stringAppendList({"Dimensions[",crstr,"][[",dimstr,"]]"});
+        crstr = printExpMmaStr(e,vars,knvars);
+        dimstr = printExpMmaStr(dim,vars,knvars);
+        str = stringAppendList({"Dimensions[",crstr,"][[",dimstr,"]]"});
       then
-  str;
+        str;
     case (DAE.SIZE(exp = e,sz = NONE()),_,_)
       equation
-  crstr = printExpMmaStr(e,vars,knvars);
-  str = stringAppendList({"Dimensions[",crstr,"]"});
+        crstr = printExpMmaStr(e,vars,knvars);
+        str = stringAppendList({"Dimensions[",crstr,"]"});
       then
-  str;
+        str;
     case (DAE.REDUCTION(DAE.REDUCTIONINFO(path = fcn),exp,(DAE.REDUCTIONITER(id = id,exp = iterexp)::_)),_,_) //TODO: need to suport more than one iterator.
       equation
-  fs = Absyn.pathString(fcn);
-  expstr = printExpMmaStr(exp,vars,knvars);
-  iterstr = printExpMmaStr(iterexp,vars,knvars);
-  str = stringAppendList({"Table[",fs,"[",expstr,"],{",id,", ",iterstr,"}]"});
+        fs = Absyn.pathString(fcn);
+        expstr = printExpMmaStr(exp,vars,knvars);
+        iterstr = printExpMmaStr(iterexp,vars,knvars);
+        str = stringAppendList({"Table[",fs,"[",expstr,"],{",id,", ",iterstr,"}]"});
       then
-  str;
+        str;
 
     case(DAE.ENUM_LITERAL(name=path),_,_) equation
       str = Absyn.pathString(path);
@@ -458,7 +458,7 @@ algorithm
       res = stringAppendList({nameStr,"[\\[FormalT]]"});
     then res;
 
-  // Input or output variables
+        // Input or output variables
     case (_,_,_)
 
       equation
@@ -692,14 +692,14 @@ algorithm
       list<BackendDAE.Var> varLst;
     case _
       equation
-  varLst = BackendVariable.varList(vars);
-  varLst = listReverse(varLst); //So the order is the same as for generated c-code.
-  states = List.map2(varLst,printMmaVarStr,true,vars);
-  algs = List.map2(varLst,printMmaVarStr,false,vars);
-  outputs = List.map(varLst,printMmaOutputStr);
-  inputs = List.map(varLst,printMmaInputStr);
+        varLst = BackendVariable.varList(vars);
+        varLst = listReverse(varLst); //So the order is the same as for generated c-code.
+        states = List.map2(varLst,printMmaVarStr,true,vars);
+        algs = List.map2(varLst,printMmaVarStr,false,vars);
+        outputs = List.map(varLst,printMmaOutputStr);
+        inputs = List.map(varLst,printMmaInputStr);
       then
-  (states,algs,outputs,inputs);
+        (states,algs,outputs,inputs);
   end match;
 end printMmaVarsStr;
 
@@ -715,7 +715,7 @@ algorithm
     case (BackendDAE.VAR(varName=DAE.CREF_IDENT("$dummy",DAE.T_UNKNOWN(_),{})),_,_) then "";
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=_)),true,_)
       equation
-  nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     //case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DYN_STATE()),true,allVars)
     // equation
@@ -723,19 +723,19 @@ algorithm
     //  then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.VARIABLE()),false,_)
       equation
-  nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DUMMY_DER()),false,_)
       equation
-  nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DUMMY_STATE()),false,_)
       equation
-  nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DISCRETE()),false,_)
       equation
-  nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case(_,_,_) then "";
   end matchcontinue;
@@ -754,7 +754,7 @@ algorithm
       String ident;
     case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.OUTPUT()))
       equation
-  true=BackendVariable.isVarOnTopLevelAndOutput(v);
+        true=BackendVariable.isVarOnTopLevelAndOutput(v);
       str = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
       then str;
     case(_) then "";

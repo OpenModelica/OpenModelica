@@ -5,7 +5,7 @@ encapsulated package HashTable "
 
   All rights reserved.
 
-  file:  HashTable.mo
+  file:        HashTable.mo
   package:     HashTable
   description: DAE.CR to Integer
 
@@ -32,10 +32,10 @@ public type Value = Integer;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref, FuncCrefEqual, FuncCrefStr, FuncExpStr>;
 public type HashTable = tuple<array<list<tuple<Key, Integer>>>,
-                        tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
-                        Integer,
-                        Integer,
-                        HashTableCrefFunctionsType>;
+                              tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
+                              Integer,
+                              Integer,
+                              HashTableCrefFunctionsType>;
 
 partial function FuncHashCref
   input Key cr;

@@ -4,10 +4,10 @@
 #include "NewtonSettings.h"
 
 NewtonSettings::NewtonSettings()
-: iNewt_max              (50)
-, dRtol                  (1e-6)
-, dAtol                  (1.0)
-, dDelta              (0.9)
+: iNewt_max                    (50)
+, dRtol                        (1e-6)
+, dAtol                        (1.0)
+, dDelta                    (0.9)
 {
 };
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
@@ -15,34 +15,34 @@ long int     NewtonSettings::getNewtMax()
 {
     return iNewt_max;
 }
-void   NewtonSettings::setNewtMax(long int max)
+void         NewtonSettings::setNewtMax(long int max)
 {
     iNewt_max =max;
 }
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
-double   NewtonSettings::getRtol()
+double         NewtonSettings::getRtol()
 {
     return dRtol;
 }
-void   NewtonSettings::setRtol(double t)
+void         NewtonSettings::setRtol(double t)
 {
     dRtol=t;
 }
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
-double   NewtonSettings::getAtol()
+double         NewtonSettings::getAtol()
 {
     return dAtol;
 }
-void   NewtonSettings::setAtol(double t)
+void         NewtonSettings::setAtol(double t)
 {
     dAtol =t;
 }
 /*Dämpfungsfaktor (default: 0.9)*/
-double   NewtonSettings::getDelta()
+double         NewtonSettings::getDelta()
 {
     return dDelta;
 }
-void   NewtonSettings::setDelta(double t)
+void         NewtonSettings::setDelta(double t)
 {
     dDelta = t;
 }

@@ -5,7 +5,7 @@ encapsulated package HashTableCrIntToExp "
 
   All rights reserved.
 
-  file:  HashTableCrIntToExp.mo
+  file:        HashTableCrIntToExp.mo
   package:     HashTableCrIntToExp
   description: (DAE.CR,DAE.CR) to DAE.Exp
 
@@ -83,7 +83,7 @@ algorithm
       Integer i1,i2;
     case ((cr1,i1),(cr2,i2))
       equation
-  true = intEq(i1,i2) "int compare is less expensive";
+        true = intEq(i1,i2) "int compare is less expensive";
       then ComponentReference.crefEqual(cr1,cr2);
     else then false;
   end matchcontinue;

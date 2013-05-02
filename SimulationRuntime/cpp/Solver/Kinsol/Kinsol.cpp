@@ -2,17 +2,17 @@
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 
-#include <Math/ILapack.h>  // needed for solution of linear system with Lapack
+#include <Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Math/Constants.h>    // definition of constants like uround
 
 Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 : _algLoop      (algLoop)
 , _kinsolSettings  ((INonLinSolverSettings*)settings)
-, _y  (NULL)
+, _y        (NULL)
 , _yHelp      (NULL)
-, _f  (NULL)
+, _f        (NULL)
 , _fHelp      (NULL)
-, _jac  (NULL)
+, _jac        (NULL)
 , _dimSys      (0)
 , _firstCall    (true)
 , _iterationStatus  (CONTINUE)
@@ -77,7 +77,7 @@ void Kinsol::init()
       memset(_fHelp,0,_dimSys*sizeof(double));
       memset(_jac,0,_dimSys*_dimSys*sizeof(double));  // Wird nur benötigt, falls symbolisch vorhanden
       for (int i=0;i<_dimSys;i++)
-  _yHelp[i] = 1;
+        _yHelp[i] = 1;
 
       _Kin_y = N_VMake_Serial(_dimSys, _y);
       _Kin_yScale = N_VMake_Serial(_dimSys, _yHelp);
@@ -88,10 +88,10 @@ void Kinsol::init()
       idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
       idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
        if (check_flag(&idid, "KINInit", 1))
-  throw std::invalid_argument("Kinsol::init()");
+        throw std::invalid_argument("Kinsol::init()");
       idid = KINSetUserData(_kinMem, _data);
       if (check_flag(&idid, "KINSetUserData", 1))
-   throw std::invalid_argument("Kinsol::init()");
+         throw std::invalid_argument("Kinsol::init()");
 
       //idid = KINDense(_kinMem, _dimSys);
       int maxl = 15; 
@@ -100,15 +100,15 @@ void Kinsol::init()
       idid = KINSpgmr(_kinMem,maxl);
       if (check_flag(&idid, "KINSpgmr", 1)) 
 
-  throw std::invalid_argument("Kinsol::init()");
+        throw std::invalid_argument("Kinsol::init()");
 
        //idid = KINSpilsSetMaxRestarts(_kinMem, maxlrst);
        if (check_flag(&idid, "KINSpilsSetMaxRestarts", 1)) 
-   throw std::invalid_argument("Kinsol::init()");
-  //KINSetMaxSetupCalls(_kinMem, mset);
-  KINSetFuncNormTol(_kinMem, fnormtol);
-  KINSetScaledStepTol(_kinMem, scsteptol);
-  KINSetNumMaxIters(_kinMem, 2000);
+         throw std::invalid_argument("Kinsol::init()");
+        //KINSetMaxSetupCalls(_kinMem, mset);
+        KINSetFuncNormTol(_kinMem, fnormtol);
+        KINSetScaledStepTol(_kinMem, scsteptol);
+        KINSetNumMaxIters(_kinMem, 2000);
     }
     else
     {
@@ -122,11 +122,11 @@ void Kinsol::init()
 void Kinsol::solve(const IContinuous::UPDATE command)
 {
   long int
-    dimRHS  = 1,    // Dimension of right hand side of linear system (=b)
-    irtrn  = 0;    // Retrun-flag of Fortran code
+    dimRHS  = 1,          // Dimension of right hand side of linear system (=b)
+    irtrn  = 0;          // Retrun-flag of Fortran code
   int idid;
     if (_firstCall)
-  init();    
+        init();    
   if(_algLoop->isLinear())
   {
     //calcFunction(_yHelp,_fHelp);
@@ -196,7 +196,7 @@ void Kinsol::calcJacobian()
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
   if (opt == 0 && flagvalue == NULL) {
     fprintf(stderr,
-      "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
+            "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
       funcname);
     return(1);
   }
@@ -206,8 +206,8 @@ void Kinsol::calcJacobian()
     errflag = (int *) flagvalue;
     if (*errflag < 0) {
       fprintf(stderr,
-        "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
-  funcname, *errflag);
+              "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
+        funcname, *errflag);
       return(1);
     }
   }
@@ -215,7 +215,7 @@ void Kinsol::calcJacobian()
   /* Check if function returned NULL pointer - no memory allocated */
   else if (opt == 2 && flagvalue == NULL) {
     fprintf(stderr,
-      "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
+            "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
       funcname);
     return(1);
   }

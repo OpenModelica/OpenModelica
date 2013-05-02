@@ -43,45 +43,45 @@ void match_dfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
       colptrs[i] = col_ptrs[i];
       stack_end = n;
       while(stack_last > -1) {
-  stack_col = stack[stack_last];
+        stack_col = stack[stack_last];
 
-  eptr = col_ptrs[stack_col + 1];
-  for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-    temp = visited[col_ids[ptr]];
-    if(temp != next_augment_no && temp != -1) {
-      break;
-    }
-  }
-  colptrs[stack_col] = ptr + 1;
+        eptr = col_ptrs[stack_col + 1];
+        for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
+          temp = visited[col_ids[ptr]];
+          if(temp != next_augment_no && temp != -1) {
+            break;
+          }
+        }
+        colptrs[stack_col] = ptr + 1;
 
-  if(ptr == eptr) {
-    stack[--stack_end] = stack_col;
-    --stack_last;
-    continue;
-  }
+        if(ptr == eptr) {
+          stack[--stack_end] = stack_col;
+          --stack_last;
+          continue;
+        }
 
-  row = col_ids[ptr]; visited[row] = next_augment_no;
-  col = row_match[row];
-  if(col == -1) {
-    while(row != -1){
-      col = stack[stack_last--];
-      temp = match[col];
-      match[col] = row; row_match[row] = col;
-      row = temp;
-    }
+        row = col_ids[ptr]; visited[row] = next_augment_no;
+        col = row_match[row];
+        if(col == -1) {
+          while(row != -1){
+            col = stack[stack_last--];
+            temp = match[col];
+            match[col] = row; row_match[row] = col;
+            row = temp;
+          }
 
-    next_augment_no++;
-    break;
-  } else {
-    stack[++stack_last] = col;
-    colptrs[col] = col_ptrs[col];
-  }
+          next_augment_no++;
+          break;
+        } else {
+          stack[++stack_last] = col;
+          colptrs[col] = col_ptrs[col];
+        }
       }
 
       if(match[i] == -1) {
-  for(j = stack_end + 1; j < n; j++) {
-    visited[match[stack[j]]] = -1;
-  }
+        for(j = stack_end + 1; j < n; j++) {
+          visited[match[stack[j]]] = -1;
+        }
       }
     }
   }
@@ -106,38 +106,38 @@ void match_bfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
       queue[0] = i; queue_ptr = 0; queue_size = 1;
 
       while(queue_size > queue_ptr) {
-  queue_col = queue[queue_ptr++];
-  eptr = col_ptrs[queue_col + 1];
-  for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
-    row = col_ids[ptr];
-    temp = visited[row];
+        queue_col = queue[queue_ptr++];
+        eptr = col_ptrs[queue_col + 1];
+        for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
+          row = col_ids[ptr];
+          temp = visited[row];
 
-    if(temp != next_augment_no && temp != -1) {
-      previous[row] = queue_col;
-      visited[row] = next_augment_no;
+          if(temp != next_augment_no && temp != -1) {
+            previous[row] = queue_col;
+            visited[row] = next_augment_no;
 
-      col = row_match[row];
-      if(col == -1) {
-        while(row != -1) {
-          col = previous[row];
-          temp = match[col];
-          match[col] = row; row_match[row] = col;
-          row = temp;
+            col = row_match[row];
+            if(col == -1) {
+              while(row != -1) {
+                col = previous[row];
+                temp = match[col];
+                match[col] = row; row_match[row] = col;
+                row = temp;
+              }
+              next_augment_no++;
+              queue_size = 0;
+              break;
+            } else {
+              queue[queue_size++] = col;
+            }
+          }
         }
-        next_augment_no++;
-        queue_size = 0;
-        break;
-      } else {
-        queue[queue_size++] = col;
-      }
-    }
-  }
       }
 
       if(match[i] == -1) {
-  for(j = 1; j < queue_size; j++) {
-    visited[match[queue[j]]] = -1;
-  }
+        for(j = 1; j < queue_size; j++) {
+          visited[match[queue[j]]] = -1;
+        }
       }
     }
   }
@@ -168,46 +168,46 @@ void match_mc21(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, 
       stack_end = n;
 
       while(stack_last > -1) {
-  stack_col = stack[stack_last];
+        stack_col = stack[stack_last];
 
-  eptr = col_ptrs[stack_col + 1];
-  for(ptr = lookahead[stack_col];  ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
-  lookahead[stack_col] = ptr + 1;
+        eptr = col_ptrs[stack_col + 1];
+        for(ptr = lookahead[stack_col];  ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+        lookahead[stack_col] = ptr + 1;
 
-  if(ptr >= eptr) {
-    for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-      temp = visited[col_ids[ptr]];
-      if(temp != next_augment_no && temp != -1) {
-        break;
-      }
-    }
-    colptrs[stack_col] = ptr + 1;
+        if(ptr >= eptr) {
+          for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
+            temp = visited[col_ids[ptr]];
+            if(temp != next_augment_no && temp != -1) {
+              break;
+            }
+          }
+          colptrs[stack_col] = ptr + 1;
 
-    if(ptr == eptr) {
-      --stack_last;
-      stack[--stack_end] = stack_col;
-      continue;
-    }
+          if(ptr == eptr) {
+            --stack_last;
+            stack[--stack_end] = stack_col;
+            continue;
+          }
 
-    row = col_ids[ptr]; visited[row] = next_augment_no;
-    col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
-  } else {
-    row = col_ids[ptr]; visited[row] = next_augment_no;
-    while(row != -1){
-      col = stack[stack_last--];
-      temp = match[col];
-      match[col] = row; row_match[row] = col;
-      row = temp;
-    }
-    next_augment_no++;
-    break;
-  }
+          row = col_ids[ptr]; visited[row] = next_augment_no;
+          col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
+        } else {
+          row = col_ids[ptr]; visited[row] = next_augment_no;
+          while(row != -1){
+            col = stack[stack_last--];
+            temp = match[col];
+            match[col] = row; row_match[row] = col;
+            row = temp;
+          }
+          next_augment_no++;
+          break;
+        }
       }
 
       if(match[i] == -1) {
-  for(j = stack_end + 1; j < n; j++) {
-    visited[match[stack[j]]] = -1;
-  }
+        for(j = stack_end + 1; j < n; j++) {
+          visited[match[stack[j]]] = -1;
+        }
       }
     }
   }
@@ -246,51 +246,51 @@ void match_pf(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
       stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col];
 
       while(stack_last > -1) {
-  stack_col = stack[stack_last];
+        stack_col = stack[stack_last];
 
-  eptr = col_ptrs[stack_col + 1];
-  for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
-  lookahead[stack_col] = ptr + 1;
+        eptr = col_ptrs[stack_col + 1];
+        for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+        lookahead[stack_col] = ptr + 1;
 
-  if(ptr >= eptr) {
-    for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-      temp = visited[col_ids[ptr]];
-      if(temp != pcount && temp != -1) {
-        break;
-      }
-    }
-    colptrs[stack_col] = ptr + 1;
+        if(ptr >= eptr) {
+          for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
+            temp = visited[col_ids[ptr]];
+            if(temp != pcount && temp != -1) {
+              break;
+            }
+          }
+          colptrs[stack_col] = ptr + 1;
 
-    if(ptr == eptr) {
-      if(stop) {stack[--stack_end_ptr] = stack_col;}
-      --stack_last;
-      continue;
-    }
+          if(ptr == eptr) {
+            if(stop) {stack[--stack_end_ptr] = stack_col;}
+            --stack_last;
+            continue;
+          }
 
-    row = col_ids[ptr]; visited[row] = pcount;
-    col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
-  } else {
-    row = col_ids[ptr]; visited[row] = pcount;
-    while(row != -1){
-      col = stack[stack_last--];
-      temp = match[col];
-      match[col] = row; row_match[row] = col;
-      row = temp;
-    }
-    stop = 0;
-    break;
-  }
+          row = col_ids[ptr]; visited[row] = pcount;
+          col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
+        } else {
+          row = col_ids[ptr]; visited[row] = pcount;
+          while(row != -1){
+            col = stack[stack_last--];
+            temp = match[col];
+            match[col] = row; row_match[row] = col;
+            row = temp;
+          }
+          stop = 0;
+          break;
+        }
       }
 
       if(match[current_col] == -1) {
-  if(stop) {
-    for(j = stack_end_ptr + 1; j < n; j++) {
-      visited[match[stack[j]]] = -1;
-    }
-    stack_end_ptr = n;
-  } else {
-    unmatched[nextunmatched++] = current_col;
-  }
+        if(stop) {
+          for(j = stack_end_ptr + 1; j < n; j++) {
+            visited[match[stack[j]]] = -1;
+          }
+          stack_end_ptr = n;
+        } else {
+          unmatched[nextunmatched++] = current_col;
+        }
       }
     }
     pcount++; nunmatched = nextunmatched; nextunmatched = 0;
@@ -328,112 +328,112 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
     stop = 1; stack_end_ptr = n;
     if(inc) {
       for(i = 0; i < nunmatched; i++) {
-  current_col = unmatched[i];
-  stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col];
+        current_col = unmatched[i];
+        stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col];
 
-  while(stack_last > -1) {
-    stack_col = stack[stack_last];
+        while(stack_last > -1) {
+          stack_col = stack[stack_last];
 
-    eptr = col_ptrs[stack_col + 1];
-    for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
-    lookahead[stack_col] = ptr + 1;
+          eptr = col_ptrs[stack_col + 1];
+          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+          lookahead[stack_col] = ptr + 1;
 
-    if(ptr >= eptr) {
-      for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-        temp = visited[col_ids[ptr]];
-        if(temp != pcount && temp != -1) {
-          break;
+          if(ptr >= eptr) {
+            for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
+              temp = visited[col_ids[ptr]];
+              if(temp != pcount && temp != -1) {
+                break;
+              }
+            }
+            colptrs[stack_col] = ptr + 1;
+
+            if(ptr == eptr) {
+              if(stop) {stack[--stack_end_ptr] = stack_col;}
+              --stack_last;
+              continue;
+            }
+
+            row = col_ids[ptr]; visited[row] = pcount;
+            col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
+          } else {
+            row = col_ids[ptr]; visited[row] = pcount;
+            while(row != -1){
+              col = stack[stack_last--];
+              temp = match[col];
+              match[col] = row; row_match[row] = col;
+              row = temp;
+            }
+            stop = 0;
+            break;
+          }
         }
-      }
-      colptrs[stack_col] = ptr + 1;
 
-      if(ptr == eptr) {
-        if(stop) {stack[--stack_end_ptr] = stack_col;}
-        --stack_last;
-        continue;
-      }
-
-      row = col_ids[ptr]; visited[row] = pcount;
-      col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
-    } else {
-      row = col_ids[ptr]; visited[row] = pcount;
-      while(row != -1){
-        col = stack[stack_last--];
-        temp = match[col];
-        match[col] = row; row_match[row] = col;
-        row = temp;
-      }
-      stop = 0;
-      break;
-    }
-  }
-
-  if(match[current_col] == -1) {
-    if(stop) {
-      for(j = stack_end_ptr + 1; j < n; j++) {
-        visited[match[stack[j]]] = -1;
-      }
-      stack_end_ptr = n;
-    } else {
-      unmatched[nextunmatched++] = current_col;
-    }
-  }
+        if(match[current_col] == -1) {
+          if(stop) {
+            for(j = stack_end_ptr + 1; j < n; j++) {
+              visited[match[stack[j]]] = -1;
+            }
+            stack_end_ptr = n;
+          } else {
+            unmatched[nextunmatched++] = current_col;
+          }
+        }
       }
     } else {
       for(i = 0; i < nunmatched; i++) {
-  current_col = unmatched[i];
-  stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col + 1] - 1;
+        current_col = unmatched[i];
+        stack[0] = current_col; stack_last = 0; colptrs[current_col] = col_ptrs[current_col + 1] - 1;
 
-  while(stack_last > -1) {
-    stack_col = stack[stack_last];
+        while(stack_last > -1) {
+          stack_col = stack[stack_last];
 
-    eptr = col_ptrs[stack_col + 1];
-    for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
-    lookahead[stack_col] = ptr + 1;
+          eptr = col_ptrs[stack_col + 1];
+          for(ptr = lookahead[stack_col]; ptr < eptr && row_match[col_ids[ptr]] != -1; ptr++){}
+          lookahead[stack_col] = ptr + 1;
 
-    if(ptr >= eptr) {
-      eptr = col_ptrs[stack_col] - 1;
-      for(ptr = colptrs[stack_col]; ptr > eptr; ptr--) {
-        temp = visited[col_ids[ptr]];
-        if(temp != pcount && temp != -1) {
-          break;
+          if(ptr >= eptr) {
+            eptr = col_ptrs[stack_col] - 1;
+            for(ptr = colptrs[stack_col]; ptr > eptr; ptr--) {
+              temp = visited[col_ids[ptr]];
+              if(temp != pcount && temp != -1) {
+                break;
+              }
+            }
+            colptrs[stack_col] = ptr - 1;
+
+            if(ptr == eptr) {
+              if(stop) {stack[--stack_end_ptr] = stack_col;}
+              --stack_last;
+              continue;
+            }
+
+            row = col_ids[ptr]; visited[row] = pcount;
+            col = row_match[row]; stack[++stack_last] = col;
+            colptrs[col] = col_ptrs[col + 1] - 1;
+
+          } else {
+            row = col_ids[ptr]; visited[row] = pcount;
+            while(row != -1){
+              col = stack[stack_last--];
+              temp = match[col];
+              match[col] = row; row_match[row] = col;
+              row = temp;
+            }
+            stop = 0;
+            break;
+          }
         }
-      }
-      colptrs[stack_col] = ptr - 1;
 
-      if(ptr == eptr) {
-        if(stop) {stack[--stack_end_ptr] = stack_col;}
-        --stack_last;
-        continue;
-      }
-
-      row = col_ids[ptr]; visited[row] = pcount;
-      col = row_match[row]; stack[++stack_last] = col;
-      colptrs[col] = col_ptrs[col + 1] - 1;
-
-    } else {
-      row = col_ids[ptr]; visited[row] = pcount;
-      while(row != -1){
-        col = stack[stack_last--];
-        temp = match[col];
-        match[col] = row; row_match[row] = col;
-        row = temp;
-      }
-      stop = 0;
-      break;
-    }
-  }
-
-  if(match[current_col] == -1) {
-    if(stop) {
-      for(j = stack_end_ptr + 1; j < n; j++) {
-        visited[match[stack[j]]] = -1;
-      }
-      stack_end_ptr = n;
-    } else {
-      unmatched[nextunmatched++] = current_col;
-    }
-  }
+        if(match[current_col] == -1) {
+          if(stop) {
+            for(j = stack_end_ptr + 1; j < n; j++) {
+              visited[match[stack[j]]] = -1;
+            }
+            stack_end_ptr = n;
+          } else {
+            unmatched[nextunmatched++] = current_col;
+          }
+        }
       }
     }
     pcount++; nunmatched = nextunmatched; nextunmatched = 0; inc = !inc;
@@ -475,23 +475,23 @@ void match_hk(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* mat
     while(stack_last == -1 && queue_ptr < queue_size) {
       last_queue_size = queue_size; L += 2;
       while(queue_ptr < last_queue_size) {
-  queue_col = queue[queue_ptr++];
-  eptr = col_ptrs[queue_col + 1];
-  for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
-    row = col_ids[ptr];
-    if(rvisited[row] != pcount) {
-      rvisited[row] = pcount;
-      col = row_match[row];
-      if(col == -1) {
-        stack[++stack_last] = row;
-        rowptrs[row] = row_ptrs[row];
-      } else  {
-        queue[queue_size++] = col;
-        cvisited[col] = pcount;
-        clevels[col] = L;
-      }
-    }
-  }
+        queue_col = queue[queue_ptr++];
+        eptr = col_ptrs[queue_col + 1];
+        for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
+          row = col_ids[ptr];
+          if(rvisited[row] != pcount) {
+            rvisited[row] = pcount;
+            col = row_match[row];
+            if(col == -1) {
+              stack[++stack_last] = row;
+              rowptrs[row] = row_ptrs[row];
+            } else  {
+              queue[queue_size++] = col;
+              cvisited[col] = pcount;
+              clevels[col] = L;
+            }
+          }
+        }
       }
     }
     ppcount = pcount++;
@@ -506,33 +506,33 @@ void match_hk(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* mat
 
       eptr = row_ptrs[stack_row + 1];
       for(ptr = rowptrs[stack_row]; ptr < eptr; ptr++) {
-  col = row_ids[ptr];
-  if(match[col] == -1 || (clevels[col] == desired && cvisited[col] == ppcount)) {
-    cvisited[col] = pcount;
-    break;
-  }
+        col = row_ids[ptr];
+        if(match[col] == -1 || (clevels[col] == desired && cvisited[col] == ppcount)) {
+          cvisited[col] = pcount;
+          break;
+        }
       }
       rowptrs[stack_row] = ptr + 1;
 
       if(ptr < eptr) {
-  row = match[col];
-  if(row == -1) {
-    qpos[queue[--level_0]] = qpos[col];
-    queue[qpos[col]] = queue[level_0];
+        row = match[col];
+        if(row == -1) {
+          qpos[queue[--level_0]] = qpos[col];
+          queue[qpos[col]] = queue[level_0];
 
-    while(col != -1){
-      row = stack[stack_last--];
-      temp = row_match[row];
-      row_match[row] = col; match[col] = row;
-      col = temp;
-    }
-  } else {
-    stack[++stack_last] = row;
-    rowptrs[row] = row_ptrs[row];
-  }
+          while(col != -1){
+            row = stack[stack_last--];
+            temp = row_match[row];
+            row_match[row] = col; match[col] = row;
+            col = temp;
+          }
+        } else {
+          stack[++stack_last] = row;
+          rowptrs[row] = row_ptrs[row];
+        }
       } else {
-  --stack_last;
-  continue;
+        --stack_last;
+        continue;
       }
     }
     pcount++;
@@ -590,24 +590,24 @@ void match_hk_dw(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     while(stack_last == -1 && queue_ptr < queue_size) {
       last_queue_size = queue_size; L += 2;
       while(queue_ptr < last_queue_size) {
-  queue_col = queue[queue_ptr++];
+        queue_col = queue[queue_ptr++];
 
-  eptr = col_ptrs[queue_col + 1];
-  for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
-    row = col_ids[ptr];
-    if(rvisited[row] != pcount) {
-      rvisited[row] = pcount;
-      col = row_match[row];
-      if(col == -1) {
-        stack[++stack_last] = row;
-        rowptrs[row] = row_ptrs[row];
-      } else  {
-        queue[queue_size++] = col;
-        cvisited[col] = pcount;
-        clevels[col] = L;
-      }
-    }
-  }
+        eptr = col_ptrs[queue_col + 1];
+        for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
+          row = col_ids[ptr];
+          if(rvisited[row] != pcount) {
+            rvisited[row] = pcount;
+            col = row_match[row];
+            if(col == -1) {
+              stack[++stack_last] = row;
+              rowptrs[row] = row_ptrs[row];
+            } else  {
+              queue[queue_size++] = col;
+              cvisited[col] = pcount;
+              clevels[col] = L;
+            }
+          }
+        }
       }
     }
     ppcount = pcount++;
@@ -620,33 +620,33 @@ void match_hk_dw(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
       eptr = row_ptrs[stack_row + 1];
       for(ptr = rowptrs[stack_row]; ptr < eptr; ptr++) {
-  col = row_ids[ptr];
-  if(match[col] == -1 || (clevels[col] == desired && cvisited[col] == ppcount)) {
-    cvisited[col] = pcount;
-    break;
-  }
+        col = row_ids[ptr];
+        if(match[col] == -1 || (clevels[col] == desired && cvisited[col] == ppcount)) {
+          cvisited[col] = pcount;
+          break;
+        }
       }
       rowptrs[stack_row] = ptr + 1;
 
       if(ptr < eptr) {
-  row = match[col];
-  if(row == -1) {
-    qpos[queue[--level_0]] = qpos[col];
-    queue[qpos[col]] = queue[level_0];
+        row = match[col];
+        if(row == -1) {
+          qpos[queue[--level_0]] = qpos[col];
+          queue[qpos[col]] = queue[level_0];
 
-    while(col != -1){
-      row = stack[stack_last--];
-      temp = row_match[row];
-      row_match[row] = col; match[col] = row;
-      col = temp;
-    }
-  } else {
-    stack[++stack_last] = row;
-    rowptrs[row] = row_ptrs[row];
-  }
+          while(col != -1){
+            row = stack[stack_last--];
+            temp = row_match[row];
+            row_match[row] = col; match[col] = row;
+            col = temp;
+          }
+        } else {
+          stack[++stack_last] = row;
+          rowptrs[row] = row_ptrs[row];
+        }
       } else {
-  --stack_last;
-  continue;
+        --stack_last;
+        continue;
       }
     }
     pcount++;
@@ -655,49 +655,49 @@ void match_hk_dw(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     for(i = 0; i < nunmatched; i++) {
       current_row = unmatched[i];
       if(row_match[current_row] == -1) {
-  stack[0] = current_row; stack_last = 0;
-  rowptrs[current_row] = row_ptrs[current_row];
-  while(stack_last > -1) {
-    stack_row = stack[stack_last];
+        stack[0] = current_row; stack_last = 0;
+        rowptrs[current_row] = row_ptrs[current_row];
+        while(stack_last > -1) {
+          stack_row = stack[stack_last];
 
-    eptr = row_ptrs[stack_row + 1];
-    for(ptr = lookahead[stack_row]; ptr < eptr && match[row_ids[ptr]] != -1; ptr++){}
-    lookahead[stack_row] = ptr + 1;
+          eptr = row_ptrs[stack_row + 1];
+          for(ptr = lookahead[stack_row]; ptr < eptr && match[row_ids[ptr]] != -1; ptr++){}
+          lookahead[stack_row] = ptr + 1;
 
-    if(ptr >= eptr) {
-      eptr = row_ptrs[stack_row + 1];
-      for(ptr = rowptrs[stack_row]; ptr < eptr && cvisited[row_ids[ptr]] == pcount; ptr++) {}
-      rowptrs[stack_row] = ptr + 1;
+          if(ptr >= eptr) {
+            eptr = row_ptrs[stack_row + 1];
+            for(ptr = rowptrs[stack_row]; ptr < eptr && cvisited[row_ids[ptr]] == pcount; ptr++) {}
+            rowptrs[stack_row] = ptr + 1;
 
-      if(ptr == eptr) {
-        --stack_last;
-        continue;
-      }
+            if(ptr == eptr) {
+              --stack_last;
+              continue;
+            }
 
-      col = row_ids[ptr];  row = match[col];
+            col = row_ids[ptr];  row = match[col];
 
-      cvisited[col] = pcount;
-      stack[++stack_last] = row;
-      rowptrs[row] = row_ptrs[row];
-    } else {
-      col = row_ids[ptr]; cvisited[col] = pcount;
+            cvisited[col] = pcount;
+            stack[++stack_last] = row;
+            rowptrs[row] = row_ptrs[row];
+          } else {
+            col = row_ids[ptr]; cvisited[col] = pcount;
 
-      qpos[queue[--level_0]] = qpos[col];
-      queue[qpos[col]] = queue[level_0];
+            qpos[queue[--level_0]] = qpos[col];
+            queue[qpos[col]] = queue[level_0];
 
-      while(col != -1){
-        row = stack[stack_last--];
-        temp = row_match[row];
-        row_match[row] = col; match[col] = row;
-        col = temp;
-      }
-      break;
-    }
-  }
+            while(col != -1){
+              row = stack[stack_last--];
+              temp = row_match[row];
+              row_match[row] = col; match[col] = row;
+              col = temp;
+            }
+            break;
+          }
+        }
 
-  if(row_match[current_row] == -1) {
-    unmatched[nextunmatched++] = current_row;
-  }
+        if(row_match[current_row] == -1) {
+          unmatched[nextunmatched++] = current_row;
+        }
       }
     }
     pcount++; nunmatched = nextunmatched;
@@ -749,28 +749,28 @@ void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* m
       update_counter = 0; L = 1; nunmatched = 0;
       queue_size = level_0;  queue_ptr = 0;
       while(queue_ptr < queue_size) {
-  level_ptr = queue_size;
-  while(queue_ptr < level_ptr) {
-    queue_row = queue[queue_ptr++];
+        level_ptr = queue_size;
+        while(queue_ptr < level_ptr) {
+          queue_row = queue[queue_ptr++];
 
-    eptr = row_ptrs[queue_row + 1];
-    for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
-      col = row_ids[ptr];
+          eptr = row_ptrs[queue_row + 1];
+          for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
+            col = row_ids[ptr];
 
-      if(cvisited[col] != pcount) {
-        cvisited[col] = pcount;
-        clevels[col] = L;
+            if(cvisited[col] != pcount) {
+              cvisited[col] = pcount;
+              clevels[col] = L;
 
-        row = match[col];
-        if(row == -1) {
-          unmatched[nunmatched++] = col;
-        } else {
-          queue[queue_size++] = row;
+              row = match[col];
+              if(row == -1) {
+                unmatched[nunmatched++] = col;
+              } else {
+                queue[queue_size++] = row;
+              }
+            }
+          }
         }
-      }
-    }
-  }
-  L += 2; if(L > lim  || 50*L > tunmatched) {break;}
+        L += 2; if(L > lim  || 50*L > tunmatched) {break;}
       }
     }
 
@@ -784,51 +784,51 @@ void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* m
       colptrs[current_col] = col_ptrs[current_col];
 
       while(stack_last > -1) {
-  stack_col = stack[stack_last];
-  desired_level = clevels[stack_col] - 2;
+        stack_col = stack[stack_last];
+        desired_level = clevels[stack_col] - 2;
 
-  eptr = col_ptrs[stack_col + 1];
-  for(ptr = colptrs[stack_col]; ptr < eptr; ptr++){
-    row = col_ids[ptr];
-    col = row_match[row];
-    if(col == -1 || clevels[col] == desired_level) {break;}
-  }
-  colptrs[stack_col] = ptr + 1;
+        eptr = col_ptrs[stack_col + 1];
+        for(ptr = colptrs[stack_col]; ptr < eptr; ptr++){
+          row = col_ids[ptr];
+          col = row_match[row];
+          if(col == -1 || clevels[col] == desired_level) {break;}
+        }
+        colptrs[stack_col] = ptr + 1;
 
-  if(ptr == eptr) {
-    clevels[stack_col] += 2;
-    update_counter++;
-    --stack_last;
-    continue;
-  }
+        if(ptr == eptr) {
+          clevels[stack_col] += 2;
+          update_counter++;
+          --stack_last;
+          continue;
+        }
 
-  if(col == -1) {
-    qpos[queue[--level_0]] = qpos[row];
-    queue[qpos[row]] = queue[level_0];
+        if(col == -1) {
+          qpos[queue[--level_0]] = qpos[row];
+          queue[qpos[row]] = queue[level_0];
 
-    while(row != -1) {
-      col = stack[stack_last--];
-      temp = match[col];
-      match[col] = row; row_match[row] = col;
-      row = temp;
-    }
-    break;
-  } else {
-    stack[++stack_last] = col;
-    colptrs[col] = col_ptrs[col];
-  }
+          while(row != -1) {
+            col = stack[stack_last--];
+            temp = match[col];
+            match[col] = row; row_match[row] = col;
+            row = temp;
+          }
+          break;
+        } else {
+          stack[++stack_last] = col;
+          colptrs[col] = col_ptrs[col];
+        }
       }
 
       if(match[current_col] != -1) {
-  tunmatched--;
-  if(50*L > tunmatched) {break;}
-  unmatched[next_col_i] = unmatched[start_col_i++];
+        tunmatched--;
+        if(50*L > tunmatched) {break;}
+        unmatched[next_col_i] = unmatched[start_col_i++];
       }
       next_col_i++;
 
       if(next_col_i < nunmatched && L != clevels[unmatched[next_col_i]]) {
-  L = clevels[unmatched[start_col_i]];
-  next_col_i = start_col_i;
+        L = clevels[unmatched[start_col_i]];
+        next_col_i = start_col_i;
       }
       if(update_counter >= counter_limit) {break;}
     }
@@ -844,24 +844,24 @@ void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* m
     while(stack_last == -1 && queue_ptr < queue_size) {
       level_ptr = queue_size; L += 2;
       while(queue_ptr < level_ptr) {
-  queue_row = queue[queue_ptr++];
+        queue_row = queue[queue_ptr++];
 
-  eptr = row_ptrs[queue_row + 1];
-  for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
-    col = row_ids[ptr];
-    if(cvisited[col] != pcount) {
-      cvisited[col] = pcount;
-      row = match[col];
-      if(row == -1) {
-        stack[++stack_last] = col;
-        colptrs[col] = col_ptrs[col];
-      } else  {
-        queue[queue_size++] = row;
-        rvisited[row] = pcount;
-        rlevels[row] = L;
-      }
-    }
-  }
+        eptr = row_ptrs[queue_row + 1];
+        for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
+          col = row_ids[ptr];
+          if(cvisited[col] != pcount) {
+            cvisited[col] = pcount;
+            row = match[col];
+            if(row == -1) {
+              stack[++stack_last] = col;
+              colptrs[col] = col_ptrs[col];
+            } else  {
+              queue[queue_size++] = row;
+              rvisited[row] = pcount;
+              rlevels[row] = L;
+            }
+          }
+        }
       }
     }
     ppcount = pcount++;
@@ -875,34 +875,34 @@ void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* m
 
       eptr = col_ptrs[stack_col + 1];
       for(ptr = colptrs[stack_col]; ptr < eptr; ptr++) {
-  row = col_ids[ptr];
-  if(row_match[row] == -1 || (rlevels[row] == desired && rvisited[row] == ppcount)) {
-    rvisited[row] = pcount;
-    break;
-  }
+        row = col_ids[ptr];
+        if(row_match[row] == -1 || (rlevels[row] == desired && rvisited[row] == ppcount)) {
+          rvisited[row] = pcount;
+          break;
+        }
       }
       colptrs[stack_col] = ptr + 1;
 
       if(ptr < eptr) {
-  col = row_match[row];
-  if(col == -1) {
+        col = row_match[row];
+        if(col == -1) {
 
-    qpos[queue[--level_0]] = qpos[row];
-    queue[qpos[row]] = queue[level_0];
+          qpos[queue[--level_0]] = qpos[row];
+          queue[qpos[row]] = queue[level_0];
 
-    while(row != -1){
-      col = stack[stack_last--];
-      temp = match[col];
-      row_match[row] = col; match[col] = row;
-      row = temp;
-    }
-  } else {
-    stack[++stack_last] = col;
-    colptrs[col] = col_ptrs[col];
-  }
+          while(row != -1){
+            col = stack[stack_last--];
+            temp = match[col];
+            row_match[row] = col; match[col] = row;
+            row = temp;
+          }
+        } else {
+          stack[++stack_last] = col;
+          colptrs[col] = col_ptrs[col];
+        }
       } else {
-  --stack_last;
-  continue;
+        --stack_last;
+        continue;
       }
     }
     pcount++;
@@ -953,28 +953,28 @@ void match_abmp_bfs(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, in
       L = 1; nunmatched = 0; update_counter = 0;
       queue_size = level_0;  queue_ptr = 0;
       while(queue_ptr < queue_size) {
-  level_ptr = queue_size;
-  while(queue_ptr < level_ptr) {
-    queue_row = queue[queue_ptr++];
+        level_ptr = queue_size;
+        while(queue_ptr < level_ptr) {
+          queue_row = queue[queue_ptr++];
 
-    eptr = row_ptrs[queue_row + 1];
-    for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
-      col = row_ids[ptr];
+          eptr = row_ptrs[queue_row + 1];
+          for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
+            col = row_ids[ptr];
 
-      if(visited[col] != pcount) {
-        visited[col] = pcount;
-        clevels[col] = L;
+            if(visited[col] != pcount) {
+              visited[col] = pcount;
+              clevels[col] = L;
 
-        row = match[col];
-        if(row == -1) {
-          unmatched[nunmatched++] = col;
-        } else {
-          queue[queue_size++] = row;
+              row = match[col];
+              if(row == -1) {
+                unmatched[nunmatched++] = col;
+              } else {
+                queue[queue_size++] = row;
+              }
+            }
+          }
         }
-      }
-    }
-  }
-  L += 2; if(L > lim  || 50*L > tunmatched) {break;}
+        L += 2; if(L > lim  || 50*L > tunmatched) {break;}
       }
     }
 
@@ -989,51 +989,51 @@ void match_abmp_bfs(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, in
       colptrs[current_col] = col_ptrs[current_col];
 
       while(stack_last > -1) {
-  stack_col = stack[stack_last];
-  desired_level = clevels[stack_col] - 2;
+        stack_col = stack[stack_last];
+        desired_level = clevels[stack_col] - 2;
 
-  eptr = col_ptrs[stack_col + 1];
-  for(ptr = colptrs[stack_col]; ptr < eptr; ptr++){
-    row = col_ids[ptr];
-    col = row_match[row];
-    if(col == -1 || clevels[col] == desired_level) {break;}
-  }
-  colptrs[stack_col] = ptr + 1;
+        eptr = col_ptrs[stack_col + 1];
+        for(ptr = colptrs[stack_col]; ptr < eptr; ptr++){
+          row = col_ids[ptr];
+          col = row_match[row];
+          if(col == -1 || clevels[col] == desired_level) {break;}
+        }
+        colptrs[stack_col] = ptr + 1;
 
-  if(ptr == eptr) {
-    clevels[stack_col] += 2;
-    update_counter++;
-    --stack_last;
-    continue;
-  }
+        if(ptr == eptr) {
+          clevels[stack_col] += 2;
+          update_counter++;
+          --stack_last;
+          continue;
+        }
 
-  if(col == -1) {
-    qpos[queue[--level_0]] = qpos[row];
-    queue[qpos[row]] = queue[level_0];
+        if(col == -1) {
+          qpos[queue[--level_0]] = qpos[row];
+          queue[qpos[row]] = queue[level_0];
 
-    while(row != -1) {
-      col = stack[stack_last--];
-      temp = match[col];
-      match[col] = row; row_match[row] = col;
-      row = temp;
-    }
-    break;
-  } else {
-    stack[++stack_last] = col;
-    colptrs[col] = col_ptrs[col];
-  }
+          while(row != -1) {
+            col = stack[stack_last--];
+            temp = match[col];
+            match[col] = row; row_match[row] = col;
+            row = temp;
+          }
+          break;
+        } else {
+          stack[++stack_last] = col;
+          colptrs[col] = col_ptrs[col];
+        }
       }
 
       if(match[current_col] != -1) {
-  tunmatched--;
-  if(50*L > tunmatched) {break;}
-  unmatched[next_col_i] = unmatched[start_col_i++];
+        tunmatched--;
+        if(50*L > tunmatched) {break;}
+        unmatched[next_col_i] = unmatched[start_col_i++];
       }
       next_col_i++;
 
       if(next_col_i < nunmatched && L != clevels[unmatched[next_col_i]]) {
-  L = clevels[unmatched[start_col_i]];
-  next_col_i = start_col_i;
+        L = clevels[unmatched[start_col_i]];
+        next_col_i = start_col_i;
       }
       if(update_counter >= counter_limit) {break;}
     }
@@ -1050,32 +1050,32 @@ void match_abmp_bfs(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, in
 
       eptr = row_ptrs[queue_row + 1];
       for(ptr = row_ptrs[queue_row]; ptr < eptr; ptr++) {
-  col = row_ids[ptr];
+        col = row_ids[ptr];
 
-  if(visited[col] != level_0 && visited[col] != -1) {
-    previous[col] = queue_row;
-    visited[col] = level_0;
+        if(visited[col] != level_0 && visited[col] != -1) {
+          previous[col] = queue_row;
+          visited[col] = level_0;
 
-    row = match[col];
-    if(row == -1) {
-      while(col != -1) {
-        row = previous[col];
-        temp = row_match[row];
-        match[col] = row; row_match[row] = col;
-        col = temp;
-      }
-      queue_size = 0;
-      break;
-    } else {
-      queue[queue_size++] = row;
-    }
-  }
+          row = match[col];
+          if(row == -1) {
+            while(col != -1) {
+              row = previous[col];
+              temp = row_match[row];
+              match[col] = row; row_match[row] = col;
+              col = temp;
+            }
+            queue_size = 0;
+            break;
+          } else {
+            queue[queue_size++] = row;
+          }
+        }
       }
     }
 
     if(row_match[queue[level_0-1]] == -1) {
       for(j = level_0; j < queue_size; j++) {
-  visited[row_match[queue[j]]] = -1;
+        visited[row_match[queue[j]]] = -1;
       }
     }
     level_0--;
@@ -1123,14 +1123,14 @@ void pr_global_relabel(int* l_label, int* r_label, int* row_ptrs, int* row_ids, 
     for(ptr = s_ptr; ptr < e_ptr; ptr++) {
       int left_vertex = row_ids[ptr];
       if(l_label[left_vertex] == max) {
-  l_label[left_vertex]=r_label[relabel_vertex]+1;
-  if (match[left_vertex]> -1) {
-    if (r_label[match[left_vertex]] == max) {
-      queue_end++;
-      queue[queue_end]=match[left_vertex];
-      r_label[match[left_vertex]]=l_label[left_vertex]+1;
-    }
-  }
+        l_label[left_vertex]=r_label[relabel_vertex]+1;
+        if (match[left_vertex]> -1) {
+          if (r_label[match[left_vertex]] == max) {
+            queue_end++;
+            queue[queue_end]=match[left_vertex];
+            r_label[match[left_vertex]]=l_label[left_vertex]+1;
+          }
+        }
       }
     }
   }
@@ -1181,45 +1181,45 @@ void match_pr_fifo_fair(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids
       int s_ptr = col_ptrs[max_vertex];
       int e_ptr = col_ptrs[max_vertex + 1];
       if (l_label[max_vertex]%4==1) {
-  for(ptr = s_ptr; ptr < e_ptr; ptr++) {
-    if(r_label[col_ids[ptr]] < min_label) {
-      min_label=r_label[col_ids[ptr]];
-      min_vertex=col_ids[ptr];
-      if (r_label[min_vertex]==l_label[max_vertex]-1){
-        relabels--;
-        break;
-      }
-    }
-  }
+        for(ptr = s_ptr; ptr < e_ptr; ptr++) {
+          if(r_label[col_ids[ptr]] < min_label) {
+            min_label=r_label[col_ids[ptr]];
+            min_vertex=col_ids[ptr];
+            if (r_label[min_vertex]==l_label[max_vertex]-1){
+              relabels--;
+              break;
+            }
+          }
+        }
       } else {
-  for(ptr = e_ptr-1; ptr >= s_ptr; ptr--) {
-    if(r_label[col_ids[ptr]] < min_label) {
-      min_label=r_label[col_ids[ptr]];
-      min_vertex=col_ids[ptr];
-      if (r_label[min_vertex]==l_label[max_vertex]-1)
-      {
-        relabels--;
-        break;
-      }
-    }
-  }
+        for(ptr = e_ptr-1; ptr >= s_ptr; ptr--) {
+          if(r_label[col_ids[ptr]] < min_label) {
+            min_label=r_label[col_ids[ptr]];
+            min_vertex=col_ids[ptr];
+            if (r_label[min_vertex]==l_label[max_vertex]-1)
+            {
+              relabels--;
+              break;
+            }
+          }
+        }
       }
     }
 
     if (min_label<max) {
       if (row_match[min_vertex]==-1){
-  row_match[min_vertex]=max_vertex;
-  match[max_vertex]=min_vertex;
+        row_match[min_vertex]=max_vertex;
+        match[max_vertex]=min_vertex;
       } else {
-  next_vertex=row_match[min_vertex];
-  queue_end = (queue_end+1)%n;
-  queuesize++;
-  queue[queue_end]=next_vertex;
+        next_vertex=row_match[min_vertex];
+        queue_end = (queue_end+1)%n;
+        queuesize++;
+        queue[queue_end]=next_vertex;
 
-  row_match[min_vertex]=max_vertex;
-  match[max_vertex]=min_vertex;
-  match[next_vertex]=-1;
-  l_label[max_vertex]=min_label+1;
+        row_match[min_vertex]=max_vertex;
+        match[max_vertex]=min_vertex;
+        match[next_vertex]=-1;
+        l_label[max_vertex]=min_label+1;
       }
       r_label[min_vertex]=min_label+2;
     }
@@ -1265,8 +1265,8 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
       ep = col_ptrs[i+1];
 
       for(;sp < ep; sp++) {
-  row = col_ids[sp];
-  row_ids[t_row_ptrs[row]++] = i;
+        row = col_ids[sp];
+        row_ids[t_row_ptrs[row]++] = i;
       }
     }
     free(t_row_ptrs);

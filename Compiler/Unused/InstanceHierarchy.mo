@@ -30,7 +30,7 @@
  */
 
 encapsulated package InstanceHierarchy
-" file:  InstanceHierarchy.mo
+" file:        InstanceHierarchy.mo
   package:     InstanceHierarchy
   description: Data structure for representing the instance hierarchy
 
@@ -88,17 +88,17 @@ constant InstanceConnects emptyConnects = CONNECTS({}, {}) "empty connects";
 public
 uniontype Instance
  "An instance can be:
-  - a model instance:  Modelica.Electrical.Analog.Basic.Resistor
+  - a model instance:        Modelica.Electrical.Analog.Basic.Resistor
   - a component instance:    Modelica.Electrical.Analog.Basic.Resistor.R
   - an extends instance:     Modelica.Electrical.Analog.Basic.Resistor.extends.Modelica.Electrical.Analog.Interfaces.OnePort
   - a derived instance:      Modelica.SIunits.Voltage.extends.Modelica.SIunits.ElectricPotential"
     record INSTANCE
-      Absyn.ComponentRef name  "the full name of this instance";
+      Absyn.ComponentRef name        "the full name of this instance";
       InstanceAttributes attributes  "the attributes of this instance";
       InstanceHierarchy children     "the childrens of this instance";
       InstanceConnects connects      "full connnection info for this instance:
-                                connects that happen in this instance and
-                                what instances this instance connects to";
+                                      connects that happen in this instance and
+                                      what instances this instance connects to";
       Option<Absyn.ComponentRef> innerReference "inner reference if existing";
       Option<Absyn.ComponentRef> outerReference "outer reference if existing";
     end INSTANCE;
@@ -127,19 +127,19 @@ algorithm
 
     case (ih,scope,(c as SCode.CLASS(name=n)):: cs)
       equation
-  path = makePath(scope, n);
-  fullCr = Absyn.pathToCref(path);
-  i = createInstanceFromClass(fullCr, ATTRIBUTES(c, NONE(), NONE()));
-  ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
+        path = makePath(scope, n);
+        fullCr = Absyn.pathToCref(path);
+        i = createInstanceFromClass(fullCr, ATTRIBUTES(c, NONE(), NONE()));
+        ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
       then
-  ih;
+        ih;
 
     case (ih,scope,c::_)
       equation
-  true = Flags.isSet(Flags.INSTANCE);
-  Debug.traceln("InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCodeDump.printClassStr(c));
+        true = Flags.isSet(Flags.INSTANCE);
+        Debug.traceln("InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCodeDump.printClassStr(c));
       then
-  fail();
+        fail();
   end matchcontinue;
 end createInstanceHierarchyFromProgram;
 
@@ -169,7 +169,7 @@ algorithm
     case ATTRIBUTES(element=SCode.CLASS(classDef = cd)) then cd;
     case _
       equation
-  Debug.fprintln(Flags.INSTANCE, "InstanceHierarchy.getClassDefinition failed");
+        Debug.fprintln(Flags.INSTANCE, "InstanceHierarchy.getClassDefinition failed");
       then fail();
   end matchcontinue;
 end getClassDefinition;
@@ -190,12 +190,12 @@ algorithm
 
     case (fullCr, attributes)
       equation
-  path = Absyn.crefToPath(fullCr);
-  classDef = getClassDefinition(attributes);
-  Debug.fprintln(Flags.INSTANCE, "IH: Creating instance: " +& Absyn.pathString(path));
-  (children, connects) = createInstanceHierarchyFromClassDef(SOME(path), classDef);
+        path = Absyn.crefToPath(fullCr);
+        classDef = getClassDefinition(attributes);
+        Debug.fprintln(Flags.INSTANCE, "IH: Creating instance: " +& Absyn.pathString(path));
+        (children, connects) = createInstanceHierarchyFromClassDef(SOME(path), classDef);
       then
-  INSTANCE(fullCr, attributes, children, connects, NONE(), NONE());
+        INSTANCE(fullCr, attributes, children, connects, NONE(), NONE());
   end match;
 end createInstanceFromClass;
 
@@ -220,33 +220,33 @@ algorithm
 
     case (scope, SCode.PARTS(elementLst = elements, normalEquationLst = equations))
       equation
-  ihrest = createInstanceHierarchyFromElements(scope, elements);
-  icrest = addConnects(scope, equations, emptyConnects);
+        ihrest = createInstanceHierarchyFromElements(scope, elements);
+        icrest = addConnects(scope, equations, emptyConnects);
       then
-  (ihrest, icrest);
+        (ihrest, icrest);
 
     case (scope, SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elements, normalEquationLst = equations)))
       equation
-  ihrest = createInstanceHierarchyFromElements(scope, elements);
-  icrest = addConnects(scope, equations, emptyConnects);
+        ihrest = createInstanceHierarchyFromElements(scope, elements);
+        icrest = addConnects(scope, equations, emptyConnects);
       then
-  (ihrest, icrest);
+        (ihrest, icrest);
 
     // derived is just a more powerful extends!
     // TODO! maybe merge DERIVED and EXTENDS!
     case (scope, SCode.DERIVED(t as Absyn.TPATH(path, _), _, _,_))
       equation
-  fpath = makePath(scope, "$extends$");
-  fpath = Absyn.joinPaths(fpath, path);
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.PUBLIC(), SCode.NOMOD(), NONE(), Absyn.dummyInfo), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
+        fpath = makePath(scope, "$extends$");
+        fpath = Absyn.joinPaths(fpath, path);
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.PUBLIC(), SCode.NOMOD(), NONE(), Absyn.dummyInfo), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
       then
-  ({i}, emptyConnects);
+        ({i}, emptyConnects);
 
     case (scope, _) // ignore enumerations and pder for now
       equation
       then
-  ({}, emptyConnects);
+        ({}, emptyConnects);
   end matchcontinue;
 end createInstanceHierarchyFromClassDef;
 
@@ -270,58 +270,58 @@ algorithm
 
     case (scope, (el as SCode.COMPONENT(name=name, typeSpec=t as Absyn.TPATH(path,_)))::rest)
       equation
-  fpath = makePath(scope, name);
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstance(fullCref, ATTRIBUTES(el, NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
-  ihrest = createInstanceHierarchyFromElements(scope, rest);
+        fpath = makePath(scope, name);
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstance(fullCref, ATTRIBUTES(el, NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
+        ihrest = createInstanceHierarchyFromElements(scope, rest);
       then
-  i::ihrest;
+        i::ihrest;
 
     case (scope, (el as SCode.EXTENDS(baseClassPath=path))::rest)
       equation
-  fpath = makePath(scope, "$extends$");
-  fpath = Absyn.joinPaths(fpath, path);
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstance(fullCref, ATTRIBUTES(el, NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
-  ihrest = createInstanceHierarchyFromElements(scope, rest);
+        fpath = makePath(scope, "$extends$");
+        fpath = Absyn.joinPaths(fpath, path);
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstance(fullCref, ATTRIBUTES(el, NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
+        ihrest = createInstanceHierarchyFromElements(scope, rest);
       then
-  i::ihrest;
+        i::ihrest;
 
     case (scope, (el as SCode.CLASS(name = name))::rest)
       equation
-  fpath = makePath(scope, name);
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
-  ihrest = createInstanceHierarchyFromElements(scope, rest);
+        fpath = makePath(scope, name);
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
+        ihrest = createInstanceHierarchyFromElements(scope, rest);
       then
-  i::ihrest;
+        i::ihrest;
 
     case (scope, (el as SCode.IMPORT(imp = _))::rest)
       equation
-  fpath = makePath(scope, "$import$");
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
-  ihrest = createInstanceHierarchyFromElements(scope, rest);
+        fpath = makePath(scope, "$import$");
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
+        ihrest = createInstanceHierarchyFromElements(scope, rest);
       then
-  ihrest;
+        ihrest;
 
     case (scope, (el as SCode.DEFINEUNIT(name = name))::rest)
       equation
-  fpath = makePath(scope, name);
-  fullCref = Absyn.pathToCref(fpath);
-  i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
-  ihrest = createInstanceHierarchyFromElements(scope, rest);
+        fpath = makePath(scope, name);
+        fullCref = Absyn.pathToCref(fpath);
+        i = createInstanceFromClass(fullCref, ATTRIBUTES(el, NONE(), NONE()));
+        ihrest = createInstanceHierarchyFromElements(scope, rest);
       then
-  i::ihrest;
+        i::ihrest;
 
     case (scope, {}) then {};
 
     case (scope, el::rest)
       equation
-  true = Flags.isSet(Flags.INSTANCE);
-  Debug.traceln("InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCodeDump.unparseElementStr(el));
+        true = Flags.isSet(Flags.INSTANCE);
+        Debug.traceln("InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCodeDump.unparseElementStr(el));
       then
-  fail();
+        fail();
   end matchcontinue;
 end createInstanceHierarchyFromElements;
 
@@ -342,10 +342,10 @@ algorithm
 
     case (SOME(p), SCode.EQ_CONNECT(cr1, cr2, cmt, info))
       equation
-  cr1 = Absyn.joinCrefs(Absyn.pathToCref(p), cr1);
-  cr2 = Absyn.joinCrefs(Absyn.pathToCref(p), cr2);
+        cr1 = Absyn.joinCrefs(Absyn.pathToCref(p), cr1);
+        cr2 = Absyn.joinCrefs(Absyn.pathToCref(p), cr2);
       then
-   SCode.EQ_CONNECT(cr1, cr2, cmt, info);
+         SCode.EQ_CONNECT(cr1, cr2, cmt, info);
   end match;
 end addScopeToConnects;
 
@@ -365,25 +365,25 @@ algorithm
 
     case (scope, SCode.EQUATION(equ as SCode.EQ_CONNECT(crefLeft = _))::rest, CONNECTS(eqs,act))
       equation
-  equ = addScopeToConnects(scope,equ);
-  result = addConnects(scope, rest, CONNECTS(equ::eqs,act));
+        equ = addScopeToConnects(scope,equ);
+        result = addConnects(scope, rest, CONNECTS(equ::eqs,act));
       then
-  result;
+        result;
 
     case (scope, SCode.EQUATION(SCode.EQ_FOR(eEquationLst = eEquationLst))::rest, CONNECTS(eqs,act))
       equation
-  eEquationLst = filterConnects(eEquationLst);
-  eEquationLst = List.map1r(eEquationLst, addScopeToConnects, scope);
-  eqs = listAppend(eqs, eEquationLst);
-  result = addConnects(scope, rest, CONNECTS(eqs,act));
+        eEquationLst = filterConnects(eEquationLst);
+        eEquationLst = List.map1r(eEquationLst, addScopeToConnects, scope);
+        eqs = listAppend(eqs, eEquationLst);
+        result = addConnects(scope, rest, CONNECTS(eqs,act));
       then
-  result;
+        result;
 
     case (scope, _::rest, inInstanceConnects)
       equation
-  result = addConnects(scope, rest, inInstanceConnects);
+        result = addConnects(scope, rest, inInstanceConnects);
       then
-  result;
+        result;
 
     case (scope, {}, inInstanceConnects) then inInstanceConnects;
 
@@ -403,9 +403,9 @@ algorithm
 
     case ((equ as SCode.EQ_CONNECT(crefLeft = _))::rest)
       equation
-  other = filterConnects(rest);
+        other = filterConnects(rest);
       then
-  equ::other;
+        equ::other;
   end match;
 end filterConnects;
 
@@ -440,20 +440,20 @@ algorithm
 
     case ((i as INSTANCE(name=cr))::ihrest, cref)
       equation
-  true = Absyn.crefEqual(cref, cr);
+        true = Absyn.crefEqual(cref, cr);
       then SOME(i);
 
     case ((i as INSTANCE(name=cr, children=children))::ihrest, cref)
       equation
-  false = Absyn.crefEqual(cref, cr);
-  SOME(i) = lookupInstance(children, cref);
+        false = Absyn.crefEqual(cref, cr);
+        SOME(i) = lookupInstance(children, cref);
       then SOME(i);
 
     case ((i as INSTANCE(name=cr, children=children))::ihrest, cref)
       equation
-  false = Absyn.crefEqual(cref, cr);
-  NONE() = lookupInstance(children, cref);
-  SOME(i) = lookupInstance(ihrest, cref);
+        false = Absyn.crefEqual(cref, cr);
+        NONE() = lookupInstance(children, cref);
+        SOME(i) = lookupInstance(ihrest, cref);
       then SOME(i);
 
     case (_, cref)
@@ -475,12 +475,12 @@ algorithm
     case ({}, _) then ();
     case (i::{}, l)
       equation
-  dumpInstance(i,l+1);
+        dumpInstance(i,l+1);
       then ();
     case (i::rest, l)
       equation
-  dumpInstance(i,l+1); print("\n");
-  dumpInstanceHierarchy(rest, l);
+        dumpInstance(i,l+1); print("\n");
+        dumpInstanceHierarchy(rest, l);
       then ();
   end matchcontinue;
 end dumpInstanceHierarchy;
@@ -492,12 +492,12 @@ algorithm
   _ := matchcontinue(i, level)
     local
       Integer l;
-      Absyn.ComponentRef name  "the full name of this instance";
+      Absyn.ComponentRef name        "the full name of this instance";
       InstanceAttributes attributes  "the attributes of this instance";
       InstanceHierarchy children     "the childrens of this instance";
       InstanceConnects connects      "full connnection info for this instance:
-                                connects that happen in this instance and
-                                what instances this instance connects to";
+                                      connects that happen in this instance and
+                                      what instances this instance connects to";
       Option<Absyn.ComponentRef> innerReference "inner reference if existing";
       Option<Absyn.ComponentRef> outerReference "outer reference if existing";
       String indent;
@@ -507,22 +507,22 @@ algorithm
 
     case (INSTANCE(name, attributes as ATTRIBUTES(el, ty, attrInsideOutside), {}, connects, innerReference, outerReference), l)
       equation
-  indent = Dump.indentStr(l) +& "+";
-  print(indent +& "I(" +& Dump.printComponentRefStr(name) +& ", el: " +& printElementStr(el));
-  print(", ty: "); printTypeOpt(ty); print(", is/os: ");
-  printFaceOpt(attrInsideOutside); print(")");
-  printInstanceConnects(connects, l+1);
+        indent = Dump.indentStr(l) +& "+";
+        print(indent +& "I(" +& Dump.printComponentRefStr(name) +& ", el: " +& printElementStr(el));
+        print(", ty: "); printTypeOpt(ty); print(", is/os: ");
+        printFaceOpt(attrInsideOutside); print(")");
+        printInstanceConnects(connects, l+1);
       then ();
 
     case (INSTANCE(name, attributes as ATTRIBUTES(el, ty, attrInsideOutside), children, connects, innerReference, outerReference), l)
       equation
-  indent = Dump.indentStr(l) +& "+";
-  print(indent +& "I(" +& Dump.printComponentRefStr(name) +& ", el: " +& printElementStr(el));
-  print(", ty: "); printTypeOpt(ty); print(", is/os: ");
-  printFaceOpt(attrInsideOutside); print(")");
-  printInstanceConnects(connects, l+1);
-  print("\n");
-  dumpInstanceHierarchy(children, l+1);
+        indent = Dump.indentStr(l) +& "+";
+        print(indent +& "I(" +& Dump.printComponentRefStr(name) +& ", el: " +& printElementStr(el));
+        print(", ty: "); printTypeOpt(ty); print(", is/os: ");
+        printFaceOpt(attrInsideOutside); print(")");
+        printInstanceConnects(connects, l+1);
+        print("\n");
+        dumpInstanceHierarchy(children, l+1);
       then ();
   end matchcontinue;
 end dumpInstance;
@@ -535,11 +535,11 @@ algorithm
       Absyn.Path p;
     case (SOME(p))
       equation
-  print (Absyn.pathString(p));
+        print (Absyn.pathString(p));
       then ();
     case (NONE())
       equation
-  print ("NONE()");
+        print ("NONE()");
       then ();
   end matchcontinue;
 end printPathOpt;
@@ -552,11 +552,11 @@ algorithm
       Types.Type ty;
     case (SOME(ty))
       equation
-  print (Types.printTypeStr(ty));
+        print (Types.printTypeStr(ty));
       then ();
     case (NONE())
       equation
-  print ("NONE()");
+        print ("NONE()");
       then ();
   end match;
 end printTypeOpt;
@@ -568,15 +568,15 @@ algorithm
     local
     case (SOME(INSIDE()))
       equation
-  print ("INSIDE");
+        print ("INSIDE");
       then ();
     case (SOME(OUTSIDE()))
       equation
-  print ("OUTSIDE");
+        print ("OUTSIDE");
       then ();
     case (NONE())
       equation
-  print ("NONE()");
+        print ("NONE()");
       then ();
   end match;
 end printFaceOpt;
@@ -589,11 +589,11 @@ algorithm
       Absyn.InnerOuter io;
     case (SOME(io))
       equation
-  print (Dump.unparseInnerouterStr(io));
+        print (Dump.unparseInnerouterStr(io));
       then ();
     case (NONE())
       equation
-  print ("NONE()");
+        print ("NONE()");
       then ();
   end matchcontinue;
 end printInnerOuterOpt;
@@ -611,11 +611,11 @@ algorithm
     case (CONNECTS({}, {}), l) then ();
     case (CONNECTS(connectEquations, actualConnects), l)
       equation
-  indent = Dump.indentStr(l) +& "+";
-  str = stringDelimitList(List.map(connectEquations, SCodeDump.equationStr), "\n" +& indent);
-  print("\n" +& indent +& str);
-  str = stringDelimitList(List.map(actualConnects, Dump.printComponentRefStr), ", ");
-  print(str);
+        indent = Dump.indentStr(l) +& "+";
+        str = stringDelimitList(List.map(connectEquations, SCodeDump.equationStr), "\n" +& indent);
+        print("\n" +& indent +& str);
+        str = stringDelimitList(List.map(actualConnects, Dump.printComponentRefStr), ", ");
+        print(str);
       then ();
   end matchcontinue;
 end printInstanceConnects;
@@ -639,36 +639,36 @@ algorithm
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
-  str = Absyn.pathString(path);
-  res = stringAppendList({"extends ",str,";"});
+        str = Absyn.pathString(path);
+        res = stringAppendList({"extends ",str,";"});
       then
-  res;
+        res;
 
     case SCode.COMPONENT(name = n,
-                   attributes = SCode.ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
+                         attributes = SCode.ATTR(variability = var),
+                         typeSpec = typath,modifications = mod,comment = comment)
       equation
-  mod_str = SCodeDump.printModStr(mod);
-  s = Dump.unparseTypeSpec(typath);
-  vs = SCodeDump.unparseVariability(var);
-  res = stringAppendList({vs," ",s," ",n,mod_str,";"});
+        mod_str = SCodeDump.printModStr(mod);
+        s = Dump.unparseTypeSpec(typath);
+        vs = SCodeDump.unparseVariability(var);
+        res = stringAppendList({vs," ",s," ",n,mod_str,";"});
       then
-  res;
+        res;
 
     case SCode.CLASS(name = n,classDef = cdef)
       equation
-  res = stringAppendList({"class ",n," ... end ",n,";"});
+        res = stringAppendList({"class ",n," ... end ",n,";"});
       then
-  res;
+        res;
 
     case SCode.IMPORT(imp = imp)
       equation
-   str = "import "+& Absyn.printImportString(imp) +& ";";
+         str = "import "+& Absyn.printImportString(imp) +& ";";
       then str;
 
     case SCode.DEFINEUNIT(name = n)
       equation
-   str = "defineunit "+& n +& ";";
+         str = "defineunit "+& n +& ";";
       then str;
 
   end match;

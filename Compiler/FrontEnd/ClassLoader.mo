@@ -30,7 +30,7 @@
  */
 
 encapsulated package ClassLoader
-" file:  ClassLoader.mo
+" file:        ClassLoader.mo
   package:     ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.
 
@@ -86,25 +86,25 @@ algorithm
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
     case (Absyn.IDENT(name = classname),_,mp,_)
       equation
-  gd = System.groupDelimiter();
-  mps = System.strtok(mp, gd);
-  p = loadClassFromMps(classname, priorityList, mps, encoding);
+        gd = System.groupDelimiter();
+        mps = System.strtok(mp, gd);
+        p = loadClassFromMps(classname, priorityList, mps, encoding);
       then
-  p;
+        p;
     /* Qualified names: First check if it is defined in a file pack.mo */
     case (Absyn.QUALIFIED(name = pack,path = rest),_,mp,_)
       equation
-  gd = System.groupDelimiter();
-  mps = System.strtok(mp, gd);
-  p = loadClassFromMps(pack, priorityList, mps, encoding);
+        gd = System.groupDelimiter();
+        mps = System.strtok(mp, gd);
+        p = loadClassFromMps(pack, priorityList, mps, encoding);
       then
-  p;
+        p;
     /* failure */
     else
       equation
-  Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadClass failed\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadClass failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end loadClass;
 
@@ -160,23 +160,23 @@ algorithm
 
     case (_,_,_,false,_)
       equation
-  pd = System.pathDelimiter();
-  /* Check for path/package.encoding; OpenModelica extension */
-  encodingfile = stringAppendList({path,pd,"package.encoding"});
-  encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
-  cl = parsePackageFile(path +& pd +& name,encoding,false,Absyn.TOP(),id);
+        pd = System.pathDelimiter();
+        /* Check for path/package.encoding; OpenModelica extension */
+        encodingfile = stringAppendList({path,pd,"package.encoding"});
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
+        cl = parsePackageFile(path +& pd +& name,encoding,false,Absyn.TOP(),id);
       then
-  cl;
+        cl;
 
     case (_,_,_,true,_)
       equation
-  /* Check for path/package.encoding; OpenModelica extension */
-  pd = System.pathDelimiter();
-  encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
-  encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
-  cl = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Error.getNumErrorMessages());
+        /* Check for path/package.encoding; OpenModelica extension */
+        pd = System.pathDelimiter();
+        encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
+        cl = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Error.getNumErrorMessages());
       then
-  cl;
+        cl;
   end match;
 end loadClassFromMp;
 
@@ -208,22 +208,22 @@ algorithm
       list<Absyn.Annotation> ann;
     case (_,pack,mp,_,within_,_)
       equation
-  pd = System.pathDelimiter();
-  mp_1 = stringAppendList({mp,pd,pack});
-  packagefile = stringAppendList({mp_1,pd,"package.mo"});
-  orderfile = stringAppendList({mp_1,pd,"package.order"});
-  existRegularFile(packagefile);
-  (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
-  reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
-  path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
-  w2 = Absyn.WITHIN(path);
-  cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, encoding, w2, {});
+        pd = System.pathDelimiter();
+        mp_1 = stringAppendList({mp,pd,pack});
+        packagefile = stringAppendList({mp_1,pd,"package.mo"});
+        orderfile = stringAppendList({mp_1,pd,"package.order"});
+        existRegularFile(packagefile);
+        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
+        reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
+        path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
+        w2 = Absyn.WITHIN(path);
+        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, encoding, w2, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
     case (_,pack,mp,_,within_,_)
       equation
-  true = numError == Error.getNumErrorMessages();
-  str = "loadCompletePackageFromMp failed for unknown reason: mp=" +& mp +& " pack=" +& pack;
-  Error.addMessage(Error.INTERNAL_ERROR, {str});
+        true = numError == Error.getNumErrorMessages();
+        str = "loadCompletePackageFromMp failed for unknown reason: mp=" +& mp +& " pack=" +& pack;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
 end loadCompletePackageFromMp;
@@ -239,11 +239,11 @@ algorithm
       list<Absyn.ClassPart> rest;
     case (Absyn.PUBLIC(ei1),Absyn.PUBLIC(ei2)::rest)
       equation
-  ei = listAppend(ei1,ei2);
+        ei = listAppend(ei1,ei2);
       then Absyn.PUBLIC(ei)::rest;
     case (Absyn.PROTECTED(ei1),Absyn.PROTECTED(ei2)::rest)
       equation
-  ei = listAppend(ei1,ei2);
+        ei = listAppend(ei1,ei2);
       then Absyn.PROTECTED(ei)::rest;
     case (_,_) then cp::cps;
   end match;
@@ -268,37 +268,37 @@ algorithm
 
     case (CLASSPART(cp),_,_,_,_)
       equation
-  cps = mergeBefore(cp,acc);
+        cps = mergeBefore(cp,acc);
       then cps;
 
     case (ELEMENT(ei,true),_,_,_,_)
       equation
-  cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
 
     case (ELEMENT(ei,false),_,_,_,_)
       equation
-  cps = mergeBefore(Absyn.PROTECTED({ei}),acc);
+        cps = mergeBefore(Absyn.PROTECTED({ei}),acc);
       then cps;
 
     case (CLASSLOAD(id),_,_,_,_)
       equation
-  pd = System.pathDelimiter();
-  true = System.directoryExists(mp +& pd +& id);
-  cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
-  ei = Absyn.makeClassElement(cl);
-  cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+        pd = System.pathDelimiter();
+        true = System.directoryExists(mp +& pd +& id);
+        cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
+        ei = Absyn.makeClassElement(cl);
+        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
 
     case (CLASSLOAD(id),_,_,_,_)
       equation
-  pd = System.pathDelimiter();
-  false = System.directoryExists(mp +& pd +& id);
-  file = mp +& pd +& id +& ".mo";
-  true = System.regularFileExists(file);
-  cl = parsePackageFile(file,encoding,false,w1,id);
-  ei = Absyn.makeClassElement(cl);
-  cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+        pd = System.pathDelimiter();
+        false = System.directoryExists(mp +& pd +& id);
+        file = mp +& pd +& id +& ".mo";
+        true = System.regularFileExists(file);
+        cl = parsePackageFile(file,encoding,false,w1,id);
+        ei = Absyn.makeClassElement(cl);
+        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
 
   end matchcontinue;
@@ -320,29 +320,29 @@ algorithm
 
     case (_,_)
       equation
-  true = System.regularFileExists(name);
-  (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
-  cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
-  prio = stringDelimitList(rest, " ");
-  prio = Util.if_(stringEq(prio,""), "default", prio);
-  mp = System.realpath(dir +& "/../");
-  p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
+        true = System.regularFileExists(name);
+        (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
+        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
+        prio = stringDelimitList(rest, " ");
+        prio = Util.if_(stringEq(prio,""), "default", prio);
+        mp = System.realpath(dir +& "/../");
+        p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
       then p1;
 
     case (_,_)
       equation
-  true = System.regularFileExists(name);
-  (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
-  false = stringEq(filename,"package.mo");
-  p1 = Parser.parse(name,encoding);
+        true = System.regularFileExists(name);
+        (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
+        false = stringEq(filename,"package.mo");
+        p1 = Parser.parse(name,encoding);
       then p1;
 
     // faliling
     else
       equation
-  Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end loadFile;
 
@@ -368,26 +368,26 @@ algorithm
 
     case (_,_,_,_,_)
       equation
-  true = System.regularFileExists(name);
-  Absyn.PROGRAM(cs,w2,ts) = Parser.parse(name,encoding);
-  classNames = List.map(cs, Absyn.getClassName);
-  str = stringDelimitList(classNames,", ");
-  Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
-  cl::{} = cs;
-  Absyn.CLASS(name=cname,body=body,info=info) = cl;
-  Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
-  s1 = Absyn.withinString(w1);
-  s2 = Absyn.withinString(w2);
-  Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-  Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
+        true = System.regularFileExists(name);
+        Absyn.PROGRAM(cs,w2,ts) = Parser.parse(name,encoding);
+        classNames = List.map(cs, Absyn.getClassName);
+        str = stringDelimitList(classNames,", ");
+        Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
+        cl::{} = cs;
+        Absyn.CLASS(name=cname,body=body,info=info) = cl;
+        Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+        s1 = Absyn.withinString(w1);
+        s2 = Absyn.withinString(w2);
+        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+        Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
       then cl;
 
     // faliling
     else
       equation
-  Debug.fprint(Flags.FAILTRACE, "ClassLoader.parsePackageFile failed: "+&name+&"\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.parsePackageFile failed: "+&name+&"\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end parsePackageFile;
 
@@ -409,49 +409,49 @@ algorithm
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
-  true = System.regularFileExists(filename);
-  contents = System.readFile(filename);
-  namesToFind = System.strtok(contents, "\n");
-  namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
-  duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
-  duplicatesStr = stringDelimitList(duplicates, ", ");
-  Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+        true = System.regularFileExists(filename);
+        contents = System.readFile(filename);
+        namesToFind = System.strtok(contents, "\n");
+        namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
+        duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
+        duplicatesStr = stringDelimitList(duplicates, ", ");
+        Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
 
-  // get all the .mo files in the directory!
-  mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
-  // get all the subdirs containing package.mo
-  subdirs = System.subDirectories(mp);
-  subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
-  // build a list
-  mofiles = listAppend(subdirs,mofiles);
-  // check if all are present in the package.order
-  differences = List.setDifference(mofiles, namesToFind);
-  // issue a warning if not all are present
-  differencesStr = stringDelimitList(differences, "\n\t");
-  Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
-  po1 = getPackageContentNamesinParts(namesToFind,cp,{});
-  List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
+        // get all the .mo files in the directory!
+        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
+        // get all the subdirs containing package.mo
+        subdirs = System.subDirectories(mp);
+        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+        // build a list
+        mofiles = listAppend(subdirs,mofiles);
+        // check if all are present in the package.order
+        differences = List.setDifference(mofiles, namesToFind);
+        // issue a warning if not all are present
+        differencesStr = stringDelimitList(differences, "\n\t");
+        Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+        po1 = getPackageContentNamesinParts(namesToFind,cp,{});
+        List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
 
-  po2 = List.map(differences, makeClassLoad);
+        po2 = List.map(differences, makeClassLoad);
 
-  po = List.appendNoCopy(po2, po1);
+        po = List.appendNoCopy(po2, po1);
       then
-  po;
+        po;
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
-  false = System.regularFileExists(filename);
-  mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
-  subdirs = System.subDirectories(mp);
-  subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
-  mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
-  po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
+        false = System.regularFileExists(filename);
+        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
+        subdirs = System.subDirectories(mp);
+        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+        mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
+        po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
       then po;
 
     case (Absyn.CLASS(info=info),_,_,_)
       equation
-  true = numError == Error.getNumErrorMessages();
-  Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
+        true = numError == Error.getNumErrorMessages();
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
       then fail();
   end matchcontinue;
 end getPackageContentNames;
@@ -488,8 +488,8 @@ algorithm
       String pd,str;
     case (CLASSLOAD(str),_,_)
       equation
-  pd = System.pathDelimiter();
-  Error.assertionOrAddSourceMessage(System.directoryExists(mp +& pd +& str) or System.regularFileExists(mp +& pd +& str +& ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
+        pd = System.pathDelimiter();
+        Error.assertionOrAddSourceMessage(System.directoryExists(mp +& pd +& str) or System.regularFileExists(mp +& pd +& str +& ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
       then ();
     else ();
   end match;
@@ -520,21 +520,21 @@ algorithm
       Absyn.ClassPart cp;
     case (namesToSort,{},_)
       equation
-  outOrder = listAppend(List.mapReverse(namesToSort,makeClassLoad),acc);
+        outOrder = listAppend(List.mapReverse(namesToSort,makeClassLoad),acc);
       then outOrder;
     case (namesToSort,Absyn.PUBLIC(elts)::rcp,_)
       equation
-  (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,true);
-  (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+        (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,true);
+        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
     case (namesToSort,Absyn.PROTECTED(elts)::rcp,_)
       equation
-  (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,false);
-  (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+        (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,false);
+        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
     case (namesToSort,cp::rcp,_)
       equation
-  (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
+        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
       then outOrder;
   end match;
 end getPackageContentNamesinParts;
@@ -561,38 +561,38 @@ algorithm
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
       equation
-  compNames = List.map(comps,Absyn.componentName);
-  (names,b) = matchCompNames(inNamesToSort,compNames,info);
-  orderElt = Util.if_(b, makeElement(ei,pub), makeClassLoad(name1));
-  (outOrder,names) = getPackageContentNamesinElts(names,Util.if_(b,elts,inElts),orderElt :: po,pub);
+        compNames = List.map(comps,Absyn.componentName);
+        (names,b) = matchCompNames(inNamesToSort,compNames,info);
+        orderElt = Util.if_(b, makeElement(ei,pub), makeClassLoad(name1));
+        (outOrder,names) = getPackageContentNamesinElts(names,Util.if_(b,elts,inElts),orderElt :: po,pub);
       then (outOrder,names);
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
       equation
-  load = makeClassLoad(name1);
-  b = name1 ==& name2;
-  Error.assertionOrAddSourceMessage(not Debug.bcallret2(b,listMember,load,po,false), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
-  orderElt = Util.if_(b, makeElement(ei,pub), load);
-  (outOrder,names) = getPackageContentNamesinElts(namesToSort,Util.if_(b,elts,inElts),orderElt :: po, pub);
+        load = makeClassLoad(name1);
+        b = name1 ==& name2;
+        Error.assertionOrAddSourceMessage(not Debug.bcallret2(b,listMember,load,po,false), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
+        orderElt = Util.if_(b, makeElement(ei,pub), load);
+        (outOrder,names) = getPackageContentNamesinElts(namesToSort,Util.if_(b,elts,inElts),orderElt :: po, pub);
       then (outOrder,names);
 
     case ({},(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
       equation
-  load = makeClassLoad(name2);
-  Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
-  Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
+        load = makeClassLoad(name2);
+        Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
+        Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
       then fail();
 
     case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::elts,_,_)
       equation
-  load = makeClassLoad(name2);
-  Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
-  Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
+        load = makeClassLoad(name2);
+        Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
+        Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
       then fail();
 
     case (namesToSort,ei::elts,_,_)
       equation
-  (outOrder,names) = getPackageContentNamesinElts(namesToSort,elts,ELEMENT(ei,pub) :: po, pub);
+        (outOrder,names) = getPackageContentNamesinElts(namesToSort,elts,ELEMENT(ei,pub) :: po, pub);
       then (outOrder,names);
   end match;
 end getPackageContentNamesinElts;
@@ -612,13 +612,13 @@ algorithm
     case (_,{},_) then (names,true);
     case (n1::rest1,n2::rest2,_)
       equation
-  true = n1 ==& n2;
-  (rest1,b) = matchCompNames(rest1,rest2,info);
-  Error.assertionOrAddSourceMessage(b,Error.ORDER_FILE_COMPONENTS, {}, info);
+        true = n1 ==& n2;
+        (rest1,b) = matchCompNames(rest1,rest2,info);
+        Error.assertionOrAddSourceMessage(b,Error.ORDER_FILE_COMPONENTS, {}, info);
       then (rest1,true);
     case (n1::rest1,n2::rest2,_)
       equation
-  false = n1 ==& n2;
+        false = n1 ==& n2;
       then (rest1,false);
   end matchcontinue;
 end matchCompNames;

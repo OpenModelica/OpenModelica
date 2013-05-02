@@ -152,8 +152,8 @@ double* alloc_real_matrix(int N, int M, void *data)
     for(i = 0; i < N; ++i) {
       tmp = RML_CAR(data);
       for(j = 0; j < M; ++j) {
-  matrix[j * N + i] = rml_prim_get_real(RML_CAR(tmp));
-  tmp = RML_CDR(tmp);
+        matrix[j * N + i] = rml_prim_get_real(RML_CAR(tmp));
+        tmp = RML_CDR(tmp);
       }
       data = RML_CDR(data);
     }
@@ -270,9 +270,9 @@ void debug_real_matrix(const char *name, int N, int M, double *data)
       d = data[i * M + j];
 
       if(d < 0) {
-  printf("%f", d);
+        printf("%f", d);
       } else {
-  printf(" %f", d);
+        printf(" %f", d);
       }
       if(j != M - 1) printf(", ");
     }

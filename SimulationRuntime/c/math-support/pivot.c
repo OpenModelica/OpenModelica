@@ -52,9 +52,9 @@ int maxsearch( double *A, modelica_integer start, modelica_integer n_rows, model
       /* Compare element to current maximum */
       if (tmp > mabsval)
       {
-  mrow = row;
-  mcol = col;
-  mabsval = tmp;
+        mrow = row;
+        mcol = col;
+        mabsval = tmp;
       }
     }
   }
@@ -121,17 +121,17 @@ int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica
       double leader = get_pivot_matrix_elt(A,i,row);
       if (leader != 0.0)
       {
-  double scale = -leader/pivot;
-  /* set leader to zero */
-  set_pivot_matrix_elt(A,i,row, 0.0);
-  /* subtract scaled equation from pivot row from current row */
-  for(j=row+1;j<n_cols;j++)
-  {
-    double t1 = get_pivot_matrix_elt(A,i,j);
-    double t2 = get_pivot_matrix_elt(A,row,j);
-    double tmp = t1 + scale*t2;
-    set_pivot_matrix_elt(A,i,j, tmp);
-  }
+        double scale = -leader/pivot;
+        /* set leader to zero */
+        set_pivot_matrix_elt(A,i,row, 0.0);
+        /* subtract scaled equation from pivot row from current row */
+        for(j=row+1;j<n_cols;j++)
+        {
+          double t1 = get_pivot_matrix_elt(A,i,j);
+          double t2 = get_pivot_matrix_elt(A,row,j);
+          double tmp = t1 + scale*t2;
+          set_pivot_matrix_elt(A,i,j, tmp);
+        }
       }
     }
   }

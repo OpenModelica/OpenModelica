@@ -18,32 +18,32 @@
 
    Revisions:
    - Jan. 20, 2010: stateValueReferencesChanged added to struct fmiEventInfo (ticket #27)
-              (by M. Otter, DLR)
-              Added WIN32 pragma to define the struct layout (ticket #34)
-              (by J. Mauss, QTronic)
+                    (by M. Otter, DLR)
+                    Added WIN32 pragma to define the struct layout (ticket #34)
+                    (by J. Mauss, QTronic)
    - Jan.  4, 2010: Removed argument intermediateResults from fmiInitialize
-              Renamed macro fmiGetModelFunctionsVersion to fmiGetVersion
-              Renamed macro fmiModelFunctionsVersion to fmiVersion
-              Replaced fmiModel by fmiComponent in decl of fmiInstantiateModel
-              (by J. Mauss, QTronic)
+                    Renamed macro fmiGetModelFunctionsVersion to fmiGetVersion
+                    Renamed macro fmiModelFunctionsVersion to fmiVersion
+                    Replaced fmiModel by fmiComponent in decl of fmiInstantiateModel
+                    (by J. Mauss, QTronic)
    - Dec. 17, 2009: Changed extension "me" to "fmi" (by Martin Otter, DLR).
    - Dez. 14, 2009: Added eventInfo to meInitialize and added
-              meGetNominalContinuousStates (by Martin Otter, DLR)
+                    meGetNominalContinuousStates (by Martin Otter, DLR)
    - Sept. 9, 2009: Added DllExport (according to Peter Nilsson's suggestion)
-              (by A. Junghanns, QTronic)
+                    (by A. Junghanns, QTronic)
    - Sept. 9, 2009: Changes according to FMI-meeting on July 21:
-              meInquireModelTypesVersion     -> meGetModelTypesPlatform
-              meInquireModelFunctionsVersion -> meGetModelFunctionsVersion
-              meSetStates                    -> meSetContinuousStates
-              meGetStates                    -> meGetContinuousStates
-              removal of meInitializeModelClass
-              removal of meGetTime
-              change of arguments of meInstantiateModel
-              change of arguments of meCompletedIntegratorStep
-              (by Martin Otter, DLR):
+                    meInquireModelTypesVersion     -> meGetModelTypesPlatform
+                    meInquireModelFunctionsVersion -> meGetModelFunctionsVersion
+                    meSetStates                    -> meSetContinuousStates
+                    meGetStates                    -> meGetContinuousStates
+                    removal of meInitializeModelClass
+                    removal of meGetTime
+                    change of arguments of meInstantiateModel
+                    change of arguments of meCompletedIntegratorStep
+                    (by Martin Otter, DLR):
    - July 19, 2009: Added "me" as prefix to file names (by Martin Otter, DLR).
    - March 2, 2009: Changed function definitions according to the last design
-              meeting with additional improvements (by Martin Otter, DLR).
+                    meeting with additional improvements (by Martin Otter, DLR).
    - Dec. 3 , 2008: First version by Martin Otter (DLR) and Hans Olsson (Dynasim).
 
 
@@ -101,30 +101,30 @@
 #define fmiFullName(name) fmiPasteB(MODEL_IDENTIFIER, name)
 
 #define fmiGetModelTypesPlatform      fmiFullName(_fmiGetModelTypesPlatform)
-#define fmiGetVersion           fmiFullName(_fmiGetVersion)
-#define fmiInstantiateModel     fmiFullName(_fmiInstantiateModel)
-#define fmiFreeModelInstance    fmiFullName(_fmiFreeModelInstance)
-#define fmiSetDebugLogging      fmiFullName(_fmiSetDebugLogging)
-#define fmiSetTime              fmiFullName(_fmiSetTime)
-#define fmiSetContinuousStates  fmiFullName(_fmiSetContinuousStates)
+#define fmiGetVersion                 fmiFullName(_fmiGetVersion)
+#define fmiInstantiateModel           fmiFullName(_fmiInstantiateModel)
+#define fmiFreeModelInstance          fmiFullName(_fmiFreeModelInstance)
+#define fmiSetDebugLogging            fmiFullName(_fmiSetDebugLogging)
+#define fmiSetTime                    fmiFullName(_fmiSetTime)
+#define fmiSetContinuousStates        fmiFullName(_fmiSetContinuousStates)
 #define fmiCompletedIntegratorStep    fmiFullName(_fmiCompletedIntegratorStep)
-#define fmiSetReal              fmiFullName(_fmiSetReal)
-#define fmiSetInteger           fmiFullName(_fmiSetInteger)
-#define fmiSetBoolean           fmiFullName(_fmiSetBoolean)
-#define fmiSetString            fmiFullName(_fmiSetString)
-#define fmiInitialize           fmiFullName(_fmiInitialize)
-#define fmiGetDerivatives       fmiFullName(_fmiGetDerivatives)
-#define fmiGetEventIndicators   fmiFullName(_fmiGetEventIndicators)
-#define fmiGetReal              fmiFullName(_fmiGetReal)
-#define fmiGetInteger           fmiFullName(_fmiGetInteger)
-#define fmiGetBoolean           fmiFullName(_fmiGetBoolean)
-#define fmiGetString            fmiFullName(_fmiGetString)
-#define fmiEventUpdate          fmiFullName(_fmiEventUpdate)
-#define fmiGetContinuousStates  fmiFullName(_fmiGetContinuousStates)
+#define fmiSetReal                    fmiFullName(_fmiSetReal)
+#define fmiSetInteger                 fmiFullName(_fmiSetInteger)
+#define fmiSetBoolean                 fmiFullName(_fmiSetBoolean)
+#define fmiSetString                  fmiFullName(_fmiSetString)
+#define fmiInitialize                 fmiFullName(_fmiInitialize)
+#define fmiGetDerivatives             fmiFullName(_fmiGetDerivatives)
+#define fmiGetEventIndicators         fmiFullName(_fmiGetEventIndicators)
+#define fmiGetReal                    fmiFullName(_fmiGetReal)
+#define fmiGetInteger                 fmiFullName(_fmiGetInteger)
+#define fmiGetBoolean                 fmiFullName(_fmiGetBoolean)
+#define fmiGetString                  fmiFullName(_fmiGetString)
+#define fmiEventUpdate                fmiFullName(_fmiEventUpdate)
+#define fmiGetContinuousStates        fmiFullName(_fmiGetContinuousStates)
 #define fmiGetNominalContinuousStates fmiFullName(_fmiGetNominalContinuousStates)
 #define fmiGetStateValueReferences    fmiFullName(_fmiGetStateValueReferences)
-#define fmiTerminate            fmiFullName(_fmiTerminate)
-#define fmiSetExternalFunction  fmiFullName(_fmiSetExternalFunction)
+#define fmiTerminate                  fmiFullName(_fmiTerminate)
+#define fmiSetExternalFunction        fmiFullName(_fmiSetExternalFunction)
 
 
 /* Version number */
@@ -143,18 +143,18 @@ extern "C" {
 
 /* Type definitions */
    typedef enum  {fmiOK,
-            fmiWarning,
-            fmiDiscard,
-            fmiError,
-            fmiFatal} fmiStatus;
+                  fmiWarning,
+                  fmiDiscard,
+                  fmiError,
+                  fmiFatal} fmiStatus;
 
-   typedef void  (*fmiCallbackLogger)  (fmiComponent c, fmiString instanceName, fmiStatus status,
-                                        fmiString category, fmiString message, ...);
+   typedef void  (*fmiCallbackLogger)        (fmiComponent c, fmiString instanceName, fmiStatus status,
+                                              fmiString category, fmiString message, ...);
    typedef void* (*fmiCallbackAllocateMemory)(size_t nobj, size_t size);
    typedef void  (*fmiCallbackFreeMemory)    (void* obj);
 
    typedef struct {
-     fmiCallbackLogger   logger;
+     fmiCallbackLogger         logger;
      fmiCallbackAllocateMemory allocateMemory;
      fmiCallbackFreeMemory     freeMemory;
    } fmiCallbackFunctions;
@@ -174,27 +174,27 @@ extern "C" {
 #endif
 
 /* Creation and destruction of model instances and setting debug status */
-   DllExport fmiComponent fmiInstantiateModel (fmiString      instanceName,
-                                         fmiString            GUID,
-                                         fmiCallbackFunctions functions,
-                                         fmiBoolean           loggingOn);
+   DllExport fmiComponent fmiInstantiateModel (fmiString            instanceName,
+                                               fmiString            GUID,
+                                               fmiCallbackFunctions functions,
+                                               fmiBoolean           loggingOn);
    DllExport void      fmiFreeModelInstance(fmiComponent c);
    DllExport fmiStatus fmiSetDebugLogging  (fmiComponent c, fmiBoolean loggingOn);
 
 
 /* Providing independent variables and re-initialization of caching */
-   DllExport fmiStatus fmiSetTime          (fmiComponent c, fmiReal time);
+   DllExport fmiStatus fmiSetTime                (fmiComponent c, fmiReal time);
    DllExport fmiStatus fmiSetContinuousStates    (fmiComponent c, const fmiReal x[], size_t nx);
    DllExport fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate);
-   DllExport fmiStatus fmiSetReal          (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal    value[]);
-   DllExport fmiStatus fmiSetInteger       (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[]);
-   DllExport fmiStatus fmiSetBoolean       (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]);
-   DllExport fmiStatus fmiSetString        (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString  value[]);
+   DllExport fmiStatus fmiSetReal                (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal    value[]);
+   DllExport fmiStatus fmiSetInteger             (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[]);
+   DllExport fmiStatus fmiSetBoolean             (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]);
+   DllExport fmiStatus fmiSetString              (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString  value[]);
 
 
 /* Evaluation of the model equations */
    DllExport fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled,
-                               fmiReal relativeTolerance, fmiEventInfo* eventInfo);
+                                     fmiReal relativeTolerance, fmiEventInfo* eventInfo);
 
    DllExport fmiStatus fmiGetDerivatives    (fmiComponent c, fmiReal derivatives[]    , size_t nx);
    DllExport fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_t ni);
@@ -204,11 +204,11 @@ extern "C" {
    DllExport fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]);
    DllExport fmiStatus fmiGetString (fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[]);
 
-   DllExport fmiStatus fmiEventUpdate         (fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo);
+   DllExport fmiStatus fmiEventUpdate               (fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo);
    DllExport fmiStatus fmiGetContinuousStates       (fmiComponent c, fmiReal states[], size_t nx);
    DllExport fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx);
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
-   DllExport fmiStatus fmiTerminate           (fmiComponent c);
+   DllExport fmiStatus fmiTerminate                 (fmiComponent c);
    DllExport fmiStatus fmiSetExternalFunction       (fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[]);
 #ifdef __cplusplus
 }

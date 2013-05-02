@@ -37,9 +37,9 @@ void old_cheap(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
     for(ptr = s_ptr; ptr < e_ptr; ptr++) {
       int r_id = col_ids[ptr];
       if(row_match[r_id] == -1) {
-  match[i] = r_id;
-  row_match[r_id] = i;
-  break;
+        match[i] = r_id;
+        row_match[r_id] = i;
+        break;
       }
     }
   }
@@ -82,57 +82,57 @@ void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   while(!stop) {
     while(no_of_d1_rows > 0 || no_of_d1_cols > 0) {
       if(no_of_d1_rows > 0) {
-  r_id = row_stack[--no_of_d1_rows];
-  if(row_degrees[r_id] == 1 && row_match[r_id] == -1) {
-    sptr = row_ptrs[r_id];
-    eptr = row_ptrs[r_id + 1];
-    for(ptr = sptr; ptr < eptr; ptr++) {
-      c_id = row_ids[ptr];
-      if(match[c_id] == -1) {
-        match[c_id] = r_id;
-        row_match[r_id] = c_id;
+        r_id = row_stack[--no_of_d1_rows];
+        if(row_degrees[r_id] == 1 && row_match[r_id] == -1) {
+          sptr = row_ptrs[r_id];
+          eptr = row_ptrs[r_id + 1];
+          for(ptr = sptr; ptr < eptr; ptr++) {
+            c_id = row_ids[ptr];
+            if(match[c_id] == -1) {
+              match[c_id] = r_id;
+              row_match[r_id] = c_id;
 
-        sptr2 = col_ptrs[c_id];
-        eptr2 = col_ptrs[c_id + 1];
-        for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
-          r_id2 = col_ids[ptr2];
-          if(row_match[r_id2] == -1) {
-            if((--(row_degrees[r_id2])) == 1) {
-              row_stack[no_of_d1_rows++] = r_id2;
+              sptr2 = col_ptrs[c_id];
+              eptr2 = col_ptrs[c_id + 1];
+              for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
+                r_id2 = col_ids[ptr2];
+                if(row_match[r_id2] == -1) {
+                  if((--(row_degrees[r_id2])) == 1) {
+                    row_stack[no_of_d1_rows++] = r_id2;
+                  }
+                }
+              }
+              break;
             }
           }
         }
-        break;
-      }
-    }
-  }
       }
 
       if(no_of_d1_cols > 0) {
-  c_id = col_stack[--no_of_d1_cols];
-  if(col_degrees[c_id] == 1 && match[c_id] == -1) {
-    sptr = col_ptrs[c_id];
-    eptr = col_ptrs[c_id + 1];
-    for(ptr = sptr; ptr < eptr; ptr++) {
-      r_id = col_ids[ptr];
-      if(row_match[r_id] == -1) {
-        row_match[r_id] = c_id;
-        match[c_id] = r_id;
+        c_id = col_stack[--no_of_d1_cols];
+        if(col_degrees[c_id] == 1 && match[c_id] == -1) {
+          sptr = col_ptrs[c_id];
+          eptr = col_ptrs[c_id + 1];
+          for(ptr = sptr; ptr < eptr; ptr++) {
+            r_id = col_ids[ptr];
+            if(row_match[r_id] == -1) {
+              row_match[r_id] = c_id;
+              match[c_id] = r_id;
 
-        sptr2 = row_ptrs[r_id];
-        eptr2 = row_ptrs[r_id + 1];
-        for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
-          c_id2 = row_ids[ptr2];
-          if( match[c_id2] == -1) {
-            if((--(col_degrees[c_id2])) == 1) {
-              col_stack[no_of_d1_cols++] = c_id2;
+              sptr2 = row_ptrs[r_id];
+              eptr2 = row_ptrs[r_id + 1];
+              for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
+                c_id2 = row_ids[ptr2];
+                if( match[c_id2] == -1) {
+                  if((--(col_degrees[c_id2])) == 1) {
+                    col_stack[no_of_d1_cols++] = c_id2;
+                  }
+                }
+              }
+              break;
             }
           }
         }
-        break;
-      }
-    }
-  }
       }
     }
 
@@ -142,50 +142,50 @@ void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       c_degree = col_degrees[c_id];
 
       if(match[c_id] == -1 && c_degree != 0) {
-  sptr = col_ptrs[c_id];
-  eptr = col_ptrs[c_id + 1];
+        sptr = col_ptrs[c_id];
+        eptr = col_ptrs[c_id + 1];
 
-  for(ptr = sptr; ptr < eptr; ptr++) {
-    r_id = col_ids[ptr];
-    if(row_match[r_id] == -1) {
-      match[c_id] = r_id;
-      row_match[r_id] = c_id;
-      stop = 0;
-      break;
-    }
-  }
-  ptr++;
+        for(ptr = sptr; ptr < eptr; ptr++) {
+          r_id = col_ids[ptr];
+          if(row_match[r_id] == -1) {
+            match[c_id] = r_id;
+            row_match[r_id] = c_id;
+            stop = 0;
+            break;
+          }
+        }
+        ptr++;
 
-  for(;ptr < eptr; ptr++) {
-    r_id2 = col_ids[ptr];
-    if(row_match[r_id2] == -1) {
-      if((--(row_degrees[r_id2])) == 1) {
-        row_stack[no_of_d1_rows++] = r_id2;
-      }
-    }
-  }
+        for(;ptr < eptr; ptr++) {
+          r_id2 = col_ids[ptr];
+          if(row_match[r_id2] == -1) {
+            if((--(row_degrees[r_id2])) == 1) {
+              row_stack[no_of_d1_rows++] = r_id2;
+            }
+          }
+        }
 
-  sptr = row_ptrs[r_id];
-  eptr = row_ptrs[r_id + 1];
-  int count = row_degrees[r_id];
-  for(ptr = sptr;ptr < eptr && count > 0; ptr++) {
-    c_id2 = row_ids[ptr];
-    if(match[c_id2] == -1) {
-      count--;
-      if((--(col_degrees[c_id2])) == 1) {
-        col_stack[no_of_d1_cols++] = c_id2;
-      }
-    }
-  }
+        sptr = row_ptrs[r_id];
+        eptr = row_ptrs[r_id + 1];
+        int count = row_degrees[r_id];
+        for(ptr = sptr;ptr < eptr && count > 0; ptr++) {
+          c_id2 = row_ids[ptr];
+          if(match[c_id2] == -1) {
+            count--;
+            if((--(col_degrees[c_id2])) == 1) {
+              col_stack[no_of_d1_cols++] = c_id2;
+            }
+          }
+        }
       }
 
       if(no_of_d1_cols + no_of_d1_rows > 0) {
-  remain = i + 1;
-  break;
+        remain = i + 1;
+        break;
       }
 
       if(i == n-1) {
-  stop = 1;
+        stop = 1;
       }
     }
   }
@@ -246,57 +246,57 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   while(!stop) {
     while(no_of_d1_rows > 0 || no_of_d1_cols > 0) {
       if(no_of_d1_rows > 0) {
-  r_id = row_stack[--no_of_d1_rows];
-  if(row_degrees[r_id] == 1 && row_match[r_id] == -1) {
-    sptr = row_ptrs[r_id];
-    eptr = row_ptrs[r_id + 1];
-    for(ptr = sptr; ptr < eptr; ptr++) {
-      c_id = row_ids[ptr];
-      if(match[c_id] == -1) {
-        match[c_id] = r_id;
-        row_match[r_id] = c_id;
+        r_id = row_stack[--no_of_d1_rows];
+        if(row_degrees[r_id] == 1 && row_match[r_id] == -1) {
+          sptr = row_ptrs[r_id];
+          eptr = row_ptrs[r_id + 1];
+          for(ptr = sptr; ptr < eptr; ptr++) {
+            c_id = row_ids[ptr];
+            if(match[c_id] == -1) {
+              match[c_id] = r_id;
+              row_match[r_id] = c_id;
 
-        sptr2 = col_ptrs[c_id];
-        eptr2 = col_ptrs[c_id + 1];
-        for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
-          r_id2 = col_ids[ptr2];
-          if(row_match[r_id2] == -1) {
-            if((--(row_degrees[r_id2])) == 1) {
-              row_stack[no_of_d1_rows++] = r_id2;
+              sptr2 = col_ptrs[c_id];
+              eptr2 = col_ptrs[c_id + 1];
+              for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
+                r_id2 = col_ids[ptr2];
+                if(row_match[r_id2] == -1) {
+                  if((--(row_degrees[r_id2])) == 1) {
+                    row_stack[no_of_d1_rows++] = r_id2;
+                  }
+                }
+              }
+              break;
             }
           }
         }
-        break;
-      }
-    }
-  }
       }
 
       if(no_of_d1_cols > 0) {
-  c_id = col_stack[--no_of_d1_cols];
-  if(col_degrees[c_id] == 1 && match[c_id] == -1) {
-    sptr = col_ptrs[c_id];
-    eptr = col_ptrs[c_id + 1];
-    for(ptr = sptr; ptr < eptr; ptr++) {
-      r_id = col_ids[ptr];
-      if(row_match[r_id] == -1) {
-        row_match[r_id] = c_id;
-        match[c_id] = r_id;
+        c_id = col_stack[--no_of_d1_cols];
+        if(col_degrees[c_id] == 1 && match[c_id] == -1) {
+          sptr = col_ptrs[c_id];
+          eptr = col_ptrs[c_id + 1];
+          for(ptr = sptr; ptr < eptr; ptr++) {
+            r_id = col_ids[ptr];
+            if(row_match[r_id] == -1) {
+              row_match[r_id] = c_id;
+              match[c_id] = r_id;
 
-        sptr2 = row_ptrs[r_id];
-        eptr2 = row_ptrs[r_id + 1];
-        for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
-          c_id2 = row_ids[ptr2];
-          if( match[c_id2] == -1) {
-            if((--(col_degrees[c_id2])) == 1) {
-              col_stack[no_of_d1_cols++] = c_id2;
+              sptr2 = row_ptrs[r_id];
+              eptr2 = row_ptrs[r_id + 1];
+              for(ptr2 = sptr2; ptr2 < eptr2; ptr2++) {
+                c_id2 = row_ids[ptr2];
+                if( match[c_id2] == -1) {
+                  if((--(col_degrees[c_id2])) == 1) {
+                    col_stack[no_of_d1_cols++] = c_id2;
+                  }
+                }
+              }
+              break;
             }
           }
         }
-        break;
-      }
-    }
-  }
       }
     }
 
@@ -306,59 +306,59 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       c_degree = col_degrees[c_id];
 
       if(match[c_id] == -1 && c_degree != 0) {
-  e_id = omc_tinymt64_generate_fast_int_range(&random_seed,c_degree);
+        e_id = omc_tinymt64_generate_fast_int_range(&random_seed,c_degree);
 
-  sptr = col_ptrs[c_id];
-  eptr = col_ptrs[c_id + 1];
+        sptr = col_ptrs[c_id];
+        eptr = col_ptrs[c_id + 1];
 
-  for(ptr = sptr; ptr < eptr; ptr++) {
-    r_id = col_ids[ptr];
-    if(row_match[r_id] == -1) {
-      if(e_id == 0) {
-        match[c_id] = r_id;
-        row_match[r_id] = c_id;
-        stop = 0;
-        break;
-      } else {
-        if((--(row_degrees[r_id])) == 1) {
-          row_stack[no_of_d1_rows++] = r_id;
+        for(ptr = sptr; ptr < eptr; ptr++) {
+          r_id = col_ids[ptr];
+          if(row_match[r_id] == -1) {
+            if(e_id == 0) {
+              match[c_id] = r_id;
+              row_match[r_id] = c_id;
+              stop = 0;
+              break;
+            } else {
+              if((--(row_degrees[r_id])) == 1) {
+                row_stack[no_of_d1_rows++] = r_id;
+              }
+              e_id--;
+            }
+          }
         }
-        e_id--;
-      }
-    }
-  }
-  ptr++;
+        ptr++;
 
-  for(;ptr < eptr; ptr++) {
-    r_id2 = col_ids[ptr];
-    if(row_match[r_id2] == -1) {
-      if((--(row_degrees[r_id2])) == 1) {
-        row_stack[no_of_d1_rows++] = r_id2;
-      }
-    }
-  }
+        for(;ptr < eptr; ptr++) {
+          r_id2 = col_ids[ptr];
+          if(row_match[r_id2] == -1) {
+            if((--(row_degrees[r_id2])) == 1) {
+              row_stack[no_of_d1_rows++] = r_id2;
+            }
+          }
+        }
 
-  sptr = row_ptrs[r_id];
-  eptr = row_ptrs[r_id + 1];
-  int count = row_degrees[r_id];
-  for(ptr = sptr;ptr < eptr && count > 0; ptr++) {
-    c_id2 = row_ids[ptr];
-    if(match[c_id2] == -1) {
-      count--;
-      if((--(col_degrees[c_id2])) == 1) {
-        col_stack[no_of_d1_cols++] = c_id2;
-      }
-    }
-  }
+        sptr = row_ptrs[r_id];
+        eptr = row_ptrs[r_id + 1];
+        int count = row_degrees[r_id];
+        for(ptr = sptr;ptr < eptr && count > 0; ptr++) {
+          c_id2 = row_ids[ptr];
+          if(match[c_id2] == -1) {
+            count--;
+            if((--(col_degrees[c_id2])) == 1) {
+              col_stack[no_of_d1_cols++] = c_id2;
+            }
+          }
+        }
       }
 
       if(no_of_d1_cols + no_of_d1_rows > 0) {
-  remain = i + 1;
-  break;
+        remain = i + 1;
+        break;
       }
 
       if(i == n-1) {
-  stop = 1;
+        stop = 1;
       }
     }
   }
@@ -433,19 +433,19 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
     if(vtx < n) {
       for(ptr = col_ptrs[vtx]; ptr < col_ptrs[vtx+1]; ptr++) {
-  if(row_match[col_ids[ptr]] == -1) {
-    minnbr = col_ids[ptr];
-    break;
-  }
+        if(row_match[col_ids[ptr]] == -1) {
+          minnbr = col_ids[ptr];
+          break;
+        }
       }
 
       for(ptr = ptr + 1; ptr < col_ptrs[vtx+1]; ptr++) {
-  row = col_ids[ptr];
-  if(row_match[row] == -1) {
-    if(rnodes[row].degree < rnodes[minnbr].degree) {
-      minnbr = col_ids[ptr];
-    }
-  }
+        row = col_ids[ptr];
+        if(row_match[row] == -1) {
+          if(rnodes[row].degree < rnodes[minnbr].degree) {
+            minnbr = col_ids[ptr];
+          }
+        }
       }
 
       match[vtx] = minnbr; row_match[minnbr] = vtx;
@@ -454,19 +454,19 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     } else {
       vtx = vtx - n;
       for(ptr = row_ptrs[vtx]; ptr < row_ptrs[vtx+1]; ptr++) {
-  if(match[row_ids[ptr]] == -1) {
-    minnbr = row_ids[ptr];
-    break;
-  }
+        if(match[row_ids[ptr]] == -1) {
+          minnbr = row_ids[ptr];
+          break;
+        }
       }
 
       for(ptr = ptr + 1; ptr < row_ptrs[vtx+1]; ptr++) {
-  col = row_ids[ptr];
-  if(match[col] == -1) {
-    if(cnodes[col].degree < cnodes[minnbr].degree) {
-      minnbr = row_ids[ptr];
-    }
-  }
+        col = row_ids[ptr];
+        if(match[col] == -1) {
+          if(cnodes[col].degree < cnodes[minnbr].degree) {
+            minnbr = row_ids[ptr];
+          }
+        }
       }
 
       row_match[vtx] = minnbr; match[minnbr] = vtx;
@@ -478,32 +478,32 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     for(ptr = col_ptrs[vtx]; ptr < col_ptrs[vtx+1]; ptr++) {
       row = col_ids[ptr];
       if(row_match[row] == -1) {
-  deg = --(rnodes[row].degree);
-  rnodes[row].next->prvs = rnodes[row].prvs;
-  rnodes[row].prvs->next = rnodes[row].next;
+        deg = --(rnodes[row].degree);
+        rnodes[row].next->prvs = rnodes[row].prvs;
+        rnodes[row].prvs->next = rnodes[row].next;
 
-  if(deg > 0) {
-    tptr = lists[deg].next;
-    tptr->prvs = lists[deg].next = &(rnodes[row]);
-    rnodes[row].next = tptr;
-    rnodes[row].prvs = &(lists[deg]);
-  }
+        if(deg > 0) {
+          tptr = lists[deg].next;
+          tptr->prvs = lists[deg].next = &(rnodes[row]);
+          rnodes[row].next = tptr;
+          rnodes[row].prvs = &(lists[deg]);
+        }
       }
     }
 
     for(ptr = row_ptrs[minnbr]; ptr < row_ptrs[minnbr+1]; ptr++) {
       col = row_ids[ptr];
       if(match[col] == -1) {
-  deg = --(cnodes[col].degree);
-  cnodes[col].next->prvs = cnodes[col].prvs;
-  cnodes[col].prvs->next = cnodes[col].next;
+        deg = --(cnodes[col].degree);
+        cnodes[col].next->prvs = cnodes[col].prvs;
+        cnodes[col].prvs->next = cnodes[col].next;
 
-  if(deg > 0) {
-    tptr = lists[deg].next;
-    tptr->prvs = lists[deg].next = &(cnodes[col]);
-    cnodes[col].next = tptr;
-    cnodes[col].prvs = &(lists[deg]);
-  }
+        if(deg > 0) {
+          tptr = lists[deg].next;
+          tptr->prvs = lists[deg].next = &(cnodes[col]);
+          cnodes[col].next = tptr;
+          cnodes[col].prvs = &(lists[deg]);
+        }
       }
     }
     cdeg--;
@@ -563,8 +563,8 @@ void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
       ep = col_ptrs[i+1];
 
       for(;sp < ep; sp++) {
-  row = col_ids[sp];
-  row_ids[t_row_ptrs[row]++] = i;
+        row = col_ids[sp];
+        row_ids[t_row_ptrs[row]++] = i;
       }
     }
     free(t_row_ptrs);

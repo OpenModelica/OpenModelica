@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFConnectEquations
-" file:  NFConnectEquations.mo
+" file:        NFConnectEquations.mo
   package:     NFConnectEquations
   description: Functions that generate connect equations.
 
@@ -81,44 +81,44 @@ algorithm
 
     case (_, {})
       equation
-  true = NFConnectUtil2.isEmptyConnections(inConnections);
+        true = NFConnectUtil2.isEmptyConnections(inConnections);
       then
-  DAEUtil.emptyDae;
+        DAEUtil.emptyDae;
 
     case (NFConnect2.CONNECTIONS(connections, expconnl, _, _), _)
       equation
-  // Create set structure. TODO: Better set size?
-  set_size = NFConnectUtil2.connectionCount(inConnections) + listLength(inFlowVariables);
-  disjoint_sets = NFConnectionSets.emptySets(set_size);
+        // Create set structure. TODO: Better set size?
+        set_size = NFConnectUtil2.connectionCount(inConnections) + listLength(inFlowVariables);
+        disjoint_sets = NFConnectionSets.emptySets(set_size);
 
-  // Add flow variables to the set structure.
-  flows = List.mapFlatReverse(inFlowVariables, NFConnectUtil2.expandConnector);
-  disjoint_sets = List.fold(flows, NFConnectionSets.add, disjoint_sets);
+        // Add flow variables to the set structure.
+        flows = List.mapFlatReverse(inFlowVariables, NFConnectUtil2.expandConnector);
+        disjoint_sets = List.fold(flows, NFConnectionSets.add, disjoint_sets);
 
-  // Add connections to the set structure.
-  connections = listReverse(connections);
-  disjoint_sets = List.fold(connections, addConnectionToSet, disjoint_sets);
+        // Add connections to the set structure.
+        connections = listReverse(connections);
+        disjoint_sets = List.fold(connections, addConnectionToSet, disjoint_sets);
 
-  // Elaborate expandable connectors and add them to the set structure.
-  expconnl = NFExpandableConnectors.elaborate(expconnl);
-  /*-------------------------------------------------------------------*/
-  // TODO: Perhaps not use addConnectionToSet, since expansion might
-  // already have been done?
-  /*-------------------------------------------------------------------*/
-  disjoint_sets = List.fold(expconnl, addConnectionToSet, disjoint_sets);
+        // Elaborate expandable connectors and add them to the set structure.
+        expconnl = NFExpandableConnectors.elaborate(expconnl);
+        /*-------------------------------------------------------------------*/
+        // TODO: Perhaps not use addConnectionToSet, since expansion might
+        // already have been done?
+        /*-------------------------------------------------------------------*/
+        disjoint_sets = List.fold(expconnl, addConnectionToSet, disjoint_sets);
 
-  // Extract the sets and generate equations for them.
-  sets = NFConnectionSets.extractSets(disjoint_sets);
-  eql = List.fold(sets, generateEquation, DAEUtil.emptyDae);
+        // Extract the sets and generate equations for them.
+        sets = NFConnectionSets.extractSets(disjoint_sets);
+        eql = List.fold(sets, generateEquation, DAEUtil.emptyDae);
       then
-  eql;
+        eql;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- ConnectUtil.generateEquations failed to generate connect equations.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- ConnectUtil.generateEquations failed to generate connect equations.");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end generateEquations;
@@ -135,13 +135,13 @@ algorithm
     // Don't add parameter/constant connectors, asserts for them should already
     // have been generated during typing.
     case (NFConnect2.CONNECTION(lhs = NFConnect2.CONNECTOR(attr =
-  NFConnect2.CONN_ATTR(variability = var))), _)
+        NFConnect2.CONN_ATTR(variability = var))), _)
       equation
-  // Variability should have been checked already, so should be enough to
-  // just check one since they should be the same.
-  true = DAEUtil.isParamOrConstVarKind(var);
+        // Variability should have been checked already, so should be enough to
+        // just check one since they should be the same.
+        true = DAEUtil.isParamOrConstVarKind(var);
       then
-  inSets;
+        inSets;
 
     else
       then NFConnectionSets.expandAddConnection(inConnection, inSets);
@@ -183,10 +183,10 @@ algorithm
     case (_, NFConnect2.STREAM(_)) then generateStreamEquations(inSet);
     case (_, NFConnect2.NO_TYPE())
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"ConnectUtil.generateEquation_dispatch failed because of unknown connector type."});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"ConnectUtil.generateEquation_dispatch failed because of unknown connector type."});
       then
-  fail();
+        fail();
 
   end match;
 end generateEquation_dispatch;
@@ -211,23 +211,23 @@ algorithm
       DAE.ElementSource src;
 
     case ((e1 as NFConnect2.CONNECTOR(name = x)) ::
-    (e2 as NFConnect2.CONNECTOR(name = y)) :: rest_el)
+          (e2 as NFConnect2.CONNECTOR(name = y)) :: rest_el)
       equation
-  e1 = Util.if_(Config.orderConnections(), e1, e2);
-  DAE.DAE(eq) = generatePotentialEquations(e1 :: rest_el);
-  src = DAE.emptyElementSource;
+        e1 = Util.if_(Config.orderConnections(), e1, e2);
+        DAE.DAE(eq) = generatePotentialEquations(e1 :: rest_el);
+        src = DAE.emptyElementSource;
       then
-  DAE.DAE(DAE.EQUEQUATION(x, y, src) :: eq);
+        DAE.DAE(DAE.EQUEQUATION(x, y, src) :: eq);
 
     case {_} then DAEUtil.emptyDae;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  str = stringDelimitList(List.map(inElements, NFConnectUtil2.connectorStr), ", ");
-  Debug.traceln("- ConnectUtil.generatePotentialEquations failed on {" +& str +& "}");
+        true = Flags.isSet(Flags.FAILTRACE);
+        str = stringDelimitList(List.map(inElements, NFConnectUtil2.connectorStr), ", ");
+        Debug.traceln("- ConnectUtil.generatePotentialEquations failed on {" +& str +& "}");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end generatePotentialEquations;
@@ -288,46 +288,46 @@ algorithm
 
     // Both inside, do nothing!
     case ({NFConnect2.CONNECTOR(face = NFConnect2.INSIDE()),
-     NFConnect2.CONNECTOR(face = NFConnect2.INSIDE())})
+           NFConnect2.CONNECTOR(face = NFConnect2.INSIDE())})
       then DAEUtil.emptyDae;
 
     // Both outside:
     // cr1 = inStream(cr2);
     // cr2 = inStream(cr1);
     case ({NFConnect2.CONNECTOR(name = cr1, face = NFConnect2.OUTSIDE()),
-     NFConnect2.CONNECTOR(name = cr2, face = NFConnect2.OUTSIDE())})
+           NFConnect2.CONNECTOR(name = cr2, face = NFConnect2.OUTSIDE())})
       equation
-  cref1 = Expression.crefExp(cr1);
-  cref2 = Expression.crefExp(cr2);
-  e1 = makeInStreamCall(cref2);
-  e2 = makeInStreamCall(cref1);
-  src = DAE.emptyElementSource;
-  dae = DAE.DAE({
-    DAE.EQUATION(cref1, e1, src),
-    DAE.EQUATION(cref2, e2, src)});
+        cref1 = Expression.crefExp(cr1);
+        cref2 = Expression.crefExp(cr2);
+        e1 = makeInStreamCall(cref2);
+        e2 = makeInStreamCall(cref1);
+        src = DAE.emptyElementSource;
+        dae = DAE.DAE({
+          DAE.EQUATION(cref1, e1, src),
+          DAE.EQUATION(cref2, e2, src)});
       then
-  dae;
+        dae;
 
     // One inside, one outside:
     // cr1 = cr2;
     case ({NFConnect2.CONNECTOR(name = cr1, face = f1),
-     NFConnect2.CONNECTOR(name = cr2, face = f2)})
+           NFConnect2.CONNECTOR(name = cr2, face = f2)})
       equation
-  e1 = Expression.crefExp(cr1);
-  e2 = Expression.crefExp(cr2);
-  src = DAE.emptyElementSource;
-  dae = DAE.DAE({DAE.EQUATION(e1, e2, src)});
+        e1 = Expression.crefExp(cr1);
+        e2 = Expression.crefExp(cr2);
+        src = DAE.emptyElementSource;
+        dae = DAE.DAE({DAE.EQUATION(e1, e2, src)});
       then
-  dae;
+        dae;
 
     // The general case with N inside connectors and M outside:
     case (_)
       equation
-  (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
-  dae = List.fold2(outside, streamEquationGeneral,
-    outside, inside, DAEUtil.emptyDae);
+        (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
+        dae = List.fold2(outside, streamEquationGeneral,
+          outside, inside, DAEUtil.emptyDae);
       then
-  dae;
+        dae;
 
   end match;
 end generateStreamEquations;
@@ -385,30 +385,30 @@ algorithm
     // No outside components.
     case ({}, _)
       equation
-  inside_sum1 = sumMap(inInsideElements, sumInside1);
-  inside_sum2 = sumMap(inInsideElements, sumInside2);
-  res = Expression.expDiv(inside_sum1, inside_sum2);
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(inside_sum1, inside_sum2);
       then
-  res;
+        res;
     // No inside components.
     case (_, {})
       equation
-  outside_sum1 = sumMap(inOutsideElements, sumOutside1);
-  outside_sum2 = sumMap(inOutsideElements, sumOutside2);
-  res = Expression.expDiv(outside_sum1, outside_sum2);
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        res = Expression.expDiv(outside_sum1, outside_sum2);
       then
-  res;
+        res;
     // Both outside and inside components.
     else
       equation
-  outside_sum1 = sumMap(inOutsideElements, sumOutside1);
-  outside_sum2 = sumMap(inOutsideElements, sumOutside2);
-  inside_sum1 = sumMap(inInsideElements, sumInside1);
-  inside_sum2 = sumMap(inInsideElements, sumInside2);
-  res = Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
-                          Expression.expAdd(outside_sum2, inside_sum2));
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
+                                Expression.expAdd(outside_sum2, inside_sum2));
       then
-  res;
+        res;
   end match;
 end streamSumEquationExp;
 
@@ -434,16 +434,16 @@ algorithm
 
     case ({elem}, _)
       equation
-  e1 = inFunc(elem);
+        e1 = inFunc(elem);
       then
-  e1;
+        e1;
 
     case (elem :: rest_elem, _)
       equation
-  e1 = inFunc(elem);
-  e2 = sumMap(rest_elem, inFunc);
+        e1 = inFunc(elem);
+        e2 = sumMap(rest_elem, inFunc);
       then
-  Expression.expAdd(e1, e2);
+        Expression.expAdd(e1, e2);
   end match;
 end sumMap;
 
@@ -482,7 +482,7 @@ protected
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
   outExp := Expression.expMul(makePositiveMaxCall(flow_exp),
-                        makeInStreamCall(stream_exp));
+                              makeInStreamCall(stream_exp));
 end sumOutside1;
 
 protected function sumInside1
@@ -567,9 +567,9 @@ algorithm
       DAE.ComponentRef cr;
     case (_, NFConnect2.CONNECTOR(name = cr))
       equation
-  true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
+        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
       then
-  true;
+        true;
     else then false;
   end matchcontinue;
 end compareCrefStreamSet;
@@ -594,28 +594,28 @@ algorithm
     // Variable simple connection, nothing to do.
     case (NFConnect2.CONNECTOR(ty = lhs_ty), NFConnect2.CONNECTOR(ty = rhs_ty), _, _)
       equation
-  false = NFConnectUtil2.isConstOrComplexConnector(inLhsConnector);
-  false = NFConnectUtil2.isConstOrComplexConnector(inRhsConnector);
+        false = NFConnectUtil2.isConstOrComplexConnector(inLhsConnector);
+        false = NFConnectUtil2.isConstOrComplexConnector(inRhsConnector);
       then
-  (inEquations, false);
+        (inEquations, false);
 
     // One or both of the connectors are constant/parameter or complex,
     // generate assertion or error message.
     case (NFConnect2.CONNECTOR(name = lhs, ty = lhs_ty),
-    NFConnect2.CONNECTOR(name = rhs, ty = rhs_ty), _, _)
+          NFConnect2.CONNECTOR(name = rhs, ty = rhs_ty), _, _)
       equation
-  /* ------------------------------------------------------------------*/
-  // TODO: If we have mixed Real/Integer, one of these expression might
-  // need to be typecast. ty should be the common type.
-  /* ------------------------------------------------------------------*/
-  lhs_exp = DAE.CREF(lhs, lhs_ty);
-  rhs_exp = DAE.CREF(rhs, rhs_ty);
-  ty = lhs_ty;
+        /* ------------------------------------------------------------------*/
+        // TODO: If we have mixed Real/Integer, one of these expression might
+        // need to be typecast. ty should be the common type.
+        /* ------------------------------------------------------------------*/
+        lhs_exp = DAE.CREF(lhs, lhs_ty);
+        rhs_exp = DAE.CREF(rhs, rhs_ty);
+        ty = lhs_ty;
 
-  (eql, is_only_const) = generateAssertion2(lhs_exp, rhs_exp,
-    ty, inInfo, inEquations);
+        (eql, is_only_const) = generateAssertion2(lhs_exp, rhs_exp,
+          ty, inInfo, inEquations);
       then
-  (eql, is_only_const);
+        (eql, is_only_const);
 
   end matchcontinue;
 end generateAssertion;
@@ -643,60 +643,60 @@ algorithm
     // One or both of the connectors are scalar Reals.
     case (_, _, _, _, _)
       equation
-  true = Types.isScalarReal(inType);
-  // Generate an 'abs(lhs - rhs) <= 0' assertion, to keep the flat Modelica
-  // somewhat similar to Modelica (which doesn't allow == for Reals).
-  bin_exp = DAE.BINARY(inLhsExp, DAE.SUB(inType), inRhsExp);
-  abs_exp = DAE.CALL(Absyn.IDENT("abs"), {bin_exp}, DAE.callAttrBuiltinReal);
-  cond_exp = DAE.RELATION(abs_exp, DAE.LESSEQ(inType), DAE.RCONST(0.0), 0, NONE());
-  assertion = makeAssertion(cond_exp, inInfo);
+        true = Types.isScalarReal(inType);
+        // Generate an 'abs(lhs - rhs) <= 0' assertion, to keep the flat Modelica
+        // somewhat similar to Modelica (which doesn't allow == for Reals).
+        bin_exp = DAE.BINARY(inLhsExp, DAE.SUB(inType), inRhsExp);
+        abs_exp = DAE.CALL(Absyn.IDENT("abs"), {bin_exp}, DAE.callAttrBuiltinReal);
+        cond_exp = DAE.RELATION(abs_exp, DAE.LESSEQ(inType), DAE.RCONST(0.0), 0, NONE());
+        assertion = makeAssertion(cond_exp, inInfo);
       then
-  (assertion :: inEquations, true);
+        (assertion :: inEquations, true);
 
     // Array connectors.
     case (_, _, DAE.T_ARRAY(ty = _), _, _)
       equation
-  /* ------------------------------------------------------------------*/
-  // TODO: Implement this.
-  /* ------------------------------------------------------------------*/
-  Error.addSourceMessage(Error.INTERNAL_ERROR,
-    {"Generating assertions for connections not yet implemented for arrays."},
-    inInfo);
+        /* ------------------------------------------------------------------*/
+        // TODO: Implement this.
+        /* ------------------------------------------------------------------*/
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"Generating assertions for connections not yet implemented for arrays."},
+          inInfo);
       then
-  fail();
+        fail();
 
     // Complex connectors.
     case (DAE.CREF(lhs_cref, DAE.T_COMPLEX(varLst = lhs_vars)),
-    DAE.CREF(rhs_cref, DAE.T_COMPLEX(varLst = rhs_vars)), _, _, _)
+          DAE.CREF(rhs_cref, DAE.T_COMPLEX(varLst = rhs_vars)), _, _, _)
       equation
-  (lhs_vars, lhs_rest) = List.splitOnTrue(lhs_vars, DAEUtil.isParamConstOrComplexVar);
-  (rhs_vars, rhs_rest) = List.splitOnTrue(rhs_vars, DAEUtil.isParamConstOrComplexVar);
+        (lhs_vars, lhs_rest) = List.splitOnTrue(lhs_vars, DAEUtil.isParamConstOrComplexVar);
+        (rhs_vars, rhs_rest) = List.splitOnTrue(rhs_vars, DAEUtil.isParamConstOrComplexVar);
 
-  ioc = List.isEmpty(lhs_rest) and List.isEmpty(rhs_rest);
+        ioc = List.isEmpty(lhs_rest) and List.isEmpty(rhs_rest);
 
-  (eql, ioc) = generateAssertion3(lhs_vars, rhs_vars,
-    lhs_cref, rhs_cref, inInfo, inEquations, ioc);
+        (eql, ioc) = generateAssertion3(lhs_vars, rhs_vars,
+          lhs_cref, rhs_cref, inInfo, inEquations, ioc);
       then
-  (eql, ioc);
+        (eql, ioc);
 
     // Other scalar types.
     case (_, _, _, _, _)
       equation
-  true = Types.isSimpleType(inType);
-  // Generate an 'lhs = rhs' assertion.
-  cond_exp = DAE.RELATION(inLhsExp, DAE.EQUAL(inType), inRhsExp, 0, NONE());
-  assertion = makeAssertion(cond_exp, inInfo);
+        true = Types.isSimpleType(inType);
+        // Generate an 'lhs = rhs' assertion.
+        cond_exp = DAE.RELATION(inLhsExp, DAE.EQUAL(inType), inRhsExp, 0, NONE());
+        assertion = makeAssertion(cond_exp, inInfo);
       then
-  (assertion :: inEquations, true);
+        (assertion :: inEquations, true);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.trace("- ConnectUtil.generateConnectAssertion2 failed on unknown type ");
-  ty_str = Types.unparseType(inType);
-  Debug.traceln(ty_str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- ConnectUtil.generateConnectAssertion2 failed on unknown type ");
+        ty_str = Types.unparseType(inType);
+        Debug.traceln(ty_str);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end generateAssertion2;
@@ -738,13 +738,13 @@ algorithm
 
     case (lhs_var :: lhs_rest, rhs_var :: rhs_rest, _, _, _, eql, _)
       equation
-  (eql, ioc) = generateAssertion4(lhs_var, rhs_var,
-    inLhsCref, inRhsCref, inInfo, eql);
-  ioc = ioc and inIsOnlyConst;
-  (eql, ioc) = generateAssertion3(lhs_rest, rhs_rest,
-    inLhsCref, inRhsCref, inInfo, eql, ioc);
+        (eql, ioc) = generateAssertion4(lhs_var, rhs_var,
+          inLhsCref, inRhsCref, inInfo, eql);
+        ioc = ioc and inIsOnlyConst;
+        (eql, ioc) = generateAssertion3(lhs_rest, rhs_rest,
+          inLhsCref, inRhsCref, inInfo, eql, ioc);
       then
-  (eql, ioc);
+        (eql, ioc);
 
     case ({}, {}, _ ,_, _, _, _) then (inEquations, inIsOnlyConst);
 

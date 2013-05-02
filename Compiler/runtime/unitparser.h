@@ -171,7 +171,7 @@ public:
     TOK_DIV,    //Div '/'
     TOK_LPARAN,    //Left parentheses '('
     TOK_RPARAN,    //Right parantheses ')'
-    TOK_DOT,  //Dot character '.'
+    TOK_DOT,        //Dot character '.'
     TOK_EXPO,    //Exponent '^'
     TOK_ID,      //Identfier starting with only ascii characters. tokstr contains the string.
     TOK_PARAM,    //Unit type parameter. An identifier starting with an apostrophe. tokstr contains the string.
@@ -230,7 +230,7 @@ public:
   /**
     Add a base quantity/unit
       @param prefixAllowed Normally set to true. Should be false for [kg], since we are not allowed to prefix this base unit.
-                                         Should instead prefix the "derived unit [g]
+                                               Should instead prefix the "derived unit [g]
   */
   void addBase(const string quantityName, const string unitName,
     const string unitSymbol, bool prefixAllowed);

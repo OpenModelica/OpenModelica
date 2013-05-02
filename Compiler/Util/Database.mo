@@ -30,7 +30,7 @@
  */
 
 encapsulated package Database
-" file:  Database.mo
+" file:        Database.mo
   package:     Database
   description: This module contains functionality for creating and using SQlite databases.
 

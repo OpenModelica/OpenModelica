@@ -50,7 +50,7 @@ typedef enum {
     modelInstantiated = 1<<0,
     modelInitialized  = 1<<1,
     modelTerminated   = 1<<2,
-    modelError  = 1<<3
+    modelError        = 1<<3
 } ModelState;
 
 typedef struct {

@@ -66,9 +66,9 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 {
   long N = initData->nVars;
 
-  const double alpha    = 1.0;  /* 0 < alpha */
-  const double beta     = 2;    /* 1 < beta */
-  const double gamma    = 0.5;  /* 0 < gamma < 1 */
+  const double alpha    = 1.0;        /* 0 < alpha */
+  const double beta     = 2;          /* 1 < beta */
+  const double gamma    = 0.5;        /* 0 < gamma < 1 */
 
   double* simplex = (double*)malloc((N+1)*N*sizeof(double));
   double* fvalues = (double*)malloc((N+1)*sizeof(double));
@@ -82,9 +82,9 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   double fxe;
   double fxk = 0;
 
-  long xb = 0;  /* best vertex */
-  long xs = 0;  /* worst vertex */
-  long xz = 0;  /* second-worst vertex */
+  long xb = 0;        /* best vertex */
+  long xs = 0;        /* worst vertex */
+  long xz = 0;        /* second-worst vertex */
 
   long x = 0;
   long i = 0;
@@ -130,8 +130,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
       double sx = initData->vars[i] / initData->nominal[i];
       for(x=0; x<N+1; x++)
       {
-  /* vertex x / var i */
-  simplex[x*N + i] = sx;
+        /* vertex x / var i */
+        simplex[x*N + i] = sx;
       }
     }
   }
@@ -141,8 +141,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     {
       for(x=0; x<N+1; x++)
       {
-  /* vertex x / var i */
-  simplex[x*N + i] = initData->vars[i];
+        /* vertex x / var i */
+        simplex[x*N + i] = initData->vars[i];
       }
     }
   }
@@ -172,7 +172,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     for(x=1; x<N+1; x++)
     {
       if(fvalues[x] < fvalues[xb])
-  xb = x;
+        xb = x;
     }
 
     /* calc residuals for xb */
@@ -182,7 +182,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     resMax = 0.0;
     for(x=0; x<initData->nInitResiduals; x++)
       if(fabs(initData->initialResiduals[x]) > resMax)
-  resMax = fabs(initData->initialResiduals[x]);
+        resMax = fabs(initData->initialResiduals[x]);
 
     if(lambda >= 1.0 && resMax < acc)
       break;
@@ -196,12 +196,12 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     {
       if(fvalues[x] > fvalues[xs])
       {
-  xz = xs;
-  xs = x;
+        xz = xs;
+        xs = x;
       }
 
       if(fvalues[x] > fvalues[xz] && (x != xs))
-  xz = x;
+        xz = x;
     }
 
     for(x=0; x<N+1; x++)
@@ -220,20 +220,20 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     {
       if(lambda < 1.0)
       {
-  lambda += lambda_step;
-  if(lambda > 1.0)
-    lambda = 1.0;
+        lambda += lambda_step;
+        if(lambda > 1.0)
+          lambda = 1.0;
 
-  INFO3(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
-  if(pFile)
-  {
-    fprintf(pFile, "%ld,", iteration);
-    fprintf(pFile, "%.16g,", lambda);
-    for(i=0; i<initData->nVars; ++i)
-      fprintf(pFile, "%.16g,", initData->vars[i]);
-    fprintf(pFile, "\n");
-  }
-  continue;
+        INFO3(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        if(pFile)
+        {
+          fprintf(pFile, "%ld,", iteration);
+          fprintf(pFile, "%.16g,", lambda);
+          for(i=0; i<initData->nVars; ++i)
+            fprintf(pFile, "%.16g,", initData->vars[i]);
+          fprintf(pFile, "\n");
+        }
+        continue;
       }
     }
 
@@ -243,10 +243,10 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
     for(x=0; x<N+1; x++)
     {
-      if(x != xs)      /* leaving worst vertex */
+      if(x != xs)            /* leaving worst vertex */
       {
-  for(i=0; i<N; i++)
-    xbar[i] += simplex[x*N+i];
+        for(i=0; i<N; i++)
+          xbar[i] += simplex[x*N+i];
       }
     }
 
@@ -264,64 +264,64 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     {
       /* replace xs by xr */
       for(i=0; i<N; i++)
-  simplex[xs*N+i] = xr[i];
+        simplex[xs*N+i] = xr[i];
     }
     else if(fxr <= fvalues[xb])
     {
       for(i=0; i<N; i++)
-  xe[i] = xbar[i] + beta*(xr[i] - xbar[i]);
+        xe[i] = xbar[i] + beta*(xr[i] - xbar[i]);
 
       setZScaled(initData, xe);
       fxe = leastSquare(initData, lambda);
 
       if(fxe < fxr)    /* if(fxe < fvalues[xb]) */
       {
-  /* replace xs by xe */
-  for(i=0; i<N; i++)
-    simplex[xs*N+i] = xe[i];
+        /* replace xs by xe */
+        for(i=0; i<N; i++)
+          simplex[xs*N+i] = xe[i];
       }
       else
       {
-  /* replace xs by xr */
-  for(i=0; i<N; i++)
-    simplex[xs*N+i] = xr[i];
+        /* replace xs by xr */
+        for(i=0; i<N; i++)
+          simplex[xs*N+i] = xr[i];
       }
     }
     else if(fvalues[xz] <= fxr)
     {
       if(fxr >= fvalues[xs])
       {
-  for(i=0; i<N; i++)
-    xk[i] = xbar[i] + gamma*(simplex[xs*N+i] - xbar[i]);
+        for(i=0; i<N; i++)
+          xk[i] = xbar[i] + gamma*(simplex[xs*N+i] - xbar[i]);
 
-  setZScaled(initData, xk);
-  fxk = leastSquare(initData, lambda);
+        setZScaled(initData, xk);
+        fxk = leastSquare(initData, lambda);
       }
       else
       {
-  for(i=0; i<N; i++)
-    xk[i] = xbar[i] + gamma*(xr[i] - xbar[i]);
+        for(i=0; i<N; i++)
+          xk[i] = xbar[i] + gamma*(xr[i] - xbar[i]);
 
-  setZScaled(initData, xk);
-  fxk = leastSquare(initData, lambda);
+        setZScaled(initData, xk);
+        fxk = leastSquare(initData, lambda);
       }
 
       if(fxk < fvalues[xs])
       {
-  /* replace xs by xk */
-  for(i=0; i<N; i++)
-    simplex[xs*N+i] = xk[i];
+        /* replace xs by xk */
+        for(i=0; i<N; i++)
+          simplex[xs*N+i] = xk[i];
       }
       else
       {
-  /* constrict simplex around xb */
-  for(x=0; x<N+1; x++)
-  {
-    for(i=0; i<N; i++)
-    {
-      simplex[x*N+i] = (simplex[x*N+i] + simplex[xb*N+i]) / 2.0;
-    }
-  }
+        /* constrict simplex around xb */
+        for(x=0; x<N+1; x++)
+        {
+          for(i=0; i<N; i++)
+          {
+            simplex[x*N+i] = (simplex[x*N+i] + simplex[xb*N+i]) / 2.0;
+          }
+        }
       }
     }
     else

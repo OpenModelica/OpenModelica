@@ -64,13 +64,13 @@ struct mmc_GC_gen_state_type {
   void **STP;
 
   /* the young region */
-  void  **young_region;
+  void        **young_region;
   unsigned long young_size;
 
   /* the older region */
-  void  **current_region;
-  void  **current_next;
-  void  **reserve_region;
+  void        **current_region;
+  void        **current_next;
+  void        **reserve_region;
   unsigned long older_size;
 
   /* the allocated from C region */
@@ -78,10 +78,10 @@ struct mmc_GC_gen_state_type {
   unsigned long c_heap_region_total_size;
 
   /* the roots pointing from older to younger */
-  void   **array_trail;
+  void         **array_trail;
   unsigned long array_trail_size;
 
-  void   **share_trail;
+  void         **share_trail;
   unsigned long share_trail_size;
 };
 typedef struct mmc_GC_gen_state_type mmc_GC_gen_state_type;

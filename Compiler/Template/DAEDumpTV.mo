@@ -128,16 +128,16 @@ package Absyn
 
   uniontype Path
       record QUALIFIED
-  Ident name;
-  Path path;
+        Ident name;
+        Path path;
       end QUALIFIED;
 
       record IDENT
-  Ident name;
+        Ident name;
       end IDENT;
 
       record FULLYQUALIFIED
-  Path path;
+        Path path;
       end FULLYQUALIFIED;
     end Path;
 
@@ -500,7 +500,7 @@ package DAE
   end Statement;
 
   uniontype Else "An if statements can one or more `elseif\' branches and an
-  optional `else\' branch."
+        optional `else\' branch."
     record NOELSE end NOELSE;
 
     record ELSEIF
@@ -693,8 +693,8 @@ package DAE
 
   uniontype Attributes "- Attributes"
     record ATTR
-      SCode.Flow    flowPrefix "flow" ;
-      SCode.Stream  streamPrefix "stream" ;
+      SCode.Flow          flowPrefix "flow" ;
+      SCode.Stream        streamPrefix "stream" ;
       SCode.Parallelism   parallelism "parallelism";
       SCode.Variability   variability "variability" ;
       Absyn.Direction     direction "direction" ;
@@ -751,15 +751,15 @@ package DAE
   end VarKind;
 
   uniontype VarDirection
-    record INPUT  "input"             end INPUT;
-    record OUTPUT "output"            end OUTPUT;
+    record INPUT  "input"                   end INPUT;
+    record OUTPUT "output"                  end OUTPUT;
     record BIDIR  "neither input or output" end BIDIR;
   end VarDirection;
 
   uniontype VarParallelism
     record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
     record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
-    record NON_PARALLEL  "Non parallel/Normal variables"      end NON_PARALLEL;
+    record NON_PARALLEL  "Non parallel/Normal variables"            end NON_PARALLEL;
   end VarParallelism;
 
   uniontype StateSelect
@@ -928,9 +928,9 @@ package DAE
 
     record T_ARRAY
       "an array can be represented in two equivalent ways:
-   1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
-   2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
-   In general Inst generates 1 and all the others generates 2"
+         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
+         2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+         In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
       TypeSource source;
@@ -1217,7 +1217,7 @@ package DAE
 
     record TUPLE
       list<Exp> PR "PR. Tuples, used in func calls returning several
-              arguments" ;
+                    arguments" ;
     end TUPLE;
 
     record CAST "Cast operator"

@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInstFlatten
-" file:  NFInstFlatten.mo
+" file:        NFInstFlatten.mo
   package:     NFInstFlatten
   description: Functionality for flattening the instantiated structure.
 
@@ -141,21 +141,21 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, alg, ialg), _)
       equation
-  (sections, el_count) =
-    List.accumulateMapFold(el, collectInheritedSections, 0);
-  el = flattenElements(el, el_count, name);
-  cls = NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, alg, ialg);
-  cls = List.fold(sections, flattenSections, cls);
+        (sections, el_count) =
+          List.accumulateMapFold(el, collectInheritedSections, 0);
+        el = flattenElements(el, el_count, name);
+        cls = NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, alg, ialg);
+        cls = List.fold(sections, flattenSections, cls);
       then
-  cls;
+        cls;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFInstFlatten.flattenClass failed for " +&
-    Absyn.pathString(NFInstUtil.getClassName(inClass)) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFInstFlatten.flattenClass failed for " +&
+          Absyn.pathString(NFInstUtil.getClassName(inClass)) +& "\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end flattenClass;
@@ -175,11 +175,11 @@ algorithm
       Class cls;
 
     case (NFInstTypes.EXTENDED_ELEMENTS(cls = cls as NFInstTypes.COMPLEX_CLASS(
-  components = el)), _, _)
+        components = el)), _, _)
       equation
-  el_count = listLength(el) + inElementCount;
+        el_count = listLength(el) + inElementCount;
       then
-  (cls :: inAccumSections, el_count);
+        (cls :: inAccumSections, el_count);
 
     else (inAccumSections, inElementCount + 1);
 
@@ -199,14 +199,14 @@ algorithm
       Absyn.Path name;
 
     case (NFInstTypes.COMPLEX_CLASS(_, _, eq1, ieq1, alg1, ialg1),
-  NFInstTypes.COMPLEX_CLASS(name, el, eq2, ieq2, alg2, ialg2))
+        NFInstTypes.COMPLEX_CLASS(name, el, eq2, ieq2, alg2, ialg2))
       equation
-  eq1 = listAppend(eq1, eq2);
-  ieq1 = listAppend(ieq1, ieq2);
-  alg1 = listAppend(alg1, alg2);
-  ialg1 = listAppend(ialg1, ialg2);
+        eq1 = listAppend(eq1, eq2);
+        ieq1 = listAppend(ieq1, ieq2);
+        alg1 = listAppend(alg1, alg2);
+        ialg1 = listAppend(ialg1, ialg2);
       then
-  NFInstTypes.COMPLEX_CLASS(name, el, eq1, ieq1, alg1, ialg1);
+        NFInstTypes.COMPLEX_CLASS(name, el, eq1, ieq1, alg1, ialg1);
 
   end match;
 end flattenSections;
@@ -224,18 +224,18 @@ algorithm
 
     case (_, _, _)
       equation
-  st = newSymbolTable(intDiv(inElementCount * 4, 3) + 1);
-  (flat_el, _) = flattenElements2(inElements, st, {}, inClassPath, {});
+        st = newSymbolTable(intDiv(inElementCount * 4, 3) + 1);
+        (flat_el, _) = flattenElements2(inElements, st, {}, inClassPath, {});
       then
-  flat_el;
+        flat_el;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFInstFlatten.flattenElements failed for " +&
-      Absyn.pathString(inClassPath) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFInstFlatten.flattenElements failed for " +&
+            Absyn.pathString(inClassPath) +& "\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end flattenElements;
@@ -258,10 +258,10 @@ algorithm
 
     case (el :: rest_el, st, _, _, accum_el)
       equation
-  (accum_el, st) = flattenElement(el, st, inExtendPath, inClassPath, accum_el);
-  (accum_el, st) = flattenElements2(rest_el, st, inExtendPath, inClassPath, accum_el);
+        (accum_el, st) = flattenElement(el, st, inExtendPath, inClassPath, accum_el);
+        (accum_el, st) = flattenElements2(rest_el, st, inExtendPath, inClassPath, accum_el);
       then
-  (accum_el, st);
+        (accum_el, st);
 
     case ({}, st, _, _, accum_el) then (listReverse(accum_el), st);
 
@@ -292,39 +292,39 @@ algorithm
 
     // Extending from a class with no components, no elements to flatten.
     case (NFInstTypes.EXTENDED_ELEMENTS(
-  cls = NFInstTypes.COMPLEX_CLASS(components = {})), st, _, _, accum_el)
+        cls = NFInstTypes.COMPLEX_CLASS(components = {})), st, _, _, accum_el)
       then (accum_el, st);
 
     case (NFInstTypes.EXTENDED_ELEMENTS(cls = NFInstTypes.BASIC_TYPE(name = _)),
-  st, _, _, accum_el)
+        st, _, _, accum_el)
       then (inElement :: accum_el, st);
 
     case (NFInstTypes.EXTENDED_ELEMENTS(baseClass = bc,
-  cls = NFInstTypes.COMPLEX_CLASS(components = ext_el),
-  ty = DAE.T_COMPLEX(varLst = vars)), st, _, _, accum_el)
+        cls = NFInstTypes.COMPLEX_CLASS(components = ext_el),
+        ty = DAE.T_COMPLEX(varLst = vars)), st, _, _, accum_el)
       equation
-  // For extended elements we can use the names from the type, which are
-  // already the last identifiers.
-  var_names = List.mapReverse(vars, Types.getVarName);
-  (accum_el, st) = flattenExtendedElements(ext_el, var_names,
-    bc :: inExtendPath, inClassPath, st, accum_el);
+        // For extended elements we can use the names from the type, which are
+        // already the last identifiers.
+        var_names = List.mapReverse(vars, Types.getVarName);
+        (accum_el, st) = flattenExtendedElements(ext_el, var_names,
+          bc :: inExtendPath, inClassPath, st, accum_el);
       then
-  (accum_el, st);
+        (accum_el, st);
 
     case (NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _)),
-  st, _, _, accum_el)
+        st, _, _, accum_el)
       then
-  (inElement :: accum_el, st);
+        (inElement :: accum_el, st);
 
     case (el, st, _, _, accum_el)
       equation
-  comp = NFInstUtil.getElementComponent(el);
-  name = Absyn.pathLastIdent(NFInstUtil.getComponentName(comp));
-  (add_el, st) =
-    flattenElement2(name, comp, inExtendPath, inClassPath, st, accum_el);
-  accum_el = List.consOnTrue(add_el, el, accum_el);
+        comp = NFInstUtil.getElementComponent(el);
+        name = Absyn.pathLastIdent(NFInstUtil.getComponentName(comp));
+        (add_el, st) =
+          flattenElement2(name, comp, inExtendPath, inClassPath, st, accum_el);
+        accum_el = List.consOnTrue(add_el, el, accum_el);
       then
-  (accum_el, st);
+        (accum_el, st);
 
   end match;
 end flattenElement;
@@ -348,21 +348,21 @@ algorithm
     // Try to add the component to the symbol table.
     case (_, _, _, _, st, accum_el)
       equation
-  st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st);
+        st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st);
       then
-  (true, st);
+        (true, st);
 
     // If we couldn't add the component to the symbol table it means it already
     // exists, so we need to check that it's identical to the already existing
     // component.
     case (_, _, _, _, st, accum_el)
       equation
-  /**********************************************************************/
-  // TODO: Look up the already existing component here and check that they
-  // are equal.
-  /**********************************************************************/
+        /**********************************************************************/
+        // TODO: Look up the already existing component here and check that they
+        // are equal.
+        /**********************************************************************/
       then
-  (false, st);
+        (false, st);
 
   end matchcontinue;
 end flattenElement2;
@@ -389,27 +389,27 @@ algorithm
       Boolean add_el;
 
     case ((el as NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _))) :: rest_el,
-  _, _, _, st, accum_el)
+        _, _, _, st, accum_el)
       equation
-  accum_el = el :: accum_el;
-  (accum_el, st) = flattenExtendedElements(rest_el, inNames,
-    inExtendPath, inClassPath, st, accum_el);
+        accum_el = el :: accum_el;
+        (accum_el, st) = flattenExtendedElements(rest_el, inNames,
+          inExtendPath, inClassPath, st, accum_el);
       then
-  (accum_el, st);
+        (accum_el, st);
 
     // Extended elements should not contain nested extended elements, since they
     // should have been flattened in instElementList. So we can assume that we
     // only have normal elements here.
     case (el :: rest_el, name :: rest_names, _, _, st, accum_el)
       equation
-  comp = NFInstUtil.getElementComponent(el);
-  (add_el, st) =
-    flattenElement2(name, comp, inExtendPath, inClassPath, st, accum_el);
-  accum_el = List.consOnTrue(add_el, el, accum_el);
-  (accum_el, st) = flattenExtendedElements(rest_el, rest_names,
-    inExtendPath, inClassPath, st, accum_el);
+        comp = NFInstUtil.getElementComponent(el);
+        (add_el, st) =
+          flattenElement2(name, comp, inExtendPath, inClassPath, st, accum_el);
+        accum_el = List.consOnTrue(add_el, el, accum_el);
+        (accum_el, st) = flattenExtendedElements(rest_el, rest_names,
+          inExtendPath, inClassPath, st, accum_el);
       then
-  (accum_el, st);
+        (accum_el, st);
 
     case ({}, {}, _, _, st, accum_el) then (accum_el, st);
 

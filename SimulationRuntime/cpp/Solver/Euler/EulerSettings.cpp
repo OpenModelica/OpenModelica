@@ -3,13 +3,13 @@
 #include "EulerSettings.h"
 
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
-: SolverSettings  (globalSettings)
-, _method          (EULERFORWARD)
-, _zeroSearchMethod  (BISECTION)
-, _denseOutput      (true)
-, _useSturmSequence  (false)
+: SolverSettings        (globalSettings)
+, _method                (EULERFORWARD)
+, _zeroSearchMethod        (BISECTION)
+, _denseOutput            (true)
+, _useSturmSequence        (false)
 , _useNewtonIteration    (false)
-, _iterTol          (1e-8)
+, _iterTol                (1e-8)
 {
 }
 
@@ -76,20 +76,20 @@ void EulerSettings::load(std::string xml_file)
     try
     {
 
-  std::ifstream ifs(xml_file.c_str());
-  if(!ifs.good())
-      cout<< "Settings file not found for :"  << xml_file << std::endl;
-  else
-  {
-      boost::archive::xml_iarchive xml(ifs);
-      xml >>boost::serialization::make_nvp("EulerSettings", *this);
-      ifs.close();
-  }
+        std::ifstream ifs(xml_file.c_str());
+        if(!ifs.good())
+            cout<< "Settings file not found for :"  << xml_file << std::endl;
+        else
+        {
+            boost::archive::xml_iarchive xml(ifs);
+            xml >>boost::serialization::make_nvp("EulerSettings", *this);
+            ifs.close();
+        }
     }
     catch(std::exception& ex)
     {
-  std::string error = ex.what();
-  cout<< error <<std::endl;
+        std::string error = ex.what();
+        cout<< error <<std::endl;
     }
 
 }

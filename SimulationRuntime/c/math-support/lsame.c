@@ -40,7 +40,7 @@ logical lsame_(char *ca, char *cb, ftnlen ca_len, ftnlen cb_len)
 
 /*  CA      (input) CHARACTER*1 */
 /*  CB      (input) CHARACTER*1 */
-/*    CA and CB specify the single characters to be compared. */
+/*          CA and CB specify the single characters to be compared. */
 
 /* ===================================================================== */
 
@@ -71,8 +71,8 @@ logical lsame_(char *ca, char *cb, ftnlen ca_len, ftnlen cb_len)
 
     if(zcode == 90 || zcode == 122) {
 
-/*  ASCII is assumed - ZCODE is the ASCII code of either lower or */
-/*  upper case 'Z'. */
+/*        ASCII is assumed - ZCODE is the ASCII code of either lower or */
+/*        upper case 'Z'. */
 
   if(inta >= 97 && inta <= 122) {
       inta += -32;
@@ -83,8 +83,8 @@ logical lsame_(char *ca, char *cb, ftnlen ca_len, ftnlen cb_len)
 
     } else if(zcode == 233 || zcode == 169) {
 
-/*  EBCDIC is assumed - ZCODE is the EBCDIC code of either lower or */
-/*  upper case 'Z'. */
+/*        EBCDIC is assumed - ZCODE is the EBCDIC code of either lower or */
+/*        upper case 'Z'. */
 
   if((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
     >= 162 && inta <= 169)) {
@@ -97,8 +97,8 @@ logical lsame_(char *ca, char *cb, ftnlen ca_len, ftnlen cb_len)
 
     } else if(zcode == 218 || zcode == 250) {
 
-/*  ASCII is assumed, on Prime machines - ZCODE is the ASCII code */
-/*  plus 128 of either lower or upper case 'Z'. */
+/*        ASCII is assumed, on Prime machines - ZCODE is the ASCII code */
+/*        plus 128 of either lower or upper case 'Z'. */
 
   if(inta >= 225 && inta <= 250) {
       inta += -32;

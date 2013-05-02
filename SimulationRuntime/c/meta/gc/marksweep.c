@@ -190,16 +190,16 @@ mmc_walk_top:
 
       if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1) /* RECORD */
       {
-  slotsMin = 1; /* ignore the fields slot! */
+        slotsMin = 1; /* ignore the fields slot! */
       }
 
       for(index = slotsMin; index < slots; index++)
       {
-  if (pp[index])
-  {
-    walk_object(pp[index]);
-    /* goto mmc_walk_top; */
-  }
+        if (pp[index])
+        {
+          walk_object(pp[index]);
+          /* goto mmc_walk_top; */
+        }
       }
     }
     else /* not a structure, move on! */
@@ -233,24 +233,24 @@ int mmc_GC_collect_mark(void)
       p = (void**)(mmc_GC_state->roots.start[index].start[count]);
       if (p && *p)
       {
-  int a=0;
-  if (mmc_GC_state->settings.debug)
-  {
-    fprintf(stderr, "marking object: %ld %p *%p ->", index, (void*) p, *p); fflush(NULL);
-    /* printAny(*p); */
-    fprintf(stderr, "\n"); fflush(NULL);
-  }
+        int a=0;
+        if (mmc_GC_state->settings.debug)
+        {
+          fprintf(stderr, "marking object: %ld %p *%p ->", index, (void*) p, *p); fflush(NULL);
+          /* printAny(*p); */
+          fprintf(stderr, "\n"); fflush(NULL);
+        }
 
-  if (!MMC_IS_IMMEDIATE(*p) && !MMC_HDRISMARKED(MMC_GETHDR(*p)))
-  {
-    /* assert(is_in_free(*p) == 0); */
-    walk_object(*p);
-    if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> marking done <<\n"); fflush(NULL); }
-  }
-  else
-  {
-    if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> obj skipped a:%d <<\n", a); fflush(NULL); }
-  }
+        if (!MMC_IS_IMMEDIATE(*p) && !MMC_HDRISMARKED(MMC_GETHDR(*p)))
+        {
+          /* assert(is_in_free(*p) == 0); */
+          walk_object(*p);
+          if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> marking done <<\n"); fflush(NULL); }
+        }
+        else
+        {
+          if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> obj skipped a:%d <<\n", a); fflush(NULL); }
+        }
       }
     }
 
@@ -314,8 +314,8 @@ int sweep_page(mmc_GC_page_type page)
       sz = (slots + 1) * sizeof(void*);
       if (mmc_GC_state->settings.debug)
       {
-  fprintf(stderr, "skipping free object: %p size:%ld\n", scan, sz);
-  fflush(NULL);
+        fprintf(stderr, "skipping free object: %p size:%ld\n", scan, sz);
+        fflush(NULL);
       }
       scan = (void*)((char*)scan + sz);
       continue;
@@ -333,8 +333,8 @@ int sweep_page(mmc_GC_page_type page)
       /* do nothing */
       if (mmc_GC_state->settings.debug)
       {
-  fprintf(stderr, "skipping and unmarking marked obj: %p size:%ld\n", scan, (slots+1)*sizeof(void*));
-  fflush(NULL);
+        fprintf(stderr, "skipping and unmarking marked obj: %p size:%ld\n", scan, (slots+1)*sizeof(void*));
+        fflush(NULL);
       }
       ((struct mmc_header*)scan)->header = MMC_HDR_UNMARK(hdr);
     }
@@ -342,10 +342,10 @@ int sweep_page(mmc_GC_page_type page)
     {
       if (mmc_GC_state->settings.debug)
       {
-  fprintf(stderr, "add free obj: hdr:%ld ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), ctor, slots, scan);
-  printAny(MMC_TAGPTR(scan));
-  fprintf(stderr, "\n");
-  fflush(NULL);
+        fprintf(stderr, "add free obj: hdr:%ld ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), ctor, slots, scan);
+        printAny(MMC_TAGPTR(scan));
+        fprintf(stderr, "\n");
+        fflush(NULL);
       }
 
       page.free = list_add(page.free, scan, slots + 1);
@@ -353,13 +353,13 @@ int sweep_page(mmc_GC_page_type page)
 
       if (mmc_GC_state->settings.debug)
       {
-  size_t sz = pages_list_size(mmc_GC_state->mas.pages);
-  if (sz != mmc_GC_state->mas.totalFreeSize)
-  {
-    fprintf(stderr, "add free obj: hdr:%ld/%lu ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), hdr, ctor, slots, scan);
-    fflush(NULL);
-  }
-  assert(sz == mmc_GC_state->mas.totalFreeSize);
+        size_t sz = pages_list_size(mmc_GC_state->mas.pages);
+        if (sz != mmc_GC_state->mas.totalFreeSize)
+        {
+          fprintf(stderr, "add free obj: hdr:%ld/%lu ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), hdr, ctor, slots, scan);
+          fflush(NULL);
+        }
+        assert(sz == mmc_GC_state->mas.totalFreeSize);
       }
 
       assert(mmc_GC_state->mas.totalFreeSize <= mmc_GC_state->mas.totalPageSize);
@@ -440,22 +440,22 @@ mmc_GC_pages_type free_list_compact(mmc_GC_pages_type pages)
       /* join if possible*/
       if (((char*)joinSlot.start + joinSlot.size*MMC_SIZE_META) == freeArr[j].start)
       {
-  joinSlot.size  = joinSlot.size + freeArr[j].size;
+        joinSlot.size  = joinSlot.size + freeArr[j].size;
       }
       else /* add it like it is! */
       {
-  pages.start[i].free->szLarge.start[k] = joinSlot;
-  MMC_TAG_AS_FREE_OBJECT(joinSlot.start, joinSlot.size - 1);
-  k++;
-  joinSlot = freeArr[j];
+        pages.start[i].free->szLarge.start[k] = joinSlot;
+        MMC_TAG_AS_FREE_OBJECT(joinSlot.start, joinSlot.size - 1);
+        k++;
+        joinSlot = freeArr[j];
       }
     }
     pages.start[i].free->szLarge.start[k++] = joinSlot;
     pages.start[i].free->szLarge.current = k;
     pages.start[i].free->szLarge.start =
       (mmc_GC_free_slot_type*)realloc(
-  pages.start[i].free->szLarge.start,
-  (k+1)*sizeof(mmc_GC_free_slot_type));
+        pages.start[i].free->szLarge.start,
+        (k+1)*sizeof(mmc_GC_free_slot_type));
     pages.start[i].free->szLarge.limit = k+1;
     /*
     qsort (pages.start[i].free->szLarge.start, k, sizeof(mmc_GC_free_slot_type), compareSize);
@@ -493,9 +493,9 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
   if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "GC before: [%d] sizeFree: %ld sizePages: %ld procent: %.3g\n",
-  local_GC_state,
-  sizeFree, sizePages,
-  (double)sizeFree*100/(double)sizePages);
+        local_GC_state,
+        sizeFree, sizePages,
+        (double)sizeFree*100/(double)sizePages);
   }
 
 
@@ -514,15 +514,15 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
   if ((sizeFree - saved)/* && mmc_GC_state->settings.debug*/)
   {
     fprintf(stderr, "GC collect: free: %8.2fMb pages: %8.2fMb free: %8.3f%% freed: %8.4fMb  lst: %10lu p: %4ld s: %6lu r:%6lu [%d]\n",
-  (double)sizeFree/(1024.0*1024.0),
-  (double)sizePages/(1024.0*1024.0),
-  (double)sizeFree*100.0/(double)sizePages,
-  (double)(sizeFree-saved)/(1024.0*1024.0),
-  pages_list_length(mmc_GC_state->mas.pages),
-  (long) mmc_GC_state->mas.pages.current,
-  mmc_GC_state->roots.rootsStackIndex,
-  mmc_GC_state->roots.current,
-  local_GC_state);
+        (double)sizeFree/(1024.0*1024.0),
+        (double)sizePages/(1024.0*1024.0),
+        (double)sizeFree*100.0/(double)sizePages,
+        (double)(sizeFree-saved)/(1024.0*1024.0),
+        pages_list_length(mmc_GC_state->mas.pages),
+        (long) mmc_GC_state->mas.pages.current,
+        mmc_GC_state->roots.rootsStackIndex,
+        mmc_GC_state->roots.current,
+        local_GC_state);
   }
 
   /* if after the collect we still have less than half a page add a new page to speed things up */
@@ -559,9 +559,9 @@ modelica_metatype allocate_from_free(unsigned nbytes)
   {
     mmc_GC_state->mas.pages =
       pages_add(mmc_GC_state->mas.pages,
-  page_create(
-    (mmc_GC_state->settings.page_size > nbytes) ? mmc_GC_state->settings.page_size : mmc_GC_state->settings.page_size + nbytes,
-    mmc_GC_state->settings.free_slots_size));
+        page_create(
+          (mmc_GC_state->settings.page_size > nbytes) ? mmc_GC_state->settings.page_size : mmc_GC_state->settings.page_size + nbytes,
+          mmc_GC_state->settings.free_slots_size));
     p = list_get(mmc_GC_state->mas.pages.start[mmc_GC_state->mas.pages.current - 1].free, szWords);
   }
 

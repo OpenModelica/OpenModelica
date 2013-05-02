@@ -48,33 +48,33 @@ typedef enum {
  * DisplayUnitDefinition, RealType, IntegerType, BooleanType, StringType
  * DefaultExperiment, Item, Annotation, Name, Real, Integer, Boolean, String, Enumeration */
 typedef struct {
-    Elm type;    /* element type */
+    Elm type;          /* element type */
     const char** attributes; /* null or n attribute value strings */
-    int n;       /* size of attributes, even number */
+    int n;             /* size of attributes, even number */
 } Element;
 
 /* AST node for element that has a list of elements
  * BaseUnit, EnumerationType, Tool, DirectDependency */
 typedef struct {
-    Elm type;    /* element type */
+    Elm type;          /* element type */
     const char** attributes; /* null or n attribute value strings */
-    int n;       /* size of attributes, even number */
+    int n;             /* size of attributes, even number */
     Element** list;    /* null-terminated array of pointers to elements, not null */
 } ListElement;
 
 /* AST node for element Type */
 typedef struct {
-    Elm type;    /* element type */
+    Elm type;          /* element type */
     const char** attributes; /* null or n attribute value strings */
-    int n;       /* size of attributes, an even number */
+    int n;             /* size of attributes, an even number */
     Element* typeSpec; /* one of RealType, IntegerType etc. */
 } Type;
 
 /* AST node for element ScalarVariable */
 typedef struct {
-    Elm type;    /* element type */
+    Elm type;          /* element type */
     const char** attributes; /* null or n attribute value strings */
-    int n;       /* size of attributes, even number */
+    int n;             /* size of attributes, even number */
     Element* typeSpec; /* one of Real, Integer, etc */
     Element** directDependencies; /* null or null-terminated list of Name */
 } ScalarVariable;
@@ -92,11 +92,11 @@ typedef struct{
 
 /* AST node for element ModelDescription */
 typedef struct {
-    Elm type;    /* element type */
+    Elm type;          /* element type */
     const char** attributes; /* null or n attribute value strings */
-    int n;       /* size of attributes, even number */
+    int n;             /* size of attributes, even number */
     ListElement** unitDefinitions;    /* NULL or null-terminated list of BaseUnits */
-    Type**  typeDefinitions;    /* NULL or null-terminated list of Types */
+    Type**        typeDefinitions;    /* NULL or null-terminated list of Types */
     Element*      defaultExperiment;  /* NULL or DefaultExperiment */
     ListElement** vendorAnnotations;  /* NULL or null-terminated list of Tools */
     ScalarVariable** modelVariables;  /* NULL or null-terminated list of ScalarVariable */
@@ -124,7 +124,7 @@ typedef enum {
 ModelDescription* parse(const char* xmlPath);
 const char* getString(void* element, Att a);
 double getDouble     (void* element, Att a, ValueStatus* vs);
-int getInt     (void* element, Att a, ValueStatus* vs);
+int getInt           (void* element, Att a, ValueStatus* vs);
 unsigned int getUInt (void* element, Att a, ValueStatus* vs);
 char getBoolean      (void* element, Att a, ValueStatus* vs);
 Enu getEnumValue     (void* element, Att a, ValueStatus* vs);

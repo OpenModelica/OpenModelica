@@ -250,23 +250,23 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation)
   }else{//block used once after simulation has been reseted or more if the next time to add into the ssd is not VALID_TIME_AFTER_RESET
     if(simulationReset){
       if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET || p_SimStepData_from_Calculation->forTimeStep == 0){
-    addDataToSSD(p_SimStepData_from_Calculation);
-    //cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
-    simulationReset = false;
+          addDataToSSD(p_SimStepData_from_Calculation);
+          //cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+          simulationReset = false;
       }
       else{
-  //cout << "no chance for reset ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+        //cout << "no chance for reset ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
       }
     } else{
       if(simulationChangetime){
 
-  if(compareDouble(p_SimStepData_from_Calculation->forTimeStep, VALID_TIME_AFTER_CHANGETIME)){
-    //cout << "add after change time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
-      addDataToSSD(p_SimStepData_from_Calculation);
-      simulationChangetime = false;
-  } else{
-    //cout << "no chance for change ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
-  }
+        if(compareDouble(p_SimStepData_from_Calculation->forTimeStep, VALID_TIME_AFTER_CHANGETIME)){
+          //cout << "add after change time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+            addDataToSSD(p_SimStepData_from_Calculation);
+            simulationChangetime = false;
+        } else{
+          //cout << "no chance for change ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+        }
       }
     }
   }
@@ -323,7 +323,7 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer) {
  * -------------------
  * |8|9|10|11|4|5|6|7|
  * -------------------
- *  A  |      B
+ *  A        |      B
  * the NextFreeSlot pointer points on the element with at the time "4", so we need two different searching algorithms
  * for each part.
  *
@@ -334,27 +334,27 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 
   if (debugResultManager > 1) {
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush( stdout);
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush( stdout);
     for (int i = 0; i < MAX_SSD; i++) {
       cout << ssdArray[i].forTimeStep << endl; fflush(stdout);
     }
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END"  << endl; fflush(stdout);
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END"  << endl; fflush(stdout);
   }
 
   if (debugResultManager > 1) {
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: "
-  << p_ssdArray_NextFreeSlot << endl;  fflush( stdout);
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: "
+        << p_ssdArray_NextFreeSlot << endl;  fflush( stdout);
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot: "
-  << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot: "
+        << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot-1: "
-  << (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot-1: "
+        << (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
     cout
-  << "ResultManager:\tFunct.: getResultDataForTime\tMessage: timeStep: "
-  << timeStep << endl;
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: timeStep: "
+        << timeStep << endl;
     fflush(stdout);
   }
 
@@ -370,26 +370,26 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
     //If this query returns true we have to search in Part B, because the time step is smaller than the lowest ssd in Part A
     if (timeStep < firstSSD_Element->forTimeStep) {
       temp = static_cast<int> (((timeStep
-    - p_ssdArray_NextFreeSlot->forTimeStep) / stepSize)
-    + 0.0001) + p_ssdArray_NextFreeSlot; //+0.0001 is needed because of type cast and vision from int and double
+          - p_ssdArray_NextFreeSlot->forTimeStep) / stepSize)
+          + 0.0001) + p_ssdArray_NextFreeSlot; //+0.0001 is needed because of type cast and vision from int and double
       if (debugResultManager > 1) {
-  cout
-      << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part B temp->forTimeStep: "
-      << temp->forTimeStep << endl;
-  fflush( stdout);
+        cout
+            << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part B temp->forTimeStep: "
+            << temp->forTimeStep << endl;
+        fflush( stdout);
       }
       return temp;
     } else {
       temp
-    = static_cast<int> (((timeStep
-        - firstSSD_Element->forTimeStep) / stepSize)
-        + 0.0001) //+0.0001 is important while casting from double to integer
-        + firstSSD_Element;
+          = static_cast<int> (((timeStep
+              - firstSSD_Element->forTimeStep) / stepSize)
+              + 0.0001) //+0.0001 is important while casting from double to integer
+              + firstSSD_Element;
       if (debugResultManager > 1) {
-  cout
-      << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part A temp->forTimeStep: "
-      << temp->forTimeStep << endl;
-  fflush( stdout);
+        cout
+            << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part A temp->forTimeStep: "
+            << temp->forTimeStep << endl;
+        fflush( stdout);
       }
       return temp;
     }
@@ -407,8 +407,8 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
     temp = &nullSSD;
     if (debugResultManager > 1) {
       cout
-    << "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD"
-    << endl;
+          << "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD"
+          << endl;
       fflush( stdout);
     }
   }
@@ -640,26 +640,26 @@ static void popSRDF(SimStepData* p_SimResDataForw_from_Transfer)
 
   for (int i = 0; i < p_simdatanumbers->nStates; i++) {
     p_SimResDataForw_from_Transfer->states[i]
-  = (*pp_srdfArray_FirstQueueElement)->states[i];
+        = (*pp_srdfArray_FirstQueueElement)->states[i];
     p_SimResDataForw_from_Transfer->statesDerivatives[i]
-  = (*pp_srdfArray_FirstQueueElement)->statesDerivatives[i];
+        = (*pp_srdfArray_FirstQueueElement)->statesDerivatives[i];
   }
 
   for (int i = 0; i < p_simdatanumbers->nAlgebraic; i++) {
     p_SimResDataForw_from_Transfer->algebraics[i]
-  = (*pp_srdfArray_FirstQueueElement)->algebraics[i];
+        = (*pp_srdfArray_FirstQueueElement)->algebraics[i];
   }
 
   for (int i = 0; i < p_simdatanumbers->nParameters; i++) {
     p_SimResDataForw_from_Transfer->parameters[i]
-  = (*pp_srdfArray_FirstQueueElement)->parameters[i];
+        = (*pp_srdfArray_FirstQueueElement)->parameters[i];
   }
 
   if (debugResultManager > 1) {
     cout << "ResultManager:\tFunct.: popSRDF\tData: time = "
-  << (*pp_srdfArray_FirstQueueElement)->forTimeStep
-  << " tank1.h = "
-  << (*pp_srdfArray_FirstQueueElement)->states[0] << endl;
+        << (*pp_srdfArray_FirstQueueElement)->forTimeStep
+        << " tank1.h = "
+        << (*pp_srdfArray_FirstQueueElement)->states[0] << endl;
     fflush( stdout);
   }
 
@@ -688,9 +688,9 @@ static void printSSD(void)
 
     if (ssdArray[i].forTimeStep != -1) {
       cout << "ResultManager:\tFunct.: printSSD\tData: SSD[" << i
-    << "]: time= " << ssdArray[i].forTimeStep
-    << " tank1.h = " << ssdArray[i].states[0]
-    << endl;
+          << "]: time= " << ssdArray[i].forTimeStep
+          << " tank1.h = " << ssdArray[i].states[0]
+          << endl;
       fflush(stdout);
     }
   }
@@ -703,15 +703,15 @@ static void printSRDF(void)
   for (int i = 0; i < MAX_SRDF; i++) {
     if (srdfArrayOfPointer[i] != 0) {
       if ((*srdfArrayOfPointer[i]).forTimeStep != -1) {
-  cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
-      << "]: time = " << (*srdfArrayOfPointer[i]).forTimeStep
-      << " tank1.h = " << (*srdfArrayOfPointer[i]).states[0]
-      << endl;
-  fflush(stdout);
+        cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
+            << "]: time = " << (*srdfArrayOfPointer[i]).forTimeStep
+            << " tank1.h = " << (*srdfArrayOfPointer[i]).states[0]
+            << endl;
+        fflush(stdout);
       }
     } else {
       cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
-    << "]: " << srdfArrayOfPointer[i] << endl;
+          << "]: " << srdfArrayOfPointer[i] << endl;
       fflush(stdout);
     }
 

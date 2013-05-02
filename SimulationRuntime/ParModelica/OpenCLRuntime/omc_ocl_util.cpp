@@ -69,9 +69,9 @@ char* load_source_file(const char* file_name){
 
     f = fopen(file_name, "rb");
     if (!f){
-  printf("OpenCL kernel file \"%s\" not found!", file_name);
-  ocl_clean_up();
-  exit(1);
+        printf("OpenCL kernel file \"%s\" not found!", file_name);
+        ocl_clean_up();
+        exit(1);
     }
 
     stat(file_name, &statbuf);
@@ -98,19 +98,19 @@ void ocl_get_device(){
     // Set our device to it.
     if (default_ocl_device)
     {
-  // If the default device id is valid set our device to it.
-  if(default_ocl_device >= 1 && default_ocl_device <= nr_dev)
-  {
-      plat_id = default_ocl_device;
-  }
-  // Not a valid id. set default_ocl_device=0 so that the next if can take care of it.
-  else
-  {
-      printf("- The device id you provided to OMC is not valid.\n");
-      printf("- Please select a valid OpenCL device number. \n");
-      fflush(stdout);
-      default_ocl_device = 0;
-  }
+        // If the default device id is valid set our device to it.
+        if(default_ocl_device >= 1 && default_ocl_device <= nr_dev)
+        {
+            plat_id = default_ocl_device;
+        }
+        // Not a valid id. set default_ocl_device=0 so that the next if can take care of it.
+        else
+        {
+            printf("- The device id you provided to OMC is not valid.\n");
+            printf("- Please select a valid OpenCL device number. \n");
+            fflush(stdout);
+            default_ocl_device = 0;
+        }
     }
 
 
@@ -119,53 +119,53 @@ void ocl_get_device(){
     // Show the selection options to the user.
     if (!default_ocl_device)
     {
-  printf("- %d OpenCL devices available.\n\n", nr_dev);
+        printf("- %d OpenCL devices available.\n\n", nr_dev);
 
-  for (unsigned int i = 1; i <= nr_dev; i++){
-      char cBuffer[1024];
-      cl_uint mem;
-      cl_ulong mem2;
-
-
-      clGetDeviceIDs(cpPlatform[i-1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
+        for (unsigned int i = 1; i <= nr_dev; i++){
+            char cBuffer[1024];
+            cl_uint mem;
+            cl_ulong mem2;
 
 
-      clGetDeviceInfo(ocl_device, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
-      printf("%d CL_DEVICE_NAME :\t\t%s\n", i, cBuffer);
-      clGetDeviceInfo(ocl_device, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL);
-      printf("%d CL_DRIVER_VERSION :\t%s\n", i, cBuffer);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_COMPUTE_UNITS , sizeof(cl_uint), &mem, NULL);
-      printf("%d CL_DEVICE_MAX_COMPUTE_UNITS :\t%d\n", i, mem);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_CLOCK_FREQUENCY , sizeof(cl_uint), &mem, NULL);
-      printf("%d CL_DEVICE_MAX_CLOCK_FREQUENCY :\t%d\n", i,mem);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-      printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%lu KB\n", i, mem2/1024);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-      printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %lu MB\n", i, mem2/1024/1024);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
-      printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %lu MB\n", i, mem2/1024/1024);
-      clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-      printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %lu MB\n", i, arg_nr);
+            clGetDeviceIDs(cpPlatform[i-1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
 
-      clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-      printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %lu \n", i, arg_nr);
-      MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
-      clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
-      printf("%d CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  : %d\n\n\n", i,mem);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
+            printf("%d CL_DEVICE_NAME :\t\t%s\n", i, cBuffer);
+            clGetDeviceInfo(ocl_device, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL);
+            printf("%d CL_DRIVER_VERSION :\t%s\n", i, cBuffer);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_COMPUTE_UNITS , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_MAX_COMPUTE_UNITS :\t%d\n", i, mem);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_CLOCK_FREQUENCY , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_MAX_CLOCK_FREQUENCY :\t%d\n", i,mem);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%lu KB\n", i, mem2/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %lu MB\n", i, mem2/1024/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %lu MB\n", i, mem2/1024/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %lu MB\n", i, arg_nr);
 
-      // MinGW needs fflush. They should put it in BIG LETTERS on A BIG BANNER!!
-      fflush(stdout);
-  }
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %lu \n", i, arg_nr);
+            MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
-  while(plat_id < 1 || plat_id > nr_dev)
-  {
-      printf("- Select your device:      ");     fflush(stdout);
-      scanf ("%d",&plat_id);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  : %d\n\n\n", i,mem);
 
-      if(plat_id < 1 || plat_id > nr_dev)
-          printf("- Please select a valid OpenCL device number. \n");
-  };
+            // MinGW needs fflush. They should put it in BIG LETTERS on A BIG BANNER!!
+            fflush(stdout);
+        }
+
+        while(plat_id < 1 || plat_id > nr_dev)
+        {
+            printf("- Select your device:      ");     fflush(stdout);
+            scanf ("%d",&plat_id);
+
+            if(plat_id < 1 || plat_id > nr_dev)
+                printf("- Please select a valid OpenCL device number. \n");
+        };
 
     }
 
@@ -189,11 +189,11 @@ void ocl_get_device(){
 
 void ocl_initialize(){
     if (!device_comm_queue){
-  if(!ocl_device){
-      ocl_get_device();
-  }
-  ocl_create_context_and_comm_queue();
-  ocl_build_p_from_src();
+        if(!ocl_device){
+            ocl_get_device();
+        }
+        ocl_create_context_and_comm_queue();
+        ocl_build_p_from_src();
     }
 }
 
@@ -221,7 +221,7 @@ void ocl_create_context_and_comm_queue(){
 #endif
 
     device_comm_queue = clCreateCommandQueue(device_context,
-  OCL_Devices[0], 0, &err);
+        OCL_Devices[0], 0, &err);
 
     ocl_error_check(OCL_CREATE_COMMAND_QUEUE, err);
 
@@ -243,7 +243,7 @@ void ocl_build_p_from_src(){
 #endif
     // omc_ocl_program declared in omc_ocl_util.h
     omc_ocl_program = clCreateProgramWithSource(device_context, 1,
-  (const char**)&program_source, NULL, NULL);
+        (const char**)&program_source, NULL, NULL);
 
 #if BE_OCL_VERBOSE
     printf("\t\t\t - OK.\n");
@@ -288,17 +288,17 @@ void ocl_build_p_from_src(){
     // Get build log size.
     size_t size;
     clGetProgramBuildInfo(omc_ocl_program, ocl_device, CL_PROGRAM_BUILD_LOG,
-                        0, NULL, &size);
+                              0, NULL, &size);
 
     // Get the build log.
     char * log = (char*)malloc(size);
     clGetProgramBuildInfo(omc_ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
 
     if(err){
-  printf("Build failed: Errors detected in compilation of OpenCL code:\n");
-  printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
-  free(log);
-  exit(1);
+        printf("Build failed: Errors detected in compilation of OpenCL code:\n");
+        printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
+        free(log);
+        exit(1);
     }
 
     free(log);
@@ -308,7 +308,7 @@ void ocl_build_p_from_src(){
 cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name){
 
     if (!device_comm_queue)
-  ocl_initialize();
+        ocl_initialize();
 
     cl_kernel kernel;
     cl_int err;
@@ -324,15 +324,15 @@ void ocl_set_kernel_args(cl_kernel kernel, int count, ...){
     va_start(arguments, count);
     for (int i = 0; i < count; i++)
     {
-  cl_mem tmp = va_arg(arguments, cl_mem);
-  err = clSetKernelArg(kernel, i, sizeof(cl_mem),(void*)&tmp);
-  //#ifdef SHOW_ARG_SET_ERRORS
-  ocl_error_check(OCL_SET_KER_ARGS, err);
-  if(err){
-    printf("Error: setting argument nr:  %d\n", i + 1);
-    exit(1);
-  }
-  //#endif
+        cl_mem tmp = va_arg(arguments, cl_mem);
+        err = clSetKernelArg(kernel, i, sizeof(cl_mem),(void*)&tmp);
+        //#ifdef SHOW_ARG_SET_ERRORS
+        ocl_error_check(OCL_SET_KER_ARGS, err);
+        if(err){
+          printf("Error: setting argument nr:  %d\n", i + 1);
+          exit(1);
+        }
+        //#endif
     }
     va_end(arguments);
 }
@@ -387,35 +387,35 @@ void ocl_execute_kernel(cl_kernel kernel){
     cl_int err = 0;
 
     if (WORK_DIM == 0){
-  size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
-  //automatic division to workgroups by OpenCL.
-  err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 1, NULL,
-  GlobalSize, NULL, 0, NULL, NULL);
+        size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
+        //automatic division to workgroups by OpenCL.
+        err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 1, NULL,
+        GlobalSize, NULL, 0, NULL, NULL);
     }
 
     else if (WORK_DIM == 1){
-  size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
-  size_t LocalSize[1] = {LOCAL_SIZE[0]}; // one dimensional Range
-  err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 1, NULL,
-  GlobalSize, LocalSize, 0, NULL, NULL);
+        size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
+        size_t LocalSize[1] = {LOCAL_SIZE[0]}; // one dimensional Range
+        err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 1, NULL,
+        GlobalSize, LocalSize, 0, NULL, NULL);
     }
 
     else if (WORK_DIM == 2){
-  size_t GlobalSize[2] = {GLOBAL_SIZE[0], GLOBAL_SIZE[1]}; // two dimensional Range
-  size_t LocalSize[2] = {LOCAL_SIZE[0], LOCAL_SIZE[1]}; // two dimensional Range
+        size_t GlobalSize[2] = {GLOBAL_SIZE[0], GLOBAL_SIZE[1]}; // two dimensional Range
+        size_t LocalSize[2] = {LOCAL_SIZE[0], LOCAL_SIZE[1]}; // two dimensional Range
 
-  //printf("Setting 2 dimensional arrangment with local size x = %d, local size y = %d, global size x = %d, global size x = %d \n",
-  //LocalSize[0], LocalSize[1], GlobalSize[0], GlobalSize[1]);
+        //printf("Setting 2 dimensional arrangment with local size x = %d, local size y = %d, global size x = %d, global size x = %d \n",
+        //LocalSize[0], LocalSize[1], GlobalSize[0], GlobalSize[1]);
 
-  err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 2, NULL,
-  GlobalSize, LocalSize, 0, NULL, NULL);
+        err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 2, NULL,
+        GlobalSize, LocalSize, 0, NULL, NULL);
     }
 
     else if (WORK_DIM == 3){
-  size_t GlobalSize[3] = {GLOBAL_SIZE[0], GLOBAL_SIZE[1], GLOBAL_SIZE[2]}; // three dimensional Range
-  size_t LocalSize[3] = {LOCAL_SIZE[0], LOCAL_SIZE[1], LOCAL_SIZE[2]}; // three dimensional Range
-  err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 3, NULL,
-  GlobalSize, LocalSize, 0, NULL, NULL);
+        size_t GlobalSize[3] = {GLOBAL_SIZE[0], GLOBAL_SIZE[1], GLOBAL_SIZE[2]}; // three dimensional Range
+        size_t LocalSize[3] = {LOCAL_SIZE[0], LOCAL_SIZE[1], LOCAL_SIZE[2]}; // three dimensional Range
+        err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 3, NULL,
+        GlobalSize, LocalSize, 0, NULL, NULL);
     }
 
     clFinish(device_comm_queue);
@@ -431,8 +431,8 @@ void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t loca
     WORK_DIM = global_threads_in.dim_size[0];
 
     for (modelica_integer i=0; i < WORK_DIM; i++){
-  GLOBAL_SIZE[i] = (size_t)(*integer_array_element_addr_c99_1(&global_threads_in, 1, i+1));
-  LOCAL_SIZE[i] = (size_t)(*integer_array_element_addr_c99_1(&local_threads_in, 1, i+1));
+        GLOBAL_SIZE[i] = (size_t)(*integer_array_element_addr_c99_1(&global_threads_in, 1, i+1));
+        LOCAL_SIZE[i] = (size_t)(*integer_array_element_addr_c99_1(&local_threads_in, 1, i+1));
     }
 
 }
@@ -452,9 +452,9 @@ void ocl_set_num_threads(modelica_integer global_threads_in){
     WORK_DIM = 0;
 
     if(global_threads_in == 0)
-  GLOBAL_SIZE[0] = MAX_THREADS_WORKGROUP;
+        GLOBAL_SIZE[0] = MAX_THREADS_WORKGROUP;
     else
-  GLOBAL_SIZE[0] = global_threads_in;
+        GLOBAL_SIZE[0] = global_threads_in;
 }
 
 modelica_integer ocl_get_num_threads(){
@@ -474,393 +474,393 @@ void ocl_clean_up(){
 void ocl_error_check(int operation, cl_int error_code){
 
     switch(operation){
-  case OCL_BUILD_PROGRAM:
-      switch (error_code){
-          case CL_INVALID_PROGRAM:
-              printf("Error building program:\n");
-              printf("CL_INVALID_PROGRAM \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error building program:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_DEVICE:
-              printf("Error building program:\n");
-              printf("CL_INVALID_DEVICE \n");
-              break;
-          case CL_BUILD_PROGRAM_FAILURE:
-              printf("Error building program:\n");
-              printf("CL_BUILD_PROGRAM_FAILURE \n");
-              break;
-          case CL_COMPILER_NOT_AVAILABLE:
-              printf("Error building program:\n");
-              printf("CL_COMPILER_NOT_AVAILABLE \n");
-              break;
-          case CL_INVALID_BINARY:
-              printf("Error building program:\n");
-              printf("CL_INVALID_BINARY \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error building program:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
+        case OCL_BUILD_PROGRAM:
+            switch (error_code){
+                case CL_INVALID_PROGRAM:
+                    printf("Error building program:\n");
+                    printf("CL_INVALID_PROGRAM \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error building program:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_DEVICE:
+                    printf("Error building program:\n");
+                    printf("CL_INVALID_DEVICE \n");
+                    break;
+                case CL_BUILD_PROGRAM_FAILURE:
+                    printf("Error building program:\n");
+                    printf("CL_BUILD_PROGRAM_FAILURE \n");
+                    break;
+                case CL_COMPILER_NOT_AVAILABLE:
+                    printf("Error building program:\n");
+                    printf("CL_COMPILER_NOT_AVAILABLE \n");
+                    break;
+                case CL_INVALID_BINARY:
+                    printf("Error building program:\n");
+                    printf("CL_INVALID_BINARY \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error building program:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
 #if BE_OCL_VERBOSE
-              printf("\t\t\t\t\t\t - OK.\n");
+                    printf("\t\t\t\t\t\t - OK.\n");
 #endif
-              break;
-          default:
-              printf("Possible unknown error in : OCL_BUILD_PROGRAM\n");
-      }
-      break;
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_BUILD_PROGRAM\n");
+            }
+            break;
 
-  case OCL_CREATE_KERNEL:
-      switch (error_code){
-          case CL_INVALID_PROGRAM:
-              printf("Error creating Kernel:\n");
-              printf("CL_INVALID_PROGRAM \n");
-              break;
-          case CL_INVALID_PROGRAM_EXECUTABLE:
-              printf("Error creating Kernel:\n");
-              printf("CL_INVALID_PROGRAM_EXECUTABLE \n");
-              break;
-          case CL_INVALID_KERNEL_NAME:
-              printf("Error creating Kernel:\n");
-              printf("CL_INVALID_KERNEL_NAME \n");
-              exit(1);
-              break;
-          case CL_INVALID_KERNEL_DEFINITION:
-              printf("Error creating Kernel:\n");
-              printf("CL_INVALID_KERNEL_DEFINITION \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error creating Kernel:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error creating Kernel:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Kernel created.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_CREATE_KERNEL\n");
-      }
-      break;
+        case OCL_CREATE_KERNEL:
+            switch (error_code){
+                case CL_INVALID_PROGRAM:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_INVALID_PROGRAM \n");
+                    break;
+                case CL_INVALID_PROGRAM_EXECUTABLE:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_INVALID_PROGRAM_EXECUTABLE \n");
+                    break;
+                case CL_INVALID_KERNEL_NAME:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_INVALID_KERNEL_NAME \n");
+                    exit(1);
+                    break;
+                case CL_INVALID_KERNEL_DEFINITION:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_INVALID_KERNEL_DEFINITION \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error creating Kernel:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Kernel created.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_CREATE_KERNEL\n");
+            }
+            break;
 
-  case OCL_CREATE_BUFFER:
+        case OCL_CREATE_BUFFER:
 
-      switch (error_code){
-          case CL_INVALID_CONTEXT:
-              printf("Error allocating buffer on device\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error allocating buffer on device\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_BUFFER_SIZE:
-              printf("Error allocating buffer on device\n");
-              printf("CL_INVALID_BUFFER_SIZE \n");
-              break;
-          case CL_INVALID_HOST_PTR:
-              printf("Error allocating buffer on device\n");
-              printf("CL_INVALID_HOST_PTR \n");
-              break;
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-              printf("Error allocating buffer on device\n");
-              printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error allocating buffer on device\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Buffer allocated on device.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_CREATE_BUFFER\n");
-      }
-      break;
+            switch (error_code){
+                case CL_INVALID_CONTEXT:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_BUFFER_SIZE:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_INVALID_BUFFER_SIZE \n");
+                    break;
+                case CL_INVALID_HOST_PTR:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_INVALID_HOST_PTR \n");
+                    break;
+                case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error allocating buffer on device\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Buffer allocated on device.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_CREATE_BUFFER\n");
+            }
+            break;
 
-  case OCL_CREATE_CONTEXT:
-      switch (error_code){
-          case CL_INVALID_PLATFORM:
-              printf("Error creating context:\n");
-              printf("CL_INVALID_PLATFORM \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error creating context:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_DEVICE:
-              printf("Error creating context:\n");
-              printf("CL_INVALID_DEVICE \n");
-              break;
-          case CL_DEVICE_NOT_AVAILABLE:
-              printf("Error creating context:\n");
-              printf("CL_DEVICE_NOT_AVAILABLE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error creating context:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
+        case OCL_CREATE_CONTEXT:
+            switch (error_code){
+                case CL_INVALID_PLATFORM:
+                    printf("Error creating context:\n");
+                    printf("CL_INVALID_PLATFORM \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error creating context:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_DEVICE:
+                    printf("Error creating context:\n");
+                    printf("CL_INVALID_DEVICE \n");
+                    break;
+                case CL_DEVICE_NOT_AVAILABLE:
+                    printf("Error creating context:\n");
+                    printf("CL_DEVICE_NOT_AVAILABLE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error creating context:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
 #if BE_OCL_VERBOSE
-              printf("\t\t\t - OK.\n");
+                    printf("\t\t\t - OK.\n");
 #endif
-              break;
-          default:
-              printf("Possible unknown error in : OCL_CREATE_CONTEXT\n");
-      }
-      break;
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_CREATE_CONTEXT\n");
+            }
+            break;
 
-  case OCL_CREATE_COMMAND_QUEUE:
-      switch (error_code){
-          case CL_INVALID_CONTEXT:
-              printf("Error creating command queue:\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error creating command queue:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_DEVICE:
-              printf("Error creating command queue:\n");
-              printf("CL_INVALID_DEVICE \n");
-              break;
-          case CL_INVALID_QUEUE_PROPERTIES:
-              printf("Error creating command queue:\n");
-              printf("CL_INVALID_QUEUE_PROPERTIES \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error creating command queue:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
+        case OCL_CREATE_COMMAND_QUEUE:
+            switch (error_code){
+                case CL_INVALID_CONTEXT:
+                    printf("Error creating command queue:\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error creating command queue:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_DEVICE:
+                    printf("Error creating command queue:\n");
+                    printf("CL_INVALID_DEVICE \n");
+                    break;
+                case CL_INVALID_QUEUE_PROPERTIES:
+                    printf("Error creating command queue:\n");
+                    printf("CL_INVALID_QUEUE_PROPERTIES \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error creating command queue:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
 #if BE_OCL_VERBOSE
-              printf("\t\t - OK.\n");
+                    printf("\t\t - OK.\n");
 #endif
-              break;
-          default:
-              printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");
-      }
-      break;
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");
+            }
+            break;
 
-  case OCL_SET_KER_ARGS:
-      switch (error_code){
-          case CL_INVALID_KERNEL:
-              printf("Error setting kernel arguments:\n");
-              printf("CL_INVALID_KERNEL \n");
-              break;
-          case CL_INVALID_ARG_INDEX:
-              //printf("Error setting kernel arguments:\n");
-              //printf("CL_INVALID_ARG_INDEX \n");
-              break;
-          case CL_INVALID_ARG_VALUE:
-              printf("Error setting kernel arguments:\n");
-              printf("CL_INVALID_ARG_VALUE \n");
-              break;
-          case CL_INVALID_MEM_OBJECT:
-              printf("Error setting kernel arguments:\n");
-              printf("CL_INVALID_MEM_OBJECT \n");
-              break;
-          case CL_INVALID_SAMPLER:
-              printf("Error setting kernel arguments:\n");
-              printf("CL_INVALID_SAMPLER \n");
-              break;
-          case CL_INVALID_ARG_SIZE:
-              printf("Error setting kernel arguments:\n");
-              printf("CL_INVALID_ARG_SIZE \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Successfuly set Kernel arguments.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");
-      }
-      break;
+        case OCL_SET_KER_ARGS:
+            switch (error_code){
+                case CL_INVALID_KERNEL:
+                    printf("Error setting kernel arguments:\n");
+                    printf("CL_INVALID_KERNEL \n");
+                    break;
+                case CL_INVALID_ARG_INDEX:
+                    //printf("Error setting kernel arguments:\n");
+                    //printf("CL_INVALID_ARG_INDEX \n");
+                    break;
+                case CL_INVALID_ARG_VALUE:
+                    printf("Error setting kernel arguments:\n");
+                    printf("CL_INVALID_ARG_VALUE \n");
+                    break;
+                case CL_INVALID_MEM_OBJECT:
+                    printf("Error setting kernel arguments:\n");
+                    printf("CL_INVALID_MEM_OBJECT \n");
+                    break;
+                case CL_INVALID_SAMPLER:
+                    printf("Error setting kernel arguments:\n");
+                    printf("CL_INVALID_SAMPLER \n");
+                    break;
+                case CL_INVALID_ARG_SIZE:
+                    printf("Error setting kernel arguments:\n");
+                    printf("CL_INVALID_ARG_SIZE \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Successfuly set Kernel arguments.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");
+            }
+            break;
 
-  case OCL_ENQUE_ND_RANGE_KERNEL:
-      switch (error_code){
-          case CL_INVALID_PROGRAM_EXECUTABLE:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_PROGRAM_EXECUTABLE \n");
-              break;
-          case CL_INVALID_COMMAND_QUEUE:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_COMMAND_QUEUE \n");
-              break;
-          case CL_INVALID_KERNEL:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_KERNEL \n");
-              break;
-          case CL_INVALID_CONTEXT:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_KERNEL_ARGS:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_KERNEL_ARGS \n");
-              break;
-          case CL_INVALID_WORK_DIMENSION:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_WORK_DIMENSION \n");
-              break;
-          case CL_INVALID_WORK_GROUP_SIZE:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_WORK_GROUP_SIZE \n");
-              break;
-          case CL_INVALID_WORK_ITEM_SIZE:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_WORK_ITEM_SIZE \n");
-              break;
-          case CL_INVALID_GLOBAL_OFFSET:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_GLOBAL_OFFSET \n");
-              break;
-          case CL_OUT_OF_RESOURCES:
-              printf("Error enquing range kernel:\n");
-              printf("CL_OUT_OF_RESOURCES \n");
-              break;
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-              printf("Error enquing range kernel:\n");
-              printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
-              break;
-          case CL_INVALID_EVENT_WAIT_LIST:
-              printf("Error enquing range kernel:\n");
-              printf("CL_INVALID_EVENT_WAIT_LIST \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error enquing range kernel:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Succesfuly enqued range Kernel.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_ENQUE_ND_RANGE_KERNEL\n");
-      }
-      break;
+        case OCL_ENQUE_ND_RANGE_KERNEL:
+            switch (error_code){
+                case CL_INVALID_PROGRAM_EXECUTABLE:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_PROGRAM_EXECUTABLE \n");
+                    break;
+                case CL_INVALID_COMMAND_QUEUE:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_COMMAND_QUEUE \n");
+                    break;
+                case CL_INVALID_KERNEL:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_KERNEL \n");
+                    break;
+                case CL_INVALID_CONTEXT:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_KERNEL_ARGS:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_KERNEL_ARGS \n");
+                    break;
+                case CL_INVALID_WORK_DIMENSION:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_WORK_DIMENSION \n");
+                    break;
+                case CL_INVALID_WORK_GROUP_SIZE:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_WORK_GROUP_SIZE \n");
+                    break;
+                case CL_INVALID_WORK_ITEM_SIZE:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_WORK_ITEM_SIZE \n");
+                    break;
+                case CL_INVALID_GLOBAL_OFFSET:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_GLOBAL_OFFSET \n");
+                    break;
+                case CL_OUT_OF_RESOURCES:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_OUT_OF_RESOURCES \n");
+                    break;
+                case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
+                    break;
+                case CL_INVALID_EVENT_WAIT_LIST:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_INVALID_EVENT_WAIT_LIST \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error enquing range kernel:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Succesfuly enqued range Kernel.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_ENQUE_ND_RANGE_KERNEL\n");
+            }
+            break;
 
-      case OCL_COPY_DEV_TO_DEV:
-      switch (error_code){
-          case CL_INVALID_COMMAND_QUEUE:
-              printf("Error copying device to device:\n");
-              printf("CL_INVALID_COMMAND_QUEUE \n");
-              break;
-          case CL_INVALID_CONTEXT:
-              printf("Error copying device to device:\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_MEM_OBJECT:
-              printf("Error copying device to device:\n");
-              printf("CL_INVALID_MEM_OBJECT \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error copying device to device:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_EVENT_WAIT_LIST:
-              printf("Error copying device to device:\n");
-              printf("CL_INVALID_EVENT_WAIT_LIST \n");
-              break;
-          case CL_MEM_COPY_OVERLAP:
-              printf("Error copying device to device:\n");
-              printf("CL_MEM_COPY_OVERLAP \n");
-              break;
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-              printf("Error copying device to device:\n");
-              printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error copying device to device:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Successfuly copied data from dev mem to dev mem.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_COPY_DEV_TO_DEV\n");
-      }
-      break;
+            case OCL_COPY_DEV_TO_DEV:
+            switch (error_code){
+                case CL_INVALID_COMMAND_QUEUE:
+                    printf("Error copying device to device:\n");
+                    printf("CL_INVALID_COMMAND_QUEUE \n");
+                    break;
+                case CL_INVALID_CONTEXT:
+                    printf("Error copying device to device:\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_MEM_OBJECT:
+                    printf("Error copying device to device:\n");
+                    printf("CL_INVALID_MEM_OBJECT \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error copying device to device:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_EVENT_WAIT_LIST:
+                    printf("Error copying device to device:\n");
+                    printf("CL_INVALID_EVENT_WAIT_LIST \n");
+                    break;
+                case CL_MEM_COPY_OVERLAP:
+                    printf("Error copying device to device:\n");
+                    printf("CL_MEM_COPY_OVERLAP \n");
+                    break;
+                case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+                    printf("Error copying device to device:\n");
+                    printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error copying device to device:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Successfuly copied data from dev mem to dev mem.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_COPY_DEV_TO_DEV\n");
+            }
+            break;
 
-      case OCL_COPY_HOST_TO_DEV:
-      switch (error_code){
-          case CL_INVALID_COMMAND_QUEUE:
-              printf("Error copying host to device:\n");
-              printf("CL_INVALID_COMMAND_QUEUE \n");
-              break;
-          case CL_INVALID_CONTEXT:
-              printf("Error copying host to device:\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_MEM_OBJECT:
-              printf("Error copying host to device:\n");
-              printf("CL_INVALID_MEM_OBJECT \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error copying host to device:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_EVENT_WAIT_LIST:
-              printf("Error copying host to device:\n");
-              printf("CL_INVALID_EVENT_WAIT_LIST \n");
-              break;
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-              printf("Error copying host to device:\n");
-              printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error copying host to device:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Successfuly copied data from host mem to dev mem.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_COPY_HOST_TO_DEV\n");
-      }
-      break;
+            case OCL_COPY_HOST_TO_DEV:
+            switch (error_code){
+                case CL_INVALID_COMMAND_QUEUE:
+                    printf("Error copying host to device:\n");
+                    printf("CL_INVALID_COMMAND_QUEUE \n");
+                    break;
+                case CL_INVALID_CONTEXT:
+                    printf("Error copying host to device:\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_MEM_OBJECT:
+                    printf("Error copying host to device:\n");
+                    printf("CL_INVALID_MEM_OBJECT \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error copying host to device:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_EVENT_WAIT_LIST:
+                    printf("Error copying host to device:\n");
+                    printf("CL_INVALID_EVENT_WAIT_LIST \n");
+                    break;
+                case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+                    printf("Error copying host to device:\n");
+                    printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error copying host to device:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Successfuly copied data from host mem to dev mem.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_COPY_HOST_TO_DEV\n");
+            }
+            break;
 
-      case OCL_COPY_DEV_TO_HOST:
-      switch (error_code){
-          case CL_INVALID_COMMAND_QUEUE:
-              printf("Error copying device to host:\n");
-              printf("CL_INVALID_COMMAND_QUEUE \n");
-              break;
-          case CL_INVALID_CONTEXT:
-              printf("Error copying device to host:\n");
-              printf("CL_INVALID_CONTEXT \n");
-              break;
-          case CL_INVALID_MEM_OBJECT:
-              printf("Error copying device to host:\n");
-              printf("CL_INVALID_MEM_OBJECT \n");
-              break;
-          case CL_INVALID_VALUE:
-              printf("Error copying device to host:\n");
-              printf("CL_INVALID_VALUE \n");
-              break;
-          case CL_INVALID_EVENT_WAIT_LIST:
-              printf("Error copying device to host:\n");
-              printf("CL_INVALID_EVENT_WAIT_LIST \n");
-              break;
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-              printf("Error copying device to host:\n");
-              printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
-              break;
-          case CL_OUT_OF_HOST_MEMORY:
-              printf("Error copying device to host:\n");
-              printf("CL_OUT_OF_HOST_MEMORY \n");
-              break;
-          case CL_SUCCESS:
-              //printf("********** Successfuly copied data from dev mem to host mem.\n");
-              break;
-          default:
-              printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
-      }
-      break;
+            case OCL_COPY_DEV_TO_HOST:
+            switch (error_code){
+                case CL_INVALID_COMMAND_QUEUE:
+                    printf("Error copying device to host:\n");
+                    printf("CL_INVALID_COMMAND_QUEUE \n");
+                    break;
+                case CL_INVALID_CONTEXT:
+                    printf("Error copying device to host:\n");
+                    printf("CL_INVALID_CONTEXT \n");
+                    break;
+                case CL_INVALID_MEM_OBJECT:
+                    printf("Error copying device to host:\n");
+                    printf("CL_INVALID_MEM_OBJECT \n");
+                    break;
+                case CL_INVALID_VALUE:
+                    printf("Error copying device to host:\n");
+                    printf("CL_INVALID_VALUE \n");
+                    break;
+                case CL_INVALID_EVENT_WAIT_LIST:
+                    printf("Error copying device to host:\n");
+                    printf("CL_INVALID_EVENT_WAIT_LIST \n");
+                    break;
+                case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+                    printf("Error copying device to host:\n");
+                    printf("CL_MEM_OBJECT_ALLOCATION_FAILURE \n");
+                    break;
+                case CL_OUT_OF_HOST_MEMORY:
+                    printf("Error copying device to host:\n");
+                    printf("CL_OUT_OF_HOST_MEMORY \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Successfuly copied data from dev mem to host mem.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
+            }
+            break;
 
     }
 }

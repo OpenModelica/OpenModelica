@@ -51,9 +51,9 @@ DOMElement * flat_modelica_tree_parser::stored_definition(RefMyAST _t,
 	
 	// create the <program> root element
 	pFlatModelicaXMLDoc = pDOMImpl->createDocument(
-	0,              // root element namespace URI.
-	X("modelica"),   // root element name
-	pDoctype);             // document type object (DTD).
+	0,                    // root element namespace URI.
+	X("modelica"),         // root element name
+	pDoctype);                   // document type object (DTD).
 	
 	pRootElementModelica = pFlatModelicaXMLDoc->getDocumentElement();
 		pRootElementFlatModelicaXML = pFlatModelicaXMLDoc->createElement(X("modelicaxml"));
@@ -162,18 +162,18 @@ DOMElement * flat_modelica_tree_parser::stored_definition(RefMyAST _t,
 	
 				XMLSize_t elementCount = pFlatModelicaXMLDoc->getElementsByTagName(X("*"))->getLength();
 				std::cout << std::endl;
-		  std::cout << "The tree just created contains: " << elementCount
-		  << " elements." << std::endl;
+		        std::cout << "The tree just created contains: " << elementCount
+		        << " elements." << std::endl;
 	
 	// get a serializer, an instance of DOMLSSerializer
 	XMLCh tempStr[3] = {chLatin_L, chLatin_S, chNull};
 	DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
-		  // create the writer            
+		        // create the writer            
 	DOMLSSerializer   *domSerializer = ((DOMImplementationLS*)impl)->createLSSerializer();
 	DOMLSOutput       *theOutputDesc = ((DOMImplementationLS*)impl)->createLSOutput();
-	static XMLCh*             gOutputEncoding        = 0;
+	static XMLCh*                   gOutputEncoding        = 0;
 	// set user specified output encoding
-	theOutputDesc->setEncoding(gOutputEncoding);      
+	theOutputDesc->setEncoding(gOutputEncoding);            
 	
 	DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
 				// set the pretty print feature
@@ -1112,10 +1112,10 @@ DOMElement*  flat_modelica_tree_parser::derived_class(RefMyAST _t) {
 	}
 #line 442 "walker.g"
 	
-					if (p)         pDerived->setAttribute(X("type"), X(((mstring*)p)->c_str()));
-					if (as)        pDerived->appendChild(as);
-					if (cmod)      pDerived = (DOMElement*)appendKidsFromStack((l_stack *)cmod, pDerived);
-					if (cmt)       pDerived->appendChild(cmt);
+					if (p)               pDerived->setAttribute(X("type"), X(((mstring*)p)->c_str()));
+					if (as)              pDerived->appendChild(as);
+					if (cmod)            pDerived = (DOMElement*)appendKidsFromStack((l_stack *)cmod, pDerived);
+					if (cmt)             pDerived->appendChild(cmt);
 					ast = pDerived;
 				
 #line 1122 "flat_modelica_tree_parser.cpp"
@@ -6464,7 +6464,7 @@ DOMElement*  flat_modelica_tree_parser::else_when_a(RefMyAST _t) {
 				pAlgElseWhen->setAttribute(X("sline"), X(itoa(e->getLine(),stmp,10)));
 				pAlgElseWhen->setAttribute(X("scolumn"), X(itoa(e->getColumn(),stmp,10)));
 	
-		  pAlgElseWhen->appendChild(pAlgThen);
+		        pAlgElseWhen->appendChild(pAlgThen);
 				ast = pAlgElseWhen;
 			
 #line 6471 "flat_modelica_tree_parser.cpp"

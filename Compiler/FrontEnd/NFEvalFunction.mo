@@ -30,10 +30,10 @@
  */
 
 encapsulated package NFEvalFunction
-" file:   NFEvalFunction.mo
+" file:         NFEvalFunction.mo
   package:      NFEvalFunction
   description:  This module constant evaluates NFInstTypes.Function objects, i.e.
-          modelica functions defined by the user.
+                modelica functions defined by the user.
 
   RCS: $Id$
 

@@ -1227,10 +1227,10 @@ DOMElement*  modelica_tree_parser::derived_class(RefMyAST _t) {
 	}
 #line 418 "walker.g"
 	
-					if (p)         pDerived->setAttribute(X("type"), X(((mstring*)p)->c_str()));
-					if (as)        pDerived->appendChild(as);
-					if (cmod)      pDerived = (DOMElement*)appendKidsFromStack((l_stack *)cmod, pDerived);
-					if (cmt)       pDerived->appendChild(cmt);
+					if (p)               pDerived->setAttribute(X("type"), X(((mstring*)p)->c_str()));
+					if (as)              pDerived->appendChild(as);
+					if (cmod)            pDerived = (DOMElement*)appendKidsFromStack((l_stack *)cmod, pDerived);
+					if (cmt)             pDerived->appendChild(cmt);
 					ast = pDerived;
 				
 #line 1237 "modelica_tree_parser.cpp"
@@ -3386,7 +3386,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		
 								DOMElement* definitionElement = pModelicaXMLDoc->createElement(X("definition"));
 								setVisibility(iSwitch, definitionElement);
-						  if (re2) definitionElement->setAttribute(X("redeclare"), X("true"));
+						        if (re2) definitionElement->setAttribute(X("redeclare"), X("true"));
 							
 #line 3392 "modelica_tree_parser.cpp"
 		{
@@ -5255,7 +5255,7 @@ DOMElement*  modelica_tree_parser::element_replaceable(RefMyAST _t,
 						if (true) pElementRedeclaration->setAttribute(X("replaceable"), X("true"));
 						if (class_def &&  class_def->hasChildNodes())
 						{
-							pElementRedeclaration->appendChild(class_def);	          
+							pElementRedeclaration->appendChild(class_def);	                
 							if (constr) 
 							{
 							   if (cmt) ((DOMElement*)constr)->appendChild(cmt);
@@ -7266,7 +7266,7 @@ DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
 				pAlgElseWhen->setAttribute(X("sline"), X(itoa(e->getLine(),stmp,10)));
 				pAlgElseWhen->setAttribute(X("scolumn"), X(itoa(e->getColumn(),stmp,10)));
 	
-		  pAlgElseWhen->appendChild(pAlgThen);
+		        pAlgElseWhen->appendChild(pAlgThen);
 				ast = pAlgElseWhen;
 			
 #line 7273 "modelica_tree_parser.cpp"

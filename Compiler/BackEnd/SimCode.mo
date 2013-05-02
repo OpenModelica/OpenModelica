@@ -30,7 +30,7 @@
  */
 
 encapsulated package SimCode
-" file:  SimCode.mo
+" file:        SimCode.mo
   package:     SimCode
   description: Code generation using Susan templates
 
@@ -62,12 +62,12 @@ type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;     // column equations, column vars, column length
-type JacobianMatrix = tuple<list<JacobianColumn>,                   // column
-                      list<SimVar>,                                 // seed vars
-                      String,                                       // matrix name
-                      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
-                      list<list<DAE.ComponentRef>>,                 // colored cols
-                      Integer>;                                     // max color used
+type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
+                            list<SimVar>,                                 // seed vars
+                            String,                                       // matrix name
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            list<list<DAE.ComponentRef>>,                 // colored cols
+                            Integer>;                                     // max color used
 
 
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
@@ -84,7 +84,7 @@ uniontype SimCode
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
     list<SimEqSystem> residualEquations;
-    Boolean useSymbolicInitialization;   // true if a system to solve the initial problem symbolically is generated, otherwise false
+    Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> parameterEquations;
@@ -451,7 +451,7 @@ uniontype SimEqSystem
   record SES_WHEN
     Integer index;
     list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-    Boolean initialCall;            // true, if top-level branch with initial()
+    Boolean initialCall;                  // true, if top-level branch with initial()
     DAE.ComponentRef left;
     DAE.Exp right;
     Option<SimEqSystem> elseWhen;
@@ -475,7 +475,7 @@ uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
     list<DAE.ComponentRef> conditionVars; // is no longer needed
     list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-    Boolean initialCall;            // true, if top-level branch with initial()
+    Boolean initialCall;                  // true, if top-level branch with initial()
     list<BackendDAE.WhenOperator> reinits;
     Option<BackendDAE.WhenEquation> whenEq;
   end SIM_WHEN_CLAUSE;
@@ -549,13 +549,13 @@ end Context;
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
-public constant Context contextInlineSolver     = INLINE_CONTEXT();
-public constant Context contextFunction         = FUNCTION_CONTEXT();
+public constant Context contextInlineSolver           = INLINE_CONTEXT();
+public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true);
-public constant Context contextAlgloop          = ALGLOOP_CONTEXT(false);
-public constant Context contextOther            = OTHER();
+public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false);
+public constant Context contextOther                  = OTHER();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
-public constant Context contextZeroCross        = ZEROCROSSINGS_CONTEXT();
+public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 
 
 /****** HashTable ComponentRef -> SimCode.SimVar ******/

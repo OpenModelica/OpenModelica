@@ -120,20 +120,20 @@ void display_omc_error(DWORD lastError, LPTSTR lpszMessage)
     LPVOID lpDisplayBuf;
 
     FormatMessage(
-  FORMAT_MESSAGE_ALLOCATE_BUFFER |
-  FORMAT_MESSAGE_FROM_SYSTEM |
-  FORMAT_MESSAGE_IGNORE_INSERTS,
-  NULL,
-  lastError,
-  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-  (LPTSTR) &lpMsgBuf,
-  0, NULL );
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        lastError,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &lpMsgBuf,
+        0, NULL );
 
     lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
-  (lstrlen((LPCTSTR)lpMsgBuf)+lstrlen((LPCTSTR)lpszMessage)+40)*sizeof(TCHAR));
+        (lstrlen((LPCTSTR)lpMsgBuf)+lstrlen((LPCTSTR)lpszMessage)+40)*sizeof(TCHAR));
     wsprintf((LPTSTR)lpDisplayBuf,
-  TEXT("%s failed with error %d:\n%s"),
-  lpszMessage, lastError, lpMsgBuf);
+        TEXT("%s failed with error %d:\n%s"),
+        lpszMessage, lastError, lpMsgBuf);
     MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("OpenModelica OMC Error"), MB_ICONERROR);
 
     LocalFree(lpMsgBuf);
@@ -283,7 +283,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
 #else
 /*******************************************************
  * *****************************************************
- *           linux stuff here
+ *                 linux stuff here
  * *****************************************************
  * *****************************************************
  */

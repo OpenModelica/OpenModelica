@@ -30,7 +30,7 @@
  */
 
 encapsulated package Visited
-" file:  Visited.mo
+" file:        Visited.mo
   package:     Visited
   description: Visited is a relation Integer <-> Integer.
 

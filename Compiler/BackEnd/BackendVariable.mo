@@ -30,10 +30,10 @@
  */
 
 encapsulated package BackendVariable
-" file:  mo
+" file:        mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
-         BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
+               BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
 
   RCS: $Id$
 "
@@ -94,9 +94,9 @@ algorithm
       DAE.ComponentRef cr1,cr2;
     case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
       equation
-  res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
+        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
       then
-  res;
+        res;
   end match;
 end varEqual;
 
@@ -126,36 +126,36 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
+        attr = getVariableAttributefromType(d);
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
 
@@ -185,10 +185,10 @@ algorithm
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".
   case (v) // states are by default fixed.
       equation
-  BackendDAE.STATE(index=_) = varKind(v);
-  fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
+        BackendDAE.STATE(index=_) = varKind(v);
+        fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
       then
-  not fixed;
+        not fixed;
 */
     case (_) then false;  /* rest defaults to false */
   end matchcontinue;
@@ -219,36 +219,36 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
+        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
   end match;
@@ -279,38 +279,38 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
+        oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(values = NONE()),NONE()) then inVar;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarStartValueOption;
@@ -340,36 +340,36 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
+        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
   end match;
@@ -442,26 +442,26 @@ algorithm
       DAE.Type ty;
     case (BackendDAE.VAR(values = attr))
       equation
-  sv=DAEUtil.getStartAttrFail(attr);
+        sv=DAEUtil.getStartAttrFail(attr);
       then sv;
     case BackendDAE.VAR(varType=ty)
       equation
-  true = Types.isIntegerOrSubTypeInteger(ty);
+        true = Types.isIntegerOrSubTypeInteger(ty);
       then
-  DAE.ICONST(0);
+        DAE.ICONST(0);
     case BackendDAE.VAR(varType=ty)
       equation
-  true = Types.isBooleanOrSubTypeBoolean(ty);
+        true = Types.isBooleanOrSubTypeBoolean(ty);
       then
-  DAE.BCONST(false);
+        DAE.BCONST(false);
     case BackendDAE.VAR(varType=ty)
       equation
-  true = Types.isStringOrSubTypeString(ty);
+        true = Types.isStringOrSubTypeString(ty);
       then
-  DAE.SCONST("");
+        DAE.SCONST("");
     else
       then
-  DAE.RCONST(0.0);
+        DAE.RCONST(0.0);
    end matchcontinue;
 end varStartValueType;
 
@@ -479,7 +479,7 @@ algorithm
       DAE.Exp exp;
     case (BackendDAE.VAR(values = attr))
       equation
-  exp=DAEUtil.getStartAttrFail(attr);
+        exp=DAEUtil.getStartAttrFail(attr);
       then SOME(exp);
     else NONE();
    end matchcontinue;
@@ -569,36 +569,36 @@ algorithm
       Boolean fixed;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
+        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
+        attr = getVariableAttributefromType(d);
+        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
 
@@ -652,17 +652,17 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = BackendDAE.STATE(index=indx),
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = oattr,
-        comment = s,
-        connectorType = ct),_)
+              varKind = BackendDAE.STATE(index=indx),
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = oattr,
+              comment = s,
+              connectorType = ct),_)
       then BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,s,ct);
   end match;
 end setStateDerivative;
@@ -680,10 +680,10 @@ algorithm
     case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     else
       equation
-  // repord a warning on failtrace
-  Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
+        // repord a warning on failtrace
+        Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
       then
-  DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+        DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   end match;
 end getVariableAttributefromType;
 
@@ -712,36 +712,36 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
+        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarFinal;
@@ -771,36 +771,36 @@ algorithm
       DAE.ConnectorType ct;
     case (_,(NONE(),NONE())) then inVar;
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarMinMax;
@@ -843,36 +843,36 @@ algorithm
       DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = NONE(),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
       equation
-  attr = getVariableAttributefromType(d);
-  oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = prl,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = SOME(attr),
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
       equation
-  oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
+        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarNominalValue;
@@ -978,9 +978,9 @@ algorithm
       BackendDAE.Variables vars;
     case(cr,vars)
       equation
-  ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(cr, vars);
       then
-  true;
+        true;
     case(_,_) then false;
   end matchcontinue;
 end isState;
@@ -1189,9 +1189,9 @@ algorithm
       list<BackendDAE.Var> vs;
     case (v :: vs)
       equation
-  true = isVarDiscrete(v);
+        true = isVarDiscrete(v);
       then
-  true;
+        true;
     case (v :: vs) then hasDiscreteVar(vs);
     case ({}) then false;
   end matchcontinue;
@@ -1229,25 +1229,25 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* bool variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_BOOL(source = _)))
+                     varType = typeVar as DAE.T_BOOL(source = _)))
       then false;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_INTEGER(source = _)))
+                     varType = typeVar as DAE.T_INTEGER(source = _)))
       then false;
     /* int enumeration */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_ENUMERATION(source = _)))
+                     varType = typeVar as DAE.T_ENUMERATION(source = _)))
       then false;
     /* string variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_STRING(source = _)))
+                     varType = typeVar as DAE.T_STRING(source = _)))
       then false;
     /* non-string variable */
     case (BackendDAE.VAR(varKind = kind))
       equation
-  kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-              BackendDAE.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
   end match;
 end isVarAlg;
@@ -1264,10 +1264,10 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* string variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_STRING(source = _)))
+                     varType = typeVar as DAE.T_STRING(source = _)))
       equation
-  kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-              BackendDAE.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
     else false;
   end match;
@@ -1284,18 +1284,18 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_INTEGER(source = _)))
+                     varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
 
-  kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-              BackendDAE.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_ENUMERATION(source = _)))
+                     varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
 
-  kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-              BackendDAE.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
 
     else false;
@@ -1314,10 +1314,10 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-               varType = typeVar as DAE.T_BOOL(source = _)))
+                     varType = typeVar as DAE.T_BOOL(source = _)))
       equation
-  kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-              BackendDAE.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
     else false;
   end matchcontinue;
@@ -1346,7 +1346,7 @@ algorithm
     /* non-string variable */
     case _
       equation
-  true = isConst(var);
+        true = isConst(var);
       then true;
     case (_)
       then false;
@@ -1364,7 +1364,7 @@ algorithm
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       equation
-  true = isConst(var);
+        true = isConst(var);
       then true;
     case (_)
       then false;
@@ -1382,11 +1382,11 @@ algorithm
     /* int variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
-  true = isConst(var);
+        true = isConst(var);
       then true;
     case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
-  true = isConst(var);
+        true = isConst(var);
       then true;
     case (_)
       then false;
@@ -1404,7 +1404,7 @@ algorithm
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       equation
-  true = isConst(var);
+        true = isConst(var);
       then true;
     case (_)
       then false;
@@ -1435,7 +1435,7 @@ algorithm
     /* non-string variable */
     case _
       equation
-  true = isParam(var);
+        true = isParam(var);
       then true;
     case (_)
       then false;
@@ -1454,7 +1454,7 @@ algorithm
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       equation
-  true = isParam(var);
+        true = isParam(var);
       then true;
     case (_)
       then false;
@@ -1473,12 +1473,12 @@ algorithm
     // int variable
     case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
-  true = isParam(var);
+        true = isParam(var);
       then true;
     // enum is also mapped to long
     case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
-  true = isParam(var);
+        true = isParam(var);
       then true;
     case (_)
       then false;
@@ -1496,7 +1496,7 @@ algorithm
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       equation
-  true = isParam(var);
+        true = isParam(var);
       then true;
     case (_)
       then false;
@@ -1689,9 +1689,9 @@ public function createDummyVar "function createDummyVar
 algorithm
   outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
   outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
-                      DAE.emptyElementSource,
-                      SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                      NONE(),DAE.NON_CONNECTOR());
+                            DAE.emptyElementSource,
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 
 public function copyVarNewName
@@ -1717,16 +1717,16 @@ algorithm
       DAE.ConnectorType ct;
 
     case (_,BackendDAE.VAR(varKind = kind,
-        varDirection = dir,
-        varParallelism = prl,
-        varType = tp,
-        bindExp = bind,
-        bindValue = v,
-        arryDim = dim,
-        source = source,
-        values = attr,
-        comment = comment,
-        connectorType = ct))
+              varDirection = dir,
+              varParallelism = prl,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              source = source,
+              values = attr,
+              comment = comment,
+              connectorType = ct))
     then
       BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct);
   end match;
@@ -1766,17 +1766,17 @@ algorithm
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
-        varKind = kind,
-        varDirection = dir,
-        varParallelism = prl,
-        varType = tp,
-        bindExp = bind,
-        bindValue = v,
-        arryDim = dim,
-        source = source,
-        values = attr,
-        comment = comment,
-        connectorType = ct),new_kind)
+              varKind = kind,
+              varDirection = dir,
+              varParallelism = prl,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              source = source,
+              values = attr,
+              comment = comment,
+              connectorType = ct),new_kind)
     equation
       oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
     then
@@ -1808,17 +1808,17 @@ algorithm
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
-        varKind = kind,
-        varDirection = dir,
-        varParallelism = prl,
-        varType = tp,
-        bindValue = v,
-        arryDim = dim,
-        source = source,
-        values = attr,
-        comment = comment,
-        connectorType = ct),
-    _)
+              varKind = kind,
+              varDirection = dir,
+              varParallelism = prl,
+              varType = tp,
+              bindValue = v,
+              arryDim = dim,
+              source = source,
+              values = attr,
+              comment = comment,
+              connectorType = ct),
+          _)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
     then
@@ -1850,17 +1850,17 @@ algorithm
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
-        varKind = kind,
-        varDirection = dir,
-        varParallelism = prl,
-        varType = tp,
-        bindExp = bind,
-        bindValue = NONE(),
-        arryDim = dim,
-        source = source,
-        values = attr,
-        comment = comment,
-        connectorType = ct),_)
+              varKind = kind,
+              varDirection = dir,
+              varParallelism = prl,
+              varType = tp,
+              bindExp = bind,
+              bindValue = NONE(),
+              arryDim = dim,
+              source = source,
+              values = attr,
+              comment = comment,
+              connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
     then
@@ -1907,16 +1907,16 @@ algorithm
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
-        varKind = kind,
-        varParallelism = prl,
-        varType = tp,
-        bindExp = bind,
-        bindValue = v,
-        arryDim = dim,
-        source = source,
-        values = attr,
-        comment = comment,
-        connectorType = ct),_)
+              varKind = kind,
+              varParallelism = prl,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              source = source,
+              values = attr,
+              comment = comment,
+              connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
     then
@@ -1952,9 +1952,9 @@ algorithm
       DAE.ConnectorType ct;
     case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
       equation
-  topLevelOutput(cr, dir, ct);
+        topLevelOutput(cr, dir, ct);
       then
-  true;
+        true;
     case (_) then false;
   end matchcontinue;
 end isVarOnTopLevelAndOutput;
@@ -1975,9 +1975,9 @@ algorithm
       DAE.ConnectorType ct;
     case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
       equation
-  topLevelInput(cr, dir, ct);
+        topLevelInput(cr, dir, ct);
       then
-  true;
+        true;
     case (_) then false;
   end matchcontinue;
 end isVarOnTopLevelAndInput;
@@ -2021,7 +2021,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
     case (BackendDAE.VAR(values = attr))
       equation
-  b=DAEUtil.getFinalAttr(attr);
+        b=DAEUtil.getFinalAttr(attr);
       then b;
    end match;
 end isFinalVar;
@@ -2073,26 +2073,26 @@ algorithm
     case(_,_,_,BackendDAE.CONST(),_,_) then iMinmax;
     case (_,_,_,_,_,_)
       equation
-  ominmax = DAEUtil.getMinMax(attr);
-  str = ComponentReference.printComponentRefStr(name);
-  str = stringAppendList({"Variable ",str," out of [min, max] interval: "});
-  e = Expression.crefExp(name);
-  tp = BackendDAEUtil.makeExpType(vartype);
-  cond = getMinMaxAsserts1(ominmax,e,tp);
-  (cond,_) = ExpressionSimplify.simplify(cond);
-  // do not add if const true
-  false = Expression.isConstTrue(cond);
-  str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
-  // if is real use %g otherwise use %d (ints and enums)
-  format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
-  msg = DAE.BINARY(
-        DAE.SCONST(str),
-        DAE.ADD(DAE.T_STRING_DEFAULT),
-        DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
-        );
-  BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
+        ominmax = DAEUtil.getMinMax(attr);
+        str = ComponentReference.printComponentRefStr(name);
+        str = stringAppendList({"Variable ",str," out of [min, max] interval: "});
+        e = Expression.crefExp(name);
+        tp = BackendDAEUtil.makeExpType(vartype);
+        cond = getMinMaxAsserts1(ominmax,e,tp);
+        (cond,_) = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
+        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        // if is real use %g otherwise use %d (ints and enums)
+        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        msg = DAE.BINARY(
+              DAE.SCONST(str),
+              DAE.ADD(DAE.T_STRING_DEFAULT),
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              );
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
-  DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
+        DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
     else then iMinmax;
   end matchcontinue;
 end getMinMaxAsserts;
@@ -2110,8 +2110,8 @@ algorithm
       DAE.Exp min,max;
     case (SOME(min)::(SOME(max)::{}),_,_)
       then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
-                      DAE.AND(DAE.T_BOOL_DEFAULT),
-                      DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
+                            DAE.AND(DAE.T_BOOL_DEFAULT),
+                            DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
     case (SOME(min)::(NONE()::{}),_,_)
       then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
     case (NONE()::(SOME(max)::{}),_,_)
@@ -2140,25 +2140,25 @@ algorithm
     case(_,_,_,BackendDAE.CONST(),_,_) then iNominal;
     case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_,_)
       equation
-  ominmax = DAEUtil.getMinMax(attr);
-  str = ComponentReference.printComponentRefStr(name);
-  str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
-  tp = BackendDAEUtil.makeExpType(vartype);
-  cond = getMinMaxAsserts1(ominmax,e,tp);
-  (cond,_) = ExpressionSimplify.simplify(cond);
-  // do not add if const true
-  false = Expression.isConstTrue(cond);
-  str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
-  // if is real use %g otherwise use %d (ints and enums)
-  format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
-  msg = DAE.BINARY(
-        DAE.SCONST(str),
-        DAE.ADD(DAE.T_STRING_DEFAULT),
-        DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
-        );
-  BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
+        ominmax = DAEUtil.getMinMax(attr);
+        str = ComponentReference.printComponentRefStr(name);
+        str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
+        tp = BackendDAEUtil.makeExpType(vartype);
+        cond = getMinMaxAsserts1(ominmax,e,tp);
+        (cond,_) = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
+        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        // if is real use %g otherwise use %d (ints and enums)
+        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        msg = DAE.BINARY(
+              DAE.SCONST(str),
+              DAE.ADD(DAE.T_STRING_DEFAULT),
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
+              );
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then
-  DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
+        DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
     else then iNominal;
   end matchcontinue;
 end getNominalAssert;
@@ -2203,7 +2203,7 @@ algorithm
     case DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)) then (name,true);
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)})
       equation
-  name = ComponentReference.crefPrefixDer(name);
+        name = ComponentReference.crefPrefixDer(name);
       then (name,false);
     case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)}))
       equation
@@ -2238,12 +2238,12 @@ algorithm
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
       equation
-  SOME(elt) = arr[1];
+        SOME(elt) = arr[1];
       then
-  {elt};
+        {elt};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
       then
-  vararrayList2(arr, n, {});
+        vararrayList2(arr, n, {});
   end matchcontinue;
 end vararrayList;
 
@@ -2262,12 +2262,12 @@ algorithm
     case (_,0,_) then inVarLst;
     case (_,_,_)
       equation
-  SOME(v) = arr[pos];
+        SOME(v) = arr[pos];
       then
-  vararrayList2(arr,pos-1,v::inVarLst);
+        vararrayList2(arr,pos-1,v::inVarLst);
     case (_,_,_)
       then
-  vararrayList2(arr,pos-1,inVarLst);
+        vararrayList2(arr,pos-1,inVarLst);
   end matchcontinue;
 end vararrayList2;
 
@@ -2336,35 +2336,35 @@ algorithm
       Real rsize,rexpandsize;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
       equation
-  (n < size) = true "Have space to add array elt." ;
-  n_1 = n + 1;
-  arr_1 = arrayUpdate(arr, n_1, SOME(v));
+        (n < size) = true "Have space to add array elt." ;
+        n_1 = n + 1;
+        arr_1 = arrayUpdate(arr, n_1, SOME(v));
       then
-  BackendDAE.VARIABLE_ARRAY(n_1,size,arr_1);
+        BackendDAE.VARIABLE_ARRAY(n_1,size,arr_1);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
       equation
-  (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
-  rsize = intReal(size);
-  rexpandsize = rsize*. 0.4;
-  expandsize = realInt(rexpandsize);
-  expandsize_1 = intMax(expandsize, 1);
-  newsize = expandsize_1 + size;
-  arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
-  n_1 = n + 1;
-  arr_2 = arrayUpdate(arr_1, n_1, SOME(v));
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
+        rsize = intReal(size);
+        rexpandsize = rsize*. 0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize_1 = intMax(expandsize, 1);
+        newsize = expandsize_1 + size;
+        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
+        n_1 = n + 1;
+        arr_2 = arrayUpdate(arr_1, n_1, SOME(v));
       then
-  BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
+        BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-  print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
-  Debug.execStat("vararrayAdd",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
+        Debug.execStat("vararrayAdd",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
-  fail();
+        fail();
     case (_,_)
       equation
-  print("- vararrayAdd failed!\n");
+        print("- vararrayAdd failed!\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end vararrayAdd;
 
@@ -2386,16 +2386,16 @@ algorithm
 
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_,_)
       equation
-  true = intLe(pos,size);
-  arr = arrayUpdate(arr, pos, SOME(inVar));
+        true = intLe(pos,size);
+        arr = arrayUpdate(arr, pos, SOME(inVar));
       then
-  BackendDAE.VARIABLE_ARRAY(n,size,arr);
+        BackendDAE.VARIABLE_ARRAY(n,size,arr);
 
     else
       equation
-  print("- vararraySetnth failed at " +& intString(pos)  +& "\n");
+        print("- vararraySetnth failed at " +& intString(pos)  +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end vararraySetnth;
 
@@ -2416,17 +2416,17 @@ algorithm
       array<Option<BackendDAE.Var>> arr;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
-  (pos < n) = true;
-  SOME(v) = arr[pos + 1];
+        (pos < n) = true;
+        SOME(v) = arr[pos + 1];
       then
-  v;
+        v;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
-  (pos < n) = true;
-  NONE() = arr[pos + 1];
-  print("- BackendVariable.vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
+        (pos < n) = true;
+        NONE() = arr[pos + 1];
+        print("- BackendVariable.vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end vararrayNth;
 
@@ -2541,11 +2541,11 @@ algorithm
       BackendDAE.Variables v;
       case ({},_) then inVars;
       case (BackendDAE.EQSYSTEM(orderedVars = v)::rest,_)
-  equation
-    vars = varList(v);
-    vars1 = listAppend(inVars,vars);
-  then
-    equationSystemsVarsLst(rest,vars1);
+        equation
+          vars = varList(v);
+          vars1 = listAppend(inVars,vars);
+        then
+          equationSystemsVarsLst(rest,vars1);
     end match;
 end equationSystemsVarsLst;
 
@@ -2640,9 +2640,9 @@ algorithm
     case (0,_,_,_) then iArr;
     case (_,_,_,_)
       equation
-  arr = resizeVars3(varOptArr[index],index,bucketSize,iArr);
+        arr = resizeVars3(varOptArr[index],index,bucketSize,iArr);
       then 
-  resizeVars2(index-1,varOptArr,bucketSize,arr);
+        resizeVars2(index-1,varOptArr,bucketSize,arr);
   end match;
 end resizeVars2;
 
@@ -2664,13 +2664,13 @@ algorithm
     case (NONE(),_,_,_) then iArr;
     case (SOME(BackendDAE.VAR(varName = cr)),_,_,_)
       equation
-  indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
-  indx_1 = indx + 1;
-  indexes = iArr[indx_1];
-  pos_1 = pos - 1;
-  hashvec = arrayUpdate(iArr, indx_1, (BackendDAE.CREFINDEX(cr,pos_1) :: indexes));
+        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
+        indx_1 = indx + 1;
+        indexes = iArr[indx_1];
+        pos_1 = pos - 1;
+        hashvec = arrayUpdate(iArr, indx_1, (BackendDAE.CREFINDEX(cr,pos_1) :: indexes));
       then
-  hashvec;
+        hashvec;
   end match;
 end resizeVars3;
 
@@ -2683,8 +2683,8 @@ public function isVariable
   Note: An array variable is currently assumed that each scalar element has
   the same type.
   inputs:  (DAE.ComponentRef,
-        Variables, /* vars */
-        Variables) /* known vars */
+              Variables, /* vars */
+              Variables) /* known vars */
   outputs: ()"
   input DAE.ComponentRef inComponentRef1;
   input BackendDAE.Variables inVariables2;
@@ -2698,16 +2698,16 @@ algorithm
       BackendDAE.VarKind kind;
     case (cr,vars,_)
       equation
-  ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, vars);
-  isVarKindVariable(kind);
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, vars);
+        isVarKindVariable(kind);
       then
-  ();
+        ();
     case (cr,_,knvars)
       equation
-  ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, knvars);
-  isVarKindVariable(kind);
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, knvars);
+        isVarKindVariable(kind);
       then
-  ();
+        ();
   end matchcontinue;
 end isVariable;
 
@@ -2720,8 +2720,8 @@ public function isVarKindVariable
   Note: An array variable is currently assumed that each scalar element has
   the same type.
   inputs:  (DAE.ComponentRef,
-        Variables, /* vars */
-        Variables) /* known vars */
+              Variables, /* vars */
+              Variables) /* known vars */
   outputs: ()"
   input BackendDAE.VarKind inVarKind;
 algorithm
@@ -2748,8 +2748,8 @@ public function isTopLevelInputOrOutput
   Note: The function needs the known variables to search for input variables
   on the top level.
   inputs:  (cref: DAE.ComponentRef,
-        vars: Variables, /* BackendDAE.Variables */
-        knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
+              vars: Variables, /* BackendDAE.Variables */
+              knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
   outputs: bool"
   input DAE.ComponentRef inComponentRef1;
   input BackendDAE.Variables inVariables2;
@@ -2762,14 +2762,14 @@ algorithm
       BackendDAE.Variables vars,knvars;
     case (cr,vars,_)
       equation
-  ((BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()) :: _),_) = getVar(cr, vars);
+        ((BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()) :: _),_) = getVar(cr, vars);
       then
-  true;
+        true;
     case (cr,vars,knvars)
       equation
-  ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       then
-  true;
+        true;
     case (_,_,_) then false;
   end matchcontinue;
 end isTopLevelInputOrOutput;
@@ -2799,14 +2799,14 @@ algorithm
       BackendDAE.Variables newvars;
     case (_,_)
       equation
-  true = intGt(varsSize(inDelVars),0);
-  newvars = traverseBackendDAEVars(inDelVars,deleteVars1,inVariables);
-  newvars = listVar1(varList(newvars));
+        true = intGt(varsSize(inDelVars),0);
+        newvars = traverseBackendDAEVars(inDelVars,deleteVars1,inVariables);
+        newvars = listVar1(varList(newvars));
       then
-  newvars;
+        newvars;
     else
       then
-  inVariables;
+        inVariables;
   end matchcontinue;
 end deleteVars;
 
@@ -2822,9 +2822,9 @@ algorithm
       DAE.ComponentRef cr;
     case ((v as BackendDAE.VAR(varName = cr),vars))
       equation
-  vars = removeCref(cr,vars) "alg var deleted" ;
+        vars = removeCref(cr,vars) "alg var deleted" ;
       then
-  ((v,vars));
+        ((v,vars));
   end match;
 end deleteVars1;
 
@@ -2875,15 +2875,15 @@ algorithm
       list<Integer> ilst;
     case (cr,_)
       equation
-  (_,ilst) = getVar(cr,inVariables);
-  (vars,_) = removeVars(ilst,inVariables,{});
+        (_,ilst) = getVar(cr,inVariables);
+        (vars,_) = removeVars(ilst,inVariables,{});
       then
-  vars;
+        vars;
     case (cr,_)
 //      equation
-//  BackendDump.debugStrCrefStr(("var ",cr," not in inVariables\n"));
+//        BackendDump.debugStrCrefStr(("var ",cr," not in inVariables\n"));
       then
-  inVariables;
+        inVariables;
   end matchcontinue;
 end removeCref;
 
@@ -2907,15 +2907,15 @@ algorithm
     case({},_,_) then (inVariables,iAcc);
     case(i::ilst,_,_)
       equation
-  (vars,v) = removeVar(i,inVariables);
-  (vars,acc) = removeVars(ilst,vars,v::iAcc);
+        (vars,v) = removeVar(i,inVariables);
+        (vars,acc) = removeVars(ilst,vars,v::iAcc);
       then
-  (vars,acc);
+        (vars,acc);
     case(i::ilst,_,_)
       equation
-  (vars,acc) = removeVars(ilst,inVariables,iAcc);
+        (vars,acc) = removeVars(ilst,inVariables,iAcc);
       then
-  (vars,acc);
+        (vars,acc);
   end matchcontinue;
 end removeVars;
 
@@ -2938,7 +2938,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets))
       equation
-  (ordvars1,outVar) = removeVar(inVarPos,ordvars);
+        (ordvars1,outVar) = removeVar(inVarPos,ordvars);
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets),outVar);
   end match;
 end removeVarDAE;
@@ -2964,22 +2964,22 @@ algorithm
       BackendDAE.VariableArray varr,varr1;
     case (pos,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-  (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
-  pos_1 = pos-1;
-  hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
-  indexes = hashvec[hashindx + 1];
-  (indexes1,_) = List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
-  hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
-  //fastht = BaseHashTable.delete(cr, fastht);
+        (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
+        pos_1 = pos-1;
+        hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
+        indexes = hashvec[hashindx + 1];
+        (indexes1,_) = List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
+        hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
+        //fastht = BaseHashTable.delete(cr, fastht);
       then
-  (BackendDAE.VARIABLES(hashvec_1,varr1,bsize,n),v);
+        (BackendDAE.VARIABLES(hashvec_1,varr1,bsize,n),v);
     case (pos,_)
       equation
-  print("- removeVar failed for var ");
-  print(intString(pos));
-  print("\n");
+        print("- removeVar failed for var ");
+        print(intString(pos));
+        print("\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end removeVar;
 
@@ -3000,16 +3000,16 @@ algorithm
 
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos)
       equation
-  (pos <= size) = true;
-  SOME(v) = arr[pos];
-  arr_1 = arrayUpdate(arr, pos, NONE());
+        (pos <= size) = true;
+        SOME(v) = arr[pos];
+        arr_1 = arrayUpdate(arr, pos, NONE());
       then
-  (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
+        (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-  print("- removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
+        print("- removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end removeVar1;
 
@@ -3040,14 +3040,14 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr;
     case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=arrSize,varOptArr=varOptArr),numberOfVars=size))
       equation
-  oVars = emptyVarsSized(size);
+        oVars = emptyVarsSized(size);
       then
-  compressVariables1(1,size,varOptArr,oVars);
+        compressVariables1(1,size,varOptArr,oVars);
     else
       equation
-  print("BackendVariable.compressVariables failed\n");
+        print("BackendVariable.compressVariables failed\n");
       then
-  fail();     
+        fail();     
   end matchcontinue;
 end compressVariables;
 
@@ -3067,29 +3067,29 @@ algorithm
     // found element
     case(_,_,_,_)
       equation
-  true = intLe(index,nVars);
-  SOME(var) = varOptArr[index];
-  vars = addVar(var,iVars);
+        true = intLe(index,nVars);
+        SOME(var) = varOptArr[index];
+        vars = addVar(var,iVars);
       then
-  compressVariables1(index+1,nVars,varOptArr,vars);
+        compressVariables1(index+1,nVars,varOptArr,vars);
     // found non element
     case(_,_,_,_)
       equation
-  true = intLe(index,nVars);
-  NONE() = varOptArr[index];
+        true = intLe(index,nVars);
+        NONE() = varOptArr[index];
       then
-  compressVariables1(index+1,nVars,varOptArr,iVars);
+        compressVariables1(index+1,nVars,varOptArr,iVars);
     // at the end
     case(_,_,_,_)
       equation
-  false = intLe(index,nVars);
+        false = intLe(index,nVars);
       then
-  iVars;
+        iVars;
     else
       equation
-  print("BackendVariable.compressVariables1 failed for index " +& intString(index) +& " and Number of Variables " +& intString(nVars) +& "\n");
+        print("BackendVariable.compressVariables1 failed for index " +& intString(index) +& " and Number of Variables " +& intString(nVars) +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end compressVariables1;
 
@@ -3107,15 +3107,15 @@ algorithm
       list<BackendDAE.Var> varlst;
     case (_,_,_)
       equation
-  (varlst,_) = getVar(inComponentRef,inVariables);
-  varlst = Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
+        (varlst,_) = getVar(inComponentRef,inVariables);
+        varlst = Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
       then
-  List.isNotEmpty(varlst);
+        List.isNotEmpty(varlst);
     case (_,_,_)
       equation
-  failure((_,_) = getVar(inComponentRef,inVariables));
+        failure((_,_) = getVar(inComponentRef,inVariables));
       then
-  false;
+        false;
   end matchcontinue;
 end existsVar;
 
@@ -3137,7 +3137,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
-  ordvars1 = addVar(inVar,ordvars);
+        ordvars1 = addVar(inVar,ordvars);
       then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
   end match;
 end addVarDAE;
@@ -3166,7 +3166,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-  knvars1 = addVar(inVar,knvars);
+        knvars1 = addVar(inVar,knvars);
       then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addKnVarDAE;
@@ -3195,7 +3195,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-  knvars1 = addNewVar(inVar,knvars);
+        knvars1 = addNewVar(inVar,knvars);
       then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addNewKnVarDAE;
@@ -3224,7 +3224,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-  aliasVars = addVar(inVar,aliasVars);
+        aliasVars = addVar(inVar,aliasVars);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addAliasVarDAE;
@@ -3253,7 +3253,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-  aliasVars = addNewVar(inVar,aliasVars);
+        aliasVars = addNewVar(inVar,aliasVars);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addNewAliasVarDAE;
@@ -3288,38 +3288,38 @@ algorithm
       BackendDAE.Variables vars;
     /* adrpo: ignore records!
     case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
-    (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
     then
       vars;
     */
     case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-  failure((_,_) = getVar(cr, vars));
-  // print("adding when not existing previously\n");
-  indx = ComponentReference.hashComponentRefMod(cr, bsize);
-  indx_1 = indx + 1;
-  newpos = vararrayLength(varr);
-  varr_1 = vararrayAdd(varr, v);
-  indexes = hashvec[indx_1];
-  hashvec_1 = arrayUpdate(hashvec, indx_1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
-  n_1 = vararrayLength(varr_1);
-  //fastht = BaseHashTable.add((cr,{newpos}),fastht);
+        failure((_,_) = getVar(cr, vars));
+        // print("adding when not existing previously\n");
+        indx = ComponentReference.hashComponentRefMod(cr, bsize);
+        indx_1 = indx + 1;
+        newpos = vararrayLength(varr);
+        varr_1 = vararrayAdd(varr, v);
+        indexes = hashvec[indx_1];
+        hashvec_1 = arrayUpdate(hashvec, indx_1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
+        n_1 = vararrayLength(varr_1);
+        //fastht = BaseHashTable.add((cr,{newpos}),fastht);
       then
-  BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
+        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
 
     case ((newv as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-  (_,{indx}) = getVar(cr, vars);
-  // print("adding when already present => Updating value\n");
-  varr_1 = vararraySetnth(varr, indx, newv);
+        (_,{indx}) = getVar(cr, vars);
+        // print("adding when already present => Updating value\n");
+        varr_1 = vararraySetnth(varr, indx, newv);
       then
-  BackendDAE.VARIABLES(hashvec,varr_1,bsize,n);
+        BackendDAE.VARIABLES(hashvec,varr_1,bsize,n);
 
     else
       equation
-  print("- addVar failed\n");
+        print("- addVar failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end addVar;
 
@@ -3344,20 +3344,20 @@ algorithm
       BackendDAE.Variables vars;
     case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-  indx = ComponentReference.hashComponentRefMod(cr, bsize);
-  newpos = vararrayLength(varr);
-  varr_1 = vararrayAdd(varr, v);
-  indexes = hashvec[indx + 1];
-  hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
-  n_1 = vararrayLength(varr_1);
+        indx = ComponentReference.hashComponentRefMod(cr, bsize);
+        newpos = vararrayLength(varr);
+        varr_1 = vararrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
+        n_1 = vararrayLength(varr_1);
       then
-  BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
+        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
 
     case (_,_)
       equation
-  print("- addNewVar failed\n");
+        print("- addNewVar failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end addNewVar;
 
@@ -3378,7 +3378,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
-  ordvars1 = expandVars(needed,ordvars);
+        ordvars1 = expandVars(needed,ordvars);
       then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
   end match;
 end expandVarsDAE;
@@ -3399,22 +3399,22 @@ algorithm
       array<Option<BackendDAE.Var>> arr,arr_1;
     case (_,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=noe,arrSize=size,varOptArr=arr),bucketSize = bsize,numberOfVars = n)))
       equation
-  size1 = noe + needed;
-  true = intGt(size1,size);
-  expandsize = size1-size;
-  arr_1 = Util.arrayExpand(expandsize, arr, NONE());
+        size1 = noe + needed;
+        true = intGt(size1,size);
+        expandsize = size1-size;
+        arr_1 = Util.arrayExpand(expandsize, arr, NONE());
       then
-  BackendDAE.VARIABLES(hashvec,BackendDAE.VARIABLE_ARRAY(noe,size1,arr_1),bsize,n);
+        BackendDAE.VARIABLES(hashvec,BackendDAE.VARIABLE_ARRAY(noe,size1,arr_1),bsize,n);
 
     case (_,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=noe,arrSize=size,varOptArr=arr),bucketSize = bsize,numberOfVars = n)))
       then
-  inVariables;
+        inVariables;
 
     case (_,_)
       equation
-  print("- expandVars failed\n");
+        print("- expandVars failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end expandVars;
 
@@ -3433,16 +3433,16 @@ algorithm
       BackendDAE.VariableArray vararr;
     case (BackendDAE.VARIABLES(varArr = vararr),_)
       equation
-  pos = inInteger - 1;
-  v = vararrayNth(vararr, pos);
+        pos = inInteger - 1;
+        v = vararrayNth(vararr, pos);
       then
-  v;
+        v;
     case (BackendDAE.VARIABLES(varArr = vararr),_)
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(inInteger));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(inInteger));
       then
-  fail();
+        fail();
   end matchcontinue;
 end getVarAt;
 
@@ -3462,15 +3462,15 @@ algorithm
       Integer bucketSize,numberOfVars;
     case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr=varArr,bucketSize=bucketSize,numberOfVars=numberOfVars),_,_)
       equation
-  varArr = vararraySetnth(varArr, pos, inVar);
+        varArr = vararraySetnth(varArr, pos, inVar);
       then
-  BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars);
+        BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars);
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.fprintln(Flags.FAILTRACE, "setVarAt failed to set the variable at index:" +& intString(pos));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "setVarAt failed to set the variable at index:" +& intString(pos));
       then
-  fail();
+        fail();
   end matchcontinue;
 end setVarAt;
 
@@ -3504,9 +3504,9 @@ algorithm
       list<Integer> indxlst;
    case (_,BackendDAE.EQSYSTEM(orderedVars=vars))
       equation
-  (varlst,indxlst) = getVar(inComponentRef,vars);
+        (varlst,indxlst) = getVar(inComponentRef,vars);
       then
-  (varlst,indxlst);
+        (varlst,indxlst);
   end match;
 end getVarDAE;
 
@@ -3526,9 +3526,9 @@ algorithm
       list<Integer> indxlst;
    case (_,BackendDAE.SHARED(knownVars=vars))
       equation
-  (varlst,indxlst) = getVar(inComponentRef,vars);
+        (varlst,indxlst) = getVar(inComponentRef,vars);
       then
-  (varlst,indxlst);
+        (varlst,indxlst);
   end match;
 end getVarShared;
 
@@ -3557,30 +3557,30 @@ algorithm
       DAE.ComponentRef cr1;
     case (_,_)
       equation
-  (v,indx) = getVar2(cr, inVariables) "if scalar found, return it" ;
+        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it" ;
       then
-  ({v},{indx});
+        ({v},{indx});
     case (_,_) /* check if array or record */
       equation
-  crlst = ComponentReference.expandCref(cr,true);
-  (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
+        crlst = ComponentReference.expandCref(cr,true);
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
-  (vLst,indxs);
+        (vLst,indxs);
     // try again check if variable indexes used
     case (_,_)
       equation
-  // replace variables with WHOLEDIM()
-  (cr1,true) = replaceVarWithWholeDim(cr, false);
-  crlst = ComponentReference.expandCref(cr1,true);
-  (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
+        // replace variables with WHOLEDIM()
+        (cr1,true) = replaceVarWithWholeDim(cr, false);
+        crlst = ComponentReference.expandCref(cr1,true);
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
-  (vLst,indxs);        
+        (vLst,indxs);        
     /* failure
     case (_,_)
       equation
-  Debug.fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
+        Debug.fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
       then
-  fail();
+        fail();
      */
   end matchcontinue;
 end getVar;
@@ -3603,16 +3603,16 @@ algorithm
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _)
       equation
-  (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
-  (cr_1, b) = replaceVarWithWholeDim(cr, b);
+        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
+        (cr_1, b) = replaceVarWithWholeDim(cr, b);
       then
-  (DAE.CREF_QUAL(name, ty, subs_1, cr_1), b);
+        (DAE.CREF_QUAL(name, ty, subs_1, cr_1), b);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _)
       equation
-  (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
+        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
       then
-  (DAE.CREF_IDENT(name, ty, subs_1), b);
+        (DAE.CREF_IDENT(name, ty, subs_1), b);
 
     case (DAE.CREF_ITER(ident = _), _) then (inCref, iPerformed);
     case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = _), _) then (inCref, iPerformed);
@@ -3620,7 +3620,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.replaceVarWithWholeDim: Unknown cref"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.replaceVarWithWholeDim: Unknown cref"});
       then fail();
   end match;
 end replaceVarWithWholeDim;
@@ -3640,32 +3640,32 @@ algorithm
     case ({}, _) then (inSubscript,iPerformed);
     case (DAE.WHOLEDIM()::rest, _)
       equation
-  (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
       then (DAE.WHOLEDIM()::rest, b);
 
     case (DAE.SLICE(exp = sub_exp)::rest, _)
       equation
-  (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-  const = Expression.isConst(sub_exp);
-  res = Util.if_(const,DAE.SLICE(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.SLICE(sub_exp)::rest,DAE.WHOLEDIM()::rest);
       then
-  (res, b or not const);
+        (res, b or not const);
 
     case (DAE.INDEX(exp = sub_exp)::rest, _)
       equation
-  (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-  const = Expression.isConst(sub_exp);
-  res = Util.if_(const,DAE.INDEX(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.INDEX(sub_exp)::rest,DAE.WHOLEDIM()::rest);
       then
-  (res, b or not const);
+        (res, b or not const);
 
     case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _)
       equation
-  (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-  const = Expression.isConst(sub_exp);
-  res = Util.if_(const,DAE.WHOLE_NONEXP(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.WHOLE_NONEXP(sub_exp)::rest,DAE.WHOLEDIM()::rest);
       then
-  (res, b or not const);
+        (res, b or not const);
   end match;
 end replaceVarWithWholeDimSubs;
 
@@ -3688,15 +3688,15 @@ algorithm
     case ({},_,_,_) then (iVarLst,iIntegerLst);
     case (cr::crlst,_,_,_)
       equation
-  (v,indx) = getVar2(cr, inVariables);
-  (varlst,ilst) = getVarLst(crlst,inVariables,v::iVarLst,indx::iIntegerLst);
+        (v,indx) = getVar2(cr, inVariables);
+        (varlst,ilst) = getVarLst(crlst,inVariables,v::iVarLst,indx::iIntegerLst);
       then
-  (varlst,ilst);
+        (varlst,ilst);
     case (_::crlst,_,_,_)
       equation
-  (varlst,ilst) = getVarLst(crlst,inVariables,iVarLst,iIntegerLst);
+        (varlst,ilst) = getVarLst(crlst,inVariables,iVarLst,iIntegerLst);
       then
-  (varlst,ilst);
+        (varlst,ilst);
   end matchcontinue;
 end getVarLst;
 
@@ -3720,14 +3720,14 @@ algorithm
 
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-  hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
-  indexes = hashvec[hashindx + 1];
-  indx = getVar3(cr, indexes, getVar4(cr,indexes));
-  ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-  true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-  indx_1 = indx + 1;
+        hashindx = ComponentReference.hashComponentRefMod(cr, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr, indexes, getVar4(cr,indexes));
+        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+        indx_1 = indx + 1;
       then
-  (v,indx_1);
+        (v,indx_1);
 
   end match;
 end getVar2;
@@ -3784,7 +3784,7 @@ algorithm
       list<Integer> indxlst;
     case ((v,(vars,v_lst)))
       equation
-  cr = varCref(v);
+        cr = varCref(v);
        (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
@@ -3817,7 +3817,7 @@ algorithm
       list<Integer> indxlst;
     case ((v,(vars,v_lst)))
       equation
-  cr = varCref(v);
+        cr = varCref(v);
        (vlst,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
@@ -3841,17 +3841,17 @@ algorithm
       BackendDAE.Variables vars1_1,vars1,vars2;
     case (vars1,vars2)
       equation
-  // to avoid side effects from arrays copy first
-  vars1_1 = emptyVarsSized(varsSize(vars1)+varsSize(vars2));
-  vars1_1 = traverseBackendDAEVars(vars1, mergeVariables1, vars1_1);
-  vars1_1 = traverseBackendDAEVars(vars2, mergeVariables1, vars1_1);
+        // to avoid side effects from arrays copy first
+        vars1_1 = emptyVarsSized(varsSize(vars1)+varsSize(vars2));
+        vars1_1 = traverseBackendDAEVars(vars1, mergeVariables1, vars1_1);
+        vars1_1 = traverseBackendDAEVars(vars2, mergeVariables1, vars1_1);
       then
-  vars1_1;
+        vars1_1;
     case (_,_)
       equation
-  print("- mergeVariables failed\n");
+        print("- mergeVariables failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end mergeVariables;
 
@@ -3891,14 +3891,14 @@ algorithm
       Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
       equation
-  ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,n,inTypeA);
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,n,inTypeA);
       then
-  ext_arg_1;
+        ext_arg_1;
     case (_,_,_)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVars;
 
@@ -3925,14 +3925,14 @@ algorithm
       Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
       equation
-  ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(varOptArr,func,traverseBackendDAEVarWithStop,1,n,inTypeA);
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(varOptArr,func,traverseBackendDAEVarWithStop,1,n,inTypeA);
       then
-  ext_arg_1;
+        ext_arg_1;
     case (_,_,_)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithStop failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarsWithStop;
 
@@ -3957,14 +3957,14 @@ algorithm
     case (NONE(),_,_) then inTypeA;
     case (SOME(v),_,_)
       equation
-  ((_,ext_arg)) = func((v,inTypeA));
+        ((_,ext_arg)) = func((v,inTypeA));
       then
-  ext_arg;
+        ext_arg;
     else
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVar;
 
@@ -3991,14 +3991,14 @@ algorithm
     case (NONE(),_,_) then (true,inTypeA);
     case (SOME(v),_,_)
       equation
-  ((_,b,ext_arg)) = func((v,inTypeA));
+        ((_,b,ext_arg)) = func((v,inTypeA));
       then
-  (b,ext_arg);
+        (b,ext_arg);
     else
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarWithStop failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarWithStop;
 
@@ -4027,14 +4027,14 @@ algorithm
       Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),_,_)
       equation
-  (varOptArr1,ext_arg_1) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
+        (varOptArr1,ext_arg_1) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
       then
-  (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
+        (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
     case (_,_,_)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithUpdate failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithUpdate failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarsWithUpdate;
 
@@ -4061,15 +4061,15 @@ algorithm
     case (ovar as NONE(),_,_) then (ovar,inTypeA);
     case (ovar as SOME(v),_,_)
       equation
-  ((v1,ext_arg)) = func((v,inTypeA));
-  ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
+        ((v1,ext_arg)) = func((v,inTypeA));
+        ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
       then
-  (ovar,ext_arg);
+        (ovar,ext_arg);
     case (_,_,_)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
       then
-  fail();
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarWithUpdate;
 
@@ -4093,7 +4093,7 @@ algorithm
       DAE.ComponentRef cr;
     case ((v,cr_lst))
       equation
-  cr = varCref(v);
+        cr = varCref(v);
       then ((v,cr::cr_lst));
     case _ then inTpl;
   end matchcontinue;
@@ -4118,7 +4118,7 @@ algorithm
       list<BackendDAE.Var> v_lst;
     case ((v,v_lst))
       equation
-  true = BackendDAEUtil.isVarDiscrete(v);
+        true = BackendDAEUtil.isVarDiscrete(v);
       then ((v,v::v_lst));
     case inTpl then inTpl;
   end matchcontinue;
@@ -4166,7 +4166,7 @@ algorithm
       Integer i;
     case ((v,(v_lst,i_lst,i)))
       equation
-  true = isStateVar(v);
+        true = isStateVar(v);
       then ((v,(v::v_lst,i::i_lst,i+1)));
     case ((v,(v_lst,i_lst,i))) then ((v,(v_lst,i_lst,i+1)));
   end matchcontinue;
@@ -4194,20 +4194,20 @@ algorithm
       list<DAE.SymbolicOperation> ops;
 
     case (BackendDAE.VAR(varName = a,
-        varKind = b,
-        varDirection = c,
-        varParallelism = p,
-        varType = d,
-        bindExp = e,
-        bindValue = f,
-        arryDim = g,
-        source = source,
-        values = oattr,
-        comment = s,
-        connectorType = ct),_)
+              varKind = b,
+              varDirection = c,
+              varParallelism = p,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = oattr,
+              comment = s,
+              connectorType = ct),_)
       equation
-  ops = listReverse(iops);
-  source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
+        ops = listReverse(iops);
+        source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
       then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,s,ct);
   end match;
 end mergeVariableOperations;
@@ -4278,18 +4278,18 @@ algorithm
       then v;
     case (v,false,_,_,va,true,SOME(sb),_,_,_)
       equation
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  v1 = setVarStartValue(v,e);
-  v2 = setVarFixed(v1,true);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        v1 = setVarStartValue(v,e);
+        v2 = setVarFixed(v1,true);
       then v2;
     case (v,false,NONE(),_,va,true,NONE(),_,_,_)
       equation
-  v1 = setVarFixed(v,true);
+        v1 = setVarFixed(v,true);
       then v1;
     case (v,false,SOME(sa),_,va,true,NONE(),_,_,_)
       equation
-  v1 = setVarStartValueOption(v,NONE());
-  v1 = setVarFixed(v,true);
+        v1 = setVarStartValueOption(v,NONE());
+        v1 = setVarFixed(v,true);
       then v1;
     // legal case both fixed=false
     case (v,false,NONE(),_,va,false,NONE(),_,_,_)
@@ -4298,53 +4298,53 @@ algorithm
       then v;
     case (v,false,NONE(),_,va,false,SOME(sb),_,_,_)
       equation
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  v1 = setVarStartValue(v,e);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        v1 = setVarStartValue(v,e);
       then v1;
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),false,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),false,_,_,_,_)
       equation
-  sa = startValueType(sv,ty);
-  sb = startValueType(sva,tya);
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  (e,origin) = getNonZeroStart(false,sa,so,e,soa,knVars);
-  v1 = setVarStartValue(v,e);
-  v1 = setVarStartOrigin(v,origin);
+        sa = startValueType(sv,ty);
+        sb = startValueType(sva,tya);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        (e,origin) = getNonZeroStart(false,sa,so,e,soa,knVars);
+        v1 = setVarStartValue(v,e);
+        v1 = setVarStartOrigin(v,origin);
       then v1;
     case (v as BackendDAE.VAR(varName=cr,varType=ty),false,_,_,va as BackendDAE.VAR(varName=cra,varType=tya),false,_,_,_,_)
       equation
-  sa = startValueType(sv,ty);
-  sb = startValueType(sva,tya);
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  // according to MSL
-  // use the value from the variable that is closer to the top of the
-  // hierarchy i.e. A.B value has priority over X.Y.Z value!
-  i = ComponentReference.crefDepth(cr);
-  ia = ComponentReference.crefDepth(cra);
+        sa = startValueType(sv,ty);
+        sb = startValueType(sva,tya);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        // according to MSL
+        // use the value from the variable that is closer to the top of the
+        // hierarchy i.e. A.B value has priority over X.Y.Z value!
+        i = ComponentReference.crefDepth(cr);
+        ia = ComponentReference.crefDepth(cra);
       then
-  mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ");
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ");
     // legal case both fixed = true and start exp equal
     case (v,true,NONE(),_,va,true,NONE(),_,_,_)
       then v;
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),true,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),true,_,_,_,_)
       equation
-  sa = startValueType(sv,ty);
-  sb = startValueType(sva,tya);
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
-  v1 = setVarStartValue(v,e);
-  v1 = setVarStartOrigin(v,origin);
+        sa = startValueType(sv,ty);
+        sb = startValueType(sva,tya);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
+        v1 = setVarStartValue(v,e);
+        v1 = setVarStartOrigin(v,origin);
       then v1;
     // not legal case both fixed with unequal start values
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),true,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),true,_,_,_,_)
       equation
-  sa = startValueType(sv,ty);
-  sb = startValueType(sva,tya);
-  e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-  // overconstrained system report warning/error
-  i = ComponentReference.crefDepth(cr);
-  ia = ComponentReference.crefDepth(cra);
+        sa = startValueType(sv,ty);
+        sb = startValueType(sva,tya);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        // overconstrained system report warning/error
+        i = ComponentReference.crefDepth(cr);
+        ia = ComponentReference.crefDepth(cra);
       then
-  mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ");
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ");
   end matchcontinue;
 end mergeStartFixed;
 
@@ -4361,27 +4361,27 @@ algorithm
     case(SOME(e),_) then e;
     case(NONE(),_)
       equation
-  true = Types.isRealOrSubTypeReal(iTy);
+        true = Types.isRealOrSubTypeReal(iTy);
       then
-  DAE.RCONST(0.0);
+        DAE.RCONST(0.0);
     case(NONE(),_)
       equation
-  true = Types.isIntegerOrSubTypeInteger(iTy);
+        true = Types.isIntegerOrSubTypeInteger(iTy);
       then
-  DAE.ICONST(0);
+        DAE.ICONST(0);
     case(NONE(),_)
       equation
-  true = Types.isBooleanOrSubTypeBoolean(iTy);
+        true = Types.isBooleanOrSubTypeBoolean(iTy);
       then
-  DAE.BCONST(false);
+        DAE.BCONST(false);
     case(NONE(),_)
       equation
-  true = Types.isStringOrSubTypeString(iTy);
+        true = Types.isStringOrSubTypeString(iTy);
       then
-  DAE.SCONST("");
+        DAE.SCONST("");
     else
       then
-  DAE.RCONST(0.0);
+        DAE.RCONST(0.0);
   end matchcontinue;
 end startValueType;
 
@@ -4406,28 +4406,28 @@ algorithm
     // alias var has more dots in the name
     case (false,_,_,_,_,_,_,_,_)
       equation
-  s1 = ComponentReference.printComponentRefStr(cr);
-  s2 = Util.if_(negate," = -"," = ");
-  s3 = ComponentReference.printComponentRefStr(cra);
-  s5 = ExpressionDump.printExpStr(sv);
-  s6 = ExpressionDump.printExpStr(sva);
-  s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
-  Error.addMessage(Error.COMPILER_WARNING,{s});
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s5 = ExpressionDump.printExpStr(sv);
+        s6 = ExpressionDump.printExpStr(sva);
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
       then
-  inVar;
+        inVar;
     case (true,_,_,_,_,_,_,_,_)
       equation
-  s1 = ComponentReference.printComponentRefStr(cr);
-  s2 = Util.if_(negate," = -"," = ");
-  s3 = ComponentReference.printComponentRefStr(cra);
-  s5 = ExpressionDump.printExpStr(sv);
-  s6 = ExpressionDump.printExpStr(sva);
-  s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
-  Error.addMessage(Error.COMPILER_WARNING,{s});
-  v = setVarStartValue(inVar,sva);
-  v = setVarStartOrigin(v,soa);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s5 = ExpressionDump.printExpStr(sv);
+        s6 = ExpressionDump.printExpStr(sva);
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
+        v = setVarStartValue(inVar,sva);
+        v = setVarStartOrigin(v,soa);
       then
-  v;
+        v;
   end match;
 end mergeStartFixed1;
 
@@ -4444,17 +4444,17 @@ algorithm
     // true if crefs replaced in expression
     case ((DAE.CREF(componentRef=cr), (vars,_,hs)))
       equation
-  // check for cyclic bindings in start value
-  false = BaseHashSet.has(cr, hs);
-  ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
-  hs = BaseHashSet.add(cr,hs);
-  ((e, (_,_,hs))) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
+        // check for cyclic bindings in start value
+        false = BaseHashSet.has(cr, hs);
+        ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
+        hs = BaseHashSet.add(cr,hs);
+        ((e, (_,_,hs))) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
       then
-  ((e, (vars,true,hs)));
+        ((e, (vars,true,hs)));
     // true if crefs in expression
     case ((e as DAE.CREF(componentRef=cr), (vars,_,hs)))
       then
-  ((e, (vars,true,hs)));
+        ((e, (vars,true,hs)));
     else then inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
@@ -4479,36 +4479,36 @@ algorithm
       Option<DAE.Exp> origin;
     case (_,_,_,_,_,_)
       equation
-  true = Expression.expEqual(exp1,exp2);
-  // use highest origin
-  i = startOriginToValue(so);
-  ia = startOriginToValue(sao);
-  origin = Util.if_(intGt(ia,i),sao,so);
+        true = Expression.expEqual(exp1,exp2);
+        // use highest origin
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        origin = Util.if_(intGt(ia,i),sao,so);
       then (exp1,origin);
     case (false,_,_,_,_,_)
       equation
-  // if one is bound and the other not use the bound one
-  i = startOriginToValue(so);
-  ia = startOriginToValue(sao);
-  false = intEq(i,ia);
-  ((exp1_1,origin)) = Util.if_(intGt(ia,i),(exp2,sao),(exp1,so));
+        // if one is bound and the other not use the bound one
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        false = intEq(i,ia);
+        ((exp1_1,origin)) = Util.if_(intGt(ia,i),(exp2,sao),(exp1,so));
       then
-  (exp1_1,origin);
+        (exp1_1,origin);
     case (_,_,_,_,_,_)
       equation
-  // simple evaluation, by replace crefs with bind expressions recursivly
-  ((exp1_1, (_,b1,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-  ((exp2_1, (_,b2,_))) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-  (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
-  (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
-  true = Expression.expEqual(exp1_1, exp2_1);
-  exp1_1 = Util.if_(b1,exp1,exp2);
-  // use highest origin
-  i = startOriginToValue(so);
-  ia = startOriginToValue(sao);
-  origin = Util.if_(intGt(ia,i),sao,so);
+        // simple evaluation, by replace crefs with bind expressions recursivly
+        ((exp1_1, (_,b1,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        ((exp2_1, (_,b2,_))) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
+        (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
+        true = Expression.expEqual(exp1_1, exp2_1);
+        exp1_1 = Util.if_(b1,exp1,exp2);
+        // use highest origin
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        origin = Util.if_(intGt(ia,i),sao,so);
       then
-  (exp1_1,origin);
+        (exp1_1,origin);
   end matchcontinue;
 end getNonZeroStart;
 
@@ -4537,21 +4537,21 @@ algorithm
       DAE.Exp e,e_1,e1,esum,eaverage;
     case (v,var,_)
       equation
-  // nominal
-  e = varNominalValue(v);
-  e1 = varNominalValue(var);
-  e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
-  esum = Expression.makeSum({e_1,e1});
-  eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
-  (eaverage,_) = ExpressionSimplify.simplify(eaverage);
-  var1 = setVarNominalValue(var,eaverage);
+        // nominal
+        e = varNominalValue(v);
+        e1 = varNominalValue(var);
+        e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
+        esum = Expression.makeSum({e_1,e1});
+        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
+        (eaverage,_) = ExpressionSimplify.simplify(eaverage);
+        var1 = setVarNominalValue(var,eaverage);
       then var1;
     case (v,var,_)
       equation
-  // nominal
-  e = varNominalValue(v);
-  e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
-  var1 = setVarNominalValue(var,e_1);
+        // nominal
+        e = varNominalValue(v);
+        e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
+        var1 = setVarNominalValue(var,e_1);
       then var1;
     case(_,_,_) then inVar;
   end matchcontinue;
@@ -4573,13 +4573,13 @@ algorithm
       DAE.ComponentRef cr,cr1;
     case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),_)
       equation
-  // minmax
-  ominmax = DAEUtil.getMinMax(attr);
-  ominmax1 = DAEUtil.getMinMax(attr1);
-  cr = varCref(v);
-  cr1 = varCref(var);
-  minMax = mergeMinMax(negate,ominmax,ominmax1,cr,cr1);
-  var1 = setVarMinMax(var,minMax);
+        // minmax
+        ominmax = DAEUtil.getMinMax(attr);
+        ominmax1 = DAEUtil.getMinMax(attr1);
+        cr = varCref(v);
+        cr1 = varCref(var);
+        minMax = mergeMinMax(negate,ominmax,ominmax1,cr,cr1);
+        var1 = setVarMinMax(var,minMax);
       then var1;
     case(_,_,_) then inVar;
   end matchcontinue;
@@ -4601,33 +4601,33 @@ algorithm
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
     case (false,{omin1,omax1},{omin2,omax2},_,_)
       equation
-  minMax = mergeMinMax1({omin1,omax1},{omin2,omax2});
-  checkMinMax(minMax,cr,cr1,negate);
+        minMax = mergeMinMax1({omin1,omax1},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
       then
-  minMax;
+        minMax;
     // in case of a=-b, min and max have to be changed and negated
     case (true,{SOME(min),SOME(max)},{omin2,omax2},_,_)
       equation
-  min1 = Expression.negate(min);
-  max1 = Expression.negate(max);
-  minMax = mergeMinMax1({SOME(max1),SOME(min1)},{omin2,omax2});
-  checkMinMax(minMax,cr,cr1,negate);
+        min1 = Expression.negate(min);
+        max1 = Expression.negate(max);
+        minMax = mergeMinMax1({SOME(max1),SOME(min1)},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
       then
-  minMax;
+        minMax;
     case (true,{NONE(),SOME(max)},{omin2,omax2},_,_)
       equation
-  max1 = Expression.negate(max);
-  minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
-  checkMinMax(minMax,cr,cr1,negate);
+        max1 = Expression.negate(max);
+        minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
       then
-  minMax;
+        minMax;
     case (true,{SOME(min),NONE()},{omin2,omax2},_,_)
       equation
-  min1 = Expression.negate(min);
-  minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
-  checkMinMax(minMax,cr,cr1,negate);
+        min1 = Expression.negate(min);
+        minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
       then
-  minMax;
+        minMax;
   end match;
 end mergeMinMax;
 
@@ -4645,16 +4645,16 @@ algorithm
       Real rmin,rmax;
     case ((SOME(min),SOME(max)),_,_,_)
       equation
-  rmin = Expression.expReal(min);
-  rmax = Expression.expReal(max);
-  true = realGt(rmin,rmax);
-  s1 = ComponentReference.printComponentRefStr(cr1);
-  s2 = Util.if_(negate," = -"," = ");
-  s3 = ComponentReference.printComponentRefStr(cr2);
-  s4 = ExpressionDump.printExpStr(min);
-  s5 = ExpressionDump.printExpStr(max);
-  s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
-  Error.addMessage(Error.COMPILER_WARNING,{s});
+        rmin = Expression.expReal(min);
+        rmax = Expression.expReal(max);
+        true = realGt(rmin,rmax);
+        s1 = ComponentReference.printComponentRefStr(cr1);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cr2);
+        s4 = ExpressionDump.printExpStr(min);
+        s5 = ExpressionDump.printExpStr(max);
+        s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
       then ();
     // no error
     else
@@ -4689,14 +4689,14 @@ algorithm
     // (min,),(min,)
     case ({SOME(min),NONE()},{SOME(min1),NONE()})
       equation
-  min_2 = Expression.expMaxScalar(min,min1);
-  (smin,_) = ExpressionSimplify.simplify(min_2);
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
       then ((SOME(smin),NONE()));
     // (,max),(,max)
     case ({NONE(),SOME(max)},{NONE(),SOME(max1)})
       equation
-  max_2 = Expression.expMinScalar(max,max1);
-  (smax,_) = ExpressionSimplify.simplify(max_2);
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
       then ((NONE(),SOME(smax)));
     // (min,),(,max)
     case ({SOME(min),NONE()},{NONE(),SOME(max1)})
@@ -4707,34 +4707,34 @@ algorithm
     // (,max),(min,max)
     case ({NONE(),SOME(max)},{SOME(min1),SOME(max1)})
       equation
-  max_2 = Expression.expMinScalar(max,max1);
-  (smax,_) = ExpressionSimplify.simplify(max_2);
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
       then ((SOME(min1),SOME(smax)));
     // (min,max),(,max)
     case ({SOME(min),SOME(max)},{NONE(),SOME(max1)})
       equation
-  max_2 = Expression.expMinScalar(max,max1);
-  (smax,_) = ExpressionSimplify.simplify(max_2);
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
       then ((SOME(min),SOME(smax)));
     // (min,),(min,max)
     case ({SOME(min),NONE()},{SOME(min1),SOME(max1)})
       equation
-  min_2 = Expression.expMaxScalar(min,min1);
-  (smin,_) = ExpressionSimplify.simplify(min_2);
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
       then ((SOME(smin),SOME(max1)));
     // (min,max),(min,)
     case ({SOME(min),SOME(max)},{SOME(min1),NONE()})
       equation
-  min_2 = Expression.expMaxScalar(min,min1);
-  (smin,_) = ExpressionSimplify.simplify(min_2);
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
       then ((SOME(smin),SOME(max)));
     // (min,max),(min,max)
     case ({SOME(min),SOME(max)},{SOME(min1),SOME(max1)})
       equation
-  min_2 = Expression.expMaxScalar(min,min1);
-  max_2 = Expression.expMinScalar(max,max1);
-  (smin,_) = ExpressionSimplify.simplify(min_2);
-  (smax,_) = ExpressionSimplify.simplify(max_2);
+        min_2 = Expression.expMaxScalar(min,min1);
+        max_2 = Expression.expMinScalar(max,max1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
       then ((SOME(smin),SOME(smax)));
   end match;
 end mergeMinMax1;
@@ -4752,15 +4752,15 @@ algorithm
       DAE.Exp e,e1;
     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
       equation
-  var1 = setVarDirection(var,DAE.INPUT());
+        var1 = setVarDirection(var,DAE.INPUT());
       then var1;
     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
       equation
-  var1 = setVarDirection(var,DAE.INPUT());
+        var1 = setVarDirection(var,DAE.INPUT());
       then var1;
     case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
       equation
-  var1 = setVarDirection(var,DAE.OUTPUT());
+        var1 = setVarDirection(var,DAE.OUTPUT());
       then var1;
     case(_,_) then inVar;
   end matchcontinue;

@@ -41,26 +41,26 @@
 typedef struct INIT_DATA
 {
   /* counts */
-  long nVars;                               /* nStates + nParameters */
+  long nVars;                                     /* nStates + nParameters */
   long nStates;
   long nParameters;
   long nInitResiduals;
   long nStartValueResiduals;
 
   /* vars */
-  double *vars;                             /* array of all unfixed variables, states first */
+  double *vars;                                   /* array of all unfixed variables, states first */
   double *start;
   double *min;
   double *max;
-  double *nominal;                          /* can be zero; nominal[i] not */
+  double *nominal;                                /* can be zero; nominal[i] not */
   char **name;
 
   /* equations */
   double *initialResiduals;
-  double *residualScalingCoefficients;      /* can be zero; residualScalingCoefficients[i] not */
+  double *residualScalingCoefficients;            /* can be zero; residualScalingCoefficients[i] not */
   double *startValueResidualScalingCoefficients;  /* can be zero; startValueResidualScalingCoefficients[i] not */
 
-  DATA *simData;                            /* corresponding simulation-data struct */
+  DATA *simData;                                  /* corresponding simulation-data struct */
 }INIT_DATA;
 
 #ifdef __cplusplus

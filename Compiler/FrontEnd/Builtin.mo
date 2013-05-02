@@ -30,7 +30,7 @@
  */
 
 encapsulated package Builtin
-" file:  Builtin.mo
+" file:        Builtin.mo
   package:     Builtin
   description: Builting tyepes and variables
 
@@ -143,379 +143,379 @@ constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCod
   `Real\', `Integer\' etc.
 */
 public constant SCode.Element rlType = SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) " real type ";
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) " real type ";
 
 public constant SCode.Element intType = SCode.CLASS("IntegerType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
 
 public constant SCode.Element strType = SCode.CLASS("StringType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
 
 public constant SCode.Element boolType = SCode.CLASS("BooleanType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
 
 protected constant SCode.Element enumType = SCode.CLASS("EnumType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_ENUMERATION(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo);
 
 protected constant SCode.Element unit = SCode.COMPONENT("unit",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
 protected constant SCode.Element quantity = SCode.COMPONENT("quantity",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element displayUnit = SCode.COMPONENT("displayUnit",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element min = SCode.COMPONENT("min",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element max = SCode.COMPONENT("max",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element startOrigin = SCode.COMPONENT("startOrigin",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING("undefined"),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING("undefined"),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element realStart = SCode.COMPONENT("start",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element integerStart = SCode.COMPONENT("start",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element stringStart = SCode.COMPONENT("start",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element booleanStart = SCode.COMPONENT("start",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element fixed = SCode.COMPONENT("fixed",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo) "Should be true for variables" ;
+          attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo) "Should be true for variables" ;
 
 protected constant SCode.Element nominal = SCode.COMPONENT("nominal",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE(), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE(), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
-    SOME((
-    Absyn.CREF(
-    Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
+          SOME((
+          Absyn.CREF(
+          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 /* Extensions for uncertainties */
 protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonPrefixes,
-    attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
-    SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
-    SOME((Absyn.CREF(Absyn.CREF_QUAL("Uncertainty",{},Absyn.CREF_IDENT("given",{}))),false)),Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
+          attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
+          SOME((Absyn.CREF(Absyn.CREF_QUAL("Uncertainty",{},Absyn.CREF_IDENT("given",{}))),false)),Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element distribution = SCode.COMPONENT("distribution",commonPrefixes,attrParam,Absyn.TPATH(Absyn.IDENT("Distribution"),NONE()),
-    SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo); // Distribution is declared in ModelicaBuiltin.mo
+          SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo); // Distribution is declared in ModelicaBuiltin.mo
 /* END Extensions for uncertainties */
 
 protected constant list<SCode.Element> stateSelectComps = {
-    SCode.COMPONENT("never",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("avoid",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("default",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("prefer",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("always",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
+          SCode.COMPONENT("never",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("avoid",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("default",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("prefer",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("always",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
 
 protected constant list<SCode.Element> uncertaintyComps = {
-    SCode.COMPONENT("given",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("sought",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-    SCode.COMPONENT("refine",commonPrefixes,
-    attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The Uncertainty enumeration" ;
+          SCode.COMPONENT("given",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("sought",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("refine",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The Uncertainty enumeration" ;
 
 protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
-    SCode.PARTS(stateSelectComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The State Select Type";
+          SCode.PARTS(stateSelectComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The State Select Type";
 
 protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
-    SCode.PARTS(uncertaintyComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The Uncertainty Type";
+          SCode.PARTS(uncertaintyComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The Uncertainty Type";
 
 public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
-    SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "ExternalObject type" ;
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "ExternalObject type" ;
 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
-    SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-    stateSelect,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Real\' type" ;
+          SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
+          stateSelect,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-    SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
-    SCode.PARTS({quantity,stringStart,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `String\' type" ;
+          SCode.PARTS({quantity,stringStart,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `String\' type" ;
 
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
-    SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Boolean\' type" ;
+          SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
-    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-    DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
 /* Optimica Extensions. Theses variables are considered builtin for Optimica: startTime, finalTime, objectiveIntegrand and objective */
 
 /* Optimica Extensions. The builtin variable startTime. */
 protected constant DAE.Var startTimeVar = DAE.TYPES_VAR("startTime",
-    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-    DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `startTime\' variable" ;
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `startTime\' variable" ;
 
 /* Optimica Extensions. The builtin variable finalTime. */
 protected constant DAE.Var finalTimeVar = DAE.TYPES_VAR("finalTime",
-    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-    DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
 
 /* Optimica Extensions. The builtin variable objectiveIntegrand. */
 protected constant DAE.Var objectiveIntegrandVar = DAE.TYPES_VAR("objectiveIntegrand",
-    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-    DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
 
 /* Optimica Extensions. The builtin variable objective. */
 protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
-    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-    DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objective\' variable" ;
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objective\' variable" ;
 
 
 protected constant DAE.Type stringIntInt2string =
-    DAE.T_FUNCTION(
-        {
-        ("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),
-        ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-        ("z",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())
-        },
-        DAE.T_STRING_DEFAULT,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+              {
+              ("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),
+              ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+              ("z",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())
+              },
+              DAE.T_STRING_DEFAULT,
+              DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+              DAE.emptyTypeSource);
 
 protected constant DAE.Type real2real =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type realReal2real =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type int2int =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type int2bool =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_BOOL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type enumeration2int =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2int =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2bool =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_BOOL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type bool2bool =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_BOOL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type real2bool =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_BOOL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type realReal2bool =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_BOOL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type realRealReal2Real =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type anyNonExpandableConnector2int =
-    DAE.T_FUNCTION(
-      {("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type anyExpandableConnector2int =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type vectorVector2int =
-    DAE.T_FUNCTION(
-      {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type vectorVector2real =
-    DAE.T_FUNCTION(
-      {("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2vectorreal =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      T_REAL_ARRAY_1_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            T_REAL_ARRAY_1_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type realRealInt2vectorreal =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-       ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      T_REAL_ARRAY_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            T_REAL_ARRAY_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type array2real =
-    DAE.T_FUNCTION(
-      {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_INTEGER_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource) "T_ARRAY is appearently not constant. To bad!" ;
+          DAE.T_FUNCTION(
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource) "T_ARRAY is appearently not constant. To bad!" ;
 
 protected constant DAE.Type int2boxed =
-    DAE.T_FUNCTION(
-      {("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_METABOXED_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_METABOXED_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type string2string =
-    DAE.T_FUNCTION(
-      {("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE())},
-      DAE.T_STRING_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_STRING_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimreal =
-    DAE.T_FUNCTION(
-      {
-      ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-      ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-      ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())
-      },
-      T_REAL_ARRAY_1_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {
+            ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+            ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+            ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())
+            },
+            T_REAL_ARRAY_1_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant DAE.Type realrealreal2real =
-    DAE.T_FUNCTION(
-      {
-      ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-      ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-      ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())
-      },
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+          DAE.T_FUNCTION(
+            {
+            ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+            ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+            ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())
+            },
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 protected constant SCode.Element timeComp =
-    SCode.COMPONENT(
-      "time",
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
-      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo);
+          SCode.COMPONENT(
+            "time",
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo);
 
 protected constant SCode.Element startTimeComp =
-    SCode.COMPONENT(
-      "startTime",
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
-      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo);
+          SCode.COMPONENT(
+            "startTime",
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo);
 
 protected constant SCode.Element finalTimeComp =
-    SCode.COMPONENT(
-      "finalTime",
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
-      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo);
+          SCode.COMPONENT(
+            "finalTime",
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo);
 
 protected constant SCode.Element objectiveIntegrandComp =
-    SCode.COMPONENT(
-      "objectiveIntegrand",
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
-      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo);
+          SCode.COMPONENT(
+            "objectiveIntegrand",
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo);
 
 protected constant SCode.Element objectiveVarComp =
-    SCode.COMPONENT(
-      "objectiveVar",
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
-      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo);
+          SCode.COMPONENT(
+            "objectiveVar",
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public function variableIsBuiltin
  "Returns true if cref is a builtin variable.
@@ -529,22 +529,22 @@ algorithm
     //If accepting Optimica then these variabels are also builtin
     case(DAE.CREF_IDENT(ident="startTime"))
       equation
-  true = Config.acceptOptimicaGrammar();
+        true = Config.acceptOptimicaGrammar();
       then true;
 
     case(DAE.CREF_IDENT(ident="finalTime"))
       equation
-  true = Config.acceptOptimicaGrammar();
+        true = Config.acceptOptimicaGrammar();
       then true;
 
     case(DAE.CREF_IDENT(ident="objective"))
       equation
-  true = Config.acceptOptimicaGrammar();
+        true = Config.acceptOptimicaGrammar();
       then true;
 
     case(DAE.CREF_IDENT(ident="objectiveIntegrand"))
       equation
-  true = Config.acceptOptimicaGrammar();
+        true = Config.acceptOptimicaGrammar();
       then true;
 
     else false;
@@ -625,9 +625,9 @@ algorithm
 
     case (cache)
       equation
-  env = getSetInitialEnv(NONE());
+        env = getSetInitialEnv(NONE());
       then 
-  (cache, env);
+        (cache, env);
 
     // if no cached version found create initial env.
     case (cache) equation
@@ -645,53 +645,53 @@ algorithm
       env = Env.extendFrameCBuiltin(env, stateSelectType);
       env = Env.extendFrameCBuiltin(env, uncertaintyType);
       env = Env.extendFrameV(
-       env,
-       timeVar,
-       timeComp,
-       DAE.NOMOD(),
-       Env.VAR_UNTYPED(),
-       {});
+             env,
+             timeVar,
+             timeComp,
+             DAE.NOMOD(),
+             Env.VAR_UNTYPED(),
+             {});
 
       //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
       env = Util.if_(Config.acceptOptimicaGrammar(),
-               Env.extendFrameV(
-                 env,
-                 objectiveVar,
-                 objectiveVarComp,
-                 DAE.NOMOD(),
-                 Env.VAR_UNTYPED(),
-                 {}),
-               env);
+                     Env.extendFrameV(
+                       env,
+                       objectiveVar,
+                       objectiveVarComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
 
       env = Util.if_(Config.acceptOptimicaGrammar(),
-               Env.extendFrameV(
-                 env,
-                 objectiveIntegrandVar,
-                 objectiveIntegrandComp,
-                 DAE.NOMOD(),
-                 Env.VAR_UNTYPED(),
-                 {}),
-               env);
+                     Env.extendFrameV(
+                       env,
+                       objectiveIntegrandVar,
+                       objectiveIntegrandComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
 
       env = Util.if_(Config.acceptOptimicaGrammar(),
-               Env.extendFrameV(
-                 env,
-                 startTimeVar,
-                 startTimeComp,
-                 DAE.NOMOD(),
-                 Env.VAR_UNTYPED(),
-                 {}),
-               env);
+                     Env.extendFrameV(
+                       env,
+                       startTimeVar,
+                       startTimeComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
 
       env = Util.if_(Config.acceptOptimicaGrammar(),
-               Env.extendFrameV(
-                 env,
-                 finalTimeVar,
-                 finalTimeComp,
-                 DAE.NOMOD(),
-                 Env.VAR_UNTYPED(),
-                 {}),
-               env);
+                     Env.extendFrameV(
+                       env,
+                       finalTimeVar,
+                       finalTimeComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
 
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
@@ -723,9 +723,9 @@ algorithm
       list<Env.Frame> env;
     case (env)
       equation
-  true = Config.acceptMetaModelicaGrammar();
-  // getGlobalRoot can not be represented by a regular function...
-  env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
+        true = Config.acceptMetaModelicaGrammar();
+        // getGlobalRoot can not be represented by a regular function...
+        env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
       then env;
     case env then env;
   end matchcontinue;
@@ -742,58 +742,58 @@ algorithm
       list<Absyn.Class> classes,classes1,classes2;
     case ()
       equation
-  failure(_ = getGlobalRoot(Global.builtinIndex));
-  setGlobalRoot(Global.builtinIndex,{});
+        failure(_ = getGlobalRoot(Global.builtinIndex));
+        setGlobalRoot(Global.builtinIndex,{});
       then fail();
     case ()
       equation
-  assocLst = getGlobalRoot(Global.builtinIndex);
+        assocLst = getGlobalRoot(Global.builtinIndex);
       then Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
     case ()
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
-  fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
-  fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
-  Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-  Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
-  initialFunctionStr = System.readFile(fileModelica);
-  initialFunctionStrMM = System.readFile(fileMetaModelica);
-  Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
-  Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileMetaModelica);
-  classes = listAppend(classes1,classes2);
-  initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
-  assocLst = getGlobalRoot(Global.builtinIndex);
-  setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,initialProgram)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
+        initialFunctionStr = System.readFile(fileModelica);
+        initialFunctionStrMM = System.readFile(fileMetaModelica);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileMetaModelica);
+        classes = listAppend(classes1,classes2);
+        initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,initialProgram)::assocLst);
       then initialProgram;
     case ()
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-  fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
-  fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
-  Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-  Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
-  initialFunctionStr = System.readFile(fileModelica);
-  initialFunctionStrMM = System.readFile(fileParModelica);
-  Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
-  Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileParModelica);
-  classes = listAppend(classes1,classes2);
-  initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
-  assocLst = getGlobalRoot(Global.builtinIndex);
-  setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,initialProgram)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
+        initialFunctionStr = System.readFile(fileModelica);
+        initialFunctionStrMM = System.readFile(fileParModelica);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileParModelica);
+        classes = listAppend(classes1,classes2);
+        initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,initialProgram)::assocLst);
       then initialProgram;
     case ()
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-  fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
-  Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-  initialFunctionStr = System.readFile(fileModelica);
-  initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
-  assocLst = getGlobalRoot(Global.builtinIndex);
-  setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,initialProgram)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        initialFunctionStr = System.readFile(fileModelica);
+        initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,initialProgram)::assocLst);
       then initialProgram;
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});
       then fail();
   end matchcontinue;
 end getInitialFunctions;
@@ -811,41 +811,41 @@ algorithm
     // nothing there
     case (_)
       equation
-  failure(_ = getGlobalRoot(Global.builtinEnvIndex));
-  setGlobalRoot(Global.builtinEnvIndex,{});
+        failure(_ = getGlobalRoot(Global.builtinEnvIndex));
+        setGlobalRoot(Global.builtinEnvIndex,{});
       then 
-  fail();
+        fail();
     
     // return the correct env depending on flags
     case (NONE())
       equation
-  assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
       then 
-  Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+        Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
     
     case (SOME(env))
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
-  assocLst = getGlobalRoot(Global.builtinEnvIndex);
-  setGlobalRoot(Global.builtinEnvIndex, (Flags.METAMODELICA,env)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.METAMODELICA,env)::assocLst);
       then 
-  env;
+        env;
     
     case (SOME(env))
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-  assocLst = getGlobalRoot(Global.builtinEnvIndex);
-  setGlobalRoot(Global.builtinEnvIndex, (Flags.PARMODELICA,env)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.PARMODELICA,env)::assocLst);
       then 
-  env;
+        env;
     
     case (SOME(env))
       equation
-  true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-  assocLst = getGlobalRoot(Global.builtinEnvIndex);
-  setGlobalRoot(Global.builtinEnvIndex, (Flags.MODELICA,env)::assocLst);
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        assocLst = getGlobalRoot(Global.builtinEnvIndex);
+        setGlobalRoot(Global.builtinEnvIndex, (Flags.MODELICA,env)::assocLst);
       then 
-  env;    
+        env;    
   
   end matchcontinue;
 end getSetInitialEnv;

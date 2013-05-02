@@ -2,9 +2,9 @@
 
 
 DuplicateParentMerge::DuplicateParentMerge(TaskGraph *tg,TaskGraph * orig_tg,
-       ContainSetMap *cmap,
-       VertexID inv, VertexID outv,
-       double l,double B,int nproc,map<VertexID,bool>* removed)
+             ContainSetMap *cmap,
+             VertexID inv, VertexID outv,
+             double l,double B,int nproc,map<VertexID,bool>* removed)
  : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,nproc,removed)
 {
 }
@@ -19,20 +19,20 @@ bool DuplicateParentMerge::apply(VertexID v)
       out_degree(v,*m_taskgraph) > 1 &&
       /*!containTask(m_outvartask,children(v,*m_taskgraph)) &&*/
       numberOfTrues(cond1=newTlevelLower(children(v,*m_taskgraph),
-     v)) > 0 &&
+           v)) > 0 &&
       numberOfTrues(cond2=siblingCondition(children(v,*m_taskgraph),
-       v)) > 0)
+             v)) > 0)
     {
       // do the merge, split children in two groups, one fulfilling
       // the merge, the other not fulfilling the merge...
       duplicateParent(v,
-    duplicateParentSelectFulfill(
-         children(v,*m_taskgraph),
-         cond1,cond2),
-    duplicateParentSelectNotFulfill(
-            children(v,*m_taskgraph),
-            cond1,cond2)
-    );
+          duplicateParentSelectFulfill(
+               children(v,*m_taskgraph),
+               cond1,cond2),
+          duplicateParentSelectNotFulfill(
+                  children(v,*m_taskgraph),
+                  cond1,cond2)
+          );
       delete cond1; delete cond2;
       // Do the merge
       change=true;
@@ -41,7 +41,7 @@ bool DuplicateParentMerge::apply(VertexID v)
 }
 
 bool DuplicateParentMerge::containTask(VertexID task,
-    std::pair<ChildrenIterator, ChildrenIterator> pair)
+          std::pair<ChildrenIterator, ChildrenIterator> pair)
 {
   ChildrenIterator c,c_end;
   for (tie(c,c_end)=pair; c != c_end; c++) {
@@ -55,8 +55,8 @@ bool DuplicateParentMerge::containTask(VertexID task,
 // Returns a list of the children that fullfill both conditions.
 list<VertexID>*
 DuplicateParentMerge::duplicateParentSelectFulfill(pair<ChildrenIterator,ChildrenIterator> pair,
-         vector<bool>* cond1,
-         vector<bool>* cond2)
+               vector<bool>* cond1,
+               vector<bool>* cond2)
 {
   list<VertexID> * lst = new list<VertexID>();
   ChildrenIterator c,c_end;
@@ -72,8 +72,8 @@ DuplicateParentMerge::duplicateParentSelectFulfill(pair<ChildrenIterator,Childre
 }
 list<VertexID>*
 DuplicateParentMerge::duplicateParentSelectNotFulfill(pair<ChildrenIterator,ChildrenIterator> pair,
-            vector<bool>* cond1,
-            vector<bool>* cond2)
+                  vector<bool>* cond1,
+                  vector<bool>* cond2)
 {
   list<VertexID> * lst = new list<VertexID>();
   ChildrenIterator c,c_end;
@@ -92,7 +92,7 @@ DuplicateParentMerge::duplicateParentSelectNotFulfill(pair<ChildrenIterator,Chil
 // child without affecting overall cost.
 vector<bool> *
 DuplicateParentMerge::newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pair,
-       VertexID parent)
+             VertexID parent)
 {
   ChildrenIterator v,v_end;
   tie(v,v_end) = pair;
@@ -118,7 +118,7 @@ DuplicateParentMerge::newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pa
 // child.
 vector<bool> *
 DuplicateParentMerge::siblingCondition(pair<ChildrenIterator,ChildrenIterator> pair,
-         VertexID parent)
+               VertexID parent)
 {
   ChildrenIterator c,c_end;
   tie(c,c_end) = pair;
@@ -137,8 +137,8 @@ DuplicateParentMerge::siblingCondition(pair<ChildrenIterator,ChildrenIterator> p
 
 bool
 DuplicateParentMerge::allSiblingsCondition(std::pair<ParentsIterator,ParentsIterator> pair,
-       VertexID child,
-       VertexID parent)
+             VertexID child,
+             VertexID parent)
 {
   bool res=true;
   EdgeID e; bool tmp;
@@ -181,8 +181,8 @@ void DuplicateParentMerge::printVertexList(const list<VertexID> &lst,ostream &os
 // Duplicate parent into each of the child in the mergeChildren list and keep
 // the edges to each child in the nonmergeChildren list.
 void DuplicateParentMerge::duplicateParent(VertexID parent,
-       list<VertexID>*mergeChildren,
-       list<VertexID>*nonmergeChildren)
+             list<VertexID>*mergeChildren,
+             list<VertexID>*nonmergeChildren)
 {
   ParentsIterator p2,p2_end;
   list<VertexID>::iterator child;
@@ -202,9 +202,9 @@ void DuplicateParentMerge::duplicateParent(VertexID parent,
   for (tie(p2,p2_end) = parents(parent,*m_taskgraph); p2 != p2_end ;p2++) {
     add_edge(*p2,*child,m_taskgraph);
     ResultSet &s=getResultSet(edge(*p2,parent,*m_taskgraph).first,
-      m_taskgraph);
+            m_taskgraph);
     ResultSet &newSet = getResultSet(edge(*p2,*child,*m_taskgraph).first,
-       m_taskgraph);
+             m_taskgraph);
     newSet.make_union(&s);
 
   }
@@ -223,9 +223,9 @@ void DuplicateParentMerge::duplicateParent(VertexID parent,
   for (tie(p2,p2_end) = parents(parent,*m_taskgraph); p2 != p2_end ;p2++) {
     add_edge(*p2,*child,m_taskgraph);
     ResultSet &s=getResultSet(edge(*p2,parent,*m_taskgraph).first,
-      m_taskgraph);
+            m_taskgraph);
     ResultSet &newSet = getResultSet(edge(*p2,*child,*m_taskgraph).first,
-         m_taskgraph);
+               m_taskgraph);
     newSet.make_union(&s);
     }
   addContainsTask(*child,parent);

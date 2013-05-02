@@ -23,10 +23,10 @@ struct SimulationStatus
 {
   enum type
   {
-   RUNNING,
-   PAUSED,
-   STOPPED,
-   SHUTDOWN
+         RUNNING,
+         PAUSED,
+         STOPPED,
+         SHUTDOWN
   };
 };
 

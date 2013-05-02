@@ -100,11 +100,11 @@ int modelTermination = 0;     /* Becomes non-zero when simulation terminates. */
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
 int terminationAssert = 0;    /* Becomes non-zero when model call assert simulation. */
 int warningLevelAssert = 0;   /* Becomes non-zero when model call assert with warning level. */
-FILE_INFO TermInfo;     /* message for termination. */
+FILE_INFO TermInfo;           /* message for termination. */
 
-char* TermMsg;          /* message for termination. */
+char* TermMsg;                /* message for termination. */
 
-int sim_noemit = 0;     /* Flag for not emitting data */
+int sim_noemit = 0;           /* Flag for not emitting data */
 
 const std::string *init_method = NULL; /* method for  initialization. */
 
@@ -176,31 +176,31 @@ void setGlobalVerboseLevel(int argc, char**argv)
       pos = flagList.find(",", 0);
       if(pos != string::npos)
       {
-  flag = flagList.substr(0, pos);
-  flagList = flagList.substr(pos+1);
+        flag = flagList.substr(0, pos);
+        flagList = flagList.substr(pos+1);
       }
       else
       {
-  flag = flagList;
+        flag = flagList;
       }
 
       for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
       {
-  if(flag == string(LOG_STREAM_NAME[i]))
-  {
-    useStream[i] = 1;
-    error = 0;
-  }
+        if(flag == string(LOG_STREAM_NAME[i]))
+        {
+          useStream[i] = 1;
+          error = 0;
+        }
       }
 
       if(error)
       {
-  WARNING(LOG_STDOUT, "current options are:");
-  INDENT(LOG_STDOUT);
-  for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
-    WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
-  RELEASE(LOG_STDOUT);
-  THROW1("unrecognized option -lv %s", flags->c_str());
+        WARNING(LOG_STDOUT, "current options are:");
+        INDENT(LOG_STDOUT);
+        for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+          WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
+        RELEASE(LOG_STDOUT);
+        THROW1("unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
   }
@@ -351,21 +351,21 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     if(modelData->realAlias[i].aliasType == 0)  /* variable */
     {
       if(!modelData->realAlias[i].filterOutput && !modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput)
-  modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->realAlias[i].filterOutput = 0;
-  modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
+        modelData->realAlias[i].filterOutput = 0;
+        modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
       }
     }
     else if(modelData->realAlias[i].aliasType == 1)  /* parameter */
     {
       if(!modelData->realAlias[i].filterOutput && !modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput)
-  modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->realAlias[i].filterOutput = 0;
-  modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+        modelData->realAlias[i].filterOutput = 0;
+        modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
       }
     }
   }
@@ -376,21 +376,21 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     if(modelData->integerAlias[i].aliasType == 0)  /* variable */
     {
       if(!modelData->integerAlias[i].filterOutput && !modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput)
-  modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->integerAlias[i].filterOutput = 0;
-  modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        modelData->integerAlias[i].filterOutput = 0;
+        modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
       }
     }
     else if(modelData->integerAlias[i].aliasType == 1)  /* parameter */
     {
       if(!modelData->integerAlias[i].filterOutput && !modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput)
-  modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->integerAlias[i].filterOutput = 0;
-  modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        modelData->integerAlias[i].filterOutput = 0;
+        modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
       }
     }
   }
@@ -401,21 +401,21 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     if(modelData->booleanAlias[i].aliasType == 0)  /* variable */
     {
       if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput)
-  modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->booleanAlias[i].filterOutput = 0;
-  modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        modelData->booleanAlias[i].filterOutput = 0;
+        modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
       }
     }
     else if(modelData->booleanAlias[i].aliasType == 1)  /* parameter */
     {
       if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput)
-  modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->booleanAlias[i].filterOutput = 0;
-  modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        modelData->booleanAlias[i].filterOutput = 0;
+        modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
       }
     }
   }
@@ -426,21 +426,21 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     if(modelData->stringAlias[i].aliasType == 0)  /* variable */
     {
       if(!modelData->stringAlias[i].filterOutput && !modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput)
-  modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->stringAlias[i].filterOutput = 0;
-  modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        modelData->stringAlias[i].filterOutput = 0;
+        modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
       }
     }
     else if(modelData->stringAlias[i].aliasType == 1)  /* parameter */
     {
       if(!modelData->stringAlias[i].filterOutput && !modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput)
-  modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       else
       {
-  modelData->stringAlias[i].filterOutput = 0;
-  modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        modelData->stringAlias[i].filterOutput = 0;
+        modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
       }
     }
   }
@@ -476,11 +476,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const char *clockName;
     if ((clockName = omc_flagValue[FLAG_CLOCK]) != NULL) {
       if (0==strcmp(clockName, "CPU")) {
-  clock = OMC_CLOCK_CPUTIME;
+        clock = OMC_CLOCK_CPUTIME;
       } else if (0==strcmp(clockName, "RT")) {
-  clock = OMC_CLOCK_REALTIME;
+        clock = OMC_CLOCK_REALTIME;
       } else {
-  WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT. Defaulting to RT.", clockName);
+        WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT. Defaulting to RT.", clockName);
       }
     }
     if (rt_set_clock(clock)) {
@@ -590,7 +590,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
-  data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
+        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
 
   return retVal;
@@ -688,12 +688,12 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 11, outVars);
 #endif
   } else if(simData->simulationInfo.solverMethod == std::string("dassl") ||
-        simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
-        simData->simulationInfo.solverMethod == std::string("dassltest")  ||
-        simData->simulationInfo.solverMethod == std::string("dasslSymJac") ||
-        simData->simulationInfo.solverMethod == std::string("dasslNumJac") ||
-        simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
-        simData->simulationInfo.solverMethod == std::string("dasslInternalNumJac")) {
+              simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
+              simData->simulationInfo.solverMethod == std::string("dassltest")  ||
+              simData->simulationInfo.solverMethod == std::string("dasslSymJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslNumJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslInternalNumJac")) {
 
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 3, outVars);
@@ -717,8 +717,8 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   } else if(simData->simulationInfo.solverMethod == std::string("qss")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
-                simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
-                simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
+                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
+                      simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
     INFO1(LOG_STDOUT, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
@@ -751,11 +751,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-  INFO2(LOG_STDOUT, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
+        INFO2(LOG_STDOUT, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-  INFO3(LOG_STDOUT, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
+        INFO3(LOG_STDOUT, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
       else
-  WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+        WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
     }
 
     RELEASE(LOG_STDOUT);
@@ -770,23 +770,23 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     {
       if(option == std::string(FLAG_NAME[i]))
       {
-  if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-    INFO2(LOG_STDOUT, "detaild flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
-  else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-    INFO3(LOG_STDOUT, "detaild flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
-  else
-    WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+        if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
+          INFO2(LOG_STDOUT, "detaild flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+        else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
+          INFO3(LOG_STDOUT, "detaild flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+        else
+          WARNING1(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
 
-  /* detailed information for some flags */
-  INDENT(LOG_STDOUT);
-  if(i == FLAG_LV)
-  {
-    for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
-      INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
-  }
-  RELEASE(LOG_STDOUT);
+        /* detailed information for some flags */
+        INDENT(LOG_STDOUT);
+        if(i == FLAG_LV)
+        {
+          for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
+            INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+        }
+        RELEASE(LOG_STDOUT);
 
-  EXIT(0);
+        EXIT(0);
       }
     }
 
@@ -860,7 +860,7 @@ void SimulationRuntime_printStatus(int sig)
   printf("<phase>UNKNOWN</phase>\n");
   /*
    * FIXME: Variables needed here are no longer global.
-   *  and (int sig) is too small for pointer to data.
+   *        and (int sig) is too small for pointer to data.
    */
   /*
   printf("<model>%s</model>\n", data->modelData.modelFilePrefix);

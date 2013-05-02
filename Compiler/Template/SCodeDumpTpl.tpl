@@ -22,14 +22,14 @@ match elements
     let el_str = dumpElement(el,'')
     let vis_str = dumpElementVisibility(el, inPublicSection)
     let rest_str = if vis_str then
-  dumpElements2(rest_els, spacing, indent, false, boolNot(inPublicSection))
+        dumpElements2(rest_els, spacing, indent, false, boolNot(inPublicSection))
       else
-  dumpElements2(rest_els, spacing, indent, false, inPublicSection)
+        dumpElements2(rest_els, spacing, indent, false, inPublicSection)
     let post_spacing = if rest_str then spacing
     let elements_str = if indent then
       <<
       <%pre_spacing%><%vis_str%>
-  <%el_str%>;<%post_spacing%><%\n%>
+        <%el_str%>;<%post_spacing%><%\n%>
       <%rest_str%>
       >>
       else
@@ -171,7 +171,7 @@ match classDef
       <%ial_str%>
       <%neq_str%>
       <%nal_str%>
-  <%extdecl_str%>
+        <%extdecl_str%>
       >>
     cdef_str
   case CLASS_EXTENDS(__) then
@@ -187,9 +187,9 @@ match classDef
     '= <%attr_str%><%type_str%><%mod_str%>'
   case ENUMERATION(__) then
     let enum_str = if enumLst then
-  (enumLst |> enum => dumpEnumLiteral(enum) ;separator=", ")
+        (enumLst |> enum => dumpEnumLiteral(enum) ;separator=", ")
       else
-  ':'
+        ':'
     '= enumeration(<%enum_str%>)'
   case PDER(__) then
     let func_str = AbsynDumpTpl.dumpPath(functionPath)
@@ -314,14 +314,14 @@ template dumpIfEEquation(SCode.EEquation ifequation)
 ::=
 match ifequation
   case EQ_IF(condition = if_cond :: elseif_conds,
-       thenBranch = if_branch :: elseif_branches) then
+             thenBranch = if_branch :: elseif_branches) then
     let if_cond_str = AbsynDumpTpl.dumpExp(if_cond)
     let if_branch_str = (if_branch |> e => dumpEEquation(e) ;separator="\n")
     let elseif_str = dumpElseIfEEquation(elseif_conds, elseif_branches)
     let else_str = if elseBranch then
       <<
       else
-  <%elseBranch |> e => dumpEEquation(e) ;separator="\n"%>
+        <%elseBranch |> e => dumpEEquation(e) ;separator="\n"%>
       >>
     <<
     if <%if_cond_str%> then
@@ -339,14 +339,14 @@ match condition
   case cond :: rest_conds then
     match branches
       case branch :: rest_branches then
-  let cond_str = AbsynDumpTpl.dumpExp(cond)
-  let branch_str = (branch |> e => dumpEEquation(e) ;separator="\n")
-  let rest_str = dumpElseIfEEquation(rest_conds, rest_branches)
-  <<
-  elseif <%cond_str%> then
-    <%branch_str%>
-  <%rest_str%>
-  >>
+        let cond_str = AbsynDumpTpl.dumpExp(cond)
+        let branch_str = (branch |> e => dumpEEquation(e) ;separator="\n")
+        let rest_str = dumpElseIfEEquation(rest_conds, rest_branches)
+        <<
+        elseif <%cond_str%> then
+          <%branch_str%>
+        <%rest_str%>
+        >>
 end dumpElseIfEEquation;
 
 template dumpForEEquation(SCode.EEquation for_equation)
@@ -382,7 +382,7 @@ match when_equation
       let else_body_str = (else_body |> e => dumpEEquation(e) ;separator="\n")
       <<
       elsewhen <%else_cond_str%> then
-  <%else_body_str%>
+        <%else_body_str%>
       >> ;separator="\n")
     let cmt_str = dumpComment(comment)
     <<
@@ -513,7 +513,7 @@ match when_statement
       let ew_body_str = dumpStatements(ew_body)
       <<
       elsewhen <%ew_cond_str%> then
-  <%ew_body_str%>
+        <%ew_body_str%>
       >> ;separator="\n")
     let cmt_str = dumpComment(comment)
     <<

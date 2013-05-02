@@ -57,49 +57,49 @@ algorithm
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
     case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
-  // An ICONST is used as the default value of stepSize so that this case
-  // fails if stepSize isn't given as argument to buildModel.
-  (cache, DAE.RCONST(rstepTime)) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stepSize", DAE.T_REAL_DEFAULT,
-                        args, DAE.ICONST(0), // force failure if stepSize is not found via division by zero below!
-                        pre, info);
+        // An ICONST is used as the default value of stepSize so that this case
+        // fails if stepSize isn't given as argument to buildModel.
+        (cache, DAE.RCONST(rstepTime)) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stepSize", DAE.T_REAL_DEFAULT,
+                              args, DAE.ICONST(0), // force failure if stepSize is not found via division by zero below!
+                              pre, info);
 
-  (cache,startTime as DAE.RCONST(rstartTime)) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
-                        args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
-                        pre, info);
+        (cache,startTime as DAE.RCONST(rstartTime)) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
+                              args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
+                              pre, info);
 
-  (cache,stopTime as DAE.RCONST(rstopTime)) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
-                        args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
-                        pre, info);
+        (cache,stopTime as DAE.RCONST(rstopTime)) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
+                              args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
+                              pre, info);
 
-  intervals = realInt((rstopTime -. rstartTime) /. rstepTime);
-  numberOfIntervals = DAE.ICONST(intervals);
+        intervals = realInt((rstopTime -. rstartTime) /. rstepTime);
+        numberOfIntervals = DAE.ICONST(intervals);
       then
-  (cache, startTime, stopTime, numberOfIntervals);
+        (cache, startTime, stopTime, numberOfIntervals);
 
     // normal case, fill in defaults
     case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
-  // An ICONST is used as the default value of stepSize so that this case
-  // fails if stepSize isn't given as argument to buildModel.
-  (cache,startTime) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
-                        args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
-                        pre, info);
+        // An ICONST is used as the default value of stepSize so that this case
+        // fails if stepSize isn't given as argument to buildModel.
+        (cache,startTime) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
+                              args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
+                              pre, info);
 
-  (cache,stopTime) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
-                        args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
-                        pre, info);
+        (cache,stopTime) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
+                              args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
+                              pre, info);
 
-  (cache,numberOfIntervals) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "numberOfIntervals", DAE.T_INTEGER_DEFAULT,
-                        args, CevalScript.getSimulationOption(inSimOpt, "numberOfIntervals"),
-                        pre, info);
+        (cache,numberOfIntervals) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "numberOfIntervals", DAE.T_INTEGER_DEFAULT,
+                              args, CevalScript.getSimulationOption(inSimOpt, "numberOfIntervals"),
+                              pre, info);
       then
-  (cache, startTime, stopTime, numberOfIntervals);
+        (cache, startTime, stopTime, numberOfIntervals);
 
    end matchcontinue;
 end calculateSimulationTimes;
@@ -141,76 +141,76 @@ algorithm
     // fill in defaults
     case (cache,env,{crexp},args,impl,SOME(st),pre,info)
       equation
-  exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
-  // We need to force eval in order to get the correct prefix
-  (cache,v,SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),Ceval.MSG(info),0);
-  Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
+        exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
+        // We need to force eval in order to get the correct prefix
+        (cache,v,SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),Ceval.MSG(info),0);
+        Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
 
-  cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
-  defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
+        cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
+        defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
 
-  (cache, startTime, stopTime, numberOfIntervals) =
-    calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
+        (cache, startTime, stopTime, numberOfIntervals) =
+          calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
 
-  (cache,tolerance) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT,
-                        args, CevalScript.getSimulationOption(defaulSimOpt, "tolerance"),
-                        pre,info);
+        (cache,tolerance) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT,
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "tolerance"),
+                              pre,info);
 
-  (cache,method) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT,
-                        args, CevalScript.getSimulationOption(defaulSimOpt, "method"),
-                        pre, info);
+        (cache,method) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT,
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "method"),
+                              pre, info);
 
-  (cache,fileNamePrefix) =
-    Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",  DAE.T_STRING_DEFAULT,
-                        args, CevalScript.getSimulationOption(defaulSimOpt, "fileNamePrefix"),
-                        pre, info);
+        (cache,fileNamePrefix) =
+          Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",  DAE.T_STRING_DEFAULT,
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "fileNamePrefix"),
+                              pre, info);
 
-  (cache,options) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT,
-                        args, CevalScript.getSimulationOption(defaulSimOpt, "options"),
-                        pre, info);
+        (cache,options) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT,
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "options"),
+                              pre, info);
 
-  (cache,outputFormat) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT,
-                        args,  CevalScript.getSimulationOption(defaulSimOpt, "outputFormat"),
-                        pre, info);
+        (cache,outputFormat) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT,
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "outputFormat"),
+                              pre, info);
 
-  (cache,variableFilter) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "variableFilter", DAE.T_STRING_DEFAULT,
-                        args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
-                        pre, info);
+        (cache,variableFilter) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "variableFilter", DAE.T_STRING_DEFAULT,
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
+                              pre, info);
 
-  (cache,measureTime) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "measureTime", DAE.T_BOOL_DEFAULT,
-                        args,  CevalScript.getSimulationOption(defaulSimOpt, "measureTime"),
-                        pre, info);
+        (cache,measureTime) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "measureTime", DAE.T_BOOL_DEFAULT,
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "measureTime"),
+                              pre, info);
 
-  (cache,cflags) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "cflags", DAE.T_STRING_DEFAULT,
-                        args,  CevalScript.getSimulationOption(defaulSimOpt, "cflags"),
-                        pre, info);
-  (cache,simflags) =
-    Static.getOptionalNamedArg(cache, env, SOME(st), impl, "simflags", DAE.T_STRING_DEFAULT,
-                        args, CevalScript.getSimulationOption(defaulSimOpt, "simflags"),
-                        pre, info);
+        (cache,cflags) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "cflags", DAE.T_STRING_DEFAULT,
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "cflags"),
+                              pre, info);
+        (cache,simflags) =
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "simflags", DAE.T_STRING_DEFAULT,
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "simflags"),
+                              pre, info);
 
       then
-  (cache,
-   {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),
-    startTime,
-    stopTime,
-    numberOfIntervals,
-    tolerance,
-    method,
-    fileNamePrefix,
-    options,
-    outputFormat,
-    variableFilter,
-    measureTime,
-    cflags,
-    simflags});
+        (cache,
+         {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),
+          startTime,
+          stopTime,
+          numberOfIntervals,
+          tolerance,
+          method,
+          fileNamePrefix,
+          options,
+          outputFormat,
+          variableFilter,
+          measureTime,
+          cflags,
+          simflags});
 
   end match;
 end getSimulationArguments;
@@ -257,190 +257,190 @@ public function elabCallInteractive "function: elabCallInteractive
       String name;
     case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),_,_,impl,SOME(st),_,_)
       equation
-  ErrorExt.setCheckpoint("Scripting");
-  cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
-  (cache,exp_1,prop,st_1) = elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,SOME(st),false,inPrefix,info);
-  ErrorExt.delCheckpoint("Scripting");
+        ErrorExt.setCheckpoint("Scripting");
+        cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
+        (cache,exp_1,prop,st_1) = elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,SOME(st),false,inPrefix,info);
+        ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop,st_1);
 
     case (cache,env,Absyn.CREF_IDENT(name = _),_,_,_,SOME(st),_,_)
       equation
-  ErrorExt.rollBack("Scripting");
+        ErrorExt.rollBack("Scripting");
       then fail();
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
       then
-  (cache,Expression.makeBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "modelEquationsUC"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-  className = Static.componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-  (cache,outputFile) = Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
-  (cache,dumpExtractionSteps) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
+        (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
+        className = Static.componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
+        (cache,outputFile) = Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
+        (cache,dumpExtractionSteps) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
       then
-  (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  cname_str = Absyn.pathString(className);
-  (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-                                               DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-  recordtype =
-  DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-  {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-   DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
-    NONE(),DAE.emptyTypeSource);
+        className = Absyn.crefToPath(cr);
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
+        recordtype =
+        DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
+        {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+         DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+          NONE(),DAE.emptyTypeSource);
       then
-  (cache,Expression.makeBuiltinCall("translateModelCPP",
-    {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("translateModelCPP",
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  cname_str = Absyn.pathString(className);
-  (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-                                               DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-  recordtype =
-    DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-    {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-     DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
-     NONE(),DAE.emptyTypeSource);
+        className = Absyn.crefToPath(cr);
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
+        recordtype =
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
+          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+           NONE(),DAE.emptyTypeSource);
       then
-  (cache,Expression.makeBuiltinCall("translateModelFMU",
-    {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("translateModelFMU",
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  cname_str = Absyn.pathString(className);
-  (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-                                               DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-  recordtype =
-    DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-    {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-     DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
-     NONE(),DAE.emptyTypeSource);
+        className = Absyn.crefToPath(cr);
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
+        recordtype =
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
+          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+           NONE(),DAE.emptyTypeSource);
       then
-  (cache,Expression.makeBuiltinCall("translateModelXML",
-    {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("translateModelXML",
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  cname_str = Absyn.pathString(className);
-  (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-    DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-  recordtype =
-    DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-    {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-     DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
-     NONE(),DAE.emptyTypeSource);
+        className = Absyn.crefToPath(cr);
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
+        recordtype =
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
+          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+           NONE(),DAE.emptyTypeSource);
       then
-  (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
-    {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
       then
-  (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
-   DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
+         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
       then
-  (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
-   DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
+         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
-  recordtype = CevalScript.getSimulationResultType();
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        recordtype = CevalScript.getSimulationResultType();
       then
-  (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
-  recordtype = CevalScript.getDrModelicaSimulationResultType();
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
-  (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "residualCMP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
-  recordtype = CevalScript.getSimulationResultType();
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        recordtype = CevalScript.getSimulationResultType();
       then
-  (cache,Expression.makeBuiltinCall("residualCMP",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("residualCMP",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-  (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
-  recordtype = CevalScript.getSimulationResultType();
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        recordtype = CevalScript.getSimulationResultType();
       then
-  (cache,Expression.makeBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-  (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-  crefExp = Expression.crefExp(cr_1);
+        (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
+        crefExp = Expression.crefExp(cr_1);
       then
-  (cache,Expression.makeBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
       equation
-  (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
+        (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
       then
-  (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
+        (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
       // MathCore-specific. Should be in MathCoreBuiltin.mo :p
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre,_)
       equation
-  excludeList = Static.getOptionalNamedArgExpList("exclude", args);
-  excludeListSize = listLength(excludeList);
+        excludeList = Static.getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
       then
-  (cache,Expression.makeBuiltinCall("checkExamplePackages",
-  {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList)},
-  DAE.T_STRING_DEFAULT),
-  DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList)},
+        DAE.T_STRING_DEFAULT),
+        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
       equation
-  excludeList = Static.getOptionalNamedArgExpList("exclude", args);
-  excludeListSize = listLength(excludeList);
+        excludeList = Static.getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
       then
-  (cache,Expression.makeBuiltinCall("checkExamplePackages",
-  {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),DAE.SCONST(str)},
-  DAE.T_STRING_DEFAULT),
-  DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),DAE.SCONST(str)},
+        DAE.T_STRING_DEFAULT),
+        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  excludeList = Static.getOptionalNamedArgExpList("exclude", args);
-  excludeListSize = listLength(excludeList);
+        className = Absyn.crefToPath(cr);
+        excludeList = Static.getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
       then
-  (cache,Expression.makeBuiltinCall("checkExamplePackages",
-  {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
-  DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT)},
-  DAE.T_STRING_DEFAULT),
-  DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
+        DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT)},
+        DAE.T_STRING_DEFAULT),
+        DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
       equation
-  className = Absyn.crefToPath(cr);
-  excludeList = Static.getOptionalNamedArgExpList("exclude", args);
-  excludeListSize = listLength(excludeList);
+        className = Absyn.crefToPath(cr);
+        excludeList = Static.getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
       then
-  (cache,Expression.makeBuiltinCall("checkExamplePackages",
-  {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
-   DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),DAE.SCONST(str)},
-  DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
+         DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),DAE.SCONST(str)},
+        DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
   end matchcontinue;
 end elabCallInteractive;
@@ -498,18 +498,18 @@ algorithm
       Prefix.Prefix pre;
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
-  Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
-  (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
-  c = Types.propAllConst(prop);
-  (e_1,_) = ExpressionSimplify.simplify1(e_1);
-  Debug.fprintln(Flags.SEI, "elab_exp CALL done");
+        Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
+        (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
+        c = Types.propAllConst(prop);
+        (e_1,_) = ExpressionSimplify.simplify1(e_1);
+        Debug.fprintln(Flags.SEI, "elab_exp CALL done");
       then
-  (cache,e_1,prop,st_1);
+        (cache,e_1,prop,st_1);
     case (cache,env,exp,impl,st,doVect,pre,_,_)
       equation
-  (cache,e_1,prop,st_1) = Static.elabExp(cache,env,exp,impl,st,doVect,pre,info);
+        (cache,e_1,prop,st_1) = Static.elabExp(cache,env,exp,impl,st,doVect,pre,info);
       then
-   (cache,e_1,prop,st_1);
+         (cache,e_1,prop,st_1);
   end matchcontinue;
 end elabExp2;
 
@@ -547,9 +547,9 @@ algorithm
       Prefix.Prefix pre;
   case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
-  (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
-  (cache,e,prop,st);
+        (cache,e,prop,st);
   end match;
 end elabCall;
 
@@ -582,14 +582,14 @@ algorithm
     // Function calls
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,_)
       equation
-  (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info,Error.getNumErrorMessages());
+        (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info,Error.getNumErrorMessages());
       then
-  (cache,e_1,prop);
+        (cache,e_1,prop);
     case (cache,env,e,impl,pre,_)
       equation
-  (cache,e_1,prop) = Static.elabGraphicsExp(cache,env,e,impl,pre,info);
+        (cache,e_1,prop) = Static.elabGraphicsExp(cache,env,e,impl,pre,info);
       then
-  (cache,e_1,prop);
+        (cache,e_1,prop);
   end matchcontinue;
 end elabGraphicsExp;
 

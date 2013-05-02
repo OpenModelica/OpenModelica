@@ -56,14 +56,14 @@ int index_spec_ok(const index_spec_t* s)
       return 0;
     }
     for(i = 0; i < s->ndims; ++i) {
-  if(s->dim_size[i] < 0) {
-    fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
-    return 0;
-  }
-  if((s->index[i] == 0) && (s->dim_size[i] != 1)) {
-      fprintf(stderr,"index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
-      return 0;
-  }
+        if(s->dim_size[i] < 0) {
+          fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
+          return 0;
+        }
+        if((s->index[i] == 0) && (s->dim_size[i] != 1)) {
+            fprintf(stderr,"index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
+            return 0;
+        }
     }
     return 1;
 }
@@ -73,11 +73,11 @@ void alloc_index_spec(index_spec_t* s)
     int i;
     s->index = index_alloc(s->ndims);
     for(i = 0; i < s->ndims; ++i) {
-  if(s->dim_size[i] > 0) {
-      s->index[i] = size_alloc(s->dim_size[i]);
-  } else {
-      s->index[i] = 0;
-  }
+        if(s->dim_size[i] > 0) {
+            s->index[i] = size_alloc(s->dim_size[i]);
+        } else {
+            s->index[i] = 0;
+        }
     }
 }
 /*
@@ -104,9 +104,9 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
     dest->index = index_alloc(nridx);
     dest->index_type = char_alloc(nridx);
     for(i = 0; i < nridx; ++i) {
-  dest->dim_size[i] = va_arg(ap, _index_t);
-  dest->index[i] = va_arg(ap, _index_t*);
-  dest->index_type[i] = (char) va_arg(ap,_index_t); /* char is cast to int by va_arg.*/
+        dest->dim_size[i] = va_arg(ap, _index_t);
+        dest->index[i] = va_arg(ap, _index_t*);
+        dest->index_type[i] = (char) va_arg(ap,_index_t); /* char is cast to int by va_arg.*/
     }
     va_end(ap);
 }
@@ -125,7 +125,7 @@ _index_t* make_index_array(int nridx, ...)
 
     res = size_alloc(nridx);
     for(i = 0; i < nridx; ++i) {
-  res[i] = va_arg(ap,_index_t);
+        res[i] = va_arg(ap,_index_t);
     }
 
     return res;
@@ -155,12 +155,12 @@ int next_index(int ndims, _index_t* idx, const _index_t* size)
     idx[d]++;
 
     while(idx[d] >= size[d]) {
-  idx[d] = 0;
-  if(d == 0) {
-      return 1;
-  }
-  d--;
-  idx[d]++;
+        idx[d] = 0;
+        if(d == 0) {
+            return 1;
+        }
+        d--;
+        idx[d]++;
     }
 
     return 0;
@@ -171,30 +171,30 @@ void print_index_spec(const index_spec_t* spec)
     int i,k;
     printf("[");
     for(i = 0; i < spec->ndims; ++i) {
-  switch (spec->index_type[i]) {
-      case 'S':
-          printf("%d", (int) *spec->index[i]);
-          break;
-      case 'A':
-          printf("{");
-          for(k = 0; k < spec->dim_size[i]-1; ++k) {
-              printf("%d,", (int) spec->index[i][k]);
-          }
-          if(0 < spec->dim_size[i]) {
-              printf("%d", (int) spec->index[i][0]);
-          }
-          printf("}");
-          break;
-      case 'W':
-          printf(":");
-          break;
-      default:
-          printf("INVALID TYPE %c.", spec->index_type[i]);
-          break;
-  }
-  if(i != (spec->ndims - 1)) {
-      printf(", ");
-  }
+        switch (spec->index_type[i]) {
+            case 'S':
+                printf("%d", (int) *spec->index[i]);
+                break;
+            case 'A':
+                printf("{");
+                for(k = 0; k < spec->dim_size[i]-1; ++k) {
+                    printf("%d,", (int) spec->index[i][k]);
+                }
+                if(0 < spec->dim_size[i]) {
+                    printf("%d", (int) spec->index[i][0]);
+                }
+                printf("}");
+                break;
+            case 'W':
+                printf(":");
+                break;
+            default:
+                printf("INVALID TYPE %c.", spec->index_type[i]);
+                break;
+        }
+        if(i != (spec->ndims - 1)) {
+            printf(", ");
+        }
     }
     printf("]");
 }

@@ -72,8 +72,8 @@ extern "C"
 struct mmc_GC_mas_state_type /* the structure of GC state */
 {
   mmc_GC_pages_type       pages; /* the allocated pages which contain a free list */
-  size_t            totalPageSize; /* the total size of pages */
-  size_t            totalFreeSize; /* the total size of free slots */
+  size_t                  totalPageSize; /* the total size of pages */
+  size_t                  totalFreeSize; /* the total size of free slots */
 };
 typedef struct mmc_GC_mas_state_type mmc_GC_mas_state_type;
 

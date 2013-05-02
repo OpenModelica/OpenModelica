@@ -22,14 +22,14 @@ public:
     /// Enumeration to control the evaluation of equations within the system
     enum UPDATE
     {
-  UNDEF_UPDATE    =    0x00000000,
+        UNDEF_UPDATE    =    0x00000000,
 
-  DISCRETE        =    0x00000001,            ///< Sample discrete variables only
-  CONTINOUS        =    0x00000002,            ///< Determine continous variables
-  ACROSS            =    0x00000004,
-  THROUGH            =    0x00000008,
-  ALL                =    0x0000000F,            ///< [DISCRETE|CONTINOUS]
-  RANKING            =    0x00000010            ///< Ranking Method
+        DISCRETE        =    0x00000001,            ///< Sample discrete variables only
+        CONTINOUS        =    0x00000002,            ///< Determine continous variables
+        ACROSS            =    0x00000004,
+        THROUGH            =    0x00000008,
+        ALL                =    0x0000000F,            ///< [DISCRETE|CONTINOUS]
+        RANKING            =    0x00000010            ///< Ranking Method
 
     };
 
@@ -70,16 +70,16 @@ public:
     /// (see: Simeon, B.: "Numerische Integration mechanischer Mehrkörpersysteme", PhD-Thesis, Düsseldorf, 1994)
     enum INDEX
     {
-  UNDEF_INDEX            =    0x00000,
-  VAR_INDEX0            =    0x00001,    ///< Variable Index 0 (States of systems of 1st order)
-  VAR_INDEX1            =    0x00002,    ///< Variable Index 1 (1st order States of systems of 2nd order, e.g. positions)
-  VAR_INDEX2            =    0x00004,    ///< Variable Index 2 (2nd order States of systems of 2nd order, e.g. velocities)
-  VAR_INDEX3            =    0x00038,    ///< Variable Index 3 (all constraints)
-  DIFF_INDEX3            =    0x00008,    ///< Differentiation Index 3 (constraints on position level only)
-  DIFF_INDEX2            =    0x00010,    ///< Differentiation Index 2 (constraints on velocity level only)
-  DIFF_INDEX1            =    0x00020,    ///< Differentiation Index 1 (constraints on acceleration level only)
-  ALL_RESIDUES        =    0x00040,    ///< All residues
-  ALL_STATES            =    0x00007,    ///< All states (no order)
-  ALL_VARS            =    0x0003f,    ///< All variables (no order)
+        UNDEF_INDEX            =    0x00000,
+        VAR_INDEX0            =    0x00001,    ///< Variable Index 0 (States of systems of 1st order)
+        VAR_INDEX1            =    0x00002,    ///< Variable Index 1 (1st order States of systems of 2nd order, e.g. positions)
+        VAR_INDEX2            =    0x00004,    ///< Variable Index 2 (2nd order States of systems of 2nd order, e.g. velocities)
+        VAR_INDEX3            =    0x00038,    ///< Variable Index 3 (all constraints)
+        DIFF_INDEX3            =    0x00008,    ///< Differentiation Index 3 (constraints on position level only)
+        DIFF_INDEX2            =    0x00010,    ///< Differentiation Index 2 (constraints on velocity level only)
+        DIFF_INDEX1            =    0x00020,    ///< Differentiation Index 1 (constraints on acceleration level only)
+        ALL_RESIDUES        =    0x00040,    ///< All residues
+        ALL_STATES            =    0x00007,    ///< All states (no order)
+        ALL_VARS            =    0x0003f,    ///< All variables (no order)
     };
     */

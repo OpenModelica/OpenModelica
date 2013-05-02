@@ -30,7 +30,7 @@
  */
 
 encapsulated package Name
-" file:  Name.mo
+" file:        Name.mo
   package:     Name
   description: Name is name in a pool.
 
@@ -102,13 +102,13 @@ algorithm
     local Name s;
     case (_, SOME(s))
       equation
-  print(s +& "\n");
+        print(s +& "\n");
       then
-  ();
+        ();
 
     case (_, _)
       equation
-  print("\n");
+        print("\n");
       then ();
   end match;
 end dump;

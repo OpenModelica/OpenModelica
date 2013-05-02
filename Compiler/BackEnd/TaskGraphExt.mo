@@ -29,7 +29,7 @@
  *
  */
 encapsulated package TaskGraphExt
-" file:  TaskGraphExt.mo
+" file:        TaskGraphExt.mo
   package:     TaskGraphExt
   description: The external representation of a task graph, using Boost Graph Library in C++.
 

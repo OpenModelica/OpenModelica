@@ -30,7 +30,7 @@
  */
 
 encapsulated package Settings
-" file:   Settings.mo
+" file:         Settings.mo
   package:     Settings
   description: This file contains settings for omc which are implemented in  C.
 

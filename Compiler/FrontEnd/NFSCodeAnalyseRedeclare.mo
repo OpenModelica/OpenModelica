@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeAnalyseRedeclare
-" file:  NFSCodeAnalyseRedeclare.mo
+" file:        NFSCodeAnalyseRedeclare.mo
   package:     NFSCodeAnalyseRedeclare
   description: SCode analysis of redeclares
 
@@ -151,51 +151,51 @@ algorithm
 
     case (_, _)
       equation
-  //print("Starting the new redeclare analysis phase ...\n");
-  name = Absyn.pathLastIdent(inClassPath);
+        //print("Starting the new redeclare analysis phase ...\n");
+        name = Absyn.pathLastIdent(inClassPath);
 
-  (item, path, env) = NFSCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
+        (item, path, env) = NFSCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
 
-  (islist, _) = analyseItem(
-                 item,
-                 env,
-                 NFInstTypesOld.NOMOD(),
-                 NFInstTypes.EMPTY_PREFIX(SOME(path)),
-                 emptyIScopes,
-                 emptyInstStack);
+        (islist, _) = analyseItem(
+                       item,
+                       env,
+                       NFInstTypesOld.NOMOD(),
+                       NFInstTypes.EMPTY_PREFIX(SOME(path)),
+                       emptyIScopes,
+                       emptyInstStack);
 
-  // sort so classes are first in the childs
-  islist = sortParts(islist);
+        // sort so classes are first in the childs
+        islist = sortParts(islist);
 
-  //print("Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
-  //print("Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
+        //print("Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
+        //print("Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
 
-  islist = filterRedeclareIScopes(islist, {});
+        islist = filterRedeclareIScopes(islist, {});
 
-  //print("Filtered Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
-  //print("Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
+        //print("Filtered Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
+        //print("Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
 
-  islist = collapseDerivedClassChain(islist, {});
+        islist = collapseDerivedClassChain(islist, {});
 
-  //print("After derived colapse Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
-  //print("After derived colapse Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
+        //print("After derived colapse Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
+        //print("After derived colapse Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
 
-  islist = fixpointCleanRedeclareIScopes(islist);
+        islist = fixpointCleanRedeclareIScopes(islist);
 
-  //print("After fixpoint clean Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
-  //print("After fixpoint clean Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
+        //print("After fixpoint clean Number of IScopes: " +& intString(iScopeSize(islist)) +& "\n");
+        //print("After fixpoint clean Filtered Max Inst Scope: " +& intString(instScopesDepth(islist)) +& "\n");
 
-  printIScopes(islist);
+        printIScopes(islist);
       then
-  islist;
+        islist;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  name = Absyn.pathString(inClassPath);
-  Debug.traceln("NFSCodeAnalyseRedeclare.analyse failed on: " +& name);
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = Absyn.pathString(inClassPath);
+        Debug.traceln("NFSCodeAnalyseRedeclare.analyse failed on: " +& name);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end analyse;
@@ -241,159 +241,159 @@ algorithm
 
     // filter out some classes!
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name, restriction = res),
-      env = env),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name, restriction = res),
+            env = env),
+          _, _, _, _, _)
       equation
-  true = listMember(name, {"equalityConstraint", "Orientation"});
-  //is = mkIScope(CL(Absyn.IDENT(name)), {EI(scls, env)}, {});
-  //islist = is::inIScopesAcc;
-  islist = inIScopesAcc;
+        true = listMember(name, {"equalityConstraint", "Orientation"});
+        //is = mkIScope(CL(Absyn.IDENT(name)), {EI(scls, env)}, {});
+        //islist = is::inIScopesAcc;
+        islist = inIScopesAcc;
       then
-  (islist, inInstStack);
+        (islist, inInstStack);
 
     // filter out operators
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name, restriction = res),
-      env = env),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name, restriction = res),
+            env = env),
+          _, _, _, _, _)
       equation
-  true = boolOr(SCode.isOperator(scls),
-                stringEq(name, "Complex"));
-  islist = inIScopesAcc;
+        true = boolOr(SCode.isOperator(scls),
+                      stringEq(name, "Complex"));
+        islist = inIScopesAcc;
       then
-  (islist, inInstStack);
+        (islist, inInstStack);
 
     // extending basic type
     case (NFSCodeEnv.CLASS(
-      cls = SCode.CLASS(name = name),
-      classType = NFSCodeEnv.BASIC_TYPE()),
-    _, _, _, _, _)
+            cls = SCode.CLASS(name = name),
+            classType = NFSCodeEnv.BASIC_TYPE()),
+          _, _, _, _, _)
       equation
-  //is = mkIScope(CL(Absyn.IDENT(name)),{}, {});
-  //islist = is::inIScopesAcc;
-  islist = inIScopesAcc;
+        //is = mkIScope(CL(Absyn.IDENT(name)),{}, {});
+        //islist = is::inIScopesAcc;
+        islist = inIScopesAcc;
       then
-  (islist, inInstStack);
+        (islist, inInstStack);
 
     // enumerations
     case (NFSCodeEnv.CLASS(
-      cls = SCode.CLASS(name = name, classDef = SCode.ENUMERATION(enumLst = _))),
-    _, _, _, _, _)
+            cls = SCode.CLASS(name = name, classDef = SCode.ENUMERATION(enumLst = _))),
+          _, _, _, _, _)
       equation
-  //is = mkIScope(CL(Absyn.IDENT(name)),{}, {});
-  //islist = is::inIScopesAcc;
-  islist = inIScopesAcc;
+        //is = mkIScope(CL(Absyn.IDENT(name)),{}, {});
+        //islist = is::inIScopesAcc;
+        islist = inIScopesAcc;
       then
-  (islist, inInstStack);
+        (islist, inInstStack);
 
     // a derived class from basic type.
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info)),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info)),
+          _, _, _, _, _)
       equation
-  // Look up the inherited class.
-  (item as NFSCodeEnv.CLASS(classType = NFSCodeEnv.BASIC_TYPE()), _, env) =
-    NFSCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        // Look up the inherited class.
+        (item as NFSCodeEnv.CLASS(classType = NFSCodeEnv.BASIC_TYPE()), _, env) =
+          NFSCodeLookup.lookupTypeSpec(dty, inEnv, info);
 
-  //is = mkIScope(CL(Absyn.IDENT(name)),{EI(scls, env)}, {});
-  //islist = is::inIScopesAcc;
-  islist = inIScopesAcc;
+        //is = mkIScope(CL(Absyn.IDENT(name)),{EI(scls, env)}, {});
+        //islist = is::inIScopesAcc;
+        islist = inIScopesAcc;
       then
-  (islist, inInstStack);
+        (islist, inInstStack);
 
     // a derived class, look up the inherited class and instantiate it.
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info),
-      env = envDerived),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name, classDef = SCode.DERIVED(dty, smod, attr), info = info),
+            env = envDerived),
+          _, _, _, _, _)
       equation
-  // Look up the inherited class.
-  (item, ts, env) = NFSCodeLookup.lookupTypeSpec(dty, inEnv, info);
-  tsFull = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, env);
-  (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+        // Look up the inherited class.
+        (item, ts, env) = NFSCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        tsFull = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, env);
+        (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
 
-  // Merge the modifiers and instantiate the inherited class.
-  dims = Absyn.typeSpecDimensions(dty);
-  dim_count = listLength(dims);
-  mod = NFSCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
-  mod = NFSCodeMod.mergeMod(inMod, mod);
+        // Merge the modifiers and instantiate the inherited class.
+        dims = Absyn.typeSpecDimensions(dty);
+        dim_count = listLength(dims);
+        mod = NFSCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inMod, mod);
 
-  // Apply the redeclarations from the derived environment!!!!
-  // print("getting redeclares: item: " +& NFSCodeEnv.itemStr(item) +& "\n");
-  redeclares = listAppend(
-    NFSCodeEnv.getDerivedClassRedeclares(name, ts, envDerived),
-    NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
-  (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);
+        // Apply the redeclarations from the derived environment!!!!
+        // print("getting redeclares: item: " +& NFSCodeEnv.itemStr(item) +& "\n");
+        redeclares = listAppend(
+          NFSCodeEnv.getDerivedClassRedeclares(name, ts, envDerived),
+          NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
+        (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);
 
-  (islist, ii) = analyseItem(item, env, mod, inPrefix, emptyIScopes, inInstStack);
+        (islist, ii) = analyseItem(item, env, mod, inPrefix, emptyIScopes, inInstStack);
 
-  scls = SCode.setDerivedTypeSpec(scls, tsFull);
-  infos = mkInfos(previousItem, {RP(replacements), EI(scls, env)});
+        scls = SCode.setDerivedTypeSpec(scls, tsFull);
+        infos = mkInfos(previousItem, {RP(replacements), EI(scls, env)});
 
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-  is = mkIScope(CL(fullName), infos, islist);
-  islist = is::inIScopesAcc;
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        is = mkIScope(CL(fullName), infos, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
     // a class with parts, instantiate all elements in it.
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = el), info = info),
-      env = {NFSCodeEnv.FRAME(clsAndVars = cls_and_vars)}),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = el), info = info),
+            env = {NFSCodeEnv.FRAME(clsAndVars = cls_and_vars)}),
+          _, _, _, _, _)
       equation
 
-  // Enter the class scope and look up all class elements.
-  env = NFSCodeEnv.mergeItemEnv(inItem, inEnv);
+        // Enter the class scope and look up all class elements.
+        env = NFSCodeEnv.mergeItemEnv(inItem, inEnv);
 
-  // Apply modifications to the elements and instantiate them.
-  mel = NFSCodeMod.applyModifications(inMod, el, inPrefix, env);
-  exts = NFSCodeEnv.getEnvExtendsFromTable(env);
+        // Apply modifications to the elements and instantiate them.
+        mel = NFSCodeMod.applyModifications(inMod, el, inPrefix, env);
+        exts = NFSCodeEnv.getEnvExtendsFromTable(env);
 
-  (islist, ii) = analyseElementList(mel, exts, env, inPrefix, emptyIScopes, inInstStack);
+        (islist, ii) = analyseElementList(mel, exts, env, inPrefix, emptyIScopes, inInstStack);
 
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
 
-  is = mkIScope(CL(fullName), {EI(scls, inEnv)}, islist);
-  islist = is::inIScopesAcc;
+        is = mkIScope(CL(fullName), {EI(scls, inEnv)}, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
     // a class extends
     case (NFSCodeEnv.CLASS(
-      cls = scls as SCode.CLASS(name = name), classType = NFSCodeEnv.CLASS_EXTENDS(), env = env),
-    _, _, _, _, _)
+            cls = scls as SCode.CLASS(name = name), classType = NFSCodeEnv.CLASS_EXTENDS(), env = env),
+          _, _, _, _, _)
       equation
-  //(islist, ii) = analyseClassExtends(scls, inMod, env, inEnv, inPrefix, inIScopesAcc/*emptyIScopes*/, inInstStack);
+        //(islist, ii) = analyseClassExtends(scls, inMod, env, inEnv, inPrefix, inIScopesAcc/*emptyIScopes*/, inInstStack);
 
-  //fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-  //is = mkIScope(CL(fullName), {EI(scls, env)}, islist);
-  //islist = is::inIScopesAcc;
-  islist = inIScopesAcc;
-  ii = inInstStack;
+        //fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        //is = mkIScope(CL(fullName), {EI(scls, env)}, islist);
+        //islist = is::inIScopesAcc;
+        islist = inIScopesAcc;
+        ii = inInstStack;
       then
-  (islist, ii);
+        (islist, ii);
 
     // a redeclared item
     case (NFSCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _, _, _, _, _)
       equation
-  name = NFSCodeEnv.getItemName(item);
-  (islist, ii) = analyseItem(item, env, inMod, inPrefix, emptyIScopes, inInstStack);
+        name = NFSCodeEnv.getItemName(item);
+        (islist, ii) = analyseItem(item, env, inMod, inPrefix, emptyIScopes, inInstStack);
 
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
-  is = mkIScope(RE(fullName), {RI(item, inEnv)}, islist);
-  islist = is::inIScopesAcc;
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
+        is = mkIScope(RE(fullName), {RI(item, inEnv)}, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
     // failure
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("NFSCodeAnalyseRedeclare.instClassItem failed on unknown class.\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("NFSCodeAnalyseRedeclare.instClassItem failed on unknown class.\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end analyseItem;
@@ -424,11 +424,11 @@ algorithm
 
     case (elem :: rest_el, exts, _, _, islist, _)
       equation
-  (new_elem, orig_mod, env, previousItem) = resolveRedeclaredElement(elem, inEnv, inPrefix);
-  (islist, exts, ii) = analyseElement_dispatch(new_elem, elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
-  (islist, ii) = analyseElementList(rest_el, exts, inEnv, inPrefix, islist, ii);
+        (new_elem, orig_mod, env, previousItem) = resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (islist, exts, ii) = analyseElement_dispatch(new_elem, elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
+        (islist, ii) = analyseElementList(rest_el, exts, inEnv, inPrefix, islist, ii);
       then
-  (islist, ii);
+        (islist, ii);
 
     case ({}, {}, _, _, _, _) then (inIScopesAcc, inInstStack);
 
@@ -438,12 +438,12 @@ algorithm
     // elements something has gone very wrong.
     case ({}, _ :: _, _, _, _, _)
       equation
-  str = "NFSCodeAnalyseRedeclare.analyseElementList has extends left! \n\t" +&
-        stringDelimitList(List.map(inExtends, NFSCodeEnv.printExtendsStr), "\n\t");
-  Error.addMessage(Error.INTERNAL_ERROR, {str});
-  print(str);
+        str = "NFSCodeAnalyseRedeclare.analyseElementList has extends left! \n\t" +&
+              stringDelimitList(List.map(inExtends, NFSCodeEnv.printExtendsStr), "\n\t");
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        print(str);
       then
-  fail();
+        fail();
 
   end match;
 end analyseElementList;
@@ -473,13 +473,13 @@ algorithm
     // Only components which are actually replaceable needs to be looked up,
     // since non-replaceable components can't have been replaced.
     case ((orig_el as SCode.COMPONENT(name = name, prefixes =
-  SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
+        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
       equation
-  (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
-  (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
-  omod = getOriginalMod(orig_el, inEnv, inPrefix);
+        (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
+        (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
+        omod = getOriginalMod(orig_el, inEnv, inPrefix);
       then
-  ((new_el, mod), omod, env, previousItem);
+        ((new_el, mod), omod, env, previousItem);
 
     // Other elements doesn't need to be looked up. Extends may not be
     // replaceable, and classes are looked up in the environment anyway. The
@@ -508,12 +508,12 @@ algorithm
       then NFInstTypesOld.NOMOD();
 
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-  modifications = smod), _, _)
+        modifications = smod), _, _)
       equation
-  dim_count = listLength(ad);
-  mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+        dim_count = listLength(ad);
+        mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
       then
-  mod;
+        mod;
 
   end match;
 end getOriginalMod;
@@ -547,45 +547,45 @@ algorithm
     // A component
     case ((elem as SCode.COMPONENT(name = _), mod), (orig, _), _, _, _, _, _, _, _)
       equation
-  (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem);
+        (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem);
       then
-  (islist, inExtends, ii);
+        (islist, inExtends, ii);
 
     // A class
     case ((elem as SCode.CLASS(name = _), mod), (orig, _), _, _, _, _, _, _, _)
       equation
-  (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem);
+        (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem);
       then
-  (islist, inExtends, ii);
+        (islist, inExtends, ii);
 
     // An extends clause. Transform it it together with the next Extends element from the environment.
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), (orig, _), _,
-    NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _, _)
+          NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _, _)
       equation
-  (islist, ii) = analyseExtends(elem, mod, redecls, inEnv, inPrefix, inIScopesAcc, inInstStack);
+        (islist, ii) = analyseExtends(elem, mod, redecls, inEnv, inPrefix, inIScopesAcc, inInstStack);
       then
-  (islist, rest_exts, ii);
+        (islist, rest_exts, ii);
 
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
     case ((SCode.EXTENDS(baseClassPath = _), _), _, _, _, {}, _, _, _, _)
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"NFSCodeAnalyseRedeclare.analyseElement_dispatch ran out of extends!."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"NFSCodeAnalyseRedeclare.analyseElement_dispatch ran out of extends!."});
       then
-  fail();
+        fail();
 
     // Ignore any other kind of elements (class definitions, etc.).
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  (elem, _) = inElement;
-  print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n\t" +&
-  "in env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n\t" +&
-  "inst stack: " +& stringDelimitList(List.map(inInstStack, Absyn.pathString), "\n\t") +& "\n\t" +&
-  "prefix:" +& Absyn.pathString(NFInstUtil.prefixToPath(inPrefix)) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        (elem, _) = inElement;
+        print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n\t" +&
+        "in env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n\t" +&
+        "inst stack: " +& stringDelimitList(List.map(inInstStack, Absyn.pathString), "\n\t") +& "\n\t" +&
+        "prefix:" +& Absyn.pathString(NFInstUtil.prefixToPath(inPrefix)) +& "\n");
       then
-  (inIScopesAcc, inExtends, inInstStack);
+        (inIScopesAcc, inExtends, inInstStack);
   end matchcontinue;
 end analyseElement_dispatch;
 
@@ -627,111 +627,111 @@ algorithm
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(
-      name = name,
-      typeSpec = Absyn.TPATH(tpath, ad),
-      modifications = smod,
-      info = info), _, orig, _, _, _, _, _, _)
+            name = name,
+            typeSpec = Absyn.TPATH(tpath, ad),
+            modifications = smod,
+            info = info), _, orig, _, _, _, _, _, _)
       equation
-  // Look up the class of the component.
-  // print("Looking up: " +& Absyn.pathString(tpath) +& " for component: " +& name +& "\n");
-  (item, tpath, env) = NFSCodeLookup.lookupClassName(tpath, inEnv, info);
-  tpath = NFSCodeEnv.mergePathWithEnvPath(tpath, env);
-  false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, tpath, false);
+        // Look up the class of the component.
+        // print("Looking up: " +& Absyn.pathString(tpath) +& " for component: " +& name +& "\n");
+        (item, tpath, env) = NFSCodeLookup.lookupClassName(tpath, inEnv, info);
+        tpath = NFSCodeEnv.mergePathWithEnvPath(tpath, env);
+        false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, tpath, false);
 
-  // add it
-  ii = tpath::inInstStack;
+        // add it
+        ii = tpath::inInstStack;
 
-  (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
 
-  prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
 
-  // Check that it's legal to instantiate the class.
-  NFSCodeCheck.checkInstanceRestriction(item, prefix, info);
+        // Check that it's legal to instantiate the class.
+        NFSCodeCheck.checkInstanceRestriction(item, prefix, info);
 
-  // Merge the class modifications with this element's modifications.
-  mod = NFSCodeMod.translateMod(smod, name, 0, inPrefix, inEnv);
-  mod = NFSCodeMod.mergeMod(inOriginalMod, mod);
-  mod = NFSCodeMod.mergeMod(inClassMod, mod);
+        // Merge the class modifications with this element's modifications.
+        mod = NFSCodeMod.translateMod(smod, name, 0, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inOriginalMod, mod);
+        mod = NFSCodeMod.mergeMod(inClassMod, mod);
 
-  // Apply redeclarations to the class definition and instantiate it.
-  redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
-  (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
+        // Apply redeclarations to the class definition and instantiate it.
+        redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
+        (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
 
-  (islist, ii) = analyseItem(item, env, mod, prefix, emptyIScopes, ii);
+        (islist, ii) = analyseItem(item, env, mod, prefix, emptyIScopes, ii);
 
-  // remove it
-  ii = inInstStack;
+        // remove it
+        ii = inInstStack;
 
-  comp = inElement;
-  comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
-  comp = mergeComponentModifiers(comp, orig);
-  infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements), EI(comp, env)});
+        comp = inElement;
+        comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
+        comp = mergeComponentModifiers(comp, orig);
+        infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements), EI(comp, env)});
 
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
 
-  is = mkIScope(CO(prefix,fullName), infos, islist);
-  islist = Util.if_(List.isEmpty(islist),inIScopesAcc, is::inIScopesAcc);
+        is = mkIScope(CO(prefix,fullName), infos, islist);
+        islist = Util.if_(List.isEmpty(islist),inIScopesAcc, is::inIScopesAcc);
       then
-  (islist, ii);
+        (islist, ii);
 
     // ignore class extends
     case (SCode.CLASS(
-      name = name,
-      info = info,
-      classDef = SCode.CLASS_EXTENDS(baseClassName = _)
-      ), _, _, _, _, _, _, _, _)
+            name = name,
+            info = info,
+            classDef = SCode.CLASS_EXTENDS(baseClassName = _)
+            ), _, _, _, _, _, _, _, _)
       equation
       then
-  (inIScopesAcc,inInstStack);
+        (inIScopesAcc,inInstStack);
 
     // ignore operators
     case (SCode.CLASS(
-      name = name,
-      info = info,
-      restriction = res
-      ), _, _, _, _, _, _, _, _)
+            name = name,
+            info = info,
+            restriction = res
+            ), _, _, _, _, _, _, _, _)
       equation
-  true = boolOr(SCode.isOperator(inElement), stringEq(name, "Complex"));
+        true = boolOr(SCode.isOperator(inElement), stringEq(name, "Complex"));
       then
-  (inIScopesAcc,inInstStack);
+        (inIScopesAcc,inInstStack);
 
     // only replaceable?? functions, packages, classes
     case (SCode.CLASS(
-      name = name,
-      info = info,
-      prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)),
-      _, _, _, _, _, _, _, _)
+            name = name,
+            info = info,
+            prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)),
+            _, _, _, _, _, _, _, _)
       equation
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-  // print("Looking up CLASS: " +& Absyn.pathString(fullName) +& "\n");
-  false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, fullName, false);
-  // add it
-  ii = fullName::inInstStack;
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        // print("Looking up CLASS: " +& Absyn.pathString(fullName) +& "\n");
+        false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, fullName, false);
+        // add it
+        ii = fullName::inInstStack;
 
-  (item, env) = NFSCodeLookup.lookupInClass(name, inEnv);
-  (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env) = NFSCodeLookup.lookupInClass(name, inEnv);
+        (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
 
-  (islist, ii) = analyseItem(item, env, inClassMod, inPrefix, {}, ii);
+        (islist, ii) = analyseItem(item, env, inClassMod, inPrefix, {}, ii);
 
-  // remove it
-  ii = inInstStack;
+        // remove it
+        ii = inInstStack;
 
-  infos = mkInfos(List.union(previousItem,inPreviousItem), {EI(inElement, env)});
+        infos = mkInfos(List.union(previousItem,inPreviousItem), {EI(inElement, env)});
 
-  // for debugging
-  // fullName = Absyn.joinPaths(fullName, Absyn.IDENT("$local"));
-  is = mkIScope(CL(fullName), infos, islist);
-  islist = is::inIScopesAcc;
+        // for debugging
+        // fullName = Absyn.joinPaths(fullName, Absyn.IDENT("$local"));
+        is = mkIScope(CL(fullName), infos, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
    // for debugging
    case (_, _, _, _, _, _, _, _, _)
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("NFSCodeAnalyseRedeclare.instElement ignored element:" +& SCodeDump.unparseElementStr(inElement) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("NFSCodeAnalyseRedeclare.instElement ignored element:" +& SCodeDump.unparseElementStr(inElement) +& "\n");
       then
-  fail();
+        fail();
 
     else (inIScopesAcc, inInstStack);
 
@@ -767,36 +767,36 @@ algorithm
       Infos infos;
 
     case (SCode.EXTENDS(path, visibility, smod, ann, info),
-    _, _, _, _, _, _)
+          _, _, _, _, _, _)
       equation
-  // Look up the base class in the environment.
-  (item, path, env) = NFSCodeLookup.lookupBaseClassName(path, inEnv, info);
-  itemOld = item;
+        // Look up the base class in the environment.
+        (item, path, env) = NFSCodeLookup.lookupBaseClassName(path, inEnv, info);
+        itemOld = item;
 
-  path = NFSCodeEnv.mergePathWithEnvPath(path, env);
-  checkRecursiveExtends(path, inEnv, info);
+        path = NFSCodeEnv.mergePathWithEnvPath(path, env);
+        checkRecursiveExtends(path, inEnv, info);
 
-  // Instantiate the class.
-  mod = NFSCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
-  mod = NFSCodeMod.mergeMod(inClassMod, mod);
+        // Instantiate the class.
+        mod = NFSCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inClassMod, mod);
 
-  // Apply the redeclarations.
-  (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(inRedeclares, item, env, inEnv, inPrefix);
+        // Apply the redeclarations.
+        (item, env, replacements) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(inRedeclares, item, env, inEnv, inPrefix);
 
-  (islist, ii) = analyseItem(item, env, mod, inPrefix, emptyInstStack, inInstStack);
+        (islist, ii) = analyseItem(item, env, mod, inPrefix, emptyInstStack, inInstStack);
 
-  infos = mkInfos({}, {RP(replacements),EI(inExtends, inEnv)});
-  is = mkIScope(EX(path), infos, islist);
-  islist = is::inIScopesAcc;
+        infos = mkInfos({}, {RP(replacements),EI(inExtends, inEnv)});
+        is = mkIScope(EX(path), infos, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("NFSCodeAnalyseRedeclare.instExtends failed on unknown element.\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("NFSCodeAnalyseRedeclare.instExtends failed on unknown element.\n");
       then
-  fail();
+        fail();
 
   end match;
 end analyseExtends;
@@ -813,17 +813,17 @@ algorithm
 
     case (_, _, _)
       equation
-  env_path = NFSCodeEnv.getEnvPath(inEnv);
-  false = Absyn.pathPrefixOf(inExtendedClass, env_path);
+        env_path = NFSCodeEnv.getEnvPath(inEnv);
+        false = Absyn.pathPrefixOf(inExtendedClass, env_path);
       then
-  ();
+        ();
 
     else
       equation
-  path_str = Absyn.pathString(inExtendedClass);
-  Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkRecursiveExtends;
@@ -857,30 +857,30 @@ algorithm
       IScope is;
 
     case (SCode.CLASS(
-      name = name,
-      classDef = SCode.CLASS_EXTENDS(modifications = mod,composition = cdef)),
-    _, _, _, _, _, _)
+            name = name,
+            classDef = SCode.CLASS_EXTENDS(modifications = mod,composition = cdef)),
+          _, _, _, _, _, _)
       equation
-  (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
-  ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
-  cdef = SCode.addElementToCompositeClassDef(ext, cdef);
-  scls = SCode.setElementClassDefinition(cdef, inClassExtends);
-  item = NFSCodeEnv.CLASS(scls, inClassEnv, NFSCodeEnv.CLASS_EXTENDS());
-  (islist, ii) = analyseItem(item, inEnv, inMod, inPrefix, emptyIScopes, inInstStack);
+        (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
+        ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
+        cdef = SCode.addElementToCompositeClassDef(ext, cdef);
+        scls = SCode.setElementClassDefinition(cdef, inClassExtends);
+        item = NFSCodeEnv.CLASS(scls, inClassEnv, NFSCodeEnv.CLASS_EXTENDS());
+        (islist, ii) = analyseItem(item, inEnv, inMod, inPrefix, emptyIScopes, inInstStack);
 
-  fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-  is = mkIScope(CL(fullName), {EI(scls, inEnv)}, islist);
-  islist = is::inIScopesAcc;
+        fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+        is = mkIScope(CL(fullName), {EI(scls, inEnv)}, islist);
+        islist = is::inIScopesAcc;
       then
-  (islist, ii);
+        (islist, ii);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  name = SCode.elementName(inClassExtends);
-  Debug.traceln("NFSCodeAnalyseRedeclare.instClassExtends failed on " +& name);
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = SCode.elementName(inClassExtends);
+        Debug.traceln("NFSCodeAnalyseRedeclare.instClassExtends failed on " +& name);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end analyseClassExtends;
@@ -897,16 +897,16 @@ algorithm
       String name;
 
     case (NFSCodeEnv.FRAME(extendsTable = NFSCodeEnv.EXTENDS_TABLE(
-      baseClasses = NFSCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
+            baseClasses = NFSCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
       then (bc, info);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  name = NFSCodeEnv.getEnvName(inClassEnv);
-  Debug.traceln("NFSCodeAnalyseRedeclare.getClassExtendsBaseClass failed on " +& name);
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = NFSCodeEnv.getEnvName(inClassEnv);
+        Debug.traceln("NFSCodeAnalyseRedeclare.getClassExtendsBaseClass failed on " +& name);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end getClassExtendsBaseClass;
@@ -975,61 +975,61 @@ algorithm
     // extends with no kids has no meaning
     case (IS(kind = EX(_), parts = {})::rest, acc)
       equation
-  (acc, b) = cleanRedeclareIScopes(rest, acc);
+        (acc, b) = cleanRedeclareIScopes(rest, acc);
       then
-  (acc, true);
+        (acc, true);
 
     // component targeting a local replaceable derived class
     // replaceable HeatTransfer = Blah.Blah.IdealHeatTransfer;
     // HeatTransfer heatTransfer(redeclare Medium = Medium)
     case (IS(k as CO(_,n1), i1, {IS(CL(n2), i2, p2)})::rest, acc)
       equation
-  // same scope!
-  //n1 = Absyn.stripLast(n1);
-  //n2 = Absyn.stripLast(n2);
-  //true = Absyn.pathEqual(n1, n2);
-  EI(e, env) = getEIFromInfos(i1);
-  EI(c, _) = getEIFromInfos(i2);
-  ts = SCode.getDerivedTypeSpec(c);
-  mNew = SCode.getDerivedMod(c);
-  mOld = SCode.getComponentMod(e);
-  // in this case we merge component modifiers as NEW
-  // and type modifiers as OLD
-  m = mergeModifiers(mOld, mNew);
-  e = SCode.setComponentTypeSpec(e, ts);
-  e = SCode.setComponentMod(e, m);
-  i1 = listAppend(i1, i2);
-  i1 = {EI(e, env)}; //::i1;
-  s = IS(k, i1, p2);
-  (acc, b) = cleanRedeclareIScopes(rest, s::acc);
+        // same scope!
+        //n1 = Absyn.stripLast(n1);
+        //n2 = Absyn.stripLast(n2);
+        //true = Absyn.pathEqual(n1, n2);
+        EI(e, env) = getEIFromInfos(i1);
+        EI(c, _) = getEIFromInfos(i2);
+        ts = SCode.getDerivedTypeSpec(c);
+        mNew = SCode.getDerivedMod(c);
+        mOld = SCode.getComponentMod(e);
+        // in this case we merge component modifiers as NEW
+        // and type modifiers as OLD
+        m = mergeModifiers(mOld, mNew);
+        e = SCode.setComponentTypeSpec(e, ts);
+        e = SCode.setComponentMod(e, m);
+        i1 = listAppend(i1, i2);
+        i1 = {EI(e, env)}; //::i1;
+        s = IS(k, i1, p2);
+        (acc, b) = cleanRedeclareIScopes(rest, s::acc);
       then
-  (acc, true);
+        (acc, true);
 
     // components with no kids, check the redeclares
     case (IS(k as CO(_,_), i, {})::rest, acc)
       equation
-  i = replaceCompEIwithRI(i);
-  (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
+        i = replaceCompEIwithRI(i);
+        (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
       then
-  (acc, b);
+        (acc, b);
 
     // class with no kids, check the redeclares
     case (IS(k as CL(_), i, {})::rest, acc)
       equation
-  i = replaceClassEIwithRI(i);
-  (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
+        i = replaceClassEIwithRI(i);
+        (acc, b) = cleanRedeclareIScopes(rest, IS(k, i, {})::acc);
       then
-  (acc, b);
+        (acc, b);
 
     // the kids got cleaned, try the parent again
     case (IS(k, i, p)::rest, acc)
       equation
-  (p, b1) = cleanRedeclareIScopes(p, {});
-  s = IS(k, i, p);
-  (acc, b2) = cleanRedeclareIScopes(rest, s::acc);
-  b = boolOr(b1, b2);
+        (p, b1) = cleanRedeclareIScopes(p, {});
+        s = IS(k, i, p);
+        (acc, b2) = cleanRedeclareIScopes(rest, s::acc);
+        b = boolOr(b1, b2);
       then
-  (acc, b);
+        (acc, b);
 
   end matchcontinue;
 end cleanRedeclareIScopes;
@@ -1044,17 +1044,17 @@ algorithm
     // no more changes
     case (_)
       equation
-  (i, false) = cleanRedeclareIScopes(inIScopes, {});
+        (i, false) = cleanRedeclareIScopes(inIScopes, {});
       then
-  i;
+        i;
 
     // some changes, try again
     case (_)
       equation
-  (i, true) = cleanRedeclareIScopes(inIScopes, {});
-  i = fixpointCleanRedeclareIScopes(i);
+        (i, true) = cleanRedeclareIScopes(inIScopes, {});
+        i = fixpointCleanRedeclareIScopes(i);
       then
-  i;
+        i;
 
   end matchcontinue;
 end fixpointCleanRedeclareIScopes;
@@ -1073,36 +1073,36 @@ algorithm
     // use the component from the redeclare
     case (_)
       equation
-  EI(o, env) = getEIFromInfos(inInfos);
-  RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.VAR(e, _), denv), env) = getRIFromInfos(inInfos);
-  e = mergeComponentModifiers(e, o);
-  infos = EI(e, env)::inInfos;
+        EI(o, env) = getEIFromInfos(inInfos);
+        RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.VAR(e, _), denv), env) = getRIFromInfos(inInfos);
+        e = mergeComponentModifiers(e, o);
+        infos = EI(e, env)::inInfos;
       then
-  infos;
+        infos;
 
     // use the type from the redeclare
     case (_)
       equation
-  EI(e, env) = getEIFromInfos(inInfos);
-  RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(c, _, _), denv), _) = getRIFromInfos(inInfos);
-  
-  ts = SCode.getDerivedTypeSpec(c);
-  
-  (_, ts, denv) = NFSCodeLookup.lookupTypeSpec(ts, denv, SCode.elementInfo(e));
-  ts = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, denv);
-  
-  mNew = SCode.getDerivedMod(c);
-  mOld = SCode.getComponentMod(e);
-  // in this case we merge component modifiers as NEW
-  // and type modifiers as OLD
-  m = mergeModifiers(mOld, mNew);
-  
-  e = SCode.setComponentTypeSpec(e, ts);
-  e = SCode.setComponentMod(e, m);
-  
-  infos = EI(e, env)::inInfos;
+        EI(e, env) = getEIFromInfos(inInfos);
+        RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(c, _, _), denv), _) = getRIFromInfos(inInfos);
+        
+        ts = SCode.getDerivedTypeSpec(c);
+        
+        (_, ts, denv) = NFSCodeLookup.lookupTypeSpec(ts, denv, SCode.elementInfo(e));
+        ts = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, denv);
+        
+        mNew = SCode.getDerivedMod(c);
+        mOld = SCode.getComponentMod(e);
+        // in this case we merge component modifiers as NEW
+        // and type modifiers as OLD
+        m = mergeModifiers(mOld, mNew);
+        
+        e = SCode.setComponentTypeSpec(e, ts);
+        e = SCode.setComponentMod(e, m);
+        
+        infos = EI(e, env)::inInfos;
       then
-  infos;
+        infos;
 
   end matchcontinue;
 end replaceCompEIwithRI;
@@ -1125,12 +1125,12 @@ algorithm
       SCode.Element c;
 
     case (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
-    SCode.COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
+          SCode.COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
       equation
-  m = mergeModifiers(m1, m2);
-  c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
+        m = mergeModifiers(m1, m2);
+        c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
       then
-  c;
+        c;
 
   end match;
 end mergeComponentModifiers;
@@ -1154,13 +1154,13 @@ algorithm
     case (SCode.REDECL(element = _), _) then inNewMod;
 
     case (SCode.MOD(f1, e1, sl1, b1, i1),
-    SCode.MOD(f2, e2, sl2, b2, i2))
+          SCode.MOD(f2, e2, sl2, b2, i2))
       equation
-  b = mergeBindings(b1, b2);
-  sl = mergeSubMods(sl1, sl2);
-  m = SCode.MOD(f1, e1, sl, b1, i1);
+        b = mergeBindings(b1, b2);
+        sl = mergeSubMods(sl1, sl2);
+        m = SCode.MOD(f1, e1, sl, b1, i1);
       then
-  m;
+        m;
 
     else inNewMod;
 
@@ -1192,10 +1192,10 @@ algorithm
 
     case (s::rest, _)
       equation
-  old = removeSub(s, inOld);
-  sl = mergeSubMods(rest, old);
+        old = removeSub(s, inOld);
+        sl = mergeSubMods(rest, old);
       then
-  s::sl;
+        s::sl;
 
      else inNew;
   end matchcontinue;
@@ -1217,15 +1217,15 @@ algorithm
 
     case (SCode.NAMEMOD(id1, _), SCode.NAMEMOD(id2, _)::rest)
       equation
-  true = stringEqual(id1, id2);
+        true = stringEqual(id1, id2);
       then
-  rest;
+        rest;
 
     case (_, s::rest)
       equation
-  rest = removeSub(inSub, rest);
+        rest = removeSub(inSub, rest);
       then
-  s::rest;
+        s::rest;
   end matchcontinue;
 end removeSub;
 
@@ -1244,31 +1244,31 @@ algorithm
     // use the class from the redeclare, fully qualify derived
     case (_)
       equation
-  EI(e, env) = getEIFromInfos(inInfos);
-  RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(e, _, _), denv), env) = getRIFromInfos(inInfos);
-  true = SCode.isDerivedClass(e);
-  ts = SCode.getDerivedTypeSpec(e);
-  (_, ts, denv) = NFSCodeLookup.lookupTypeSpec(ts, denv, SCode.elementInfo(e));
-  ts = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, denv);
-  e = SCode.setDerivedTypeSpec(e, ts);
-  p = SCode.elementPrefixes(e);
-  p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
-  e = SCode.setClassPrefixes(p, e);
-  infos = EI(e, env)::inInfos;
+        EI(e, env) = getEIFromInfos(inInfos);
+        RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(e, _, _), denv), env) = getRIFromInfos(inInfos);
+        true = SCode.isDerivedClass(e);
+        ts = SCode.getDerivedTypeSpec(e);
+        (_, ts, denv) = NFSCodeLookup.lookupTypeSpec(ts, denv, SCode.elementInfo(e));
+        ts = NFSCodeEnv.mergeTypeSpecWithEnvPath(ts, denv);
+        e = SCode.setDerivedTypeSpec(e, ts);
+        p = SCode.elementPrefixes(e);
+        p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
+        e = SCode.setClassPrefixes(p, e);
+        infos = EI(e, env)::inInfos;
       then
-  infos;
+        infos;
 
     // use the class from the redeclare
     case (_)
       equation
-  EI(e, env) = getEIFromInfos(inInfos);
-  RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(e, denv, _), _), env) = getRIFromInfos(inInfos);
-  p = SCode.elementPrefixes(e);
-  p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
-  e = SCode.setClassPrefixes(p, e);
-  infos = EI(e, env)::inInfos;
+        EI(e, env) = getEIFromInfos(inInfos);
+        RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.CLASS(e, denv, _), _), env) = getRIFromInfos(inInfos);
+        p = SCode.elementPrefixes(e);
+        p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
+        e = SCode.setClassPrefixes(p, e);
+        infos = EI(e, env)::inInfos;
       then
-  infos;
+        infos;
 
   end matchcontinue;
 end replaceClassEIwithRI;
@@ -1289,13 +1289,13 @@ algorithm
 
     case (IS(k, i, p)::rest, acc)
       equation
-  // maybe we should keep all childrens if there is a redeclare on the path?
-  p = filterRedeclareIScopes(p, {});
-  s = IS(k, i, p);
-  acc = Util.if_(hasRedeclares(s), s::acc, acc);
-  acc = filterRedeclareIScopes(rest, acc);
+        // maybe we should keep all childrens if there is a redeclare on the path?
+        p = filterRedeclareIScopes(p, {});
+        s = IS(k, i, p);
+        acc = Util.if_(hasRedeclares(s), s::acc, acc);
+        acc = filterRedeclareIScopes(rest, acc);
       then
-  acc;
+        acc;
 
   end match;
 end filterRedeclareIScopes;
@@ -1314,16 +1314,16 @@ algorithm
     case (IS(kind = RE(_))) then true;
     case (IS(kind = EX(n)))
       equation
-  true = intNe(System.stringFind(Absyn.pathLastIdent(n), "$base"), -1);
+        true = intNe(System.stringFind(Absyn.pathLastIdent(n), "$base"), -1);
       then
-  true;
+        true;
     case (IS(parts = p, infos = infos))
       equation
-  b1 = hasRedeclareInfos(infos);
-  b2 = List.applyAndFold(p, boolOr, hasRedeclares, false);
-  b = boolOr(b1, b2);
+        b1 = hasRedeclareInfos(infos);
+        b2 = List.applyAndFold(p, boolOr, hasRedeclares, false);
+        b = boolOr(b1, b2);
       then
-  b;
+        b;
 
     else false;
 
@@ -1373,18 +1373,18 @@ algorithm
 
     case ((s as IS(k, i, p))::rest, acc)
       equation
-  true = SCode.isDerivedClass(getElementFromIScope(s));
-  s = mergeDerivedClasses(s::p);
-  acc = collapseDerivedClassChain(rest, s::acc);
+        true = SCode.isDerivedClass(getElementFromIScope(s));
+        s = mergeDerivedClasses(s::p);
+        acc = collapseDerivedClassChain(rest, s::acc);
       then
-  acc;
+        acc;
 
     case ((s as IS(k, i, p))::rest, acc)
       equation
-  p = collapseDerivedClassChain(p, {});
-  acc = collapseDerivedClassChain(rest, IS(k, i, p)::acc);
+        p = collapseDerivedClassChain(p, {});
+        acc = collapseDerivedClassChain(rest, IS(k, i, p)::acc);
       then
-  acc;
+        acc;
 
   end matchcontinue;
 end collapseDerivedClassChain;
@@ -1404,28 +1404,28 @@ algorithm
 
     case ((s as IS(k, i, p))::rest)
       equation
-  EI(e, env) = getEIFromIScope(s);
-  true = SCode.isDerivedClass(e);
-  // at least one
-  (ilist as _::_) = getDerivedIScopes(rest, {});
-  // start with original and fold derived prefixes on to it.
-  e = List.applyAndFold(ilist, NFSCodeFlattenRedeclare.propagateAttributesClass, getElementFromIScope, e);
-  e = List.applyAndFold(ilist, propagateModifiersAndArrayDims, getElementFromIScope, e);
-  last = List.last(ilist);
-  EI(eLast,envLast) = getEIFromIScope(last);
-  // a = a, a = c, c = d, d = e -> a = e
-  // TODO FIXME do we need to merge also mods and array dims??!!
-  e = SCode.setDerivedTypeSpec(e, SCode.getDerivedTypeSpec(eLast));
-  e = removeRedeclareMods(e);
-  ni = List.applyAndFold(ilist, listAppend, iScopeInfos, i);
-  ni = listReverse(ni);
-  ni = EI(e, env)::ni;
-  // replace parts with the last one
-  p = iScopeParts(last);
-  p = collapseDerivedClassChain(p, {});
-  s = IS(k, ni, p);
+        EI(e, env) = getEIFromIScope(s);
+        true = SCode.isDerivedClass(e);
+        // at least one
+        (ilist as _::_) = getDerivedIScopes(rest, {});
+        // start with original and fold derived prefixes on to it.
+        e = List.applyAndFold(ilist, NFSCodeFlattenRedeclare.propagateAttributesClass, getElementFromIScope, e);
+        e = List.applyAndFold(ilist, propagateModifiersAndArrayDims, getElementFromIScope, e);
+        last = List.last(ilist);
+        EI(eLast,envLast) = getEIFromIScope(last);
+        // a = a, a = c, c = d, d = e -> a = e
+        // TODO FIXME do we need to merge also mods and array dims??!!
+        e = SCode.setDerivedTypeSpec(e, SCode.getDerivedTypeSpec(eLast));
+        e = removeRedeclareMods(e);
+        ni = List.applyAndFold(ilist, listAppend, iScopeInfos, i);
+        ni = listReverse(ni);
+        ni = EI(e, env)::ni;
+        // replace parts with the last one
+        p = iScopeParts(last);
+        p = collapseDerivedClassChain(p, {});
+        s = IS(k, ni, p);
       then
-  s;
+        s;
 
   end match;
 end mergeDerivedClasses;
@@ -1467,10 +1467,10 @@ algorithm
 
     case (SCode.DERIVED(ts1, m1, atr1), SCode.DERIVED(ts2, m2, atr2))
       equation
-  m2 = mergeModifiers(m2, m1);
-  cd = SCode.DERIVED(ts2, m2, atr2);
+        m2 = mergeModifiers(m2, m1);
+        cd = SCode.DERIVED(ts2, m2, atr2);
       then
-  cd;
+        cd;
 
   end match;
 end mergeCdefs;
@@ -1500,28 +1500,28 @@ algorithm
 
     case (SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i))
       equation
-  //p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
-  //p = SCode.prefixesSetReplaceable(p, SCode.NOT_REPLACEABLE());
-  cd = removeRedeclareModsFromClassDef(cd);
-  e = SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i);
+        //p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
+        //p = SCode.prefixesSetReplaceable(p, SCode.NOT_REPLACEABLE());
+        cd = removeRedeclareModsFromClassDef(cd);
+        e = SCode.CLASS(n, p, ep, pp, rp, cd, cmt, i);
       then
-  e;
+        e;
 
     case (SCode.COMPONENT(n, p, a, t, m, cmt, cnd, i))
       equation
-  p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
-  //p = SCode.prefixesSetReplaceable(p, SCode.NOT_REPLACEABLE());
-  m = NFSCodeMod.removeRedeclaresFromMod(m);
-  e = SCode.COMPONENT(n, p, a, t, m, cmt, cnd, i);
+        p = SCode.prefixesSetRedeclare(p, SCode.NOT_REDECLARE());
+        //p = SCode.prefixesSetReplaceable(p, SCode.NOT_REPLACEABLE());
+        m = NFSCodeMod.removeRedeclaresFromMod(m);
+        e = SCode.COMPONENT(n, p, a, t, m, cmt, cnd, i);
       then
-  e;
+        e;
 
     case (SCode.EXTENDS(bcp, v, m, ann, i))
       equation
-  m = NFSCodeMod.removeRedeclaresFromMod(m);
-  e = SCode.EXTENDS(bcp, v, m, ann, i);
+        m = NFSCodeMod.removeRedeclaresFromMod(m);
+        e = SCode.EXTENDS(bcp, v, m, ann, i);
       then
-  e;
+        e;
 
   end match;
 end removeRedeclareMods;
@@ -1553,30 +1553,30 @@ algorithm
 
     case (SCode.CLASS_EXTENDS(n, m, cd))
       equation
-  m = NFSCodeMod.removeRedeclaresFromMod(m);
-  cd = removeRedeclareModsFromClassDef(cd);
-  cd = SCode.CLASS_EXTENDS(n, m, cd);
+        m = NFSCodeMod.removeRedeclaresFromMod(m);
+        cd = removeRedeclareModsFromClassDef(cd);
+        cd = SCode.CLASS_EXTENDS(n, m, cd);
       then
-  cd;
+        cd;
 
     case (SCode.DERIVED(t, m, a))
       equation
-  m = NFSCodeMod.removeRedeclaresFromMod(m);
-  cd = SCode.DERIVED(t, m, a);
+        m = NFSCodeMod.removeRedeclaresFromMod(m);
+        cd = SCode.DERIVED(t, m, a);
       then
-  cd;
+        cd;
 
     case (cd as SCode.ENUMERATION(enumLst = _))
       then
-  cd;
+        cd;
 
     case (cd as SCode.OVERLOAD(pathLst = _))
       then
-  cd;
+        cd;
 
     case (cd as SCode.PDER(functionPath = _))
       then
-  cd;
+        cd;
   end match;
 end removeRedeclareModsFromClassDef;
 
@@ -1596,18 +1596,18 @@ algorithm
 
     case ({s}, acc)
       equation
-  e = getElementFromIScope(s);
-  true = SCode.isDerivedClass(e);
-  acc = getDerivedIScopes(iScopeParts(s), s::acc);
+        e = getElementFromIScope(s);
+        true = SCode.isDerivedClass(e);
+        acc = getDerivedIScopes(iScopeParts(s), s::acc);
       then
-  acc;
+        acc;
 
     case ({s}, _)
       equation
-  e = getElementFromIScope(s);
-  false = SCode.isDerivedClass(e);
+        e = getElementFromIScope(s);
+        false = SCode.isDerivedClass(e);
       then
-  listReverse(inIScopesAcc);
+        listReverse(inIScopesAcc);
 
     else inIScopes;
 
@@ -1655,20 +1655,20 @@ algorithm
 
     case (_)
       equation
-  false = Flags.isSet(Flags.SHOW_REDECLARE_ANALYSIS);
+        false = Flags.isSet(Flags.SHOW_REDECLARE_ANALYSIS);
       then ();
 
     case ({})
       equation
-  print("\n");
+        print("\n");
       then ();
 
     case (is::rest)
       equation
-  printIScopeIndent(is, 1);
-  printIScopes(rest);
+        printIScopeIndent(is, 1);
+        printIScopes(rest);
       then
-  ();
+        ();
 
     else equation
       print("Left: " +& intString(listLength(inIScopes)) +& "\n");
@@ -1697,10 +1697,10 @@ algorithm
 
     case (IS(k, i, p))
       equation
-  {sk, ski} = kindStr(k);
-  str = sk +& "(" +& ski +& ")";
+        {sk, ski} = kindStr(k);
+        str = sk +& "(" +& ski +& ")";
       then
-  str;
+        str;
 
   end matchcontinue;
 end iScopeStrNoParts;
@@ -1717,23 +1717,23 @@ algorithm
 
     case (CL(n))
       equation
-  s = Absyn.pathString(n);
+        s = Absyn.pathString(n);
       then {"CL",s};
 
     case (CO(p,n))
       equation
-  s = NFInstUtil.prefixToStrNoEmpty(p) +& "/" +& Absyn.pathString(n);
+        s = NFInstUtil.prefixToStrNoEmpty(p) +& "/" +& Absyn.pathString(n);
       then {"CO",s};
 
     case (EX(n))
       equation
-  s = Absyn.pathString(n);
+        s = Absyn.pathString(n);
       then
-  {"EX",s};
+        {"EX",s};
 
     case (RE(n))
       equation
-  s = Absyn.pathString(n);
+        s = Absyn.pathString(n);
       then {"RE",s};
 
   end match;
@@ -1752,13 +1752,13 @@ algorithm
 
     case (IS(k, i, p))
       equation
-  si = infosStr(i);
-  si = Util.if_(stringEq(si, ""), "", ", " +& si);
-  {sk, ski} = kindStr(k);
-  str = sk +& "(" +& ski +& si +& ")\n\t";
-  str = str +& stringDelimitList(List.map(p, iScopeStr), "\n\t");
+        si = infosStr(i);
+        si = Util.if_(stringEq(si, ""), "", ", " +& si);
+        {sk, ski} = kindStr(k);
+        str = sk +& "(" +& ski +& si +& ")\n\t";
+        str = str +& stringDelimitList(List.map(p, iScopeStr), "\n\t");
       then
-  str;
+        str;
 
   end match;
 end iScopeStr;
@@ -1777,26 +1777,26 @@ algorithm
 
     case (IS(k, i, p as {}), _)
       equation
-  indent = stringAppendList(List.fill(" ", inIncrement));
-  si = infosStr(i);
-  si = Util.if_(stringEq(si, ""), "", ", " +& si);
-  {sk, ski} = kindStr(k);
-  str = indent +& sk +& "(" +& ski +& si +& ")";
+        indent = stringAppendList(List.fill(" ", inIncrement));
+        si = infosStr(i);
+        si = Util.if_(stringEq(si, ""), "", ", " +& si);
+        {sk, ski} = kindStr(k);
+        str = indent +& sk +& "(" +& ski +& si +& ")";
       then
-  str;
+        str;
 
     case (IS(k, i, p), _)
       equation
-  indent = stringAppendList(List.fill(" ", inIncrement));
-  si = infosStr(i);
-  si = Util.if_(stringEq(si, ""), "", ", " +& si);
-  {sk, ski} = kindStr(k);
-  str = indent +& sk +& "(" +& ski +& si +& ")" +& "\n" +& indent +&
-        stringDelimitList(
-          List.map1(p, iScopeStrIndent, inIncrement + 1),
-          "\n" +& indent);
+        indent = stringAppendList(List.fill(" ", inIncrement));
+        si = infosStr(i);
+        si = Util.if_(stringEq(si, ""), "", ", " +& si);
+        {sk, ski} = kindStr(k);
+        str = indent +& sk +& "(" +& ski +& si +& ")" +& "\n" +& indent +&
+              stringDelimitList(
+                List.map1(p, iScopeStrIndent, inIncrement + 1),
+                "\n" +& indent);
       then
-  str;
+        str;
 
   end matchcontinue;
 end iScopeStrIndent;
@@ -1817,23 +1817,23 @@ algorithm
     case ({}) then "";
     case (RP(replacements as _::_)::rest)
       equation
-  str = stringDelimitList(List.map(replacements, replacementStr), "/") +& " ";
-  str = str +& infosStr(rest);
+        str = stringDelimitList(List.map(replacements, replacementStr), "/") +& " ";
+        str = str +& infosStr(rest);
       then
-  str;
+        str;
     case (EI(e, env)::rest)
       equation
-  // str = "EI(" +& NFSCodeEnv.getEnvName(env) +& "/" +& SCodeDump.unparseElementStr(e) +& ") ";
-  str = "EI(" +& NFSCodeEnv.getEnvName(env) +& "/" +& SCodeDump.shortElementStr(e) +& ") ";
-  str = str +& infosStr(rest);
+        // str = "EI(" +& NFSCodeEnv.getEnvName(env) +& "/" +& SCodeDump.unparseElementStr(e) +& ") ";
+        str = "EI(" +& NFSCodeEnv.getEnvName(env) +& "/" +& SCodeDump.shortElementStr(e) +& ") ";
+        str = str +& infosStr(rest);
       then
-  str;
+        str;
     case (RI(i, env)::rest)
       equation
-  str = redeclareInfoStr(i, env) +& " ";
-  str = str +& infosStr(rest);
+        str = redeclareInfoStr(i, env) +& " ";
+        str = str +& infosStr(rest);
       then
-  str;
+        str;
     case (_::rest) then infosStr(rest);
 
   end matchcontinue;
@@ -1919,9 +1919,9 @@ algorithm
 
     case ((i as EI(env = _))::rest, _)
       equation
-  infos = getEIsFromInfos(rest, i::inInfosAcc);
+        infos = getEIsFromInfos(rest, i::inInfosAcc);
       then
-  infos;
+        infos;
 
     case (_::rest, _)
       then getEIsFromInfos(rest, inInfosAcc);
@@ -1943,9 +1943,9 @@ algorithm
 
     case ((i as RI(env = _))::rest, _)
       equation
-  infos = getRIsFromInfos(rest, i::inInfosAcc);
+        infos = getRIsFromInfos(rest, i::inInfosAcc);
       then
-  infos;
+        infos;
 
     case (_::rest, _)
       then getRIsFromInfos(rest, inInfosAcc);
@@ -2007,18 +2007,18 @@ algorithm
 
     case (NFSCodeFlattenRedeclare.REPLACED(nm, o, n, e))
       equation
-  str = "E(" +& NFSCodeEnv.getEnvName(e) +& ")." +&
-        "Old(" +& itemShortStr(o) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(o)) +& ")/" +&
-        "New(" +& itemShortStr(n) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(n)) +& ")";
+        str = "E(" +& NFSCodeEnv.getEnvName(e) +& ")." +&
+              "Old(" +& itemShortStr(o) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(o)) +& ")/" +&
+              "New(" +& itemShortStr(n) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(n)) +& ")";
       then
-  str;
+        str;
 
     case (NFSCodeFlattenRedeclare.PUSHED(nm, n, bc, eto, etn, e))
       equation
-  str = "New(" +& itemShortStr(n) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(n)) +& ")." +&
-        "BC(" +& stringDelimitList(List.map(bc, Absyn.pathString), "|") +& ").E(" +& NFSCodeEnv.getEnvName(e) +& ")";
+        str = "New(" +& itemShortStr(n) +& ").E(" +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(n)) +& ")." +&
+              "BC(" +& stringDelimitList(List.map(bc, Absyn.pathString), "|") +& ").E(" +& NFSCodeEnv.getEnvName(e) +& ")";
       then
-  str;
+        str;
 
   end match;
 end replacementStr;
@@ -2036,16 +2036,16 @@ algorithm
 
     case (NFSCodeEnv.REDECLARED_ITEM(i, de), _)
       equation
-  str = "RED(" +& itemShortStr(i) +& ").DENV(" +& NFSCodeEnv.getEnvName(de) +& ")." +&
-        "LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")";
+        str = "RED(" +& itemShortStr(i) +& ").DENV(" +& NFSCodeEnv.getEnvName(de) +& ")." +&
+              "LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")";
       then
-  str;
+        str;
 
     case (i, _)
       equation
-  str = "PRE(" +& itemShortStr(i) +& ").LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")";
+        str = "PRE(" +& itemShortStr(i) +& ").LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")";
       then
-  str;
+        str;
 
   end matchcontinue;
 end redeclareInfoStr;
@@ -2068,16 +2068,16 @@ algorithm
       then List.first(System.strtok(SCodeDump.unparseElementStr(el), "\n"));
     case NFSCodeEnv.ALIAS(name = name, path = SOME(path))
       equation
-  alias_str = Absyn.pathString(path);
+        alias_str = Absyn.pathString(path);
       then
-  "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
+        "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
     case NFSCodeEnv.ALIAS(name = name, path = NONE())
       then "alias " +& name +& " -> ()";
     case NFSCodeEnv.REDECLARED_ITEM(item = item)
       equation
-  name = itemShortStr(item);
+        name = itemShortStr(item);
       then
-  "redeclared " +& name;
+        "redeclared " +& name;
 
     else "UNHANDLED ITEM";
 
@@ -2112,9 +2112,9 @@ algorithm
     case (IS(parts = {})) then 0;
     case (IS(parts = p))
       equation
-  n = 1 + List.applyAndFold(p, intMax, iScopeDepth, 0);
+        n = 1 + List.applyAndFold(p, intMax, iScopeDepth, 0);
       then
-  n;
+        n;
   end match;
 end iScopeDepth;
 
@@ -2130,9 +2130,9 @@ algorithm
     case ({}) then 1;
     case (IS(parts = p)::rest)
       equation
-  n = iScopeSize(p) + iScopeSize(rest);
+        n = iScopeSize(p) + iScopeSize(rest);
       then
-  n;
+        n;
   end match;
 end iScopeSize;
 
@@ -2149,26 +2149,26 @@ algorithm
 
     case (IS(k, i, p as {}), _)
       equation
-  indent = stringAppendList(List.fill(" ", inIncrement));
-  si = infosStr(i);
-  si = Util.if_(stringEq(si, ""), "", ", " +& si);
-  {sk, ski} = kindStr(k);
-  str = indent +& sk +& "(" +& ski +& si +& ")";
-  print(str);
+        indent = stringAppendList(List.fill(" ", inIncrement));
+        si = infosStr(i);
+        si = Util.if_(stringEq(si, ""), "", ", " +& si);
+        {sk, ski} = kindStr(k);
+        str = indent +& sk +& "(" +& ski +& si +& ")";
+        print(str);
       then
-  ();
+        ();
 
     case (IS(k, i, p), _)
       equation
-  indent = stringAppendList(List.fill(" ", inIncrement));
-  si = infosStr(i);
-  si = Util.if_(stringEq(si, ""), "", ", " +& si);
-  {sk, ski} = kindStr(k);
-  str = indent +& sk +& "(" +& ski +& si +& ")" +& "\n" +& indent;
-  print(str);
-  printIScopesIndent(p, inIncrement + 1, "\n" +& indent);
+        indent = stringAppendList(List.fill(" ", inIncrement));
+        si = infosStr(i);
+        si = Util.if_(stringEq(si, ""), "", ", " +& si);
+        {sk, ski} = kindStr(k);
+        str = indent +& sk +& "(" +& ski +& si +& ")" +& "\n" +& indent;
+        print(str);
+        printIScopesIndent(p, inIncrement + 1, "\n" +& indent);
       then
-  ();
+        ();
 
   end matchcontinue;
 end printIScopeIndent;
@@ -2187,16 +2187,16 @@ algorithm
 
     case ({s}, _, _)
       equation
-  printIScopeIndent(s, inIncrement);
+        printIScopeIndent(s, inIncrement);
       then ();
 
     case (s::p, _, _)
       equation
-  printIScopeIndent(s, inIncrement);
-  print(delimiter);
-  printIScopesIndent(p, inIncrement, delimiter);
+        printIScopeIndent(s, inIncrement);
+        print(delimiter);
+        printIScopesIndent(p, inIncrement, delimiter);
       then
-  ();
+        ();
 
   end matchcontinue;
 end printIScopesIndent;
@@ -2230,23 +2230,23 @@ algorithm
     // class put it in CL list
     case ((i as IS(kind = CL(_)))::rest, _, _, _)
       equation
-  (cl, co, ex) = splitParts(rest, i::inScopesAccCL, inScopesAccCO, inScopesAccEX);
+        (cl, co, ex) = splitParts(rest, i::inScopesAccCL, inScopesAccCO, inScopesAccEX);
       then
-  (cl, co, ex);
+        (cl, co, ex);
 
     // component put it co list
     case ((i as IS(kind = CO(_,_)))::rest, _, _, _)
       equation
-  (cl, co, ex) = splitParts(rest, inScopesAccCL, i::inScopesAccCO, inScopesAccEX);
+        (cl, co, ex) = splitParts(rest, inScopesAccCL, i::inScopesAccCO, inScopesAccEX);
       then
-  (cl, co, ex);
+        (cl, co, ex);
 
     // extend sput it in ex list
     case ((i as IS(kind = EX(_)))::rest, _, _, _)
       equation
-  (cl, co, ex) = splitParts(rest, inScopesAccCL, inScopesAccCO, i::inScopesAccEX);
+        (cl, co, ex) = splitParts(rest, inScopesAccCL, inScopesAccCO, i::inScopesAccEX);
       then
-  (cl, co, ex);
+        (cl, co, ex);
   end match;
 end splitParts;
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package Connect
-" file:  Connect.mo
+" file:        Connect.mo
   package:     Connect
   description: Connection set management
 

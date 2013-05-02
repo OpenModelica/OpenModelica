@@ -60,7 +60,7 @@ static inline void string_set(string_array_t *a, size_t i, modelica_string_t r)
  **/
 
 void string_array_create(string_array_t *dest, modelica_string_t *data,
-                   int ndims, ...)
+                         int ndims, ...)
 {
     va_list ap;
     va_start(ap, ndims);
@@ -104,7 +104,7 @@ void copy_string_array_data(const string_array_t *source, string_array_t *dest)
     nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-  string_set(dest, i, string_get(source, i));
+        string_set(dest, i, string_get(source, i));
     }
 }
 
@@ -117,7 +117,7 @@ void copy_string_array_data_mem(const string_array_t *source, modelica_string_t 
     nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-  dest[i] = string_get(source, i);
+        dest[i] = string_get(source, i);
     }
 }
 
@@ -133,22 +133,22 @@ void copy_string_array(const string_array_t *source, string_array_t *dest)
 */
 
 static inline modelica_string_t *calc_string_index_spec(int ndims, const _index_t *idx_vec,
-                                                  const string_array_t *arr,
-                                                  const index_spec_t *spec)
+                                                        const string_array_t *arr,
+                                                        const index_spec_t *spec)
 {
     return string_ptrget(arr, calc_base_index_spec(ndims, idx_vec, arr, spec));
 }
 
 /* Uses zero based indexing */
 modelica_string_t *calc_string_index(int ndims, const _index_t *idx_vec,
-                               const string_array_t *arr)
+                                     const string_array_t *arr)
 {
     return string_ptrget(arr, calc_base_index(ndims, idx_vec, arr));
 }
 
 /* One based index*/
 modelica_string_t *calc_string_index_va(const string_array_t *source, int ndims,
-                                  va_list ap)
+                                        va_list ap)
 {
     return string_ptrget(source, calc_base_index_va(source, ndims, ap));
 }
@@ -159,16 +159,16 @@ void print_string_matrix(const string_array_t *source)
     modelica_string_t value;
 
     if(source->ndims == 2) {
-  printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
-  for(i = 0; i < source->dim_size[0]; ++i) {
-      for(j = 0; j < source->dim_size[1]; ++j) {
-          value = string_get(source, (i * source->dim_size[1]) + j);
-          printf("%s\t", value);
-      }
-      printf("\n");
-  }
+        printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
+        for(i = 0; i < source->dim_size[0]; ++i) {
+            for(j = 0; j < source->dim_size[1]; ++j) {
+                value = string_get(source, (i * source->dim_size[1]) + j);
+                printf("%s\t", value);
+            }
+            printf("\n");
+        }
     } else {
-  printf("array with %d dimensions\n", source->ndims);
+        printf("array with %d dimensions\n", source->ndims);
     }
 }
 
@@ -181,31 +181,31 @@ void print_string_array(const string_array_t *source)
 
     data = (modelica_string_t *) source->data;
     if(source->ndims == 1) {
-  for(i = 1; i < source->dim_size[0]; ++i) {
-      printf("%s, ", (*data));
-      ++data;
-  }
-  if(0 < source->dim_size[0]) {
-      printf("%s", (*data));
-  }
+        for(i = 1; i < source->dim_size[0]; ++i) {
+            printf("%s, ", (*data));
+            ++data;
+        }
+        if(0 < source->dim_size[0]) {
+            printf("%s", (*data));
+        }
     } else if(source->ndims > 1) {
-  n = base_array_nr_of_elements(source) /
-      (source->dim_size[0] * source->dim_size[1]);
-  for(k = 0; k < n; ++k) {
-      for(i = 0; i < source->dim_size[1]; ++i) {
-          for(j = 0; j < source->dim_size[0]; ++j) {
-              printf("%s, ", (*data));
-              ++data;
-          }
-          if(0 < source->dim_size[0]) {
-              printf("%s", (*data));
-          }
-          printf("\n");
-      }
-      if((k + 1) < n) {
-          printf("\n ================= \n");
-      }
-  }
+        n = base_array_nr_of_elements(source) /
+            (source->dim_size[0] * source->dim_size[1]);
+        for(k = 0; k < n; ++k) {
+            for(i = 0; i < source->dim_size[1]; ++i) {
+                for(j = 0; j < source->dim_size[0]; ++j) {
+                    printf("%s, ", (*data));
+                    ++data;
+                }
+                if(0 < source->dim_size[0]) {
+                    printf("%s", (*data));
+                }
+                printf("\n");
+            }
+            if((k + 1) < n) {
+                printf("\n ================= \n");
+            }
+        }
     }
 }
 
@@ -217,7 +217,7 @@ void put_string_element(modelica_string_t value, int i1, string_array_t *dest)
 }
 
 void put_string_matrix_element(modelica_string_t value, int r, int c,
-                         string_array_t* dest)
+                               string_array_t* dest)
 {
     /* Assert that dest hast correct dimension */
     /* Assert that r and c are valid indices */
@@ -227,8 +227,8 @@ void put_string_matrix_element(modelica_string_t value, int r, int c,
 
 /* Zero based index */
 void simple_indexed_assign_string_array1(const string_array_t * source,
-                                   int i1,
-                                   string_array_t* dest)
+                                         int i1,
+                                         string_array_t* dest)
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
@@ -236,8 +236,8 @@ void simple_indexed_assign_string_array1(const string_array_t * source,
 }
 
 void simple_indexed_assign_string_array2(const string_array_t * source,
-                                   int i1, int i2,
-                                   string_array_t* dest)
+                                         int i1, int i2,
+                                         string_array_t* dest)
 {
     size_t index;
     /* Assert that source has correct dimension */
@@ -247,8 +247,8 @@ void simple_indexed_assign_string_array2(const string_array_t * source,
 }
 
 void indexed_assign_string_array(const string_array_t * source,
-                           string_array_t* dest,
-                           const index_spec_t* dest_spec)
+                                 string_array_t* dest,
+                                 const index_spec_t* dest_spec)
 {
     _index_t* idx_vec1;
     _index_t* idx_vec2;
@@ -261,9 +261,9 @@ void indexed_assign_string_array(const string_array_t * source,
     assert(index_spec_ok(dest_spec));
     assert(index_spec_fit_base_array(dest_spec, dest));
     for(i = 0,j = 0; i < dest_spec->ndims; ++i) {
-  if(dest_spec->dim_size[i] != 0) {
-      ++j;
-  }
+        if(dest_spec->dim_size[i] != 0) {
+            ++j;
+        }
     }
     assert(j == source->ndims);
 
@@ -273,26 +273,26 @@ void indexed_assign_string_array(const string_array_t * source,
     idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
-  idx_vec1[i] = 0;
+        idx_vec1[i] = 0;
 
-  if(dest_spec->index[i] != NULL) {
-      idx_size[i] = imax(dest_spec->dim_size[i],1);
-  } else {
-      idx_size[i] = dest->dim_size[i];
-  }
+        if(dest_spec->index[i] != NULL) {
+            idx_size[i] = imax(dest_spec->dim_size[i],1);
+        } else {
+            idx_size[i] = dest->dim_size[i];
+        }
     }
 
     do {
-  for(i = 0, j = 0; i < dest_spec->ndims; ++i) {
-      if(dest_spec->dim_size[i] != 0) {
-          idx_vec2[j] = idx_vec1[i];
-          ++j;
-      }
-  }
-  string_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
-                                        dest, dest_spec),
-             string_get(source, calc_base_index(source->ndims,
-                                                idx_vec2, source)));
+        for(i = 0, j = 0; i < dest_spec->ndims; ++i) {
+            if(dest_spec->dim_size[i] != 0) {
+                idx_vec2[j] = idx_vec1[i];
+                ++j;
+            }
+        }
+        string_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
+                                              dest, dest_spec),
+                   string_get(source, calc_base_index(source->ndims,
+                                                      idx_vec2, source)));
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
@@ -311,8 +311,8 @@ void indexed_assign_string_array(const string_array_t * source,
  */
 
 void index_string_array(const string_array_t * source,
-                  const index_spec_t* source_spec,
-                  string_array_t* dest)
+                        const index_spec_t* source_spec,
+                        string_array_t* dest)
 {
     _index_t* idx_vec1;
     _index_t* idx_vec2;
@@ -326,11 +326,11 @@ void index_string_array(const string_array_t * source,
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec,source));
     for(i = 0, j = 0; i < source->ndims; ++i) {
-  if((source_spec->index_type[i] == 'W')
-      ||
-      (source_spec->index_type[i] == 'A')) {
-      ++j;
-  }
+        if((source_spec->index_type[i] == 'W')
+            ||
+            (source_spec->index_type[i] == 'A')) {
+            ++j;
+        }
     }
     assert(j == dest->ndims);
 
@@ -340,30 +340,30 @@ void index_string_array(const string_array_t * source,
     idx_size = size_alloc(source_spec->ndims);
 
     for(i = 0; i < source->ndims; ++i) {
-  idx_vec1[i] = 0;
+        idx_vec1[i] = 0;
     }
     for(i = 0; i < source_spec->ndims; ++i) {
-  if(source_spec->index[i] != NULL) {
-      idx_size[i] = imax(source_spec->dim_size[i],1);
-  } else {
-      idx_size[i] = source->dim_size[i];
-  }
+        if(source_spec->index[i] != NULL) {
+            idx_size[i] = imax(source_spec->dim_size[i],1);
+        } else {
+            idx_size[i] = source->dim_size[i];
+        }
     }
 
     do {
-  for(i = 0, j = 0; i < source->ndims; ++i) {
-      if((source_spec->index_type[i] == 'W')
-          ||
-          (source_spec->index_type[i] == 'A')) {
-          idx_vec2[j] = idx_vec1[i];
-          j++;
-      }
-  }
+        for(i = 0, j = 0; i < source->ndims; ++i) {
+            if((source_spec->index_type[i] == 'W')
+                ||
+                (source_spec->index_type[i] == 'A')) {
+                idx_vec2[j] = idx_vec1[i];
+                j++;
+            }
+        }
 
-  string_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
-             string_get(source,
-                        calc_base_index_spec(source->ndims, idx_vec1,
-                                             source, source_spec)));
+        string_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
+                   string_get(source,
+                              calc_base_index_spec(source->ndims, idx_vec1,
+                                                   source, source_spec)));
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
 
@@ -382,8 +382,8 @@ void index_string_array(const string_array_t * source,
  */
 
 void index_alloc_string_array(const string_array_t * source,
-                        const index_spec_t* source_spec,
-                        string_array_t* dest)
+                              const index_spec_t* source_spec,
+                              string_array_t* dest)
 {
     int i;
     int j;
@@ -395,25 +395,25 @@ void index_alloc_string_array(const string_array_t * source,
 
     ndimsdiff = 0;
     for(i = 0; i < source_spec->ndims; ++i) {
-  if((source_spec->index_type[i] == 'W')
-      ||
-      (source_spec->index_type[i] == 'A')) {
-      ndimsdiff--;
-  }
+        if((source_spec->index_type[i] == 'W')
+            ||
+            (source_spec->index_type[i] == 'A')) {
+            ndimsdiff--;
+        }
     }
 
     dest->ndims = source->ndims + ndimsdiff;
     dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0,j = 0; i < dest->ndims; ++i) {
-  while(source_spec->index_type[i+j] == 'S') { /* Skip scalars */
-      j++;
-  }
-  if(source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
-      dest->dim_size[i]=source->dim_size[i+j];
-  } else if(source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
-      dest->dim_size[i]=source_spec->dim_size[i+j];
-  }
+        while(source_spec->index_type[i+j] == 'S') { /* Skip scalars */
+            j++;
+        }
+        if(source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
+            dest->dim_size[i]=source->dim_size[i+j];
+        } else if(source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
+            dest->dim_size[i]=source_spec->dim_size[i+j];
+        }
     }
 
     alloc_string_array_data(dest);
@@ -422,7 +422,7 @@ void index_alloc_string_array(const string_array_t * source,
 
 /* Returns dest := source[i1,:,:...]*/
 void simple_index_alloc_string_array1(const string_array_t * source, int i1,
-                                string_array_t* dest)
+                                      string_array_t* dest)
 {
     int i;
     assert(base_array_ok(source));
@@ -431,7 +431,7 @@ void simple_index_alloc_string_array1(const string_array_t * source, int i1,
     dest->dim_size = size_alloc(dest->ndims);
 
     for(i = 0; i < dest->ndims; ++i) {
-  dest->dim_size[i] = source->dim_size[i+1];
+        dest->dim_size[i] = source->dim_size[i+1];
     }
     alloc_string_array_data(dest);
 
@@ -439,7 +439,7 @@ void simple_index_alloc_string_array1(const string_array_t * source, int i1,
 }
 
 void simple_index_string_array1(const string_array_t * source, int i1,
-                          string_array_t* dest)
+                                string_array_t* dest)
 {
     size_t i;
     size_t nr_of_elements = base_array_nr_of_elements(dest);
@@ -448,20 +448,20 @@ void simple_index_string_array1(const string_array_t * source, int i1,
     assert(dest->ndims == (source->ndims - 1));
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-  string_set(dest, i, string_get(source, off + i));
+        string_set(dest, i, string_get(source, off + i));
     }
 }
 
 void simple_index_string_array2(const string_array_t * source,
-                          int i1, int i2,
-                          string_array_t* dest)
+                                int i1, int i2,
+                                string_array_t* dest)
 {
     size_t i;
     size_t nr_of_elements = base_array_nr_of_elements(dest);
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-  string_set(dest, i, string_get(source, off + i));
+        string_set(dest, i, string_get(source, off + i));
     }
 }
 
@@ -476,24 +476,24 @@ void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
     va_start(ap,first);
     elts[0] = first;
     for(i = 1; i < n; ++i) {
-  elts[i] = va_arg(ap, string_array_t*);
+        elts[i] = va_arg(ap, string_array_t*);
     }
     va_end(ap);
 
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-  m = base_array_nr_of_elements(elts[i]);
-  for(j = 0; j < m; ++j) {
-      string_set(dest, c, string_get(elts[i], j));
-      c++;
-  }
+        m = base_array_nr_of_elements(elts[i]);
+        for(j = 0; j < m; ++j) {
+            string_set(dest, c, string_get(elts[i], j));
+            c++;
+        }
     }
     free(elts);
 }
 
 void array_alloc_string_array(string_array_t* dest, int n,
-                        string_array_t* first,...)
+                              string_array_t* first,...)
 {
     int i,j,c,m;
     va_list ap;
@@ -504,38 +504,38 @@ void array_alloc_string_array(string_array_t* dest, int n,
     va_start(ap,first);
     elts[0] = first;
     for(i = 1; i < n; ++i) {
-  elts[i] = va_arg(ap, string_array_t*);
+        elts[i] = va_arg(ap, string_array_t*);
     }
     va_end(ap);
 
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     if(first->ndims == 1) {
-  alloc_string_array(dest,2,n,first->dim_size[0]);
+        alloc_string_array(dest,2,n,first->dim_size[0]);
     } else if(first->ndims == 2) {
-  alloc_string_array(dest,3,n,first->dim_size[0],first->dim_size[1]);
+        alloc_string_array(dest,3,n,first->dim_size[0],first->dim_size[1]);
     } else if(first->ndims == 3) {
-  alloc_string_array(dest,4,n,first->dim_size[0],first->dim_size[1],
-                     first->dim_size[2]);
+        alloc_string_array(dest,4,n,first->dim_size[0],first->dim_size[1],
+                           first->dim_size[2]);
     } else if(first->ndims == 4) {
-  alloc_string_array(dest,5,n,first->dim_size[0],first->dim_size[1],
-                     first->dim_size[2],first->dim_size[3]);
+        alloc_string_array(dest,5,n,first->dim_size[0],first->dim_size[1],
+                           first->dim_size[2],first->dim_size[3]);
     } else {
-  assert(0 && "Dimension size > 4 not impl. yet");
+        assert(0 && "Dimension size > 4 not impl. yet");
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-  m = base_array_nr_of_elements(elts[i]);
-  for(j = 0; j < m; ++j) {
-      string_set(dest, c, string_get(elts[i], j));
-      c++;
-  }
+        m = base_array_nr_of_elements(elts[i]);
+        for(j = 0; j < m; ++j) {
+            string_set(dest, c, string_get(elts[i], j));
+            c++;
+        }
     }
     free(elts);
 }
 
 void array_scalar_string_array(string_array_t* dest, int n,
-                         modelica_string_t first, ...)
+                               modelica_string_t first, ...)
 {
     int i;
     va_list ap;
@@ -545,7 +545,7 @@ void array_scalar_string_array(string_array_t* dest, int n,
     put_string_element(first, 0, dest);
     va_start(ap,first);
     for(i = 0; i < n; ++i) {
-  put_string_element(va_arg(ap, modelica_string_t),i,dest);
+        put_string_element(va_arg(ap, modelica_string_t),i,dest);
     }
     va_end(ap);
 }
@@ -556,7 +556,7 @@ void array_scalar_string_array(string_array_t* dest, int n,
  */
 
 void array_alloc_scalar_string_array(string_array_t* dest, int n,
-                               modelica_string_t first,...)
+                                     modelica_string_t first,...)
 {
     int i;
     va_list ap;
@@ -564,25 +564,25 @@ void array_alloc_scalar_string_array(string_array_t* dest, int n,
     va_start(ap,first);
     put_string_element(first,0,dest);
     for(i = 1; i < n; ++i) {
-  put_string_element(va_arg(ap, modelica_string_t),i,dest);
+        put_string_element(va_arg(ap, modelica_string_t),i,dest);
     }
     va_end(ap);
 }
 
 modelica_string_t* string_array_element_addr1(const string_array_t * source,int ndims,
-                                        int dim1)
+                                              int dim1)
 {
     return string_ptrget(source, dim1 - 1);
 }
 
 modelica_string_t* string_array_element_addr2(const string_array_t * source,int ndims,
-                                        int dim1,int dim2)
+                                              int dim1,int dim2)
 {
     return string_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
 }
 
 modelica_string_t* string_array_element_addr(const string_array_t * source,
-                                       int ndims,...)
+                                             int ndims,...)
 {
     va_list ap;
     modelica_string_t* tmp;
@@ -601,68 +601,6 @@ modelica_string_t* string_array_element_addr(const string_array_t * source,
  * k is one based
  */
 void cat_string_array(int k, string_array_t* dest, int n,
-              string_array_t* first,...)
-{
-    va_list ap;
-    int i, j, r, c;
-    int n_sub = 1, n_super = 1;
-    int new_k_dim_size = 0;
-    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
-
-    assert(elts);
-    /* collect all array ptrs to simplify traversal.*/
-    va_start(ap, first);
-    elts[0] = first;
-
-    for(i = 1; i < n; i++) {
-  elts[i] = va_arg(ap,string_array_t*);
-    }
-    va_end(ap);
-
-    /* check dim sizes of all inputs and dest */
-    assert(elts[0]->ndims >= k);
-    for(i = 0; i < n; i++) {
-  assert(dest->ndims == elts[i]->ndims);
-  for(j = 0; j < (k - 1); j++) {
-      assert(dest->dim_size[j] == elts[i]->dim_size[j]);
-  }
-  new_k_dim_size += elts[i]->dim_size[k-1];
-  for(j = k; j < elts[0]->ndims; j++) {
-      assert(dest->dim_size[j] == elts[i]->dim_size[j]);
-  }
-    }
-    assert(dest->dim_size[k-1] == new_k_dim_size);
-
-    /* calculate size of sub and super structure in 1-dim data representation */
-    for(i = 0; i < (k - 1); i++) {
-  n_super *= elts[0]->dim_size[i];
-    }
-    for(i = k; i < elts[0]->ndims; i++) {
-  n_sub *= elts[0]->dim_size[i];
-    }
-
-    /* concatenation along k-th dimension */
-    j = 0;
-    for(i = 0; i < n_super; i++) {
-  for(c = 0; c < n; c++) {
-      int n_sub_k = n_sub * elts[c]->dim_size[k-1];
-      for(r = 0; r < n_sub_k; r++) {
-          string_set(dest, j,
-                      string_get(elts[c], r + (i * n_sub_k)));
-          j++;
-      }
-  }
-    }
-    free(elts);
-}
-
-/* function: cat_alloc_string_array
- *
- * Concatenates n string arrays along the k:th dimension.
- * allocates space in dest array
- * k is one based
- */
-void cat_alloc_string_array(int k, string_array_t* dest, int n,
                     string_array_t* first,...)
 {
     va_list ap;
@@ -677,7 +615,69 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-  elts[i] = va_arg(ap,string_array_t*);
+        elts[i] = va_arg(ap,string_array_t*);
+    }
+    va_end(ap);
+
+    /* check dim sizes of all inputs and dest */
+    assert(elts[0]->ndims >= k);
+    for(i = 0; i < n; i++) {
+        assert(dest->ndims == elts[i]->ndims);
+        for(j = 0; j < (k - 1); j++) {
+            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+        }
+        new_k_dim_size += elts[i]->dim_size[k-1];
+        for(j = k; j < elts[0]->ndims; j++) {
+            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+        }
+    }
+    assert(dest->dim_size[k-1] == new_k_dim_size);
+
+    /* calculate size of sub and super structure in 1-dim data representation */
+    for(i = 0; i < (k - 1); i++) {
+        n_super *= elts[0]->dim_size[i];
+    }
+    for(i = k; i < elts[0]->ndims; i++) {
+        n_sub *= elts[0]->dim_size[i];
+    }
+
+    /* concatenation along k-th dimension */
+    j = 0;
+    for(i = 0; i < n_super; i++) {
+        for(c = 0; c < n; c++) {
+            int n_sub_k = n_sub * elts[c]->dim_size[k-1];
+            for(r = 0; r < n_sub_k; r++) {
+                string_set(dest, j,
+                            string_get(elts[c], r + (i * n_sub_k)));
+                j++;
+            }
+        }
+    }
+    free(elts);
+}
+
+/* function: cat_alloc_string_array
+ *
+ * Concatenates n string arrays along the k:th dimension.
+ * allocates space in dest array
+ * k is one based
+ */
+void cat_alloc_string_array(int k, string_array_t* dest, int n,
+                          string_array_t* first,...)
+{
+    va_list ap;
+    int i, j, r, c;
+    int n_sub = 1, n_super = 1;
+    int new_k_dim_size = 0;
+    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
+
+    assert(elts);
+    /* collect all array ptrs to simplify traversal.*/
+    va_start(ap, first);
+    elts[0] = first;
+
+    for(i = 1; i < n; i++) {
+        elts[i] = va_arg(ap,string_array_t*);
     }
     va_end(ap);
 
@@ -685,42 +685,42 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
     assert(elts[0]->ndims >= k);
     new_k_dim_size = elts[0]->dim_size[k-1];
     for(i = 1; i < n; i++) {
-  assert(elts[0]->ndims == elts[i]->ndims);
-  for(j = 0; j < (k - 1); j++) {
-      assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
-  }
-  new_k_dim_size += elts[i]->dim_size[k-1];
-  for(j = k; j < elts[0]->ndims; j++) {
-      assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
-  }
+        assert(elts[0]->ndims == elts[i]->ndims);
+        for(j = 0; j < (k - 1); j++) {
+            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+        }
+        new_k_dim_size += elts[i]->dim_size[k-1];
+        for(j = k; j < elts[0]->ndims; j++) {
+            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+        }
     }
 
     /* calculate size of sub and super structure in 1-dim data representation */
     for(i = 0; i < (k - 1); i++) {
-  n_super *= elts[0]->dim_size[i];
+        n_super *= elts[0]->dim_size[i];
     }
     for(i = k; i < elts[0]->ndims; i++) {
-  n_sub *= elts[0]->dim_size[i];
+        n_sub *= elts[0]->dim_size[i];
     }
     /* allocate dest structure */
     dest->data = string_alloc( n_super * new_k_dim_size * n_sub);
     dest->ndims = elts[0]->ndims;
     dest->dim_size = size_alloc(dest->ndims);
     for(j = 0; j < dest->ndims; j++) {
-  dest->dim_size[j] = elts[0]->dim_size[j];
+        dest->dim_size[j] = elts[0]->dim_size[j];
     }
     dest->dim_size[k-1] = new_k_dim_size;
     /* concatenation along k-th dimension */
     j = 0;
     for(i = 0; i < n_super; i++) {
-  for(c = 0; c < n; c++) {
-      int n_sub_k = n_sub * elts[c]->dim_size[k-1];
-      for(r = 0; r < n_sub_k; r++) {
-          string_set(dest, j,
-                      string_get(elts[c], r + (i * n_sub_k)));
-          j++;
-      }
-  }
+        for(c = 0; c < n; c++) {
+            int n_sub_k = n_sub * elts[c]->dim_size[k-1];
+            for(r = 0; r < n_sub_k; r++) {
+                string_set(dest, j,
+                            string_get(elts[c], r + (i * n_sub_k)));
+                j++;
+            }
+        }
     }
     free(elts);
 }
@@ -731,7 +731,7 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
  * that the destination array is allocated.
  */
 void promote_alloc_string_array(const string_array_t * a, int n,
-                          string_array_t* dest)
+                                string_array_t* dest)
 {
     clone_string_array_spec(a,dest);
     alloc_string_array_data(dest);
@@ -754,10 +754,10 @@ void promote_string_array(const string_array_t * a, int n,string_array_t* dest)
     dest->data = a->data;
     /* Assert a->ndims>=n */
     for(i = 0; i < a->ndims; ++i) {
-  dest->dim_size[i] = a->dim_size[i];
+        dest->dim_size[i] = a->dim_size[i];
     }
     for(i = a->ndims; i < (n + a->ndims); ++i) {
-  dest->dim_size[i] = 1;
+        dest->dim_size[i] = 1;
     }
 
     dest->ndims=n+a->ndims;
@@ -769,7 +769,7 @@ void promote_string_array(const string_array_t * a, int n,string_array_t* dest)
  */
 
 void promote_scalar_string_array(modelica_string_t s,int n,
-                           string_array_t* dest)
+                                 string_array_t* dest)
 {
     int i;
 
@@ -785,7 +785,7 @@ void promote_scalar_string_array(modelica_string_t s,int n,
     string_set(dest, 0, s);
 
     for(i = 0; i < n; ++i) {
-  dest->dim_size[i] = 1;
+        dest->dim_size[i] = 1;
     }
 }
 
@@ -798,7 +798,7 @@ void size_string_array(const string_array_t * a, integer_array_t* dest)
     assert(dest->dim_size[0] == a->ndims);
 
     for(i = 0 ; i < a->ndims ; i++) {
-  ((modelica_integer *) dest->data)[i] = a->dim_size[i];
+        ((modelica_integer *) dest->data)[i] = a->dim_size[i];
     }
 }
 
@@ -818,7 +818,7 @@ void vector_string_array(const string_array_t * a, string_array_t* dest)
 
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-  string_set(dest, i, string_get(a, i));
+        string_set(dest, i, string_get(a, i));
     }
 }
 
@@ -838,7 +838,7 @@ void matrix_string_array(const string_array_t * a, string_array_t* dest)
     cnt = dest->dim_size[0] * dest->dim_size[1];
 
     for(i = 0; i < cnt; ++i) {
-  string_set(dest, i, string_get(a, i));
+        string_set(dest, i, string_get(a, i));
     }
 }
 
@@ -883,8 +883,8 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-  copy_string_array_data(a,dest);
-  return;
+        copy_string_array_data(a,dest);
+        return;
     }
 
     assert(a->ndims==2 && dest->ndims==2);
@@ -895,9 +895,9 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
     assert(dest->dim_size[0] == m && dest->dim_size[1] == n);
 
     for(i = 0; i < n; ++i) {
-  for(j = 0; j < m; ++j) {
-      string_set(dest, (j * n) + i, string_get(a, (i * m) + j));
-  }
+        for(j = 0; j < m; ++j) {
+            string_set(dest, (j * n) + i, string_get(a, (i * m) + j));
+        }
     }
 }
 
@@ -908,32 +908,32 @@ void fill_string_array(string_array_t* dest,modelica_string_t s)
 
     nr_of_elements = base_array_nr_of_elements(dest);
     for(i = 0; i < nr_of_elements; ++i) {
-  string_set(dest, i, s);
+        string_set(dest, i, s);
     }
 }
 
 void convert_alloc_string_array_to_f77(const string_array_t * a,
-                                 string_array_t* dest)
+                                       string_array_t* dest)
 {
     int i;
     clone_reverse_base_array_spec(a, dest);
     alloc_string_array_data(dest);
     transpose_string_array(a, dest);
     for(i = 0; i < dest->ndims; ++i) {
-  dest->dim_size[i] = a->dim_size[i];
+        dest->dim_size[i] = a->dim_size[i];
     }
 }
 
 void convert_alloc_string_array_from_f77(const string_array_t * a,
-                                   string_array_t* dest)
+                                         string_array_t* dest)
 {
     int i;
     clone_reverse_base_array_spec(a,dest);
     alloc_string_array_data(dest);
     for(i = 0; i < dest->ndims; ++i) {
-  int tmp = dest->dim_size[i];
-  dest->dim_size[i] = a->dim_size[i];
-  a->dim_size[i] = tmp;
+        int tmp = dest->dim_size[i];
+        dest->dim_size[i] = a->dim_size[i];
+        a->dim_size[i] = tmp;
     }
     transpose_string_array(a, dest);
 }

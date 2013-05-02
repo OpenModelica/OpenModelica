@@ -40,13 +40,13 @@ extern "C" {
 #define RT_CLOCK_SPECIAL_STOPWATCH 32 /* The 33rd clock */
 
 /* Simulation-specific timing macros */
-#define SIM_TIMER_TOTAL    0
-#define SIM_TIMER_INIT     1
-#define SIM_TIMER_STEP     2
-#define SIM_TIMER_OUTPUT   3
-#define SIM_TIMER_EVENT    4
+#define SIM_TIMER_TOTAL          0
+#define SIM_TIMER_INIT           1
+#define SIM_TIMER_STEP           2
+#define SIM_TIMER_OUTPUT         3
+#define SIM_TIMER_EVENT          4
 #define SIM_TIMER_LINEARIZE      5
-#define SIM_TIMER_PREINIT  6
+#define SIM_TIMER_PREINIT        6
 #define SIM_TIMER_OVERHEAD       7
 #define SIM_TIMER_FIRST_FUNCTION 8
 

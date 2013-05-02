@@ -69,28 +69,28 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
 
 const char *LOG_STREAM_DESC[LOG_MAX] = {
   "unknown",
-  "this stream is always active",                 /* LOG_STDOUT */
-  "this stream is always active",                 /* LOG_ASSERT */
+  "this stream is always active",                       /* LOG_STDOUT */
+  "this stream is always active",                       /* LOG_ASSERT */
 
-  "additional information about dassl solver",    /* LOG_DDASRT */
-  "additional debug information",                 /* LOG_DEBUG */
+  "additional information about dassl solver",          /* LOG_DDASRT */
+  "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
   "outputs jacobian of the dynamic state selection",    /* LOG_DSS_JAC */
   "additional information during event iteration",      /* LOG_EVENTS */
-  "verbose logging of event system",              /* LOG_EVENTS_V */
+  "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
-  "outputs the jacobian matrix used by dassl",    /* LOG_JAC */
-  "logging for linear systems",                   /* LOG_LS */
-  "verbose logging of linear systems",            /* LOG_LS_V */
-  "logging for nonlinear systems",                /* LOG_NLS */
-  "verbose logging of nonlinear systems",         /* LOG_NLS_V */
-  "outputs the jacobian of nonlinear systems",    /* LOG_NLS_JAC */
-  "outputs residuals of the initialization",      /* LOG_RES_INIT */
+  "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
+  "logging for linear systems",                         /* LOG_LS */
+  "verbose logging of linear systems",                  /* LOG_LS_V */
+  "logging for nonlinear systems",                      /* LOG_NLS */
+  "verbose logging of nonlinear systems",               /* LOG_NLS_V */
+  "outputs the jacobian of nonlinear systems",          /* LOG_NLS_JAC */
+  "outputs residuals of the initialization",            /* LOG_RES_INIT */
   "additional information about simulation process",    /* LOG_SIMULATION */
-  "additional information about solver process",  /* LOG_SOLVER */
-  "final solution of the initialization",         /* LOG_SOTI */
+  "additional information about solver process",        /* LOG_SOLVER */
+  "final solution of the initialization",               /* LOG_SOTI */
   "additional statistics about timer/events/solver",    /* LOG_STATS */
-  "???",                                          /* LOG_UTIL*/
+  "???",                                                /* LOG_UTIL*/
   "additional information about the zerocrossings"      /* LOG_ZEROCROSSINGS */
 };
 

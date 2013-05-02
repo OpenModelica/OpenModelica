@@ -30,7 +30,7 @@
  */
 
 encapsulated package Global
-" file:  Global.mo
+" file:        Global.mo
   package:     Global
   description: Global contains structures that are available globally.
 

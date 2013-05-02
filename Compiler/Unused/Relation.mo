@@ -30,7 +30,7 @@
  */
 
 encapsulated package Relation
-" file:  Relation.mo
+" file:        Relation.mo
   package:     Relation
   description: Relation is a representation of a relation between two objects.
   @author:     adrpo
@@ -136,17 +136,17 @@ algorithm
     // add in single
     case (UNIDIRECTIONAL(tTo, n), inSource, inTarget)
       equation
-  tTo = AvlTree.add(tTo, inSource, inTarget);
+        tTo = AvlTree.add(tTo, inSource, inTarget);
       then
-  UNIDIRECTIONAL(tTo, n);
+        UNIDIRECTIONAL(tTo, n);
 
     // add in double
     case (BIDIRECTIONAL(tTo, tFrom, n), inSource, inTarget)
       equation
-  tTo = AvlTree.add(tTo, inSource, inTarget);
-  tFrom = AvlTree.add(tFrom, inTarget, inSource);
+        tTo = AvlTree.add(tTo, inSource, inTarget);
+        tFrom = AvlTree.add(tFrom, inTarget, inSource);
       then
-  BIDIRECTIONAL(tTo, tFrom, n);
+        BIDIRECTIONAL(tTo, tFrom, n);
 
   end matchcontinue;
 end add;
@@ -165,16 +165,16 @@ algorithm
     // search in single
     case (UNIDIRECTIONAL(relation = tTo), inSource)
       equation
-  target = AvlTree.get(tTo, inSource);
+        target = AvlTree.get(tTo, inSource);
       then
-  target;
+        target;
 
     // search in double
     case (BIDIRECTIONAL(relationSourceTarget = tTo), inSource)
       equation
-  target = AvlTree.get(tTo, inSource);
+        target = AvlTree.get(tTo, inSource);
       then
-  target;
+        target;
 
   end matchcontinue;
 end getTargetFromSource;
@@ -194,16 +194,16 @@ algorithm
     // get in single
     case (UNIDIRECTIONAL(relation = tTo), inTarget)
       equation
-  source = AvlTree.getKeyOfVal(tTo, inTarget);
+        source = AvlTree.getKeyOfVal(tTo, inTarget);
       then
-  source;
+        source;
 
     // get in double
     case (BIDIRECTIONAL(relationTargetSource = tFrom), inTarget)
       equation
-  source = AvlTree.get(tFrom, inTarget);
+        source = AvlTree.get(tFrom, inTarget);
       then
-  source;
+        source;
 
   end matchcontinue;
 end getSourceFromTarget;
@@ -231,16 +231,16 @@ algorithm
 
     case (UNIDIRECTIONAL(tTo,n))
       equation
-  str = "to[" +& n +& "]:" +& AvlTree.prettyPrintTreeStr(tTo) +& "\n";
+        str = "to[" +& n +& "]:" +& AvlTree.prettyPrintTreeStr(tTo) +& "\n";
       then
-  str;
+        str;
     case (BIDIRECTIONAL(tTo,tFrom,n))
       equation
-  str1 = AvlTree.prettyPrintTreeStr(tTo);
-  str2 = AvlTree.prettyPrintTreeStr(tFrom);
-  str = stringAppendList({"to[", n, "]:", str1, "\nfrom[", n, "]:" , str2, "\n"});
+        str1 = AvlTree.prettyPrintTreeStr(tTo);
+        str2 = AvlTree.prettyPrintTreeStr(tFrom);
+        str = stringAppendList({"to[", n, "]:", str1, "\nfrom[", n, "]:" , str2, "\n"});
       then
-  str;
+        str;
   end matchcontinue;
 end printRelationStr;
 
@@ -264,13 +264,13 @@ algorithm
 
     case ((l1,r1),(l2,r2))
       equation
-  //print("comparing: " +& intPairStr(i1) +& "=<" +& intPairStr(i2));
-  bEQ = boolAnd(intEq(l1, l2), intEq(r1, r2));
-  bLT = boolOr(intLt(l1, l2), boolAnd(intEq(l1, l2), intLt(r1, r2)));
-  o = Util.if_(bEQ, 0, Util.if_(bLT, -1, 1));
-  //print(" got: " +& intString(o) +& "\n");
+        //print("comparing: " +& intPairStr(i1) +& "=<" +& intPairStr(i2));
+        bEQ = boolAnd(intEq(l1, l2), intEq(r1, r2));
+        bLT = boolOr(intLt(l1, l2), boolAnd(intEq(l1, l2), intLt(r1, r2)));
+        o = Util.if_(bEQ, 0, Util.if_(bLT, -1, 1));
+        //print(" got: " +& intString(o) +& "\n");
       then
-  o;
+        o;
   end match;
 end intPairCompare;
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFConnectUtil2
-" file:  NFConnectUtil2.mo
+" file:        NFConnectUtil2.mo
   package:     NFConnectUtil2
   description: Connection set utility functions
 
@@ -140,13 +140,13 @@ algorithm
 
     case SOME(NFInstTypes.TYPED_COMPONENT(ty = ty, prefixes = prefs))
       equation
-  (attr, dcty) = extractConnectorAttrFromPrefs(prefs);
-  cty = translateDaeConnectorType(dcty);
+        (attr, dcty) = extractConnectorAttrFromPrefs(prefs);
+        cty = translateDaeConnectorType(dcty);
       then
-  (ty, cty, attr);
+        (ty, cty, attr);
 
     else (DAE.T_UNKNOWN_DEFAULT, NFConnect2.NO_TYPE(),
-    NFConnect2.CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR()));
+          NFConnect2.CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR()));
 
   end match;
 end extractConnectorTypesFromComp;
@@ -190,12 +190,12 @@ algorithm
       Face face1, face2;
 
     case (NFConnect2.CONNECTOR(name = name1, face = face1),
-    NFConnect2.CONNECTOR(name = name2, face = face2))
+          NFConnect2.CONNECTOR(name = name2, face = face2))
       equation
-  true = faceEqual(face1, face2);
-  true = ComponentReference.crefEqualNoStringCompare(name1, name2);
+        true = faceEqual(face1, face2);
+        true = ComponentReference.crefEqualNoStringCompare(name1, name2);
       then
-  true;
+        true;
 
     else false;
 
@@ -279,9 +279,9 @@ algorithm
     case NFConnect2.STREAM(NONE()) then "stream()";
     case NFConnect2.STREAM(SOME(cref))
       equation
-  cref_str = ComponentReference.printComponentRefStr(cref);
+        cref_str = ComponentReference.printComponentRefStr(cref);
       then
-  "stream(" +& cref_str +& ")";
+        "stream(" +& cref_str +& ")";
     else "NO_TYPE";
   end match;
 end connectorTypeStr;
@@ -310,9 +310,9 @@ algorithm
 
     case NFInstTypes.DAE_PREFIXES(connectorType = dcty, variability = var)
       equation
-  cty = translateDaeConnectorType(dcty);
+        cty = translateDaeConnectorType(dcty);
       then
-  (cty, var);
+        (cty, var);
 
     else (NFConnect2.POTENTIAL(), DAE.VARIABLE());
 
@@ -404,20 +404,20 @@ algorithm
       Connector lhs, rhs;
 
     case (NFConnect2.CONNECTION(lhs = lhs, rhs = rhs),
-  NFConnect2.CONNECTIONS(connl, expconnl, branches, roots))
+        NFConnect2.CONNECTIONS(connl, expconnl, branches, roots))
       equation
-  true = isExpandableConnector(lhs) or
-         isUndeclaredConnector(lhs) or
-         isUndeclaredConnector(rhs);
-  expconnl = inConnection :: connl;
+        true = isExpandableConnector(lhs) or
+               isUndeclaredConnector(lhs) or
+               isUndeclaredConnector(rhs);
+        expconnl = inConnection :: connl;
       then
-  NFConnect2.CONNECTIONS(connl, expconnl, branches, roots);
+        NFConnect2.CONNECTIONS(connl, expconnl, branches, roots);
 
     case (_, NFConnect2.CONNECTIONS(connl, expconnl, branches, roots))
       equation
-  connl = inConnection :: connl;
+        connl = inConnection :: connl;
       then
-  NFConnect2.CONNECTIONS(connl, expconnl, branches, roots);
+        NFConnect2.CONNECTIONS(connl, expconnl, branches, roots);
 
   end matchcontinue;
 end consConnection;
@@ -469,13 +469,13 @@ algorithm
       list<Connector> flows;
 
     case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(ty = ty),
-  cls = cls as NFInstTypes.COMPLEX_CLASS(components = sub_comps)), flows)
+        cls = cls as NFInstTypes.COMPLEX_CLASS(components = sub_comps)), flows)
       equation
-  true = NFInstUtil.isConnectorComponent(comp);
-  flows = collectFlowConnectors2(cls, flows);
-  flows = List.fold(sub_comps, collectFlowConnector, flows);
+        true = NFInstUtil.isConnectorComponent(comp);
+        flows = collectFlowConnectors2(cls, flows);
+        flows = List.fold(sub_comps, collectFlowConnector, flows);
       then
-  flows;
+        flows;
 
     case (NFInstTypes.ELEMENT(cls = cls as NFInstTypes.COMPLEX_CLASS(components = _)), _)
       then collectFlowConnectors2(cls, inAccumFlows);
@@ -497,11 +497,11 @@ algorithm
 
     case (NFInstTypes.ELEMENT(component = comp), _)
       equation
-  true = NFInstUtil.isFlowComponent(comp);
-  cref = NFInstUtil.makeTypedComponentCref(comp);
-  c = makeConnector(cref, NFConnect2.INSIDE(), SOME(comp));
+        true = NFInstUtil.isFlowComponent(comp);
+        cref = NFInstUtil.makeTypedComponentCref(comp);
+        c = makeConnector(cref, NFConnect2.INSIDE(), SOME(comp));
       then
-  c :: inAccumFlows;
+        c :: inAccumFlows;
 
     else inAccumFlows;
   end matchcontinue;
@@ -520,11 +520,11 @@ algorithm
       DAE.ConnectorType cty;
 
     case NFInstTypes.DAE_PREFIXES(visibility = vis, variability = var,
-  direction = dir, connectorType = cty)
+        direction = dir, connectorType = cty)
       then (NFConnect2.CONN_ATTR(var, vis, dir), cty);
 
     else (NFConnect2.CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR()),
-      DAE.POTENTIAL());
+            DAE.POTENTIAL());
 
   end match;
 end extractConnectorAttrFromPrefs;
@@ -558,11 +558,11 @@ algorithm
 
     case NFConnect2.CONNECTOR(name, ty, face, cty, attr)
       equation
-  (prefixes, name) = expandConnectorPrefix(name);
-  connl = expandConnector2(name, ty, face, cty, attr);
-  connl = List.productMap(prefixes, connl, prefixConnector);
+        (prefixes, name) = expandConnectorPrefix(name);
+        connl = expandConnector2(name, ty, face, cty, attr);
+        connl = List.productMap(prefixes, connl, prefixConnector);
       then
-  connl;
+        connl;
 
   end match;
 end expandConnector;
@@ -580,10 +580,10 @@ algorithm
     case DAE.CREF_IDENT(ident = _) then ({}, inCref);
     else
       equation
-  (pre_cr, last_cr) = ComponentReference.splitCrefLast(inCref);
-  prefixes = ComponentReference.expandCref(pre_cr, false);
+        (pre_cr, last_cr) = ComponentReference.splitCrefLast(inCref);
+        prefixes = ComponentReference.expandCref(pre_cr, false);
       then
-  (prefixes, last_cr);
+        (prefixes, last_cr);
 
   end match;
 end expandConnectorPrefix;
@@ -652,23 +652,23 @@ algorithm
 
     case (_, DAE.T_ARRAY(ty = _), _, _, _)
       equation
-  crefs = ComponentReference.expandCref(inCref, false);
-  connl = List.map4(crefs, makeConnector2, inType, inFace, inConnectorType,
-    inConnectorAttr);
+        crefs = ComponentReference.expandCref(inCref, false);
+        connl = List.map4(crefs, makeConnector2, inType, inFace, inConnectorType,
+          inConnectorAttr);
       then
-  connl;
+        connl;
 
     case (_, DAE.T_COMPLEX(varLst = vars), _, _, _)
       equation
-  vars = List.filterOnTrueReverse(vars, DAEUtil.isNotParamOrConstVar);
+        vars = List.filterOnTrueReverse(vars, DAEUtil.isNotParamOrConstVar);
       then
-  List.map2(vars, varToConnector, inCref, inFace);
+        List.map2(vars, varToConnector, inCref, inFace);
 
     else
       equation
-  conn = makeConnector2(inCref, inType, inFace, inConnectorType, inConnectorAttr);
+        conn = makeConnector2(inCref, inType, inFace, inConnectorType, inConnectorAttr);
       then
-  {conn};
+        {conn};
 
   end match;
 end expandConnector2;
@@ -696,12 +696,12 @@ algorithm
     // of the given connector element.
     case (DAE.CREF_QUAL(ident = _), _)
       equation
-  SOME(comp) = NFInstUtil.getComponentParent(inComponent);
-  is_conn = NFInstUtil.isConnectorComponent(comp);
-  // Connector => outside, not connector => inside.
-  face = Util.if_(is_conn, NFConnect2.OUTSIDE(), NFConnect2.INSIDE());
+        SOME(comp) = NFInstUtil.getComponentParent(inComponent);
+        is_conn = NFInstUtil.isConnectorComponent(comp);
+        // Connector => outside, not connector => inside.
+        face = Util.if_(is_conn, NFConnect2.OUTSIDE(), NFConnect2.INSIDE());
       then
-  face;
+        face;
 
   end match;
 end getConnectorFace;

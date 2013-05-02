@@ -29,13 +29,13 @@
  */
 
 /*
- * file:  BackendDAEEXT.cpp
+ * file:        BackendDAEEXT.cpp
  * description: The BackendDAEEXT.cpp file is the external implementation of
- *        MetaModelica package: Compiler/BackendDAEEXT.mo.
- *        This is used for the BLT and index reduction algorithms in BackendDAE.
- *        The implementation mainly consists of several bitvectors implemented
- *        using std::vector<bool> since such functionality is not available in
- *        MetaModelica Compiler (MMC).
+ *              MetaModelica package: Compiler/BackendDAEEXT.mo.
+ *              This is used for the BLT and index reduction algorithms in BackendDAE.
+ *              The implementation mainly consists of several bitvectors implemented
+ *              using std::vector<bool> since such functionality is not available in
+ *              MetaModelica Compiler (MMC).
  *
  * RCS: $Id$
  *
@@ -236,32 +236,32 @@ void BackendDAEExtImpl__cheapmatching(int nvars, int neqns, int cheapID, int cle
     if (neqns>n) {
       if(match)
       {
-  int* tmp = (int*) malloc(neqns * sizeof(int));
-  memcpy(tmp,match,n*sizeof(int));
-  free(match);
-  match = tmp;
-  for (i = n; i < neqns; i++) {
-    match[i] = -1;
-  }
+        int* tmp = (int*) malloc(neqns * sizeof(int));
+        memcpy(tmp,match,n*sizeof(int));
+        free(match);
+        match = tmp;
+        for (i = n; i < neqns; i++) {
+          match[i] = -1;
+        }
       } else {
-   match = (int*) malloc(neqns * sizeof(int));
-   memset(match,-1,neqns * sizeof(int));
+         match = (int*) malloc(neqns * sizeof(int));
+         memset(match,-1,neqns * sizeof(int));
       }
       n = neqns;
     }
     if (nvars>m) {
       if(row_match)
       {
-  int* tmp = (int*) malloc(nvars * sizeof(int));
-  memcpy(tmp,row_match,m*sizeof(int));
-  free(row_match);
-  row_match = tmp;
-  for (i = m; i < nvars; i++) {
-    row_match[i] = -1;
-  }
+        int* tmp = (int*) malloc(nvars * sizeof(int));
+        memcpy(tmp,row_match,m*sizeof(int));
+        free(row_match);
+        row_match = tmp;
+        for (i = m; i < nvars; i++) {
+          row_match[i] = -1;
+        }
       } else {
-  row_match = (int*) malloc(nvars * sizeof(int));
-   memset(row_match,-1,nvars * sizeof(int));
+        row_match = (int*) malloc(nvars * sizeof(int));
+         memset(row_match,-1,nvars * sizeof(int));
       }
       m = nvars;
     }
@@ -296,32 +296,32 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
     if (neqns>n) {
       if(match)
       {
-  int* tmp = (int*) malloc(neqns * sizeof(int));
-  memcpy(tmp,match,n*sizeof(int));
-  free(match);
-  match = tmp;
-  for (i = n; i < neqns; i++) {
-    match[i] = -1;
-  }
+        int* tmp = (int*) malloc(neqns * sizeof(int));
+        memcpy(tmp,match,n*sizeof(int));
+        free(match);
+        match = tmp;
+        for (i = n; i < neqns; i++) {
+          match[i] = -1;
+        }
       } else {
-   match = (int*) malloc(neqns * sizeof(int));
-   memset(match,-1,neqns * sizeof(int));
+         match = (int*) malloc(neqns * sizeof(int));
+         memset(match,-1,neqns * sizeof(int));
       }
       n = neqns;
     }
     if (nvars>m) {
       if(row_match)
       {
-  int* tmp = (int*) malloc(nvars * sizeof(int));
-  memcpy(tmp,row_match,m*sizeof(int));
-  free(row_match);
-  row_match = tmp;
-  for (i = m; i < nvars; i++) {
-    row_match[i] = -1;
-  }
+        int* tmp = (int*) malloc(nvars * sizeof(int));
+        memcpy(tmp,row_match,m*sizeof(int));
+        free(row_match);
+        row_match = tmp;
+        for (i = m; i < nvars; i++) {
+          row_match[i] = -1;
+        }
       } else {
-  row_match = (int*) malloc(nvars * sizeof(int));
-   memset(row_match,-1,nvars * sizeof(int));
+        row_match = (int*) malloc(nvars * sizeof(int));
+         memset(row_match,-1,nvars * sizeof(int));
       }
       m = nvars;
     }

@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFEnv
-" file:  NFEnv.mo
+" file:        NFEnv.mo
   package:     NFEnv
   description: Symbol table for lookup
 
@@ -118,15 +118,15 @@ algorithm
 
     case (_, SCode.NOT_ENCAPSULATED(), ENV(_, ty, scopes, sc, entries))
       equation
-  sc = sc + 1;
+        sc = sc + 1;
       then
-  ENV(inScopeName, ty, inEnv :: scopes, sc, entries);
+        ENV(inScopeName, ty, inEnv :: scopes, sc, entries);
 
     case (_, _, ENV(_, _, scopes, sc, _))
       equation
-  sc = sc + 1;
+        sc = sc + 1;
       then
-  ENV(inScopeName, ENCAPSULATED_SCOPE(), inEnv :: scopes, sc, emptyAvlTree);
+        ENV(inScopeName, ENCAPSULATED_SCOPE(), inEnv :: scopes, sc, emptyAvlTree);
 
   end match;
 end openScope;
@@ -254,28 +254,28 @@ algorithm
     // simply shadowe the old entry.
     case (ENTRY(name = name, scopeLevel = old_scope), ENTRY(scopeLevel = new_scope))
       equation
-  true = new_scope > old_scope;
+        true = new_scope > old_scope;
       then
-  inNewEntry;
+        inNewEntry;
 
     // Otherwise, merge the origins to make sure that it's a valid insertion.
     // Then update the old entry with the new origins.
     case (ENTRY(name, old_element, scope, old_origins),
-    ENTRY(element = new_element, origins = new_origins))
+          ENTRY(element = new_element, origins = new_origins))
       equation
-  // New entries should only have one origin.
-  origin = getSingleOriginFromList(new_origins);
-  element = checkOrigin(origin, old_origins, old_element, new_element);
-  origins = mergeOrigin(origin, old_origins);
+        // New entries should only have one origin.
+        origin = getSingleOriginFromList(new_origins);
+        element = checkOrigin(origin, old_origins, old_element, new_element);
+        origins = mergeOrigin(origin, old_origins);
       then
-  ENTRY(name, element, scope, origins);
+        ENTRY(name, element, scope, origins);
 
     case (ENTRY(name = name), _)
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFEnv.mergeEntry failed on entry " +& name);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFEnv.mergeEntry failed on entry " +& name);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end mergeEntry;
@@ -338,19 +338,19 @@ algorithm
 
     // Found two origins with the same base class, merge their origins.
     case (INHERITED_ORIGIN(baseClass = bc1, origin = origin1),
-  INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
+        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
       equation
-  true = Absyn.pathEqual(bc1, bc2);
-  origin2 = List.fold(origin1, mergeOrigin, origin2);
+        true = Absyn.pathEqual(bc1, bc2);
+        origin2 = List.fold(origin1, mergeOrigin, origin2);
       then
-  INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
+        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
 
     // No match, search the rest.
     case (_, origin :: rest_origins)
       equation
-  rest_origins = mergeInheritedOrigin(inNewOrigin, rest_origins);
+        rest_origins = mergeInheritedOrigin(inNewOrigin, rest_origins);
       then
-  origin :: rest_origins;
+        origin :: rest_origins;
 
   end matchcontinue;
 end mergeInheritedOrigin;
@@ -392,15 +392,15 @@ algorithm
     // shadowed by a local/inherited element.
     case (IMPORTED_ORIGIN(imp = _), _, _, _)
       equation
-  // Check if we have conflicting imports.
-  List.map1_0(inOldOrigins, checkOriginImportConflict, inNewOrigin);
+        // Check if we have conflicting imports.
+        List.map1_0(inOldOrigins, checkOriginImportConflict, inNewOrigin);
 
-  // If we reached here there was no conflict, but the imported entry
-  // will be shadowed by the old entry. This makes the import useless, so
-  // we print a warning but keep the old entry and continue.
-  printImportShadowWarning(inNewOrigin, inOldElement);
+        // If we reached here there was no conflict, but the imported entry
+        // will be shadowed by the old entry. This makes the import useless, so
+        // we print a warning but keep the old entry and continue.
+        printImportShadowWarning(inNewOrigin, inOldElement);
       then
-  inOldElement;
+        inOldElement;
 
     // If the old element was imported, then it will be shadowed by the new
     // element. Note that if the old element would have had more than one
@@ -408,47 +408,47 @@ algorithm
     // when it was added.
     case (_, {origin as IMPORTED_ORIGIN(imp = _)}, _, _)
       equation
-  printImportShadowWarning(origin, inNewElement);
+        printImportShadowWarning(origin, inNewElement);
       then
-  inNewElement;
+        inNewElement;
 
     // The new element was inherited, check that it's identical to the existing
     // element. Keep the old one in that case, so that e.g. error messages favor
     // the local elements.
     case (INHERITED_ORIGIN(baseClass = _), _, _, _)
       equation
-  /*********************************************************************/
-  // TODO: Check duplicate elements due to inheritance here.
-  //       Or perhaps we shouldn't check this here, but in NFInstFlatten
-  //       instead so we get the qualified name of the class.
-  /*********************************************************************/
+        /*********************************************************************/
+        // TODO: Check duplicate elements due to inheritance here.
+        //       Or perhaps we shouldn't check this here, but in NFInstFlatten
+        //       instead so we get the qualified name of the class.
+        /*********************************************************************/
       then
-  inOldElement;
+        inOldElement;
 
     // The new element is a local element. Since local elements are added first
     // this means that we have duplicate elements in the scope. This is not
     // allowed, so print an error and fail.
     case (LOCAL_ORIGIN(), _, _, _)
       equation
-  printDoubleDeclarationError(inOldElement, inNewElement);
+        printDoubleDeclarationError(inOldElement, inNewElement);
       then
-  fail();
+        fail();
 
     // Same as case above, but with builtin elements.
     case (BUILTIN_ORIGIN(), _, _, _)
       equation
-  printDoubleDeclarationError(inOldElement, inNewElement);
+        printDoubleDeclarationError(inOldElement, inNewElement);
       then
-  fail();
+        fail();
 
     // Other cases shouldn't occur.
     else
       equation
-  name = SCode.elementName(inNewElement);
-  err_msg = "NFEnv.checkOrigin failed on unhandled origin!";
-  Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
+        name = SCode.elementName(inNewElement);
+        err_msg = "NFEnv.checkOrigin failed on unhandled origin!";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
-  fail();
+        fail();
 
   end match;
 end checkOrigin;
@@ -468,11 +468,11 @@ algorithm
 
     case (IMPORTED_ORIGIN(imp = imp, info = info1), IMPORTED_ORIGIN(info = info2))
       equation
-  name = Absyn.importName(imp);
-  Error.addMultiSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
-    {name}, {info2, info1});
+        name = Absyn.importName(imp);
+        Error.addMultiSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
+          {name}, {info2, info1});
       then
-  fail();
+        fail();
 
     else ();
   end match;
@@ -614,16 +614,16 @@ algorithm
 
     case (ENTRY(scopeLevel = scope_lvl), ENV(scopeCount = scope_count))
       equation
-  true = intEq(scope_lvl, scope_count);
+        true = intEq(scope_lvl, scope_count);
       then
-  inEnv;
+        inEnv;
 
     case (ENTRY(scopeLevel = scope_lvl),
-    ENV(scopeCount = scope_count, scopes = scopes))
+          ENV(scopeCount = scope_count, scopes = scopes))
       equation
-  scope_lvl = scope_count - scope_lvl;
+        scope_lvl = scope_count - scope_lvl;
       then
-  listGet(scopes, scope_lvl);
+        listGet(scopes, scope_lvl);
 
   end matchcontinue;
 end entryEnv;
@@ -648,10 +648,10 @@ algorithm
     // Some origins => choose the first.
     case (ENTRY(origins = origin :: _), _)
       equation
-  env = originEnv(origin);
-  entry = setEntryScope(inEntry, env);
+        env = originEnv(origin);
+        entry = setEntryScope(inEntry, env);
       then
-  (entry, env);
+        (entry, env);
 
   end match;
 end resolveEntry;
@@ -868,10 +868,10 @@ algorithm
 
     case ENV(name = SOME(name))
       equation
-  env = exitScope(inEnv);
-  path = envPath(env);
+        env = exitScope(inEnv);
+        path = envPath(env);
       then
-  Absyn.QUALIFIED(name, path);
+        Absyn.QUALIFIED(name, path);
 
   end match;
 end envPath;
@@ -901,18 +901,18 @@ algorithm
 
     case (ENV(name = SOME(n1)), ENV(name = SOME(n2)))
       equation
-  false = stringEq(n1, n2);
+        false = stringEq(n1, n2);
       then
-  false;
+        false;
 
     case (ENV(scopes = {}), ENV(scopes = {})) then true;
 
     else
       equation
-  rest1 = exitScope(inEnv1);
-  rest2 = exitScope(inEnv2);
+        rest1 = exitScope(inEnv1);
+        rest2 = exitScope(inEnv2);
       then
-  isEqual(rest1, rest2);
+        isEqual(rest1, rest2);
 
   end matchcontinue;
 end isEqual;
@@ -932,18 +932,18 @@ algorithm
     // be a prefix.
     case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
       equation
-  true = intGt(sc1, sc2);
+        true = intGt(sc1, sc2);
       then
-  false;
+        false;
 
     // Otherwise, remove scopes from the second environment until they are the
     // same length, and check if they are equal or not.
     case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
       equation
-  sc_diff = sc2 - sc1;
-  rest2 = exitScopes(inEnv, sc_diff);
+        sc_diff = sc2 - sc1;
+        rest2 = exitScopes(inEnv, sc_diff);
       then
-  isEqual(inPrefixEnv, rest2);
+        isEqual(inPrefixEnv, rest2);
 
   end matchcontinue;
 end isPrefix;
@@ -988,18 +988,18 @@ algorithm
 
     case (ENTRY(element = SCode.CLASS(classDef = cdef, info = info)), _)
       equation
-  env = openClassEntryScope(inEntry, inEnv);
-  env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
-    elementSplitterRegular, info, env);
+        env = openClassEntryScope(inEntry, inEnv);
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
+          elementSplitterRegular, info, env);
       then
-  env;
+        env;
 
     case (ENTRY(element = SCode.COMPONENT(typeSpec = ty, info = info)), _)
       equation
-  (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, info);
-  env = enterEntryScope(entry, env);
+        (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, info);
+        env = enterEntryScope(entry, env);
       then
-  env;
+        env;
 
   end match;
 end enterEntryScope;
@@ -1078,43 +1078,43 @@ algorithm
 
     case (SCode.PARTS(elementLst = elems), _, _, _, _, _, env)
       equation
-  (cls_vars, exts, imps) =
-    populateEnvWithClassDef2(elems, inSplitFunc, {}, {}, {});
-  cls_vars = applyVisibilityToElements(cls_vars, inVisibility);
-  exts = applyVisibilityToElements(exts, inVisibility);
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(elems, inSplitFunc, {}, {}, {});
+        cls_vars = applyVisibilityToElements(cls_vars, inVisibility);
+        exts = applyVisibilityToElements(exts, inVisibility);
 
-  origin = collapseInheritedOrigins(inOrigins);
-  // Add classes, component and imports first, so that extends can be found.
-  env = populateEnvWithElements(cls_vars, origin, env);
-  env = populateEnvWithImports(imps, env, false);
-  env = populateEnvWithExtends(exts, inOrigins, inEnv, env);
+        origin = collapseInheritedOrigins(inOrigins);
+        // Add classes, component and imports first, so that extends can be found.
+        env = populateEnvWithElements(cls_vars, origin, env);
+        env = populateEnvWithImports(imps, env, false);
+        env = populateEnvWithExtends(exts, inOrigins, inEnv, env);
       then
-  env;
+        env;
 
     case (SCode.CLASS_EXTENDS(composition = cdef), _, _, _, _, _, _)
       then populateEnvWithClassDef(cdef, inVisibility, inOrigins, inEnv,
-  inSplitFunc, inInfo, inAccumEnv);
+        inSplitFunc, inInfo, inAccumEnv);
 
     case (SCode.DERIVED(typeSpec = ty), _, _, _, _, _, _)
       equation
-  (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, inInfo);
-  ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
-  // TODO: Only create this environment if needed, i.e. if the cdef
-  // contains extends.
-  env = openClassEntryScope(entry, env);
-  env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
-    elementSplitterExtends, inInfo, inAccumEnv);
-  env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
-    inSplitFunc, inInfo, inAccumEnv);
+        (entry, env) = NFLookup.lookupTypeSpec(ty, inEnv, inInfo);
+        ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
+        // TODO: Only create this environment if needed, i.e. if the cdef
+        // contains extends.
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
+          elementSplitterExtends, inInfo, inAccumEnv);
+        env = populateEnvWithClassDef(cdef, inVisibility, inOrigins, env,
+          inSplitFunc, inInfo, inAccumEnv);
       then
-  env;
+        env;
 
     case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, env)
       equation
-  path = envPath(inEnv);
-  env = insertEnumLiterals(enums, path, 1, env);
+        path = envPath(inEnv);
+        env = insertEnumLiterals(enums, path, 1, env);
       then
-  env;
+        env;
 
   end match;
 end populateEnvWithClassDef;
@@ -1148,11 +1148,11 @@ algorithm
 
     case (el :: rest_el, _, cls_vars, exts, imps)
       equation
-  (cls_vars, exts, imps) = inSplitFunc(el, cls_vars, exts, imps);
-  (cls_vars, exts, imps) =
-    populateEnvWithClassDef2(rest_el, inSplitFunc, cls_vars, exts, imps);
+        (cls_vars, exts, imps) = inSplitFunc(el, cls_vars, exts, imps);
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(rest_el, inSplitFunc, cls_vars, exts, imps);
       then
-  (cls_vars, exts, imps);
+        (cls_vars, exts, imps);
 
     case ({}, _, _, _, _) then (inClsAndVars, inExtends, inImports);
 
@@ -1174,9 +1174,9 @@ algorithm
 
     case (lit :: rest_lits, _, _, _)
       equation
-  env = insertEnumLiteral(lit, inEnumPath, inNextValue, inEnv);
+        env = insertEnumLiteral(lit, inEnumPath, inNextValue, inEnv);
       then
-  insertEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
+        insertEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
 
     case ({}, _, _, _) then inEnv;
 
@@ -1230,10 +1230,10 @@ algorithm
 
     else
       equation
-  top_env = topScope(inEnv);
-  env = List.fold1(inImports, populateEnvWithImport, top_env, inEnv);
+        top_env = topScope(inEnv);
+        env = List.fold1(inImports, populateEnvWithImport, top_env, inEnv);
       then
-  env;
+        env;
 
   end match;
 end populateEnvWithImports;
@@ -1255,16 +1255,16 @@ algorithm
 
     case (SCode.IMPORT(imp = imp, info = info), _, _)
       equation
-  // Look up the import name.
-  path = Absyn.importPath(imp);
-  (entry, env) = NFLookup.lookupImportPath(path, inTopScope, info);
-  // Convert the entry to an entry imported into the given environment.
-  origin = IMPORTED_ORIGIN(imp, info, env);
-  entry = makeEntryWithOrigin(entryElement(entry), {origin}, inEnv);
-  // Add the imported entry to the environment.
-  env = populateEnvWithImport2(imp, entry, env, info, inEnv);
+        // Look up the import name.
+        path = Absyn.importPath(imp);
+        (entry, env) = NFLookup.lookupImportPath(path, inTopScope, info);
+        // Convert the entry to an entry imported into the given environment.
+        origin = IMPORTED_ORIGIN(imp, info, env);
+        entry = makeEntryWithOrigin(entryElement(entry), {origin}, inEnv);
+        // Add the imported entry to the environment.
+        env = populateEnvWithImport2(imp, entry, env, info, inEnv);
       then
-  env;
+        env;
 
   end match;
 end populateEnvWithImport;
@@ -1288,35 +1288,35 @@ algorithm
     // A renaming import, 'import D = A.B.C'.
     case (Absyn.NAMED_IMPORT(name = name), _, _, _, _)
       equation
-  entry = renameEntry(inEntry, name);
-  env = insertEntry(entry, inAccumEnv);
+        entry = renameEntry(inEntry, name);
+        env = insertEntry(entry, inAccumEnv);
       then
-  env;
+        env;
 
     // A qualified import, 'import A.B.C'.
     case (Absyn.QUAL_IMPORT(path = _), _, _, _, _)
       equation
-  env = insertEntry(inEntry, inAccumEnv);
+        env = insertEntry(inEntry, inAccumEnv);
       then
-  env;
+        env;
 
     // An unqualified import, 'import A.B.*'.
     case (Absyn.UNQUAL_IMPORT(path = _),
-  ENTRY(element = SCode.CLASS(classDef = cdef), origins = origins), _, _, _)
+        ENTRY(element = SCode.CLASS(classDef = cdef), origins = origins), _, _, _)
       equation
-  env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), origins, inEnv,
-    elementSplitterRegular, inInfo, inAccumEnv);
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), origins, inEnv,
+          elementSplitterRegular, inInfo, inAccumEnv);
       then
-  env;
+        env;
 
     // This should not happen, group imports are split into separate imports by
     // SCodeUtil.translateImports.
     case (Absyn.GROUP_IMPORT(prefix = _), _, _, _, _)
       equation
-  Error.addSourceMessage(Error.INTERNAL_ERROR,
-    {"NFEnv.populateEnvWithImport2 got unhandled group import!\n"}, inInfo);
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"NFEnv.populateEnvWithImport2 got unhandled group import!\n"}, inInfo);
       then
-  inEnv;
+        inEnv;
 
   end match;
 end populateEnvWithImport2;
@@ -1335,9 +1335,9 @@ algorithm
     // One or more origins, collapse with fold.
     case (origin :: rest_origins)
       equation
-  origin = List.fold(rest_origins, collapseInheritedOrigins2, origin);
+        origin = List.fold(rest_origins, collapseInheritedOrigins2, origin);
       then
-  {origin};
+        {origin};
 
     // Already collapsed.
     else inOrigins;
@@ -1391,23 +1391,23 @@ algorithm
 
     case (SCode.EXTENDS(baseClassPath = bc, visibility = vis, info = info), _, _, _)
       equation
-  // Look up the base class and check that it's a valid base class.
-  (entry, env) = NFLookup.lookupBaseClassName(bc, inEnv, info);
-  checkRecursiveExtends(bc, env, inEnv, info);
+        // Look up the base class and check that it's a valid base class.
+        (entry, env) = NFLookup.lookupBaseClassName(bc, inEnv, info);
+        checkRecursiveExtends(bc, env, inEnv, info);
 
-  // Check entry: not var, not replaceable
-  // Create an environment for the base class if needed.
-  ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
-  env = openClassEntryScope(entry, env);
-  env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
-    elementSplitterExtends, info, env);
-  // Populate the accumulated environment with the inherited elements.
-  origin = INHERITED_ORIGIN(bc, info, {}, env);
-  origins = origin :: inOrigins;
-  accum_env = populateEnvWithClassDef(cdef, vis, origins, env,
-    elementSplitterInherited, info, inAccumEnv);
+        // Check entry: not var, not replaceable
+        // Create an environment for the base class if needed.
+        ENTRY(element = SCode.CLASS(classDef = cdef)) = entry;
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, SCode.PUBLIC(), {}, env,
+          elementSplitterExtends, info, env);
+        // Populate the accumulated environment with the inherited elements.
+        origin = INHERITED_ORIGIN(bc, info, {}, env);
+        origins = origin :: inOrigins;
+        accum_env = populateEnvWithClassDef(cdef, vis, origins, env,
+          elementSplitterInherited, info, inAccumEnv);
       then
-  accum_env;
+        accum_env;
 
   end match;
 end populateEnvWithExtend;
@@ -1425,18 +1425,18 @@ algorithm
 
     case (_, _, _, _)
       equation
-  bc_name = Absyn.pathLastIdent(inExtendedClass);
-  env = openScope(SOME(bc_name), SCode.NOT_ENCAPSULATED(), inFoundEnv);
-  false = isPrefix(env, inOriginEnv);
+        bc_name = Absyn.pathLastIdent(inExtendedClass);
+        env = openScope(SOME(bc_name), SCode.NOT_ENCAPSULATED(), inFoundEnv);
+        false = isPrefix(env, inOriginEnv);
       then
-  ();
+        ();
 
     else
       equation
-  path_str = Absyn.pathString(inExtendedClass);
-  Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end checkRecursiveExtends;
@@ -1549,11 +1549,11 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = key))), _, _, _)
       equation
-  key_comp = stringCompare(inKey, key);
-  tree = avlTreeAdd2(inAvlTree, key_comp, inKey, inValue, inUpdateFunc);
-  tree = avlBalance(tree);
+        key_comp = stringCompare(inKey, key);
+        tree = avlTreeAdd2(inAvlTree, key_comp, inKey, inValue, inUpdateFunc);
+        tree = avlBalance(tree);
       then
-  tree;
+        tree;
 
   end match;
 end avlTreeAdd;
@@ -1584,25 +1584,25 @@ algorithm
     // Existing node, update it with the given update function.
     case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
       equation
-  value = inUpdateFunc(value, inValue);
+        value = inUpdateFunc(value, inValue);
       then
-  AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+        AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
 
     // Insert into right subtree.
     case (AVLTREENODE(oval, h, left, right), 1, _, _, _)
       equation
-  t = avlCreateEmptyIfNone(right);
-  t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
+        t = avlCreateEmptyIfNone(right);
+        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
       then
-  AVLTREENODE(oval, h, left, SOME(t));
+        AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(oval, h, left, right), -1, _, _, _)
       equation
-  t = avlCreateEmptyIfNone(left);
-  t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
+        t = avlCreateEmptyIfNone(left);
+        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
       then
-  AVLTREENODE(oval, h, SOME(t), right);
+        AVLTREENODE(oval, h, SOME(t), right);
 
   end match;
 end avlTreeAdd2;
@@ -1628,7 +1628,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAddUnique failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAddUnique failed"});
       then fail();
 
   end match;
@@ -1654,21 +1654,21 @@ algorithm
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-  1, key, value)
+        1, key, value)
       equation
-  t = avlCreateEmptyIfNone(right);
-  t = avlTreeAddUnique(t, key, value);
+        t = avlCreateEmptyIfNone(right);
+        t = avlTreeAddUnique(t, key, value);
       then
-  AVLTREENODE(oval, h, left, SOME(t));
+        AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-  -1, key, value)
+        -1, key, value)
       equation
-  t = avlCreateEmptyIfNone(left);
-  t = avlTreeAddUnique(t, key, value);
+        t = avlCreateEmptyIfNone(left);
+        t = avlTreeAddUnique(t, key, value);
       then
-  AVLTREENODE(oval, h, SOME(t), right);
+        AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeAddUnique2;
 
@@ -1728,7 +1728,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
       then fail();
 
   end match;
@@ -1756,16 +1756,16 @@ algorithm
     // Insert into right subtree.
     case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _)
       equation
-  t = avlTreeReplace(t, inKey, inValue);
+        t = avlTreeReplace(t, inKey, inValue);
       then
-  AVLTREENODE(oval, h, left, SOME(t));
+        AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _)
       equation
-  t = avlTreeReplace(t, inKey, inValue);
+        t = avlTreeReplace(t, inKey, inValue);
       then
-  AVLTREENODE(oval, h, SOME(t), right);
+        AVLTREENODE(oval, h, SOME(t), right);
 
   end match;
 end avlTreeReplace2;
@@ -1820,21 +1820,21 @@ algorithm
 
     case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
       equation
-  value = inUpdateFunc(value, inArg);
+        value = inUpdateFunc(value, inArg);
       then
-  AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+        AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
 
     case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _, _)
       equation
-  t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
+        t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
       then
-  AVLTREENODE(oval, h, left, SOME(t));
+        AVLTREENODE(oval, h, left, SOME(t));
 
     case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _, _)
       equation
-  t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
+        t = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
       then
-  AVLTREENODE(oval, h, SOME(t), right);
+        AVLTREENODE(oval, h, SOME(t), right);
 
   end match;
 end avlTreeUpdate2;
@@ -1886,13 +1886,13 @@ algorithm
     local AvlTree bt;
     case(true,bt)
       equation
-  bt = avlDoBalance3(bt);
-  bt = avlRotateLeft(bt);
+        bt = avlDoBalance3(bt);
+        bt = avlRotateLeft(bt);
       then bt;
     case(false,bt)
       equation
-  bt = avlDoBalance4(bt);
-  bt = avlRotateRight(bt);
+        bt = avlDoBalance4(bt);
+        bt = avlRotateRight(bt);
       then bt;
   end match;
 end avlDoBalance2;
@@ -1906,9 +1906,9 @@ algorithm
       AvlTree rr,bt;
     case(bt)
       equation
-  true = avlDifferenceInHeight(Util.getOption(avlRightNode(bt))) > 0;
-  rr = avlRotateRight(Util.getOption(avlRightNode(bt)));
-  bt = avlSetRight(bt,SOME(rr));
+        true = avlDifferenceInHeight(Util.getOption(avlRightNode(bt))) > 0;
+        rr = avlRotateRight(Util.getOption(avlRightNode(bt)));
+        bt = avlSetRight(bt,SOME(rr));
       then bt;
     else inBt;
   end matchcontinue;
@@ -1923,9 +1923,9 @@ algorithm
       AvlTree rl,bt;
     case (bt)
       equation
-  true = avlDifferenceInHeight(Util.getOption(avlLeftNode(bt))) < 0;
-  rl = avlRotateLeft(Util.getOption(avlLeftNode(bt)));
-  bt = avlSetLeft(bt,SOME(rl));
+        true = avlDifferenceInHeight(Util.getOption(avlLeftNode(bt))) < 0;
+        rl = avlRotateLeft(Util.getOption(avlLeftNode(bt)));
+        bt = avlSetLeft(bt,SOME(rl));
       then bt;
     else inBt;
   end matchcontinue;
@@ -2082,21 +2082,21 @@ algorithm
 
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-  indent = inIndent +& "  ";
-  s1 = avlPrintTreeStrPP2(l, indent);
-  s2 = avlPrintTreeStrPP2(r, indent);
-  res = "\n" +& inIndent +& rkey +& s1 +& s2;
+        indent = inIndent +& "  ";
+        s1 = avlPrintTreeStrPP2(l, indent);
+        s2 = avlPrintTreeStrPP2(r, indent);
+        res = "\n" +& inIndent +& rkey +& s1 +& s2;
       then
-  res;
+        res;
 
     case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-  indent = inIndent +& "  ";
-  s1 = avlPrintTreeStrPP2(l, indent);
-  s2 = avlPrintTreeStrPP2(r, indent);
-  res = "\n" +& s1 +& s2;
+        indent = inIndent +& "  ";
+        s1 = avlPrintTreeStrPP2(l, indent);
+        s2 = avlPrintTreeStrPP2(r, indent);
+        res = "\n" +& s1 +& s2;
       then
-  res;
+        res;
   end match;
 end avlPrintTreeStrPP2;
 

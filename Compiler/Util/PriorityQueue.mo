@@ -30,7 +30,7 @@
  */
 
 encapsulated package PriorityQueue
-" file:  PriorityQueue.mo
+" file:        PriorityQueue.mo
   package:     PriorityQueue
   description: ADT PriorityQueue
 
@@ -133,11 +133,11 @@ algorithm
 
     case (true,_,_,ts1,_,ts2)
       equation
-  ts = meld(ts1,t2::ts2);
+        ts = meld(ts1,t2::ts2);
       then t1::ts;
     case (_,true,_,ts1,_,ts2)
       equation
-  ts = meld(t1::ts1,ts2);
+        ts = meld(t1::ts1,ts2);
       then t2::ts;
     else ins(link(t1,t2), meld(inTs1,inTs2));
   end match;
@@ -156,8 +156,8 @@ algorithm
     case {t} then root(t);
     case t::ts
       equation
-  x = root(t);
-  y = findMin(ts);
+        x = root(t);
+        y = findMin(ts);
       then Util.if_(compareElement(x,y),x,y);
   end match;
 end findMin;
@@ -202,7 +202,7 @@ algorithm
     case ({},_) then listReverse(acc);
     case (ts,_)
       equation
-  (ts,elt) = deleteAndReturnMin(ts);
+        (ts,elt) = deleteAndReturnMin(ts);
       then elements2(ts,elt::acc);
   end match;
 end elements2;
@@ -247,13 +247,13 @@ algorithm
       T ts1,ts2;
     case (NODE(e1,r1,ts1),NODE(e2,r2,ts2))
       equation
-  r1 = r1+1;
-  r2 = r2+1;
-  ts1 = t2::ts1;
-  ts2 = t1::ts2;
+        r1 = r1+1;
+        r2 = r2+1;
+        ts1 = t2::ts1;
+        ts2 = t1::ts2;
       then Util.if_(compareElement(root(t1),root(t2)),
-  NODE(e1,r1,ts1),
-  NODE(e2,r2,ts2));
+        NODE(e1,r1,ts1),
+        NODE(e2,r2,ts2));
   end match;
 end link;
 
@@ -285,8 +285,8 @@ algorithm
     case {t} then (t,{});
     case t1::ts1
       equation
-  (t2,ts2) = getMin(ts1);
-  b = compareElement(root(t1),root(t2));
+        (t2,ts2) = getMin(ts1);
+        b = compareElement(root(t1),root(t2));
       then (Util.if_(b,t1,t2), Util.if_(b,ts1,t1::ts2));
   end match;
 end getMin;

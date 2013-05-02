@@ -30,7 +30,7 @@
  */
 
 encapsulated package Global
-" file:  Global.mo
+" file:        Global.mo
   package:     Global
   description: Global contains structures that are available globally.
 
@@ -58,16 +58,16 @@ type Names       = Name.Names;
 type Scopes      = Scope.Scopes;
 type InstInfo    = InstInfo.Info;
 type SymbolTable = Interactive.SymbolTable;
-type Id    = Integer;
+type Id          = Integer;
 
-constant Name.Name    rootName  = "$/";
-constant Id     rootScopeId     = 1;
+constant Name.Name    rootName        = "$/";
+constant Id           rootScopeId     = 1;
 constant Scope.Scope  rootScope       = {Scope.S(rootScopeId, virtualId, 1, Scope.TY())};
-constant Id     rootParentId    = 1;
-constant Id     rootInstanceId  = 2;
+constant Id           rootParentId    = 1;
+constant Id           rootInstanceId  = 2;
 
-constant Id     virtualId = 0 "an id for the parent of the root, etc, when we do not have any info";
-constant Id     autoId = Pool.autoId "an dummy id that will be auto-updated on insert in a pool";
+constant Id           virtualId = 0 "an id for the parent of the root, etc, when we do not have any info";
+constant Id           autoId = Pool.autoId "an dummy id that will be auto-updated on insert in a pool";
 
 uniontype Global
   record G

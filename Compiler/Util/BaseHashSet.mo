@@ -31,11 +31,11 @@
 
 encapsulated package BaseHashSet
 "
-  file:  BaseHashSet.mo
+  file:        BaseHashSet.mo
   package:     BaseHashSet
   author:      Peter Aronsson (MathCore), Jens Frenkek (TU Dresden)
   description: BaseHashSet is a generic implementation of hashsets.
-         See HashSet*.mo to see how to use it.
+               See HashSet*.mo to see how to use it.
 
   RCS: $Id: BaseHashSet.mo 12193 2012-06-23 08:33:08Z Frenkel TUD $
 
@@ -57,7 +57,7 @@ protected import Util;
 // Generic hashset code below
 
 // adrpo: use a prime here (pick your poison):
-//  3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
+//        3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
 //       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157
 //      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257
 //      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367
@@ -138,37 +138,37 @@ algorithm
     // Adding when not existing previously
     case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
       equation
-  failure((_) = get(key, hashSet));
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr_1 = valueArrayAdd(varr, key);
-  indexes = hashvec[indx + 1];
-  hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-  n_1 = valueArrayLength(varr_1);
+        failure((_) = get(key, hashSet));
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, key);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     // adding when already present => Updating value
     case (key,((hashvec,varr,bsize,n,fntpl)))
       equation
-  (_,indx) = get1(key, hashSet);
-  //print("adding when present, indx =" );print(intString(indx));print("\n");
-  indx_1 = indx - 1;
-  varr_1 = valueArraySetnth(varr, indx, key);
+        (_,indx) = get1(key, hashSet);
+        //print("adding when present, indx =" );print(intString(indx));print("\n");
+        indx_1 = indx - 1;
+        varr_1 = valueArraySetnth(varr, indx, key);
       then ((hashvec,varr_1,bsize,n,fntpl));
 
     case (key,((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc))))
       equation
-  print("- BaseHashSet.add failed: ");
-  print("bsize: ");
-  print(intString(bsize));
-  print(" key: ");
-  s = keystrFunc(key);
-  print(s +& " Hash: ");
-  hval = hashFunc(key,bsize);
-  print(intString(hval));
-  print("\n");
+        print("- BaseHashSet.add failed: ");
+        print("bsize: ");
+        print(intString(bsize));
+        print(" key: ");
+        s = keystrFunc(key);
+        print(s +& " Hash: ");
+        hval = hashFunc(key,bsize);
+        print(intString(hval));
+        print("\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end add;
 
@@ -194,19 +194,19 @@ algorithm
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_)))
       equation
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr_1 = valueArrayAdd(varr, key);
-  indexes = hashvec[indx + 1];
-  hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-  n_1 = valueArrayLength(varr_1);
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, key);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     case (_,_)
       equation
-  print("- BaseHashSet.addNoUpdCheck failed\n");
+        print("- BaseHashSet.addNoUpdCheck failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end addNoUpdCheck;
 
@@ -227,17 +227,17 @@ algorithm
 
     // Adding when not existing previously
     case (_,
-  ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
       equation
-  failure(_ = get(key, hashSet));
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr_1 = valueArrayAdd(varr, key);
-  indexes = hashvec[indx + 1];
-  hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-  n_1 = valueArrayLength(varr_1);
+        failure(_ = get(key, hashSet));
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, key);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);
       then
-  ((hashvec_1, varr_1, bsize, n_1, fntpl));
+        ((hashvec_1, varr_1, bsize, n_1, fntpl));
 
   end match;
 end addUnique;
@@ -263,15 +263,15 @@ algorithm
       /* adding when already present => Updating value */
     case (_,(hashvec,varr,bsize,n,fntpl))
       equation
-  (_,indx) = get1(key, hashSet);
-  indx_1 = indx - 1;
-  varr_1 = valueArrayClearnth(varr, indx);
+        (_,indx) = get1(key, hashSet);
+        indx_1 = indx - 1;
+        varr_1 = valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
     case (_,_)
       equation
-  print("-HashSet.delete failed\n");
+        print("-HashSet.delete failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end delete;
 
@@ -285,12 +285,12 @@ algorithm
     // empty set containg nothing
     case (_,(_,(0,_,_),_,_,_))
       then
-  false;
+        false;
     case(_,_)
       equation
-  _ = get(key,hashSet);
+        _ = get(key,hashSet);
       then
-  true;
+        true;
     else
       then false;
   end matchcontinue;
@@ -323,12 +323,12 @@ algorithm
 
     case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_)))
       equation
-  hashindx = hashFunc(key, bsize);
-  indexes = hashvec[hashindx + 1];
-  indx = get2(key, indexes, keyEqual);
-  k = valueArrayNth(varr, indx);
+        hashindx = hashFunc(key, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = get2(key, indexes, keyEqual);
+        k = valueArrayNth(varr, indx);
       then
-  (k,indx);
+        (k,indx);
 
   end match;
 end get1;
@@ -348,16 +348,16 @@ algorithm
     // search for the key, found the good one
     case (_,((key2,index) :: _),_)
       equation
-  true = keyEqual(key, key2);
+        true = keyEqual(key, key2);
       then
-  index;
+        index;
 
     // search more
     case (_,(_ :: xs),_)
       equation
-  index = get2(key, xs, keyEqual);
+        index = get2(key, xs, keyEqual);
       then
-  index;
+        index;
   end matchcontinue;
 end get2;
 
@@ -399,14 +399,14 @@ algorithm
     case ((0,_,arr)) then {};
     case ((1,_,arr))
       equation
-  SOME(elt) = arr[0 + 1];
+        SOME(elt) = arr[0 + 1];
       then
-  {elt};
+        {elt};
     case ((n,size,arr))
       equation
-  lastpos = n - 1;
+        lastpos = n - 1;
       then
-  valueArrayList2(arr, false, 0, lastpos, {});
+        valueArrayList2(arr, false, 0, lastpos, {});
   end matchcontinue;
 end valueArrayList;
 
@@ -426,13 +426,13 @@ algorithm
 
     case (arr,true,pos,lastpos,acc)
       equation
-  acc = List.consOption(arr[pos + 1],acc);
+        acc = List.consOption(arr[pos + 1],acc);
       then listReverse(acc);
 
     case (arr,false,pos,lastpos,acc)
       equation
-  pos_1 = pos + 1;
-  acc = List.consOption(arr[pos + 1],acc);
+        pos_1 = pos + 1;
+        acc = List.consOption(arr[pos + 1],acc);
       then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
 
   end match;
@@ -472,30 +472,30 @@ algorithm
       Real rsize,rexpandsize;
     case ((n,size,arr),_)
       equation
-  (n < size) = true "Have space to add array elt." ;
-  n_1 = n + 1;
-  arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+        (n < size) = true "Have space to add array elt." ;
+        n_1 = n + 1;
+        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
       then
-  ((n_1,size,arr_1));
+        ((n_1,size,arr_1));
 
     case ((n,size,arr),_)
       equation
-  (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
-  rsize = intReal(size);
-  rexpandsize = rsize *. 0.4;
-  expandsize = realInt(rexpandsize);
-  expandsize_1 = intMax(expandsize, 1);
-  newsize = expandsize_1 + size;
-  arr_1 = Util.arrayExpand(expandsize_1, arr, NONE());
-  n_1 = n + 1;
-  arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
+        rsize = intReal(size);
+        rexpandsize = rsize *. 0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize_1 = intMax(expandsize, 1);
+        newsize = expandsize_1 + size;
+        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE());
+        n_1 = n + 1;
+        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
-  ((n_1,newsize,arr_2));
+        ((n_1,newsize,arr_2));
     case (_,_)
       equation
-  print("-HashSet.valueArrayAdd failed\n");
+        print("-HashSet.valueArrayAdd failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end valueArrayAdd;
 
@@ -513,15 +513,15 @@ algorithm
       Integer n,size;
     case ((n,size,arr),_,_)
       equation
-  (pos < size) = true;
-  arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
       then
-  ((n,size,arr_1));
+        ((n,size,arr_1));
     case (_,_,_)
       equation
-  print("-HashSet.valueArraySetnth failed\n");
+        print("-HashSet.valueArraySetnth failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end valueArraySetnth;
 
@@ -537,15 +537,15 @@ algorithm
       Integer n,size;
     case ((n,size,arr),_)
       equation
-  (pos < size) = true;
-  arr_1 = arrayUpdate(arr, pos + 1,NONE());
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1,NONE());
       then
-  ((n,size,arr_1));
+        ((n,size,arr_1));
     case (_,_)
       equation
-  print("-HashSet.valueArrayClearnth failed\n");
+        print("-HashSet.valueArrayClearnth failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end valueArrayClearnth;
 
@@ -562,10 +562,10 @@ algorithm
       array<Option<Key>> arr;
     case ((n,_,arr),_)
       equation
-  (pos <= n) = true;
-  SOME(k) = arr[pos + 1];
+        (pos <= n) = true;
+        SOME(k) = arr[pos + 1];
       then
-  k;
+        k;
   end match;
 end valueArrayNth;
 

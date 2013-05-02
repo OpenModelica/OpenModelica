@@ -4,9 +4,9 @@ model dcmotor
   Modelica.Electrical.Analog.Basic.Inductor     inductor1(L = 0.2);
   Modelica.Electrical.Analog.Basic.Ground       ground1;
   Modelica.Mechanics.Rotational.Components.Inertia      load(J = 1);    // Modelica version 3.1
-  // Modelica.Mechanics.Rotational.Inertia   load(J = 1); // Modelica version 2.2
-  Modelica.Electrical.Analog.Basic.EMF    emf1;
-  Modelica.Blocks.Sources.Step            step1;
+  // Modelica.Mechanics.Rotational.Inertia         load(J = 1); // Modelica version 2.2
+  Modelica.Electrical.Analog.Basic.EMF          emf1;
+  Modelica.Blocks.Sources.Step                  step1;
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage1;
 equation
   //connect(step1.outport, signalVoltage1.inPort);

@@ -29,8 +29,8 @@ int stackPush(Stack* s, void* e) {
     s->stackPos++;
     if (s->stackPos==s->stackSize){
     s->stackSize += (s->stack ? s->inc: s->initialSize);
-  s->stack = (void**) realloc(s->stack, s->stackSize * sizeof(void*));
-  if (!s->stack) return 0; // error;
+        s->stack = (void**) realloc(s->stack, s->stackSize * sizeof(void*));
+        if (!s->stack) return 0; // error;
     }
     s->stack[s->stackPos] = e;
     return 1; // success
@@ -57,7 +57,7 @@ void** stackLastPopedAsArray0(Stack* s, int n){
     void** array = (void**)malloc((n + 1)*sizeof(void*));
     if (! array) return NULL; // failure
     for (i=0; i<n; i++) {
-  array[i] = s->stack[i+ s->stackPos + 1];
+        array[i] = s->stack[i+ s->stackPos + 1];
     }
     array[n]=NULL; // terminating NULL
     return array;
@@ -71,7 +71,7 @@ void** stackPopAllAsArray(Stack* s, int *size) {
     if (! array) return NULL; // failure
     *size = s->stackPos + 1;
     for (i=0; i<*size; i++)
-  array[i] = s->stack[i];
+        array[i] = s->stack[i];
     s->stackPos = -1;
     return array;
 }

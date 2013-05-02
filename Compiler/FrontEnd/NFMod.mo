@@ -31,7 +31,7 @@
 
 
 encapsulated package NFMod
-" file:  NFMod.mo
+" file:        NFMod.mo
   package:     NFMod
   description: Modification handling for NFInst.
 
@@ -88,11 +88,11 @@ algorithm
 
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
-  pd = Util.if_(SCode.eachBool(ep), 0, inDimensions);
-  mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
-  binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
+        pd = Util.if_(SCode.eachBool(ep), 0, inDimensions);
+        mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
       then
-  NFInstTypes.MODIFIER(inElementName, fp, ep, binding, mods, info);
+        NFInstTypes.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
     case (SCode.REDECL(fp, ep, el), _, _, _, _)
       then NFInstTypes.REDECLARE(fp, ep, el);
@@ -133,9 +133,9 @@ algorithm
     // See propagateMod for how this works.
     case (SOME((bind_exp, _)), _, _, _, _, _)
       equation
-  pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
+        pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
       then
-  NFInstTypes.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
+        NFInstTypes.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
 
   end match;
 end translateBinding;
@@ -156,19 +156,19 @@ algorithm
 
     case (_, _, _, _)
       equation
-  mods = splitMod(inMod, inPrefix);
-  List.map2_0(mods, checkModifier, inEnv, inPrefix);
-  table = List.fold(mods, addModToTable, inTable);
+        mods = splitMod(inMod, inPrefix);
+        List.map2_0(mods, checkModifier, inEnv, inPrefix);
+        table = List.fold(mods, addModToTable, inTable);
       then
-  table;
+        table;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFMod.addClassModToTable failed on modifier " +&
-    printMod(inMod));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFMod.addClassModToTable failed on modifier " +&
+          printMod(inMod));
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end addClassModToTable;
@@ -187,9 +187,9 @@ algorithm
 
     case ((inner_name, _), (mod as (outer_name, _)) :: rest_mods)
       equation
-  eq_name = stringEq(inner_name, outer_name);
+        eq_name = stringEq(inner_name, outer_name);
       then
-  addModToTable2(eq_name, inMod, mod, rest_mods);
+        addModToTable2(eq_name, inMod, mod, rest_mods);
 
     case (_, {}) then inMod :: inModTable;
 
@@ -211,15 +211,15 @@ algorithm
 
     case (true, (_, inner_mod), (name, outer_mod), _)
       equation
-  outer_mod = mergeMod(outer_mod, inner_mod);
+        outer_mod = mergeMod(outer_mod, inner_mod);
       then
-  ((name, outer_mod) :: inModTable);
+        ((name, outer_mod) :: inModTable);
 
     else
       equation
-  rest_mods = addModToTable(inInnerMod, inModTable);
+        rest_mods = addModToTable(inInnerMod, inModTable);
       then
-  (inOuterMod :: rest_mods);
+        (inOuterMod :: rest_mods);
 
   end match;
 end addModToTable2;
@@ -237,9 +237,9 @@ algorithm
 
     case (_, (name, mod) :: _)
       equation
-  true = stringEq(name, inName);
+        true = stringEq(name, inName);
       then
-  mod;
+        mod;
 
     case (_, _ :: rest_mods) then getModFromTable(inName, rest_mods);
 
@@ -276,19 +276,19 @@ algorithm
 
     case (_, _, _)
       equation
-  (entry, _) = NFLookup.lookupInLocalScope(inName, inEnv);
+        (entry, _) = NFLookup.lookupInLocalScope(inName, inEnv);
       then
-  entry;
+        entry;
 
     // The modified element couldn't be found, show an error.
     else
       equation
-  cls_name = NFEnv.scopeName(inEnv);
-  info = getModifierInfo(inMod);
-  Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-    {inName, cls_name}, info);
+        cls_name = NFEnv.scopeName(inEnv);
+        info = getModifierInfo(inMod);
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inName, cls_name}, info);
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end lookupMod;
@@ -310,19 +310,19 @@ algorithm
     // The modified element is a class but the modifier has no binding, e.g.
     // c(A(x = 3)). This is ok.
     case (NFEnv.ENTRY(element = SCode.CLASS(name = _)),
-  (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
+        (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
       then ();
 
     // The modified element is a class but the modifier has a binding. This is
     // not ok, tell the user that the redeclare keyword is missing.
     case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), (name, mod), _)
       equation
-  info = getModifierInfo(mod);
-  pre_str = NFInstDump.prefixStr(inPrefix);
-  Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
-    {name, pre_str}, info);
+        info = getModifierInfo(mod);
+        pre_str = NFInstDump.prefixStr(inPrefix);
+        Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
+          {name, pre_str}, info);
       then
-  fail();
+        fail();
 
     else ();
 
@@ -365,33 +365,33 @@ algorithm
 
     // Neither of the modifiers have a binding, just merge the submods.
     case (NFInstTypes.MODIFIER(subModifiers = submods1, binding = NFInstTypes.UNBOUND(), info = info1),
-    NFInstTypes.MODIFIER(name = name, subModifiers = submods2, binding = NFInstTypes.UNBOUND()))
+          NFInstTypes.MODIFIER(name = name, subModifiers = submods2, binding = NFInstTypes.UNBOUND()))
       equation
-  submods1 = List.fold(submods1, mergeSubMod, submods2);
+        submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-  NFInstTypes.MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(),
-    NFInstTypes.UNBOUND(), submods1, info1);
+        NFInstTypes.MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(),
+          NFInstTypes.UNBOUND(), submods1, info1);
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
     case (NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(bindingExp = _),
-      submods1, info1),
-    NFInstTypes.MODIFIER(subModifiers = submods2, info = info2))
+            submods1, info1),
+          NFInstTypes.MODIFIER(subModifiers = submods2, info = info2))
       equation
-  checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
-  submods1 = List.fold(submods1, mergeSubMod, submods2);
+        checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
+        submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-  NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
 
     // The inner modifier has a binding, but not the outer, so keep it.
     case (NFInstTypes.MODIFIER(subModifiers = submods1, info = info1),
-    NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(bindingExp = _),
-      submods2, info2))
+          NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(bindingExp = _),
+            submods2, info2))
       equation
-  checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
-  submods2 = List.fold(submods1, mergeSubMod, submods2);
+        checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
+        submods2 = List.fold(submods1, mergeSubMod, submods2);
       then
-  NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info1);
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info1);
 
     case (NFInstTypes.MODIFIER(name = _), NFInstTypes.REDECLARE(element = _))
       then inOuterMod;
@@ -400,10 +400,10 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFInstTypes.mergeMod failed on unknown mod."});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstTypes.mergeMod failed on unknown mod."});
       then
-  fail();
+        fail();
   end match;
 end mergeMod;
 
@@ -423,12 +423,12 @@ algorithm
 
     case (_, _, _, NFInstTypes.MODIFIER(finalPrefix = SCode.FINAL()), _)
       equation
-  NFInstTypes.RAW_BINDING(bindingExp = oexp) = getModifierBinding(inOuterMod);
-  oexp_str = Dump.printExpStr(oexp);
-  Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-    {inName, oexp_str}, {inOuterInfo, inInnerInfo});
+        NFInstTypes.RAW_BINDING(bindingExp = oexp) = getModifierBinding(inOuterMod);
+        oexp_str = Dump.printExpStr(oexp);
+        Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
+          {inName, oexp_str}, {inOuterInfo, inInnerInfo});
       then
-  fail();
+        fail();
 
     else ();
   end match;
@@ -469,15 +469,15 @@ algorithm
 
     case (_, _, (mod as NFInstTypes.MODIFIER(name = id)) :: rest_mods, _)
       equation
-  is_equal = stringEq(inSubModId, id);
+        is_equal = stringEq(inSubModId, id);
       then
-  mergeSubMod_tail2(inSubModId, inSubMod, mod, is_equal, rest_mods, inAccumMods);
+        mergeSubMod_tail2(inSubModId, inSubMod, mod, is_equal, rest_mods, inAccumMods);
 
     case (_, _, {}, _)
       equation
-  accum = inSubMod :: inAccumMods;
+        accum = inSubMod :: inAccumMods;
       then
-  listReverse(accum);
+        listReverse(accum);
 
     case (_, _, _ :: rest_mods, _)
       then mergeSubMod_tail(inSubModId, inSubMod, rest_mods, inAccumMods);
@@ -504,11 +504,11 @@ algorithm
     // list of modifiers with the new modifier in it.
     case (_, _, _, true, _, _)
       equation
-  mod = mergeMod(inSubMod1, inSubMod2);
-  accum = mod :: inAccumMods;
-  accum = listReverse(accum);
+        mod = mergeMod(inSubMod1, inSubMod2);
+        accum = mod :: inAccumMods;
+        accum = listReverse(accum);
       then
-  listAppend(accum, inSubMods);
+        listAppend(accum, inSubMods);
 
     // Otherwise, continue to search for a matching modifier.
     else mergeSubMod_tail(inSubModId, inSubMod1, inSubMods, inSubMod2 :: inAccumMods);
@@ -533,9 +533,9 @@ algorithm
     // TOOD: print an error if this modifier has a binding?
     case (NFInstTypes.MODIFIER(subModifiers = submods), _)
       equation
-  mods = List.fold1(submods, splitSubMod, inPrefix, {});
+        mods = List.fold1(submods, splitSubMod, inPrefix, {});
       then
-  mods;
+        mods;
 
     else {};
 
@@ -562,12 +562,12 @@ algorithm
 
     case (NFInstTypes.MODIFIER(name = id), _, _)
       equation
-  // Use splitMod2 to try and find a matching modifier to merge with.
-  (mods, found) = List.findMap3(inMods, splitMod2, id, inSubMod, inPrefix);
-  // Add the sub modifier to the list if it wasn't merged by splitMod2.
-  mods = List.consOnTrue(not found, (id, inSubMod), mods);
+        // Use splitMod2 to try and find a matching modifier to merge with.
+        (mods, found) = List.findMap3(inMods, splitMod2, id, inSubMod, inPrefix);
+        // Add the sub modifier to the list if it wasn't merged by splitMod2.
+        mods = List.consOnTrue(not found, (id, inSubMod), mods);
       then
-  mods;
+        mods;
 
     case (NFInstTypes.NOMOD(), _, _) then inMods;
 
@@ -591,15 +591,15 @@ algorithm
 
     case ((id, _), _, _, _)
       equation
-  false = stringEq(id, inId);
+        false = stringEq(id, inId);
       then
-  (inExistingMod, false);
+        (inExistingMod, false);
 
     case ((id, mod), _, _, _)
       equation
-  mod = mergeModsInSameScope(mod, inNewMod, id, inPrefix);
+        mod = mergeModsInSameScope(mod, inNewMod, id, inPrefix);
       then
-  ((id, mod), true);
+        ((id, mod), true);
 
   end matchcontinue;
 end splitMod2;
@@ -624,31 +624,31 @@ algorithm
 
     // The second modifier has no binding, use the binding from the first.
     case (NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1),
-    NFInstTypes.MODIFIER(subModifiers = submods2, binding = NFInstTypes.UNBOUND()), _, _)
+          NFInstTypes.MODIFIER(subModifiers = submods2, binding = NFInstTypes.UNBOUND()), _, _)
       equation
-  submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
-    inElementName, submods2);
+        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
+          inElementName, submods2);
       then
-  NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
 
     // The first modifier has no binding, use the binding from the second.
     case (NFInstTypes.MODIFIER(subModifiers = submods1, binding = NFInstTypes.UNBOUND()),
-    NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
+          NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
       equation
-  submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
-    inElementName, submods2);
+        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
+          inElementName, submods2);
       then
-  NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
     case (NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info1),
-    NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
+          NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
-  comp_str = NFInstDump.prefixStr(inPrefix);
-  Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
-    {inElementName, comp_str}, {info2, info1});
+        comp_str = NFInstDump.prefixStr(inPrefix);
+        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
+          {inElementName, comp_str}, {info2, info1});
       then
-  fail();
+        fail();
 
   end match;
 end mergeModsInSameScope;
@@ -684,18 +684,18 @@ algorithm
       Modifier mod;
 
     case (NFInstTypes.MODIFIER(name = id1),
-    NFInstTypes.MODIFIER(name = id2), _, _)
+          NFInstTypes.MODIFIER(name = id2), _, _)
       equation
-  false = stringEq(id1, id2);
+        false = stringEq(id1, id2);
       then
-  (inExistingMod, false);
+        (inExistingMod, false);
 
     case (NFInstTypes.MODIFIER(name = id1), _, _, _)
       equation
-  id1 = inElementName +& "." +& id1;
-  mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inPrefix);
+        id1 = inElementName +& "." +& id1;
+        mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inPrefix);
       then
-  (mod, true);
+        (mod, true);
 
   end matchcontinue;
 end mergeSubModInSameScope2;
@@ -761,10 +761,10 @@ algorithm
 
     case (NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info), _)
       equation
-  binding = propagateBinding(binding, inDimensions);
-  submods = List.map1(submods, propagateMod, inDimensions);
+        binding = propagateBinding(binding, inDimensions);
+        submods = List.map1(submods, propagateMod, inDimensions);
       then
-  NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info);
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info);
 
     else inModifier;
 
@@ -790,9 +790,9 @@ algorithm
     // A normal binding, increment with the dimension count.
     case (NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
       equation
-  pd = pd + inDimensions;
+        pd = pd + inDimensions;
       then
-  NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info);
+        NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info);
 
     else inBinding;
   end match;
@@ -813,20 +813,20 @@ algorithm
 
     case NFInstTypes.MODIFIER(_, fp, ep, binding, submods, _)
       equation
-  fstr = SCodeDump.finalStr(fp);
-  estr = SCodeDump.eachStr(ep);
-  submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
-  bind_str = NFInstDump.bindingStr(binding);
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
+        bind_str = NFInstDump.bindingStr(binding);
       then
-  "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
+        "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
 
     case NFInstTypes.REDECLARE(fp, ep, el)
       equation
-  fstr = SCodeDump.finalStr(fp);
-  estr = SCodeDump.eachStr(ep);
-  el_str = SCodeDump.unparseElementStr(el);
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        el_str = SCodeDump.unparseElementStr(el);
       then
-  "REDECL(" +& fstr +& estr +& el_str +& ")";
+        "REDECL(" +& fstr +& estr +& el_str +& ")";
 
     case NFInstTypes.NOMOD() then "NOMOD()";
   end match;
@@ -865,9 +865,9 @@ algorithm
 
     case (SCode.MOD(fp, ep, sl, b, i),_)
       equation
-  sl = removeModFromSubModContainingCref(sl, id);
+        sl = removeModFromSubModContainingCref(sl, id);
       then
-  SCode.MOD(fp, ep, sl, b, i);
+        SCode.MOD(fp, ep, sl, b, i);
 
     else inMod;
 
@@ -893,16 +893,16 @@ algorithm
 
     case (SCode.NAMEMOD(ident = n, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
-  cl = Absyn.getCrefFromExp(e,true);
-  true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
+        cl = Absyn.getCrefFromExp(e,true);
+        true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
       then
-  rest;
+        rest;
 
     case (sm::rest, _)
       equation
-  sl = removeModFromSubModContainingCref(rest, id);
+        sl = removeModFromSubModContainingCref(rest, id);
       then
-  sm::sl;
+        sm::sl;
   end matchcontinue;
 end removeModFromSubModContainingCref;
 
@@ -926,16 +926,16 @@ algorithm
 
     case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
       equation
-  sl = removeCrefPrefixFromSubModExp(sl, id);
-  ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id);
+        sl = removeCrefPrefixFromSubModExp(sl, id);
+        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id);
       then
-  SCode.MOD(fp, ep, sl, SOME((e, b)), i);
+        SCode.MOD(fp, ep, sl, SOME((e, b)), i);
 
     case (SCode.MOD(fp, ep, sl, NONE(), i),_)
       equation
-  sl = removeCrefPrefixFromSubModExp(sl, id);
+        sl = removeCrefPrefixFromSubModExp(sl, id);
       then
-  SCode.MOD(fp, ep, sl, NONE(), i);
+        SCode.MOD(fp, ep, sl, NONE(), i);
 
     else inMod;
 
@@ -962,16 +962,16 @@ algorithm
 
     case (SCode.NAMEMOD(n, m)::rest, _)
       equation
-  m = removeCrefPrefixFromModExp(m, id);
-  sl = removeCrefPrefixFromSubModExp(rest, id);
+        m = removeCrefPrefixFromModExp(m, id);
+        sl = removeCrefPrefixFromSubModExp(rest, id);
       then
-  SCode.NAMEMOD(n, m)::sl;
+        SCode.NAMEMOD(n, m)::sl;
 
     case (sm::rest, _)
       equation
-  sl = removeCrefPrefixFromSubModExp(rest, id);
+        sl = removeCrefPrefixFromSubModExp(rest, id);
       then
-  sm::sl;
+        sm::sl;
   end matchcontinue;
 end removeCrefPrefixFromSubModExp;
 
@@ -985,10 +985,10 @@ algorithm
 
     case ((Absyn.CREF(cr), pre))
       equation
-  true = Absyn.crefFirstEqual(cr, pre);
-  cr = Absyn.crefStripFirst(cr);
+        true = Absyn.crefFirstEqual(cr, pre);
+        cr = Absyn.crefStripFirst(cr);
       then
-  ((Absyn.CREF(cr), pre));
+        ((Absyn.CREF(cr), pre));
 
     else inCrefExp_inPrefix;
   end matchcontinue;
@@ -1011,9 +1011,9 @@ algorithm
 
     case (SCode.MOD(fp, ep, sl, binding, i))
       equation
-  sl = removeRedeclaresFromSubMod(sl);
+        sl = removeRedeclaresFromSubMod(sl);
       then
-  SCode.MOD(fp, ep, sl, binding, i);
+        SCode.MOD(fp, ep, sl, binding, i);
 
     case (SCode.REDECL(element = _)) then SCode.NOMOD();
 
@@ -1040,10 +1040,10 @@ algorithm
 
     case (SCode.NAMEMOD(n, m)::rest)
       equation
-  m = removeRedeclaresFromMod(m);
-  sl = removeRedeclaresFromSubMod(rest);
+        m = removeRedeclaresFromMod(m);
+        sl = removeRedeclaresFromSubMod(rest);
       then
-  SCode.NAMEMOD(n, m)::sl;
+        SCode.NAMEMOD(n, m)::sl;
 
   end match;
 end removeRedeclaresFromSubMod;
@@ -1060,9 +1060,9 @@ algorithm
 
     case SCode.MOD(subModLst = sub_mods)
       equation
-  redeclares = List.fold(sub_mods, extractRedeclareFromSubMod, {});
+        redeclares = List.fold(sub_mods, extractRedeclareFromSubMod, {});
       then
-  redeclares;
+        redeclares;
 
     else {};
 
@@ -1082,9 +1082,9 @@ algorithm
 
     case (SCode.NAMEMOD(A = SCode.REDECL(element = redecl)), _)
       equation
-  //NFSCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
+        //NFSCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
       then
-  redecl :: inRedeclares;
+        redecl :: inRedeclares;
 
     // Skip modifiers that are not redeclarations.
     else inRedeclares;

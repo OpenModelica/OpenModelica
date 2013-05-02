@@ -52,67 +52,67 @@ static integer c__1 = 1;
 /*     the subroutine statement is */
 
 /*       subroutine fdjac1(fcn,n,x,fvec,fjac,ldfjac,iflag,ml,mu,epsfcn, */
-/*                   wa1,wa2) */
+/*                         wa1,wa2) */
 
 /*     where */
 
 /*       fcn is the name of the user-supplied subroutine which */
-/*   calculates the functions. fcn must be declared */
-/*   in an external statement in the user calling */
-/*   program, and should be written as follows. */
+/*         calculates the functions. fcn must be declared */
+/*         in an external statement in the user calling */
+/*         program, and should be written as follows. */
 
-/*   subroutine fcn(n,x,fvec,iflag) */
-/*   integer n,iflag */
-/*   double precision x(n),fvec(n) */
-/*   ---------- */
-/*   calculate the functions at x and */
-/*   return this vector in fvec. */
-/*   ---------- */
-/*   return */
-/*   end */
+/*         subroutine fcn(n,x,fvec,iflag) */
+/*         integer n,iflag */
+/*         double precision x(n),fvec(n) */
+/*         ---------- */
+/*         calculate the functions at x and */
+/*         return this vector in fvec. */
+/*         ---------- */
+/*         return */
+/*         end */
 
-/*   the value of iflag should not be changed by fcn unless */
-/*   the user wants to terminate execution of fdjac1. */
-/*   in this case set iflag to a negative integer. */
+/*         the value of iflag should not be changed by fcn unless */
+/*         the user wants to terminate execution of fdjac1. */
+/*         in this case set iflag to a negative integer. */
 
 /*       n is a positive integer input variable set to the number */
-/*   of functions and variables. */
+/*         of functions and variables. */
 
 /*       x is an input array of length n. */
 
 /*       fvec is an input array of length n which must contain the */
-/*   functions evaluated at x. */
+/*         functions evaluated at x. */
 
 /*       fjac is an output n by n array which contains the */
-/*   approximation to the jacobian matrix evaluated at x. */
+/*         approximation to the jacobian matrix evaluated at x. */
 
 /*       ldfjac is a positive integer input variable not less than n */
-/*   which specifies the leading dimension of the array fjac. */
+/*         which specifies the leading dimension of the array fjac. */
 
 /*       iflag is an integer variable which can be used to terminate */
-/*   the execution of fdjac1. see description of fcn. */
+/*         the execution of fdjac1. see description of fcn. */
 
 /*       ml is a nonnegative integer input variable which specifies */
-/*   the number of subdiagonals within the band of the */
-/*   jacobian matrix. if the jacobian is not banded, set */
-/*   ml to at least n - 1. */
+/*         the number of subdiagonals within the band of the */
+/*         jacobian matrix. if the jacobian is not banded, set */
+/*         ml to at least n - 1. */
 
 /*       epsfcn is an input variable used in determining a suitable */
-/*   step length for the forward-difference approximation. this */
-/*   approximation assumes that the relative errors in the */
-/*   functions are of the order of epsfcn. if epsfcn is less */
-/*   than the machine precision, it is assumed that the relative */
-/*   errors in the functions are of the order of the machine */
-/*   precision. */
+/*         step length for the forward-difference approximation. this */
+/*         approximation assumes that the relative errors in the */
+/*         functions are of the order of epsfcn. if epsfcn is less */
+/*         than the machine precision, it is assumed that the relative */
+/*         errors in the functions are of the order of the machine */
+/*         precision. */
 
 /*       mu is a nonnegative integer input variable which specifies */
-/*   the number of superdiagonals within the band of the */
-/*   jacobian matrix. if the jacobian is not banded, set */
-/*   mu to at least n - 1. */
+/*         the number of superdiagonals within the band of the */
+/*         jacobian matrix. if the jacobian is not banded, set */
+/*         mu to at least n - 1. */
 
 /*       wa1 and wa2 are work arrays of length n. if ml + mu + 1 is at */
-/*   least n, then the jacobian is considered dense, and wa2 is */
-/*   not referenced. */
+/*         least n, then the jacobian is considered dense, and wa2 is */
+/*         not referenced. */
 
 /*     subprograms called */
 
@@ -145,7 +145,7 @@ static integer c__1 = 1;
   goto L40;
     }
 
-/*  computation of dense approximate jacobian. */
+/*        computation of dense approximate jacobian. */
 
     i__1 = *n;
     for(j = 1; j <= i__1; ++j) {
@@ -171,7 +171,7 @@ L30:
     goto L110;
 L40:
 
-/*  computation of banded approximate jacobian. */
+/*        computation of banded approximate jacobian. */
 
     i__1 = msum;
     for(k = 1; k <= i__1; ++k) {
@@ -202,7 +202,7 @@ L40:
       for(i__ = 1; i__ <= i__4; ++i__) {
     fjac[i__ + j * fjac_dim1] = zero;
     if(i__ >= j - *mu && i__ <= j + *ml) {
-  fjac[i__ + j * fjac_dim1] = (wa1[i__] - fvec[i__]) / h__;
+        fjac[i__ + j * fjac_dim1] = (wa1[i__] - fvec[i__]) / h__;
     }
 /* L70: */
       }

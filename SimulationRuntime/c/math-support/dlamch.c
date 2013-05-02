@@ -62,30 +62,30 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 /*  ========= */
 
 /*  CMACH   (input) CHARACTER*1 */
-/*    Specifies the value to be returned by DLAMCH: */
-/*    = 'E' or 'e',   DLAMCH := eps */
-/*    = 'S' or 's ,   DLAMCH := sfmin */
-/*    = 'B' or 'b',   DLAMCH := base */
-/*    = 'P' or 'p',   DLAMCH := eps*base */
-/*    = 'N' or 'n',   DLAMCH := t */
-/*    = 'R' or 'r',   DLAMCH := rnd */
-/*    = 'M' or 'm',   DLAMCH := emin */
-/*    = 'U' or 'u',   DLAMCH := rmin */
-/*    = 'L' or 'l',   DLAMCH := emax */
-/*    = 'O' or 'o',   DLAMCH := rmax */
+/*          Specifies the value to be returned by DLAMCH: */
+/*          = 'E' or 'e',   DLAMCH := eps */
+/*          = 'S' or 's ,   DLAMCH := sfmin */
+/*          = 'B' or 'b',   DLAMCH := base */
+/*          = 'P' or 'p',   DLAMCH := eps*base */
+/*          = 'N' or 'n',   DLAMCH := t */
+/*          = 'R' or 'r',   DLAMCH := rnd */
+/*          = 'M' or 'm',   DLAMCH := emin */
+/*          = 'U' or 'u',   DLAMCH := rmin */
+/*          = 'L' or 'l',   DLAMCH := emax */
+/*          = 'O' or 'o',   DLAMCH := rmax */
 
-/*    where */
+/*          where */
 
-/*    eps   = relative machine precision */
-/*    sfmin = safe minimum, such that 1/sfmin does not overflow */
-/*    base  = base of the machine */
-/*    prec  = eps*base */
-/*    t     = number of (base) digits in the mantissa */
-/*    rnd   = 1.0 when rounding occurs in addition, 0.0 otherwise */
-/*    emin  = minimum exponent before (gradual) underflow */
-/*    rmin  = underflow threshold - base**(emin-1) */
-/*    emax  = largest exponent before overflow */
-/*    rmax  = overflow threshold  - (base**emax)*(1-eps) */
+/*          eps   = relative machine precision */
+/*          sfmin = safe minimum, such that 1/sfmin does not overflow */
+/*          base  = base of the machine */
+/*          prec  = eps*base */
+/*          t     = number of (base) digits in the mantissa */
+/*          rnd   = 1.0 when rounding occurs in addition, 0.0 otherwise */
+/*          emin  = minimum exponent before (gradual) underflow */
+/*          rmin  = underflow threshold - base**(emin-1) */
+/*          emax  = largest exponent before overflow */
+/*          rmax  = overflow threshold  - (base**emax)*(1-eps) */
 
 /* ===================================================================== */
 
@@ -124,8 +124,8 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
   small = 1. / rmax;
   if(small >= sfmin) {
 
-/*     Use SMALL plus a bit, to avoid the possibility of rounding */
-/*     causing overflow when computing  1/sfmin. */
+/*           Use SMALL plus a bit, to avoid the possibility of rounding */
+/*           causing overflow when computing  1/sfmin. */
 
       sfmin = small * (eps + 1.);
   }
@@ -202,20 +202,20 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 /*  ========= */
 
 /*  BETA    (output) INTEGER */
-/*    The base of the machine. */
+/*          The base of the machine. */
 
 /*  T       (output) INTEGER */
-/*    The number of ( BETA ) digits in the mantissa. */
+/*          The number of ( BETA ) digits in the mantissa. */
 
 /*  RND     (output) LOGICAL */
-/*    Specifies whether proper rounding  ( RND = .TRUE. )  or */
-/*    chopping  ( RND = .FALSE. )  occurs in addition. This may not */
-/*    be a reliable guide to the way in which the machine performs */
-/*    its arithmetic. */
+/*          Specifies whether proper rounding  ( RND = .TRUE. )  or */
+/*          chopping  ( RND = .FALSE. )  occurs in addition. This may not */
+/*          be a reliable guide to the way in which the machine performs */
+/*          its arithmetic. */
 
 /*  IEEE1   (output) LOGICAL */
-/*    Specifies whether rounding appears to be done in the IEEE */
-/*    'round to nearest' style. */
+/*          Specifies whether rounding appears to be done in the IEEE */
+/*          'round to nearest' style. */
 
 /*  Further Details */
 /*  =============== */
@@ -224,11 +224,11 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 /*  incorporates suggestions by Gentleman and Marovich. See */
 
 /*     Malcolm M. A. (1972) Algorithms to reveal properties of */
-/*  floating-point arithmetic. Comms. of the ACM, 15, 949-951. */
+/*        floating-point arithmetic. Comms. of the ACM, 15, 949-951. */
 
 /*     Gentleman W. M. and Marovich S. B. (1974) More on algorithms */
-/*  that reveal properties of floating point arithmetic units. */
-/*  Comms. of the ACM, 17, 276-277. */
+/*        that reveal properties of floating point arithmetic units. */
+/*        Comms. of the ACM, 17, 276-277. */
 
 /* ===================================================================== */
 
@@ -246,17 +246,17 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
   first = FALSE_;
   one = 1.;
 
-/*  LBETA,  LIEEE1,  LT and  LRND  are the  local values  of  BETA, */
-/*  IEEE1, T and RND. */
+/*        LBETA,  LIEEE1,  LT and  LRND  are the  local values  of  BETA, */
+/*        IEEE1, T and RND. */
 
-/*  Throughout this routine  we use the function  DLAMC3  to ensure */
-/*  that relevant values are  stored and not held in registers,  or */
-/*  are not affected by optimizers. */
+/*        Throughout this routine  we use the function  DLAMC3  to ensure */
+/*        that relevant values are  stored and not held in registers,  or */
+/*        are not affected by optimizers. */
 
-/*  Compute  a = 2.0**m  with the  smallest positive integer m such */
-/*  that */
+/*        Compute  a = 2.0**m  with the  smallest positive integer m such */
+/*        that */
 
-/*     fl( a + 1.0 ) = a. */
+/*           fl( a + 1.0 ) = a. */
 
   a = 1.;
   c__ = 1.;
@@ -272,10 +272,10 @@ L10:
   }
 /* +       END WHILE */
 
-/*  Now compute  b = 2.0**m  with the smallest positive integer m */
-/*  such that */
+/*        Now compute  b = 2.0**m  with the smallest positive integer m */
+/*        such that */
 
-/*     fl( a + b ) .gt. a. */
+/*           fl( a + b ) .gt. a. */
 
   b = 1.;
   c__ = dlamc3_(&a, &b);
@@ -289,10 +289,10 @@ L20:
   }
 /* +       END WHILE */
 
-/*  Now compute the base.  a and c  are neighbouring floating point */
-/*  numbers  in the  interval  ( beta**t, beta**( t + 1 ) )  and so */
-/*  their difference is beta. Adding 0.25 to c is to ensure that it */
-/*  is truncated to beta and not ( beta - 1 ). */
+/*        Now compute the base.  a and c  are neighbouring floating point */
+/*        numbers  in the  interval  ( beta**t, beta**( t + 1 ) )  and so */
+/*        their difference is beta. Adding 0.25 to c is to ensure that it */
+/*        is truncated to beta and not ( beta - 1 ). */
 
   qtr = one / 4;
   savec = c__;
@@ -300,8 +300,8 @@ L20:
   c__ = dlamc3_(&c__, &d__1);
   lbeta = (integer) (c__ + qtr);
 
-/*  Now determine whether rounding or chopping occurs,  by adding a */
-/*  bit  less  than  beta/2  and a  bit  more  than  beta/2  to  a. */
+/*        Now determine whether rounding or chopping occurs,  by adding a */
+/*        bit  less  than  beta/2  and a  bit  more  than  beta/2  to  a. */
 
   b = (doublereal) lbeta;
   d__1 = b / 2;
@@ -321,11 +321,11 @@ L20:
       lrnd = FALSE_;
   }
 
-/*  Try and decide whether rounding is done in the  IEEE  'round to */
-/*  nearest' style. B/2 is half a unit in the last place of the two */
-/*  numbers A and SAVEC. Furthermore, A is even, i.e. has last  bit */
-/*  zero, and SAVEC is odd. Thus adding B/2 to A should not  change */
-/*  A, but adding B/2 to SAVEC should change SAVEC. */
+/*        Try and decide whether rounding is done in the  IEEE  'round to */
+/*        nearest' style. B/2 is half a unit in the last place of the two */
+/*        numbers A and SAVEC. Furthermore, A is even, i.e. has last  bit */
+/*        zero, and SAVEC is odd. Thus adding B/2 to A should not  change */
+/*        A, but adding B/2 to SAVEC should change SAVEC. */
 
   d__1 = b / 2;
   t1 = dlamc3_(&d__1, &a);
@@ -333,12 +333,12 @@ L20:
   t2 = dlamc3_(&d__1, &savec);
   lieee1 = t1 == a && t2 > savec && lrnd;
 
-/*  Now find  the  mantissa, t.  It should  be the  integer part of */
-/*  log to the base beta of a,  however it is safer to determine  t */
-/*  by powering.  So we find t as the smallest positive integer for */
-/*  which */
+/*        Now find  the  mantissa, t.  It should  be the  integer part of */
+/*        log to the base beta of a,  however it is safer to determine  t */
+/*        by powering.  So we find t as the smallest positive integer for */
+/*        which */
 
-/*     fl( beta**t + 1.0 ) = 1.0. */
+/*           fl( beta**t + 1.0 ) = 1.0. */
 
   lt = 0;
   a = 1.;
@@ -441,39 +441,39 @@ L30:
 /*  ========= */
 
 /*  BETA    (output) INTEGER */
-/*    The base of the machine. */
+/*          The base of the machine. */
 
 /*  T       (output) INTEGER */
-/*    The number of ( BETA ) digits in the mantissa. */
+/*          The number of ( BETA ) digits in the mantissa. */
 
 /*  RND     (output) LOGICAL */
-/*    Specifies whether proper rounding  ( RND = .TRUE. )  or */
-/*    chopping  ( RND = .FALSE. )  occurs in addition. This may not */
-/*    be a reliable guide to the way in which the machine performs */
-/*    its arithmetic. */
+/*          Specifies whether proper rounding  ( RND = .TRUE. )  or */
+/*          chopping  ( RND = .FALSE. )  occurs in addition. This may not */
+/*          be a reliable guide to the way in which the machine performs */
+/*          its arithmetic. */
 
 /*  EPS     (output) DOUBLE PRECISION */
-/*    The smallest positive number such that */
+/*          The smallest positive number such that */
 
-/*       fl( 1.0 - EPS ) .LT. 1.0, */
+/*             fl( 1.0 - EPS ) .LT. 1.0, */
 
-/*    where fl denotes the computed value. */
+/*          where fl denotes the computed value. */
 
 /*  EMIN    (output) INTEGER */
-/*    The minimum exponent before (gradual) underflow occurs. */
+/*          The minimum exponent before (gradual) underflow occurs. */
 
 /*  RMIN    (output) DOUBLE PRECISION */
-/*    The smallest normalized number for the machine, given by */
-/*    BASE**( EMIN - 1 ), where  BASE  is the floating point value */
-/*    of BETA. */
+/*          The smallest normalized number for the machine, given by */
+/*          BASE**( EMIN - 1 ), where  BASE  is the floating point value */
+/*          of BETA. */
 
 /*  EMAX    (output) INTEGER */
-/*    The maximum exponent before overflow occurs. */
+/*          The maximum exponent before overflow occurs. */
 
 /*  RMAX    (output) DOUBLE PRECISION */
-/*    The largest positive number for the machine, given by */
-/*    BASE**EMAX * ( 1 - EPS ), where  BASE  is the floating point */
-/*    value of BETA. */
+/*          The largest positive number for the machine, given by */
+/*          BASE**EMAX * ( 1 - EPS ), where  BASE  is the floating point */
+/*          value of BETA. */
 
 /*  Further Details */
 /*  =============== */
@@ -503,25 +503,25 @@ L30:
   one = 1.;
   two = 2.;
 
-/*  LBETA, LT, LRND, LEPS, LEMIN and LRMIN  are the local values of */
-/*  BETA, T, RND, EPS, EMIN and RMIN. */
+/*        LBETA, LT, LRND, LEPS, LEMIN and LRMIN  are the local values of */
+/*        BETA, T, RND, EPS, EMIN and RMIN. */
 
-/*  Throughout this routine  we use the function  DLAMC3  to ensure */
-/*  that relevant values are stored  and not held in registers,  or */
-/*  are not affected by optimizers. */
+/*        Throughout this routine  we use the function  DLAMC3  to ensure */
+/*        that relevant values are stored  and not held in registers,  or */
+/*        are not affected by optimizers. */
 
-/*  DLAMC1 returns the parameters  LBETA, LT, LRND and LIEEE1. */
+/*        DLAMC1 returns the parameters  LBETA, LT, LRND and LIEEE1. */
 
   dlamc1_(&lbeta, &lt, &lrnd, &lieee1);
 
-/*  Start to find EPS. */
+/*        Start to find EPS. */
 
   b = (doublereal) lbeta;
   i__1 = -lt;
   a = pow_di(&b, &i__1);
   leps = a;
 
-/*  Try some tricks to see whether or not this is the correct  EPS. */
+/*        Try some tricks to see whether or not this is the correct  EPS. */
 
   b = two / 3;
   half = one / 2;
@@ -563,11 +563,11 @@ L10:
       leps = a;
   }
 
-/*  Computation of EPS complete. */
+/*        Computation of EPS complete. */
 
-/*  Now find  EMIN.  Let A = + or - 1, and + or - (1 + BASE**(-3)). */
-/*  Keep dividing  A by BETA until (gradual) underflow occurs. This */
-/*  is detected when we cannot recover the previous A. */
+/*        Now find  EMIN.  Let A = + or - 1, and + or - (1 + BASE**(-3)). */
+/*        Keep dividing  A by BETA until (gradual) underflow occurs. This */
+/*        is detected when we cannot recover the previous A. */
 
   rbase = one / lbeta;
   small = one;
@@ -588,27 +588,27 @@ L10:
   if(ngpmin == ngnmin && gpmin == gnmin) {
       if(ngpmin == gpmin) {
     lemin = ngpmin;
-/*      ( Non twos-complement machines, no gradual underflow; */
-/*        e.g.,  VAX ) */
+/*            ( Non twos-complement machines, no gradual underflow; */
+/*              e.g.,  VAX ) */
       } else if(gpmin - ngpmin == 3) {
     lemin = ngpmin - 1 + lt;
     ieee = TRUE_;
-/*      ( Non twos-complement machines, with gradual underflow; */
-/*        e.g., IEEE standard followers ) */
+/*            ( Non twos-complement machines, with gradual underflow; */
+/*              e.g., IEEE standard followers ) */
       } else {
     lemin = min(ngpmin,gpmin);
-/*      ( A guess; no known machine ) */
+/*            ( A guess; no known machine ) */
     iwarn = TRUE_;
       }
 
   } else if(ngpmin == gpmin && ngnmin == gnmin) {
       if((i__1 = ngpmin - ngnmin, abs(i__1)) == 1) {
     lemin = max(ngpmin,ngnmin);
-/*      ( Twos-complement machines, no gradual underflow; */
-/*        e.g., CYBER 205 ) */
+/*            ( Twos-complement machines, no gradual underflow; */
+/*              e.g., CYBER 205 ) */
       } else {
     lemin = min(ngpmin,ngnmin);
-/*      ( A guess; no known machine ) */
+/*            ( A guess; no known machine ) */
     iwarn = TRUE_;
       }
 
@@ -616,11 +616,11 @@ L10:
      {
       if(gpmin - min(ngpmin,ngnmin) == 3) {
     lemin = max(ngpmin,ngnmin) - 1 + lt;
-/*      ( Twos-complement machines with gradual underflow; */
-/*        no known machine ) */
+/*            ( Twos-complement machines with gradual underflow; */
+/*              no known machine ) */
       } else {
     lemin = min(ngpmin,ngnmin);
-/*      ( A guess; no known machine ) */
+/*            ( A guess; no known machine ) */
     iwarn = TRUE_;
       }
 
@@ -628,7 +628,7 @@ L10:
 /* Computing MIN */
       i__1 = min(ngpmin,ngnmin), i__1 = min(i__1,gpmin);
       lemin = min(i__1,gnmin);
-/*   ( A guess; no known machine ) */
+/*         ( A guess; no known machine ) */
       iwarn = TRUE_;
   }
 /* ** */
@@ -641,16 +641,16 @@ L10:
   }
 /* ** */
 
-/*  Assume IEEE arithmetic if we found denormalised  numbers above, */
-/*  or if arithmetic seems to round in the  IEEE style,  determined */
-/*  in routine DLAMC1. A true IEEE machine should have both  things */
-/*  true; however, faulty machines may have one or the other. */
+/*        Assume IEEE arithmetic if we found denormalised  numbers above, */
+/*        or if arithmetic seems to round in the  IEEE style,  determined */
+/*        in routine DLAMC1. A true IEEE machine should have both  things */
+/*        true; however, faulty machines may have one or the other. */
 
   ieee = ieee || lieee1;
 
-/*  Compute  RMIN by successive division by  BETA. We could compute */
-/*  RMIN as BASE**( EMIN - 1 ),  but some machines underflow during */
-/*  this computation. */
+/*        Compute  RMIN by successive division by  BETA. We could compute */
+/*        RMIN as BASE**( EMIN - 1 ),  but some machines underflow during */
+/*        this computation. */
 
   lrmin = 1.;
   i__1 = 1 - lemin;
@@ -660,7 +660,7 @@ L10:
 /* L30: */
   }
 
-/*  Finally, call DLAMC5 to compute EMAX and RMAX. */
+/*        Finally, call DLAMC5 to compute EMAX and RMAX. */
 
   dlamc5_(&lbeta, &lt, &lemin, &ieee, &lemax, &lrmax);
     }
@@ -709,7 +709,7 @@ doublereal dlamc3_(doublereal *a, doublereal *b)
 /*  ========= */
 
 /*  A, B    (input) DOUBLE PRECISION */
-/*    The values A and B. */
+/*          The values A and B. */
 
 /* ===================================================================== */
 
@@ -756,15 +756,15 @@ doublereal dlamc3_(doublereal *a, doublereal *b)
 /*  ========= */
 
 /*  EMIN    (output) EMIN */
-/*    The minimum exponent before (gradual) underflow, computed by */
-/*    setting A = START and dividing by BASE until the previous A */
-/*    can not be recovered. */
+/*          The minimum exponent before (gradual) underflow, computed by */
+/*          setting A = START and dividing by BASE until the previous A */
+/*          can not be recovered. */
 
 /*  START   (input) DOUBLE PRECISION */
-/*    The starting point for determining EMIN. */
+/*          The starting point for determining EMIN. */
 
 /*  BASE    (input) INTEGER */
-/*    The base of the machine. */
+/*          The base of the machine. */
 
 /* ===================================================================== */
 
@@ -864,24 +864,24 @@ L10:
 /*  ========= */
 
 /*  BETA    (input) INTEGER */
-/*    The base of floating-point arithmetic. */
+/*          The base of floating-point arithmetic. */
 
 /*  P       (input) INTEGER */
-/*    The number of base BETA digits in the mantissa of a */
-/*    floating-point value. */
+/*          The number of base BETA digits in the mantissa of a */
+/*          floating-point value. */
 
 /*  EMIN    (input) INTEGER */
-/*    The minimum exponent before (gradual) underflow. */
+/*          The minimum exponent before (gradual) underflow. */
 
 /*  IEEE    (input) LOGICAL */
-/*    A logical flag specifying whether or not the arithmetic */
-/*    system is thought to comply with the IEEE standard. */
+/*          A logical flag specifying whether or not the arithmetic */
+/*          system is thought to comply with the IEEE standard. */
 
 /*  EMAX    (output) INTEGER */
-/*    The largest exponent before overflow */
+/*          The largest exponent before overflow */
 
 /*  RMAX    (output) DOUBLE PRECISION */
-/*    The largest machine floating-point number. */
+/*          The largest machine floating-point number. */
 
 /* ===================================================================== */
 
@@ -937,24 +937,24 @@ L10:
 
     if(nbits % 2 == 1 && *beta == 2) {
 
-/*  Either there are an odd number of bits used to store a */
-/*  floating-point number, which is unlikely, or some bits are */
-/*  not used in the representation of numbers, which is possible, */
-/*  (e.g. Cray machines) or the mantissa has an implicit bit, */
-/*  (e.g. IEEE machines, Dec Vax machines), which is perhaps the */
-/*  most likely. We have to assume the last alternative. */
-/*  If this is true, then we need to reduce EMAX by one because */
-/*  there must be some way of representing zero in an implicit-bit */
-/*  system. On machines like Cray, we are reducing EMAX by one */
-/*  unnecessarily. */
+/*        Either there are an odd number of bits used to store a */
+/*        floating-point number, which is unlikely, or some bits are */
+/*        not used in the representation of numbers, which is possible, */
+/*        (e.g. Cray machines) or the mantissa has an implicit bit, */
+/*        (e.g. IEEE machines, Dec Vax machines), which is perhaps the */
+/*        most likely. We have to assume the last alternative. */
+/*        If this is true, then we need to reduce EMAX by one because */
+/*        there must be some way of representing zero in an implicit-bit */
+/*        system. On machines like Cray, we are reducing EMAX by one */
+/*        unnecessarily. */
 
   --(*emax);
     }
 
     if(*ieee) {
 
-/*  Assume we are on an IEEE machine which reserves one exponent */
-/*  for infinity and NaN. */
+/*        Assume we are on an IEEE machine which reserves one exponent */
+/*        for infinity and NaN. */
 
   --(*emax);
     }

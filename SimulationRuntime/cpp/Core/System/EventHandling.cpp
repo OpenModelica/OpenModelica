@@ -29,10 +29,10 @@ void EventHandling::init(IMixedSystem* system,int dim)
     _system=system;
     if(_dimH > 0)
     {
-  // Initialize help vars vector
-  if(_h) delete [] _h ;
-  _h = new double[_dimH];
-  memset(_h,0,(_dimH)*sizeof(double));
+        // Initialize help vars vector
+        if(_h) delete [] _h ;
+        _h = new double[_dimH];
+        memset(_h,0,(_dimH)*sizeof(double));
     }
 }
 /**
@@ -42,7 +42,7 @@ void EventHandling::giveHelpVars(double* h)
 {
     for(int i=0; i<_dimH; ++i)
     {
-  h[i] = _h[i];
+        h[i] = _h[i];
     }
 }
 /**
@@ -52,7 +52,7 @@ void EventHandling::setHelpVars(const double* h)
 {
     for(int i=0; i<_dimH; ++i)
     {
-  _h[i] = h[i];
+        _h[i] = h[i];
     }
 }
 /**
@@ -62,9 +62,9 @@ void EventHandling::saveH()
 {
     for(int i=0; i<_dimH; ++i)
     {
-  std::ostringstream s1;
-  s1 << "h" << i  ;
-  save(_h[i],s1.str());
+        std::ostringstream s1;
+        s1 << "h" << i  ;
+        save(_h[i],s1.str());
     }
 }
 /**
@@ -144,7 +144,7 @@ bool EventHandling::IterateEventQueue(bool* conditions)
     IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_system);
 
     bool drestart=false;
-    bool crestart=true;  
+    bool crestart=true;        
     
   
     //save discrete varibales
@@ -179,7 +179,7 @@ void  EventHandling::addTimeEvents( event_times_type times)
        //check if time event already exists
       iter2 = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(iter->first, 1e-10) );
        if(iter2==_time_events.end())
-  _time_events.insert(*iter);
+        _time_events.insert(*iter);
    }
 
 }
@@ -193,8 +193,8 @@ event_times_type EventHandling::makePeriodeEvents(double ts,double te,double int
      double val = ts;
      while(val < te)
      {
-   periode.insert(make_pair(real_cast<double>(val),index));
-   val += interval;
+         periode.insert(make_pair(real_cast<double>(val),index));
+         val += interval;
      }
      return periode;
 }

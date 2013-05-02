@@ -28,7 +28,7 @@
  */
 
 encapsulated package OpenTURNS "
-  file:  OpenTURNS.mo
+  file:        OpenTURNS.mo
   package:     OpenTURNS
   description: Connection to OpenTURNS, software for uncertainty propagation. The connection consists of two parts
   1. Generation of python script as input to OPENTURNS
@@ -62,9 +62,9 @@ import System;
 import Util;
 
 // important constants!
-constant String cStrSharePath         = "share/omc/scripts/OpenTurns/";
-constant String cStrWrapperSuffix     = "_wrapper";
-constant String cStrCWrapperTemplate  = "wrapper_template.c";
+constant String cStrSharePath               = "share/omc/scripts/OpenTurns/";
+constant String cStrWrapperSuffix           = "_wrapper";
+constant String cStrCWrapperTemplate        = "wrapper_template.c";
 constant String cStrMakefileWrapperTemplate = "wrapper_template.makefile";
 constant String cStrWrapperCompileCmd       = "wrapper_template.compile.cmd";
 constant String cStrInvokeOpenTurnsCmd      = "invoke.cmd";
@@ -274,7 +274,7 @@ algorithm
       then varStr::strLst;
     case (_::rest)
       equation
-  strLst = generateXMLLibraryInputs(rest);
+        strLst = generateXMLLibraryInputs(rest);
       then strLst;
   end matchcontinue;
 end generateXMLLibraryInputs;
@@ -400,42 +400,42 @@ algorithm
 
     case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
       equation
-  // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
-  // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
-  args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
-  // keep the variable name EXACTLY as it is
-  varName = ComponentReference.crefStr(cr);
-  // use the variable name with "." replaced by "_"
-  distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
-  // add LogNormal.MUSIGMA!
-  str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)";
+        // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
+        // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
+        args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
+        // keep the variable name EXACTLY as it is
+        varName = ComponentReference.crefStr(cr);
+        // use the variable name with "." replaced by "_"
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
+        // add LogNormal.MUSIGMA!
+        str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)";
       then
-  (str,(varName,distVar));
+        (str,(varName,distVar));
 
     case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
       equation
-  // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
-  // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
-  args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
-  // keep the variable name EXACTLY as it is
-  varName = ComponentReference.crefStr(cr);
-  // use the variable name with "." replaced by "_"
-  distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
-  str = distVar+& " = " +& name +& "("+&args+&")";
+        // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
+        // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
+        args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
+        // keep the variable name EXACTLY as it is
+        varName = ComponentReference.crefStr(cr);
+        // use the variable name with "." replaced by "_"
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
+        str = distVar+& " = " +& name +& "("+&args+&")";
       then
-  (str,(varName,distVar));
+        (str,(varName,distVar));
 
     case((DAE.DISTRIBUTION(e1,e2,e3),cr),_)
       equation
-  ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
-  ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
-  false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
-  false = Expression.expEqual(e3,e3_1);
-  //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
-  //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
-  (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
+        ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
+        false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
+        false = Expression.expEqual(e3,e3_1);
+        //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
+        //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
+        (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
       then
-  (str,distributionVar);
+        (str,distributionVar);
   end matchcontinue;
 end generateDistributionVariable;
 
@@ -453,27 +453,27 @@ algorithm
   correlationMatrix := matchcontinue(dae, numDists, uncertainVars)
     case (_, _, _)
       equation
-  algs = BackendDAEUtil.getAlgorithms(dae);
-  header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
-  SOME(correlationAlg) = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
-  correlationMatrix = header +& generateCorrelationMatrix2(correlationAlg,uncertainVars);
+        algs = BackendDAEUtil.getAlgorithms(dae);
+        header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
+        SOME(correlationAlg) = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
+        correlationMatrix = header +& generateCorrelationMatrix2(correlationAlg,uncertainVars);
      then
        correlationMatrix;
 
     case (_, _, _)
       equation
-  algs = BackendDAEUtil.getAlgorithms(dae);
-  header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
-  NONE() = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
-  Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
+        algs = BackendDAEUtil.getAlgorithms(dae);
+        header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
+        NONE() = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
+        Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
      then
        fail();
 
     else
       equation
-  Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed ...");
+        Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed ...");
       then
-  fail();
+        fail();
   end matchcontinue;
 end generateCorrelationMatrix;
 
@@ -560,8 +560,8 @@ algorithm
 
     case _
       equation
-  cr = BackendVariable.varCref(var);
-  true = isCorrelationVarCref(cr);
+        cr = BackendVariable.varCref(var);
+        true = isCorrelationVarCref(cr);
       then true;
 
     case(_) then false;
@@ -706,14 +706,14 @@ algorithm
       String cmdContents, logFile, cmdFile;
     case _
       equation
-  cmdContents = System.readFile(getFullShareFileName(cStrInvokeOpenTurnsCmd));
-  cmdContents = System.stringReplace(cmdContents, "<%pythonScriptOpenModelica%>", inStrPythonScriptFile);
-  cmdFile = inStrPythonScriptFile +& ".bat";
-  System.writeFile(cmdFile, cmdContents);
-  logFile = inStrPythonScriptFile +& ".log";
-  runCommand(cmdFile +& " > " +& logFile +& " 2>&1");
+        cmdContents = System.readFile(getFullShareFileName(cStrInvokeOpenTurnsCmd));
+        cmdContents = System.stringReplace(cmdContents, "<%pythonScriptOpenModelica%>", inStrPythonScriptFile);
+        cmdFile = inStrPythonScriptFile +& ".bat";
+        System.writeFile(cmdFile, cmdContents);
+        logFile = inStrPythonScriptFile +& ".log";
+        runCommand(cmdFile +& " > " +& logFile +& " 2>&1");
       then
-  logFile;
+        logFile;
   end match;
 end runPythonScript;
 
@@ -723,15 +723,15 @@ algorithm
   _ := matchcontinue(cmd)
     case _
       equation
-  print("running: " +& cmd +& "\n");
-  0 = System.systemCall(cmd);
+        print("running: " +& cmd +& "\n");
+        0 = System.systemCall(cmd);
       then
-  ();
+        ();
     case _
       equation
-  print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
+        print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
       then
-  ();
+        ();
   end matchcontinue;
 end runCommand;
 

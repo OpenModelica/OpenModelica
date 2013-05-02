@@ -109,11 +109,11 @@ package SimCode
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
-                      list<SimVar>,           // seed vars
-                      String,                 // matrix name
-                      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
-                      list<list<DAE.ComponentRef>>,    // colored cols
-                      Integer>;               // max color used
+                            list<SimVar>,           // seed vars
+                            String,                 // matrix name
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            list<list<DAE.ComponentRef>>,    // colored cols
+                            Integer>;               // max color used
   
   uniontype SimCode
     record SIMCODE
@@ -314,7 +314,7 @@ package SimCode
     record SES_WHEN
       Integer index;
       list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-      Boolean initialCall;            // true, if top-level branch with initial()
+      Boolean initialCall;                  // true, if top-level branch with initial()
       DAE.ComponentRef left;
       DAE.Exp right;
       Option<SimEqSystem> elseWhen;
@@ -338,7 +338,7 @@ package SimCode
     record SIM_WHEN_CLAUSE
       list<DAE.ComponentRef> conditionVars; // is no longer needed 
       list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-      Boolean initialCall;            // true, if top-level branch with initial()
+      Boolean initialCall;                  // true, if top-level branch with initial()
       list<BackendDAE.WhenOperator> reinits;
       Option<BackendDAE.WhenEquation> whenEq;
     end SIM_WHEN_CLAUSE;
@@ -546,8 +546,8 @@ package SimCode
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;
-  constant Context contextAlgloop;       
-   constant Context contextAlgloopInitialisation;       
+  constant Context contextAlgloop;             
+   constant Context contextAlgloopInitialisation;             
 
   constant Context contextParallelFunction;
   constant Context contextZeroCross;
@@ -731,7 +731,7 @@ package BackendDAE
   
   uniontype SampleLookup
     record SAMPLE_LOOKUP
-      Integer nSamples                        "total number of different sample calls" ;
+      Integer nSamples                              "total number of different sample calls" ;
       list<tuple<Integer, DAE.Exp, DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
     end SAMPLE_LOOKUP;
   end SampleLookup;
@@ -739,7 +739,7 @@ package BackendDAE
   uniontype WhenOperator "- Reinit Statement"
     record REINIT
       DAE.ComponentRef stateVar "State variable to reinit" ;
-      DAE.Exp value       "Value after reinit" ;
+      DAE.Exp value             "Value after reinit" ;
       DAE.ElementSource source "origin of equation";
     end REINIT;
 
@@ -1197,7 +1197,7 @@ package DAE
   uniontype VarParallelism
     record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
     record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
-    record NON_PARALLEL  "Non parallel/Normal variables"      end NON_PARALLEL;
+    record NON_PARALLEL  "Non parallel/Normal variables"            end NON_PARALLEL;
   end VarParallelism;
 
   uniontype Operator
@@ -1454,9 +1454,9 @@ package DAE
   
     record T_ARRAY 
       "an array can be represented in two equivalent ways: 
-   1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
-   2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
-   In general Inst generates 1 and all the others generates 2"
+         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+         2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+         In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
       TypeSource source;
@@ -1729,7 +1729,7 @@ package ClassInf
       String string;
     end MODEL;
     record RECORD
-  Absyn.Path path;
+        Absyn.Path path;
     end RECORD;
     record BLOCK
       String string;
@@ -1811,7 +1811,7 @@ uniontype Restriction
 
   // predefined internal types
   record R_PREDEFINED_INTEGER     "predefined IntegerType" end R_PREDEFINED_INTEGER;
-  record R_PREDEFINED_REAL  "predefined RealType"    end R_PREDEFINED_REAL;
+  record R_PREDEFINED_REAL        "predefined RealType"    end R_PREDEFINED_REAL;
   record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
   record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
   record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
@@ -1839,8 +1839,8 @@ uniontype Mod "- Modifications"
   end MOD;
 
   record REDECL
-    Final   finalPrefix "final prefix";    
-    Each    eachPrefix "each prefix";    
+    Final         finalPrefix "final prefix";    
+    Each          eachPrefix "each prefix";    
     list<Element> elementLst  "elements";
   end REDECL;
 
@@ -1862,7 +1862,7 @@ As in the AST, a program is simply a list of class definitions.";
 
 uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
   record ENUM
-    Ident     literal;
+    Ident           literal;
     Option<Comment> comment;
   end ENUM;
 end Enum;
@@ -1886,20 +1886,20 @@ uniontype ClassDef
   end A;"
   
   record PARTS "a class made of parts"
-    list<Element>        elementLst          "the list of elements";
-    list<Equation>       normalEquationLst   "the list of equations";
-    list<Equation>       initialEquationLst  "the list of initial equations";
+    list<Element>              elementLst          "the list of elements";
+    list<Equation>             normalEquationLst   "the list of equations";
+    list<Equation>             initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-    Option<Absyn.ExternalDecl> externalDecl  "used by external functions";
-    list<Annotation>     annotationLst       "the list of annotations found in between class elements, equations and algorithms";
-    Option<Comment>      comment             "the class comment";
+    Option<Absyn.ExternalDecl> externalDecl        "used by external functions";
+    list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
+    Option<Comment>            comment             "the class comment";
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
-    Ident                baseClassName       "the name of the base class we have to extend";
-    Mod                  modifications       "the modifications that need to be applied to the base class";
-    ClassDef             composition         "the new composition";
+    Ident                      baseClassName       "the name of the base class we have to extend";
+    Mod                        modifications       "the modifications that need to be applied to the base class";
+    ClassDef                   composition         "the new composition";
   end CLASS_EXTENDS;
 
   record DERIVED "a derived class"
@@ -1982,15 +1982,15 @@ uniontype EEquation
   end EQ_CONNECT;
 
   record EQ_FOR "the for equation"
-    Ident     index        "the index name";
-    Absyn.Exp       range  "the range of the index";
+    Ident           index        "the index name";
+    Absyn.Exp       range        "the range of the index";
     list<EEquation> eEquationLst "the equation list";
     Option<Comment> comment;
     Absyn.Info info;
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
-    Absyn.Exp  condition "the when condition";
+    Absyn.Exp        condition "the when condition";
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst "the elsewhen expression and equation list";
     Option<Comment> comment;
@@ -2012,7 +2012,7 @@ uniontype EEquation
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
-    Absyn.Exp    expReinit "the new value" ;
+    Absyn.Exp          expReinit "the new value" ;
     Option<Comment> comment;
     Absyn.Info info;
   end EQ_REINIT;
@@ -2164,10 +2164,10 @@ end ConnectorType;
 
 uniontype Prefixes "the common class or component prefixes"
   record PREFIXES "the common class or component prefixes"
-    Visibility       visibility     "the protected/public prefix";
-    Redeclare  redeclarePrefix      "redeclare prefix";    
-    Final      finalPrefix          "final prefix, be it at the element or top level";
-    Absyn.InnerOuter innerOuter     "the inner/outer/innerouter prefix";
+    Visibility       visibility           "the protected/public prefix";
+    Redeclare        redeclarePrefix      "redeclare prefix";    
+    Final            finalPrefix          "final prefix, be it at the element or top level";
+    Absyn.InnerOuter innerOuter           "the inner/outer/innerouter prefix";
     Replaceable      replaceablePrefix    "replaceable prefix";
   end PREFIXES;      
 end Prefixes;
@@ -2181,45 +2181,45 @@ uniontype Element "- Elements
   DEFINEUNIT (for units)"
   
   record IMPORT "an import element"
-    Absyn.Import imp           "the import definition";
-    Visibility   visibility    "the protected/public prefix";    
-    Absyn.Info   info          "the import information";
+    Absyn.Import imp                 "the import definition";
+    Visibility   visibility          "the protected/public prefix";    
+    Absyn.Info   info                "the import information";
   end IMPORT;  
   
   record EXTENDS "the extends element"
-    Path baseClassPath         "the extends path";
-    Visibility visibility      "the protected/public prefix";
-    Mod modifications          "the modifications applied to the base class";
-    Option<Annotation> ann     "the extends annotation";
-    Absyn.Info info            "the extends info";
+    Path baseClassPath               "the extends path";
+    Visibility visibility            "the protected/public prefix";
+    Mod modifications                "the modifications applied to the base class";
+    Option<Annotation> ann           "the extends annotation";
+    Absyn.Info info                  "the extends info";
   end EXTENDS;
 
   record CLASS "a class definition"
-    Ident   name               "the name of the class";
-    Prefixes prefixes          "the common class or component prefixes";
+    Ident   name                     "the name of the class";
+    Prefixes prefixes                "the common class or component prefixes";
     Encapsulated encapsulatedPrefix  "the encapsulated prefix";
-    Partial partialPrefix      "the partial prefix";    
-    Restriction restriction    "the restriction of the class";
-    ClassDef classDef          "the class specification";
-    Absyn.Info info            "the class information";
+    Partial partialPrefix            "the partial prefix";    
+    Restriction restriction          "the restriction of the class";
+    ClassDef classDef                "the class specification";
+    Absyn.Info info                  "the class information";
   end CLASS;
   
   record COMPONENT "a component"
-    Ident name                "the component name";
-    Prefixes prefixes         "the common class or component prefixes";    
-    Attributes attributes     "the component attributes";
-    Absyn.TypeSpec typeSpec   "the type specification";
-    Mod modifications         "the modifications to be applied to the component";
-    Option<Comment> comment   "this if for extraction of comments and annotations from Absyn";
+    Ident name                      "the component name";
+    Prefixes prefixes               "the common class or component prefixes";    
+    Attributes attributes           "the component attributes";
+    Absyn.TypeSpec typeSpec         "the type specification";
+    Mod modifications               "the modifications to be applied to the component";
+    Option<Comment> comment         "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition     "the conditional declaration of a component";
-    Absyn.Info info           "this is for line and column numbers, also file name.";
+    Absyn.Info info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
     Ident name;
-    Visibility visibility      "the protected/public prefix";
-    Option<String> exp         "the unit expression";
-    Option<Real> weight        "the weight";
+    Visibility visibility            "the protected/public prefix";
+    Option<String> exp               "the unit expression";
+    Option<Real> weight              "the weight";
   end DEFINEUNIT;
   
 end Element;
@@ -2234,10 +2234,10 @@ uniontype Attributes "- Attributes"
 end Attributes;
 
 uniontype Variability "the variability of a component"
-  record VAR      "a variable"    end VAR;
+  record VAR      "a variable"          end VAR;
   record DISCRETE "a discrete variable" end DISCRETE;
-  record PARAM    "a parameter"   end PARAM;
-  record CONST    "a constant"    end CONST;
+  record PARAM    "a parameter"         end PARAM;
+  record CONST    "a constant"          end CONST;
 end Variability;
 
 uniontype Initial "the initial attribute of an algorithm or equation

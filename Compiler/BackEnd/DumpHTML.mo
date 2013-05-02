@@ -30,7 +30,7 @@
  */
 
 encapsulated package DumpHTML
-" file:  DumpHTML.mo
+" file:        DumpHTML.mo
   package:     DumpHTML
   description: Generate HTML documents for Dump Issues
 
@@ -339,36 +339,36 @@ algorithm
       Tags tags;
     case (HEADING(stage=i,text=t),_)
       equation
-  str = iBuffer +& "\n<h" +& intString(i) +& ">" +& t +& "</h" +& intString(i) +& ">";
+        str = iBuffer +& "\n<h" +& intString(i) +& ">" +& t +& "</h" +& intString(i) +& ">";
       then
-  str;
+        str;
     case (HYPERLINK(href=t,title=t1,text=t2),_)
       equation
-  str = iBuffer +& "\n<a href=\"" +& t +& "\" title=\"" +& t1 +& "\">" +& t2 +& "</a>";
+        str = iBuffer +& "\n<a href=\"" +& t +& "\" title=\"" +& t1 +& "\">" +& t2 +& "</a>";
       then
-  str;
+        str;
     case (ANKER(name=t),_)
       equation
-  str = iBuffer +& "\n<a name=\"" +& t +& "\"/>";
+        str = iBuffer +& "\n<a name=\"" +& t +& "\"/>";
       then
-  str;
+        str;
     case (LINE(text=t),_)
       equation
-  str = iBuffer +& "\n" +& t +& "<br>";
+        str = iBuffer +& "\n" +& t +& "<br>";
       then
-  str;
+        str;
     case (DIVISION(id=t,style=style,tags=tags),_)
       equation
-  t1 = stringDelimitList(List.map(style,dumpStyle),"; ");
-  t2 = List.fold(tags,dumpTag,"");
-  str = iBuffer +& "\n<div id=\"" +& t +& "\" style=\"" +& t1 +& "\">\n" +& t2 +& "\n</div>";
+        t1 = stringDelimitList(List.map(style,dumpStyle),"; ");
+        t2 = List.fold(tags,dumpTag,"");
+        str = iBuffer +& "\n<div id=\"" +& t +& "\" style=\"" +& t1 +& "\">\n" +& t2 +& "\n</div>";
       then
-  str;
+        str;
     case (SCRIPT(type_=t1,text=t2),_)
       equation
-  str = iBuffer +& "\n<script type=\"" +& t1 +& "\">\n" +& t2 +& "\n</script>";
+        str = iBuffer +& "\n<script type=\"" +& t1 +& "\">\n" +& t2 +& "\n</script>";
       then
-  str;
+        str;
   end match;
 end dumpTag;
 

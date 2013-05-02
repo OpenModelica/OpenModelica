@@ -56,60 +56,60 @@
 /*     where */
 
 /*       fcn is the name of the user-supplied subroutine which */
-/*   calculates the functions. fcn must be declared */
-/*   in an external statement in the user calling */
-/*   program, and should be written as follows. */
+/*         calculates the functions. fcn must be declared */
+/*         in an external statement in the user calling */
+/*         program, and should be written as follows. */
 
-/*   subroutine fcn(n,x,fvec,iflag) */
-/*   integer n,iflag */
-/*   double precision x(n),fvec(n) */
-/*   ---------- */
-/*   calculate the functions at x and */
-/*   return this vector in fvec. */
-/*   --------- */
-/*   return */
-/*   end */
+/*         subroutine fcn(n,x,fvec,iflag) */
+/*         integer n,iflag */
+/*         double precision x(n),fvec(n) */
+/*         ---------- */
+/*         calculate the functions at x and */
+/*         return this vector in fvec. */
+/*         --------- */
+/*         return */
+/*         end */
 
-/*   the value of iflag should not be changed by fcn unless */
-/*   the user wants to terminate execution of hybrd1. */
-/*   in this case set iflag to a negative integer. */
+/*         the value of iflag should not be changed by fcn unless */
+/*         the user wants to terminate execution of hybrd1. */
+/*         in this case set iflag to a negative integer. */
 
 /*       n is a positive integer input variable set to the number */
-/*   of functions and variables. */
+/*         of functions and variables. */
 
 /*       x is an array of length n. on input x must contain */
-/*   an initial estimate of the solution vector. on output x */
-/*   contains the final estimate of the solution vector. */
+/*         an initial estimate of the solution vector. on output x */
+/*         contains the final estimate of the solution vector. */
 
 /*       fvec is an output array of length n which contains */
-/*   the functions evaluated at the output x. */
+/*         the functions evaluated at the output x. */
 
 /*       tol is a nonnegative input variable. termination occurs */
-/*   when the algorithm estimates that the relative error */
-/*   between x and the solution is at most tol. */
+/*         when the algorithm estimates that the relative error */
+/*         between x and the solution is at most tol. */
 
 /*       info is an integer output variable. if the user has */
-/*   terminated execution, info is set to the (negative) */
-/*   value of iflag. see description of fcn. otherwise, */
-/*   info is set as follows. */
+/*         terminated execution, info is set to the (negative) */
+/*         value of iflag. see description of fcn. otherwise, */
+/*         info is set as follows. */
 
-/*   info = 0   improper input parameters. */
+/*         info = 0   improper input parameters. */
 
-/*   info = 1   algorithm estimates that the relative error */
-/*              between x and the solution is at most tol. */
+/*         info = 1   algorithm estimates that the relative error */
+/*                    between x and the solution is at most tol. */
 
-/*   info = 2   number of calls to fcn has reached or exceeded */
-/*              200*(n+1). */
+/*         info = 2   number of calls to fcn has reached or exceeded */
+/*                    200*(n+1). */
 
-/*   info = 3   tol is too small. no further improvement in */
-/*              the approximate solution x is possible. */
+/*         info = 3   tol is too small. no further improvement in */
+/*                    the approximate solution x is possible. */
 
-/*   info = 4   iteration is not making good progress. */
+/*         info = 4   iteration is not making good progress. */
 
 /*       wa is a work array of length lwa. */
 
 /*       lwa is a positive integer input variable not less than */
-/*   (n*(3*n+13))/2. */
+/*         (n*(3*n+13))/2. */
 
 /*     subprograms called */
 

@@ -153,52 +153,52 @@ static integer c__1 = 1;
 
 /*     ARGUMENTS:- */
 /*     P()     = INPUT, STARTING VALUES OF PARAMETERS */
-/*         OUTPUT, FINAL VALUES OF PARAMETERS */
+/*               OUTPUT, FINAL VALUES OF PARAMETERS */
 /*     STEP()  = INPUT, INITIAL STEP SIZES */
 /*     NOP     = INPUT, NO. OF PARAMETERS, INCL. ANY TO BE HELD FIXED */
 /*     FUNC    = OUTPUT, THE FUNCTION VALUE CORRESPONDING TO THE FINAL */
-/*           PARAMETER VALUES. */
+/*                 PARAMETER VALUES. */
 /*     MAX     = INPUT, THE MAXIMUM NO. OF FUNCTION EVALUATIONS ALLOWED. */
-/*         Say, 20 times the number of parameters, NOP. */
+/*               Say, 20 times the number of parameters, NOP. */
 /*     IPRINT  = INPUT, PRINT CONTROL PARAMETER */
-/*           < 0 NO PRINTING */
-/*           = 0 PRINTING OF PARAMETER VALUES AND THE FUNCTION */
-/*               VALUE AFTER INITIAL EVIDENCE OF CONVERGENCE. */
-/*           > 0 AS FOR IPRINT = 0 PLUS PROGRESS REPORTS AFTER */
-/*               EVERY IPRINT EVALUATIONS, PLUS PRINTING FOR THE */
-/*               INITIAL SIMPLEX. */
+/*                 < 0 NO PRINTING */
+/*                 = 0 PRINTING OF PARAMETER VALUES AND THE FUNCTION */
+/*                     VALUE AFTER INITIAL EVIDENCE OF CONVERGENCE. */
+/*                 > 0 AS FOR IPRINT = 0 PLUS PROGRESS REPORTS AFTER */
+/*                     EVERY IPRINT EVALUATIONS, PLUS PRINTING FOR THE */
+/*                     INITIAL SIMPLEX. */
 /*     STOPCR  = INPUT, STOPPING CRITERION. */
-/*         The criterion is applied to the standard deviation of */
-/*         the values of FUNC at the points of the simplex. */
+/*               The criterion is applied to the standard deviation of */
+/*               the values of FUNC at the points of the simplex. */
 /*     NLOOP   = INPUT, THE STOPPING RULE IS APPLIED AFTER EVERY NLOOP */
-/*         FUNCTION EVALUATIONS.   Normally NLOOP should be slightly */
-/*         greater than NOP, say NLOOP = 2*NOP. */
+/*               FUNCTION EVALUATIONS.   Normally NLOOP should be slightly */
+/*               greater than NOP, say NLOOP = 2*NOP. */
 /*     IQUAD   = INPUT, = 1 IF FITTING OF A QUADRATIC SURFACE IS REQUIRED */
-/*                = 0 IF NOT */
-/*         N.B. The fitting of a quadratic surface is strongly */
-/*         recommended, provided that the fitted function is */
-/*         continuous in the vicinity of the minimum.   It is often */
-/*         a good indicator of whether a premature termination of */
-/*         the search has occurred. */
+/*                      = 0 IF NOT */
+/*               N.B. The fitting of a quadratic surface is strongly */
+/*               recommended, provided that the fitted function is */
+/*               continuous in the vicinity of the minimum.   It is often */
+/*               a good indicator of whether a premature termination of */
+/*               the search has occurred. */
 /*     SIMP    = INPUT, CRITERION FOR EXPANDING THE SIMPLEX TO OVERCOME */
-/*         ROUNDING ERRORS BEFORE FITTING THE QUADRATIC SURFACE. */
-/*         The simplex is expanded so that the function values at */
-/*         the points of the simplex exceed those at the supposed */
-/*         minimum by at least an amount SIMP. */
+/*               ROUNDING ERRORS BEFORE FITTING THE QUADRATIC SURFACE. */
+/*               The simplex is expanded so that the function values at */
+/*               the points of the simplex exceed those at the supposed */
+/*               minimum by at least an amount SIMP. */
 /*     VAR()   = OUTPUT, CONTAINS THE DIAGONAL ELEMENTS OF THE INVERSE OF */
-/*         THE INFORMATION MATRIX. */
+/*               THE INFORMATION MATRIX. */
 /*     FUNCTN  = INPUT, NAME OF THE USER'S SUBROUTINE - ARGUMENTS */
 /*     (NOP,P,FUNC) WHICH RETURNS THE FUNCTION VALUE FOR A GIVEN */
-/*         SET OF PARAMETER VALUES IN ARRAY P. */
+/*               SET OF PARAMETER VALUES IN ARRAY P. */
 /* ****     FUNCTN MUST BE DECLARED EXTERNAL IN THE CALLING PROGRAM. */
 /*     IFAULT  = OUTPUT, = 0 FOR SUCCESSFUL TERMINATION */
-/*           = 1 IF MAXIMUM NO. OF FUNCTION EVALUATIONS EXCEEDED */
-/*           = 2 IF INFORMATION MATRIX IS NOT +VE SEMI-DEFINITE */
-/*           = 3 IF NOP < 1 */
-/*           = 4 IF NLOOP < 1 */
+/*                 = 1 IF MAXIMUM NO. OF FUNCTION EVALUATIONS EXCEEDED */
+/*                 = 2 IF INFORMATION MATRIX IS NOT +VE SEMI-DEFINITE */
+/*                 = 3 IF NOP < 1 */
+/*                 = 4 IF NLOOP < 1 */
 
 /*     N.B. P, STEP AND VAR (IF IQUAD = 1) MUST HAVE DIMENSION AT LEAST NOP */
-/*    IN THE CALLING PROGRAM. */
+/*          IN THE CALLING PROGRAM. */
 /*     THE DIMENSIONS BELOW ARE FOR A MAXIMUM OF 20 PARAMETERS. */
 
 /*     LATEST REVISION - 6 April 1985 */
@@ -978,7 +978,7 @@ L690:
       i__3 = nap;
       for(k = 1; k <= i__3; ++k) {
     if(k > j) {
-  goto L700;
+        goto L700;
     }
     l = j * (j - 1) / 2 + k;
     goto L710;
@@ -1149,20 +1149,20 @@ L910:
 
 /*     ARGUMENTS:- */
 /*     A()    = INPUT, THE SYMMETRIC MATRIX TO BE INVERTED, STORED IN */
-/*          LOWER TRIANGULAR FORM */
+/*                LOWER TRIANGULAR FORM */
 /*     N      = INPUT, ORDER OF THE MATRIX */
 /*     C()    = OUTPUT, THE INVERSE OF A (A GENERALIZED INVERSE IF C IS */
-/*          SINGULAR), ALSO STORED IN LOWER TRIANGULAR. */
-/*          C AND A MAY OCCUPY THE SAME LOCATIONS. */
+/*                SINGULAR), ALSO STORED IN LOWER TRIANGULAR. */
+/*                C AND A MAY OCCUPY THE SAME LOCATIONS. */
 /*     W()    = WORKSPACE, DIMENSION AT LEAST N. */
 /*     NULLTY = OUTPUT, THE RANK DEFICIENCY OF A. */
 /*     IFAULT = OUTPUT, ERROR INDICATOR */
-/*           = 1 IF N < 1 */
-/*           = 2 IF A IS NOT +VE SEMI-DEFINITE */
-/*           = 0 OTHERWISE */
+/*                 = 1 IF N < 1 */
+/*                 = 2 IF A IS NOT +VE SEMI-DEFINITE */
+/*                 = 0 OTHERWISE */
 /*     RMAX   = OUTPUT, APPROXIMATE BOUND ON THE ACCURACY OF THE DIAGONAL */
-/*          ELEMENTS OF C.  E.G. IF RMAX = 1.E-04 THEN THE DIAGONAL */
-/*          ELEMENTS OF C WILL BE ACCURATE TO ABOUT 4 DEC. DIGITS. */
+/*                ELEMENTS OF C.  E.G. IF RMAX = 1.E-04 THEN THE DIAGONAL */
+/*                ELEMENTS OF C WILL BE ACCURATE TO ABOUT 4 DEC. DIGITS. */
 
 /*     LATEST REVISION - 1 April 1985 */
 
@@ -1275,19 +1275,19 @@ L100:
 
 /*     ARGUMENTS:- */
 /*     A()    = INPUT, A +VE DEFINITE MATRIX STORED IN LOWER-TRIANGULAR */
-/*          FORM. */
+/*                FORM. */
 /*     N      = INPUT, THE ORDER OF A */
 /*     U()    = OUTPUT, A LOWER TRIANGULAR MATRIX SUCH THAT U*U' = A. */
-/*          A & U MAY OCCUPY THE SAME LOCATIONS. */
+/*                A & U MAY OCCUPY THE SAME LOCATIONS. */
 /*     NULLTY = OUTPUT, THE RANK DEFICIENCY OF A. */
 /*     IFAULT = OUTPUT, ERROR INDICATOR */
-/*           = 1 IF N < 1 */
-/*           = 2 IF A IS NOT +VE SEMI-DEFINITE */
-/*           = 0 OTHERWISE */
+/*                 = 1 IF N < 1 */
+/*                 = 2 IF A IS NOT +VE SEMI-DEFINITE */
+/*                 = 0 OTHERWISE */
 /*     RMAX   = OUTPUT, AN ESTIMATE OF THE RELATIVE ACCURACY OF THE */
-/*          DIAGONAL ELEMENTS OF U. */
+/*                DIAGONAL ELEMENTS OF U. */
 /*     R()    = OUTPUT, ARRAY CONTAINING BOUNDS ON THE RELATIVE ACCURACY */
-/*          OF EACH DIAGONAL ELEMENT OF U. */
+/*                OF EACH DIAGONAL ELEMENT OF U. */
 
 /*     LATEST REVISION - 1 April 1985 */
 
@@ -1340,15 +1340,15 @@ L110:
       for(i__ = 1; i__ <= i__3; ++i__) {
     ++l;
     if(i__ == irow) {
-  goto L20;
+        goto L20;
     }
     w -= u[l] * u[m];
     if(irow == icol) {
 /* Computing 2nd power */
-  d__2 = u[l];
+        d__2 = u[l];
 /* Computing 2nd power */
-  d__1 = d__2 * d__2 * r__[i__];
-  rsq += d__1 * d__1;
+        d__1 = d__2 * d__2 * r__[i__];
+        rsq += d__1 * d__1;
     }
     ++m;
 /* L10: */

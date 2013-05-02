@@ -1,7 +1,7 @@
 encapsulated package UnitAbsynBuilder " Copyright MathCore Engineering AB 2008-2009
   Author: Peter Aronsson (peter.aronsson@mathcore.com)
 
-  file:  UnitAbsynBuilder.mo
+  file:        UnitAbsynBuilder.mo
   package:     UnitAbsynBuilder
   description: Physical unit checking.
 
@@ -300,8 +300,8 @@ algorithm
   outSt := match(st)
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
     case(UnitAbsyn.STORE(vector,indx)) equation
-  incr = intMin(1,realInt(intReal(indx) *. 0.4));
-  vector = arrayExpand(incr,vector,NONE());
+        incr = intMin(1,realInt(intReal(indx) *. 0.4));
+        vector = arrayExpand(incr,vector,NONE());
      then UnitAbsyn.STORE(vector,indx);
   end match;
 end expandStore;
@@ -409,20 +409,20 @@ algorithm
       array<Type_a> src,dst,dst_1;
     case (src,dst) /* src dst */
       equation
-  srclen = arrayLength(src);
-  dstlen = arrayLength(dst);
-  (srclen > dstlen) = true;
-  print(
-    "- Util.arrayCopy failed. Can not fit elements into dest array\n");
+        srclen = arrayLength(src);
+        dstlen = arrayLength(dst);
+        (srclen > dstlen) = true;
+        print(
+          "- Util.arrayCopy failed. Can not fit elements into dest array\n");
       then
-  fail();
+        fail();
     case (src,dst)
       equation
-  srclen = arrayLength(src);
-  srclen = srclen - 1;
-  dst_1 = arrayCopy2(src, dst, srclen);
+        srclen = arrayLength(src);
+        srclen = srclen - 1;
+        dst_1 = arrayCopy2(src, dst, srclen);
       then
-  dst_1;
+        dst_1;
   end matchcontinue;
 end arrayCopy;
 
@@ -442,12 +442,12 @@ algorithm
     case (src,dst,-1) then dst;  /* src dst current pos */
     case (src,dst,pos)
       equation
-  elt = src[pos + 1];
-  dst_1 = arrayUpdate(dst, pos + 1, elt);
-  pos = pos - 1;
-  dst_2 = arrayCopy2(src, dst_1, pos);
+        elt = src[pos + 1];
+        dst_1 = arrayUpdate(dst, pos + 1, elt);
+        pos = pos - 1;
+        dst_2 = arrayCopy2(src, dst_1, pos);
       then
-  dst_2;
+        dst_2;
   end matchcontinue;
 end arrayCopy2;
 
@@ -684,19 +684,19 @@ algorithm
       Option<UnitAbsyn.UnitCheckResult> res;
     case(_,_,_,_)
       equation
-  false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then(UnitAbsyn.noStore,{});
     case (_,_,_,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
       equation
-  (terms,st) = buildTerms(env,dae,ht,st);
-  (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
-  terms = listAppend(terms,terms2);
-  //print("built terms, store :"); printStore(st);
-  //print("ht =");BaseHashTable.dumpHashTable(ht);
-  st = createTypeParameterLocations(st);
-  // print("built type param, store :"); printStore(st);
-  terms = listReverse(terms);
+        (terms,st) = buildTerms(env,dae,ht,st);
+        (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
+        terms = listAppend(terms,terms2);
+        //print("built terms, store :"); printStore(st);
+        //print("ht =");BaseHashTable.dumpHashTable(ht);
+        st = createTypeParameterLocations(st);
+        // print("built type param, store :"); printStore(st);
+        terms = listReverse(terms);
      then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
     case(_,_,_,_) equation
       print("instBuildUnitTerms failed!!\n");
@@ -886,8 +886,8 @@ algorithm
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-  cref_ = ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
-  ht = BaseHashTable.add((cref_,nextElt),ht);
+        cref_ = ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
+        ht = BaseHashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
 
@@ -1031,20 +1031,20 @@ algorithm
     /* special case for pow */
     case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store)
       equation
-  (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
-  (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
-  terms = listAppend(terms1,terms2);
-  ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
+        (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
+        terms = listAppend(terms1,terms2);
+        ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
     case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store)
       equation
-  (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
-  (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
-  terms = listAppend(terms1,terms2);
-  i = realInt(r);
-  true = intReal(i) -. r ==. 0.0;
-  ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
+        (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
+        terms = listAppend(terms1,terms2);
+        i = realInt(r);
+        true = intReal(i) -. r ==. 0.0;
+        ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
     case(_,e as DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
@@ -1090,7 +1090,7 @@ algorithm
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
     case(_,e as DAE.ARRAY(_,_,expl),divOrMul,ht,store)
       equation
-  print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
+        print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
       ut::uts = buildArrayElementTerms(uts,expl);
       terms = listAppend(terms,uts);
@@ -1098,11 +1098,11 @@ algorithm
 
     case(_,e as DAE.MATRIX(matrix=mexpl),divOrMul,ht,store)
       equation
-  print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
-  expl = List.flatten(mexpl);
-  (uts,terms,store) = buildTermExpList(env,expl,ht,store);
-  ut::uts = buildArrayElementTerms(uts,expl);
-  terms = listAppend(terms,uts);
+        print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
+        expl = List.flatten(mexpl);
+        (uts,terms,store) = buildTermExpList(env,expl,ht,store);
+        ut::uts = buildArrayElementTerms(uts,expl);
+        terms = listAppend(terms,uts);
       then (ut,terms,store);
 
     case(_,e as DAE.CALL(path=_),divOrMul,ht,store) equation
@@ -1159,9 +1159,9 @@ algorithm
        funcInstId=tick();
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);
-  terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
-  (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
-  extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
+        terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
+        (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
+        extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
     then (ut,extraTerms,store);
   end match;
 end buildTermCall;
@@ -1685,7 +1685,7 @@ protected
     sigma := {
     UnitAbsyn.LOCATION("x",UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},{r1,r0,r0,r0,r0,r0,r0}))), // x -> m
     UnitAbsyn.LOCATION("y",UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},{r1,r0,r0,r0,r0,r0,r0}))), // y -> m
-    UnitAbsyn.LOCATION("z",UnitAbsyn.UNSPECIFIED())                                       // z -> unspecified
+    UnitAbsyn.LOCATION("z",UnitAbsyn.UNSPECIFIED())                                             // z -> unspecified
     };
  end buildTest5;
  */

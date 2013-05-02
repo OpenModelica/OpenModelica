@@ -30,7 +30,7 @@
  */
 
 encapsulated package MMath
-" file:  MMath.mo
+" file:        MMath.mo
   package:     MMath
   description: Rational numbers and operations
   @author:     Peter Aronsson (peter.aronsson@mathcore.com)

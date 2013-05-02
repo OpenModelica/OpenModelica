@@ -30,10 +30,10 @@
  */
 
 encapsulated package Initialization
-" file:  Initialization.mo
+" file:        Initialization.mo
   package:     Initialization
   description: Initialization.mo contains everything needed to set up the
-         BackendDAE for the initial system.
+               BackendDAE for the initial system.
 
   RCS: $Id$"
 
@@ -662,13 +662,13 @@ algorithm
       Boolean b;
 
     case(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
-                                                     aliasVars=avars,
-                                                     initialEqs=inieqns,
-                                                     constraints=constraints,
-                                                     classAttrs=classAttrs,
-                                                     cache=cache,
-                                                     env=env,
-                                                     functionTree=functionTree)), _, _) equation
+                                                           aliasVars=avars,
+                                                           initialEqs=inieqns,
+                                                           constraints=constraints,
+                                                           classAttrs=classAttrs,
+                                                           cache=cache,
+                                                           env=env,
+                                                           functionTree=functionTree)), _, _) equation
       // collect all pre(var) in time equations to get the discrete states (-> report them)
       // and collect all pre(var) in initial equations to get all initilized pre variables
       // hs = discreteStates(inDAE);
@@ -700,19 +700,19 @@ algorithm
       eavars = BackendVariable.emptyVars();
       emptyeqns = BackendEquation.emptyEqns();
       shared = BackendDAE.SHARED(fixvars,
-                           evars,
-                           eavars,
-                           emptyeqns,
-                           reeqns,
-                           constraints,
-                           classAttrs,
-                           cache,
-                           env,
-                           functionTree,
-                           BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
-                           {},
-                           BackendDAE.INITIALSYSTEM(),
-                           {});
+                                 evars,
+                                 eavars,
+                                 emptyeqns,
+                                 reeqns,
+                                 constraints,
+                                 classAttrs,
+                                 cache,
+                                 env,
+                                 functionTree,
+                                 BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
+                                 {},
+                                 BackendDAE.INITIALSYSTEM(),
+                                 {});
 
       // split it in independend subsystems
       (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);

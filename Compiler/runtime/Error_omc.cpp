@@ -53,9 +53,9 @@ void Error_addMessage(int errorID, void *msg_type, void *severity, const char* m
       tokenlst=MMC_CDR(tokenlst);
     }
     add_message(errorID,
-          (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-          (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
-          message,tokens);
+                (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+                (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                message,tokens);
   }
 }
 
@@ -78,9 +78,9 @@ extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int 
       tokenlst=MMC_CDR(tokenlst);
     }
     add_source_message(_id,
-                 (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-                 (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
-                 _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
+                       (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+                       (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                       _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
   }
 }
 

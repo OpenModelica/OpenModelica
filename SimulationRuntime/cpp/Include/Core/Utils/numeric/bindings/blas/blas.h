@@ -84,26 +84,26 @@ extern "C"
   void   BLAS_ZGEMM(const char *transa, const char *transb, const int *m, const int *n, const int *k, const dcomplex_t *alpha, const dcomplex_t *a, const int *lda, const dcomplex_t *b, const int *ldb, const dcomplex_t *beta, dcomplex_t *c, const int *ldc);
 
   void   BLAS_SSYRK ( const char* uplo, const char* trans, const int* n, const int* k, const float* alpha,
-                const float* a, const int* lda, const float* beta, float* c, const int* ldc );
+                      const float* a, const int* lda, const float* beta, float* c, const int* ldc );
   void   BLAS_DSYRK ( const char* uplo, const char* trans, const int* n, const int* k, const double* alpha,
-                const double* a, const int* lda, const double* beta, double* c, const int* ldc );
+                      const double* a, const int* lda, const double* beta, double* c, const int* ldc );
   void   BLAS_CSYRK ( const char* uplo, const char* trans, const int* n, const int* k, const fcomplex_t* alpha,
-                const fcomplex_t* a, const int* lda, const fcomplex_t* beta, fcomplex_t* c, const int* ldc );
+                      const fcomplex_t* a, const int* lda, const fcomplex_t* beta, fcomplex_t* c, const int* ldc );
   void   BLAS_ZSYRK ( const char* uplo, const char* trans, const int* n, const int* k, const dcomplex_t* alpha,
-                const dcomplex_t* a, const int* lda, const dcomplex_t* beta, dcomplex_t* c, const int* ldc );
+                      const dcomplex_t* a, const int* lda, const dcomplex_t* beta, dcomplex_t* c, const int* ldc );
   void   BLAS_CHERK ( const char* uplo, const char* trans, const int* n, const int* k, const float* alpha,
-                const fcomplex_t* a, const int* lda, const float* beta, fcomplex_t* c, const int* ldc );
+                      const fcomplex_t* a, const int* lda, const float* beta, fcomplex_t* c, const int* ldc );
   void   BLAS_ZHERK ( const char* uplo, const char* trans, const int* n, const int* k, const double* alpha,
-                const dcomplex_t* a, const int* lda, const double* beta, dcomplex_t* c, const int* ldc );
+                      const dcomplex_t* a, const int* lda, const double* beta, dcomplex_t* c, const int* ldc );
 
   void BLAS_STRSM( const char* side, const char* uplo, const char* transa, const char* diag, const int* m,
-             const int* n, float const* alpha, float const* a, int const* lda, float* b, int const* ldb );
+                   const int* n, float const* alpha, float const* a, int const* lda, float* b, int const* ldb );
   void BLAS_DTRSM( const char* side, const char* uplo, const char* transa, const char* diag, const int* m,
-             const int* n, double const* alpha, double const* a, int const* lda, double* b, int const* ldb );
+                   const int* n, double const* alpha, double const* a, int const* lda, double* b, int const* ldb );
   void BLAS_CTRSM( const char* side, const char* uplo, const char* transa, const char* diag, const int* m,
-             const int* n, fcomplex_t const* alpha, fcomplex_t const* a, int const* lda, fcomplex_t* b, int const* ldb );
+                   const int* n, fcomplex_t const* alpha, fcomplex_t const* a, int const* lda, fcomplex_t* b, int const* ldb );
   void BLAS_ZTRSM( const char* side, const char* uplo, const char* transa, const char* diag, const int* m,
-             const int* n, dcomplex_t const* alpha, dcomplex_t const* a, int const* lda, dcomplex_t* b, int const* ldb );
+                   const int* n, dcomplex_t const* alpha, dcomplex_t const* a, int const* lda, dcomplex_t* b, int const* ldb );
 
 }
 

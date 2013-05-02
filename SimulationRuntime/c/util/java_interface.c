@@ -89,7 +89,7 @@ int GetStringFromWindowsRegistry(HKEY key, const char *name, char *buf, int buf_
     if(type == REG_SZ && (size < (unsigned int)buf_length)) {
       /* The key is a string with ok length */
       if(RegQueryValueEx(key, name, 0, 0, (unsigned char*)buf, &size) == 0) {
-  return 0;
+        return 0;
       }
     }
   }
@@ -741,7 +741,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   }
 
   fprintf(stderr, "%s:%s: %d slots; ctor %d - FAILED to detect the type\n",
-    __FILE__, __FUNCTION__, numslots, ctor);
+          __FILE__, __FUNCTION__, numslots, ctor);
   EXIT(EXIT_CODE_JAVA_ERROR);
 }
 
@@ -967,7 +967,7 @@ void* jobject_to_mmc(JNIEnv* env, jobject o)
   CALL_IF_INSTANCEOF(env,jobject_to_mmc_list, o, JAVA_MODELICA_ARRAY); /* LIST */
 
   fprintf(stderr, "%s:%s: Failed to parse object: %s\n",
-    __FILE__, __FUNCTION__, jobjectToString(env, o));
+          __FILE__, __FUNCTION__, jobjectToString(env, o));
   EXIT(EXIT_CODE_JAVA_ERROR);
 }
 

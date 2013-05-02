@@ -73,7 +73,7 @@ end testMap2;
 
 template testMap3(list<list<Integer>> lstOfLst) ::=
     (lstOfLst |> intLst =>
-  (intLst |> int => mapInt(int) ;separator=", ")
+        (intLst |> int => mapInt(int) ;separator=", ")
     ;separator=";\n"; anchor)
 end testMap3;
 
@@ -88,7 +88,7 @@ end testMap5;
 template intMatrix(list<list<Integer>> lstOfLst) ::=
 <<
 [ <%lstOfLst |> intLst =>
-  (intLst ;separator=", ")
+        (intLst ;separator=", ")
    ;separator=";\n"; anchor%> ]
 >>
 end intMatrix;
@@ -272,7 +272,7 @@ testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
 testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
 testMap3(list<list<Integer>> lstOfLst) ::=
     (lstOfLst of intLst :
-  (intLst of int : mapInt(int) ", ")
+        (intLst of int : mapInt(int) ", ")
     ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst : (lst : mapInt())
 testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
@@ -287,7 +287,7 @@ testMap(list<Integer> ints) ::= (ints map i -> mapInt(i) map mi -> mapString(mi)
 testMap2(list<Integer> ints) ::= (ints map int -> mapInt(int) map st -> mapIntString(int, st) ", ")
 testMap3(list<list<Integer>> lstOfLst) ::=
     (lstOfLst map intLst ->
-  (intLst map int -> mapInt(int) ", ")
+        (intLst map int -> mapInt(int) ", ")
     ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst map it -> it map it -> mapInt(it)
 testMap5(list<Integer> ints) ::= (ints map i -> mapString(mapInt(i)) ", ")
@@ -304,7 +304,7 @@ or
  arg |> (map ptrn indexedby i0 => templ)
 
  arg |> (map ptrn =>
-       arg |> (map ptrn => templ))
+             arg |> (map ptrn => templ))
  arg |> (ptrn => templ(s,a))
 
 arg1, arg2 |> (ptrn1,ptrn2 => templ) |> (ptrn => templ)
@@ -314,7 +314,7 @@ testMap(list<Integer> ints) ::= (ints | i -> mapInt(i) | mi -> mapString(mi) ;se
 testMap2(list<Integer> ints) ::= (ints | int -> mapInt(int) | st -> mapIntString(int, st) ;separ = ", ")
 testMap3(list<list<Integer>> lstOfLst) ::=
     (lstOfLst | intLst ->
-  (intLst | int -> mapInt(int) ; separ = ", ")
+        (intLst | int -> mapInt(int) ; separ = ", ")
     ; separ = ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst | intLst -> intLst | it -> mapInt(it)
 testMap5(list<Integer> ints) ::= (ints | i -> mapString(mapInt(i)) ; separ = ", ")
@@ -326,7 +326,7 @@ lstOfLst | intLst -> intLst | it -> mapInt(it) //not correct!!
 lstOfLst | intLst ->
     let outerIndex = i0
     (intLst | it ->
-  '<<outerIndex>>/<<i0>> ... <<mapInt(it)>>')
+        '<<outerIndex>>/<<i0>> ... <<mapInt(it)>>')
 
 
 lstOfLst |> map (fun lst -> lst |> map (fun it -> mapInt(it)) )
@@ -339,24 +339,24 @@ testMap(list<Integer> ints) ::=
 <<
 private static readonly SimVarInfo[] VariableInfosStatic = new[] {
     <% {
-  filter vars.stateVars with SIMVAR(__) then
+        filter vars.stateVars with SIMVAR(__) then
 
-  map vars.stateVars with el then
+        map vars.stateVars with el then
 
-    <<
-    new SimVarInfo( "(% cref(origName) %)", "(%comment%)", SimVarType.State, <% index %>, false)
-    >>; separator=",\n"
-  ,
-  vars.derivativeVars |? SIMVAR(__) => <<
-  new SimVarInfo( "<% cref(origName) %>", "<% comment %>", SimVarType.StateDer, <% index %>, false)
-  >>; separator=",\n"
-  ,
-  (vars.algVars of SIMVAR(__): <<
-  new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
-  >>; separator=",\n"),
-  (vars.paramVars of SIMVAR(__): <<
-  new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
-  >>; separator=",\n")
+          <<
+          new SimVarInfo( "(% cref(origName) %)", "(%comment%)", SimVarType.State, <% index %>, false)
+          >>; separator=",\n"
+        ,
+        vars.derivativeVars |? SIMVAR(__) => <<
+        new SimVarInfo( "<% cref(origName) %>", "<% comment %>", SimVarType.StateDer, <% index %>, false)
+        >>; separator=",\n"
+        ,
+        (vars.algVars of SIMVAR(__): <<
+        new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
+        >>; separator=",\n"),
+        (vars.paramVars of SIMVAR(__): <<
+        new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
+        >>; separator=",\n")
     }; separator=",\n\n" %>
 };
 

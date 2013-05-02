@@ -76,7 +76,7 @@ class QssSignal
   {
     if (this != &other)
       for (unsigned int i=0;i<=_order;++i)
-  _coeff[i] = other.coeff(i);
+        _coeff[i] = other.coeff(i);
     return *this;
   }
   void sampledAt(double t)

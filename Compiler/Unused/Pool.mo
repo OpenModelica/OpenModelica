@@ -30,7 +30,7 @@
  */
 
 encapsulated package Pool
-" file:  Pool.mo
+" file:        Pool.mo
   package:     Pool
   description: A MetaModelica Pool implementation
   @author:     adrpo
@@ -168,35 +168,35 @@ algorithm
 
     case (POOL(fs, mx, arr, _, n), el, inUpdateFuncOpt)
       equation
-  // no need to grow the array
-  newIndex = fs + 1;
-  true = intLt(newIndex, mx);
+        // no need to grow the array
+        newIndex = fs + 1;
+        true = intLt(newIndex, mx);
 
-  // update the index inside the element (if an update function is given)
-  el = updateElementIndex(el, inUpdateFuncOpt, newIndex);
+        // update the index inside the element (if an update function is given)
+        el = updateElementIndex(el, inUpdateFuncOpt, newIndex);
 
-  arr = arrayUpdate(arr, newIndex, SOME(el));
-  fs = newIndex;
+        arr = arrayUpdate(arr, newIndex, SOME(el));
+        fs = newIndex;
       then
-  (POOL(fs, mx, arr, fs, n), fs);
+        (POOL(fs, mx, arr, fs, n), fs);
 
     case (POOL(fs, mx, arr, _, n), el, inUpdateFuncOpt)
       equation
-  // need to grow the array
-  newIndex = fs + 1;
-  false = intLt(newIndex, mx);
-  // grow it by 1.4
-  mx = realInt(realMul(intReal(mx), 1.4));
-  newArr = arrayCreate(mx, NONE());
-  newArr = Util.arrayCopy(arr, newArr);
+        // need to grow the array
+        newIndex = fs + 1;
+        false = intLt(newIndex, mx);
+        // grow it by 1.4
+        mx = realInt(realMul(intReal(mx), 1.4));
+        newArr = arrayCreate(mx, NONE());
+        newArr = Util.arrayCopy(arr, newArr);
 
-  // update the index inside the element (if an update function is given)
-  el = updateElementIndex(el, inUpdateFuncOpt, newIndex);
+        // update the index inside the element (if an update function is given)
+        el = updateElementIndex(el, inUpdateFuncOpt, newIndex);
 
-  newArr = arrayUpdate(newArr, newIndex, SOME(el));
-  fs = newIndex;
+        newArr = arrayUpdate(newArr, newIndex, SOME(el));
+        fs = newIndex;
       then
-  (POOL(fs, mx, newArr, fs, n), fs);
+        (POOL(fs, mx, newArr, fs, n), fs);
   end matchcontinue;
 end add;
 
@@ -236,28 +236,28 @@ algorithm
     // pool is empty
     case (pool, el, inUpdateFuncOpt, inEqualityCheckFunc)
       equation
-  // no elements, yet, add it
-  true = intEq(next(pool), 1);
-  (pool, index) = add(inPool, el, inUpdateFuncOpt);
+        // no elements, yet, add it
+        true = intEq(next(pool), 1);
+        (pool, index) = add(inPool, el, inUpdateFuncOpt);
       then
-  (pool, index);
+        (pool, index);
 
     // pool is not empty, search for it
     case (pool, el, inUpdateFuncOpt, inEqualityCheckFunc)
       equation
-  // see if is in there, 0 means not in there!
-  0 = member(pool, el, inEqualityCheckFunc);
-  (pool, index) = add(inPool, el, inUpdateFuncOpt);
+        // see if is in there, 0 means not in there!
+        0 = member(pool, el, inEqualityCheckFunc);
+        (pool, index) = add(inPool, el, inUpdateFuncOpt);
       then
-  (pool, index);
+        (pool, index);
 
     // pool is not empty, search for it
     case (pool as POOL(fs, mx, arr, _, n), el, _, inEqualityCheckFunc)
       equation
-  // see if is in there, 0 means not in there!
-  index = member(pool, el, inEqualityCheckFunc);
+        // see if is in there, 0 means not in there!
+        index = member(pool, el, inEqualityCheckFunc);
       then
-  (POOL(fs, mx, arr, index, n), index);
+        (POOL(fs, mx, arr, index, n), index);
   end matchcontinue;
 end addUnique;
 
@@ -285,24 +285,24 @@ algorithm
     // pool is empty
     case (pool, inElement, inEqualityCheckFunc)
       equation
-  // no elements, yet, add it
-  true = intEq(next(pool), 1);
+        // no elements, yet, add it
+        true = intEq(next(pool), 1);
       then
-  0;
+        0;
 
     // pool is not empty, search for it, with an equality check function
     case (pool, inElement, SOME(equalityCheckFunc))
       equation
-  index = Util.arrayMemberEqualityFunc(members(pool), next(pool), SOME(inElement), equalityCheckFunc);
+        index = Util.arrayMemberEqualityFunc(members(pool), next(pool), SOME(inElement), equalityCheckFunc);
       then
-  index;
+        index;
 
     // pool is not empty, search for it, without an equality check function!
     case (pool, inElement, NONE())
       equation
-  index = Util.arrayMember(members(pool), next(pool), SOME(inElement));
+        index = Util.arrayMember(members(pool), next(pool), SOME(inElement));
       then
-  index;
+        index;
   end matchcontinue;
 end member;
 
@@ -322,16 +322,16 @@ algorithm
     // search for it
     case (pool, inIndex)
       equation
-  SOME(el) = arrayGet(members(pool), inIndex);
+        SOME(el) = arrayGet(members(pool), inIndex);
       then
-  el;
+        el;
 
     // failure
     case (pool, inIndex)
       equation
-  print("Pool.get name: " +& name(pool) +& " Error: Element with index: " +& intString(inIndex) +& " not found in pool!\n");
+        print("Pool.get name: " +& name(pool) +& " Error: Element with index: " +& intString(inIndex) +& " not found in pool!\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end get;
 
@@ -356,16 +356,16 @@ algorithm
     // TODO! FIXME! update filledSize if inIndex > filledSize, check for max, grow array if inIndex > max
     case (POOL(fs, mx, elements, la, n), inIndex, el)
       equation
-  elements = arrayUpdate(elements, inIndex, SOME(el));
+        elements = arrayUpdate(elements, inIndex, SOME(el));
       then
-  POOL(fs, mx, elements, la, n);
+        POOL(fs, mx, elements, la, n);
 
     // failure
     case (pool, inIndex, _)
       equation
-  print("Pool.set name: " +& name(pool) +& " Error: Element with index: " +& intString(inIndex) +& " could not be set in pool!\n");
+        print("Pool.set name: " +& name(pool) +& " Error: Element with index: " +& intString(inIndex) +& " could not be set in pool!\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end set;
 
@@ -450,9 +450,9 @@ algorithm
     // yeeehaa, we have an update function
     case (inElement, SOME(func), updatedIndex)
       equation
-  el = func(inElement, updatedIndex);
+        el = func(inElement, updatedIndex);
       then
-  el;
+        el;
 
   end matchcontinue;
 end updateElementIndex;

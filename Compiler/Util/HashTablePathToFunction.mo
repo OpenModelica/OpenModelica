@@ -5,7 +5,7 @@ encapsulated package HashTablePathToFunction "
 
   All rights reserved.
 
-  file:  HashTablePathToFunction.mo
+  file:        HashTablePathToFunction.mo
   package:     HashTablePathToFunction
   description: Absyn.Path to NFInstTypes.Function
 

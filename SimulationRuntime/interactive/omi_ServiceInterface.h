@@ -90,7 +90,7 @@ int get_forceEmit(void);
 void setGlobalSimulationValuesFromSimulationStepData(SimStepData*);
 void fillSimulationStepDataWithValuesFromGlobalData(string, SimStepData*);
 void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
-   SimDataNames*, SimDataNamesFilter*);
+         SimDataNames*, SimDataNamesFilter*);
 
 //************ END Global Data Value Request and Manipulation ************
 

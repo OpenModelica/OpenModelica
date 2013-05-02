@@ -54,7 +54,7 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     dest->dim_size = size_alloc(ndims);
 
     for(i = 0; i < ndims; ++i) {
-  dest->dim_size[i] = va_arg(ap, int);
+        dest->dim_size[i] = va_arg(ap, int);
     }
 
     /* uncomment for debugging!
@@ -82,10 +82,10 @@ int base_array_ok(const base_array_t *a)
       return 0;
     }
     for(i = 0; i < a->ndims; ++i) {
-  if(a->dim_size[i] < 0) {
-    fprintf(stderr, "base_array.c: array dimension size for dimension %d is %d < 0!\n", i, (int) a->dim_size[i]); fflush(stderr);
-    return 0;
-  }
+        if(a->dim_size[i] < 0) {
+          fprintf(stderr, "base_array.c: array dimension size for dimension %d is %d < 0!\n", i, (int) a->dim_size[i]); fflush(stderr);
+          return 0;
+        }
     }
     return 1;
 }
@@ -99,14 +99,14 @@ void check_base_array_dim_sizes(const base_array_t * const *elts, int n)
     int i, curdim, dimsize;
     int ndims = elts[0]->ndims;
     for(i = 1; i < n; ++i) {
-  assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+        assert(elts[i]->ndims == ndims && "Not same number of dimensions");
     }
     for(curdim = 0; curdim < ndims; ++curdim) {
-  dimsize = elts[0]->dim_size[curdim];
-  for(i = 1; i < n; ++i) {
-      assert(dimsize == elts[i]->dim_size[curdim]
-             && "Dimensions size not same");
-  }
+        dimsize = elts[0]->dim_size[curdim];
+        for(i = 1; i < n; ++i) {
+            assert(dimsize == elts[i]->dim_size[curdim]
+                   && "Dimensions size not same");
+        }
     }
 }
 
@@ -120,19 +120,19 @@ void check_base_array_dim_sizes_except(int k, const base_array_t * const *elts, 
     int k_loc = k - 1;
     int ndims = elts[0]->ndims;
     for(i = 1; i < n; ++i) {
-  assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+        assert(elts[i]->ndims == ndims && "Not same number of dimensions");
     }
     for(curdim = 0; curdim < ndims; ++curdim) {
-  if(curdim != k_loc) {
-      assert(elts[0]);
-      assert(elts[0]->dim_size[curdim]);
-      dimsize = elts[0]->dim_size[curdim];
+        if(curdim != k_loc) {
+            assert(elts[0]);
+            assert(elts[0]->dim_size[curdim]);
+            dimsize = elts[0]->dim_size[curdim];
 
-      for(i = 1; i < n; ++i) {
-          assert(dimsize == elts[i]->dim_size[curdim]
-                 && "Dimensions size not same");
-      }
-  }
+            for(i = 1; i < n; ++i) {
+                assert(dimsize == elts[i]->dim_size[curdim]
+                       && "Dimensions size not same");
+            }
+        }
     }
 }
 
@@ -141,16 +141,16 @@ int base_array_shape_eq(const base_array_t *a, const base_array_t *b)
     int i;
 
     if(a->ndims != b->ndims) {
-  fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->ndims);
-  return 0;
+        fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->ndims);
+        return 0;
     }
 
     for(i = 0; i < a->ndims; ++i) {
-  if(a->dim_size[i] != b->dim_size[i]) {
-      fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
-              i, i, (int) a->dim_size[i], (int) b->dim_size[i]);
-      return 0;
-  }
+        if(a->dim_size[i] != b->dim_size[i]) {
+            fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
+                    i, i, (int) a->dim_size[i], (int) b->dim_size[i]);
+            return 0;
+        }
     }
 
     return 1;
@@ -161,9 +161,9 @@ int base_array_one_element_ok(const base_array_t *a)
     int i;
 
     for(i = 0; i < a->ndims; ++i) {
-  if(a->dim_size[i] != 1) {
-      return 0;
-  }
+        if(a->dim_size[i] != 1) {
+            return 0;
+        }
     }
     return 1;
 }
@@ -173,31 +173,31 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     int i, j;
 
     if(s->ndims != a->ndims) {
-  fprintf(stderr, "index spec dimensions and array dimensions do not agree %d != %d\n",
-          (int)s->ndims, (int)a->ndims); fflush(stderr);
-  return 0;
+        fprintf(stderr, "index spec dimensions and array dimensions do not agree %d != %d\n",
+                (int)s->ndims, (int)a->ndims); fflush(stderr);
+        return 0;
     }
     for(i = 0; i < s->ndims; ++i) {
-  if(s->dim_size[i] == 0) {
-      if((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i])) {
-          fprintf(stderr,
-                  "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
-                  i, (int) s->index[i][0], i, (int) a->dim_size[i]); fflush(stderr);
-          return 0;
-      }
-  }
+        if(s->dim_size[i] == 0) {
+            if((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i])) {
+                fprintf(stderr,
+                        "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
+                        i, (int) s->index[i][0], i, (int) a->dim_size[i]); fflush(stderr);
+                return 0;
+            }
+        }
 
-  if(s->index[i] != NULL)
-  {
-      for(j = 0; j < s->dim_size[i]; ++j) {
-          if((s->index[i][j] <= 0) || (s->index[i][j] > a->dim_size[i])) {
-              fprintf(stderr,
-                      "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
-                      i, j, (int) s->index[i][j], i, (int) a->dim_size[i]); fflush(stderr);
-              return 0;
-          }
-      }
-  }
+        if(s->index[i] != NULL)
+        {
+            for(j = 0; j < s->dim_size[i]; ++j) {
+                if((s->index[i][j] <= 0) || (s->index[i][j] > a->dim_size[i])) {
+                    fprintf(stderr,
+                            "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
+                            i, j, (int) s->index[i][j], i, (int) a->dim_size[i]); fflush(stderr);
+                    return 0;
+                }
+            }
+        }
     }
 
     return 1;
@@ -240,14 +240,14 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
     dest->dim_size = size_alloc(ndims);
 
     for(i = 0; i < ndims; ++i) {
-  dest->dim_size[i] = va_arg(ap, _index_t);
-  nr_of_elements *= dest->dim_size[i];
+        dest->dim_size[i] = va_arg(ap, _index_t);
+        nr_of_elements *= dest->dim_size[i];
     }
 
     /* uncomment for debugging!
     fprintf(stderr, "alloc array ndims[%d] (", ndims);
     for(i = 0; i < ndims; ++i) {
-  fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
+        fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
     }
     fprintf(stderr, ")\n"); fflush(stderr);
     */
@@ -265,7 +265,7 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
     assert(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
-  dest->dim_size[i] = source->dim_size[i];
+        dest->dim_size[i] = source->dim_size[i];
     }
 }
 
@@ -274,7 +274,7 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
 */
 
 size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
-                      const base_array_t *arr, const index_spec_t *spec)
+                            const base_array_t *arr, const index_spec_t *spec)
 {
     /* idx_vec is zero based */
     /* spec is one based */
@@ -289,13 +289,13 @@ size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
 
     index = 0;
     for(i = 0; i < ndims; ++i) {
-  d = idx_vec[i];
-  if(spec->index[i] != NULL) {
-      d2 = spec->index[i][d] - 1;
-  } else {
-      d2 = d;
-  }
-  index = (index * arr->dim_size[i]) + d2;
+        d = idx_vec[i];
+        if(spec->index[i] != NULL) {
+            d2 = spec->index[i][d] - 1;
+        } else {
+            d2 = d;
+        }
+        index = (index * arr->dim_size[i]) + d2;
     }
 
     return index;
@@ -309,8 +309,8 @@ size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *a
     assert(ndims == arr->ndims);
 
     for(i = 0; i < ndims; ++i) {
-  /* Assert that idx_vec[i] is not out of bounds */
-  index = (index * arr->dim_size[i]) + idx_vec[i];
+        /* Assert that idx_vec[i] is not out of bounds */
+        index = (index * arr->dim_size[i]) + idx_vec[i];
     }
 
     return index;
@@ -325,8 +325,8 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
 
     index = 0;
     for(i = 0; i < ndims; ++i) {
-  dim_i = va_arg(ap, _index_t) - 1;
-  index = (index * source->dim_size[i]) + dim_i;
+        dim_i = va_arg(ap, _index_t) - 1;
+        index = (index * source->dim_size[i]) + dim_i;
     }
 
     return index;
@@ -355,6 +355,6 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
     assert(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
-  dest->dim_size[i] = source->dim_size[dest->ndims - 1 - i];
+        dest->dim_size[i] = source->dim_size[dest->ndims - 1 - i];
     }
 }

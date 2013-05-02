@@ -107,8 +107,8 @@ int newuoa_initialization(INIT_DATA *initData)
   long MAXFUN = 1000 * initData->nVars;
   double RHOEND = 1.0e-12;
   double RHOBEG = 10;     /* This should be about one tenth of the greatest
-                       expected value of a variable. Perhaps the nominal
-                       value can be used for this. */
+                             expected value of a variable. Perhaps the nominal
+                             value can be used for this. */
   long NPT = 2*initData->nVars+1;
 
   double *W = (double*)calloc((NPT+13)*(NPT+initData->nVars)+3*initData->nVars*(initData->nVars+3)/2, sizeof(double));

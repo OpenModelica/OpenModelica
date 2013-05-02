@@ -41,7 +41,7 @@ public:
      virtual double getZeroTimeTol();
    virtual void setZeroTimeTol(double) ;
 
-  virtual double getZeroRatio();
+        virtual double getZeroRatio();
     virtual void setZeroRatio(double) ;
    virtual double getATol();
   virtual void setATol(double);
@@ -53,7 +53,7 @@ public:
     virtual void load(string);
 private:
   double
-    _hInit,  ///< Initial step size (default: 1e-2)
+    _hInit,        ///< Initial step size (default: 1e-2)
     _hLowerLimit,    ///< Lower limit for step size during integration (default: should be machine precision)
     _hUpperLimit,    ///< Upper limit for step size during integration (default: _endTime-_startTime)
     _endTimeTol,      ///< Tolerance to reach _endTime (default: 1e-6)
@@ -73,21 +73,21 @@ private:
 
     {
 
-  try
-  {
-      using boost::serialization::make_nvp;
-      ar & make_nvp("HInit", _hInit);
-      ar & make_nvp("LowerLimit", _hLowerLimit);
-      ar & make_nvp("UpperLimit", _hUpperLimit);
-      ar &   make_nvp("EndTimeTol", _endTimeTol);
-      ar &   make_nvp("ZeroTol", _zeroTol);
-      ar &   make_nvp("ZeroTimeTol", _zeroTimeTol);
+        try
+        {
+            using boost::serialization::make_nvp;
+            ar & make_nvp("HInit", _hInit);
+            ar & make_nvp("LowerLimit", _hLowerLimit);
+            ar & make_nvp("UpperLimit", _hUpperLimit);
+            ar &   make_nvp("EndTimeTol", _endTimeTol);
+            ar &   make_nvp("ZeroTol", _zeroTol);
+            ar &   make_nvp("ZeroTimeTol", _zeroTimeTol);
 
-  }
-  catch(std::exception& ex)
-  {
-      string error = ex.what();
-  }
+        }
+        catch(std::exception& ex)
+        {
+            string error = ex.what();
+        }
 
 
     }

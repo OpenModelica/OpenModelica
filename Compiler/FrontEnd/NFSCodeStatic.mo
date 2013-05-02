@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeStatic
-" file:  NFSCodeStatic.mo
+" file:        NFSCodeStatic.mo
   package:     NFSCodeStatic
   description: Static analysis of expressions
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package AbsynDep
-" file:  AbsynDep.mo
+" file:        AbsynDep.mo
   package:     AbsynDep
   description: AbsynDep builds dependencies based on a start class (program slicing)
   author:      Peter Aronsson
@@ -121,7 +121,7 @@ algorithm
    local
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),_) equation
-   uses = avlTreeAdd(uses,cl,{});
+         uses = avlTreeAdd(uses,cl,{});
      then DEPENDS(uses,usedBy);
    end match;
 end addEmptyDependency;
@@ -136,8 +136,8 @@ public function addDependency "add a dependency tha a class 'cl' uses another cl
    local
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),_,_) equation
-   uses = avlTreeAdd(uses,cl,{usesClass});
-   usedBy = avlTreeAdd(usedBy,usesClass,{cl});
+         uses = avlTreeAdd(uses,cl,{usesClass});
+         usedBy = avlTreeAdd(usedBy,usesClass,{cl});
      then DEPENDS(uses,usedBy);
    end match;
  end addDependency;
@@ -405,36 +405,36 @@ algorithm
     /* Replace this node. NOTE: different from generic impl. Joins the list. */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-  true = Absyn.pathEqual(rkey,key);
-  value = List.unionOnTrue(value,rval,Absyn.pathEqual);
-  bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
+        true = Absyn.pathEqual(rkey,key);
+        value = List.unionOnTrue(value,rval,Absyn.pathEqual);
+        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
-  bt;
+        bt;
 
-  /* Insert to right  */
+        /* Insert to right  */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-  true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
-  t = createEmptyAvlIfNone(right);
-  t_1 = avlTreeAdd(t, key, value);
-  bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        t = createEmptyAvlIfNone(right);
+        t_1 = avlTreeAdd(t, key, value);
+        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
       then
-  bt;
+        bt;
 
-  /* Insert to left subtree */
+        /* Insert to left subtree */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-  /*true = stringCompare(key,rkey) < 0;*/
-   t = createEmptyAvlIfNone(left);
-  t_1 = avlTreeAdd(t, key, value);
-  bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
+        /*true = stringCompare(key,rkey) < 0;*/
+         t = createEmptyAvlIfNone(left);
+        t_1 = avlTreeAdd(t, key, value);
+        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
       then
-  bt;
+        bt;
     case (_,_,_)
       equation
-  print("avlTreeAdd failed\n");
+        print("avlTreeAdd failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end avlTreeAdd;
 
@@ -525,9 +525,9 @@ algorithm
       AvlTree rr,bt;
     case (bt)
       equation
-  true = differenceInHeight(getOption(rightNode(bt))) > 0;
-  rr = rotateRight(getOption(rightNode(bt)));
-  bt = setRight(bt,SOME(rr));
+        true = differenceInHeight(getOption(rightNode(bt))) > 0;
+        rr = rotateRight(getOption(rightNode(bt)));
+        bt = setRight(bt,SOME(rr));
       then bt;
     case(bt) then bt;
   end matchcontinue;
@@ -541,9 +541,9 @@ algorithm
     local AvlTree rl,bt;
     case(bt)
       equation
-  true = differenceInHeight(getOption(leftNode(bt))) < 0;
-  rl = rotateLeft(getOption(leftNode(bt)));
-  bt = setLeft(bt,SOME(rl));
+        true = differenceInHeight(getOption(leftNode(bt))) < 0;
+        rl = rotateLeft(getOption(leftNode(bt)));
+        bt = setLeft(bt,SOME(rl));
       then bt;
   end match;
 end doBalance4;
@@ -606,10 +606,10 @@ algorithm
 
     case  (node,parent)
       equation
-  parent = setRight(parent,leftNode(node));
-  parent = balance(parent);
-  node = setLeft(node,SOME(parent));
-  bt = balance(node);
+        parent = setRight(parent,leftNode(node));
+        parent = balance(parent);
+        node = setLeft(node,SOME(parent));
+        bt = balance(node);
       then bt;
   end match;
 end exchangeLeft;
@@ -697,25 +697,25 @@ algorithm
     // hash func Search to the right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
-  true = Absyn.pathEqual(rkey,key);
+        true = Absyn.pathEqual(rkey,key);
       then
-  rval;
+        rval;
 
     // Search to the right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-  true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
-  res = avlTreeGet(right, key);
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        res = avlTreeGet(right, key);
       then
-  res;
+        res;
 
     // Search to the left
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-  /*true = stringCompare(key,rkey) < 0;*/
-  res = avlTreeGet(left, key);
+        /*true = stringCompare(key,rkey) < 0;*/
+        res = avlTreeGet(left, key);
       then
-  res;
+        res;
   end matchcontinue;
 end avlTreeGet;
 
@@ -748,20 +748,20 @@ algorithm
     // end of tree case
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE(),right = NONE()),key)
       equation
-  b2 = Absyn.pathPrefixOf(key,rkey);
-  rval = Util.if_(b2,rval,{});
+        b2 = Absyn.pathPrefixOf(key,rkey);
+        rval = Util.if_(b2,rval,{});
       then
-  rval;
+        rval;
     // Normal case, compare current node and search left+right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
       equation
-  b1 = Absyn.pathPrefixOf(key,rkey);
-  rval = Util.if_(b1,rval,{});
-  res = avlTreeGetSubsopt(left, key);
-  res2 = avlTreeGetSubsopt(right, key);
-  rval = listAppend(rval,listAppend(res,res2));
+        b1 = Absyn.pathPrefixOf(key,rkey);
+        rval = Util.if_(b1,rval,{});
+        res = avlTreeGetSubsopt(left, key);
+        res2 = avlTreeGetSubsopt(right, key);
+        rval = listAppend(rval,listAppend(res,res2));
       then
-  rval;
+        rval;
   end matchcontinue;
 end avlTreeGetSubs;
 
@@ -785,9 +785,9 @@ algorithm
       FuncTypeType_aToString r;
     case (SOME(a),r)
       equation
-  str = r(a);
+        str = r(a);
       then
-  str;
+        str;
     case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
@@ -808,19 +808,19 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
       equation
-  s2 = getOptionStr(l, printAvlTreeStr);
-  s3 = getOptionStr(r, printAvlTreeStr);
-  res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
+        s2 = getOptionStr(l, printAvlTreeStr);
+        s3 = getOptionStr(r, printAvlTreeStr);
+        res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
       then
-  res;
+        res;
     case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
-  s2 = getOptionStr(l, printAvlTreeStr);
-  s3 = getOptionStr(r, printAvlTreeStr);
-  res = "<NONE," +& s2 +& ", "+& s3 +& ">";
+        s2 = getOptionStr(l, printAvlTreeStr);
+        s3 = getOptionStr(r, printAvlTreeStr);
+        res = "<NONE," +& s2 +& ", "+& s3 +& ">";
 
       then
-  res;
+        res;
   end matchcontinue;
 end printAvlTreeStr;
 

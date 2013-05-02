@@ -31,7 +31,7 @@
 
 
 encapsulated package NFBuiltin
-" file:  NFBuiltin.mo
+" file:        NFBuiltin.mo
   package:     NFBuiltin
   description: Builtin definitions.
 

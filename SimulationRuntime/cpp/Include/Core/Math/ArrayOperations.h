@@ -22,7 +22,7 @@ Copyright (c) 2010, OSMC
 Assertion function
 */
 //void boost::assertion_failed(char const * expr, char const * function,
-//                       char const * file, long line);
+//                             char const * file, long line);
 #include <boost/multi_array.hpp>
 #include <functional>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
@@ -170,8 +170,8 @@ boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dim
 {
   typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
   for ( typename boost::multi_array< T1, dims >::iterator i = a.begin();
-  i != a.end(); i++, j++ )
-  array_operation( *i, *j, op );
+        i != a.end(); i++, j++ )
+        array_operation( *i, *j, op );
   return a;
 }
 
@@ -186,7 +186,7 @@ boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, 
 {
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
-  i != a.end(); i++, j++ )
+        i != a.end(); i++, j++ )
     op( *i, *j );
   return a;
 }
@@ -200,7 +200,7 @@ boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::det
 {
   typename boost::multi_array_ref< T2, NumDims >::const_iterator j = b.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, NumDims >::iterator i = a.begin();
-  i != a.end(); i++, j++ )
+        i != a.end(); i++, j++ )
     array_operation( *i, *j, op );
   return a;
 }
@@ -213,7 +213,7 @@ boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::m
 {
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
-  i != a.end(); i++, j++ )
+        i != a.end(); i++, j++ )
     op( *i, *j );
   return a;
 }
@@ -230,7 +230,7 @@ boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::m
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
-  i != a.end(); i++, j++, k++ )
+        i != a.end(); i++, j++, k++ )
    op( *i, *j, *k );
   return a;
 }
@@ -247,7 +247,7 @@ boost::multi_array< T1, 1 > &array_operation( boost::multi_array< T1, 1 > &a,  b
  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
  typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
   for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
-  i != a.end(); i++, j++, k++ )
+        i != a.end(); i++, j++, k++ )
     op( *i, *j, *k );
   return a;
 }
@@ -263,7 +263,7 @@ boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail
   typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
   typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, dims >::iterator i = a.begin();
-  i != a.end(); i++, j++, k++ )    array_operation( *i, *j, *k, op );
+        i != a.end(); i++, j++, k++ )    array_operation( *i, *j, *k, op );
   return a;
 }
 /**
@@ -277,7 +277,7 @@ boost::multi_array< T1, dims > &array_operation( boost::multi_array< T1, dims > 
   typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
   typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
   for (typename boost::multi_array< T1, dims >::iterator i = a.begin();
-  i != a.end(); i++, j++, k++ )
+        i != a.end(); i++, j++, k++ )
     array_operation( *i, *j, *k, op );
   return a;
 }

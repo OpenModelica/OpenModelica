@@ -168,9 +168,9 @@ extern int nproc;
     char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,taskgraph,
-    make_label_writer(VertexUniqueIDProperty(&taskgraph)),
-    make_label_writer(EdgeCommCostProperty(&taskgraph))
-    );
+          make_label_writer(VertexUniqueIDProperty(&taskgraph)),
+          make_label_writer(EdgeCommCostProperty(&taskgraph))
+          );
     file.close();
     RML_TAILCALLK(rmlSC);
   }
@@ -181,9 +181,9 @@ extern int nproc;
     char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,merged_taskgraph,
-    make_label_writer(VertexUniqueIDProperty(&merged_taskgraph)),
-    make_label_writer(EdgeCommCostProperty(&merged_taskgraph))
-    );
+          make_label_writer(VertexUniqueIDProperty(&merged_taskgraph)),
+          make_label_writer(EdgeCommCostProperty(&merged_taskgraph))
+          );
     file.close();
     RML_TAILCALLK(rmlSC);
   }
@@ -234,9 +234,9 @@ extern int nproc;
     ParallelOptions options(nproc,l,b);
     merged_taskgraph = taskgraph;
     taskmerging.merge(&merged_taskgraph,&taskgraph,&options,
-    find_task(getTaskID(start_task,&taskgraph),&merged_taskgraph),
-    find_task(getTaskID(stop_task,&taskgraph),&merged_taskgraph),
-    &contain_set);
+          find_task(getTaskID(start_task,&taskgraph),&merged_taskgraph),
+          find_task(getTaskID(stop_task,&taskgraph),&merged_taskgraph),
+          &contain_set);
 
     RML_TAILCALLK(rmlSC);
   }
@@ -277,9 +277,9 @@ extern int nproc;
     //cerr << "Schedule with " << n << " processors." << endl;
 
     schedule = new Schedule(&merged_taskgraph,
-    taskmerging.get_starttask(),
-    taskmerging.get_endtask(),
-    n);
+          taskmerging.get_starttask(),
+          taskmerging.get_endtask(),
+          n);
 
     schedule->printSchedule(cerr);
 

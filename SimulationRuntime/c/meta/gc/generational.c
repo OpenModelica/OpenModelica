@@ -107,7 +107,7 @@ unsigned long mmc_prim_clock(void)
 
 static int allocatedInCHeap = 0;
 /* deal with external C heap */
-#define mmc_c_heap              mmc_GC_state->gen.c_heap
+#define mmc_c_heap                    mmc_GC_state->gen.c_heap
 #define mmc_c_heap_region_total_size  mmc_GC_state->gen.c_heap_region_total_size
 mmc_uint_t mmc_c_heap_collect_flag = 0;
 unsigned long mmc_c_heap_collect_count;
@@ -153,14 +153,14 @@ static void mmc_free_core(void **p, size_t nslots_unused) {
 #endif
 #define mmc_array_trail_size    mmc_GC_state->gen.array_trail_size
 /* stores the pointers from older to young (write barrier) */
-#define mmc_array_trail   mmc_GC_state->gen.array_trail
+#define mmc_array_trail         mmc_GC_state->gen.array_trail
 
 #if  !defined(MMC_SHARE_TRAIL_SIZE)
 #define MMC_SHARE_TRAIL_SIZE  (1024*1024)
 #endif
 #define mmc_share_trail_size    mmc_GC_state->gen.share_trail_size
 /* stores references that can be shared because values they point to are semantically equal */
-#define mmc_share_trail   mmc_GC_state->gen.share_trail
+#define mmc_share_trail         mmc_GC_state->gen.share_trail
 
 
 /* misc */
@@ -298,42 +298,42 @@ void mmc_gcinit(void) {
 void mmc_exit(int status) {
   if (mmc_flag_log) {
     fprintf(
-  stderr,
-  "[HEAP:\t%lu minor collections, %lu major collections, %lu words currently in use]\n",
-  mmc_minorgc_count, mmc_majorgc_count,
-  (unsigned long)(mmc_young_next - mmc_young_region)
-      + (unsigned long)(mmc_current_next - mmc_current_region)
-      + (unsigned long)mmc_c_heap_region_total_size);
+        stderr,
+        "[HEAP:\t%lu minor collections, %lu major collections, %lu words currently in use]\n",
+        mmc_minorgc_count, mmc_majorgc_count,
+        (unsigned long)(mmc_young_next - mmc_young_region)
+            + (unsigned long)(mmc_current_next - mmc_current_region)
+            + (unsigned long)mmc_c_heap_region_total_size);
     fprintf(
-  stderr,
-  "[HEAP:\t%lu words allocated to young, %lu words allocated to current, %lu/%lu heap expansions/shrinkings performed]\n",
-  (unsigned long)mmc_young_size, /* MMC_YOUNG_SIZE, */
-  (unsigned long)mmc_older_size,
-  (unsigned long)(mmc_heap_expansions_count),
+        stderr,
+        "[HEAP:\t%lu words allocated to young, %lu words allocated to current, %lu/%lu heap expansions/shrinkings performed]\n",
+        (unsigned long)mmc_young_size, /* MMC_YOUNG_SIZE, */
+        (unsigned long)mmc_older_size,
+        (unsigned long)(mmc_heap_expansions_count),
     (unsigned long)(mmc_heap_shrinkings_count));
     fprintf(
-  stderr,
-  "[HEAP: \t%lu words allocated into managed C heap (from mk_* functions), collected %lu times, remaining uncollected %lu words]\n",
-  mmc_allocated_from_c, mmc_c_heap_collect_count,
-  mmc_c_heap_region_total_size);
+        stderr,
+        "[HEAP: \t%lu words allocated into managed C heap (from mk_* functions), collected %lu times, remaining uncollected %lu words]\n",
+        mmc_allocated_from_c, mmc_c_heap_collect_count,
+        mmc_c_heap_region_total_size);
     fprintf(stderr, "[HEAP: \t%lu strings totaling %lu words where shared]\n",
-  mmc_total_shared_strings, mmc_total_shared_strings_words);
+        mmc_total_shared_strings, mmc_total_shared_strings_words);
     fprintf(stderr, "[HEAP:\t%#.2f seconds wasted while doing GC]\n",
-  mmc_gc_total_time);
+        mmc_gc_total_time);
     fprintf(stderr,
-  "[ARRAY:\t%lu words currently in use in the array trail]\n",
-  (unsigned long)(&mmc_array_trail[MMC_ARRAY_TRAIL_SIZE] - mmc_GC_state->gen.ATP));
+        "[ARRAY:\t%lu words currently in use in the array trail]\n",
+        (unsigned long)(&mmc_array_trail[MMC_ARRAY_TRAIL_SIZE] - mmc_GC_state->gen.ATP));
     fprintf(stderr, "[MOTOR:\t%lu tailcalls performed]\n", mmc_call_count);
   }
   if (mmc_flag_bench) {
     unsigned long mmc_clock_end = mmc_prim_clock();
     double secs = (double)(mmc_clock_end - mmc_clock_start)
-  / (double)MMC_CLOCKS_PER_SEC;
+        / (double)MMC_CLOCKS_PER_SEC;
     fprintf(
-  stderr,
-  "[%s:\t%#.2f seconds total from which %#.2f seconds GC, %lu minor collections, %lu major collections]\n",
-  status ? "FAIL" : "BENCH", secs, mmc_gc_total_time, mmc_minorgc_count,
-  mmc_majorgc_count);
+        stderr,
+        "[%s:\t%#.2f seconds total from which %#.2f seconds GC, %lu minor collections, %lu major collections]\n",
+        status ? "FAIL" : "BENCH", secs, mmc_gc_total_time, mmc_minorgc_count,
+        mmc_majorgc_count);
   }
   exit(status);
 }
@@ -372,9 +372,9 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
       /* If is not allocated in the C heap, do not forward it! */
       if (mmc_c_heap_collect_flag && mmc_is_allocated_on_c_heap((void**)MMC_UNTAGPTR(old)))
       {
-  /* collect to next region */
+        /* collect to next region */
       } else {
-  continue;
+        continue;
       }
     }
 
@@ -400,7 +400,7 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
       assert(mmc_isYoungOrOlder(old));
       if (!mmc_isYoungOrOlder(old))
       {
-  fprintf(stderr, "slots: %lu p: %p nwords: %lu\n", hdr, *old, nwords); fflush(stderr);
+        fprintf(stderr, "slots: %lu p: %p nwords: %lu\n", hdr, *old, nwords); fflush(stderr);
       }
       /* reuse `hdr' as `#slots' */
       *next++ = *old++;
@@ -437,11 +437,11 @@ static void **mmc_forward_all(void **next, char *region_low, mmc_uint_t region_n
       void *array_node = *ATP; /* known to be an array node */
       mmc_uint_t nrelements= MMC_GETHDR(array_node);
       if ( MMC_HDR_IS_FORWARD(nrelements)) {
-  continue;
+        continue;
       }
       nrelements = MMC_HDRSLOTS(nrelements);
       for (i = 0; i < nrelements; i++) {
-  next = mmc_forward_vec(&(MMC_STRUCTDATA(array_node)[i]), 1, next, region_low, region_nbytes);
+        next = mmc_forward_vec(&(MMC_STRUCTDATA(array_node)[i]), 1, next, region_low, region_nbytes);
       }
     }
     mmc_GC_state->gen.ATP = &mmc_array_trail[MMC_ARRAY_TRAIL_SIZE];
@@ -523,20 +523,20 @@ static void* mmc_major_collection(mmc_uint_t nwords)
    * external C heap data + the young gen + what we need to allocate now (nwords)
    */
     if (((long)mmc_c_heap_region_total_size + (long)nwords + (long)mmc_young_size)
-  < ((long)mmc_older_size - ((long)mmc_current_next - (long)mmc_current_region)))
+        < ((long)mmc_older_size - ((long)mmc_current_next - (long)mmc_current_region)))
     {
       /* we have enough space */
       if (mmc_flag_gclog && !mmc_flag_bench)
       {
-  mmc_heap_expansions_count++;
-  fprintf(stderr, " keep heap size ..."); fflush(stderr);
+        mmc_heap_expansions_count++;
+        fprintf(stderr, " keep heap size ..."); fflush(stderr);
       }
       rr = mmc_alloc_core(mmc_older_size, MMC_EXIT_ON_FAILURE);
       if (rr == NULL)
       {
-  fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
-  fflush(stderr);
-  return NULL;
+        fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
+        fflush(stderr);
+        return NULL;
       }
       mmc_reserve_region = rr;
     }
@@ -545,16 +545,16 @@ static void* mmc_major_collection(mmc_uint_t nwords)
       /* we DON'T have enough space , do a heap expansion directly */
       if (mmc_flag_gclog && !mmc_flag_bench)
       {
-  mmc_heap_expansions_count++;
-  fprintf(stderr, " expanding heap (A) ..."); fflush(stderr);
+        mmc_heap_expansions_count++;
+        fprintf(stderr, " expanding heap (A) ..."); fflush(stderr);
       }
       mmc_older_size += mmc_c_heap_region_total_size + nwords + mmc_young_size;
       rr = mmc_alloc_core(mmc_older_size, MMC_EXIT_ON_FAILURE);
       if (rr == NULL)
       {
-  fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
-  fflush(stderr);
-  return NULL;
+        fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
+        fflush(stderr);
+        return NULL;
       }
       mmc_reserve_region = rr;
     }
@@ -629,22 +629,22 @@ static void* mmc_major_collection(mmc_uint_t nwords)
     if ( !mmc_reserve_region ) /* we couldn't allocate that much, try again, with less memory */
     {
       if (mmc_flag_gclog && !mmc_flag_bench) {
-  fprintf(stderr, " (LESS %%50) "); fflush(stderr);
+        fprintf(stderr, " (LESS %%50) "); fflush(stderr);
       }
       new_size = current_inuse + mmc_young_size; /* try to allocate less */
       rr = mmc_alloc_core(new_size, MMC_EXIT_ON_FAILURE);
       if (rr == NULL)
       {
-  fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
-  fflush(stderr);
-  return NULL;
+        fprintf(stderr, "returning NULL (not enough memory) from mmc_major_collection!\n");
+        fflush(stderr);
+        return NULL;
       }
       mmc_reserve_region = rr;
     }
     else
     {
       if (mmc_flag_gclog && !mmc_flag_bench) {
-    fprintf(stderr, " (MORE 50%%) "); fflush(stderr);
+          fprintf(stderr, " (MORE 50%%) "); fflush(stderr);
       }
     }
 
@@ -669,9 +669,9 @@ static void* mmc_major_collection(mmc_uint_t nwords)
     current_inuse = mmc_current_next - mmc_current_region;
   }
   else if ( /* do a heap shrink if only 15% is used and it was an expansion */
-     100.0*((double)current_inuse/(double)mmc_older_size) <= 20.0 && /* less than 20% used */
-     (double)mmc_young_size * 4.0 < (double)mmc_older_size  /* older is at least 4 times the young */
-    )
+           100.0*((double)current_inuse/(double)mmc_older_size) <= 20.0 && /* less than 20% used */
+           (double)mmc_young_size * 4.0 < (double)mmc_older_size  /* older is at least 4 times the young */
+          )
   {
     mmc_uint_t new_size = 0;
     mmc_uint_t ratio = 0;
@@ -681,17 +681,17 @@ static void* mmc_major_collection(mmc_uint_t nwords)
       ratio = 4;
     else
       if (ratio % 2) /* not even */
-  ratio++; /* make it even */
+        ratio++; /* make it even */
 
     new_size = ratio * mmc_young_size;
 
     if (mmc_flag_gclog && !mmc_flag_bench) {
       mmc_heap_shrinkings_count++;
       fprintf(stderr, " shrinking heap [ratio: %ld, before: %.3g%%, after: %.3g%%] ...",
-  (long)ratio,
-  100.0*((double)current_inuse/(double)mmc_older_size),
-  100.0*((double)current_inuse/(double)new_size)
-  );
+        (long)ratio,
+        100.0*((double)current_inuse/(double)mmc_older_size),
+        100.0*((double)current_inuse/(double)new_size)
+        );
       fflush(stderr);
     }
 
@@ -866,49 +866,49 @@ void shareEqual(void)
       fprintf(stderr, "Sharing %d %p <-> %p\n", slotsIdx, *pp, *qq); fflush(stderr);
       if (*pp > *qq) /* store qq in pp as pp is > than qq */
       {
-  MMC_STRUCTDATA(p)[slotsIdx] = *qq;
-  if (!MMC_ISIMM(*qq))
-  {
-    /* also check here if the array is not already in the trail */
-    for (idx = mmc_array_trail_size; &mmc_array_trail[idx] >= mmcATP; idx--)
-      if (mmc_array_trail[idx] == *qq) /* if found, do not add again */
-      {
-        break;
-      }
-      /* add the address of the array into the roots to be
-      taken into consideration at the garbage collection time */
-      if( mmcATP == &mmc_array_trail[0] )
-      {
-        (void)fprintf(stderr, "Array Trail Overflow!\n"); fflush(stderr);
-        mmc_exit(1);
-      }
+        MMC_STRUCTDATA(p)[slotsIdx] = *qq;
+        if (!MMC_ISIMM(*qq))
+        {
+          /* also check here if the array is not already in the trail */
+          for (idx = mmc_array_trail_size; &mmc_array_trail[idx] >= mmcATP; idx--)
+            if (mmc_array_trail[idx] == *qq) /* if found, do not add again */
+            {
+              break;
+            }
+            /* add the address of the array into the roots to be
+            taken into consideration at the garbage collection time */
+            if( mmcATP == &mmc_array_trail[0] )
+            {
+              (void)fprintf(stderr, "Array Trail Overflow!\n"); fflush(stderr);
+              mmc_exit(1);
+            }
 
-      if (!idx) /* we didn't already find it */
-        *--mmcATP = p;
-  }
+            if (!idx) /* we didn't already find it */
+              *--mmcATP = p;
+        }
       }
       else /* store pp in qq as qq is > than pp */
       {
-  MMC_STRUCTDATA(q)[slotsIdx] = *pp;
-  if (!MMC_ISIMM(*pp))
-  {
-    /* also check here if the array is not already in the trail */
-    for (idx = mmc_array_trail_size; &mmc_array_trail[idx] >= mmcATP; idx--)
-      if (mmc_array_trail[idx] == *pp) /* if found, do not add again */
-      {
-        break;
-      }
-      /* add the address of the array into the roots to be
-      taken into consideration at the garbage collection time */
-      if( mmcATP == &mmc_array_trail[0] )
-      {
-        (void)fprintf(stderr, "Array Trail Overflow!\n"); fflush(stderr);
-        mmc_exit(1);
-      }
+        MMC_STRUCTDATA(q)[slotsIdx] = *pp;
+        if (!MMC_ISIMM(*pp))
+        {
+          /* also check here if the array is not already in the trail */
+          for (idx = mmc_array_trail_size; &mmc_array_trail[idx] >= mmcATP; idx--)
+            if (mmc_array_trail[idx] == *pp) /* if found, do not add again */
+            {
+              break;
+            }
+            /* add the address of the array into the roots to be
+            taken into consideration at the garbage collection time */
+            if( mmcATP == &mmc_array_trail[0] )
+            {
+              (void)fprintf(stderr, "Array Trail Overflow!\n"); fflush(stderr);
+              mmc_exit(1);
+            }
 
-      if (!idx) /* we didn't already find it */
-        *--mmcATP = q;
-  }
+            if (!idx) /* we didn't already find it */
+              *--mmcATP = q;
+        }
       }
     }
   }
@@ -967,8 +967,8 @@ void *mmc_gen_alloc_words(unsigned nwords) {
       mmc_allocated_from_c += nwords;
 
       if (mmc_flag_gclog) {
-  mmc_gc_end_clock = mmc_prim_clock();
-  mmc_gc_total_time += (double)(mmc_gc_end_clock - mmc_gc_start_clock) / (double)MMC_CLOCKS_PER_SEC;
+        mmc_gc_end_clock = mmc_prim_clock();
+        mmc_gc_total_time += (double)(mmc_gc_end_clock - mmc_gc_start_clock) / (double)MMC_CLOCKS_PER_SEC;
       }
       /* return the pointer to available region */
       return p;

@@ -67,7 +67,7 @@ int allocateNonlinearSystem(DATA *data)
     if(nonlinsys[i].jacobianIndex != -1){
       ASSERT(nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       if (nonlinsys[i].initialAnalyticalJacobian(data)){
-  nonlinsys[i].jacobianIndex = -1;
+        nonlinsys[i].jacobianIndex = -1;
       }
     }
 
@@ -93,16 +93,16 @@ int allocateNonlinearSystem(DATA *data)
       switch(data->simulationInfo.nlsMethod)
       {
       case NS_HYBRID:
-  allocateHybrdData(size, &nonlinsys[i].solverData);
-  break;
+        allocateHybrdData(size, &nonlinsys[i].solverData);
+        break;
       case NS_KINSOL:
-  nls_kinsol_allocate(data, &nonlinsys[i]);
-  break;
+        nls_kinsol_allocate(data, &nonlinsys[i]);
+        break;
       case NS_NEWTON:
-  allocateNewtonData(size, &nonlinsys[i].solverData);
-  break;
+        allocateNewtonData(size, &nonlinsys[i].solverData);
+        break;
       default:
-  THROW("unrecognized nonlinear solver");
+        THROW("unrecognized nonlinear solver");
       }
     }
 
@@ -141,16 +141,16 @@ int freeNonlinearSystem(DATA *data)
       switch(data->simulationInfo.nlsMethod)
       {
       case NS_HYBRID:
-  freeHybrdData(&nonlinsys[i].solverData);
-  break;
+        freeHybrdData(&nonlinsys[i].solverData);
+        break;
       case NS_KINSOL:
-  nls_kinsol_free(&nonlinsys[i]);
-  break;
+        nls_kinsol_free(&nonlinsys[i]);
+        break;
       case NS_NEWTON:
-  freeNewtonData(&nonlinsys[i].solverData);
-  break;
+        freeNewtonData(&nonlinsys[i].solverData);
+        break;
       default:
-  THROW("unrecognized nonlinear solver");
+        THROW("unrecognized nonlinear solver");
       }
     }
     free(nonlinsys[i].solverData);
@@ -162,7 +162,7 @@ int freeNonlinearSystem(DATA *data)
 /*! \fn solve non-linear systems
  *
  *  \param  [in]  [data]
- *          [sysNumber] index of corresponding non-linear System
+ *                [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */

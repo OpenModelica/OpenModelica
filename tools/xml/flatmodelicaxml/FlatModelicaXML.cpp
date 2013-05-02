@@ -1,7 +1,7 @@
 /* Copyright (c)2000 Linköping University Sweden, All Rights Reserved
 /* Programming Environments Laboratory
 *******************************************************************************
-  File  : "FlatModelicaXML.cpp"
+  File        : "FlatModelicaXML.cpp"
   Author      : Adrian Pop 2005-05-26
   Description : Antlr Parser caller and XML serializer for Flat Modelica
 -------------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 using namespace std;
 
 //-----------------------------------------------------------------------------
-// func   : main function for the modelica optimizer
+// func         : main function for the modelica optimizer
 // author       : Adrian Pop 2003-10-25
 // organization : Linköping University Sweden, Programming Environment Laboratory
 //-----------------------------------------------------------------------------

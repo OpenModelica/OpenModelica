@@ -3,7 +3,7 @@
 using namespace std;
 using namespace boost;
 
-const string TAB = string("  ");
+const string TAB = string("        ");
 
 const string * Codegen::generateOperator(const char op ,int operands)
 {
@@ -87,8 +87,8 @@ void Codegen::generateTemporaries()
   }
 }
 void Codegen::generateParallelFunction(TaskList *tasks,
-         map<VertexID,double>& levelMap,
-         int procno)
+               map<VertexID,double>& levelMap,
+               int procno)
 {
   generateParallelFunctionPrologue(procno);
   generateParallelFunctionHeader(procno);
@@ -98,8 +98,8 @@ void Codegen::generateParallelFunction(TaskList *tasks,
 }
 
 void Codegen::generateParallelFunctionBody(TaskList *tasks,
-              map<VertexID,double>& levelMap,
-              int proc)
+                    map<VertexID,double>& levelMap,
+                    int proc)
 {
   m_cstream << endl << TAB << "/* Proc body */" << endl;
   generateParallelFunctionLocals(tasks);
@@ -155,10 +155,10 @@ void Codegen::generateSendData(VertexID task, int proc, bool genQuit)
 }
 
 void Codegen::generateSendCommand(VertexID source,
-    VertexID target,
-    int sourceproc,
-    int targetproc,
-    bool genQuit)
+          VertexID target,
+          int sourceproc,
+          int targetproc,
+          bool genQuit)
 {
   EdgeID e; bool found;
   tie(e,found) = edge(source,target,*m_merged_tg);
@@ -182,8 +182,8 @@ void Codegen::generateSendCommand(VertexID source,
       i++;
     }
     m_cstream << TAB << "MSEND(sendbuf" << sourceproc << ","
-  << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << ","
-  << getTaskID(source,m_merged_tg) << ");" << endl;
+        << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << ","
+        << getTaskID(source,m_merged_tg) << ");" << endl;
   } else {
     res.createQueue();
     i=0;
@@ -195,16 +195,16 @@ void Codegen::generateSendCommand(VertexID source,
       i++;
     }
     m_cstream << TAB << "MSEND(sendbuf" << sourceproc << ","
-  << res.size() << "," << "MPI_DOUBLE," << targetproc << ","
-  << getTaskID(source,m_merged_tg) << ");" << endl;
+        << res.size() << "," << "MPI_DOUBLE," << targetproc << ","
+        << getTaskID(source,m_merged_tg) << ");" << endl;
   }
 }
 
 
 void Codegen::generateRecvCommand(VertexID source,
-           VertexID target,
-           int sourceproc,
-           int targetproc)
+                 VertexID target,
+                 int sourceproc,
+                 int targetproc)
 {
   EdgeID e; bool found;
   tie(e,found) = edge(source,target,*m_merged_tg);
@@ -214,8 +214,8 @@ void Codegen::generateRecvCommand(VertexID source,
 
   if (targetproc != 0) {
     m_cstream << TAB << "MRECV(recvbuf" << sourceproc << ","
-  << res.size() << "," << "MPI_DOUBLE," << targetproc << ","
-  << getTaskID(source,m_merged_tg) << ");" << endl;
+        << res.size() << "," << "MPI_DOUBLE," << targetproc << ","
+        << getTaskID(source,m_merged_tg) << ");" << endl;
 
     res.createQueue();
     int  i=0;
@@ -228,8 +228,8 @@ void Codegen::generateRecvCommand(VertexID source,
     }
   } else {
     m_cstream << TAB << "MRECV(recvbuf" << sourceproc << ","
-  << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << ","
-  << getTaskID(source,m_merged_tg) << ");" << endl;
+        << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << ","
+        << getTaskID(source,m_merged_tg) << ");" << endl;
     m_cstream << TAB << "if (recvbuf" << sourceproc<< "[0]==0.0) { MPI_Finalize(); exit(0); }" << endl;
 
     int i=1;
@@ -245,7 +245,7 @@ void Codegen::generateRecvCommand(VertexID source,
 }
 
 void Codegen::generateTaskCode(VertexID task,
-        map<VertexID,double>& levelMap)
+              map<VertexID,double>& levelMap)
 {
   ContainSetMap::iterator taskmap;
   VertexID gentask;
@@ -262,7 +262,7 @@ void Codegen::generateTaskCode(VertexID task,
     // Store internal tasks in a levelsorted queue to be able to generate
     // code in correct order.
     m_cstream << TAB << TAB << "/* Task " << getTaskID(task,m_merged_tg)
-  << " contains: ";
+        << " contains: ";
     for (t=(taskmap->second)->begin(); t != (taskmap->second)->end(); t++) {
       tasks.push(find_task(*t,m_tg));
       m_cstream << *t << " ";
@@ -311,7 +311,7 @@ void Codegen::generateSubTaskCode(VertexID task)
 
     if (s.size() == 0) {
       for(int j=0; j < getCommCost(e,m_tg); j++) { // if same variable used more
-         // than once, e.g. a*a.
+               // than once, e.g. a*a.
   parentnames[i++]=getResultName(source(e,*m_tg),m_tg);
       }
     } else {
@@ -329,18 +329,18 @@ void Codegen::generateSubTaskCode(VertexID task)
   switch(getTaskType(task,m_tg)) {
   case TempVar:
     m_cstream << TAB << getResultName(task,m_tg) << "="
-  << insert_strings(getVertexName(task,m_tg),parentnames) << ";"
-  << TAB << "// Task " << getTaskID(task,m_tg) << " variable " << getOrigName(task,m_tg) << endl;
+        << insert_strings(getVertexName(task,m_tg),parentnames) << ";"
+        << TAB << "// Task " << getTaskID(task,m_tg) << " variable " << getOrigName(task,m_tg) << endl;
     break;
   case Begin:
-    m_cstream << "  /* Begin */" << endl;
+    m_cstream << "        /* Begin */" << endl;
     break;
   case End:
-    m_cstream << "  /* End */" << endl;
+    m_cstream << "        /* End */" << endl;
     break;
   case Assignment:
     m_cstream << TAB << insert_strings(getVertexName(task,m_tg),parentnames)
-  << TAB << "// Task " << getTaskID(task,m_tg) << endl;
+        << TAB << "// Task " << getTaskID(task,m_tg) << endl;
     break;
   case LinSys:
     m_cstream << TAB << "/* Linear system*/" << endl;
@@ -352,9 +352,9 @@ void Codegen::generateSubTaskCode(VertexID task)
     break;
   case Copy:
     m_cstream << TAB << getResultName(task,m_tg)
-  << "=" << parentnames[0] << ";"
-  << TAB << "// " << getTaskID(task,m_tg) << " variable "
-  << getOrigName(task,m_tg) << endl;
+        << "=" << parentnames[0] << ";"
+        << TAB << "// " << getTaskID(task,m_tg) << " variable "
+        << getOrigName(task,m_tg) << endl;
     break;
   default:
     assert(false);
@@ -467,11 +467,11 @@ void Codegen::generateParallelCalls()
   m_cstream << "#endif" << endl;
   m_cstream << TAB << "switch (rank) {" << endl;
   m_cstream << TAB << "    case 0 : solver(&x[0],&xd[0],&y[0],&p[0],&res[0],nx,ny,np,numsteps,start,stop,step,&f);" << endl;
-  m_cstream << TAB << "       send_quit_command();" << endl;
+  m_cstream << TAB << "             send_quit_command();" << endl;
   m_cstream << TAB << TAB << "break;" << endl;
   for (int i = 1 ; i < m_nproc; i++) {
     m_cstream << TAB << "    case " << i << ": proc" << i << "();" << endl
-  << TAB << TAB << "break;" << endl;
+        << TAB << TAB << "break;" << endl;
   }
   m_cstream << TAB << "}" << endl << endl;
   m_cstream << "#ifdef TIMING" << endl;

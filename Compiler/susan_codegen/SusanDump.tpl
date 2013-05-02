@@ -56,8 +56,8 @@ templateDef(TemplateDef, Ident templId) <>=
 case TEMPLATE_DEF then
 {
 <name>(<signature :
-  case (tsign, arg) then "<typeSignature(tsign)> <arg>"
-  ', '
+        case (tsign, arg) then "<typeSignature(tsign)> <arg>"
+        ', '
        > <lesc><resc>= <expression(exp, lesc, resc)>
 }
 case CONST_DEF then "<name> = <constant(value)>"
@@ -125,8 +125,8 @@ case LIST_MAP    then
 {
 <lesc><listMapExp(listMapExp)
       > <match separator
-   case SOME(sep) then expression(sep, lesc, resc)
-  ><escapedExpOptions(options, lesc, resc)><resc>
+         case SOME(sep) then expression(sep, lesc, resc)
+        ><escapedExpOptions(options, lesc, resc)><resc>
 }
 case ESCAPED_EXP     then "<lesc><templateExp(exp)> <escapedExpOptions(options, lesc, resc)><resc>"
 case NON_TEMPL_CALL  then "<lesc><functionCall(fnCall, lesc, resc)><resc>"
@@ -195,10 +195,10 @@ case cond as CONDITION then
 if <match rhsValue
     case NONE then "<if cond.isNot then 'not '><expression(lhsExp, lesc, resc)>"
     case SOME(const) then {<expression(lhsExp, lesc, resc)
-                     > <if cond.isNot
-                        then '<>'
-                        else '=='
-                       > <expression(rhsExp, lesc, resc)>}
+                           > <if cond.isNot
+                              then '<>'
+                              else '=='
+                             > <expression(rhsExp, lesc, resc)>}
    >
 then <expression(trueBranch, lesc, resc)
      ><match elseBranch
@@ -227,9 +227,9 @@ case RECORD_MATCH then
 ><pathIdent(tagName)
  ><if fieldMatchings <> [] then
       <<(<fieldMatchings :
-    case (field, mexp) then "<field> = <matchingExp(mexp)>"
-    ', '
-   >)>>
+          case (field, mexp) then "<field> = <matchingExp(mexp)>"
+          ', '
+         >)>>
   >
 }
 case SOME_MATCH  then "SOME(<matchingExp(value)>)"

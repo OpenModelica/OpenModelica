@@ -4,7 +4,7 @@ double minposroot(double *coeff, int order) {
   double mpr;
   switch (order) {
   case 0:
-   mpr=INF;
+         mpr=INF;
        break;
   case 1:
     if (coeff[1]==0) {
@@ -17,28 +17,28 @@ double minposroot(double *coeff, int order) {
   case 2:
   if (coeff[2]==0 || (1000*fabs(coeff[2]))<fabs(coeff[1])){
        if (coeff[1]==0) {
-   mpr=INF;
+         mpr=INF;
        } else {
-   mpr=-coeff[0]/coeff[1];
+         mpr=-coeff[0]/coeff[1];
        };
        if (mpr<0) mpr=INF;
       } else {
        double disc;
        disc=coeff[1]*coeff[1]-4*coeff[2]*coeff[0];
        if (disc<0) {
-   //no real roots
-   mpr=INF;
+         //no real roots
+         mpr=INF;
        } else {
-   double sd,r1;
-   sd=sqrt(disc);
-   r1=(-coeff[1]+sd)/2/coeff[2];
-   if (r1>0) {
-     mpr=r1;
-   } else {
-     mpr=INF;
-   };
-   r1=(-coeff[1]-sd)/2/coeff[2];
-   if ((r1>0)&&(r1<mpr)) mpr=r1;
+         double sd,r1;
+         sd=sqrt(disc);
+         r1=(-coeff[1]+sd)/2/coeff[2];
+         if (r1>0) {
+           mpr=r1;
+         } else {
+           mpr=INF;
+         };
+         r1=(-coeff[1]-sd)/2/coeff[2];
+         if ((r1>0)&&(r1<mpr)) mpr=r1;
        };
       };
       break;
@@ -57,21 +57,21 @@ double minposroot(double *coeff, int order) {
        double sd,s,t,r1;
        sd=sqrt(disc);
        if (r+sd>0) {
-   s=pow(r+sd,1.0/3);
+         s=pow(r+sd,1.0/3);
        } else {
-   s=-pow(fabs(r+sd),1.0/3);
+         s=-pow(fabs(r+sd),1.0/3);
        };
        if (r-sd>0) {
-   t=pow(r-sd,1.0/3);
+         t=pow(r-sd,1.0/3);
        } else {
-   t=-pow(fabs(r-sd),1.0/3);
+         t=-pow(fabs(r-sd),1.0/3);
        };
        r1=s+t-coeff[2]/3/coeff[3];
        if (r1>0) mpr=r1;
       }  else {
        //three real roots
        double rho,th,rho13,costh3,sinth3,spt,smti32,r1;
-  rho=sqrt(-q*q*q);
+        rho=sqrt(-q*q*q);
        th=acos(r/rho);
        rho13=pow(rho,1.0/3);
        costh3=cos(th/3);

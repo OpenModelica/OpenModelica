@@ -5,7 +5,7 @@ encapsulated package HashTableCrToExpSourceTpl "
 
   All rights reserved.
 
-  file:  HashTableCrToExpSourceTpl.mo
+  file:        HashTableCrToExpSourceTpl.mo
   package:     HashTableCrToExpSourceTpl
   description: DAE.CR to tuple<DAE.Exp,DAE.ElementSource>
 

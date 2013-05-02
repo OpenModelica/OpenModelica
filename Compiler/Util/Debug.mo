@@ -30,7 +30,7 @@
  */
 
 encapsulated package Debug
-" file:  Debug.mo
+" file:        Debug.mo
   package:     Debug
   description: Debug printing
 
@@ -90,7 +90,7 @@ algorithm
   _ := match (cond,str)
     case (true,_)
       equation
-  Print.printErrorBuf(str);
+        Print.printErrorBuf(str);
       then ();
     else ();
   end match;
@@ -107,8 +107,8 @@ algorithm
   _ := match (cond,str)
     case (true,_)
       equation
-  Print.printErrorBuf(str);
-  Print.printErrorBuf("\n");
+        Print.printErrorBuf(str);
+        Print.printErrorBuf("\n");
       then ();
     else ();
   end match;
@@ -137,11 +137,11 @@ algorithm
       list<String> strlist;
     case (_,strlist)
       equation
-  true = Flags.isSet(inFlag);
-  str = stringAppendList(strlist);
-  Print.printErrorBuf(str);
+        true = Flags.isSet(inFlag);
+        str = stringAppendList(strlist);
+        Print.printErrorBuf(str);
       then
-  ();
+        ();
     case (_,_) then ();
   end matchcontinue;
 end fprintl;
@@ -167,10 +167,10 @@ algorithm
 
     case (_,_,arg1,arg2)
       equation
-  true = Flags.isSet(inFlag);
-  func(arg1,arg2);
+        true = Flags.isSet(inFlag);
+        func(arg1,arg2);
       then
-  ();
+        ();
     case (_,_,_,_) then ();
   end matchcontinue;
 end fcall2;
@@ -192,10 +192,10 @@ algorithm
       Type_a str;
     case (_,func,str)
       equation
-  true = Flags.isSet(inFlag);
-  func(str);
+        true = Flags.isSet(inFlag);
+        func(str);
       then
-  ();
+        ();
     case (_,_,_) then ();
   end matchcontinue;
 end fcall;
@@ -213,10 +213,10 @@ algorithm
       FuncTypeTo func;
     case (_,func)
       equation
-  true = Flags.isSet(inFlag);
-  func();
+        true = Flags.isSet(inFlag);
+        func();
       then
-  ();
+        ();
     case (_,_) then ();
   end matchcontinue;
 end fcall0;
@@ -241,10 +241,10 @@ algorithm
       FuncTypeToType_b func;
     case (_,func,def)
       equation
-  true = Flags.isSet(inFlag);
-  res = func();
+        true = Flags.isSet(inFlag);
+        res = func();
       then
-  res;
+        res;
     case (_,_,def) then def;
   end matchcontinue;
 end fcallret0;
@@ -273,10 +273,10 @@ algorithm
       Type_a arg;
     case (_,func,arg,def)
       equation
-  true = Flags.isSet(inFlag);
-  res = func(arg);
+        true = Flags.isSet(inFlag);
+        res = func(arg);
       then
-  res;
+        res;
     case (_,_,_,def) then def;
   end matchcontinue;
 end fcallret1;
@@ -304,10 +304,10 @@ algorithm
   res := matchcontinue (inFlag,func,arg1,arg2,default)
     case (_,_,_,_,_)
       equation
-  true = Flags.isSet(inFlag);
-  res = func(arg1,arg2);
+        true = Flags.isSet(inFlag);
+        res = func(arg1,arg2);
       then
-  res;
+        res;
     case (_,_,_,_,_) then default;
   end matchcontinue;
 end fcallret2;
@@ -338,10 +338,10 @@ algorithm
   res := matchcontinue (inFlag,func,arg1,arg2,arg3,default)
     case (_,func,arg1,arg2,arg3,_)
       equation
-  true = Flags.isSet(inFlag);
-  res = func(arg1,arg2,arg3);
+        true = Flags.isSet(inFlag);
+        res = func(arg1,arg2,arg3);
       then
-  res;
+        res;
     case (_,_,_,_,_,default) then default;
   end matchcontinue;
 end fcallret3;
@@ -364,7 +364,7 @@ algorithm
   res := match (flag,func,default)
     case (true,_,_)
       equation
-  res = func();
+        res = func();
       then res;
     else default;
   end match;
@@ -391,7 +391,7 @@ algorithm
   res := match (flag,func,arg,default)
     case (true,_,_,_)
       equation
-  res = func(arg);
+        res = func(arg);
       then res;
     else default;
   end match;
@@ -420,7 +420,7 @@ algorithm
   res := match (flag,func,arg1,arg2,default)
     case (true,_,_,_,_)
       equation
-  res = func(arg1,arg2);
+        res = func(arg1,arg2);
       then res;
     else default;
   end match;
@@ -452,7 +452,7 @@ algorithm
   res := match (flag,func,arg1,arg2,arg3,default)
     case (true,_,_,_,_,_)
       equation
-  res = func(arg1,arg2,arg3);
+        res = func(arg1,arg2,arg3);
       then res;
     else default;
   end match;
@@ -487,7 +487,7 @@ algorithm
   res := match (flag,func,arg1,arg2,arg3,arg4,default)
     case (true,_,_,_,_,_,_)
       equation
-  res = func(arg1,arg2,arg3,arg4);
+        res = func(arg1,arg2,arg3,arg4);
       then res;
     else default;
   end match;
@@ -525,7 +525,7 @@ algorithm
   res := match (flag,func,arg1,arg2,arg3,arg4,arg5,default)
     case (true,_,_,_,_,_,_,_)
       equation
-  res = func(arg1,arg2,arg3,arg4,arg5);
+        res = func(arg1,arg2,arg3,arg4,arg5);
       then res;
     else default;
   end match;
@@ -566,7 +566,7 @@ algorithm
   res := match (flag,func,arg1,arg2,arg3,arg4,arg5,arg6,default)
     case (true,_,_,_,_,_,_,_,_)
       equation
-  res = func(arg1,arg2,arg3,arg4,arg5,arg6);
+        res = func(arg1,arg2,arg3,arg4,arg5,arg6);
       then res;
     else default;
   end match;
@@ -602,7 +602,7 @@ algorithm
   (res1,res2) := match (flag,func,arg1,arg2,arg3,default1,default2)
     case (true,_,_,_,_,_,_)
       equation
-  (res1,res2) = func(arg1,arg2,arg3);
+        (res1,res2) = func(arg1,arg2,arg3);
       then (res1,res2);
     else (default1,default2);
   end match;
@@ -625,9 +625,9 @@ algorithm
       Type_a str;
     case (true,func,str)
       equation
-  func(str);
+        func(str);
       then
-  ();
+        ();
     case (false,_,_) then ();
   end match;
 end bcall;
@@ -642,7 +642,7 @@ algorithm
   _ := match (inBoolean,func)
     case (true,_)
       equation
-  func();
+        func();
       then ();
     case (false,_) then ();
   end match;
@@ -662,9 +662,9 @@ algorithm
   _ := match (inBoolean,func,inTypeA)
     case (true,_,_)
       equation
-  func(inTypeA);
+        func(inTypeA);
       then
-  ();
+        ();
     case (false,_,_) then ();
   end match;
 end bcall1;
@@ -686,9 +686,9 @@ algorithm
   _ := match (inBoolean,func,inTypeA,inTypeB)
     case (true,_,_,_)
       equation
-  func(inTypeA, inTypeB);
+        func(inTypeA, inTypeB);
       then
-  ();
+        ();
     case (false,_,_,_) then ();
   end match;
 end bcall2;
@@ -713,9 +713,9 @@ algorithm
   _ := match (inBoolean,fn,inTypeA,inTypeB,inTypeC)
     case (true,_,_,_,_)
       equation
-  fn(inTypeA, inTypeB, inTypeC);
+        fn(inTypeA, inTypeB, inTypeC);
       then
-  ();
+        ();
     case (false,_,_,_,_) then ();
   end match;
 end bcall3;
@@ -743,9 +743,9 @@ algorithm
   _ := match (inBoolean,fn,inTypeA,inTypeB,inTypeC,inTypeD)
     case (true,_,_,_,_,_)
       equation
-  fn(inTypeA, inTypeB, inTypeC, inTypeD);
+        fn(inTypeA, inTypeB, inTypeC, inTypeD);
       then
-  ();
+        ();
     case (false,_,_,_,_,_) then ();
   end match;
 end bcall4;
@@ -769,10 +769,10 @@ algorithm
       Type_a str;
     case (_,func,str)
       equation
-  false = Flags.isSet(inFlag);
-  func(str);
+        false = Flags.isSet(inFlag);
+        func(str);
       then
-  ();
+        ();
     case (_,_,_) then ();
   end matchcontinue;
 end notfcall;
@@ -797,10 +797,10 @@ algorithm
       FuncTypeType_aTo func;
     case (_,lst,func,sep)
       equation
-  true = Flags.isSet(inFlag);
-  printList(lst, func, sep);
+        true = Flags.isSet(inFlag);
+        printList(lst, func, sep);
       then
-  ();
+        ();
     case (_,_,_,_) then ();
   end matchcontinue;
 end fprintList;
@@ -826,16 +826,16 @@ algorithm
     case ({},_,_) then ();
     case ({h},r,_)
       equation
-  r(h);
+        r(h);
       then
-  ();
+        ();
     case ((h :: t),r,sep)
       equation
-  r(h);
-  Print.printErrorBuf(sep);
-  printList(t, r, sep);
+        r(h);
+        Print.printErrorBuf(sep);
+        printList(t, r, sep);
       then
-  ();
+        ();
   end matchcontinue;
 end printList;
 
@@ -864,20 +864,20 @@ algorithm
     case (false,_,_) then ();
     case (_,_,_)
       equation
-  t = System.realtimeTock(clockIndex);
-  (used,allocated) = System.getGCStatus();
-  print("*** ");
-  print(name);
-  print(" -> time: ");
-  print(realString(t));
-  print(", memory: ");
-  print(bytesToRealMBString(used));
-  print("/");
-  print(bytesToRealMBString(allocated));
-  print(" MB (");
-  print(realString(realMul(100.0,realDiv(intReal(used),intReal(allocated)))));
-  print("%)\n");
-  System.realtimeTick(clockIndex);
+        t = System.realtimeTock(clockIndex);
+        (used,allocated) = System.getGCStatus();
+        print("*** ");
+        print(name);
+        print(" -> time: ");
+        print(realString(t));
+        print(", memory: ");
+        print(bytesToRealMBString(used));
+        print("/");
+        print(bytesToRealMBString(allocated));
+        print(" MB (");
+        print(realString(realMul(100.0,realDiv(intReal(used),intReal(allocated)))));
+        print("%)\n");
+        System.realtimeTick(clockIndex);
       then ();
   end match;
 end execStat2;

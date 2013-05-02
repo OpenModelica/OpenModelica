@@ -51,7 +51,7 @@
 #endif
 
 /***************************************************************************************/
-/*   CLASS: Rational                                                             */
+/*   CLASS: Rational                                                                   */
 /***************************************************************************************/
 
 Rational::Rational(long numerator, long denominator) {
@@ -156,7 +156,7 @@ long Rational::gcd(long a, long b) {
 }
 
 /***************************************************************************************/
-/*   CLASS: Unit                                                                 */
+/*   CLASS: Unit                                                                       */
 /***************************************************************************************/
 
 UnitRes Unit::div(Unit u1, Unit u2, Unit& ur) {
@@ -186,7 +186,7 @@ UnitRes Unit::paramutil(Unit u1, Unit u2, Unit& ur, bool mulop) {
     if (i < u2.unitVec.size())
       q2 = u2.unitVec[i];
     ur.unitVec.push_back(mulop ? Rational::add(q1, q2) : Rational::sub(q1,
-  q2));
+        q2));
   }
 
   map<string, Rational>::iterator p1 = u1.typeParamVec.begin();
@@ -195,25 +195,25 @@ UnitRes Unit::paramutil(Unit u1, Unit u2, Unit& ur, bool mulop) {
     if (p1 != u1.typeParamVec.end() && p2 != u2.typeParamVec.end()) {
       int cval = (*p1).first.compare((*p2).first);
       if (cval == 0) {
-  //Same parameter symbol
-  ur.typeParamVec[(*p1).first] = mulop ? Rational::add(
-      (*p1).second, (*p2).second) : Rational::sub(
-      (*p1).second, (*p2).second);
-  p1++;
-  p2++;
+        //Same parameter symbol
+        ur.typeParamVec[(*p1).first] = mulop ? Rational::add(
+            (*p1).second, (*p2).second) : Rational::sub(
+            (*p1).second, (*p2).second);
+        p1++;
+        p2++;
       } else if (cval > 0) {
-  ur.typeParamVec[(*p2).first] = (*p2).second;
-  p2++;
+        ur.typeParamVec[(*p2).first] = (*p2).second;
+        p2++;
       } else {
-  ur.typeParamVec[(*p1).first] = (*p1).second;
-  p1++;
+        ur.typeParamVec[(*p1).first] = (*p1).second;
+        p1++;
       }
     } else if (p1 != u1.typeParamVec.end()) {
       ur.typeParamVec[(*p1).first] = (*p1).second;
       p1++;
     } else if (p2 != u2.typeParamVec.end()) {
       ur.typeParamVec[(*p2).first] = mulop ? (*p2).second
-    : Rational::mul((*p2).second, Rational(-1));
+          : Rational::mul((*p2).second, Rational(-1));
       p2++;
     } else
       break;
@@ -256,9 +256,9 @@ bool Unit::isBaseUnit() {
       return false;
     if ((*p).num == 1) {
       if (onefound)
-  return false;
+        return false;
       else
-  onefound = true;
+        onefound = true;
     } else if ((*p).num != 0)
       return false;
   }
@@ -278,7 +278,7 @@ bool Unit::equalNoWeight(const Unit& u) {
 }
 
 /***************************************************************************************/
-/*   CLASS: UnitParser                                                           */
+/*   CLASS: UnitParser                                                                 */
 /***************************************************************************************/
 
 UnitParser::UnitParser() {
@@ -375,11 +375,11 @@ UnitRes UnitParser::commit() {
     while (_tempDerived.size() != 0) {
       DerivedInfo d = _tempDerived.front();
       UnitRes res = addDerivedInternal(d.quantityName, d.unitName,
-    d.unitSymbol, d.unitStrExp, d.prefixExpo, d.scaleFactor,
-    d.offset, d.prefixAllowed, d.weight);
+          d.unitSymbol, d.unitStrExp, d.prefixExpo, d.scaleFactor,
+          d.offset, d.prefixAllowed, d.weight);
       _tempDerived.pop_front();
       if (!res.Ok())
-  tmp.push_back(d);
+        tmp.push_back(d);
     }
     if (tmp.size() == startSize)
       return UnitRes::ERROR_ADDING_UNIT;
@@ -408,8 +408,8 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   lprec *lp = make_lp(0, 2 * NU);
   if (lp == NULL) {
     cerr
-  << "Internal error pretty printing expression. Using simple approach"
-  << endl;
+        << "Internal error pretty printing expression. Using simple approach"
+        << endl;
     return unit;
   }
 
@@ -430,10 +430,10 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
       char * s1 = (char*) it->second.unitName.c_str();
       char * s2 = (char*) (string("-") + string(s1)).c_str();
       if (!set_col_name(lp, i, s1)) {
-  cerr << "ERROR2" << endl;
+        cerr << "ERROR2" << endl;
       }
       if (!set_col_name(lp, NU + i, s2)) {
-  cerr << "ERROR3" << endl;
+        cerr << "ERROR3" << endl;
       }
       i++;
     }
@@ -447,8 +447,8 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 
   if (!row || !colno) {
     cerr
-  << "Internal error pretty printing expression (allocation of memory). Using simple approach"
-  << endl;
+        << "Internal error pretty printing expression (allocation of memory). Using simple approach"
+        << endl;
     return unit;
   }
 
@@ -463,12 +463,12 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     }
     /* Set numBaseUnits .. NU-1 following columns */
     for (map<string, Unit>::iterator it = _units.begin(); it
-  != _units.end(); it++) {
+        != _units.end(); it++) {
       Unit u = it->second;
       if (!u.isBaseUnit()) {
-  colno[j] = 1 + c;
-  row[j++] = u.unitVec[r].toReal();
-  c++;
+        colno[j] = 1 + c;
+        row[j++] = u.unitVec[r].toReal();
+        c++;
       }
     }
     for (int j2 = 0; j2 < NU; j2++) {
@@ -478,8 +478,8 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     double b = r < unit.unitVec.size() ? unit.unitVec[r].toReal() : 0.0;
     if (!add_constraintex(lp, j, row, colno, EQ, b)) {
       cerr
-    << "Internal error pretty printing expression (adding row to lp). Using simple approach"
-    << endl;
+          << "Internal error pretty printing expression (adding row to lp). Using simple approach"
+          << endl;
       return unit;
     }
   }
@@ -493,7 +493,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     double cost = 1;
     for (int r2 = 0; r2 < numBaseUnits; r2++) {
       double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-    : 0.0;
+          : 0.0;
       cost += fabs(b - (c2 == r2 ? 1 : 0));
     }
     cost /= _base[c2].weight;
@@ -507,12 +507,12 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     Unit u = it->second;
     if (!u.isBaseUnit()) {
       for (int r2 = 0; r2 < numBaseUnits; r2++) {
-  double b1 =
-      r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-          : 0.0;
-  double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
-      : 0.0;
-  cost += fabs(b1 - b2);
+        double b1 =
+            r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
+                : 0.0;
+        double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
+            : 0.0;
+        cost += fabs(b1 - b2);
       }
       cost /= u.weight;
       colno[j] = c2 + 1;
@@ -525,7 +525,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     double cost = 1;
     for (int r2 = 0; r2 < numBaseUnits; r2++) {
       double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-    : 0.0;
+          : 0.0;
       cost += fabs(b - (c2 == r2 ? -1 : 0));
     }
     cost /= _base[c2].weight;
@@ -539,12 +539,12 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     Unit u = it->second;
     if (!u.isBaseUnit()) {
       for (int r2 = 0; r2 < numBaseUnits; r2++) {
-  double b1 =
-      r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
-          : 0.0;
-  double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
-      : 0.0;
-  cost += fabs(b1 + b2);
+        double b1 =
+            r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
+                : 0.0;
+        double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal()
+            : 0.0;
+        cost += fabs(b1 + b2);
       }
       cost /= u.weight;
       colno[j] = c2 + NU + 1;
@@ -554,8 +554,8 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   }
   if (!set_obj_fnex(lp, j, row, colno)) {
     cerr
-  << "Internal error pretty printing expression (adding objective to lp). Using simple approach"
-  << endl;
+        << "Internal error pretty printing expression (adding objective to lp). Using simple approach"
+        << endl;
     return unit;
   }
 
@@ -590,17 +590,17 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
       double res = get_var_primalresult(lp, i + 1 + numBaseUnits);
       //cerr << i << " : " << res << endl ;
       if (i >= NU) {
-  //cerr << "Resetting elt " << i << " at pos " << i%NU << endl;
-  Rational r;
-  r.rationalize(res);
-  prettyUnit.unitVec[i % NU] = Rational::sub(prettyUnit.unitVec[i
-      % NU], r);
+        //cerr << "Resetting elt " << i << " at pos " << i%NU << endl;
+        Rational r;
+        r.rationalize(res);
+        prettyUnit.unitVec[i % NU] = Rational::sub(prettyUnit.unitVec[i
+            % NU], r);
       } else {
-  //cerr << "Setting elt " << i << endl;
-  Rational r;
-  r.rationalize(res);
-  //cerr << "setting elt " << i << " to rational " << r.toString() << endl;
-  prettyUnit.unitVec.push_back(r);
+        //cerr << "Setting elt " << i << endl;
+        Rational r;
+        r.rationalize(res);
+        //cerr << "setting elt " << i << " to rational " << r.toString() << endl;
+        prettyUnit.unitVec.push_back(r);
       }
     }
     //cout << "resulting unit =" << unit2str(prettyUnit) << endl;
@@ -664,7 +664,7 @@ Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
   if (actualNumDerived(unit) > 1) {
     for (int i = numBaseUnits; i < unit.unitVec.size(); i++) {
       if (!unit.unitVec[i].isZero()) {
-  stack.push(i); // store nth position in unit map
+        stack.push(i); // store nth position in unit map
       }
     }
   }
@@ -684,11 +684,11 @@ Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
     }
     if (actualNumDerived(newUnit)==1) break;
     for (int i = numBaseUnits; i < newUnit.unitVec.size(); i++) {
-    if (!newUnit.unitVec[i].isZero()&&_derivedUnitsVisited.find(i) == _derivedUnitsVisited.end()) {
-      stack.push(i); // store nth position in unit map
-      cout << "adding " << i << " to stack" << endl;
-    }
-  }
+          if (!newUnit.unitVec[i].isZero()&&_derivedUnitsVisited.find(i) == _derivedUnitsVisited.end()) {
+            stack.push(i); // store nth position in unit map
+            cout << "adding " << i << " to stack" << endl;
+          }
+        }
   }
 
   return newUnit;
@@ -704,8 +704,8 @@ void UnitParser::increaseNthUnitWeight(int indx,double factor) {
     //cout << "indx " << i << " unit:" << it->first << endl;
     if (!it->second.isBaseUnit()) {
       if (i == indx) {
-  accumulateWeight(it->first, factor);
-  cout << "increasing weight for " << it->first << endl;
+        accumulateWeight(it->first, factor);
+        cout << "increasing weight for " << it->first << endl;
       }
       i++;
     }
@@ -723,8 +723,8 @@ void UnitParser::resetNthUnitWeight(int indx,double factor)
     //cout << "indx " << i << " unit:" << it->first << endl;
     if (!it->second.isBaseUnit()) {
       if (i == indx) {
-  accumulateWeight(it->first, 1/factor);
-  cout << "decreasing weight for " << it->first << endl;
+        accumulateWeight(it->first, 1/factor);
+        cout << "decreasing weight for " << it->first << endl;
       }
       i++;
     }
@@ -766,9 +766,9 @@ string UnitParser::unit2str(Unit unit) {
       != unit.typeParamVec.end(); p++) {
     if (!(*p).second.isZero()) {
       if (!first)
-  ss << ".";
+        ss << ".";
       ss << (*p).first << ((*p).second.is(1) ? ""
-    : (*p).second.toString());
+          : (*p).second.toString());
       first = false;
     }
   }
@@ -778,7 +778,7 @@ string UnitParser::unit2str(Unit unit) {
     Rational q(i < unit.unitVec.size() ? unit.unitVec[i] : Rational(0, 0));
     if (!q.isZero()) {
       if (!first)
-  ss << ".";
+        ss << ".";
       ss << _base[i].unitSymbol << (q.is(1) ? "" : q.toString());
       first = false;
     }
@@ -787,13 +787,13 @@ string UnitParser::unit2str(Unit unit) {
   for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++) {
     if (!it->second.isBaseUnit()) {
       Rational q(i < unit.unitVec.size() ? unit.unitVec[i] : Rational(0,
-    0));
+          0));
 
       if (!q.isZero()) {
-  if (!first)
-    ss << ".";
-  ss << it->second.unitSymbol << (q.is(1) ? "" : q.toString());
-  first = false;
+        if (!first)
+          ss << ".";
+        ss << it->second.unitSymbol << (q.is(1) ? "" : q.toString());
+        first = false;
       }
       i++;
     }
@@ -972,15 +972,15 @@ UnitRes UnitParser::parseSymbol(Scanner& scan, Unit& unit) {
   for (unsigned int i = 1; i <= str.size(); i++) {
     if (_prefix.find(str.substr(0, i)) != _prefix.end()) {
       if (_units.find(str.substr(i)) != _units.end()) {
-  unit = _units[str.substr(i)];
-  if (!unit.prefixAllowed)
-    return UnitRes(UnitRes::PREFIX_NOT_ALLOWED,
-        scan.getLastPos());
-  unit.prefixExpo = Rational::add(unit.prefixExpo,
-      _prefix[str.substr(0, i)]);
-  return UnitRes(UnitRes::UNIT_OK);
+        unit = _units[str.substr(i)];
+        if (!unit.prefixAllowed)
+          return UnitRes(UnitRes::PREFIX_NOT_ALLOWED,
+              scan.getLastPos());
+        unit.prefixExpo = Rational::add(unit.prefixExpo,
+            _prefix[str.substr(0, i)]);
+        return UnitRes(UnitRes::UNIT_OK);
       } else
-  return UnitRes(UnitRes::UNIT_NOT_FOUND, scan.getLastPos() + i);
+        return UnitRes(UnitRes::UNIT_NOT_FOUND, scan.getLastPos() + i);
     }
   }
   return UnitRes(UnitRes::PREFIX_NOT_FOUND, scan.getLastPos());
@@ -1115,7 +1115,7 @@ void UnitParser::initSIUnits() {
 }
 
 /***************************************************************************************/
-/*   CLASS: Scanner                                                              */
+/*   CLASS: Scanner                                                                    */
 /***************************************************************************************/
 
 Scanner::Scanner(string str) :
@@ -1174,10 +1174,10 @@ Scanner::TokenType Scanner::getTokenInternal(string& tokstr,
     tokstr = _str.substr(idx, index - idx);
     if (_str[idx] == '\'') {
       if (index - idx == 1) {
-  index--;
-  return TOK_UNKNOWN;
+        index--;
+        return TOK_UNKNOWN;
       } else
-  return TOK_PARAM;
+        return TOK_PARAM;
     }
     return TOK_ID;
   }

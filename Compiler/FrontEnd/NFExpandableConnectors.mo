@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFExpandableConnectors
-" file:  NFExpandableConnectors.mo
+" file:        NFExpandableConnectors.mo
   package:     NFExpandableConnectors
   description: NFExpandableConnectors translates Absyn to SCode intermediate form
 
@@ -97,26 +97,26 @@ algorithm
 
     case (_)
       equation
-  (expl, nonexpl) = List.splitOnTrue(inConnections, isExpandableConnection);
-  // TODO: Better set size?
-  sets = NFConnectionSets.emptySets(listLength(inConnections));
-  sets = List.fold(expl, NFConnectionSets.expandAddConnection, sets);
-  (nonexpl, sets) = List.mapFold(nonexpl, elaborateNonExpandable, sets);
+        (expl, nonexpl) = List.splitOnTrue(inConnections, isExpandableConnection);
+        // TODO: Better set size?
+        sets = NFConnectionSets.emptySets(listLength(inConnections));
+        sets = List.fold(expl, NFConnectionSets.expandAddConnection, sets);
+        (nonexpl, sets) = List.mapFold(nonexpl, elaborateNonExpandable, sets);
 
-  expsets = NFConnectionSets.extractSets(sets);
-  sets = List.fold(expsets, elaborateExpandable, sets);
-  (expl, _) = List.mapFold(expl, updateExpandableConnection, sets);
+        expsets = NFConnectionSets.extractSets(sets);
+        sets = List.fold(expsets, elaborateExpandable, sets);
+        (expl, _) = List.mapFold(expl, updateExpandableConnection, sets);
 
-  connl = listAppend(nonexpl, expl);
+        connl = listAppend(nonexpl, expl);
       then
-  connl;
+        connl;
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"Elaboration of expandable connectors failed!."});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Elaboration of expandable connectors failed!."});
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end elaborate;
@@ -129,7 +129,7 @@ protected
 algorithm
   NFConnect2.CONNECTION(lhs = lhs, rhs = rhs) := inConnection;
   outIsExpandable := NFConnectUtil2.isExpandableConnector(lhs) and
-               NFConnectUtil2.isExpandableConnector(rhs);
+                     NFConnectUtil2.isExpandableConnector(rhs);
 end isExpandableConnection;
 
 protected function elaborateNonExpandable
@@ -168,20 +168,20 @@ algorithm
 
     case (NFConnect2.CONNECTOR(name = name), _, _, sets)
       equation
-  // Look up the parent of the undeclared connector in the sets.
-  // Do we need to care about face here?
-  (exp_name, _) = ComponentReference.splitCrefLast(name);
-  (exp_conn, sets) = findConnectorByName(exp_name, sets);
+        // Look up the parent of the undeclared connector in the sets.
+        // Do we need to care about face here?
+        (exp_name, _) = ComponentReference.splitCrefLast(name);
+        (exp_conn, sets) = findConnectorByName(exp_name, sets);
 
-  // Augment the expandable connector with a new component with the same
-  // name as the undeclared but the same attributes as the declared, if
-  // it doesn't already exist.
-  (exp_conn, new_conn) = augmentConnector(exp_conn, name, inDeclared);
+        // Augment the expandable connector with a new component with the same
+        // name as the undeclared but the same attributes as the declared, if
+        // it doesn't already exist.
+        (exp_conn, new_conn) = augmentConnector(exp_conn, name, inDeclared);
 
-  // Update the expandable connector in the sets with the new value.
-  sets = NFConnectionSets.update(exp_conn, sets);
+        // Update the expandable connector in the sets with the new value.
+        sets = NFConnectionSets.update(exp_conn, sets);
       then
-  (new_conn, sets);
+        (new_conn, sets);
 
   end match;
 end elaborateNonExpandable2;
@@ -222,11 +222,11 @@ algorithm
 
     case (NFConnect2.CONNECTOR(exp_name, exp_ty, exp_face, exp_cty, exp_attr), _, _)
       equation
-  (conn, var) = makeNewConnector(inUndeclaredName, inDeclared);
-  exp_ty = augmentType(var, exp_ty);
-  exp_conn = NFConnect2.CONNECTOR(exp_name, exp_ty, exp_face, exp_cty, exp_attr);
+        (conn, var) = makeNewConnector(inUndeclaredName, inDeclared);
+        exp_ty = augmentType(var, exp_ty);
+        exp_conn = NFConnect2.CONNECTOR(exp_name, exp_ty, exp_face, exp_cty, exp_attr);
       then
-  (exp_conn, conn);
+        (exp_conn, conn);
 
   end match;
 end augmentConnector;
@@ -245,11 +245,11 @@ algorithm
 
     case (_, NFConnect2.CONNECTOR(name = _))
       equation
-  conn = NFConnectUtil2.renameConnector(inUndeclaredName, inDeclared);
-  name = ComponentReference.crefLastCref(inUndeclaredName);
-  var = connectorToVar(name, conn);
+        conn = NFConnectUtil2.renameConnector(inUndeclaredName, inDeclared);
+        name = ComponentReference.crefLastCref(inUndeclaredName);
+        var = connectorToVar(name, conn);
       then
-  (conn, var);
+        (conn, var);
 
   end match;
 end makeNewConnector;
@@ -274,17 +274,17 @@ algorithm
       SCode.Visibility svis;
 
     case (DAE.CREF_IDENT(ident = id, subscriptLst = {}),
-  NFConnect2.CONNECTOR(ty = ty, cty = cty,
-    attr = NFConnect2.CONN_ATTR(var, vis, dir)))
+        NFConnect2.CONNECTOR(ty = ty, cty = cty,
+          attr = NFConnect2.CONN_ATTR(var, vis, dir)))
       equation
-  scty = NFConnectUtil2.translateConnectorTypeToSCode(cty);
-  svar = NFInstUtil.daeToSCodeVariability(var);
-  adir = NFInstUtil.daeToAbsynDirection(dir);
-  svis = NFInstUtil.daeToSCodeVisibility(vis);
-  attr = DAE.ATTR(scty, SCode.NON_PARALLEL(), svar, adir,
-    Absyn.NOT_INNER_OUTER(), svis);
+        scty = NFConnectUtil2.translateConnectorTypeToSCode(cty);
+        svar = NFInstUtil.daeToSCodeVariability(var);
+        adir = NFInstUtil.daeToAbsynDirection(dir);
+        svis = NFInstUtil.daeToSCodeVisibility(vis);
+        attr = DAE.ATTR(scty, SCode.NON_PARALLEL(), svar, adir,
+          Absyn.NOT_INNER_OUTER(), svis);
       then
-  DAE.TYPES_VAR(id, attr, ty, DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(id, attr, ty, DAE.UNBOUND(), NONE());
 
   end match;
 end connectorToVar;
@@ -303,19 +303,19 @@ algorithm
 
     case (_, DAE.T_COMPLEX(state, vars, eq, source))
       equation
-  /*********************************************************************/
-  // Check if the variable already exists or not.
-  /*********************************************************************/
-  vars = inVar :: vars;
+        /*********************************************************************/
+        // Check if the variable already exists or not.
+        /*********************************************************************/
+        vars = inVar :: vars;
       then
-  DAE.T_COMPLEX(state, vars, eq, source);
+        DAE.T_COMPLEX(state, vars, eq, source);
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFExpandableConnectors.augmentType got an unknown type."});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFExpandableConnectors.augmentType got an unknown type."});
       then
-  fail();
+        fail();
 
   end match;
 end augmentType;
@@ -333,28 +333,28 @@ algorithm
 
     case (_, sets)
       equation
-  print("1\n");
-  // Extract a list of all variables that should be merged, together with info.
-  /*********************************************************************/
-  // TODO: Propagate info here so that we can print good errors.
-  /*********************************************************************/
-  vars = List.mapFlat(inSet, extractVarsFromConnector);
-  print("2\n");
+        print("1\n");
+        // Extract a list of all variables that should be merged, together with info.
+        /*********************************************************************/
+        // TODO: Propagate info here so that we can print good errors.
+        /*********************************************************************/
+        vars = List.mapFlat(inSet, extractVarsFromConnector);
+        print("2\n");
 
-  // Merge the variables into one set of unique variables.
-  /*********************************************************************/
-  // TODO: Implement this.
-  /*********************************************************************/
+        // Merge the variables into one set of unique variables.
+        /*********************************************************************/
+        // TODO: Implement this.
+        /*********************************************************************/
 
-  // Update the type of all connectors to have the same type (what about
-  // input/output?)
-  connl = List.map1(inSet, updateExpandableConnectorType, vars);
-  print("3\n");
-  // Update the connectors in the sets.
-  sets = List.fold(connl, NFConnectionSets.update, sets);
-  print("4\n");
+        // Update the type of all connectors to have the same type (what about
+        // input/output?)
+        connl = List.map1(inSet, updateExpandableConnectorType, vars);
+        print("3\n");
+        // Update the connectors in the sets.
+        sets = List.fold(connl, NFConnectionSets.update, sets);
+        print("4\n");
       then
-  sets;
+        sets;
 
   end match;
 end elaborateExpandable;
@@ -370,9 +370,9 @@ algorithm
     case NFConnect2.CONNECTOR(ty = DAE.T_COMPLEX(varLst = vars)) then vars;
     else
       equation
-  print("Got unknown type in NFExpandableConnectors.extractVarsFromConnector.\n");
+        print("Got unknown type in NFExpandableConnectors.extractVarsFromConnector.\n");
       then
-  fail();
+        fail();
 
   end match;
 end extractVarsFromConnector;
@@ -391,9 +391,9 @@ algorithm
 
     case (NFConnect2.CONNECTOR(ty = DAE.T_COMPLEX(state, _, eq, source)), _)
       equation
-  ty = DAE.T_COMPLEX(state, inVars, eq, source);
+        ty = DAE.T_COMPLEX(state, inVars, eq, source);
       then
-  NFConnectUtil2.updateConnectorType(ty, inConnector);
+        NFConnectUtil2.updateConnectorType(ty, inConnector);
 
   end match;
 end updateExpandableConnectorType;
@@ -412,10 +412,10 @@ algorithm
 
     case (NFConnect2.CONNECTION(lhs, rhs, info), sets)
       equation
-  (lhs, sets) = NFConnectionSets.findConnector(lhs, sets);
-  (rhs, sets) = NFConnectionSets.findConnector(rhs, sets);
+        (lhs, sets) = NFConnectionSets.findConnector(lhs, sets);
+        (rhs, sets) = NFConnectionSets.findConnector(rhs, sets);
       then
-  (NFConnect2.CONNECTION(lhs, rhs, info), sets);
+        (NFConnect2.CONNECTION(lhs, rhs, info), sets);
 
   end match;
 end updateExpandableConnection;

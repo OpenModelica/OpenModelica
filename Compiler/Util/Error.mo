@@ -31,7 +31,7 @@
 
 encapsulated package Error
 "
-  file:  Error.mo
+  file:        Error.mo
   package:     Error
   description: Error handling
 
@@ -51,17 +51,17 @@ encapsulated package Error
       may contain directives to insert tokens given when the message is used.
       These directives are:
 
-  %s: Inserts the next token in the list.
-  %n: Inserts token number n in the list, where n is a number from 1 to 9.
+        %s: Inserts the next token in the list.
+        %n: Inserts token number n in the list, where n is a number from 1 to 9.
 
       Note that these two directives do not affect each other. I.e. %s will move
       to the next token in the list regardless of any positional directives, and
       %1 will always point to the first token regardless of any %s before it.
       An example:
 
-  Message: '%2: This is a %s of %2 %s and %1'
-  Tokens: {'test', 'error', 'directives', 'messages'}
-  Result: 'error: This is a test of error messages and directives'
+        Message: '%2: This is a %s of %2 %s and %1'
+        Tokens: {'test', 'error', 'directives', 'messages'}
+        Result: 'error: This is a test of error messages and directives'
 
     3) Use the new error message by calling addSourceMessage or addMessage with
        it's ErrorID.
@@ -76,7 +76,7 @@ uniontype Severity "severity of message"
   record WARNING "Warning when tool succeds but with warning" end WARNING;
 
   record NOTIFICATION "Additional information to user, e.g. what
-       actions tool has taken to succed in translation" end NOTIFICATION;
+             actions tool has taken to succed in translation" end NOTIFICATION;
 end Severity;
 
 public
@@ -86,10 +86,10 @@ uniontype MessageType "runtime scripting /interpretation error"
   record GRAMMAR "grammar errors" end GRAMMAR;
 
   record TRANSLATION "instantiation errors: up to
-     flat modelica" end TRANSLATION;
+           flat modelica" end TRANSLATION;
 
   record SYMBOLIC "Symbolic manipulation error,
-     simcodegen, up to .exe file" end SYMBOLIC;
+           simcodegen, up to .exe file" end SYMBOLIC;
 
   record SIMULATION "Runtime simulation error" end SIMULATION;
 
@@ -99,7 +99,7 @@ end MessageType;
 
 public
 type ErrorID = Integer "Unique error id. Used to
-  look up message string and type and severity";
+        look up message string and type and severity";
 
 public
 uniontype Message
@@ -121,9 +121,9 @@ end TotalMessage;
 
 public
 type MessageTokens = list<String>   "\"Tokens\" to insert into message at
-      positions identified by
-      - %s for string
-      - %n for string number n" ;
+            positions identified by
+            - %s for string
+            - %n for string number n" ;
 
 public import Absyn;
 
@@ -770,12 +770,12 @@ algorithm
       Util.TranslatableContent msg;
     case (MESSAGE(error_id, msg_type, severity, msg), tokens)
       equation
-  //print(" adding message: " +& intString(error_id) +& "\n");
-  msg_str = Util.translateContent(msg);
-  ErrorExt.addMessage(error_id, msg_type, severity, msg_str, tokens);
-  //print(" succ add " +& msg_type_str +& " " +& severity_string +& ",  " +& msg +& "\n");
+        //print(" adding message: " +& intString(error_id) +& "\n");
+        msg_str = Util.translateContent(msg);
+        ErrorExt.addMessage(error_id, msg_type, severity, msg_str, tokens);
+        //print(" succ add " +& msg_type_str +& " " +& severity_string +& ",  " +& msg +& "\n");
       then
-  ();
+        ();
   end match;
 end addMessage;
 
@@ -796,13 +796,13 @@ algorithm
       Boolean isReadOnly;
       Util.TranslatableContent msg;
     case (MESSAGE(error_id, msg_type, severity, msg), tokens,
-  Absyn.INFO(fileName = file,isReadOnly = isReadOnly,
-    lineNumberStart = sline, columnNumberStart = scol,
-    lineNumberEnd = eline,columnNumberEnd = ecol))
+        Absyn.INFO(fileName = file,isReadOnly = isReadOnly,
+          lineNumberStart = sline, columnNumberStart = scol,
+          lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
-  msg_str = Util.translateContent(msg);
-  ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol,
-    eline, ecol, isReadOnly, Util.testsuiteFriendly(file), msg_str, tokens);
+        msg_str = Util.translateContent(msg);
+        ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol,
+          eline, ecol, isReadOnly, Util.testsuiteFriendly(file), msg_str, tokens);
       then ();
   end match;
 end addSourceMessage;
@@ -823,24 +823,24 @@ algorithm
     // Only one info left, print out the message.
     case (_, _, {info})
       equation
-  addSourceMessage(inErrorMsg, inMessageTokens, info);
+        addSourceMessage(inErrorMsg, inMessageTokens, info);
       then
-  ();
+        ();
 
     // Multiple infos left, print a trace with the first info.
     case (_, _, info :: rest_info)
       equation
-  addSourceMessage(ERROR_FROM_HERE, {}, info);
-  addMultiSourceMessage(inErrorMsg, inMessageTokens, rest_info);
+        addSourceMessage(ERROR_FROM_HERE, {}, info);
+        addMultiSourceMessage(inErrorMsg, inMessageTokens, rest_info);
       then
-  ();
+        ();
 
     // No infos given, print a sourceless error.
     case (_, _, {})
       equation
-  addMessage(inErrorMsg, inMessageTokens);
+        addMessage(inErrorMsg, inMessageTokens);
       then
-  ();
+        ();
 
   end match;
 end addMultiSourceMessage;
@@ -861,13 +861,13 @@ algorithm
     // we DON'T have an info, add message
     case (_, _, NONE())
       equation
-  addMessage(inErrorMsg, inMessageTokens);
+        addMessage(inErrorMsg, inMessageTokens);
       then ();
 
     // we have an info, add source message
     case (_, _, SOME(info))
       equation
-  addSourceMessage(inErrorMsg, inMessageTokens, info);
+        addSourceMessage(inErrorMsg, inMessageTokens, info);
       then ();
   end match;
 end addMessageOrSourceMessage;
@@ -1040,11 +1040,11 @@ algorithm
       String filename, info_str;
       Integer line_start, line_end, col_start, col_end;
     case (Absyn.INFO(fileName = filename, lineNumberStart = line_start,
-  columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
-  equation
-    info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +&
-               intString(line_start) +& ":" +& intString(col_start) +& "-" +&
-               intString(line_end) +& ":" +& intString(col_end) +& "]";
+        columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
+        equation
+          info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +&
+                     intString(line_start) +& ":" +& intString(col_start) +& "-" +&
+                     intString(line_end) +& ":" +& intString(col_end) +& "]";
       then info_str;
   end match;
 end infoStr;
@@ -1060,7 +1060,7 @@ algorithm
     case (true,_,_) then ();
     else
       equation
-  addSourceMessage(INTERNAL_ERROR, {message}, info);
+        addSourceMessage(INTERNAL_ERROR, {message}, info);
       then fail();
   end match;
 end assertion;
@@ -1078,8 +1078,8 @@ algorithm
     case (true,_,_,_) then ();
     else
       equation
-  addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
-  failOnErrorMsg(inErrorMsg);
+        addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
+        failOnErrorMsg(inErrorMsg);
       then ();
   end match;
 end assertionOrAddSourceMessage;
@@ -1100,9 +1100,9 @@ algorithm
   _ := match (message)
     case _
       equation
-  addMessage(COMPILER_WARNING, {message});
+        addMessage(COMPILER_WARNING, {message});
       then
-  ();
+        ();
   end match;
 end addCompilerWarning;
 

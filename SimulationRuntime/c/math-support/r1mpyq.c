@@ -37,7 +37,7 @@
 /*     given an m by n matrix a, this subroutine computes a*q where */
 /*     q is the product of 2*(n - 1) transformations */
 
-/*     gv(n-1)*...*gv(1)*gw(1)*...*gw(n-1) */
+/*           gv(n-1)*...*gv(1)*gw(1)*...*gw(n-1) */
 
 /*     and gv(i), gw(i) are givens rotations in the (i,n) plane which */
 /*     eliminate elements in the i-th and n-th planes, respectively. */
@@ -51,25 +51,25 @@
 /*     where */
 
 /*       m is a positive integer input variable set to the number */
-/*   of rows of a. */
+/*         of rows of a. */
 
 /*       n is a positive integer input variable set to the number */
-/*   of columns of a. */
+/*         of columns of a. */
 
 /*       a is an m by n array. on input a must contain the matrix */
-/*   to be postmultiplied by the orthogonal matrix q */
-/*   described above. on output a*q has replaced a. */
+/*         to be postmultiplied by the orthogonal matrix q */
+/*         described above. on output a*q has replaced a. */
 
 /*       lda is a positive integer input variable not less than m */
-/*   which specifies the leading dimension of the array a. */
+/*         which specifies the leading dimension of the array a. */
 
 /*       v is an input array of length n. v(i) must contain the */
-/*   information necessary to recover the givens rotation gv(i) */
-/*   described above. */
+/*         information necessary to recover the givens rotation gv(i) */
+/*         described above. */
 
 /*       w is an input array of length n. w(i) must contain the */
-/*   information necessary to recover the givens rotation gw(i) */
-/*   described above. */
+/*         information necessary to recover the givens rotation gw(i) */
+/*         described above. */
 
 /*     subroutines called */
 
@@ -117,7 +117,7 @@
   for(i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] - sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = sin__ * a[i__ + j * a_dim1] + cos__ * a[
-  i__ + *n * a_dim1];
+        i__ + *n * a_dim1];
       a[i__ + j * a_dim1] = temp;
 /* L10: */
   }
@@ -148,7 +148,7 @@
   for(i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] + sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = -sin__ * a[i__ + j * a_dim1] + cos__ * a[
-  i__ + *n * a_dim1];
+        i__ + *n * a_dim1];
       a[i__ + j * a_dim1] = temp;
 /* L30: */
   }

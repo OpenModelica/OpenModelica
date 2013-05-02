@@ -152,17 +152,17 @@ static integer c__72 = 72;
 
 /* ***BEGIN PROLOGUE  DDASSL */
 /* ***PURPOSE  This code solves a system of differential/algebraic */
-/*      equations of the form G(T,Y,YPRIME) = 0. */
+/*            equations of the form G(T,Y,YPRIME) = 0. */
 /* ***LIBRARY   SLATEC (DASSL) */
 /* ***CATEGORY  I1A2 */
 /* ***TYPE      DOUBLE PRECISION (SDASSL-S, DDASSL-D) */
 /* ***KEYWORDS  DIFFERENTIAL/ALGEBRAIC, BACKWARD DIFFERENTIATION FORMULAS, */
-/*       IMPLICIT DIFFERENTIAL SYSTEMS */
+/*             IMPLICIT DIFFERENTIAL SYSTEMS */
 /* ***AUTHOR  PETZOLD, LINDA R., (LLNL) */
-/*       COMPUTING AND MATHEMATICS RESEARCH DIVISION */
-/*       LAWRENCE LIVERMORE NATIONAL LABORATORY */
-/*       L - 316, P.O. BOX 808, */
-/*       LIVERMORE, CA.    94550 */
+/*             COMPUTING AND MATHEMATICS RESEARCH DIVISION */
+/*             LAWRENCE LIVERMORE NATIONAL LABORATORY */
+/*             L - 316, P.O. BOX 808, */
+/*             LIVERMORE, CA.    94550 */
 /* ***DESCRIPTION */
 
 /* *Usage: */
@@ -180,7 +180,7 @@ static integer c__72 = 72;
 /*  (In the following, all real arrays should be type DOUBLE PRECISION.) */
 
 /*  RES:EXT     This is a subroutine which you provide to define the */
-/*        differential/algebraic system. */
+/*              differential/algebraic system. */
 
 /*  NEQ:IN      This is the number of equations to be solved. */
 
@@ -189,45 +189,45 @@ static integer c__72 = 72;
 /*  Y(*):INOUT  This array contains the solution components at T. */
 
 /*  YPRIME(*):INOUT  This array contains the derivatives of the solution */
-/*        components at T. */
+/*              components at T. */
 
 /*  TOUT:IN     This is a point at which a solution is desired. */
 
 /*  INFO(N):IN  The basic task of the code is to solve the system from T */
-/*        to TOUT and return an answer at TOUT.  INFO is an integer */
-/*        array which is used to communicate exactly how you want */
-/*        this task to be carried out.  (See below for details.) */
-/*        N must be greater than or equal to 15. */
+/*              to TOUT and return an answer at TOUT.  INFO is an integer */
+/*              array which is used to communicate exactly how you want */
+/*              this task to be carried out.  (See below for details.) */
+/*              N must be greater than or equal to 15. */
 
 /*  RTOL,ATOL:INOUT  These quantities represent relative and absolute */
-/*        error tolerances which you provide to indicate how */
-/*        accurately you wish the solution to be computed.  You */
-/*        may choose them to be both scalars or else both vectors. */
-/*        Caution:  In Fortran 77, a scalar is not the same as an */
-/*                  array of length 1.  Some compilers may object */
-/*                  to using scalars for RTOL,ATOL. */
+/*              error tolerances which you provide to indicate how */
+/*              accurately you wish the solution to be computed.  You */
+/*              may choose them to be both scalars or else both vectors. */
+/*              Caution:  In Fortran 77, a scalar is not the same as an */
+/*                        array of length 1.  Some compilers may object */
+/*                        to using scalars for RTOL,ATOL. */
 
 /*  IDID:OUT    This scalar quantity is an indicator reporting what the */
-/*        code did.  You must monitor this integer variable to */
-/*        decide  what action to take next. */
+/*              code did.  You must monitor this integer variable to */
+/*              decide  what action to take next. */
 
 /*  RWORK:WORK  A real work array of length LRW which provides the */
-/*        code with needed storage space. */
+/*              code with needed storage space. */
 
 /*  LRW:IN      The length of RWORK.  (See below for required length.) */
 
 /*  IWORK:WORK  An integer work array of length LIW which probides the */
-/*        code with needed storage space. */
+/*              code with needed storage space. */
 
 /*  LIW:IN      The length of IWORK.  (See below for required length.) */
 
 /*  RPAR,IPAR:IN  These are real and integer parameter arrays which */
-/*        you can use for communication between your calling */
-/*        program and the RES subroutine (and the JAC subroutine) */
+/*              you can use for communication between your calling */
+/*              program and the RES subroutine (and the JAC subroutine) */
 
 /*  JAC:EXT     This is the name of a subroutine which you may choose */
-/*        to provide for defining a matrix of partial derivatives */
-/*        described below. */
+/*              to provide for defining a matrix of partial derivatives */
+/*              described below. */
 
 /*  Quantities which may be altered by DDASSL are: */
 /*     T, Y(*), YPRIME(*), INFO(1), RTOL, ATOL, */
@@ -262,388 +262,388 @@ static integer c__72 = 72;
 
 
 /*  RES -- Provide a subroutine of the form */
-/*       SUBROUTINE RES(T,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
-/*   to define the system of differential/algebraic */
-/*   equations which is to be solved. For the given values */
-/*   of T,Y and YPRIME, the subroutine should */
-/*   return the residual of the defferential/algebraic */
-/*   system */
-/*       DELTA = G(T,Y,YPRIME) */
-/*   (DELTA(*) is a vector of length NEQ which is */
-/*   output for RES.) */
+/*             SUBROUTINE RES(T,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
+/*         to define the system of differential/algebraic */
+/*         equations which is to be solved. For the given values */
+/*         of T,Y and YPRIME, the subroutine should */
+/*         return the residual of the defferential/algebraic */
+/*         system */
+/*             DELTA = G(T,Y,YPRIME) */
+/*         (DELTA(*) is a vector of length NEQ which is */
+/*         output for RES.) */
 
-/*   Subroutine RES must not alter T,Y or YPRIME. */
-/*   You must declare the name RES in an external */
-/*   statement in your program that calls DDASSL. */
-/*   You must dimension Y,YPRIME and DELTA in RES. */
+/*         Subroutine RES must not alter T,Y or YPRIME. */
+/*         You must declare the name RES in an external */
+/*         statement in your program that calls DDASSL. */
+/*         You must dimension Y,YPRIME and DELTA in RES. */
 
-/*   IRES is an integer flag which is always equal to */
-/*   zero on input. Subroutine RES should alter IRES */
-/*   only if it encounters an illegal value of Y or */
-/*   a stop condition. Set IRES = -1 if an input value */
-/*   is illegal, and DDASSL will try to solve the problem */
-/*   without getting IRES = -1. If IRES = -2, DDASSL */
-/*   will return control to the calling program */
-/*   with IDID = -11. */
+/*         IRES is an integer flag which is always equal to */
+/*         zero on input. Subroutine RES should alter IRES */
+/*         only if it encounters an illegal value of Y or */
+/*         a stop condition. Set IRES = -1 if an input value */
+/*         is illegal, and DDASSL will try to solve the problem */
+/*         without getting IRES = -1. If IRES = -2, DDASSL */
+/*         will return control to the calling program */
+/*         with IDID = -11. */
 
-/*   RPAR and IPAR are real and integer parameter arrays which */
-/*   you can use for communication between your calling program */
-/*   and subroutine RES. They are not altered by DDASSL. If you */
-/*   do not need RPAR or IPAR, ignore these parameters by treat- */
-/*   ing them as dummy arguments. If you do choose to use them, */
-/*   dimension them in your calling program and in RES as arrays */
-/*   of appropriate length. */
+/*         RPAR and IPAR are real and integer parameter arrays which */
+/*         you can use for communication between your calling program */
+/*         and subroutine RES. They are not altered by DDASSL. If you */
+/*         do not need RPAR or IPAR, ignore these parameters by treat- */
+/*         ing them as dummy arguments. If you do choose to use them, */
+/*         dimension them in your calling program and in RES as arrays */
+/*         of appropriate length. */
 
 /*  NEQ -- Set it to the number of differential equations. */
-/*   (NEQ .GE. 1) */
+/*         (NEQ .GE. 1) */
 
 /*  T -- Set it to the initial point of the integration. */
-/*   T must be defined as a variable. */
+/*         T must be defined as a variable. */
 
 /*  Y(*) -- Set this vector to the initial values of the NEQ solution */
-/*   components at the initial point. You must dimension Y of */
-/*   length at least NEQ in your calling program. */
+/*         components at the initial point. You must dimension Y of */
+/*         length at least NEQ in your calling program. */
 
 /*  YPRIME(*) -- Set this vector to the initial values of the NEQ */
-/*   first derivatives of the solution components at the initial */
-/*   point.  You must dimension YPRIME at least NEQ in your */
-/*   calling program. If you do not know initial values of some */
-/*   of the solution components, see the explanation of INFO(11). */
+/*         first derivatives of the solution components at the initial */
+/*         point.  You must dimension YPRIME at least NEQ in your */
+/*         calling program. If you do not know initial values of some */
+/*         of the solution components, see the explanation of INFO(11). */
 
 /*  TOUT -- Set it to the first point at which a solution */
-/*   is desired. You can not take TOUT = T. */
-/*   integration either forward in T (TOUT .GT. T) or */
-/*   backward in T (TOUT .LT. T) is permitted. */
+/*         is desired. You can not take TOUT = T. */
+/*         integration either forward in T (TOUT .GT. T) or */
+/*         backward in T (TOUT .LT. T) is permitted. */
 
-/*   The code advances the solution from T to TOUT using */
-/*   step sizes which are automatically selected so as to */
-/*   achieve the desired accuracy. If you wish, the code will */
-/*   return with the solution and its derivative at */
-/*   intermediate steps (intermediate-output mode) so that */
-/*   you can monitor them, but you still must provide TOUT in */
-/*   accord with the basic aim of the code. */
+/*         The code advances the solution from T to TOUT using */
+/*         step sizes which are automatically selected so as to */
+/*         achieve the desired accuracy. If you wish, the code will */
+/*         return with the solution and its derivative at */
+/*         intermediate steps (intermediate-output mode) so that */
+/*         you can monitor them, but you still must provide TOUT in */
+/*         accord with the basic aim of the code. */
 
-/*   The first step taken by the code is a critical one */
-/*   because it must reflect how fast the solution changes near */
-/*   the initial point. The code automatically selects an */
-/*   initial step size which is practically always suitable for */
-/*   the problem. By using the fact that the code will not step */
-/*   past TOUT in the first step, you could, if necessary, */
-/*   restrict the length of the initial step size. */
+/*         The first step taken by the code is a critical one */
+/*         because it must reflect how fast the solution changes near */
+/*         the initial point. The code automatically selects an */
+/*         initial step size which is practically always suitable for */
+/*         the problem. By using the fact that the code will not step */
+/*         past TOUT in the first step, you could, if necessary, */
+/*         restrict the length of the initial step size. */
 
-/*   For some problems it may not be permissible to integrate */
-/*   past a point TSTOP because a discontinuity occurs there */
-/*   or the solution or its derivative is not defined beyond */
-/*   TSTOP. When you have declared a TSTOP point (SEE INFO(4) */
-/*   and RWORK(1)), you have told the code not to integrate */
-/*   past TSTOP. In this case any TOUT beyond TSTOP is invalid */
-/*   input. */
+/*         For some problems it may not be permissible to integrate */
+/*         past a point TSTOP because a discontinuity occurs there */
+/*         or the solution or its derivative is not defined beyond */
+/*         TSTOP. When you have declared a TSTOP point (SEE INFO(4) */
+/*         and RWORK(1)), you have told the code not to integrate */
+/*         past TSTOP. In this case any TOUT beyond TSTOP is invalid */
+/*         input. */
 
 /*  INFO(*) -- Use the INFO array to give the code more details about */
-/*   how you want your problem solved.  This array should be */
-/*   dimensioned of length 15, though DDASSL uses only the first */
-/*   eleven entries.  You must respond to all of the following */
-/*   items, which are arranged as questions.  The simplest use */
-/*   of the code corresponds to answering all questions as yes, */
-/*   i.e. setting all entries of INFO to 0. */
+/*         how you want your problem solved.  This array should be */
+/*         dimensioned of length 15, though DDASSL uses only the first */
+/*         eleven entries.  You must respond to all of the following */
+/*         items, which are arranged as questions.  The simplest use */
+/*         of the code corresponds to answering all questions as yes, */
+/*         i.e. setting all entries of INFO to 0. */
 
 /*       INFO(1) - This parameter enables the code to initialize */
-/*        itself. You must set it to indicate the start of every */
-/*        new problem. */
+/*              itself. You must set it to indicate the start of every */
+/*              new problem. */
 
-/*    **** Is this the first call for this problem ... */
-/*          Yes - Set INFO(1) = 0 */
-/*           No - Not applicable here. */
-/*                See below for continuation calls.  **** */
+/*          **** Is this the first call for this problem ... */
+/*                Yes - Set INFO(1) = 0 */
+/*                 No - Not applicable here. */
+/*                      See below for continuation calls.  **** */
 
 /*       INFO(2) - How much accuracy you want of your solution */
-/*        is specified by the error tolerances RTOL and ATOL. */
-/*        The simplest use is to take them both to be scalars. */
-/*        To obtain more flexibility, they can both be vectors. */
-/*        The code must be told your choice. */
+/*              is specified by the error tolerances RTOL and ATOL. */
+/*              The simplest use is to take them both to be scalars. */
+/*              To obtain more flexibility, they can both be vectors. */
+/*              The code must be told your choice. */
 
-/*    **** Are both error tolerances RTOL, ATOL scalars ... */
-/*          Yes - Set INFO(2) = 0 */
-/*                and input scalars for both RTOL and ATOL */
-/*           No - Set INFO(2) = 1 */
-/*                and input arrays for both RTOL and ATOL **** */
+/*          **** Are both error tolerances RTOL, ATOL scalars ... */
+/*                Yes - Set INFO(2) = 0 */
+/*                      and input scalars for both RTOL and ATOL */
+/*                 No - Set INFO(2) = 1 */
+/*                      and input arrays for both RTOL and ATOL **** */
 
 /*       INFO(3) - The code integrates from T in the direction */
-/*        of TOUT by steps. If you wish, it will return the */
-/*        computed solution and derivative at the next */
-/*        intermediate step (the intermediate-output mode) or */
-/*        TOUT, whichever comes first. This is a good way to */
-/*        proceed if you want to see the behavior of the solution. */
-/*        If you must have solutions at a great many specific */
-/*        TOUT points, this code will compute them efficiently. */
+/*              of TOUT by steps. If you wish, it will return the */
+/*              computed solution and derivative at the next */
+/*              intermediate step (the intermediate-output mode) or */
+/*              TOUT, whichever comes first. This is a good way to */
+/*              proceed if you want to see the behavior of the solution. */
+/*              If you must have solutions at a great many specific */
+/*              TOUT points, this code will compute them efficiently. */
 
-/*    **** Do you want the solution only at */
-/*          TOUT (and not at the next intermediate step) ... */
-/*           Yes - Set INFO(3) = 0 */
-/*            No - Set INFO(3) = 1 **** */
+/*          **** Do you want the solution only at */
+/*                TOUT (and not at the next intermediate step) ... */
+/*                 Yes - Set INFO(3) = 0 */
+/*                  No - Set INFO(3) = 1 **** */
 
 /*       INFO(4) - To handle solutions at a great many specific */
-/*        values TOUT efficiently, this code may integrate past */
-/*        TOUT and interpolate to obtain the result at TOUT. */
-/*        Sometimes it is not possible to integrate beyond some */
-/*        point TSTOP because the equation changes there or it is */
-/*        not defined past TSTOP. Then you must tell the code */
-/*        not to go past. */
+/*              values TOUT efficiently, this code may integrate past */
+/*              TOUT and interpolate to obtain the result at TOUT. */
+/*              Sometimes it is not possible to integrate beyond some */
+/*              point TSTOP because the equation changes there or it is */
+/*              not defined past TSTOP. Then you must tell the code */
+/*              not to go past. */
 
-/*     **** Can the integration be carried out without any */
-/*          restrictions on the independent variable T ... */
-/*           Yes - Set INFO(4)=0 */
-/*            No - Set INFO(4)=1 */
-/*                 and define the stopping point TSTOP by */
-/*                 setting RWORK(1)=TSTOP **** */
+/*           **** Can the integration be carried out without any */
+/*                restrictions on the independent variable T ... */
+/*                 Yes - Set INFO(4)=0 */
+/*                  No - Set INFO(4)=1 */
+/*                       and define the stopping point TSTOP by */
+/*                       setting RWORK(1)=TSTOP **** */
 
 /*       INFO(5) - To solve differential/algebraic problems it is */
-/*        necessary to use a matrix of partial derivatives of the */
-/*        system of differential equations. If you do not */
-/*        provide a subroutine to evaluate it analytically (see */
-/*        description of the item JAC in the call list), it will */
-/*        be approximated by numerical differencing in this code. */
-/*        although it is less trouble for you to have the code */
-/*        compute partial derivatives by numerical differencing, */
-/*        the solution will be more reliable if you provide the */
-/*        derivatives via JAC. Sometimes numerical differencing */
-/*        is cheaper than evaluating derivatives in JAC and */
-/*        sometimes it is not - this depends on your problem. */
+/*              necessary to use a matrix of partial derivatives of the */
+/*              system of differential equations. If you do not */
+/*              provide a subroutine to evaluate it analytically (see */
+/*              description of the item JAC in the call list), it will */
+/*              be approximated by numerical differencing in this code. */
+/*              although it is less trouble for you to have the code */
+/*              compute partial derivatives by numerical differencing, */
+/*              the solution will be more reliable if you provide the */
+/*              derivatives via JAC. Sometimes numerical differencing */
+/*              is cheaper than evaluating derivatives in JAC and */
+/*              sometimes it is not - this depends on your problem. */
 
-/*     **** Do you want the code to evaluate the partial */
-/*          derivatives automatically by numerical differences ... */
-/*             Yes - Set INFO(5)=0 */
-/*              No - Set INFO(5)=1 */
-/*            and provide subroutine JAC for evaluating the */
-/*            matrix of partial derivatives **** */
+/*           **** Do you want the code to evaluate the partial */
+/*                derivatives automatically by numerical differences ... */
+/*                   Yes - Set INFO(5)=0 */
+/*                    No - Set INFO(5)=1 */
+/*                  and provide subroutine JAC for evaluating the */
+/*                  matrix of partial derivatives **** */
 
 /*       INFO(6) - DDASSL will perform much better if the matrix of */
-/*        partial derivatives, DG/DY + CJ*DG/DYPRIME, */
-/*        (here CJ is a scalar determined by DDASSL) */
-/*        is banded and the code is told this. In this */
-/*        case, the storage needed will be greatly reduced, */
-/*        numerical differencing will be performed much cheaper, */
-/*        and a number of important algorithms will execute much */
-/*        faster. The differential equation is said to have */
-/*        half-bandwidths ML (lower) and MU (upper) if equation i */
-/*        involves only unknowns Y(J) with */
-/*                       I-ML .LE. J .LE. I+MU */
-/*        for all I=1,2,...,NEQ. Thus, ML and MU are the widths */
-/*        of the lower and upper parts of the band, respectively, */
-/*        with the main diagonal being excluded. If you do not */
-/*        indicate that the equation has a banded matrix of partial */
-/*        derivatives, the code works with a full matrix of NEQ**2 */
-/*        elements (stored in the conventional way). Computations */
-/*        with banded matrices cost less time and storage than with */
-/*        full matrices if 2*ML+MU .LT. NEQ. If you tell the */
-/*        code that the matrix of partial derivatives has a banded */
-/*        structure and you want to provide subroutine JAC to */
-/*        compute the partial derivatives, then you must be careful */
-/*        to store the elements of the matrix in the special form */
-/*        indicated in the description of JAC. */
+/*              partial derivatives, DG/DY + CJ*DG/DYPRIME, */
+/*              (here CJ is a scalar determined by DDASSL) */
+/*              is banded and the code is told this. In this */
+/*              case, the storage needed will be greatly reduced, */
+/*              numerical differencing will be performed much cheaper, */
+/*              and a number of important algorithms will execute much */
+/*              faster. The differential equation is said to have */
+/*              half-bandwidths ML (lower) and MU (upper) if equation i */
+/*              involves only unknowns Y(J) with */
+/*                             I-ML .LE. J .LE. I+MU */
+/*              for all I=1,2,...,NEQ. Thus, ML and MU are the widths */
+/*              of the lower and upper parts of the band, respectively, */
+/*              with the main diagonal being excluded. If you do not */
+/*              indicate that the equation has a banded matrix of partial */
+/*              derivatives, the code works with a full matrix of NEQ**2 */
+/*              elements (stored in the conventional way). Computations */
+/*              with banded matrices cost less time and storage than with */
+/*              full matrices if 2*ML+MU .LT. NEQ. If you tell the */
+/*              code that the matrix of partial derivatives has a banded */
+/*              structure and you want to provide subroutine JAC to */
+/*              compute the partial derivatives, then you must be careful */
+/*              to store the elements of the matrix in the special form */
+/*              indicated in the description of JAC. */
 
-/*    **** Do you want to solve the problem using a full */
-/*         (dense) matrix (and not a special banded */
-/*         structure) ... */
-/*          Yes - Set INFO(6)=0 */
-/*           No - Set INFO(6)=1 */
-/*                 and provide the lower (ML) and upper (MU) */
-/*                 bandwidths by setting */
-/*                 IWORK(1)=ML */
-/*                 IWORK(2)=MU **** */
+/*          **** Do you want to solve the problem using a full */
+/*               (dense) matrix (and not a special banded */
+/*               structure) ... */
+/*                Yes - Set INFO(6)=0 */
+/*                 No - Set INFO(6)=1 */
+/*                       and provide the lower (ML) and upper (MU) */
+/*                       bandwidths by setting */
+/*                       IWORK(1)=ML */
+/*                       IWORK(2)=MU **** */
 
 
-/*  INFO(7) -- You can specify a maximum (absolute value of) */
-/*        stepsize, so that the code */
-/*        will avoid passing over very */
-/*        large regions. */
+/*        INFO(7) -- You can specify a maximum (absolute value of) */
+/*              stepsize, so that the code */
+/*              will avoid passing over very */
+/*              large regions. */
 
-/*    ****  Do you want the code to decide */
-/*          on its own maximum stepsize? */
-/*          Yes - Set INFO(7)=0 */
-/*           No - Set INFO(7)=1 */
-/*                and define HMAX by setting */
-/*                RWORK(2)=HMAX **** */
+/*          ****  Do you want the code to decide */
+/*                on its own maximum stepsize? */
+/*                Yes - Set INFO(7)=0 */
+/*                 No - Set INFO(7)=1 */
+/*                      and define HMAX by setting */
+/*                      RWORK(2)=HMAX **** */
 
-/*  INFO(8) -- Differential/algebraic problems */
-/*        may occaisionally suffer from */
-/*        severe scaling difficulties on the */
-/*        first step. If you know a great deal */
-/*        about the scaling of your problem, you can */
-/*        help to alleviate this problem by */
-/*        specifying an initial stepsize HO. */
+/*        INFO(8) -- Differential/algebraic problems */
+/*              may occaisionally suffer from */
+/*              severe scaling difficulties on the */
+/*              first step. If you know a great deal */
+/*              about the scaling of your problem, you can */
+/*              help to alleviate this problem by */
+/*              specifying an initial stepsize HO. */
 
-/*    ****  Do you want the code to define */
-/*          its own initial stepsize? */
-/*          Yes - Set INFO(8)=0 */
-/*           No - Set INFO(8)=1 */
-/*                and define HO by setting */
-/*                RWORK(3)=HO **** */
+/*          ****  Do you want the code to define */
+/*                its own initial stepsize? */
+/*                Yes - Set INFO(8)=0 */
+/*                 No - Set INFO(8)=1 */
+/*                      and define HO by setting */
+/*                      RWORK(3)=HO **** */
 
-/*  INFO(9) -- If storage is a severe problem, */
-/*        you can save some locations by */
-/*        restricting the maximum order MAXORD. */
-/*        the default value is 5. for each */
-/*        order decrease below 5, the code */
-/*        requires NEQ fewer locations, however */
-/*        it is likely to be slower. In any */
-/*        case, you must have 1 .LE. MAXORD .LE. 5 */
-/*    ****  Do you want the maximum order to */
-/*          default to 5? */
-/*          Yes - Set INFO(9)=0 */
-/*           No - Set INFO(9)=1 */
-/*                and define MAXORD by setting */
-/*                IWORK(3)=MAXORD **** */
+/*        INFO(9) -- If storage is a severe problem, */
+/*              you can save some locations by */
+/*              restricting the maximum order MAXORD. */
+/*              the default value is 5. for each */
+/*              order decrease below 5, the code */
+/*              requires NEQ fewer locations, however */
+/*              it is likely to be slower. In any */
+/*              case, you must have 1 .LE. MAXORD .LE. 5 */
+/*          ****  Do you want the maximum order to */
+/*                default to 5? */
+/*                Yes - Set INFO(9)=0 */
+/*                 No - Set INFO(9)=1 */
+/*                      and define MAXORD by setting */
+/*                      IWORK(3)=MAXORD **** */
 
-/*  INFO(10) --If you know that the solutions to your equations */
-/*         will always be nonnegative, it may help to set this */
-/*         parameter. However, it is probably best to */
-/*         try the code without using this option first, */
-/*         and only to use this option if that doesn't */
-/*         work very well. */
-/*     ****  Do you want the code to solve the problem without */
-/*           invoking any special nonnegativity constraints? */
-/*            Yes - Set INFO(10)=0 */
-/*             No - Set INFO(10)=1 */
+/*        INFO(10) --If you know that the solutions to your equations */
+/*               will always be nonnegative, it may help to set this */
+/*               parameter. However, it is probably best to */
+/*               try the code without using this option first, */
+/*               and only to use this option if that doesn't */
+/*               work very well. */
+/*           ****  Do you want the code to solve the problem without */
+/*                 invoking any special nonnegativity constraints? */
+/*                  Yes - Set INFO(10)=0 */
+/*                   No - Set INFO(10)=1 */
 
-/*  INFO(11) --DDASSL normally requires the initial T, */
-/*         Y, and YPRIME to be consistent. That is, */
-/*         you must have G(T,Y,YPRIME) = 0 at the initial */
-/*         time. If you do not know the initial */
-/*         derivative precisely, you can let DDASSL try */
-/*         to compute it. */
-/*    ****   Are the initialHE INITIAL T, Y, YPRIME consistent? */
-/*           Yes - Set INFO(11) = 0 */
-/*            No - Set INFO(11) = 1, */
-/*                 and set YPRIME to an initial approximation */
-/*                 to YPRIME.  (If you have no idea what */
-/*                 YPRIME should be, set it to zero. Note */
-/*                 that the initial Y should be such */
-/*                 that there must exist a YPRIME so that */
-/*                 G(T,Y,YPRIME) = 0.) */
+/*        INFO(11) --DDASSL normally requires the initial T, */
+/*               Y, and YPRIME to be consistent. That is, */
+/*               you must have G(T,Y,YPRIME) = 0 at the initial */
+/*               time. If you do not know the initial */
+/*               derivative precisely, you can let DDASSL try */
+/*               to compute it. */
+/*          ****   Are the initialHE INITIAL T, Y, YPRIME consistent? */
+/*                 Yes - Set INFO(11) = 0 */
+/*                  No - Set INFO(11) = 1, */
+/*                       and set YPRIME to an initial approximation */
+/*                       to YPRIME.  (If you have no idea what */
+/*                       YPRIME should be, set it to zero. Note */
+/*                       that the initial Y should be such */
+/*                       that there must exist a YPRIME so that */
+/*                       G(T,Y,YPRIME) = 0.) */
 
 /*  RTOL, ATOL -- You must assign relative (RTOL) and absolute (ATOL */
-/*   error tolerances to tell the code how accurately you */
-/*   want the solution to be computed.  They must be defined */
-/*   as variables because the code may change them.  You */
-/*   have two choices -- */
-/*         Both RTOL and ATOL are scalars. (INFO(2)=0) */
-/*         Both RTOL and ATOL are vectors. (INFO(2)=1) */
-/*   in either case all components must be non-negative. */
+/*         error tolerances to tell the code how accurately you */
+/*         want the solution to be computed.  They must be defined */
+/*         as variables because the code may change them.  You */
+/*         have two choices -- */
+/*               Both RTOL and ATOL are scalars. (INFO(2)=0) */
+/*               Both RTOL and ATOL are vectors. (INFO(2)=1) */
+/*         in either case all components must be non-negative. */
 
-/*   The tolerances are used by the code in a local error */
-/*   test at each step which requires roughly that */
-/*         ABS(LOCAL ERROR) .LE. RTOL*ABS(Y)+ATOL */
-/*   for each vector component. */
-/*   (More specifically, a root-mean-square norm is used to */
-/*   measure the size of vectors, and the error test uses the */
-/*   magnitude of the solution at the beginning of the step.) */
+/*         The tolerances are used by the code in a local error */
+/*         test at each step which requires roughly that */
+/*               ABS(LOCAL ERROR) .LE. RTOL*ABS(Y)+ATOL */
+/*         for each vector component. */
+/*         (More specifically, a root-mean-square norm is used to */
+/*         measure the size of vectors, and the error test uses the */
+/*         magnitude of the solution at the beginning of the step.) */
 
-/*   The true (global) error is the difference between the */
-/*   true solution of the initial value problem and the */
-/*   computed approximation.  Practically all present day */
-/*   codes, including this one, control the local error at */
-/*   each step and do not even attempt to control the global */
-/*   error directly. */
-/*   Usually, but not always, the true accuracy of the */
-/*   computed Y is comparable to the error tolerances. This */
-/*   code will usually, but not always, deliver a more */
-/*   accurate solution if you reduce the tolerances and */
-/*   integrate again.  By comparing two such solutions you */
-/*   can get a fairly reliable idea of the true error in the */
-/*   solution at the bigger tolerances. */
+/*         The true (global) error is the difference between the */
+/*         true solution of the initial value problem and the */
+/*         computed approximation.  Practically all present day */
+/*         codes, including this one, control the local error at */
+/*         each step and do not even attempt to control the global */
+/*         error directly. */
+/*         Usually, but not always, the true accuracy of the */
+/*         computed Y is comparable to the error tolerances. This */
+/*         code will usually, but not always, deliver a more */
+/*         accurate solution if you reduce the tolerances and */
+/*         integrate again.  By comparing two such solutions you */
+/*         can get a fairly reliable idea of the true error in the */
+/*         solution at the bigger tolerances. */
 
-/*   Setting ATOL=0. results in a pure relative error test on */
-/*   that component.  Setting RTOL=0. results in a pure */
-/*   absolute error test on that component.  A mixed test */
-/*   with non-zero RTOL and ATOL corresponds roughly to a */
-/*   relative error test when the solution component is much */
-/*   bigger than ATOL and to an absolute error test when the */
-/*   solution component is smaller than the threshhold ATOL. */
+/*         Setting ATOL=0. results in a pure relative error test on */
+/*         that component.  Setting RTOL=0. results in a pure */
+/*         absolute error test on that component.  A mixed test */
+/*         with non-zero RTOL and ATOL corresponds roughly to a */
+/*         relative error test when the solution component is much */
+/*         bigger than ATOL and to an absolute error test when the */
+/*         solution component is smaller than the threshhold ATOL. */
 
-/*   The code will not attempt to compute a solution at an */
-/*   accuracy unreasonable for the machine being used.  It will */
-/*   advise you if you ask for too much accuracy and inform */
-/*   you as to the maximum accuracy it believes possible. */
+/*         The code will not attempt to compute a solution at an */
+/*         accuracy unreasonable for the machine being used.  It will */
+/*         advise you if you ask for too much accuracy and inform */
+/*         you as to the maximum accuracy it believes possible. */
 
 /*  RWORK(*) --  Dimension this real work array of length LRW in your */
-/*   calling program. */
+/*         calling program. */
 
 /*  LRW -- Set it to the declared length of the RWORK array. */
-/*         You must have */
-/*              LRW .GE. 40+(MAXORD+4)*NEQ+NEQ**2 */
-/*         for the full (dense) JACOBIAN case (when INFO(6)=0), or */
-/*              LRW .GE. 40+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
-/*         for the banded user-defined JACOBIAN case */
-/*         (when INFO(5)=1 and INFO(6)=1), or */
-/*               LRW .GE. 40+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
-/*                     +2*(NEQ/(ML+MU+1)+1) */
-/*         for the banded finite-difference-generated JACOBIAN case */
-/*         (when INFO(5)=0 and INFO(6)=1) */
+/*               You must have */
+/*                    LRW .GE. 40+(MAXORD+4)*NEQ+NEQ**2 */
+/*               for the full (dense) JACOBIAN case (when INFO(6)=0), or */
+/*                    LRW .GE. 40+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
+/*               for the banded user-defined JACOBIAN case */
+/*               (when INFO(5)=1 and INFO(6)=1), or */
+/*                     LRW .GE. 40+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
+/*                           +2*(NEQ/(ML+MU+1)+1) */
+/*               for the banded finite-difference-generated JACOBIAN case */
+/*               (when INFO(5)=0 and INFO(6)=1) */
 
 /*  IWORK(*) --  Dimension this integer work array of length LIW in */
-/*   your calling program. */
+/*         your calling program. */
 
 /*  LIW -- Set it to the declared length of the IWORK array. */
-/*         You must have LIW .GE. 20+NEQ */
+/*               You must have LIW .GE. 20+NEQ */
 
 /*  RPAR, IPAR -- These are parameter arrays, of real and integer */
-/*   type, respectively.  You can use them for communication */
-/*   between your program that calls DDASSL and the */
-/*   RES subroutine (and the JAC subroutine).  They are not */
-/*   altered by DDASSL.  If you do not need RPAR or IPAR, */
-/*   ignore these parameters by treating them as dummy */
-/*   arguments.  If you do choose to use them, dimension */
-/*   them in your calling program and in RES (and in JAC) */
-/*   as arrays of appropriate length. */
+/*         type, respectively.  You can use them for communication */
+/*         between your program that calls DDASSL and the */
+/*         RES subroutine (and the JAC subroutine).  They are not */
+/*         altered by DDASSL.  If you do not need RPAR or IPAR, */
+/*         ignore these parameters by treating them as dummy */
+/*         arguments.  If you do choose to use them, dimension */
+/*         them in your calling program and in RES (and in JAC) */
+/*         as arrays of appropriate length. */
 
 /*  JAC -- If you have set INFO(5)=0, you can ignore this parameter */
-/*   by treating it as a dummy argument.  Otherwise, you must */
-/*   provide a subroutine of the form */
-/*       SUBROUTINE JAC(T,Y,YPRIME,PD,CJ,RPAR,IPAR) */
-/*   to define the matrix of partial derivatives */
-/*       PD=DG/DY+CJ*DG/DYPRIME */
-/*   CJ is a scalar which is input to JAC. */
-/*   For the given values of T,Y,YPRIME, the */
-/*   subroutine must evaluate the non-zero partial */
-/*   derivatives for each equation and each solution */
-/*   component, and store these values in the */
-/*   matrix PD.  The elements of PD are set to zero */
-/*   before each call to JAC so only non-zero elements */
-/*   need to be defined. */
+/*         by treating it as a dummy argument.  Otherwise, you must */
+/*         provide a subroutine of the form */
+/*             SUBROUTINE JAC(T,Y,YPRIME,PD,CJ,RPAR,IPAR) */
+/*         to define the matrix of partial derivatives */
+/*             PD=DG/DY+CJ*DG/DYPRIME */
+/*         CJ is a scalar which is input to JAC. */
+/*         For the given values of T,Y,YPRIME, the */
+/*         subroutine must evaluate the non-zero partial */
+/*         derivatives for each equation and each solution */
+/*         component, and store these values in the */
+/*         matrix PD.  The elements of PD are set to zero */
+/*         before each call to JAC so only non-zero elements */
+/*         need to be defined. */
 
-/*   Subroutine JAC must not alter T,Y,(*),YPRIME(*), or CJ. */
-/*   You must declare the name JAC in an EXTERNAL statement in */
-/*   your program that calls DDASSL.  You must dimension Y, */
-/*   YPRIME and PD in JAC. */
+/*         Subroutine JAC must not alter T,Y,(*),YPRIME(*), or CJ. */
+/*         You must declare the name JAC in an EXTERNAL statement in */
+/*         your program that calls DDASSL.  You must dimension Y, */
+/*         YPRIME and PD in JAC. */
 
-/*   The way you must store the elements into the PD matrix */
-/*   depends on the structure of the matrix which you */
-/*   indicated by INFO(6). */
-/*         *** INFO(6)=0 -- Full (dense) matrix *** */
-/*             Give PD a first dimension of NEQ. */
-/*             When you evaluate the (non-zero) partial derivative */
-/*             of equation I with respect to variable J, you must */
-/*             store it in PD according to */
-/*             PD(I,J) = "DG(I)/DY(J)+CJ*DG(I)/DYPRIME(J)" */
-/*         *** INFO(6)=1 -- Banded JACOBIAN with ML lower and MU */
-/*             upper diagonal bands (refer to INFO(6) description */
-/*             of ML and MU) *** */
-/*             Give PD a first dimension of 2*ML+MU+1. */
-/*             when you evaluate the (non-zero) partial derivative */
-/*             of equation I with respect to variable J, you must */
-/*             store it in PD according to */
-/*             IROW = I - J + ML + MU + 1 */
-/*             PD(IROW,J) = "DG(I)/DY(J)+CJ*DG(I)/DYPRIME(J)" */
+/*         The way you must store the elements into the PD matrix */
+/*         depends on the structure of the matrix which you */
+/*         indicated by INFO(6). */
+/*               *** INFO(6)=0 -- Full (dense) matrix *** */
+/*                   Give PD a first dimension of NEQ. */
+/*                   When you evaluate the (non-zero) partial derivative */
+/*                   of equation I with respect to variable J, you must */
+/*                   store it in PD according to */
+/*                   PD(I,J) = "DG(I)/DY(J)+CJ*DG(I)/DYPRIME(J)" */
+/*               *** INFO(6)=1 -- Banded JACOBIAN with ML lower and MU */
+/*                   upper diagonal bands (refer to INFO(6) description */
+/*                   of ML and MU) *** */
+/*                   Give PD a first dimension of 2*ML+MU+1. */
+/*                   when you evaluate the (non-zero) partial derivative */
+/*                   of equation I with respect to variable J, you must */
+/*                   store it in PD according to */
+/*                   IROW = I - J + ML + MU + 1 */
+/*                   PD(IROW,J) = "DG(I)/DY(J)+CJ*DG(I)/DYPRIME(J)" */
 
-/*   RPAR and IPAR are real and integer parameter arrays */
-/*   which you can use for communication between your calling */
-/*   program and your JACOBIAN subroutine JAC. They are not */
-/*   altered by DDASSL. If you do not need RPAR or IPAR, */
-/*   ignore these parameters by treating them as dummy */
-/*   arguments. If you do choose to use them, dimension */
-/*   them in your calling program and in JAC as arrays of */
-/*   appropriate length. */
+/*         RPAR and IPAR are real and integer parameter arrays */
+/*         which you can use for communication between your calling */
+/*         program and your JACOBIAN subroutine JAC. They are not */
+/*         altered by DDASSL. If you do not need RPAR or IPAR, */
+/*         ignore these parameters by treating them as dummy */
+/*         arguments. If you do choose to use them, dimension */
+/*         them in your calling program and in JAC as arrays of */
+/*         appropriate length. */
 
 
 /*  OPTIONALLY REPLACEABLE NORM ROUTINE: */
@@ -677,129 +677,129 @@ static integer c__72 = 72;
 
 
 /*  T -- The solution was successfully advanced to the */
-/*         output value of T. */
+/*               output value of T. */
 
 /*  Y(*) -- Contains the computed solution approximation at T. */
 
 /*  YPRIME(*) -- Contains the computed derivative */
-/*         approximation at T. */
+/*               approximation at T. */
 
 /*  IDID -- Reports what the code did. */
 
-/*               *** Task completed *** */
-/*          Reported by positive values of IDID */
+/*                     *** Task completed *** */
+/*                Reported by positive values of IDID */
 
-/*     IDID = 1 -- A step was successfully taken in the */
-/*             intermediate-output mode. The code has not */
-/*             yet reached TOUT. */
+/*           IDID = 1 -- A step was successfully taken in the */
+/*                   intermediate-output mode. The code has not */
+/*                   yet reached TOUT. */
 
-/*     IDID = 2 -- The integration to TSTOP was successfully */
-/*             completed (T=TSTOP) by stepping exactly to TSTOP. */
+/*           IDID = 2 -- The integration to TSTOP was successfully */
+/*                   completed (T=TSTOP) by stepping exactly to TSTOP. */
 
-/*     IDID = 3 -- The integration to TOUT was successfully */
-/*             completed (T=TOUT) by stepping past TOUT. */
-/*             Y(*) is obtained by interpolation. */
-/*             YPRIME(*) is obtained by interpolation. */
+/*           IDID = 3 -- The integration to TOUT was successfully */
+/*                   completed (T=TOUT) by stepping past TOUT. */
+/*                   Y(*) is obtained by interpolation. */
+/*                   YPRIME(*) is obtained by interpolation. */
 
-/*              *** Task interrupted *** */
-/*          Reported by negative values of IDID */
+/*                    *** Task interrupted *** */
+/*                Reported by negative values of IDID */
 
-/*     IDID = -1 -- A large amount of work has been expended. */
-/*             (About 500 steps) */
+/*           IDID = -1 -- A large amount of work has been expended. */
+/*                   (About 500 steps) */
 
-/*     IDID = -2 -- The error tolerances are too stringent. */
+/*           IDID = -2 -- The error tolerances are too stringent. */
 
-/*     IDID = -3 -- The local error test cannot be satisfied */
-/*             because you specified a zero component in ATOL */
-/*             and the corresponding computed solution */
-/*             component is zero. Thus, a pure relative error */
-/*             test is impossible for this component. */
+/*           IDID = -3 -- The local error test cannot be satisfied */
+/*                   because you specified a zero component in ATOL */
+/*                   and the corresponding computed solution */
+/*                   component is zero. Thus, a pure relative error */
+/*                   test is impossible for this component. */
 
-/*     IDID = -6 -- DDASSL had repeated error test */
-/*             failures on the last attempted step. */
+/*           IDID = -6 -- DDASSL had repeated error test */
+/*                   failures on the last attempted step. */
 
-/*     IDID = -7 -- The corrector could not converge. */
+/*           IDID = -7 -- The corrector could not converge. */
 
-/*     IDID = -8 -- The matrix of partial derivatives */
-/*             is singular. */
+/*           IDID = -8 -- The matrix of partial derivatives */
+/*                   is singular. */
 
-/*     IDID = -9 -- The corrector could not converge. */
-/*             there were repeated error test failures */
-/*             in this step. */
+/*           IDID = -9 -- The corrector could not converge. */
+/*                   there were repeated error test failures */
+/*                   in this step. */
 
-/*     IDID =-10 -- The corrector could not converge */
-/*             because IRES was equal to minus one. */
+/*           IDID =-10 -- The corrector could not converge */
+/*                   because IRES was equal to minus one. */
 
-/*     IDID =-11 -- IRES equal to -2 was encountered */
-/*             and control is being returned to the */
-/*             calling program. */
+/*           IDID =-11 -- IRES equal to -2 was encountered */
+/*                   and control is being returned to the */
+/*                   calling program. */
 
-/*     IDID =-12 -- DDASSL failed to compute the initial */
-/*             YPRIME. */
+/*           IDID =-12 -- DDASSL failed to compute the initial */
+/*                   YPRIME. */
 
 
 
-/*     IDID = -13,..,-32 -- Not applicable for this code */
+/*           IDID = -13,..,-32 -- Not applicable for this code */
 
-/*              *** Task terminated *** */
-/*          Reported by the value of IDID=-33 */
+/*                    *** Task terminated *** */
+/*                Reported by the value of IDID=-33 */
 
-/*     IDID = -33 -- The code has encountered trouble from which */
-/*             it cannot recover. A message is printed */
-/*             explaining the trouble and control is returned */
-/*             to the calling program. For example, this occurs */
-/*             when invalid input is detected. */
+/*           IDID = -33 -- The code has encountered trouble from which */
+/*                   it cannot recover. A message is printed */
+/*                   explaining the trouble and control is returned */
+/*                   to the calling program. For example, this occurs */
+/*                   when invalid input is detected. */
 
 /*  RTOL, ATOL -- These quantities remain unchanged except when */
-/*         IDID = -2. In this case, the error tolerances have been */
-/*         increased by the code to values which are estimated to */
-/*         be appropriate for continuing the integration. However, */
-/*         the reported solution at T was obtained using the input */
-/*         values of RTOL and ATOL. */
+/*               IDID = -2. In this case, the error tolerances have been */
+/*               increased by the code to values which are estimated to */
+/*               be appropriate for continuing the integration. However, */
+/*               the reported solution at T was obtained using the input */
+/*               values of RTOL and ATOL. */
 
 /*  RWORK, IWORK -- Contain information which is usually of no */
-/*         interest to the user but necessary for subsequent calls. */
-/*         However, you may find use for */
+/*               interest to the user but necessary for subsequent calls. */
+/*               However, you may find use for */
 
-/*         RWORK(3)--Which contains the step size H to be */
-/*                 attempted on the next step. */
+/*               RWORK(3)--Which contains the step size H to be */
+/*                       attempted on the next step. */
 
-/*         RWORK(4)--Which contains the current value of the */
-/*                 independent variable, i.e., the farthest point */
-/*                 integration has reached. This will be different */
-/*                 from T only when interpolation has been */
-/*                 performed (IDID=3). */
+/*               RWORK(4)--Which contains the current value of the */
+/*                       independent variable, i.e., the farthest point */
+/*                       integration has reached. This will be different */
+/*                       from T only when interpolation has been */
+/*                       performed (IDID=3). */
 
-/*         RWORK(7)--Which contains the stepsize used */
-/*                 on the last successful step. */
+/*               RWORK(7)--Which contains the stepsize used */
+/*                       on the last successful step. */
 
-/*         IWORK(7)--Which contains the order of the method to */
-/*                 be attempted on the next step. */
+/*               IWORK(7)--Which contains the order of the method to */
+/*                       be attempted on the next step. */
 
-/*         IWORK(8)--Which contains the order of the method used */
-/*                 on the last step. */
+/*               IWORK(8)--Which contains the order of the method used */
+/*                       on the last step. */
 
-/*         IWORK(11)--Which contains the number of steps taken so */
-/*                  far. */
+/*               IWORK(11)--Which contains the number of steps taken so */
+/*                        far. */
 
-/*         IWORK(12)--Which contains the number of calls to RES */
-/*                  so far. */
+/*               IWORK(12)--Which contains the number of calls to RES */
+/*                        so far. */
 
-/*         IWORK(13)--Which contains the number of evaluations of */
-/*                  the matrix of partial derivatives needed so */
-/*                  far. */
+/*               IWORK(13)--Which contains the number of evaluations of */
+/*                        the matrix of partial derivatives needed so */
+/*                        far. */
 
-/*         IWORK(14)--Which contains the total number */
-/*                  of error test failures so far. */
+/*               IWORK(14)--Which contains the total number */
+/*                        of error test failures so far. */
 
-/*         IWORK(15)--Which contains the total number */
-/*                  of convergence test failures so far. */
-/*                  (includes singular iteration matrix */
-/*                  failures.) */
+/*               IWORK(15)--Which contains the total number */
+/*                        of convergence test failures so far. */
+/*                        (includes singular iteration matrix */
+/*                        failures.) */
 
 
 /*  -------- INPUT -- WHAT TO DO TO CONTINUE THE INTEGRATION ------------ */
-/*              (CALLS AFTER THE FIRST) */
+/*                    (CALLS AFTER THE FIRST) */
 
 /*  This code is organized so that subsequent calls to continue the */
 /*  integration involve little (if any) additional effort on your */
@@ -836,99 +836,99 @@ static integer c__72 = 72;
 /*  Do not change INFO(5), INFO(6), IWORK(1), or IWORK(2) */
 /*  unless you are going to restart the code. */
 
-/*           *** Following a completed task *** */
+/*                 *** Following a completed task *** */
 /*  If */
 /*     IDID = 1, call the code again to continue the integration */
-/*            another step in the direction of TOUT. */
+/*                  another step in the direction of TOUT. */
 
 /*     IDID = 2 or 3, define a new TOUT and call the code again. */
-/*            TOUT must be different from T. You cannot change */
-/*            the direction of integration without restarting. */
+/*                  TOUT must be different from T. You cannot change */
+/*                  the direction of integration without restarting. */
 
-/*           *** Following an interrupted task *** */
-/*         To show the code that you realize the task was */
-/*         interrupted and that you want to continue, you */
-/*         must take appropriate action and set INFO(1) = 1 */
+/*                 *** Following an interrupted task *** */
+/*               To show the code that you realize the task was */
+/*               interrupted and that you want to continue, you */
+/*               must take appropriate action and set INFO(1) = 1 */
 /*  If */
 /*    IDID = -1, The code has taken about 500 steps. */
-/*            If you want to continue, set INFO(1) = 1 and */
-/*            call the code again. An additional 500 steps */
-/*            will be allowed. */
+/*                  If you want to continue, set INFO(1) = 1 and */
+/*                  call the code again. An additional 500 steps */
+/*                  will be allowed. */
 
 /*    IDID = -2, The error tolerances RTOL, ATOL have been */
-/*            increased to values the code estimates appropriate */
-/*            for continuing. You may want to change them */
-/*            yourself. If you are sure you want to continue */
-/*            with relaxed error tolerances, set INFO(1)=1 and */
-/*            call the code again. */
+/*                  increased to values the code estimates appropriate */
+/*                  for continuing. You may want to change them */
+/*                  yourself. If you are sure you want to continue */
+/*                  with relaxed error tolerances, set INFO(1)=1 and */
+/*                  call the code again. */
 
 /*    IDID = -3, A solution component is zero and you set the */
-/*            corresponding component of ATOL to zero. If you */
-/*            are sure you want to continue, you must first */
-/*            alter the error criterion to use positive values */
-/*            for those components of ATOL corresponding to zero */
-/*            solution components, then set INFO(1)=1 and call */
-/*            the code again. */
+/*                  corresponding component of ATOL to zero. If you */
+/*                  are sure you want to continue, you must first */
+/*                  alter the error criterion to use positive values */
+/*                  for those components of ATOL corresponding to zero */
+/*                  solution components, then set INFO(1)=1 and call */
+/*                  the code again. */
 
 /*    IDID = -4,-5  --- Cannot occur with this code. */
 
 /*    IDID = -6, Repeated error test failures occurred on the */
-/*            last attempted step in DDASSL. A singularity in the */
-/*            solution may be present. If you are absolutely */
-/*            certain you want to continue, you should restart */
-/*            the integration. (Provide initial values of Y and */
-/*            YPRIME which are consistent) */
+/*                  last attempted step in DDASSL. A singularity in the */
+/*                  solution may be present. If you are absolutely */
+/*                  certain you want to continue, you should restart */
+/*                  the integration. (Provide initial values of Y and */
+/*                  YPRIME which are consistent) */
 
 /*    IDID = -7, Repeated convergence test failures occurred */
-/*            on the last attempted step in DDASSL. An inaccurate */
-/*            or ill-conditioned JACOBIAN may be the problem. If */
-/*            you are absolutely certain you want to continue, you */
-/*            should restart the integration. */
+/*                  on the last attempted step in DDASSL. An inaccurate */
+/*                  or ill-conditioned JACOBIAN may be the problem. If */
+/*                  you are absolutely certain you want to continue, you */
+/*                  should restart the integration. */
 
 /*    IDID = -8, The matrix of partial derivatives is singular. */
-/*            Some of your equations may be redundant. */
-/*            DDASSL cannot solve the problem as stated. */
-/*            It is possible that the redundant equations */
-/*            could be removed, and then DDASSL could */
-/*            solve the problem. It is also possible */
-/*            that a solution to your problem either */
-/*            does not exist or is not unique. */
+/*                  Some of your equations may be redundant. */
+/*                  DDASSL cannot solve the problem as stated. */
+/*                  It is possible that the redundant equations */
+/*                  could be removed, and then DDASSL could */
+/*                  solve the problem. It is also possible */
+/*                  that a solution to your problem either */
+/*                  does not exist or is not unique. */
 
 /*    IDID = -9, DDASSL had multiple convergence test */
-/*            failures, preceeded by multiple error */
-/*            test failures, on the last attempted step. */
-/*            It is possible that your problem */
-/*            is ill-posed, and cannot be solved */
-/*            using this code. Or, there may be a */
-/*            discontinuity or a singularity in the */
-/*            solution. If you are absolutely certain */
-/*            you want to continue, you should restart */
-/*            the integration. */
+/*                  failures, preceeded by multiple error */
+/*                  test failures, on the last attempted step. */
+/*                  It is possible that your problem */
+/*                  is ill-posed, and cannot be solved */
+/*                  using this code. Or, there may be a */
+/*                  discontinuity or a singularity in the */
+/*                  solution. If you are absolutely certain */
+/*                  you want to continue, you should restart */
+/*                  the integration. */
 
 /*    IDID =-10, DDASSL had multiple convergence test failures */
-/*            because IRES was equal to minus one. */
-/*            If you are absolutely certain you want */
-/*            to continue, you should restart the */
-/*            integration. */
+/*                  because IRES was equal to minus one. */
+/*                  If you are absolutely certain you want */
+/*                  to continue, you should restart the */
+/*                  integration. */
 
 /*    IDID =-11, IRES=-2 was encountered, and control is being */
-/*            returned to the calling program. */
+/*                  returned to the calling program. */
 
 /*    IDID =-12, DDASSL failed to compute the initial YPRIME. */
-/*            This could happen because the initial */
-/*            approximation to YPRIME was not very good, or */
-/*            if a YPRIME consistent with the initial Y */
-/*            does not exist. The problem could also be caused */
-/*            by an inaccurate or singular iteration matrix. */
+/*                  This could happen because the initial */
+/*                  approximation to YPRIME was not very good, or */
+/*                  if a YPRIME consistent with the initial Y */
+/*                  does not exist. The problem could also be caused */
+/*                  by an inaccurate or singular iteration matrix. */
 
 /*    IDID = -13,..,-32  --- Cannot occur with this code. */
 
 
-/*           *** Following a terminated task *** */
+/*                 *** Following a terminated task *** */
 
 /*  If IDID= -33, you cannot continue the solution of this problem. */
-/*            An attempt to do so will result in your */
-/*            run being terminated. */
+/*                  An attempt to do so will result in your */
+/*                  run being terminated. */
 
 
 /*  -------- ERROR MESSAGES --------------------------------------------- */
@@ -947,15 +947,15 @@ static integer c__72 = 72;
 
 /*   Error number       Condition */
 
-/*  1       Some element of INFO vector is not zero or one. */
-/*  2       NEQ .le. 0 */
-/*  3       MAXORD not in range. */
-/*  4       LRW is less than the required length for RWORK. */
-/*  5       LIW is less than the required length for IWORK. */
-/*  6       Some element of RTOL is .lt. 0 */
-/*  7       Some element of ATOL is .lt. 0 */
-/*  8       All elements of RTOL and ATOL are zero. */
-/*  9       INFO(4)=1 and TSTOP is behind TOUT. */
+/*        1       Some element of INFO vector is not zero or one. */
+/*        2       NEQ .le. 0 */
+/*        3       MAXORD not in range. */
+/*        4       LRW is less than the required length for RWORK. */
+/*        5       LIW is less than the required length for IWORK. */
+/*        6       Some element of RTOL is .lt. 0 */
+/*        7       Some element of ATOL is .lt. 0 */
+/*        8       All elements of RTOL and ATOL are zero. */
+/*        9       INFO(4)=1 and TSTOP is behind TOUT. */
 /*       10       HMAX .lt. 0.0 */
 /*       11       TOUT is behind T. */
 /*       12       INFO(8)=1 and H0=0.0 */
@@ -983,94 +983,94 @@ static integer c__72 = 72;
 /*  --------------------------------------------------------------------- */
 
 /* ***REFERENCES  A DESCRIPTION OF DASSL: A DIFFERENTIAL/ALGEBRAIC */
-/*           SYSTEM SOLVER, L. R. PETZOLD, SAND82-8637, */
-/*           SANDIA NATIONAL LABORATORIES, SEPTEMBER 1982. */
+/*                 SYSTEM SOLVER, L. R. PETZOLD, SAND82-8637, */
+/*                 SANDIA NATIONAL LABORATORIES, SEPTEMBER 1982. */
 /* ***ROUTINES CALLED  D1MACH, DDAINI, DDANRM, DDASTP, DDATRP, DDAWTS, */
-/*              XERMSG */
+/*                    XERMSG */
 /* ***REVISION HISTORY  (YYMMDD) */
 /*   830315  DATE WRITTEN */
 /*   880387  Code changes made.  All common statements have been */
-/*     replaced by a DATA statement, which defines pointers into */
-/*     RWORK, and PARAMETER statements which define pointers */
-/*     into IWORK.  As well the documentation has gone through */
-/*     grammatical changes. */
+/*           replaced by a DATA statement, which defines pointers into */
+/*           RWORK, and PARAMETER statements which define pointers */
+/*           into IWORK.  As well the documentation has gone through */
+/*           grammatical changes. */
 /*   881005  The prologue has been changed to mixed case. */
-/*     The subordinate routines had revision dates changed to */
-/*     this date, although the documentation for these routines */
-/*     is all upper case.  No code changes. */
+/*           The subordinate routines had revision dates changed to */
+/*           this date, although the documentation for these routines */
+/*           is all upper case.  No code changes. */
 /*   890511  Code changes made.  The DATA statement in the declaration */
-/*     section of DDASSL was replaced with a PARAMETER */
-/*     statement.  Also the statement S = 100.D0 was removed */
-/*     from the top of the Newton iteration in DDASTP. */
-/*     The subordinate routines had revision dates changed to */
-/*     this date. */
+/*           section of DDASSL was replaced with a PARAMETER */
+/*           statement.  Also the statement S = 100.D0 was removed */
+/*           from the top of the Newton iteration in DDASTP. */
+/*           The subordinate routines had revision dates changed to */
+/*           this date. */
 /*   890517  The revision date syntax was replaced with the revision */
-/*     history syntax.  Also the "DECK" comment was added to */
-/*     the top of all subroutines.  These changes are consistent */
-/*     with new SLATEC guidelines. */
-/*     The subordinate routines had revision dates changed to */
-/*     this date.  No code changes. */
+/*           history syntax.  Also the "DECK" comment was added to */
+/*           the top of all subroutines.  These changes are consistent */
+/*           with new SLATEC guidelines. */
+/*           The subordinate routines had revision dates changed to */
+/*           this date.  No code changes. */
 /*   891013  Code changes made. */
-/*     Removed all occurrances of FLOAT or DBLE.  All operations */
-/*     are now performed with "mixed-mode" arithmetic. */
-/*     Also, specific function names were replaced with generic */
-/*     function names to be consistent with new SLATEC guidelines. */
-/*     In particular: */
-/*        Replaced DSQRT with SQRT everywhere. */
-/*        Replaced DABS with ABS everywhere. */
-/*        Replaced DMIN1 with MIN everywhere. */
-/*        Replaced MIN0 with MIN everywhere. */
-/*        Replaced DMAX1 with MAX everywhere. */
-/*        Replaced MAX0 with MAX everywhere. */
-/*        Replaced DSIGN with SIGN everywhere. */
-/*     Also replaced REVISION DATE with REVISION HISTORY in all */
-/*     subordinate routines. */
+/*           Removed all occurrances of FLOAT or DBLE.  All operations */
+/*           are now performed with "mixed-mode" arithmetic. */
+/*           Also, specific function names were replaced with generic */
+/*           function names to be consistent with new SLATEC guidelines. */
+/*           In particular: */
+/*              Replaced DSQRT with SQRT everywhere. */
+/*              Replaced DABS with ABS everywhere. */
+/*              Replaced DMIN1 with MIN everywhere. */
+/*              Replaced MIN0 with MIN everywhere. */
+/*              Replaced DMAX1 with MAX everywhere. */
+/*              Replaced MAX0 with MAX everywhere. */
+/*              Replaced DSIGN with SIGN everywhere. */
+/*           Also replaced REVISION DATE with REVISION HISTORY in all */
+/*           subordinate routines. */
 /*  901004  Miscellaneous changes to prologue to complete conversion */
-/*    to SLATEC 4.0 format.  No code changes.  (F.N.Fritsch) */
+/*          to SLATEC 4.0 format.  No code changes.  (F.N.Fritsch) */
 /*  901009  Corrected GAMS classification code and converted subsidiary */
-/*    routines to 4.0 format.  No code changes.  (F.N.Fritsch) */
+/*          routines to 4.0 format.  No code changes.  (F.N.Fritsch) */
 /*  901010  Converted XERRWV calls to XERMSG calls.  (R.Clemens,AFWL) */
 /*  901019  Code changes made. */
-/*    Merged SLATEC 4.0 changes with previous changes made */
-/*    by C. Ulrich.  Below is a history of the changes made by */
-/*    C. Ulrich. (Changes in subsidiary routines are implied */
-/*    by this history) */
-/*    891228  Bug was found and repaired inside the DDASSL */
-/*            and DDAINI routines.  DDAINI was incorrectly */
-/*            returning the initial T with Y and YPRIME */
-/*            computed at T+H.  The routine now returns T+H */
-/*            rather than the initial T. */
-/*            Cosmetic changes made to DDASTP. */
-/*    900904  Three modifications were made to fix a bug (inside */
-/*            DDASSL) re interpolation for continuation calls and */
-/*            cases where TN is very close to TSTOP: */
+/*          Merged SLATEC 4.0 changes with previous changes made */
+/*          by C. Ulrich.  Below is a history of the changes made by */
+/*          C. Ulrich. (Changes in subsidiary routines are implied */
+/*          by this history) */
+/*          891228  Bug was found and repaired inside the DDASSL */
+/*                  and DDAINI routines.  DDAINI was incorrectly */
+/*                  returning the initial T with Y and YPRIME */
+/*                  computed at T+H.  The routine now returns T+H */
+/*                  rather than the initial T. */
+/*                  Cosmetic changes made to DDASTP. */
+/*          900904  Three modifications were made to fix a bug (inside */
+/*                  DDASSL) re interpolation for continuation calls and */
+/*                  cases where TN is very close to TSTOP: */
 
-/*            1) In testing for whether H is too large, just */
-/*               compare H to (TSTOP - TN), rather than */
-/*               (TSTOP - TN) * (1-4*UROUND), and set H to */
-/*               TSTOP - TN.  This will force DDASTP to step */
-/*               exactly to TSTOP under certain situations */
-/*               (i.e. when H returned from DDASTP would otherwise */
-/*               take TN beyond TSTOP). */
+/*                  1) In testing for whether H is too large, just */
+/*                     compare H to (TSTOP - TN), rather than */
+/*                     (TSTOP - TN) * (1-4*UROUND), and set H to */
+/*                     TSTOP - TN.  This will force DDASTP to step */
+/*                     exactly to TSTOP under certain situations */
+/*                     (i.e. when H returned from DDASTP would otherwise */
+/*                     take TN beyond TSTOP). */
 
-/*            2) Inside the DDASTP loop, interpolate exactly to */
-/*               TSTOP if TN is very close to TSTOP (rather than */
-/*               interpolating to within roundoff of TSTOP). */
+/*                  2) Inside the DDASTP loop, interpolate exactly to */
+/*                     TSTOP if TN is very close to TSTOP (rather than */
+/*                     interpolating to within roundoff of TSTOP). */
 
-/*            3) Modified IDID description for IDID = 2 to say that */
-/*               the solution is returned by stepping exactly to */
-/*               TSTOP, rather than TOUT.  (In some cases the */
-/*               solution is actually obtained by extrapolating */
-/*               over a distance near unit roundoff to TSTOP, */
-/*               but this small distance is deemed acceptable in */
-/*               these circumstances.) */
+/*                  3) Modified IDID description for IDID = 2 to say that */
+/*                     the solution is returned by stepping exactly to */
+/*                     TSTOP, rather than TOUT.  (In some cases the */
+/*                     solution is actually obtained by extrapolating */
+/*                     over a distance near unit roundoff to TSTOP, */
+/*                     but this small distance is deemed acceptable in */
+/*                     these circumstances.) */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue, removed unreferenced labels, */
-/*     and improved XERMSG calls.  (FNF) */
+/*           cosmetic changes to prologue, removed unreferenced labels, */
+/*           and improved XERMSG calls.  (FNF) */
 /*   901030  Added ERROR MESSAGES section and reworked other sections to */
-/*     be of more uniform format.  (FNF) */
+/*           be of more uniform format.  (FNF) */
 /*   910624  Fixed minor bug related to HMAX (five lines ending in */
-/*     statement 526 in DDASSL).   (LRP) */
+/*           statement 526 in DDASSL).   (LRP) */
 
 /* ***END PROLOGUE  DDASSL */
 
@@ -2201,7 +2201,7 @@ L750:
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /* ***END PROLOGUE  DDAWTS */
 
 
@@ -2259,7 +2259,7 @@ doublereal ddanrm_(integer *neq, doublereal *v, doublereal *wt, doublereal *
 /*     ROOT-MEAN-SQUARE NORM OF THE VECTOR OF LENGTH */
 /*     NEQ CONTAINED IN THE ARRAY V,WITH WEIGHTS */
 /*     CONTAINED IN THE ARRAY WT OF LENGTH NEQ. */
-/*  DDANRM=SQRT((1/NEQ)*SUM(V(I)/WT(I))**2) */
+/*        DDANRM=SQRT((1/NEQ)*SUM(V(I)/WT(I))**2) */
 /* ----------------------------------------------------------------------- */
 /* ***ROUTINES CALLED  (NONE) */
 /* ***REVISION HISTORY  (YYMMDD) */
@@ -2267,7 +2267,7 @@ doublereal ddanrm_(integer *neq, doublereal *v, doublereal *wt, doublereal *
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /* ***END PROLOGUE  DDANRM */
 
 
@@ -2369,23 +2369,23 @@ L30:
 /*     NONLINEARLY ON YPRIME. */
 
 /*     THE PARAMETERS REPRESENT: */
-/*     X --   INDEPENDENT VARIABLE */
-/*     Y --   SOLUTION VECTOR AT X */
+/*     X --         INDEPENDENT VARIABLE */
+/*     Y --         SOLUTION VECTOR AT X */
 /*     YPRIME --    DERIVATIVE OF SOLUTION VECTOR */
 /*     NEQ --       NUMBER OF EQUATIONS */
-/*     H --   STEPSIZE. IMDER MAY USE A STEPSIZE */
-/*            SMALLER THAN H. */
-/*     WT --  VECTOR OF WEIGHTS FOR ERROR */
-/*            CRITERION */
+/*     H --         STEPSIZE. IMDER MAY USE A STEPSIZE */
+/*                  SMALLER THAN H. */
+/*     WT --        VECTOR OF WEIGHTS FOR ERROR */
+/*                  CRITERION */
 /*     IDID --      COMPLETION CODE WITH THE FOLLOWING MEANINGS */
-/*            IDID= 1 -- YPRIME WAS FOUND SUCCESSFULLY */
-/*            IDID=-12 -- DDAINI FAILED TO FIND YPRIME */
+/*                  IDID= 1 -- YPRIME WAS FOUND SUCCESSFULLY */
+/*                  IDID=-12 -- DDAINI FAILED TO FIND YPRIME */
 /*     RPAR,IPAR -- REAL AND INTEGER PARAMETER ARRAYS */
-/*            THAT ARE NOT ALTERED BY DDAINI */
+/*                  THAT ARE NOT ALTERED BY DDAINI */
 /*     PHI --       WORK SPACE FOR DDAINI */
 /*     DELTA,E --   WORK SPACE FOR DDAINI */
 /*     WM,IWM --    REAL AND INTEGER ARRAYS STORING */
-/*            MATRIX INFORMATION */
+/*                  MATRIX INFORMATION */
 
 /* ----------------------------------------------------------------- */
 /* ***ROUTINES CALLED  DDAJAC, DDANRM, DDASLV */
@@ -2394,7 +2394,7 @@ L30:
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /*   901030  Minor corrections to declarations.  (FNF) */
 /* ***END PROLOGUE  DDAINI */
 
@@ -2713,9 +2713,9 @@ L690:
 /*     X     THE CURRENT TIME IN THE INTEGRATION. */
 /*     XOUT  THE TIME AT WHICH THE SOLUTION IS DESIRED */
 /*     YOUT  THE INTERPOLATED APPROXIMATION TO Y AT XOUT */
-/*     (THIS IS OUTPUT) */
+/*           (THIS IS OUTPUT) */
 /*     YPOUT THE INTERPOLATED APPROXIMATION TO YPRIME AT XOUT */
-/*     (THIS IS OUTPUT) */
+/*           (THIS IS OUTPUT) */
 /*     NEQ   NUMBER OF EQUATIONS */
 /*     KOLD  ORDER USED ON LAST SUCCESSFUL STEP */
 /*     PHI   ARRAY OF SCALED DIVIDED DIFFERENCES OF Y */
@@ -2727,7 +2727,7 @@ L690:
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /* ***END PROLOGUE  DDATRP */
 
 
@@ -2846,58 +2846,58 @@ L690:
 
 
 /*     THE PARAMETERS REPRESENT */
-/*     X  --  INDEPENDENT VARIABLE */
-/*     Y  --  SOLUTION VECTOR AT X */
+/*     X  --        INDEPENDENT VARIABLE */
+/*     Y  --        SOLUTION VECTOR AT X */
 /*     YPRIME --    DERIVATIVE OF SOLUTION VECTOR */
-/*            AFTER SUCCESSFUL STEP */
+/*                  AFTER SUCCESSFUL STEP */
 /*     NEQ --       NUMBER OF EQUATIONS TO BE INTEGRATED */
 /*     RES --       EXTERNAL USER-SUPPLIED SUBROUTINE */
-/*            TO EVALUATE THE RESIDUAL.  THE CALL IS */
-/*            CALL RES(X,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
-/*            X,Y,YPRIME ARE INPUT.  DELTA IS OUTPUT. */
-/*            ON INPUT, IRES=0.  RES SHOULD ALTER IRES ONLY */
-/*            IF IT ENCOUNTERS AN ILLEGAL VALUE OF Y OR A */
-/*            STOP CONDITION.  SET IRES=-1 IF AN INPUT VALUE */
-/*            OF Y IS ILLEGAL, AND DDASTP WILL TRY TO SOLVE */
-/*            THE PROBLEM WITHOUT GETTING IRES = -1.  IF */
-/*            IRES=-2, DDASTP RETURNS CONTROL TO THE CALLING */
-/*            PROGRAM WITH IDID = -11. */
+/*                  TO EVALUATE THE RESIDUAL.  THE CALL IS */
+/*                  CALL RES(X,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
+/*                  X,Y,YPRIME ARE INPUT.  DELTA IS OUTPUT. */
+/*                  ON INPUT, IRES=0.  RES SHOULD ALTER IRES ONLY */
+/*                  IF IT ENCOUNTERS AN ILLEGAL VALUE OF Y OR A */
+/*                  STOP CONDITION.  SET IRES=-1 IF AN INPUT VALUE */
+/*                  OF Y IS ILLEGAL, AND DDASTP WILL TRY TO SOLVE */
+/*                  THE PROBLEM WITHOUT GETTING IRES = -1.  IF */
+/*                  IRES=-2, DDASTP RETURNS CONTROL TO THE CALLING */
+/*                  PROGRAM WITH IDID = -11. */
 /*     JAC --       EXTERNAL USER-SUPPLIED ROUTINE TO EVALUATE */
-/*            THE ITERATION MATRIX (THIS IS OPTIONAL) */
-/*            THE CALL IS OF THE FORM */
-/*            CALL JAC(X,Y,YPRIME,PD,CJ,RPAR,IPAR) */
-/*            PD IS THE MATRIX OF PARTIAL DERIVATIVES, */
-/*            PD=DG/DY+CJ*DG/DYPRIME */
-/*     H --   APPROPRIATE STEP SIZE FOR NEXT STEP. */
-/*            NORMALLY DETERMINED BY THE CODE */
-/*     WT --  VECTOR OF WEIGHTS FOR ERROR CRITERION. */
+/*                  THE ITERATION MATRIX (THIS IS OPTIONAL) */
+/*                  THE CALL IS OF THE FORM */
+/*                  CALL JAC(X,Y,YPRIME,PD,CJ,RPAR,IPAR) */
+/*                  PD IS THE MATRIX OF PARTIAL DERIVATIVES, */
+/*                  PD=DG/DY+CJ*DG/DYPRIME */
+/*     H --         APPROPRIATE STEP SIZE FOR NEXT STEP. */
+/*                  NORMALLY DETERMINED BY THE CODE */
+/*     WT --        VECTOR OF WEIGHTS FOR ERROR CRITERION. */
 /*     JSTART --    INTEGER VARIABLE SET 0 FOR */
-/*            FIRST STEP, 1 OTHERWISE. */
+/*                  FIRST STEP, 1 OTHERWISE. */
 /*     IDID --      COMPLETION CODE WITH THE FOLLOWING MEANINGS: */
-/*            IDID= 1 -- THE STEP WAS COMPLETED SUCCESSFULLY */
-/*            IDID=-6 -- THE ERROR TEST FAILED REPEATEDLY */
-/*            IDID=-7 -- THE CORRECTOR COULD NOT CONVERGE */
-/*            IDID=-8 -- THE ITERATION MATRIX IS SINGULAR */
-/*            IDID=-9 -- THE CORRECTOR COULD NOT CONVERGE. */
-/*                       THERE WERE REPEATED ERROR TEST */
-/*                       FAILURES ON THIS STEP. */
-/*            IDID=-10-- THE CORRECTOR COULD NOT CONVERGE */
-/*                       BECAUSE IRES WAS EQUAL TO MINUS ONE */
-/*            IDID=-11-- IRES EQUAL TO -2 WAS ENCOUNTERED, */
-/*                       AND CONTROL IS BEING RETURNED TO */
-/*                       THE CALLING PROGRAM */
+/*                  IDID= 1 -- THE STEP WAS COMPLETED SUCCESSFULLY */
+/*                  IDID=-6 -- THE ERROR TEST FAILED REPEATEDLY */
+/*                  IDID=-7 -- THE CORRECTOR COULD NOT CONVERGE */
+/*                  IDID=-8 -- THE ITERATION MATRIX IS SINGULAR */
+/*                  IDID=-9 -- THE CORRECTOR COULD NOT CONVERGE. */
+/*                             THERE WERE REPEATED ERROR TEST */
+/*                             FAILURES ON THIS STEP. */
+/*                  IDID=-10-- THE CORRECTOR COULD NOT CONVERGE */
+/*                             BECAUSE IRES WAS EQUAL TO MINUS ONE */
+/*                  IDID=-11-- IRES EQUAL TO -2 WAS ENCOUNTERED, */
+/*                             AND CONTROL IS BEING RETURNED TO */
+/*                             THE CALLING PROGRAM */
 /*     RPAR,IPAR -- REAL AND INTEGER PARAMETER ARRAYS THAT */
-/*            ARE USED FOR COMMUNICATION BETWEEN THE */
-/*            CALLING PROGRAM AND EXTERNAL USER ROUTINES */
-/*            THEY ARE NOT ALTERED BY DDASTP */
+/*                  ARE USED FOR COMMUNICATION BETWEEN THE */
+/*                  CALLING PROGRAM AND EXTERNAL USER ROUTINES */
+/*                  THEY ARE NOT ALTERED BY DDASTP */
 /*     PHI --       ARRAY OF DIVIDED DIFFERENCES USED BY */
-/*            DDASTP. THE LENGTH IS NEQ*(K+1),WHERE */
-/*            K IS THE MAXIMUM ORDER */
+/*                  DDASTP. THE LENGTH IS NEQ*(K+1),WHERE */
+/*                  K IS THE MAXIMUM ORDER */
 /*     DELTA,E --   WORK VECTORS FOR DDASTP OF LENGTH NEQ */
 /*     WM,IWM --    REAL AND INTEGER ARRAYS STORING */
-/*            MATRIX INFORMATION SUCH AS THE MATRIX */
-/*            OF PARTIAL DERIVATIVES,PERMUTATION */
-/*            VECTOR,AND VARIOUS OTHER INFORMATION. */
+/*                  MATRIX INFORMATION SUCH AS THE MATRIX */
+/*                  OF PARTIAL DERIVATIVES,PERMUTATION */
+/*                  VECTOR,AND VARIOUS OTHER INFORMATION. */
 
 /*     THE OTHER PARAMETERS ARE INFORMATION */
 /*     WHICH IS NEEDED INTERNALLY BY DDASTP TO */
@@ -2910,7 +2910,7 @@ L690:
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /* ***END PROLOGUE  DDASTP */
 
 
@@ -3344,10 +3344,10 @@ L430:
 
 
 /*     ESTIMATE THE ERROR AT ORDER K+1 UNLESS: */
-/*  ALREADY DECIDED TO LOWER ORDER, OR */
-/*  ALREADY USING MAXIMUM ORDER, OR */
-/*  STEPSIZE NOT CONSTANT, OR */
-/*  ORDER RAISED IN PREVIOUS STEP */
+/*        ALREADY DECIDED TO LOWER ORDER, OR */
+/*        ALREADY USING MAXIMUM ORDER, OR */
+/*        STEPSIZE NOT CONSTANT, OR */
+/*        ORDER RAISED IN PREVIOUS STEP */
     if(knew == km1 || *k == iwm[3]) {
   *iphase = 1;
     }
@@ -3656,7 +3656,7 @@ L690:
 /* ***BEGIN PROLOGUE  DDAJAC */
 /* ***SUBSIDIARY */
 /* ***PURPOSE  Compute the iteration matrix for DDASSL and form the */
-/*      LU-decomposition. */
+/*            LU-decomposition. */
 /* ***LIBRARY   SLATEC (DASSL) */
 /* ***TYPE      DOUBLE PRECISION (SDAJAC-S, DDAJAC-D) */
 /* ***AUTHOR  PETZOLD, LINDA R., (LLNL) */
@@ -3669,32 +3669,32 @@ L690:
 /*     IT IS COMPUTED BY NUMERICAL FINITE DIFFERENCING */
 /*     IF IWM(MTYPE)IS 2 OR 5 */
 /*     THE PARAMETERS HAVE THE FOLLOWING MEANINGS. */
-/*     Y  = ARRAY CONTAINING PREDICTED VALUES */
+/*     Y        = ARRAY CONTAINING PREDICTED VALUES */
 /*     YPRIME   = ARRAY CONTAINING PREDICTED DERIVATIVES */
 /*     DELTA    = RESIDUAL EVALUATED AT (X,Y,YPRIME) */
-/*          (USED ONLY IF IWM(MTYPE)=2 OR 5) */
+/*                (USED ONLY IF IWM(MTYPE)=2 OR 5) */
 /*     CJ       = SCALAR PARAMETER DEFINING ITERATION MATRIX */
-/*     H  = CURRENT STEPSIZE IN INTEGRATION */
+/*     H        = CURRENT STEPSIZE IN INTEGRATION */
 /*     IER      = VARIABLE WHICH IS .NE. 0 */
-/*          IF ITERATION MATRIX IS SINGULAR, */
-/*          AND 0 OTHERWISE. */
+/*                IF ITERATION MATRIX IS SINGULAR, */
+/*                AND 0 OTHERWISE. */
 /*     WT       = VECTOR OF WEIGHTS FOR COMPUTING NORMS */
-/*     E  = WORK SPACE (TEMPORARY) OF LENGTH NEQ */
+/*     E        = WORK SPACE (TEMPORARY) OF LENGTH NEQ */
 /*     WM       = REAL WORK SPACE FOR MATRICES. ON */
-/*          OUTPUT IT CONTAINS THE LU DECOMPOSITION */
-/*          OF THE ITERATION MATRIX. */
+/*                OUTPUT IT CONTAINS THE LU DECOMPOSITION */
+/*                OF THE ITERATION MATRIX. */
 /*     IWM      = INTEGER WORK SPACE CONTAINING */
-/*          MATRIX INFORMATION */
+/*                MATRIX INFORMATION */
 /*     RES      = NAME OF THE EXTERNAL USER-SUPPLIED ROUTINE */
-/*          TO EVALUATE THE RESIDUAL FUNCTION G(X,Y,YPRIME) */
+/*                TO EVALUATE THE RESIDUAL FUNCTION G(X,Y,YPRIME) */
 /*     IRES     = FLAG WHICH IS EQUAL TO ZERO IF NO ILLEGAL VALUES */
-/*          IN RES, AND LESS THAN ZERO OTHERWISE.  (IF IRES */
-/*          IS LESS THAN ZERO, THE MATRIX WAS NOT COMPLETED) */
-/*          IN THIS CASE (IF IRES .LT. 0), THEN IER = 0. */
+/*                IN RES, AND LESS THAN ZERO OTHERWISE.  (IF IRES */
+/*                IS LESS THAN ZERO, THE MATRIX WAS NOT COMPLETED) */
+/*                IN THIS CASE (IF IRES .LT. 0), THEN IER = 0. */
 /*     UROUND   = THE UNIT ROUNDOFF ERROR OF THE MACHINE BEING USED. */
 /*     JAC      = NAME OF THE EXTERNAL USER-SUPPLIED ROUTINE */
-/*          TO EVALUATE THE ITERATION MATRIX (THIS ROUTINE */
-/*          IS ONLY USED IF IWM(MTYPE) IS 1 OR 4) */
+/*                TO EVALUATE THE ITERATION MATRIX (THIS ROUTINE */
+/*                IS ONLY USED IF IWM(MTYPE) IS 1 OR 4) */
 /* ----------------------------------------------------------------------- */
 /* ***ROUTINES CALLED  DGBFA, DGEFA */
 /* ***REVISION HISTORY  (YYMMDD) */
@@ -3703,7 +3703,7 @@ L690:
 /*   901010  Modified three MAX calls to be all on one line.  (FNF) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /*   901101  Corrected PURPOSE.  (FNF) */
 /* ***END PROLOGUE  DDAJAC */
 
@@ -3750,26 +3750,26 @@ L100:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1]){
        nrow = npdm1;
-  i__1 = *neq;
-  i__2 = *neq;
-  printf("cj: %g and the states\n", *cj);
-  for(k=0;k<*neq;k++) {
-      printf("%g ", y[k+1]);
-  }
+        i__1 = *neq;
+        i__2 = *neq;
+        printf("cj: %g and the states\n", *cj);
+        for(k=0;k<*neq;k++) {
+            printf("%g ", y[k+1]);
+        }
 
 
-  printf("analytical jacobian\n");
-  printf("at point in time : ");
-  printf("%g \n", *x);
-  for(i__ = 1; i__ <= i__1; ++i__) {
-           wm[nrow+i__] += *cj;
-           for(l = 1; l <= i__2; ++l) {
-               printf("%g  ",wm[nrow + l]);
-           }
-           wm[nrow+i__] -= *cj;
-           printf("\n");
-           nrow += *neq;
-  }
+        printf("analytical jacobian\n");
+        printf("at point in time : ");
+        printf("%g \n", *x);
+        for(i__ = 1; i__ <= i__1; ++i__) {
+                 wm[nrow+i__] += *cj;
+                 for(l = 1; l <= i__2; ++l) {
+                     printf("%g  ",wm[nrow + l]);
+                 }
+                 wm[nrow+i__] -= *cj;
+                 printf("\n");
+                 nrow += *neq;
+        }
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3814,27 +3814,27 @@ L200:
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1] ){
-      nrow = npdm1;
-      i__1 = *neq;
-      i__2 = *neq;
-      printf("cj: %g and the states\n", *cj);
-      for(k=0;k<*neq;k++) {
-          printf("%g ", y[k+1]);
-      }
+            nrow = npdm1;
+            i__1 = *neq;
+            i__2 = *neq;
+            printf("cj: %g and the states\n", *cj);
+            for(k=0;k<*neq;k++) {
+                printf("%g ", y[k+1]);
+            }
 
 
-      printf("numerical jacobian\n");
-      printf("at point in time : ");
-      printf("%g \n",*x);
-      for(i__ = 1; i__ <= i__1; ++i__) {
-              wm[nrow+i__] += *cj;
-              for(l = 1; l <= i__1; ++l) {
-                      printf("%g  ",wm[nrow + l]);
-              }
-              wm[nrow+i__] -= *cj;
-              printf("\n");
-              nrow += *neq;
-      }
+            printf("numerical jacobian\n");
+            printf("at point in time : ");
+            printf("%g \n",*x);
+            for(i__ = 1; i__ <= i__1; ++i__) {
+                    wm[nrow+i__] += *cj;
+                    for(l = 1; l <= i__1; ++l) {
+                            printf("%g  ",wm[nrow + l]);
+                    }
+                    wm[nrow+i__] -= *cj;
+                    printf("\n");
+                    nrow += *neq;
+            }
     }
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3886,8 +3886,8 @@ L500:
       wm[ipsave + k] = yprime[n];
 /* Computing MAX */
       d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
-  abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
-  abs(d__3));
+        abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
+        abs(d__3));
       del = squr * max(d__4,d__5);
       d__1 = *h__ * yprime[n];
       del = d_sign(&del, &d__1);
@@ -3908,8 +3908,8 @@ L500:
       yprime[n] = wm[ipsave + k];
 /* Computing MAX */
       d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
-  abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
-  abs(d__3));
+        abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
+        abs(d__3));
       del = squr * max(d__4,d__5);
       d__1 = *h__ * yprime[n];
       del = d_sign(&del, &d__1);
@@ -3974,7 +3974,7 @@ L550:
 /*   901009  Finished conversion to SLATEC 4.0 format (F.N.Fritsch) */
 /*   901019  Merged changes made by C. Ulrich with SLATEC 4.0 format. */
 /*   901026  Added explicit declarations for all variables and minor */
-/*     cosmetic changes to prologue.  (FNF) */
+/*           cosmetic changes to prologue.  (FNF) */
 /* ***END PROLOGUE  DDASLV */
 
 
@@ -4051,8 +4051,8 @@ L400:
 /* ***TYPE      ALL */
 /* ***KEYWORDS  ERROR MESSAGE, XERROR */
 /* ***AUTHOR  FONG, KIRBY, (NMFECC AT LLNL) */
-/*       Modified by */
-/*     FRITSCH, F. N., (LLNL) */
+/*             Modified by */
+/*           FRITSCH, F. N., (LLNL) */
 /* ***DESCRIPTION */
 
 /*   XERMSG processes a diagnostic message in a manner determined by the */
@@ -4061,122 +4061,122 @@ L400:
 /*       (XSETF is inoperable in this version.). */
 
 /*    LIBRAR   A character constant (or character variable) with the name */
-/*       of the library.  This will be 'SLATEC' for the SLATEC */
-/*       Common Math Library.  The error handling package is */
-/*       general enough to be used by many libraries */
-/*       simultaneously, so it is desirable for the routine that */
-/*       detects and reports an error to identify the library name */
-/*       as well as the routine name. */
+/*             of the library.  This will be 'SLATEC' for the SLATEC */
+/*             Common Math Library.  The error handling package is */
+/*             general enough to be used by many libraries */
+/*             simultaneously, so it is desirable for the routine that */
+/*             detects and reports an error to identify the library name */
+/*             as well as the routine name. */
 
 /*    SUBROU   A character constant (or character variable) with the name */
-/*       of the routine that detected the error.  Usually it is the */
-/*       name of the routine that is calling XERMSG.  There are */
-/*       some instances where a user callable library routine calls */
-/*       lower level subsidiary routines where the error is */
-/*       detected.  In such cases it may be more informative to */
-/*       supply the name of the routine the user called rather than */
-/*       the name of the subsidiary routine that detected the */
-/*       error. */
+/*             of the routine that detected the error.  Usually it is the */
+/*             name of the routine that is calling XERMSG.  There are */
+/*             some instances where a user callable library routine calls */
+/*             lower level subsidiary routines where the error is */
+/*             detected.  In such cases it may be more informative to */
+/*             supply the name of the routine the user called rather than */
+/*             the name of the subsidiary routine that detected the */
+/*             error. */
 
 /*    MESSG    A character constant (or character variable) with the text */
-/*       of the error or warning message.  In the example below, */
-/*       the message is a character constant that contains a */
-/*       generic message. */
+/*             of the error or warning message.  In the example below, */
+/*             the message is a character constant that contains a */
+/*             generic message. */
 
-/*             CALL XERMSG ('SLATEC', 'MMPY', */
-/*            *'THE ORDER OF THE MATRIX EXCEEDS THE ROW DIMENSION', */
-/*            *3, 1) */
+/*                   CALL XERMSG ('SLATEC', 'MMPY', */
+/*                  *'THE ORDER OF THE MATRIX EXCEEDS THE ROW DIMENSION', */
+/*                  *3, 1) */
 
-/*       It is possible (and is sometimes desirable) to generate a */
-/*       specific message--e.g., one that contains actual numeric */
-/*       values.  Specific numeric values can be converted into */
-/*       character strings using formatted WRITE statements into */
-/*       character variables.  This is called standard Fortran */
-/*       internal file I/O and is exemplified in the first three */
-/*       lines of the following example.  You can also catenate */
-/*       substrings of characters to construct the error message. */
-/*       Here is an example showing the use of both writing to */
-/*       an internal file and catenating character strings. */
+/*             It is possible (and is sometimes desirable) to generate a */
+/*             specific message--e.g., one that contains actual numeric */
+/*             values.  Specific numeric values can be converted into */
+/*             character strings using formatted WRITE statements into */
+/*             character variables.  This is called standard Fortran */
+/*             internal file I/O and is exemplified in the first three */
+/*             lines of the following example.  You can also catenate */
+/*             substrings of characters to construct the error message. */
+/*             Here is an example showing the use of both writing to */
+/*             an internal file and catenating character strings. */
 
-/*             CHARACTER*5 CHARN, CHARL */
-/*             WRITE (CHARN,10) N */
-/*             WRITE (CHARL,10) LDA */
-/*          10 FORMAT(I5) */
-/*             CALL XERMSG ('SLATEC', 'MMPY', 'THE ORDER'//CHARN// */
-/*            *   ' OF THE MATRIX EXCEEDS ITS ROW DIMENSION OF'// */
-/*            *   CHARL, 3, 1) */
+/*                   CHARACTER*5 CHARN, CHARL */
+/*                   WRITE (CHARN,10) N */
+/*                   WRITE (CHARL,10) LDA */
+/*                10 FORMAT(I5) */
+/*                   CALL XERMSG ('SLATEC', 'MMPY', 'THE ORDER'//CHARN// */
+/*                  *   ' OF THE MATRIX EXCEEDS ITS ROW DIMENSION OF'// */
+/*                  *   CHARL, 3, 1) */
 
-/*       There are two subtleties worth mentioning.  One is that */
-/*       the // for character catenation is used to construct the */
-/*       error message so that no single character constant is */
-/*       continued to the next line.  This avoids confusion as to */
-/*       whether there are trailing blanks at the end of the line. */
-/*       The second is that by catenating the parts of the message */
-/*       as an actual argument rather than encoding the entire */
-/*       message into one large character variable, we avoid */
-/*       having to know how long the message will be in order to */
-/*       declare an adequate length for that large character */
-/*       variable.  XERMSG calls XERPRN to print the message using */
-/*       multiple lines if necessary.  If the message is very long, */
-/*       XERPRN will break it into pieces of 72 characters (as */
-/*       requested by XERMSG) for printing on multiple lines. */
-/*       Also, XERMSG asks XERPRN to prefix each line with ' *  ' */
-/*       so that the total line length could be 76 characters. */
-/*       Note also that XERPRN scans the error message backwards */
-/*       to ignore trailing blanks.  Another feature is that */
-/*       the substring '$$' is treated as a new line sentinel */
-/*       by XERPRN.  If you want to construct a multiline */
-/*       message without having to count out multiples of 72 */
-/*       characters, just use '$$' as a separator.  '$$' */
-/*       obviously must occur within 72 characters of the */
-/*       start of each line to have its intended effect since */
-/*       XERPRN is asked to wrap around at 72 characters in */
-/*       addition to looking for '$$'. */
+/*             There are two subtleties worth mentioning.  One is that */
+/*             the // for character catenation is used to construct the */
+/*             error message so that no single character constant is */
+/*             continued to the next line.  This avoids confusion as to */
+/*             whether there are trailing blanks at the end of the line. */
+/*             The second is that by catenating the parts of the message */
+/*             as an actual argument rather than encoding the entire */
+/*             message into one large character variable, we avoid */
+/*             having to know how long the message will be in order to */
+/*             declare an adequate length for that large character */
+/*             variable.  XERMSG calls XERPRN to print the message using */
+/*             multiple lines if necessary.  If the message is very long, */
+/*             XERPRN will break it into pieces of 72 characters (as */
+/*             requested by XERMSG) for printing on multiple lines. */
+/*             Also, XERMSG asks XERPRN to prefix each line with ' *  ' */
+/*             so that the total line length could be 76 characters. */
+/*             Note also that XERPRN scans the error message backwards */
+/*             to ignore trailing blanks.  Another feature is that */
+/*             the substring '$$' is treated as a new line sentinel */
+/*             by XERPRN.  If you want to construct a multiline */
+/*             message without having to count out multiples of 72 */
+/*             characters, just use '$$' as a separator.  '$$' */
+/*             obviously must occur within 72 characters of the */
+/*             start of each line to have its intended effect since */
+/*             XERPRN is asked to wrap around at 72 characters in */
+/*             addition to looking for '$$'. */
 
 /*    NERR     An integer value that is chosen by the library routine's */
-/*       author.  It must be in the range -9999999 to 99999999 (8 */
-/*       printable digits).  Each distinct error should have its */
-/*       own error number.  These error numbers should be described */
-/*       in the machine readable documentation for the routine. */
-/*       The error numbers need be unique only within each routine, */
-/*       so it is reasonable for each routine to start enumerating */
-/*       errors from 1 and proceeding to the next integer. */
+/*             author.  It must be in the range -9999999 to 99999999 (8 */
+/*             printable digits).  Each distinct error should have its */
+/*             own error number.  These error numbers should be described */
+/*             in the machine readable documentation for the routine. */
+/*             The error numbers need be unique only within each routine, */
+/*             so it is reasonable for each routine to start enumerating */
+/*             errors from 1 and proceeding to the next integer. */
 
 /*    LEVEL    An integer value in the range 0 to 2 that indicates the */
-/*       level (severity) of the error.  Their meanings are */
+/*             level (severity) of the error.  Their meanings are */
 
-/*      -1  A warning message.  This is used if it is not clear */
-/*          that there really is an error, but the user's attention */
-/*          may be needed.  An attempt is made to only print this */
-/*          message once. */
+/*            -1  A warning message.  This is used if it is not clear */
+/*                that there really is an error, but the user's attention */
+/*                may be needed.  An attempt is made to only print this */
+/*                message once. */
 
-/*       0  A warning message.  This is used if it is not clear */
-/*          that there really is an error, but the user's attention */
-/*          may be needed. */
+/*             0  A warning message.  This is used if it is not clear */
+/*                that there really is an error, but the user's attention */
+/*                may be needed. */
 
-/*       1  A recoverable error.  This is used even if the error is */
-/*          so serious that the routine cannot return any useful */
-/*          answer.  If the user has told the error package to */
-/*          return after recoverable errors, then XERMSG will */
-/*          return to the Library routine which can then return to */
-/*          the user's routine.  The user may also permit the error */
-/*          package to terminate the program upon encountering a */
-/*          recoverable error. */
+/*             1  A recoverable error.  This is used even if the error is */
+/*                so serious that the routine cannot return any useful */
+/*                answer.  If the user has told the error package to */
+/*                return after recoverable errors, then XERMSG will */
+/*                return to the Library routine which can then return to */
+/*                the user's routine.  The user may also permit the error */
+/*                package to terminate the program upon encountering a */
+/*                recoverable error. */
 
-/*       2  A fatal error.  XERMSG will not return to its caller */
-/*          after it receives a fatal error.  This level should */
-/*          hardly ever be used; it is much better to allow the */
-/*          user a chance to recover.  An example of one of the few */
-/*          cases in which it is permissible to declare a level 2 */
-/*          error is a reverse communication Library routine that */
-/*          is likely to be called repeatedly until it integrates */
-/*          across some interval.  If there is a serious error in */
-/*          the input such that another step cannot be taken and */
-/*          the Library routine is called again without the input */
-/*          error having been corrected by the caller, the Library */
-/*          routine will probably be called forever with improper */
-/*          input.  In this case, it is reasonable to declare the */
-/*          error to be fatal. */
+/*             2  A fatal error.  XERMSG will not return to its caller */
+/*                after it receives a fatal error.  This level should */
+/*                hardly ever be used; it is much better to allow the */
+/*                user a chance to recover.  An example of one of the few */
+/*                cases in which it is permissible to declare a level 2 */
+/*                error is a reverse communication Library routine that */
+/*                is likely to be called repeatedly until it integrates */
+/*                across some interval.  If there is a serious error in */
+/*                the input such that another step cannot be taken and */
+/*                the Library routine is called again without the input */
+/*                error having been corrected by the caller, the Library */
+/*                routine will probably be called forever with improper */
+/*                input.  In this case, it is reasonable to declare the */
+/*                error to be fatal. */
 
 /*    Each of the arguments to XERMSG is input; none will be modified by */
 /*    XERMSG.  A routine may make multiple calls to XERMSG with warning */
@@ -4184,51 +4184,51 @@ L400:
 /*    error, the routine should return to the user. */
 
 /* ***REFERENCES  JONES, RONDALL E. AND KAHANER, DAVID K., "XERROR, THE */
-/*           SLATEC ERROR-HANDLING PACKAGE", SOFTWARE - PRACTICE */
-/*           AND EXPERIENCE, VOLUME 13, NO. 3, PP. 251-257, */
-/*           MARCH, 1983. */
+/*                 SLATEC ERROR-HANDLING PACKAGE", SOFTWARE - PRACTICE */
+/*                 AND EXPERIENCE, VOLUME 13, NO. 3, PP. 251-257, */
+/*                 MARCH, 1983. */
 /* ***ROUTINES CALLED  XERHLT, XERPRN */
 /* ***REVISION HISTORY  (YYMMDD) */
 /*   880101  DATE WRITTEN */
 /*   880621  REVISED AS DIRECTED AT SLATEC CML MEETING OF FEBRUARY 1988. */
-/*     THERE ARE TWO BASIC CHANGES. */
-/*     1.  A NEW ROUTINE, XERPRN, IS USED INSTEAD OF XERPRT TO */
-/*         PRINT MESSAGES.  THIS ROUTINE WILL BREAK LONG MESSAGES */
-/*         INTO PIECES FOR PRINTING ON MULTIPLE LINES.  '$$' IS */
-/*         ACCEPTED AS A NEW LINE SENTINEL.  A PREFIX CAN BE */
-/*         ADDED TO EACH LINE TO BE PRINTED.  XERMSG USES EITHER */
-/*         ' ***' OR ' *  ' AND LONG MESSAGES ARE BROKEN EVERY */
-/*         72 CHARACTERS (AT MOST) SO THAT THE MAXIMUM LINE */
-/*         LENGTH OUTPUT CAN NOW BE AS GREAT AS 76. */
-/*     2.  THE TEXT OF ALL MESSAGES IS NOW IN UPPER CASE SINCE THE */
-/*         FORTRAN STANDARD DOCUMENT DOES NOT ADMIT THE EXISTENCE */
-/*         OF LOWER CASE. */
+/*           THERE ARE TWO BASIC CHANGES. */
+/*           1.  A NEW ROUTINE, XERPRN, IS USED INSTEAD OF XERPRT TO */
+/*               PRINT MESSAGES.  THIS ROUTINE WILL BREAK LONG MESSAGES */
+/*               INTO PIECES FOR PRINTING ON MULTIPLE LINES.  '$$' IS */
+/*               ACCEPTED AS A NEW LINE SENTINEL.  A PREFIX CAN BE */
+/*               ADDED TO EACH LINE TO BE PRINTED.  XERMSG USES EITHER */
+/*               ' ***' OR ' *  ' AND LONG MESSAGES ARE BROKEN EVERY */
+/*               72 CHARACTERS (AT MOST) SO THAT THE MAXIMUM LINE */
+/*               LENGTH OUTPUT CAN NOW BE AS GREAT AS 76. */
+/*           2.  THE TEXT OF ALL MESSAGES IS NOW IN UPPER CASE SINCE THE */
+/*               FORTRAN STANDARD DOCUMENT DOES NOT ADMIT THE EXISTENCE */
+/*               OF LOWER CASE. */
 /*   880708  REVISED AFTER THE SLATEC CML MEETING OF JUNE 29 AND 30. */
-/*     THE PRINCIPAL CHANGES ARE */
-/*     1.  CLARIFY COMMENTS IN THE PROLOGUES */
-/*     2.  RENAME XRPRNT TO XERPRN */
-/*     3.  REWORK HANDLING OF '$$' IN XERPRN TO HANDLE BLANK LINES */
-/*         SIMILAR TO THE WAY FORMAT STATEMENTS HANDLE THE / */
-/*         CHARACTER FOR NEW RECORDS. */
+/*           THE PRINCIPAL CHANGES ARE */
+/*           1.  CLARIFY COMMENTS IN THE PROLOGUES */
+/*           2.  RENAME XRPRNT TO XERPRN */
+/*           3.  REWORK HANDLING OF '$$' IN XERPRN TO HANDLE BLANK LINES */
+/*               SIMILAR TO THE WAY FORMAT STATEMENTS HANDLE THE / */
+/*               CHARACTER FOR NEW RECORDS. */
 /*   890706  REVISED WITH THE HELP OF FRED FRITSCH AND REG CLEMENS TO */
-/*     CLEAN UP THE CODING. */
+/*           CLEAN UP THE CODING. */
 /*   890721  REVISED TO USE NEW FEATURE IN XERPRN TO COUNT CHARACTERS IN */
-/*     PREFIX. */
+/*           PREFIX. */
 /*   891013  REVISED TO CORRECT COMMENTS. */
 /*   891214  Prologue converted to Version 4.0 format.  (WRB) */
 /*   900510  Changed test on NERR to be -9999999 < NERR < 99999999, but */
-/*     NERR .ne. 0, and on LEVEL to be -2 < LEVEL < 3.  Added */
-/*     LEVEL=-1 logic, changed calls to XERSAV to XERSVE, and */
-/*     XERCTL to XERCNT.  (RWC) */
+/*           NERR .ne. 0, and on LEVEL to be -2 < LEVEL < 3.  Added */
+/*           LEVEL=-1 logic, changed calls to XERSAV to XERSVE, and */
+/*           XERCTL to XERCNT.  (RWC) */
 /*   901011  Removed error saving features to produce a simplified */
-/*     version for distribution with DASSL and other LLNL codes. */
-/*     (FNF) */
+/*           version for distribution with DASSL and other LLNL codes. */
+/*           (FNF) */
 /* ***END PROLOGUE  XERMSG */
 /* ***FIRST EXECUTABLE STATEMENT  XERMSG */
 
 /*       WE PRINT A FATAL ERROR MESSAGE AND TERMINATE FOR AN ERROR IN */
-/*    CALLING XERMSG.  THE ERROR NUMBER SHOULD BE POSITIVE, */
-/*    AND THE LEVEL SHOULD BE BETWEEN 0 AND 2. */
+/*          CALLING XERMSG.  THE ERROR NUMBER SHOULD BE POSITIVE, */
+/*          AND THE LEVEL SHOULD BE BETWEEN 0 AND 2. */
 
     if(*nerr < -9999999 || *nerr > 99999999 || *nerr == 0 || *level < -1 || *
       level > 2) {
@@ -4273,12 +4273,12 @@ L400:
 /*       PRINTING THE MESSAGE.  THE INTRODUCTORY LINE TELLS THE CHOICE */
 /*       FROM EACH OF THE FOLLOWING TWO OPTIONS. */
 /*       1.  LEVEL OF THE MESSAGE */
-/*        'INFORMATIVE MESSAGE' */
-/*        'POTENTIALLY RECOVERABLE ERROR' */
-/*        'FATAL ERROR' */
+/*              'INFORMATIVE MESSAGE' */
+/*              'POTENTIALLY RECOVERABLE ERROR' */
+/*              'FATAL ERROR' */
 /*       2.  WHETHER CONTROL FLAG WILL ALLOW PROGRAM TO CONTINUE */
-/*        'PROGRAM CONTINUES' */
-/*        'PROGRAM ABORTED' */
+/*              'PROGRAM CONTINUES' */
+/*              'PROGRAM ABORTED' */
 /*       NOTICE THAT THE LINE INCLUDING FOUR PREFIX CHARACTERS WILL NOT */
 /*       EXCEED 74 CHARACTERS. */
 /*       WE SKIP THE NEXT BLOCK IF THE INTRODUCTORY LINE IS NOT NEEDED. */
@@ -4292,7 +4292,7 @@ L400:
       ltemp = 20;
   } else if(*level == 1) {
       s_copy(temp, "POTENTIALLY RECOVERABLE ERROR,", (ftnlen)30, (
-  ftnlen)30);
+        ftnlen)30);
       ltemp = 30;
   } else {
       s_copy(temp, "FATAL ERROR,", (ftnlen)12, (ftnlen)12);
@@ -4304,12 +4304,12 @@ L400:
   if((mkntrl == 2 && *level >= 1) || (mkntrl == 1 && *level == 2)) {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM ABORTED.", ltemp + 17 - i__1, (
-  ftnlen)17);
+        ftnlen)17);
       ltemp += 17;
   } else {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM CONTINUES.", ltemp + 19 - i__1, (
-  ftnlen)19);
+        ftnlen)19);
       ltemp += 19;
   }
 
@@ -4365,10 +4365,10 @@ L20:
     if(lkntrl > 0) {
   if(*level == 1) {
       xerprn_(" ***", &c_n1, "JOB ABORT DUE TO UNRECOVERED ERROR.", &
-  c__72, (ftnlen)4, (ftnlen)35);
+        c__72, (ftnlen)4, (ftnlen)35);
   } else {
       xerprn_(" ***", &c_n1, "JOB ABORT DUE TO FATAL ERROR.", &c__72, (
-  ftnlen)4, (ftnlen)29);
+        ftnlen)4, (ftnlen)29);
   }
   xerhlt_(" ", (ftnlen)1);
     }
@@ -4391,18 +4391,18 @@ L20:
 /* ***DESCRIPTION */
 
 /*     Abstract */
-/*  ***Note*** machine dependent routine */
-/*  XERHLT aborts the execution of the program. */
-/*  The error message causing the abort is given in the calling */
-/*  sequence, in case one needs it for printing on a dayfile, */
-/*  for example. */
+/*        ***Note*** machine dependent routine */
+/*        XERHLT aborts the execution of the program. */
+/*        The error message causing the abort is given in the calling */
+/*        sequence, in case one needs it for printing on a dayfile, */
+/*        for example. */
 
 /*     Description of Parameters */
-/*  MESSG is as in XERROR. */
+/*        MESSG is as in XERROR. */
 
 /* ***REFERENCES  JONES R.E., KAHANER D.K., 'XERROR, THE SLATEC ERROR- */
-/*           HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
-/*           1982. */
+/*                 HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
+/*                 1982. */
 /* ***ROUTINES CALLED  (NONE) */
 /* ***REVISION HISTORY  (YYMMDD) */
 /*   790801  DATE WRITTEN as XERABT */
@@ -4410,7 +4410,7 @@ L20:
 /*   891214  Prologue converted to Version 4.0 format.  (BAB) */
 /*   900206  Routine changed from user-callable to subsidiary.  (WRB) */
 /*   900510  Changed calling sequence to delete length of char string */
-/*     Changed subroutine name from XERABT to XERHLT.  (RWC) */
+/*           Changed subroutine name from XERABT to XERHLT.  (RWC) */
 /* ***END PROLOGUE  XERHLT */
 /* ***FIRST EXECUTABLE STATEMENT  XERHLT */
     s_stop("", (ftnlen)0);
@@ -4461,56 +4461,56 @@ L20:
 /* wrap around into multiple lines. */
 
 /* PREFIX  Input argument of type CHARACTER.  This argument contains */
-/*   characters to be put at the beginning of each line before */
-/*   the body of the message.  No more than 16 characters of */
-/*   PREFIX will be used. */
+/*         characters to be put at the beginning of each line before */
+/*         the body of the message.  No more than 16 characters of */
+/*         PREFIX will be used. */
 
 /* NPREF   Input argument of type INTEGER.  This argument is the number */
-/*   of characters to use from PREFIX.  If it is negative, the */
-/*   intrinsic function LEN is used to determine its length.  If */
-/*   it is zero, PREFIX is not used.  If it exceeds 16 or if */
-/*   LEN(PREFIX) exceeds 16, only the first 16 characters will be */
-/*   used.  If NPREF is positive and the length of PREFIX is less */
-/*   than NPREF, a copy of PREFIX extended with blanks to length */
-/*   NPREF will be used. */
+/*         of characters to use from PREFIX.  If it is negative, the */
+/*         intrinsic function LEN is used to determine its length.  If */
+/*         it is zero, PREFIX is not used.  If it exceeds 16 or if */
+/*         LEN(PREFIX) exceeds 16, only the first 16 characters will be */
+/*         used.  If NPREF is positive and the length of PREFIX is less */
+/*         than NPREF, a copy of PREFIX extended with blanks to length */
+/*         NPREF will be used. */
 
 /* MESSG   Input argument of type CHARACTER.  This is the text of a */
-/*   message to be printed.  If it is a long message, it will be */
-/*   broken into pieces for printing on multiple lines.  Each line */
-/*   will start with the appropriate prefix and be followed by a */
-/*   piece of the message.  NWRAP is the number of characters per */
-/*   piece; that is, after each NWRAP characters, we break and */
-/*   start a new line.  In addition the characters '$$' embedded */
-/*   in MESSG are a sentinel for a new line.  The counting of */
-/*   characters up to NWRAP starts over for each new line.  The */
-/*   value of NWRAP typically used by XERMSG is 72 since many */
-/*   older error messages in the SLATEC Library are laid out to */
-/*   rely on wrap-around every 72 characters. */
+/*         message to be printed.  If it is a long message, it will be */
+/*         broken into pieces for printing on multiple lines.  Each line */
+/*         will start with the appropriate prefix and be followed by a */
+/*         piece of the message.  NWRAP is the number of characters per */
+/*         piece; that is, after each NWRAP characters, we break and */
+/*         start a new line.  In addition the characters '$$' embedded */
+/*         in MESSG are a sentinel for a new line.  The counting of */
+/*         characters up to NWRAP starts over for each new line.  The */
+/*         value of NWRAP typically used by XERMSG is 72 since many */
+/*         older error messages in the SLATEC Library are laid out to */
+/*         rely on wrap-around every 72 characters. */
 
 /* NWRAP   Input argument of type INTEGER.  This gives the maximum size */
-/*   piece into which to break MESSG for printing on multiple */
-/*   lines.  An embedded '$$' ends a line, and the count restarts */
-/*   at the following character.  If a line break does not occur */
-/*   on a blank (it would split a word) that word is moved to the */
-/*   next line.  Values of NWRAP less than 16 will be treated as */
-/*   16.  Values of NWRAP greater than 132 will be treated as 132. */
-/*   The actual line length will be NPREF + NWRAP after NPREF has */
-/*   been adjusted to fall between 0 and 16 and NWRAP has been */
-/*   adjusted to fall between 16 and 132. */
+/*         piece into which to break MESSG for printing on multiple */
+/*         lines.  An embedded '$$' ends a line, and the count restarts */
+/*         at the following character.  If a line break does not occur */
+/*         on a blank (it would split a word) that word is moved to the */
+/*         next line.  Values of NWRAP less than 16 will be treated as */
+/*         16.  Values of NWRAP greater than 132 will be treated as 132. */
+/*         The actual line length will be NPREF + NWRAP after NPREF has */
+/*         been adjusted to fall between 0 and 16 and NWRAP has been */
+/*         adjusted to fall between 16 and 132. */
 
 /* ***REFERENCES  (NONE) */
 /* ***ROUTINES CALLED  I1MACH, XGETUA */
 /* ***REVISION HISTORY  (YYMMDD) */
 /*   880621  DATE WRITTEN */
 /*   880708  REVISED AFTER THE SLATEC CML SUBCOMMITTEE MEETING OF */
-/*     JUNE 29 AND 30 TO CHANGE THE NAME TO XERPRN AND TO REWORK */
-/*     THE HANDLING OF THE NEW LINE SENTINEL TO BEHAVE LIKE THE */
-/*     SLASH CHARACTER IN FORMAT STATEMENTS. */
+/*           JUNE 29 AND 30 TO CHANGE THE NAME TO XERPRN AND TO REWORK */
+/*           THE HANDLING OF THE NEW LINE SENTINEL TO BEHAVE LIKE THE */
+/*           SLASH CHARACTER IN FORMAT STATEMENTS. */
 /*   890706  REVISED WITH THE HELP OF FRED FRITSCH AND REG CLEMMENS TO */
-/*     STREAMLINE THE CODING AND FIX A BUG THAT CAUSED EXTRA BLANK */
-/*     LINES TO BE PRINTED. */
+/*           STREAMLINE THE CODING AND FIX A BUG THAT CAUSED EXTRA BLANK */
+/*           LINES TO BE PRINTED. */
 /*   890721  REVISED TO ADD A NEW FEATURE.  A NEGATIVE VALUE OF NPREF */
-/*     CAUSES LEN(PREFIX) TO BE USED AS THE LENGTH. */
+/*           CAUSES LEN(PREFIX) TO BE USED AS THE LENGTH. */
 /*   891013  REVISED TO CORRECT ERROR IN CALCULATING PREFIX LENGTH. */
 /*   891214  Prologue converted to Version 4.0 format.  (WRB) */
 /*   900510  Added code to break messages between words.  (RWC) */
@@ -4598,26 +4598,26 @@ L30:
 /*       POSITION NEXTC. */
 
 /*       LPIECE .EQ. 0   THE NEW LINE SENTINEL DOES NOT OCCUR IN THE */
-/*                 REMAINDER OF THE CHARACTER STRING.  LPIECE */
-/*                 SHOULD BE SET TO LWRAP OR LENMSG+1-NEXTC, */
-/*                 WHICHEVER IS LESS. */
+/*                       REMAINDER OF THE CHARACTER STRING.  LPIECE */
+/*                       SHOULD BE SET TO LWRAP OR LENMSG+1-NEXTC, */
+/*                       WHICHEVER IS LESS. */
 
 /*       LPIECE .EQ. 1   THE NEW LINE SENTINEL STARTS AT MESSG(NEXTC: */
-/*                 NEXTC).  LPIECE IS EFFECTIVELY ZERO, AND WE */
-/*                 PRINT NOTHING TO AVOID PRODUCING UNNECESSARY */
-/*                 BLANK LINES.  THIS TAKES CARE OF THE SITUATION */
-/*                 WHERE THE LIBRARY ROUTINE HAS A MESSAGE OF */
-/*                 EXACTLY 72 CHARACTERS FOLLOWED BY A NEW LINE */
-/*                 SENTINEL FOLLOWED BY MORE CHARACTERS.  NEXTC */
-/*                 SHOULD BE INCREMENTED BY 2. */
+/*                       NEXTC).  LPIECE IS EFFECTIVELY ZERO, AND WE */
+/*                       PRINT NOTHING TO AVOID PRODUCING UNNECESSARY */
+/*                       BLANK LINES.  THIS TAKES CARE OF THE SITUATION */
+/*                       WHERE THE LIBRARY ROUTINE HAS A MESSAGE OF */
+/*                       EXACTLY 72 CHARACTERS FOLLOWED BY A NEW LINE */
+/*                       SENTINEL FOLLOWED BY MORE CHARACTERS.  NEXTC */
+/*                       SHOULD BE INCREMENTED BY 2. */
 
 /*       LPIECE .GT. LWRAP+1  REDUCE LPIECE TO LWRAP. */
 
-/*       ELSE      THIS LAST CASE MEANS 2 .LE. LPIECE .LE. LWRAP+1 */
-/*                 RESET LPIECE = LPIECE-1.  NOTE THAT THIS */
-/*                 PROPERLY HANDLES THE END CASE WHERE LPIECE .EQ. */
-/*                 LWRAP+1.  THAT IS, THE SENTINEL FALLS EXACTLY */
-/*                 AT THE END OF A LINE. */
+/*       ELSE            THIS LAST CASE MEANS 2 .LE. LPIECE .LE. LWRAP+1 */
+/*                       RESET LPIECE = LPIECE-1.  NOTE THAT THIS */
+/*                       PROPERLY HANDLES THE END CASE WHERE LPIECE .EQ. */
+/*                       LWRAP+1.  THAT IS, THE SENTINEL FALLS EXACTLY */
+/*                       AT THE END OF A LINE. */
 
     nextc = 1;
 L50:
@@ -4636,9 +4636,9 @@ L50:
     i__1 = nextc + i__ - 2;
     if(s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)
       1) == 0) {
-  lpiece = i__ - 1;
-  idelta = 1;
-  goto L54;
+        lpiece = i__ - 1;
+        idelta = 1;
+        goto L54;
     }
 /* L52: */
       }
@@ -4664,7 +4664,7 @@ L54:
   for(i__ = lpiece + 1; i__ >= 2; --i__) {
       i__1 = nextc + i__ - 2;
       if(s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)1) ==
-   0) {
+         0) {
     lpiece = i__ - 1;
     idelta = 1;
     goto L58;
@@ -4716,41 +4716,41 @@ L58:
 
 /* ***BEGIN PROLOGUE  XGETUA */
 /* ***PURPOSE  Return unit number(s) to which error messages are being */
-/*      sent. */
+/*            sent. */
 /* ***LIBRARY   SLATEC (XERROR) */
 /* ***CATEGORY  R3C */
 /* ***TYPE      ALL (XGETUA-A) */
 /* ***KEYWORDS  ERROR, XERROR */
 /* ***AUTHOR  JONES, R. E., (SNLA) */
-/*       Modified by */
-/*     FRITSCH, F. N., (LLNL) */
+/*             Modified by */
+/*           FRITSCH, F. N., (LLNL) */
 /* ***DESCRIPTION */
 
 /*     Abstract */
-/*  XGETUA may be called to determine the unit number or numbers */
-/*  to which error messages are being sent. */
-/*  These unit numbers may have been set by a call to XSETUN, */
-/*  or a call to XSETUA, or may be a default value. */
+/*        XGETUA may be called to determine the unit number or numbers */
+/*        to which error messages are being sent. */
+/*        These unit numbers may have been set by a call to XSETUN, */
+/*        or a call to XSETUA, or may be a default value. */
 
 /*     Description of Parameters */
 /*      --Output-- */
-/*  IUNIT - an array of one to five unit numbers, depending */
-/*          on the value of N.  A value of zero refers to the */
-/*          default unit, as defined by the I1MACH machine */
-/*          constant routine.  Only IUNIT(1),...,IUNIT(N) are */
-/*          defined by XGETUA.  The values of IUNIT(N+1),..., */
-/*          IUNIT(5) are not defined (for N .LT. 5) or altered */
-/*          in any way by XGETUA. */
-/*  N     - the number of units to which copies of the */
-/*          error messages are being sent.  N will be in the */
-/*          range from 1 to 5. */
+/*        IUNIT - an array of one to five unit numbers, depending */
+/*                on the value of N.  A value of zero refers to the */
+/*                default unit, as defined by the I1MACH machine */
+/*                constant routine.  Only IUNIT(1),...,IUNIT(N) are */
+/*                defined by XGETUA.  The values of IUNIT(N+1),..., */
+/*                IUNIT(5) are not defined (for N .LT. 5) or altered */
+/*                in any way by XGETUA. */
+/*        N     - the number of units to which copies of the */
+/*                error messages are being sent.  N will be in the */
+/*                range from 1 to 5. */
 
 /*     CAUTION:  The use of COMMON in this version is not safe for */
-/*         multiprocessing. */
+/*               multiprocessing. */
 
 /* ***REFERENCES  JONES R.E., KAHANER D.K., 'XERROR, THE SLATEC ERROR- */
-/*           HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
-/*           1982. */
+/*                 HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
+/*                 1982. */
 /* ***ROUTINES CALLED  (NONE) */
 /* ***COMMON BLOCKS    XERUNI */
 /* ***REVISION HISTORY  (YYMMDD) */
@@ -4806,39 +4806,39 @@ L58:
 
 /* ***BEGIN PROLOGUE  XSETUA */
 /* ***PURPOSE  Set logical unit numbers (up to 5) to which error */
-/*      messages are to be sent. */
+/*            messages are to be sent. */
 /* ***LIBRARY   SLATEC (XERROR) */
 /* ***CATEGORY  R3B */
 /* ***TYPE      ALL (XSETUA-A) */
 /* ***KEYWORDS  ERROR, XERROR */
 /* ***AUTHOR  JONES, R. E., (SNLA) */
-/*       Modified by */
-/*     FRITSCH, F. N., (LLNL) */
+/*             Modified by */
+/*           FRITSCH, F. N., (LLNL) */
 /* ***DESCRIPTION */
 
 /*     Abstract */
-/*  XSETUA may be called to declare a list of up to five */
-/*  logical units, each of which is to receive a copy of */
-/*  each error message processed by this package. */
-/*  The purpose of XSETUA is to allow simultaneous printing */
-/*  of each error message on, say, a main output file, */
-/*  an interactive terminal, and other files such as graphics */
-/*  communication files. */
+/*        XSETUA may be called to declare a list of up to five */
+/*        logical units, each of which is to receive a copy of */
+/*        each error message processed by this package. */
+/*        The purpose of XSETUA is to allow simultaneous printing */
+/*        of each error message on, say, a main output file, */
+/*        an interactive terminal, and other files such as graphics */
+/*        communication files. */
 
 /*     Description of Parameters */
 /*      --Input-- */
-/*  IUNIT - an array of up to five unit numbers. */
-/*          Normally these numbers should all be different */
-/*          (but duplicates are not prohibited.) */
-/*  N     - the number of unit numbers provided in IUNIT */
-/*          must have 1 .LE. N .LE. 5. */
+/*        IUNIT - an array of up to five unit numbers. */
+/*                Normally these numbers should all be different */
+/*                (but duplicates are not prohibited.) */
+/*        N     - the number of unit numbers provided in IUNIT */
+/*                must have 1 .LE. N .LE. 5. */
 
 /*     CAUTION:  The use of COMMON in this version is not safe for */
-/*         multiprocessing. */
+/*               multiprocessing. */
 
 /* ***REFERENCES  JONES R.E., KAHANER D.K., 'XERROR, THE SLATEC ERROR- */
-/*           HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
-/*           1982. */
+/*                 HANDLING PACKAGE', SAND82-0800, SANDIA LABORATORIES, */
+/*                 1982. */
 /* ***ROUTINES CALLED  XERMSG */
 /* ***COMMON BLOCKS    XERUNI */
 /* ***REVISION HISTORY  (YYMMDD) */

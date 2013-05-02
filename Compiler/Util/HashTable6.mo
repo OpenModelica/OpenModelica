@@ -5,7 +5,7 @@ encapsulated package HashTable6 "
 
   All rights reserved.
 
-  file:  HashTable6.mo
+  file:        HashTable6.mo
   package:     HashTable6
   description: (DAE.CR,DAE.CR) to DAE.Exp
 

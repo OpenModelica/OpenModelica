@@ -393,7 +393,7 @@ extern void* System_getFileModificationTime(const char *fileName)
 {
   struct stat attrib;   // create a file attribute structure
   double elapsedTime;    // the time elapsed as double
-  int result;      // the result of the function call
+  int result;            // the result of the function call
 
   if (stat( fileName, &attrib ) != 0) {
     return mmc_mk_none();
@@ -417,7 +417,7 @@ void* System_moFiles(const char *directory)
     while(more) {
       if (strcmp(FileData.cFileName,"package.mo") != 0)
       {
-  res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
       }
       more = FindNextFile(sh, &FileData);
     }
@@ -514,10 +514,10 @@ void* System_subDirectories(const char *directory)
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
       if (strcmp(FileData.cFileName,"..") != 0 &&
-  strcmp(FileData.cFileName,".") != 0 &&
-  (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+        strcmp(FileData.cFileName,".") != 0 &&
+        (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
       {
-    res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+          res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
       }
       more = FindNextFile(sh, &FileData);
     }

@@ -30,7 +30,7 @@
  */
 
 encapsulated package ResidualCmp
-" file:  ResidualCmp.mo
+" file:        ResidualCmp.mo
   package:     ResidualCmp
   description: Code generation using Susan templates
 
@@ -130,21 +130,21 @@ algorithm
 
     case (_,dae,_,path)
       equation
-  // get all the used functions from the function tree
-  funcelems = DAEUtil.getFunctionList(functionTree);
-  part_func_elems = PartFn.createPartEvalFunctions(funcelems);
-  (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
-  funcelems = List.union(part_func_elems, part_func_elems);
-  //funcelems = List.union(funcelems, part_func_elems);
-  //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
-  (fns, recordDecls, includes2, includeDirs2, libs2) = SimCodeUtil.elaborateFunctions(program, funcelems, {}, {}, {}); // Do we need metarecords here as well?
+        // get all the used functions from the function tree
+        funcelems = DAEUtil.getFunctionList(functionTree);
+        part_func_elems = PartFn.createPartEvalFunctions(funcelems);
+        (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
+        funcelems = List.union(part_func_elems, part_func_elems);
+        //funcelems = List.union(funcelems, part_func_elems);
+        //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
+        (fns, recordDecls, includes2, includeDirs2, libs2) = SimCodeUtil.elaborateFunctions(program, funcelems, {}, {}, {}); // Do we need metarecords here as well?
       then
-  (libs2, includes2, includeDirs2, recordDecls, fns);
+        (libs2, includes2, includeDirs2, recordDecls, fns);
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
       then
-  fail();
+        fail();
   end matchcontinue;
 end createFunctions;
 
@@ -177,25 +177,25 @@ algorithm
       SimCode.HashTableCrefToSimVar hashTable;
     case (DAE.DAE(elementLst=elementLst),_,_,_,_,_,_,_,_,_)
       equation
-  // generate all residual equations
-  (daevars,_,allEquations,allInitEquations) = generateEquationscollectVars(elementLst,{},1,{},{});
-  // generate variable definitions
-  simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
-  varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
+        // generate all residual equations
+        (daevars,_,allEquations,allInitEquations) = generateEquationscollectVars(elementLst,{},1,{},{});
+        // generate variable definitions
+        simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
+        varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
 
-  modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});
-  extObjInfo = SimCode.EXTOBJINFO({},{});
-  makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"");
-  delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
-  hashTable = SimCodeUtil.emptyHashTable();
-  rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable);
+        modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});
+        extObjInfo = SimCode.EXTOBJINFO({},{});
+        makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"");
+        delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
+        hashTable = SimCodeUtil.emptyHashTable();
+        rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable);
       then
-  rescmp;
+        rescmp;
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"ResidualCmp.createResidualCmp failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"ResidualCmp.createResidualCmp failed!"});
       then
-  fail();
+        fail();
   end matchcontinue;
 end createResidualCmp;
 
@@ -223,169 +223,169 @@ algorithm
     // external Objects
     case ((elem as DAE.EXTOBJECTCLASS(path=_))::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // Variables
     case ((elem as DAE.VAR(componentRef = _))::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,elem::iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,elem::iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // equations
     case((elem as DAE.EQUATION(exp=_))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // initial equations
     case ((elem as DAE.INITIALEQUATION(exp1 = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // effort variable equality equations
     case ((elem as DAE.EQUEQUATION(cr1 = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // a solved equation
     case ((elem as DAE.DEFINE(componentRef = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // complex equations
     case ((elem as DAE.COMPLEX_EQUATION(lhs = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // complex initial equations
     case ((elem as DAE.INITIAL_COMPLEX_EQUATION(lhs = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // array equations
     case ((elem as DAE.ARRAY_EQUATION(dimension=_))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // initial array equations
     case ((elem as DAE.INITIAL_ARRAY_EQUATION(exp = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // when equations
     case (DAE.WHEN_EQUATION(equations = _)::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // if equation
     case ((elem as DAE.IF_EQUATION(equations2 = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
     // initial if equation
     case ((elem as DAE.INITIAL_IF_EQUATION(condition1 = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // algorithm
     case ((elem as DAE.ALGORITHM(algorithm_ = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // initial algorithm
     case ((elem as DAE.INITIALALGORITHM(algorithm_ = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // flat class / COMP
     case (DAE.COMP(dAElist = daeElts)::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(daeElts,iVars,equationindex,iEquations,iInitialEquations);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(daeElts,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,vars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // reinit
     case (DAE.REINIT(componentRef = _)::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // assert in equation
     case ((elem as DAE.ASSERT(condition = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // terminate in equation section is converted to ALGORITHM
     case ((elem as DAE.TERMINATE(message = _))::rest,_,_,_,_)
       equation
-  (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
+        (simeqns,initsimeqns,index) = generateEquation(elem,iEquations,iInitialEquations,equationindex);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,index,simeqns,initsimeqns);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     case (DAE.NORETCALL(functionName = _)::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
     case (DAE.CONSTRAINT(constraints = _)::rest,_,_,_,_)
       equation
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
 
     case (elem::rest,_,_,_,_)
       equation
-  Debug.traceln("- ResidualCmp.generateEquationscollectVars skipp: " +& DAEDump.dumpElementsStr({elem}));
-  (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
+        Debug.traceln("- ResidualCmp.generateEquationscollectVars skipp: " +& DAEDump.dumpElementsStr({elem}));
+        (vars,index,simeqns,initsimeqns) = generateEquationscollectVars(rest,iVars,equationindex,iEquations,iInitialEquations);
       then
-  (vars,index,simeqns,initsimeqns);
+        (vars,index,simeqns,initsimeqns);
   end match;
 end generateEquationscollectVars;
 
@@ -409,115 +409,115 @@ algorithm
     // equations
     case(DAE.EQUATION(exp=e1,scalar=e2,source=source),_,_,_)
       equation
-  res = Expression.expSub(e1,e2);
-  simeqn = SimCode.SES_RESIDUAL(index,res,source);
+        res = Expression.expSub(e1,e2);
+        simeqn = SimCode.SES_RESIDUAL(index,res,source);
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // initial equations
     case (DAE.INITIALEQUATION(exp1=e1,exp2=e2,source=source),_,_,_)
       equation
-  res = Expression.expSub(e1,e2);
-  simeqn = SimCode.SES_RESIDUAL(0,res,source);
+        res = Expression.expSub(e1,e2);
+        simeqn = SimCode.SES_RESIDUAL(0,res,source);
       then
-  (iEquations,simeqn::iInitialEquations,index+1);
+        (iEquations,simeqn::iInitialEquations,index+1);
 
     // effort variable equality equations
     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source=source),_,_,_)
       equation
-  e1 = Expression.crefExp(cr1);
-  e2 = Expression.crefExp(cr2);
-  res = Expression.expSub(e1,e2);
-  simeqn = SimCode.SES_RESIDUAL(0,res,source);
+        e1 = Expression.crefExp(cr1);
+        e2 = Expression.crefExp(cr2);
+        res = Expression.expSub(e1,e2);
+        simeqn = SimCode.SES_RESIDUAL(0,res,source);
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // a solved equation
     case (DAE.DEFINE(componentRef=cr1,exp=e2,source=source),_,_,_)
       equation
-  e1 = Expression.crefExp(cr1);
-  res = Expression.expSub(e1,e2);
-  simeqn = SimCode.SES_RESIDUAL(0,res,source);
+        e1 = Expression.crefExp(cr1);
+        res = Expression.expSub(e1,e2);
+        simeqn = SimCode.SES_RESIDUAL(0,res,source);
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
 /*
     // complex equations
     case ((elem as DAE.COMPLEX_EQUATION(lhs = _)),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // complex initial equations
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // array equations
     case ((elem as DAE.ARRAY_EQUATION(dimension=_)),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // initial array equations
     case (DAE.INITIAL_ARRAY_EQUATION(exp = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // when equations
     case (DAE.WHEN_EQUATION(equations = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // if equation that cannot be translated to if expression but have initial() as condition
     case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // if equation
     case (DAE.IF_EQUATION(equations2 = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
     // initial if equation
     case (DAE.INITIAL_IF_EQUATION(condition1 = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // algorithm
     case (DAE.ALGORITHM(algorithm_ = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // initial algorithm
     case (DAE.INITIALALGORITHM(algorithm_ = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // assert in equation
     case (DAE.ASSERT(condition = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);
+        (simeqn::iEquations,iInitialEquations,index+1);
 
     // terminate in equation section is converted to ALGORITHM
     case (DAE.TERMINATE(message = _),_,_,_)
       equation
       then
-  (simeqn::iEquations,iInitialEquations,index+1);;
+        (simeqn::iEquations,iInitialEquations,index+1);;
 */
     case (_,_,_,_)
       equation
-  Debug.traceln("- ResidualCmp.generateEquation skipped: " +& DAEDump.dumpElementsStr({inElement}));
+        Debug.traceln("- ResidualCmp.generateEquation skipped: " +& DAEDump.dumpElementsStr({inElement}));
       then
-  (iEquations,iInitialEquations,index);
+        (iEquations,iInitialEquations,index);
 
   end match;
 end generateEquation;
@@ -542,34 +542,34 @@ algorithm
     // Variables
     case (DAE.VAR(ty=DAE.T_REAL(source=_)),_,_,_,_,_)
       equation
-  realVars = generateVar(inElement,irealVars);
+        realVars = generateVar(inElement,irealVars);
       then
-  (realVars,iintVars,iboolVars,istringVars,iextVars);
+        (realVars,iintVars,iboolVars,istringVars,iextVars);
 
     case (DAE.VAR(ty=DAE.T_INTEGER(source=_)),_,_,_,_,_)
       equation
-  intVars = generateVar(inElement,iintVars);
+        intVars = generateVar(inElement,iintVars);
       then
-  (irealVars,intVars,iboolVars,istringVars,iextVars);
+        (irealVars,intVars,iboolVars,istringVars,iextVars);
 
     case (DAE.VAR(ty=DAE.T_BOOL(source=_)),_,_,_,_,_)
       equation
-  boolVars = generateVar(inElement,iboolVars);
+        boolVars = generateVar(inElement,iboolVars);
       then
-  (irealVars,iintVars,boolVars,istringVars,iextVars);
+        (irealVars,iintVars,boolVars,istringVars,iextVars);
 
 
     case (DAE.VAR(ty=DAE.T_STRING(source=_)),_,_,_,_,_)
       equation
-  stringVars = generateVar(inElement,istringVars);
+        stringVars = generateVar(inElement,istringVars);
       then
-  (irealVars,iintVars,iboolVars,stringVars,iextVars);
+        (irealVars,iintVars,iboolVars,stringVars,iextVars);
 
     case (_,_,_,_,_,_)
       equation
-  Debug.traceln("- ResidualCmp.generateVar skipped: " +& DAEDump.dumpElementsStr({inElement}));
+        Debug.traceln("- ResidualCmp.generateVar skipped: " +& DAEDump.dumpElementsStr({inElement}));
       then
-  (irealVars,iintVars,iboolVars,istringVars,iextVars);
+        (irealVars,iintVars,iboolVars,istringVars,iextVars);
 
   end match;
 end generateVars;
@@ -601,19 +601,19 @@ algorithm
       ty = tp,
       source = source),_)
       equation
-  commentStr = "";
-  unit = "";
-  displayUnit = "";
-  minValue = NONE();
-  maxValue = NONE();
-  nomVal = NONE();
-  type_ = tp;
-  arrayCref = SimCodeUtil.getArrayCref(cr);
-  numArrayElement=SimCodeUtil.arraydim1(inst_dims);
-  kind = daeKindtoBackendDAEKind(daekind);
+        commentStr = "";
+        unit = "";
+        displayUnit = "";
+        minValue = NONE();
+        maxValue = NONE();
+        nomVal = NONE();
+        type_ = tp;
+        arrayCref = SimCodeUtil.getArrayCref(cr);
+        numArrayElement=SimCodeUtil.arraydim1(inst_dims);
+        kind = daeKindtoBackendDAEKind(daekind);
       then
-  SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-  minValue, maxValue, NONE(), nomVal, false, type_, false, arrayCref, SimCode.NOALIAS(), source, SimCode.NONECAUS(),NONE(),numArrayElement)::ivars;
+        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        minValue, maxValue, NONE(), nomVal, false, type_, false, arrayCref, SimCode.NOALIAS(), source, SimCode.NONECAUS(),NONE(),numArrayElement)::ivars;
   end match;
 end generateVar;
 

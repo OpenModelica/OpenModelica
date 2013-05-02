@@ -30,7 +30,7 @@
  */
 
 encapsulated package Env
-" file:  Env.mo
+" file:        Env.mo
   package:     Env
   description: Environment management
 
@@ -42,7 +42,7 @@ encapsulated package Env
   - a frame name (corresponding to the class partially instantiated in that frame)
   - a binary tree containing a list of classes
   - a binary tree containing a list of functions (functions are overloaded so serveral
-           function names can exist)
+                 function names can exist)
   - a list of unnamed items consisting of import statements
 
   As an example lets consider the following Modelica code:
@@ -211,15 +211,15 @@ end FrameType;
 public
 uniontype Frame
   record FRAME
-    Option<Ident>       name         "Optional class name";
-    Option<ScopeType>   scopeType    "Optional scope type";
-    FrameType     frameType          "Normal, Encapsulated, Implicit";
-    AvlTree       clsAndVars         "List of uniquely named classes and variables";
-    AvlTree       types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
-    CSetsType     connectionSet      "Current connection set crefs";
-    list<SCode.Element> defineUnits  "List of units defined in the frame";
-    ExtendsTable  extendsTable       "The Extends table containing all extends with their redeclares";
-    ImportTable   importTable        "The Import table";
+    Option<Ident>       name               "Optional class name";
+    Option<ScopeType>   scopeType          "Optional scope type";
+    FrameType           frameType          "Normal, Encapsulated, Implicit";
+    AvlTree             clsAndVars         "List of uniquely named classes and variables";
+    AvlTree             types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
+    CSetsType           connectionSet      "Current connection set crefs";
+    list<SCode.Element> defineUnits        "List of units defined in the frame";
+    ExtendsTable        extendsTable       "The Extends table containing all extends with their redeclares";
+    ImportTable         importTable        "The Import table";
     Option<Util.StatefulBoolean> isUsed    "Used by FDependency.";
   end FRAME;
 end Frame;
@@ -243,7 +243,7 @@ and finally instantiated to produce the DAE. These three states are indicated by
   end VAR_TYPED;
 
   record VAR_DAE "Typed variables that also have been instantiated to generate dae. Required to distinguish
-            between typed variables without DAE to know when to skip multiply declared dae elements"
+                  between typed variables without DAE to know when to skip multiply declared dae elements"
   end VAR_DAE;
 end InstStatus;
 
@@ -328,7 +328,7 @@ protected
   Util.StatefulBoolean is_used;
 algorithm
   clsAndVars := avlTreeNew();
-  tys  := avlTreeNew();
+  tys        := avlTreeNew();
   exts       := newExtendsTable();
   imps       := newImportTable();
   is_used    := Util.makeStatefulBoolean(false);
@@ -402,7 +402,7 @@ algorithm
 
     case(FRAME(name = SOME(name))::_)
       equation
-  true = stringEq(name, forScopeName);
+        true = stringEq(name, forScopeName);
       then true;
 
     case(_) then false;
@@ -419,12 +419,12 @@ algorithm
 
     case(FRAME(name = SOME(name))::_)
       equation
-  true = stringEq(name, forIterScopeName);
+        true = stringEq(name, forIterScopeName);
       then true;
 
     case(FRAME(name = SOME(name))::_)
       equation
-  true = stringEq(name, parForIterScopeName);
+        true = stringEq(name, parForIterScopeName);
       then true;
 
     case(_) then false;
@@ -439,8 +439,8 @@ algorithm
     local String name; Env env;
     case(FRAME(name = SOME(name))::env)
       equation
-  true = stringEq(name, forScopeName);
-  env = stripForLoopScope(env);
+        true = stringEq(name, forScopeName);
+        env = stripForLoopScope(env);
       then env;
     case(env) then env;
   end matchcontinue;
@@ -469,15 +469,15 @@ algorithm
     // frame with a name
     case ((FRAME(name = SOME(name))::inEnv))
       equation
-  names = getScopeNames(inEnv);
+        names = getScopeNames(inEnv);
       then
-  name::names;
+        name::names;
     // frame without a name
     case ((FRAME(name = NONE())::inEnv))
       equation
-  names = getScopeNames(inEnv);
+        names = getScopeNames(inEnv);
       then
-  "-NONAME-"::names;
+        "-NONAME-"::names;
   end matchcontinue;
 end getScopeNames;
 
@@ -503,9 +503,9 @@ algorithm
 
     case(FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, _)
       equation
-  clsAndVars = updateEnvClassesInTree(clsAndVars, inClassEnv);
+        clsAndVars = updateEnvClassesInTree(clsAndVars, inClassEnv);
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
   end match;
 end updateEnvClasses;
@@ -563,9 +563,9 @@ algorithm
     case(NONE(),_) then NONE();
     case(SOME(t),_)
       equation
-  t = updateEnvClassesInTree(t,classEnv);
+        t = updateEnvClassesInTree(t,classEnv);
       then
-  SOME(t);
+        SOME(t);
   end match;
 end updateEnvClassesInTreeOpt;
 
@@ -595,18 +595,18 @@ algorithm
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n))
       equation
-  cdef = SCode.getClassDef(c);
-  ct = getClassType(cdef);
-  clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
+        cdef = SCode.getClassDef(c);
+        ct = getClassType(cdef);
+        clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     case (_,_)
       equation
-  n = SCode.elementName(inClass);
-  print("- Env.extendFrameC failed on element: " +& n +& "\n");
+        n = SCode.elementName(inClass);
+        print("- Env.extendFrameC failed on element: " +& n +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end extendFrameC;
 
@@ -645,16 +645,16 @@ algorithm
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n), _)
       equation
-  clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inClassType));
+        clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inClassType));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     case (_,_,_)
       equation
-  n = SCode.elementName(inClass);
-  print("- Env.extendFrameCClassType failed on element: " +& n +& "\n");
+        n = SCode.elementName(inClass);
+        print("- Env.extendFrameCClassType failed on element: " +& n +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end extendFrameCClassType;
 
@@ -688,38 +688,38 @@ algorithm
     /*
     case (env, e, classEnv)
       equation
-  // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv));
+        // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv));
       then
-  fail();*/
+        fail();*/
 
     // empty case
 
     case ({}, _, _) then {};
 
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,
-    e as SCode.CLASS(name = n), classEnv)
+          e as SCode.CLASS(name = n), classEnv)
       equation
-  cdef = SCode.getClassDef(e);
-  clsTy = getClassType(cdef);
+        cdef = SCode.getClassDef(e);
+        clsTy = getClassType(cdef);
 
-  CLASS(oldE,oldCE,oldCT) = avlTreeGet(clsAndVars, n);
+        CLASS(oldE,oldCE,oldCT) = avlTreeGet(clsAndVars, n);
 
-  clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
+        clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     // Also check frames above, e.g. when variable is in base class
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, e, classEnv)
       equation
-  frames = updateFrameC(fs, e, classEnv);
+        frames = updateFrameC(fs, e, classEnv);
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::frames;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::frames;
 
     case (_, e, classEnv)
       equation
-  print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e) +& "\n");
+        print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e) +& "\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end updateFrameC;
@@ -741,10 +741,10 @@ algorithm
 
     case (env, c :: cs)
       equation
-  env = extendFrameCBuiltin(env, c);
-  env = extendFrameClasses(env, cs);
+        env = extendFrameCBuiltin(env, c);
+        env = extendFrameClasses(env, cs);
       then
-  env;
+        env;
 
   end match;
 end extendFrameClasses;
@@ -757,7 +757,7 @@ algorithm
   outType := match(inClassDef)
     // A builtin class.
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-  lang = SOME("builtin")))))
+        lang = SOME("builtin")))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
@@ -785,10 +785,10 @@ algorithm
 
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs)
       equation
-  // make an empty component env!
-  clsAndVars = avlTreeNew();
+        // make an empty component env!
+        clsAndVars = avlTreeNew();
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
   end match;
 end removeComponentsFromFrameV;
@@ -824,16 +824,16 @@ algorithm
     // Environment of component
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
       equation
-  clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
+        clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     // Variable already added, perhaps from baseclass
     case (FRAME(clsAndVars  = clsAndVars)::fs,v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
       equation
-  _ = avlTreeGet(clsAndVars, n);
+        _ = avlTreeGet(clsAndVars, n);
       then
-  inEnv;
+        inEnv;
   end matchcontinue;
 end extendFrameV;
 
@@ -871,26 +871,26 @@ algorithm
 
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
-  (var as VAR(_,c,m,_,_,iu)) = avlTreeGet(clsAndVars, n);
-  // Debug.fprintln(Flags.INST_TRACE, "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
-  // Debug.fprintln(Flags.INST_TRACE, "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
-  clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
+        (var as VAR(_,c,m,_,_,iu)) = avlTreeGet(clsAndVars, n);
+        // Debug.fprintln(Flags.INST_TRACE, "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
+        // Debug.fprintln(Flags.INST_TRACE, "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
+        clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs;
 
     // Also check frames above, e.g. when variable is in base class
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs,v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
-  frames = updateFrameV(fs, v, i, coenv);
+        frames = updateFrameV(fs, v, i, coenv);
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::frames;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::frames;
 
     case (_,v as DAE.TYPES_VAR(name = n),_,_)
       equation
-  print("- Env.updateFrameV failed on variable: " +&
-        n +& "\n" +& Types.printVarStr(v) +& "\n");
+        print("- Env.updateFrameV failed on variable: " +&
+              n +& "\n" +& Types.printVarStr(v) +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end updateFrameV;
 
@@ -924,18 +924,18 @@ algorithm
     // Other types with that name already exist, add this type as well
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,n,t)
       equation
-  TYPE(tps) = avlTreeGet(tys, n);
-  tys = avlTreeReplace(tys, n, TYPE(t::tps));
+        TYPE(tps) = avlTreeGet(tys, n);
+        tys = avlTreeReplace(tys, n, TYPE(t::tps));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     // No other types exists
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,n,t)
       equation
-  failure(TYPE(_) = avlTreeGet(tys, n));
-  tys = avlTreeAdd(tys, n, TYPE({t}));
+        failure(TYPE(_) = avlTreeGet(tys, n));
+        tys = avlTreeAdd(tys, n, TYPE({t}));
       then
-  FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
   end matchcontinue;
 end extendFrameT;
 
@@ -950,9 +950,9 @@ algorithm
     local Env env;
     case (_, _)
       equation
-  env = FEnv.extendEnvWithImport(inImport, inEnv);
+        env = FEnv.extendEnvWithImport(inImport, inEnv);
       then
-  env;
+        env;
   end match;
 end extendFrameI;
 
@@ -996,23 +996,23 @@ algorithm
 
     case (_, _, _, _,_,_)
       equation
-  new_env = extendFrameV(
-    env,
-    DAE.TYPES_VAR(
-      name,
-      DAE.ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-      ty,
-      binding,
-      constOfForIteratorRange),
-    SCode.COMPONENT(
-      name,
-      SCode.defaultPrefixes,
-      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
-      Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-      SCode.noComment, NONE(), Absyn.dummyInfo),
-    DAE.NOMOD(),
-    VAR_UNTYPED(),
-    {});
+        new_env = extendFrameV(
+          env,
+          DAE.TYPES_VAR(
+            name,
+            DAE.ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+            ty,
+            binding,
+            constOfForIteratorRange),
+          SCode.COMPONENT(
+            name,
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
+            Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+            SCode.noComment, NONE(), Absyn.dummyInfo),
+          DAE.NOMOD(),
+          VAR_UNTYPED(),
+          {});
       then new_env;
 
   end match;
@@ -1030,9 +1030,9 @@ algorithm
     case ({fr}) then fr;
     case ((elt :: (lst as (_ :: _))))
       equation
-  fr = topFrame(lst);
+        fr = topFrame(lst);
       then
-  fr;
+        fr;
   end match;
 end topFrame;
 
@@ -1089,9 +1089,9 @@ algorithm
 
     case _
       equation
-  path = getEnvName(inEnv);
+        path = getEnvName(inEnv);
       then
-  SOME(path);
+        SOME(path);
 
     else NONE();
   end matchcontinue;
@@ -1112,19 +1112,19 @@ algorithm
       Env rest;
     case ((FRAME(name = SOME(id)) :: rest))
       equation
-  true = listMember(id,implicitScopeNames);
+        true = listMember(id,implicitScopeNames);
       then getEnvPathNoImplicitScope(rest);
     case ((FRAME(name = SOME(id)) :: rest))
       equation
-  false = listMember(id,implicitScopeNames);
-  SOME(path) = getEnvPathNoImplicitScope(rest);
-  path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
+        false = listMember(id,implicitScopeNames);
+        SOME(path) = getEnvPathNoImplicitScope(rest);
+        path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
-  SOME(path_1);
+        SOME(path_1);
     case (FRAME(name = SOME(id))::rest)
       equation
-  false = listMember(id,implicitScopeNames);
-  NONE() = getEnvPathNoImplicitScope(rest);
+        false = listMember(id,implicitScopeNames);
+        NONE() = getEnvPathNoImplicitScope(rest);
       then SOME(Absyn.IDENT(id));
     case (_) then NONE();
   end matchcontinue;
@@ -1141,12 +1141,12 @@ algorithm
       Absyn.Path envPath;
     case (_,_)
       equation
-  SOME(envPath) = getEnvPath(inEnv);
-  envPath = Absyn.joinPaths(envPath,inPath);
+        SOME(envPath) = getEnvPath(inEnv);
+        envPath = Absyn.joinPaths(envPath,inPath);
       then envPath;
     case (_,_)
       equation
-  NONE() = getEnvPath(inEnv);
+        NONE() = getEnvPath(inEnv);
       then inPath;
   end matchcontinue;
 end joinEnvPath;
@@ -1159,7 +1159,7 @@ algorithm
   outString := matchcontinue(inEnv)
     case (_)
       then
-  Absyn.pathString(getEnvName(inEnv));
+        Absyn.pathString(getEnvName(inEnv));
     else ".";
   end matchcontinue;
 end getEnvNameStr;
@@ -1176,10 +1176,10 @@ algorithm
       Env env;
     case (env)
       equation
-  SOME(path) = getEnvPath(env);
-  pathstr = Absyn.pathString(path);
+        SOME(path) = getEnvPath(env);
+        pathstr = Absyn.pathString(path);
       then
-  pathstr;
+        pathstr;
     case (env) then "<global scope>";
   end matchcontinue;
 end printEnvPathStr;
@@ -1196,16 +1196,16 @@ algorithm
       Env env;
     case (env)
       equation
-  SOME(path) = getEnvPath(env);
-  pathstr = Absyn.pathString(path);
-  Print.printBuf(pathstr);
+        SOME(path) = getEnvPath(env);
+        pathstr = Absyn.pathString(path);
+        Print.printBuf(pathstr);
       then
-  ();
+        ();
     case (env)
       equation
-  Print.printBuf("TOPENV");
+        Print.printBuf("TOPENV");
       then
-  ();
+        ();
   end matchcontinue;
 end printEnvPath;
 
@@ -1222,11 +1222,11 @@ algorithm
     case {} then "Empty env\n";
     case (fr :: frs)
       equation
-  s1 = printFrameStr(fr);
-  s2 = printEnvStr(frs);
-  res = stringAppend(s1, s2);
+        s1 = printFrameStr(fr);
+        s2 = printEnvStr(frs);
+        res = stringAppend(s1, s2);
       then
-  res;
+        res;
   end match;
 end printEnvStr;
 
@@ -1249,12 +1249,12 @@ algorithm
 
     case(env as (FRAME(connectionSet = clst)::_))
       equation
-  crs = List.flatten(List.map(clst, Util.tuple21));
-  print(printEnvPathStr(env));print(" :   ");
-  print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
-  print("\n");
+        crs = List.flatten(List.map(clst, Util.tuple21));
+        print(printEnvPathStr(env));print(" :   ");
+        print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
+        print("\n");
       then
-  ();
+        ();
   end matchcontinue;
 end printEnvConnectionCrefs;
 
@@ -1273,21 +1273,21 @@ algorithm
       FrameType frameType;
 
     case FRAME(name = optName,
-         clsAndVars = ht,
-         types = httypes,
-         connectionSet = crs,
-         frameType = frameType)
+               clsAndVars = ht,
+               types = httypes,
+               connectionSet = crs,
+               frameType = frameType)
       equation
-  sid = Util.getOptionOrDefault(optName, "unnamed");
-  s1 = printAvlTreeStr(ht);
-  s2 = printAvlTreeStr(httypes);
-  frmTyStr = printFrameTypeStr(frameType);
-  res = stringAppendList(
-    "FRAME: " :: sid :: " (enc=" :: frmTyStr ::
-    ") \nClasses and Vars:\n=============\n" ::
-    s1 :: "\nTypes:\n======\n" :: s2 :: "\n" :: {});
+        sid = Util.getOptionOrDefault(optName, "unnamed");
+        s1 = printAvlTreeStr(ht);
+        s2 = printAvlTreeStr(httypes);
+        frmTyStr = printFrameTypeStr(frameType);
+        res = stringAppendList(
+          "FRAME: " :: sid :: " (enc=" :: frmTyStr ::
+          ") \nClasses and Vars:\n=============\n" ::
+          s1 :: "\nTypes:\n======\n" :: s2 :: "\n" :: {});
       then
-  res;
+        res;
   end match;
 end printFrameStr;
 
@@ -1307,19 +1307,19 @@ algorithm
       Option<Ident> optName;
 
     case FRAME(name = optName,
-         frameType = frameType,
-         clsAndVars = ht,
-         types = httypes,
-         connectionSet = crs)
+               frameType = frameType,
+               clsAndVars = ht,
+               types = httypes,
+               connectionSet = crs)
       equation
-  sid = Util.stringOption(optName);
-  s1 = printAvlTreeStr(ht);
-  frmTyStr = printFrameTypeStr(frameType);
-  res = stringAppendList({"FRAME: ",sid," (frmTy=",frmTyStr,
-                          ") \nclasses and vars:\n=============\n",
-                          s1,"\n\n\n"});
+        sid = Util.stringOption(optName);
+        s1 = printAvlTreeStr(ht);
+        frmTyStr = printFrameTypeStr(frameType);
+        res = stringAppendList({"FRAME: ",sid," (frmTy=",frmTyStr,
+                                ") \nclasses and vars:\n=============\n",
+                                s1,"\n\n\n"});
       then
-  res;
+        res;
 
     case _ then "";
 
@@ -1351,16 +1351,16 @@ algorithm
     case {} then "";
     case {e}
       equation
-  s1 = printFrameElementStr(("",e));
+        s1 = printFrameElementStr(("",e));
       then
-  s1;
+        s1;
     case ((e :: rst))
       equation
-  s1 = printFrameElementStr(("",e));
-  s2 = printImportsStr(rst);
-  res = stringAppendList({s1,", ",s2});
+        s1 = printFrameElementStr(("",e));
+        s2 = printImportsStr(rst);
+        res = stringAppendList({s1,", ",s2});
       then
-  res;
+        res;
   end matchcontinue;
 end printImportsStr;
 
@@ -1386,49 +1386,49 @@ algorithm
 
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),var = elt,instStatus = i,env = (compframe :: _))))
       equation
-  s = SCodeDump.variabilityString(var);
-  elt_str = SCodeDump.printElementStr(elt);
-  tp_str = Types.unparseType(tp);
-  var_str = Types.unparseVar(tv);
-  frame_str = printFrameVarsStr(compframe);
-  bind_str = Types.printBindingStr(bind);
-  res = stringAppendList(
-    {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-    "}, binding:",bind_str});
+        s = SCodeDump.variabilityString(var);
+        elt_str = SCodeDump.printElementStr(elt);
+        tp_str = Types.unparseType(tp);
+        var_str = Types.unparseVar(tv);
+        frame_str = printFrameVarsStr(compframe);
+        bind_str = Types.printBindingStr(bind);
+        res = stringAppendList(
+          {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
+          "}, binding:",bind_str});
       then
-  res;
+        res;
 
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),var = elt,instStatus = i,env = {})))
       equation
-  s = SCodeDump.variabilityString(var);
-  elt_str = SCodeDump.printElementStr(elt);
-  tp_str = Types.unparseType(tp);
-  var_str = Types.unparseVar(tv);
-  res = stringAppendList(
-    {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-    "}, compframe: []"});
+        s = SCodeDump.variabilityString(var);
+        elt_str = SCodeDump.printElementStr(elt);
+        tp_str = Types.unparseType(tp);
+        var_str = Types.unparseVar(tv);
+        res = stringAppendList(
+          {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
+          "}, compframe: []"});
       then
-  res;
+        res;
 
     case ((n,CLASS(cls = _)))
       equation
-  res = stringAppendList({"c:",n,"\n"});
+        res = stringAppendList({"c:",n,"\n"});
       then
-  res;
+        res;
 
     case ((n,TYPE(tys = lst)))
       equation
-  len = listLength(lst);
-  lenstr = intString(len);
-  res = stringAppendList({"t:",n," (",lenstr,")\n"});
+        len = listLength(lst);
+        lenstr = intString(len);
+        res = stringAppendList({"t:",n," (",lenstr,")\n"});
       then
-  res;
+        res;
 
     case ((n,_))
       equation
-  res = stringAppendList({"oth\n"});
+        res = stringAppendList({"oth\n"});
       then
-  res;
+        res;
   end match;
 end printFrameElementStr;
 
@@ -1486,9 +1486,9 @@ algorithm
       array<EnvCache> arr;
    case (_,_,CACHE(envCache=SOME(arr)))
       equation
-  ENVCACHE(tree) = arr[1];
-  env = cacheGetEnv(scope,path,tree);
-  //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
+        ENVCACHE(tree) = arr[1];
+        env = cacheGetEnv(scope,path,tree);
+        //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;
   end match;
 end cacheGet;
@@ -1507,17 +1507,17 @@ algorithm
 
     case (_,CACHE(envCache=SOME(arr)),_)
       equation
-  ENVCACHE(tree)=arr[1];
-  // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
-  tree = cacheAddEnv(fullpath,tree,env);
+        ENVCACHE(tree)=arr[1];
+        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
+        tree = cacheAddEnv(fullpath,tree,env);
 
-  //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
-  //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
-  arr = arrayUpdate(arr,1,ENVCACHE(tree));
+        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
+        //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
+        arr = arrayUpdate(arr,1,ENVCACHE(tree));
       then inCache /*CACHE(SOME(arr),ie,ef)*/;
     case (_,_,_)
       equation
-  print("cacheAdd failed\n");
+        print("cacheAdd failed\n");
       then fail();
   end matchcontinue;
 end cacheAdd;
@@ -1538,24 +1538,24 @@ algorithm
     // +d=noCache
     case (_,_,_)
       equation
-  false = Flags.isSet(Flags.CACHE);
+        false = Flags.isSet(Flags.CACHE);
       then
-  inCache;
+        inCache;
 
     case (CACHE(envCache=NONE()),_,_) then inCache;
 
     case (_,_,_)
       equation
-  SOME(path) = getEnvPath(env);
-  outCache = cacheAdd(path,inCache,env);
+        SOME(path) = getEnvPath(env);
+        outCache = cacheAdd(path,inCache,env);
       then outCache;
 
     case(_,_,_)
       equation
-  // this should be placed in the global environment
-  // how do we do that??
-  true = Flags.isSet(Flags.ENV);
-  Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
+        // this should be placed in the global environment
+        // how do we do that??
+        true = Flags.isSet(Flags.ENV);
+        Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
       then inCache;
 
   end matchcontinue;
@@ -1574,9 +1574,9 @@ algorithm
       // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,_,_)
       equation
-  env = cacheGetEnv2(path2,path,tree);
-  //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-  //print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
+        env = cacheGetEnv2(path2,path,tree);
+        //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
+        //print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
       then env;
   end match;
 end cacheGetEnv;
@@ -1598,26 +1598,26 @@ algorithm
     //  Simple name found in children, search for model from this scope.
     case (Absyn.IDENT(id1),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
-  true = stringEq(id1, id2);
-  //print("found (1) ");print(id); print("\n");
-  env = cacheGetEnv3(path,children2);
+        true = stringEq(id1, id2);
+        //print("found (1) ");print(id); print("\n");
+        env = cacheGetEnv3(path,children2);
       then
-  env;
+        env;
 
     //  Simple name. try next.
     case (Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
       equation
-  //print("try next ");print(id);print("\n");
-  env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
+        //print("try next ");print(id);print("\n");
+        env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
       then
-  env;
+        env;
 
     // for qualified name, found first matching identifier in child
      case (Absyn.QUALIFIED(id1,path2),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation
-   true = stringEq(id1, id2);
-   //print("found qualified (1) ");print(id);print("\n");
-   env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
+         true = stringEq(id1, id2);
+         //print("found qualified (1) ");print(id);print("\n");
+         env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
 
    // for qualified name, try next.
@@ -1648,9 +1648,9 @@ algorithm
     // found matching qualified name
     case (path2 as Absyn.QUALIFIED(id1,path1),CACHETREE(id2,_,children1)::children2)
       equation
-  b = stringEq(id1, id2);
-  path = Util.if_(b,path1,path2);
-  children = Util.if_(b,children1,children2);
+        b = stringEq(id1, id2);
+        path = Util.if_(b,path1,path2);
+        children = Util.if_(b,children1,children2);
       then cacheGetEnv3(path,children);
   end match;
 end cacheGetEnv3;
@@ -1672,34 +1672,34 @@ algorithm
     // simple names already added
     case (Absyn.IDENT(id1),(CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),_)
       equation
-  // print(id);print(" already added\n");
-  true = stringEq(id1, id2);
-  // shouldn't we replace it?
-  // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
+        // print(id);print(" already added\n");
+        true = stringEq(id1, id2);
+        // shouldn't we replace it?
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
       then tree;
 
     // simple names try next
     case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,child::children),_)
       equation
-  CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,children),env);
+        CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,children),env);
       then CACHETREE(globalID,globalEnv,child::children);
 
     // Simple names, not found
     case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),_)
       equation
-  // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then CACHETREE(globalID,globalEnv,{CACHETREE(id1,env,{})});
 
     // Qualified names.
     case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),_)
       equation
-  children=cacheAddEnv2(path,children,env);
+        children=cacheAddEnv2(path,children,env);
       then CACHETREE(globalID,globalEnv,children);
 
     // failure
     case (path,_,_)
       equation
-  print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
+        print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
       then fail();
   end matchcontinue;
 end cacheAddEnv;
@@ -1721,38 +1721,38 @@ algorithm
     // qualified name, found matching
     case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,_)
       equation
-  true = stringEq(id1, id2);
-  children2 = cacheAddEnv2(path,children2,env);
+        true = stringEq(id1, id2);
+        children2 = cacheAddEnv2(path,children2,env);
       then CACHETREE(id2,env2,children2)::children;
 
     // simple name, found matching
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,_)
       equation
-  true = stringEq(id1, id2);
-  // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
-  //print("single name, found matching\n");
+        true = stringEq(id1, id2);
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
+        //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
 
     // try next
     case(path,child::children,_)
       equation
-  //print("try next\n");
-  children = cacheAddEnv2(path,children,env);
+        //print("try next\n");
+        children = cacheAddEnv2(path,children,env);
       then child::children;
 
     // qualified name no child found, create one.
     case (Absyn.QUALIFIED(id1,path),{},_)
       equation
-  children = cacheAddEnv2(path,{},env);
-  // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
-  //print("qualified name no child found, create one.\n");
+        children = cacheAddEnv2(path,{},env);
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        //print("qualified name no child found, create one.\n");
       then {CACHETREE(id1,emptyEnv,children)};
 
     // simple name no child found, create one.
     case (Absyn.IDENT(id1),{},_)
       equation
-  // print("simple name no child found, create one.\n");
-  // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        // print("simple name no child found, create one.\n");
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then {CACHETREE(id1,env,{})};
 
     case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
@@ -1773,11 +1773,11 @@ algorithm
     // some cache present
     case CACHE(envCache=SOME(arr),functions=ef)
       equation
-  ENVCACHE(tree) = arr[1];
-  s = printCacheTreeStr(tree,1);
-  str = stringAppendList({"Cache:\n",s,"\n"});
-  s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
-  str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
+        ENVCACHE(tree) = arr[1];
+        s = printCacheTreeStr(tree,1);
+        str = stringAppendList({"Cache:\n",s,"\n"});
+        s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
+        str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
     // empty cache
     else "EMPTY CACHE\n";
@@ -1797,9 +1797,9 @@ algorithm
 
     case (CACHETREE(id,_,children),indent)
       equation
-  s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
-  s1 = stringAppendList(List.fill(" ",indent));
-  str = stringAppendList({s1,id,"\n",s});
+        s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
+        s1 = stringAppendList(List.fill(" ",indent));
+        str = stringAppendList({s1,id,"\n",s});
       then str;
   end matchcontinue;
 end printCacheTreeStr;
@@ -1814,10 +1814,10 @@ algorithm
     local DAE.Subscript s;
     case(subs)
       equation
-  str = " subs: " +& stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
-  print(str);
+        str = " subs: " +& stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
+        print(str);
       then
-  str;
+        str;
   end matchcontinue;
 end dummyDump;
 
@@ -1883,32 +1883,32 @@ algorithm
 
 
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(ct, parallelism, variability, direction, innerOuter, _),ty=tp,binding=binding),
-       var = el, instStatus=instStatus, env = env))
+             var = el, instStatus=instStatus, env = env))
       equation
-  s1 = SCodeDump.connectorTypeStr(ct);
-  s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
-  s2 = SCodeDump.parallelismString(parallelism);
-  s2 = Util.if_(stringEq(s2, ""), "", s2 +& ", ");
-  s3 = SCodeDump.variabilityString(variability);
-  s3 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
-  s4 = Dump.unparseDirectionSymbolStr(direction);
-  s4 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
-  s5 = SCodeDump.innerouterString(innerOuter);
-  s5 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
+        s1 = SCodeDump.connectorTypeStr(ct);
+        s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
+        s2 = SCodeDump.parallelismString(parallelism);
+        s2 = Util.if_(stringEq(s2, ""), "", s2 +& ", ");
+        s3 = SCodeDump.variabilityString(variability);
+        s3 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
+        s4 = Dump.unparseDirectionSymbolStr(direction);
+        s4 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
+        s5 = SCodeDump.innerouterString(innerOuter);
+        s5 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
 
-  str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
-  +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
-  printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env);
+        str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
+        +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
+        printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env);
       then str;
 
     case(CLASS(cls = e as SCode.CLASS(name=name), env = env))
       equation
-  str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
+        str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
       then str;
 
     case(TYPE(tp::_))
       equation
-  str = "type:   " +& Types.unparseType(tp);
+        str = "type:   " +& Types.unparseType(tp);
       then str;
 
   end match;
@@ -1964,7 +1964,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
       then fail();
   end match;
 end avlTreeAdd;
@@ -1989,35 +1989,35 @@ algorithm
     /*/ Don't allow replacing of nodes.
     case (_, 0, key, _)
       equation
-  info = FEnv.getItemInfo(inValue);
-  Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
-    {inKey}, info);
+        info = FEnv.getItemInfo(inValue);
+        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
+          {inKey}, info);
       then
-  fail();*/
+        fail();*/
 
     // replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,key,value)
       equation
-  // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
-  // checkValueReplacementCompatible(rval, value);
+        // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
+        // checkValueReplacementCompatible(rval, value);
       then
-  AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right);
+        AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right);
 
     // insert to right
     case (AVLTREENODE(value = oval,height=h,left = left,right = right),1,key,value)
       equation
-  t = createEmptyAvlIfNone(right);
-  t_1 = avlTreeAdd(t, key, value);
+        t = createEmptyAvlIfNone(right);
+        t_1 = avlTreeAdd(t, key, value);
       then
-  AVLTREENODE(oval,h,left,SOME(t_1));
+        AVLTREENODE(oval,h,left,SOME(t_1));
 
     // insert to left subtree
     case (AVLTREENODE(value = oval,height=h,left = left ,right = right),-1,key,value)
       equation
-  t = createEmptyAvlIfNone(left);
-  t_1 = avlTreeAdd(t, key, value);
+        t = createEmptyAvlIfNone(left);
+        t_1 = avlTreeAdd(t, key, value);
       then
-  AVLTREENODE(oval,h,SOME(t_1),right);
+        AVLTREENODE(oval,h,SOME(t_1),right);
 
   end match;
 end avlTreeAdd2;
@@ -2047,10 +2047,10 @@ algorithm
     // anything else is an error!
     case (val1, val2)
       equation
-  (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2);
-  Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2);
+        Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
       then
-  ();
+        ();
   end match;
 end checkValueReplacementCompatible;
 
@@ -2069,28 +2069,28 @@ algorithm
 
     // var should not be replaced by class!
     case (VAR(var = SCode.COMPONENT(name = n1, info = aInfo)),
-    CLASS(cls = SCode.CLASS(name = n2, info = _), env = env))
+          CLASS(cls = SCode.CLASS(name = n2, info = _), env = env))
       equation
-   n = printEnvPathStr(env);
-   n2 = n +& "." +& n2;
+         n = printEnvPathStr(env);
+         n2 = n +& "." +& n2;
       then
-  (n1, n2, aInfo);
+        (n1, n2, aInfo);
 
     // class should not be replaced by var!
     case (CLASS(cls = _), VAR(instantiated = _))
       equation
-  // call ourselfs reversed
-  (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);
+        // call ourselfs reversed
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);
       then
-  (n1, n2, aInfo);
+        (n1, n2, aInfo);
 
     // anything else that might happen??
     case (val1, val2)
       equation
-  n1 = valueStr(val1);
-  n2 = valueStr(val2);
+        n1 = valueStr(val1);
+        n2 = valueStr(val2);
       then
-  (n1, n2, Absyn.dummyInfo);
+        (n1, n2, Absyn.dummyInfo);
   end matchcontinue;
 end getNamesAndInfoFromVal;
 
@@ -2121,8 +2121,8 @@ algorithm
     local Integer d; AvlTree bt;
     case (bt)
       equation
-  d = differenceInHeight(bt);
-  bt = doBalance(d,bt);
+        d = differenceInHeight(bt);
+        bt = doBalance(d,bt);
       then bt;
   end match;
 end balance;
@@ -2140,7 +2140,7 @@ algorithm
       /* d < -1 or d > 1 */
     case(_,bt)
       equation
-  bt = doBalance2(difference < 0,bt);
+        bt = doBalance2(difference < 0,bt);
       then bt;
   end match;
 end doBalance;
@@ -2154,13 +2154,13 @@ algorithm
     local AvlTree bt;
     case (true,bt)
       equation
-  bt = doBalance3(bt);
-  bt = rotateLeft(bt);
+        bt = doBalance3(bt);
+        bt = rotateLeft(bt);
       then bt;
     case (false,bt)
       equation
-  bt = doBalance4(bt);
-  bt = rotateRight(bt);
+        bt = doBalance4(bt);
+        bt = rotateRight(bt);
       then bt;
   end match;
 end doBalance2;
@@ -2174,9 +2174,9 @@ algorithm
       AvlTree rr,bt;
     case(bt)
       equation
-  true = differenceInHeight(getOption(rightNode(bt))) > 0;
-  rr = rotateRight(getOption(rightNode(bt)));
-  bt = setRight(bt,SOME(rr));
+        true = differenceInHeight(getOption(rightNode(bt))) > 0;
+        rr = rotateRight(getOption(rightNode(bt)));
+        bt = setRight(bt,SOME(rr));
       then bt;
     else inBt;
   end matchcontinue;
@@ -2191,9 +2191,9 @@ algorithm
       AvlTree rl,bt;
     case (bt)
       equation
-  true = differenceInHeight(getOption(leftNode(bt))) < 0;
-  rl = rotateLeft(getOption(leftNode(bt)));
-  bt = setLeft(bt,SOME(rl));
+        true = differenceInHeight(getOption(leftNode(bt))) < 0;
+        rl = rotateLeft(getOption(leftNode(bt)));
+        bt = setLeft(bt,SOME(rl));
       then bt;
     else inBt;
   end matchcontinue;
@@ -2312,8 +2312,8 @@ algorithm
       Option<AvlTree> l,r;
     case(AVLTREENODE(left=l,right=r))
       equation
-  lh = getHeight(l);
-  rh = getHeight(r);
+        lh = getHeight(l);
+        rh = getHeight(r);
       then lh - rh;
   end match;
 end differenceInHeight;
@@ -2379,9 +2379,9 @@ algorithm
       FuncTypeType_aToString r;
     case (SOME(a),r)
       equation
-  str = r(a);
+        str = r(a);
       then
-  str;
+        str;
     case (NONE(),_) then "";
   end match;
 end getOptionStr;
@@ -2402,18 +2402,18 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
       equation
-  s2 = getOptionStr(l, printAvlTreeStr);
-  s3 = getOptionStr(r, printAvlTreeStr);
-  res = "\n" +& valueStr(rval) +& ",  " +& Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        s2 = getOptionStr(l, printAvlTreeStr);
+        s3 = getOptionStr(r, printAvlTreeStr);
+        res = "\n" +& valueStr(rval) +& ",  " +& Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
       then
-  res;
+        res;
     case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
-  s2 = getOptionStr(l, printAvlTreeStr);
-  s3 = getOptionStr(r, printAvlTreeStr);
-  res = Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        s2 = getOptionStr(l, printAvlTreeStr);
+        s3 = getOptionStr(r, printAvlTreeStr);
+        res = Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
       then
-  res;
+        res;
   end match;
 end printAvlTreeStr;
 
@@ -2428,9 +2428,9 @@ algorithm
       Integer hl,hr,height;
     case(AVLTREENODE(value=v as SOME(_),left=l,right=r))
       equation
-  hl = getHeight(l);
-  hr = getHeight(r);
-  height = intMax(hl,hr) + 1;
+        hl = getHeight(l);
+        hr = getHeight(r);
+        height = intMax(hl,hr) + 1;
       then AVLTREENODE(v,height,l,r);
   end match;
 end computeHeight;
@@ -2471,12 +2471,12 @@ algorithm
     // some environment
     case (fr :: frs)
       equation
-  lst1 = getVariablesFromFrame(fr);
-  // adrpo: TODO! FIXME! CHECK if we really don't need this!
-  // lst2 = getVariablesFromEnv(frs);
-  // lst = listAppend(lst1, lst2);
+        lst1 = getVariablesFromFrame(fr);
+        // adrpo: TODO! FIXME! CHECK if we really don't need this!
+        // lst2 = getVariablesFromEnv(frs);
+        // lst = listAppend(lst1, lst2);
       then
-  lst1;
+        lst1;
   end match;
 end getVariablesFromEnv;
 
@@ -2493,9 +2493,9 @@ algorithm
 
     case FRAME(clsAndVars = ht)
       equation
-  lst = getVariablesFromAvlTree(ht);
+        lst = getVariablesFromAvlTree(ht);
       then
-  lst;
+        lst;
   end match;
 end getVariablesFromFrame;
 
@@ -2515,21 +2515,21 @@ algorithm
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
       equation
-  lst0 = getVariablesFromAvlValue(rval);
-  lst1 = getVariablesFromOptionAvlTree(l);
-  lst2 = getVariablesFromOptionAvlTree(r);
-  lst = listAppend(lst1, lst2);
-  lst = listAppend(lst0, lst);
+        lst0 = getVariablesFromAvlValue(rval);
+        lst1 = getVariablesFromOptionAvlTree(l);
+        lst2 = getVariablesFromOptionAvlTree(r);
+        lst = listAppend(lst1, lst2);
+        lst = listAppend(lst0, lst);
       then
-  lst;
+        lst;
 
     case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
-  lst1 = getVariablesFromOptionAvlTree(l);
-  lst2 = getVariablesFromOptionAvlTree(r);
-  lst = listAppend(lst1, lst2);
+        lst1 = getVariablesFromOptionAvlTree(l);
+        lst2 = getVariablesFromOptionAvlTree(r);
+        lst = listAppend(lst1, lst2);
       then
-  lst;
+        lst;
   end match;
 end getVariablesFromAvlTree;
 
@@ -2628,12 +2628,12 @@ algorithm
       /* Don't overwrite SOME() with NONE() */
     case (_, _)
       equation
-  checkCachedInstFuncGuard(cache, func);
+        checkCachedInstFuncGuard(cache, func);
       then cache;
 
     case (CACHE(envCache,ienv,ef,ht,p),Absyn.FULLYQUALIFIED(_))
       equation
-  ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
+        ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
       then CACHE(envCache,ienv,ef,ht,p);
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_) then (cache);
@@ -2655,7 +2655,7 @@ algorithm
       Absyn.Path p;
     case (CACHE(envCache,ienv,ef,ht,p),_)
       equation
-  ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
       then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end addDaeFunction;
@@ -2675,7 +2675,7 @@ algorithm
       Absyn.Path p;
     case (CACHE(envCache,ienv,ef,ht,p),_)
       equation
-  ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
       then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end addDaeExtFunction;
@@ -2691,7 +2691,7 @@ algorithm
       array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),_)
       equation
-  SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+        SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -2732,21 +2732,21 @@ algorithm
 
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-  indent = inIndent +& "  ";
-  s1 = printAvlTreeStrPP2(l, indent);
-  s2 = printAvlTreeStrPP2(r, indent);
-  res = "\n" +& inIndent +& rkey +& s1 +& s2;
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& inIndent +& rkey +& s1 +& s2;
       then
-  res;
+        res;
 
     case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-  indent = inIndent +& "  ";
-  s1 = printAvlTreeStrPP2(l, indent);
-  s2 = printAvlTreeStrPP2(r, indent);
-  res = "\n" +& s1 +& s2;
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& s1 +& s2;
       then
-  res;
+        res;
   end match;
 end printAvlTreeStrPP2;
 
@@ -2767,7 +2767,7 @@ algorithm
       Absyn.Path p;
     case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),_)
       equation
-  // str = ComponentReference.printComponentRefStr(cr);
+        // str = ComponentReference.printComponentRefStr(cr);
       then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st),p);
     else cache;
   end match;
@@ -2823,7 +2823,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
       then fail();
 
   end match;
@@ -2848,26 +2848,26 @@ algorithm
 
     // Replace this node.
     case (AVLTREENODE(value = SOME(_), height = h, left = left, right = right),
-  0, key, value)
+        0, key, value)
       then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-  1, key, value)
+        1, key, value)
       equation
-  t = createEmptyAvlIfNone(right);
-  t = avlTreeReplace(t, key, value);
+        t = createEmptyAvlIfNone(right);
+        t = avlTreeReplace(t, key, value);
       then
-  AVLTREENODE(oval, h, left, SOME(t));
+        AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-  -1, key, value)
+        -1, key, value)
       equation
-  t = createEmptyAvlIfNone(left);
-  t = avlTreeReplace(t, key, value);
+        t = createEmptyAvlIfNone(left);
+        t = avlTreeReplace(t, key, value);
       then
-  AVLTREENODE(oval, h, SOME(t), right);
+        AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeReplace2;
 

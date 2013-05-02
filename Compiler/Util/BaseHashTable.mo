@@ -31,11 +31,11 @@
 
 encapsulated package BaseHashTable
 "
-  file:  BaseHashTable.mo
+  file:        BaseHashTable.mo
   package:     BaseHashTable
   author:      Peter Aronsson (MathCore)
   description: BaseHashTable is a generic implementation of hashtables.
-         See HashTable*.mo to see how to use it.
+               See HashTable*.mo to see how to use it.
 
   RCS: $Id$
 
@@ -58,7 +58,7 @@ protected import Util;
 // Generic hashtable code below
 
 // adrpo: use a prime here (pick your poison):
-//  3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
+//        3   5   7  11  13  17  19  23  29  31  37  41  43  47  53  59  61  67
 //       71  73  79  83  89  97 101 103 107 109 113 127 131 137 139 149 151 157
 //      163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257
 //      263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367
@@ -143,35 +143,35 @@ algorithm
 
     // Adding when not existing previously.
     case ((v as (key,value)),
-  ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
       equation
-  failure((_) = get(key, hashTable));
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr = valueArrayAdd(varr, v);
-  indexes = hashvec[indx + 1];
-  hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-  n = valueArrayLength(varr);
+        failure((_) = get(key, hashTable));
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
       then
-  ((hashvec, varr, bsize, n, fntpl));
+        ((hashvec, varr, bsize, n, fntpl));
 
     // Adding when already present => update value.
     case (_, _) then update(entry, hashTable);
 
     case ((v as (key,value)),
-  ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
+        ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
       equation
-  print("- BaseHashTable.add failed: ");
-  print("bsize: ");
-  print(intString(bsize));
-  print(" key: ");
-  s = keystrFunc(key);
-  print(s +& " Hash: ");
-  hval = hashFunc(key, bsize);
-  print(intString(hval));
-  print("\n");
+        print("- BaseHashTable.add failed: ");
+        print("bsize: ");
+        print(intString(bsize));
+        print(" key: ");
+        s = keystrFunc(key);
+        print(s +& " Hash: ");
+        hval = hashFunc(key, bsize);
+        print(intString(hval));
+        print("\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end add;
@@ -215,20 +215,20 @@ algorithm
     case ((v as (key, value)),
        (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _)))
       equation
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr = valueArrayAdd(varr, v);
-  indexes = hashvec[indx + 1];
-  hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-  n = valueArrayLength(varr);
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
       then
-  ((hashvec, varr, bsize, n, fntpl));
+        ((hashvec, varr, bsize, n, fntpl));
 
     else
       equation
-  print("- BaseHashTable.addNoUpdCheck failed\n");
+        print("- BaseHashTable.addNoUpdCheck failed\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end addNoUpdCheck;
@@ -253,17 +253,17 @@ algorithm
 
     // Adding when not existing previously
     case ((v as (key, value)),
-  ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
       equation
-  failure((_) = get(key, hashTable));
-  indx = hashFunc(key, bsize);
-  newpos = valueArrayLength(varr);
-  varr = valueArrayAdd(varr, v);
-  indexes = hashvec[indx + 1];
-  hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-  n = valueArrayLength(varr);
+        failure((_) = get(key, hashTable));
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
       then
-  ((hashvec, varr, bsize, n, fntpl));
+        ((hashvec, varr, bsize, n, fntpl));
 
   end match;
 end addUnique;
@@ -306,16 +306,16 @@ algorithm
 
     case (_, (hashvec, varr, bsize, n, fntpl))
       equation
-  (_, indx) = get1(key, hashTable);
-  varr = valueArrayClearnth(varr, indx);
+        (_, indx) = get1(key, hashTable);
+        varr = valueArrayClearnth(varr, indx);
       then
-  ((hashvec, varr, bsize, n, fntpl));
+        ((hashvec, varr, bsize, n, fntpl));
 
     else
       equation
-  print("-HashTable.delete failed\n");
+        print("-HashTable.delete failed\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end delete;
@@ -350,13 +350,13 @@ algorithm
 
     case (_, (hashvec, varr, bsize, n, (hashFunc, keyEqual, _, _)))
       equation
-  hashindx = hashFunc(key, bsize);
-  (k,n)::indexes = hashvec[hashindx + 1];
-  eq = keyEqual(k,key);
-  indx = get2(eq, n, key, indexes, keyEqual);
-  (k, v) = valueArrayNth(varr, indx);
+        hashindx = hashFunc(key, bsize);
+        (k,n)::indexes = hashvec[hashindx + 1];
+        eq = keyEqual(k,key);
+        indx = get2(eq, n, key, indexes, keyEqual);
+        (k, v) = valueArrayNth(varr, indx);
       then
-  (v, indx);
+        (v, indx);
 
   end match;
 end get1;
@@ -379,7 +379,7 @@ algorithm
     // search for the key, found the good one? stop and use the index
     case (_,_,_,(key2,index) :: xs,_)
       equation
-  eq = keyEqual(key, key2);
+        eq = keyEqual(key, key2);
       then get2(eq, index, key, xs, keyEqual);
 
   end match;
@@ -486,31 +486,31 @@ algorithm
 
     case ((n, size, arr), _)
       equation
-  (n < size) = true "Have space to add array elt.";
-  n = n + 1;
-  arr = arrayUpdate(arr, n, SOME(entry));
+        (n < size) = true "Have space to add array elt.";
+        n = n + 1;
+        arr = arrayUpdate(arr, n, SOME(entry));
       then
-  ((n, size, arr));
+        ((n, size, arr));
 
     case ((n, size, arr), _)
       equation
-  (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
-  rsize = intReal(size);
-  rexpandsize = rsize *. 0.4;
-  expandsize = realInt(rexpandsize);
-  expandsize = intMax(expandsize, 1);
-  newsize = expandsize + size;
-  arr = Util.arrayExpand(expandsize, arr, NONE());
-  n = n + 1;
-  arr = arrayUpdate(arr, n, SOME(entry));
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
+        rsize = intReal(size);
+        rexpandsize = rsize *. 0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize = intMax(expandsize, 1);
+        newsize = expandsize + size;
+        arr = Util.arrayExpand(expandsize, arr, NONE());
+        n = n + 1;
+        arr = arrayUpdate(arr, n, SOME(entry));
       then
-  ((n, newsize, arr));
+        ((n, newsize, arr));
 
     case (_, _)
       equation
-  print("-HashTable.valueArrayAdd failed\n");
+        print("-HashTable.valueArrayAdd failed\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end valueArrayAdd;
@@ -529,16 +529,16 @@ algorithm
 
     case ((n, size, arr), _, _)
       equation
-  (pos < size) = true;
-  arr = arrayUpdate(arr, pos + 1, SOME(entry));
+        (pos < size) = true;
+        arr = arrayUpdate(arr, pos + 1, SOME(entry));
       then
-  ((n, size, arr));
+        ((n, size, arr));
 
     else
       equation
-  print("-HashTable.valueArraySetnth failed\n");
+        print("-HashTable.valueArraySetnth failed\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end valueArraySetnth;
@@ -556,16 +556,16 @@ algorithm
 
     case ((n, size, arr), _)
       equation
-  (pos < size) = true;
-  arr = arrayUpdate(arr, pos + 1,NONE());
+        (pos < size) = true;
+        arr = arrayUpdate(arr, pos + 1,NONE());
       then
-  ((n, size, arr));
+        ((n, size, arr));
 
     else
       equation
-  print("-HashTable.valueArrayClearnth failed\n");
+        print("-HashTable.valueArrayClearnth failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end valueArrayClearnth;
 
@@ -585,10 +585,10 @@ algorithm
 
     case ((n, _, arr), _)
       equation
-  (pos <= n) = true;
-  SOME((k, v)) = arr[pos + 1];
+        (pos <= n) = true;
+        SOME((k, v)) = arr[pos + 1];
       then
-  (k, v);
+        (k, v);
 
   end match;
 end valueArrayNth;

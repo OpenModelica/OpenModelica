@@ -90,7 +90,7 @@ typedef struct omc_ModelInput
   /* these two we need to know to be able to add
      the stuff in <Real ... />, <String ... /> to
      the correct variable in the correct map */
-  int             lastCI; /* index */
+  int                   lastCI; /* index */
   omc_ModelVariables*   lastCT; /* type (classification) */
 } omc_ModelInput;
 
@@ -252,9 +252,9 @@ void read_input_xml(MODEL_DATA* modelData,
     {
       fclose(file);
       WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
-    filename.c_str(),
-    XML_ErrorString(XML_GetErrorCode(parser)),
-    XML_GetCurrentLineNumber(parser));
+          filename.c_str(),
+          XML_ErrorString(XML_GetErrorCode(parser)),
+          XML_GetCurrentLineNumber(parser));
       XML_ParserFree(parser);
       THROW("see last warning");
     }
@@ -268,16 +268,16 @@ void read_input_xml(MODEL_DATA* modelData,
   if (mi.md.find("guid") == mi.md.end())
   {
      WARNING2(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
-  modelData->modelGUID,
-  filename.c_str());
+        modelData->modelGUID,
+        filename.c_str());
   } else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
     fclose(file);
     WARNING3(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
-  mi.md["guid"].c_str(),
-  filename.c_str(),
-  modelData->modelGUID);
+        mi.md["guid"].c_str(),
+        filename.c_str(),
+        modelData->modelGUID);
     THROW("see last warning");
   }
 
@@ -320,17 +320,17 @@ void read_input_xml(MODEL_DATA* modelData,
   modelica_integer nyboolchk, npboolchk;
   modelica_integer nystrchk, npstrchk;
 
-  read_value(mi.md["numberOfContinuousStates"],    &nxchk);
+  read_value(mi.md["numberOfContinuousStates"],          &nxchk);
   read_value(mi.md["numberOfRealAlgebraicVariables"],    &nychk);
-  read_value(mi.md["numberOfRealParameters"],      &npchk);
+  read_value(mi.md["numberOfRealParameters"],            &npchk);
 
-  read_value(mi.md["numberOfIntegerParameters"],   &npintchk);
+  read_value(mi.md["numberOfIntegerParameters"],         &npintchk);
   read_value(mi.md["numberOfIntegerAlgebraicVariables"], &nyintchk);
 
-  read_value(mi.md["numberOfBooleanParameters"],   &npboolchk);
+  read_value(mi.md["numberOfBooleanParameters"],         &npboolchk);
   read_value(mi.md["numberOfBooleanAlgebraicVariables"], &nyboolchk);
 
-  read_value(mi.md["numberOfStringParameters"],    &npstrchk);
+  read_value(mi.md["numberOfStringParameters"],          &npstrchk);
   read_value(mi.md["numberOfStringAlgebraicVariables"],  &nystrchk);
 
   if(nxchk != modelData->nStates
@@ -897,9 +897,9 @@ void read_input_xml(MODEL_DATA* modelData,
       THROW1("%s", msg.c_str());
     }
     DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
-          modelData->realAlias[i].info.name,
-          modelData->realAlias[i].nameID,
-          modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
+                modelData->realAlias[i].info.name,
+                modelData->realAlias[i].nameID,
+                modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
   }
   RELEASE(LOG_DEBUG);
 
@@ -967,9 +967,9 @@ void read_input_xml(MODEL_DATA* modelData,
       THROW1("%s", msg.c_str());
     }
     DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
-          modelData->integerAlias[i].info.name,
-          modelData->integerAlias[i].nameID,
-          modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
+                modelData->integerAlias[i].info.name,
+                modelData->integerAlias[i].nameID,
+                modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
   }
   RELEASE(LOG_DEBUG);
 
@@ -1037,9 +1037,9 @@ void read_input_xml(MODEL_DATA* modelData,
       THROW1("%s", msg.c_str());
     }
     DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
-          modelData->booleanAlias[i].info.name,
-          modelData->booleanAlias[i].nameID,
-          modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
+                modelData->booleanAlias[i].info.name,
+                modelData->booleanAlias[i].nameID,
+                modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
   }
   RELEASE(LOG_DEBUG);
 
@@ -1107,9 +1107,9 @@ void read_input_xml(MODEL_DATA* modelData,
       THROW1("%s", msg.c_str());
     }
     DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
-          modelData->stringAlias[i].info.name,
-          modelData->stringAlias[i].nameID,
-          modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
+                modelData->stringAlias[i].info.name,
+                modelData->stringAlias[i].nameID,
+                modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
   }
   RELEASE(LOG_DEBUG);
 
@@ -1228,36 +1228,36 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     char *p = strtok(overrideStr, ",");
     while(p)
     {
-  std::string *key_val = new string(p);
-  // split it key = value => map[key]=value
-  size_t pos = key_val->find("=");
-  key = key_val->substr(0,pos);
-  value = key_val->substr(pos + 1,key_val->length() - pos - 1);
+        std::string *key_val = new string(p);
+        // split it key = value => map[key]=value
+        size_t pos = key_val->find("=");
+        key = key_val->substr(0,pos);
+        value = key_val->substr(pos + 1,key_val->length() - pos - 1);
 
-  /* un-quote key and value
-  if(key[0] == '"')
-   key = key.substr(1,key.length() - 1);
-  if(key[key.length()] == '"')
-   key = key.substr(0,key.length() - 1);
-  if(value[0] == '"')
-   value = value.substr(1,value.length() - 1);
-  if(value[value.length()] == '"')
-   value = value.substr(0,value.length() - 1);
-  */
+        /* un-quote key and value
+        if(key[0] == '"')
+         key = key.substr(1,key.length() - 1);
+        if(key[key.length()] == '"')
+         key = key.substr(0,key.length() - 1);
+        if(value[0] == '"')
+         value = value.substr(1,value.length() - 1);
+        if(value[value.length()] == '"')
+         value = value.substr(0,value.length() - 1);
+        */
 
-  // map[key]=value
-  mOverrides[key] = value;
+        // map[key]=value
+        mOverrides[key] = value;
 
-  INFO2(LOG_SOLVER, "override %s = %s", key.c_str(), value.c_str());
+        INFO2(LOG_SOLVER, "override %s = %s", key.c_str(), value.c_str());
 
-  // move to next
-  p = strtok(NULL, ",");
+        // move to next
+        p = strtok(NULL, ",");
     }
 
     free(overrideStr);
 
     // now we have all overrides in mOverrides, override mi now
-    mi.de["solver"]   = mOverrides.count("solver")         ? mOverrides["solver"]         : mi.de["solver"];
+    mi.de["solver"]         = mOverrides.count("solver")         ? mOverrides["solver"]         : mi.de["solver"];
     mi.de["startTime"]      = mOverrides.count("startTime")      ? mOverrides["startTime"]      : mi.de["startTime"];
     mi.de["stopTime"]       = mOverrides.count("stopTime")       ? mOverrides["stopTime"]       : mi.de["stopTime"];
     mi.de["stepSize"]       = mOverrides.count("stepSize")       ? mOverrides["stepSize"]       : mi.de["stepSize"];

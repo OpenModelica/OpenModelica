@@ -159,16 +159,16 @@
     sstemp = zero;
     i__1 = *n;
     for(i__ = 1; i__ <= i__1; ++i__) {
-  diff = xpt[k + i__ * xpt_dim1] - xopt[i__];
-  dstemp += d__[i__] * diff;
+        diff = xpt[k + i__ * xpt_dim1] - xopt[i__];
+        dstemp += d__[i__] * diff;
 /* L40: */
-  sstemp += diff * diff;
+        sstemp += diff * diff;
     }
     if(dstemp * dstemp / sstemp < dtest) {
-  ksav = k;
-  dtest = dstemp * dstemp / sstemp;
-  ds = dstemp;
-  ss = sstemp;
+        ksav = k;
+        dtest = dstemp * dstemp / sstemp;
+        ds = dstemp;
+        ss = sstemp;
     }
       }
 /* L50: */
@@ -281,8 +281,8 @@ L70:
     i__2 = *n;
     for(j = 1; j <= i__2; ++j) {
 /* L160: */
-  sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
-    wvec_dim1];
+        sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
+          wvec_dim1];
     }
 /* L170: */
     prod[k + jc * prod_dim1] += sum;
@@ -308,7 +308,7 @@ L70:
   sum = zero;
   for(i__ = 1; i__ <= 5; ++i__) {
       par[i__ - 1] = half * prod[k + i__ * prod_dim1] * wvec[k + i__ *
-  wvec_dim1];
+        wvec_dim1];
 /* L200: */
       sum += par[i__ - 1];
   }

@@ -1881,35 +1881,35 @@ algorithm
     if isModelicaUri then
       libraries := getLoadedLibraries();
       if sum(1 for lib in libraries) == 0 then
-  filename := "";
-  return;
+        filename := "";
+        return;
       end if;
       path := matches[2];
       while path <> "" loop
-  (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
-  path := matches2[3];
-  if isMatch then
-    /* We already have a match for the first part. The full name was e.g. Modelica.Blocks, so we now see if the Blocks directory exists, and so on */
-    if directoryExists(filename + "/" + matches2[2]) then
-      filename := realpath(filename + "/" + matches2[2]);
-    else
-      break;
-    end if;
-  else
-    /* It is the first part of the name (Modelica.XXX) - look among the loaded classes for the name Modelica and use that path */
-    for i in 1:sum(1 for lib in libraries) loop
-      if libraries[i,1] == matches2[2] then
-        filename := libraries[i,2];
-        isMatch := true;
-        break;
-      end if;
-    end for;
-    if not isMatch then
-      print("Could not resolve URI: " + uri + "\n");
-      filename := "";
-      return;
-    end if;
-  end if;
+        (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
+        path := matches2[3];
+        if isMatch then
+          /* We already have a match for the first part. The full name was e.g. Modelica.Blocks, so we now see if the Blocks directory exists, and so on */
+          if directoryExists(filename + "/" + matches2[2]) then
+            filename := realpath(filename + "/" + matches2[2]);
+          else
+            break;
+          end if;
+        else
+          /* It is the first part of the name (Modelica.XXX) - look among the loaded classes for the name Modelica and use that path */
+          for i in 1:sum(1 for lib in libraries) loop
+            if libraries[i,1] == matches2[2] then
+              filename := libraries[i,2];
+              isMatch := true;
+              break;
+            end if;
+          end for;
+          if not isMatch then
+            print("Could not resolve URI: " + uri + "\n");
+            filename := "";
+            return;
+          end if;
+        end if;
       end while;
       filename := if isMatch then filename + matches[3] else filename;
     elseif isFileUriAbsolute then
@@ -2002,7 +2002,7 @@ end importFMU;
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some efault values.
  simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
-     [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
   simulate(A);
 "
@@ -2040,7 +2040,7 @@ function linearize "creates a model with the symbolic linearization matrixes.
 At stopTime the linearization matrixes are evaluated and a modelica model is created.
  The only required argument is the className, while all others have some efault values.
  linerize(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
-     [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
   linearize(A, stopTime=0.0);
   => create the file \"linear_A.mo\" that contain the linearized matrixes at stopTime.

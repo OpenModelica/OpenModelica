@@ -92,9 +92,9 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   else
     {
       if (step == 0)
-  { // outputsteps not defined and zero step, use default 1e-3
-    step = 1e-3;
-  }
+        { // outputsteps not defined and zero step, use default 1e-3
+          step = 1e-3;
+        }
     }
 
   int sampleEvent_actived = 0;
@@ -139,31 +139,31 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   }
   try{
       if (initialization(init_initMethod?init_initMethod->c_str():NULL, init_optiMethod?init_optiMethod->c_str():NULL))
-  {
-    throw TerminateSimulationException(globalData->timeValue, string(
-        "Error in initialization. Storing results and exiting.\n"));
-  }
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "Error in initialization. Storing results and exiting.\n"));
+        }
 
       SaveZeroCrossings();
       saveall();
       if (sim_verbose >= LOG_SOLVER)
-  {
-    sim_result->emit();
-  }
+        {
+          sim_result->emit();
+        }
 
       //Activate sample and evaluate again
       if (globalData->curSampleTimeIx < globalData->nSampleTimes)
-  {
-    sampleEvent_actived = checkForSampleEvent();
-    activateSampleEvents();
-  }
+        {
+          sampleEvent_actived = checkForSampleEvent();
+          activateSampleEvents();
+        }
       //update_DAEsystem();
       SaveZeroCrossings();
       if (sampleEvent_actived)
-  {
-    deactivateSampleEventsandEquations();
-    sampleEvent_actived = 0;
-  }
+        {
+          deactivateSampleEventsandEquations();
+          sampleEvent_actived = 0;
+        }
       saveall();
       sim_result->emit();
       storeExtrapolationData();
@@ -183,9 +183,9 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   if (globalData->timeValue >= stop)
     {
       if (sim_verbose >= LOG_SOLVER)
-  {
-    cout << "Simulation done!" << endl;
-  }
+        {
+          cout << "Simulation done!" << endl;
+        }
       return 0;
     }
 
@@ -193,7 +193,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     {
       cout << "Performed initial value calculation." << endl;
       cout << "Start numerical solver from " << globalData->timeValue << " to "
-    << stop << endl;
+          << stop << endl;
     }
   FILE *fmt = NULL;
   int stepNo = 0;
@@ -201,8 +201,8 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
       const string filename = string(globalData->modelFilePrefix) + "_prof.data";
       fmt = fopen(filename.c_str(), "wb");
       if (!fmt) {
-    fclose(fmt);
-    fmt = NULL;
+          fclose(fmt);
+          fmt = NULL;
       }
   }
 
@@ -265,8 +265,8 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     {
       //cout << "Child " << i << " has tn " << tn[i]<< endl;
       if (tn[i]<next_tn) {
-  index=i;
-  next_tn=tn[i];
+        index=i;
+        next_tn=tn[i];
       }
     }
     if (next_tn<globalData->timeValue)
@@ -297,9 +297,9 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     {
       if (incidenceMatrix[i*2]==index)
       {
-  cout << "Updating child " << incidenceMatrix[i*2+1] << " because of a step from " << index << endl;
-  childs[incidenceMatrix[i*2+1]]->update(globalData->timeValue);
-  tn[incidenceMatrix[i*2+1]]=globalData->timeValue+childs[incidenceMatrix[i*2+1]]->ta();
+        cout << "Updating child " << incidenceMatrix[i*2+1] << " because of a step from " << index << endl;
+        childs[incidenceMatrix[i*2+1]]->update(globalData->timeValue);
+        tn[incidenceMatrix[i*2+1]]=globalData->timeValue+childs[incidenceMatrix[i*2+1]]->ta();
       }
     }
   }
@@ -395,15 +395,15 @@ void init_ompd()
    do
     {
       if (IterationNum > IterationMax)
-  {
-    throw TerminateSimulationException(globalData->timeValue, string(
-        "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
-  }
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
+        }
       if (initialization(init_initMethod?init_initMethod->c_str():NULL, init_optiMethod?init_optiMethod->c_str():NULL))
-  {
-    throw TerminateSimulationException(globalData->timeValue, string(
-        "Error in initialization. Storing results and exiting.\n"));
-  }
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "Error in initialization. Storing results and exiting.\n"));
+        }
       saveall();
       functionDAE(&needToIterate);
       functionAliasEquations();
@@ -436,10 +436,10 @@ void init_ompd()
       functionDAE(&needToIterate);
       IterationNum++;
       if (IterationNum > IterationMax)
-  {
-    throw TerminateSimulationException(globalData->timeValue, string(
-        "ERROR: Too many Iteration. System is not consistent!\n"));
-  }
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "ERROR: Too many Iteration. System is not consistent!\n"));
+        }
     }
   functionAliasEquations();
   SaveZeroCrossings();

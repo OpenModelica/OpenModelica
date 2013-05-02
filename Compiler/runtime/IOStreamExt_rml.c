@@ -36,8 +36,8 @@
  *  This file is the external C implementation of TOP/Compiler/IOStreamExt.mo
  *
  *  TODO! FIXME! implement stream buffers (unify with Print.mo,
- *         but more general, as we need several buffers),
- *         handle buffer files, etc.
+ *               but more general, as we need several buffers),
+ *               handle buffer files, etc.
  *
  */
 

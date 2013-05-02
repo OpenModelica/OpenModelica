@@ -36,7 +36,7 @@ encapsulated package HashSet "
 
   All rights reserved.
 
-  file:  HashSet.mo
+  file:        HashSet.mo
   package:     HashSet
   description: DAE.CR to Integer
 

@@ -81,7 +81,7 @@ extern void copy_real_array(const real_array_t * source, real_array_t* dest);
 extern void create_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, modelica_real stop);
 
 void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step,
-                          modelica_real stop/*, size_t dim*/);
+                                modelica_real stop/*, size_t dim*/);
 
 extern modelica_real* calc_real_index(int ndims, const _index_t* idx_vec, const real_array_t * arr);
 extern modelica_real* calc_real_index_va(const real_array_t * source,int ndims,va_list ap);
@@ -97,14 +97,14 @@ extern void print_real_array(const real_array_t * source);
 
 */
 extern void indexed_assign_real_array(const real_array_t * source,
-       real_array_t* dest,
-       const index_spec_t* dest_spec);
+             real_array_t* dest,
+             const index_spec_t* dest_spec);
 extern void simple_indexed_assign_real_array1(const real_array_t * source,
-         int i1,
-         real_array_t* dest);
+               int i1,
+               real_array_t* dest);
 extern void simple_indexed_assign_real_array2(const real_array_t * source,
-         int i1, int i2,
-         real_array_t* dest);
+               int i1, int i2,
+               real_array_t* dest);
 
 /*
 
@@ -112,21 +112,21 @@ extern void simple_indexed_assign_real_array2(const real_array_t * source,
 
 */
 extern void index_real_array(const real_array_t * source,
-                const index_spec_t* source_spec,
-                real_array_t* dest);
-extern void index_alloc_real_array(const real_array_t * source,
                       const index_spec_t* source_spec,
                       real_array_t* dest);
+extern void index_alloc_real_array(const real_array_t * source,
+                            const index_spec_t* source_spec,
+                            real_array_t* dest);
 
 extern void simple_index_alloc_real_array1(const real_array_t * source, int i1,
-                              real_array_t* dest);
+                                    real_array_t* dest);
 
 extern void simple_index_real_array1(const real_array_t * source,
-                        int i1,
-                        real_array_t* dest);
+                              int i1,
+                              real_array_t* dest);
 extern void simple_index_real_array2(const real_array_t * source,
-                        int i1, int i2,
-                        real_array_t* dest);
+                              int i1, int i2,
+                              real_array_t* dest);
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
@@ -144,7 +144,7 @@ extern void cat_real_array(int k,real_array_t* dest, int n, real_array_t* first,
 extern void cat_alloc_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
 
 extern void range_alloc_real_array(modelica_real start,modelica_real stop,modelica_real inc,
-                      real_array_t* dest);
+                            real_array_t* dest);
 extern void range_real_array(modelica_real start,modelica_real stop, modelica_real inc,real_array_t* dest);
 
 extern void add_alloc_real_array(const real_array_t * a, const real_array_t * b,real_array_t* dest);
@@ -157,15 +157,15 @@ extern void sub_real_array(const real_array_t * a, const real_array_t * b, real_
 extern void sub_alloc_real_array(const real_array_t * a, const real_array_t * b, real_array_t* dest);
 
 extern void sub_real_array_data_mem(const real_array_t * a, const real_array_t * b,
-                       modelica_real* dest);
+                             modelica_real* dest);
 
 extern void mul_scalar_real_array(modelica_real a,const real_array_t * b,real_array_t* dest);
 extern void mul_alloc_scalar_real_array(modelica_real a,const real_array_t * b,
-                           real_array_t* dest);
+                                 real_array_t* dest);
 
 extern void mul_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest);
 extern void mul_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
-                           real_array_t* dest);
+                                 real_array_t* dest);
 
 extern void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest);
 extern void mul_alloc_real_array(const real_array_t *a,const real_array_t *b,real_array_t *dest);
@@ -174,19 +174,19 @@ extern modelica_real mul_real_scalar_product(const real_array_t * a, const real_
 
 extern void mul_real_matrix_product(const real_array_t *a,const real_array_t *b,real_array_t*dest);
 extern void mul_real_matrix_vector(const real_array_t * a, const real_array_t * b,
-                      real_array_t* dest);
+                            real_array_t* dest);
 extern void mul_real_vector_matrix(const real_array_t * a, const real_array_t * b,
-                      real_array_t* dest);
+                            real_array_t* dest);
 extern void mul_alloc_real_matrix_product_smart(const real_array_t * a, const real_array_t * b,
-                                   real_array_t* dest);
+                                         real_array_t* dest);
 
 extern void div_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest);
 extern void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
-                           real_array_t* dest);
+                                 real_array_t* dest);
 
 extern void division_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str);
 extern void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
-                           real_array_t* dest, const char* division_str);
+                                 real_array_t* dest, const char* division_str);
 extern void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest);
 extern void div_alloc_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest);
 extern void pow_real_array_scalar(const real_array_t *a, modelica_real b, real_array_t* dest);
@@ -194,7 +194,7 @@ extern void pow_alloc_real_array_scalar(const real_array_t* a, modelica_real b, 
 
 extern void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest);
 extern void exp_alloc_real_array(const real_array_t * a, modelica_integer b,
-                    real_array_t* dest);
+                          real_array_t* dest);
 
 extern void promote_real_array(const real_array_t * a, int n,real_array_t* dest);
 extern void promote_scalar_real_array(modelica_real s,int n,real_array_t* dest);
@@ -223,7 +223,7 @@ extern void identity_real_array(int n, real_array_t* dest);
 extern void diagonal_real_array(const real_array_t * v,real_array_t* dest);
 extern void fill_real_array(real_array_t* dest,modelica_real s);
 extern void linspace_real_array(modelica_real x1,modelica_real x2,int n,
-                   real_array_t* dest);
+                         real_array_t* dest);
 extern modelica_real min_real_array(const real_array_t * a);
 extern modelica_real max_real_array(const real_array_t * a);
 extern modelica_real sum_real_array(const real_array_t * a);
@@ -237,7 +237,7 @@ static inline size_t real_array_nr_of_elements(const real_array_t *a)
 { return base_array_nr_of_elements(a); }
 
 static inline void clone_reverse_real_array_spec(const real_array_t *source,
-                                           real_array_t *dest)
+                                                 real_array_t *dest)
 { clone_reverse_base_array_spec(source, dest); }
 extern void convert_alloc_real_array_to_f77(const real_array_t * a, real_array_t* dest);
 extern void convert_alloc_real_array_from_f77(const real_array_t * a, real_array_t* dest);

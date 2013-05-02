@@ -30,14 +30,14 @@
  */
 
 encapsulated package Graphviz
-" file:  Graphviz.mo
+" file:        Graphviz.mo
   package:     Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
-         representation. This module generates the textual input
-         to graphviz from a tree defined using the data structures
-         defined here, e.g. Node for tree  nodes.
-         See
-            http://www.research.att.com/sw/tools/graphviz/.
+               representation. This module generates the textual input
+               to graphviz from a tree defined using the data structures
+               defined here, e.g. Node for tree  nodes.
+               See
+                  http://www.research.att.com/sw/tools/graphviz/.
 
   RCS: $Id$
 
@@ -116,26 +116,26 @@ algorithm
 
     case (NODE(type_ = typ,attributes = attr,children = children))
       equation
-  nm = nodename(typ);
-  typlbl = makeLabel({typ});
-  newattr = listAppend({ATTR("label",typlbl)}, attr);
-  out = makeNode(nm, newattr);
-  print(out);
-  dumpChildren(nm, children);
+        nm = nodename(typ);
+        typlbl = makeLabel({typ});
+        newattr = listAppend({ATTR("label",typlbl)}, attr);
+        out = makeNode(nm, newattr);
+        print(out);
+        dumpChildren(nm, children);
       then
-  nm;
+        nm;
 
     case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
       equation
-  nm = nodename(typ);
-  lbl_1 = typ::lbl;
-  lblstr = makeLabel(lbl_1);
-  newattr = ATTR("label",lblstr)::attr;
-  out = makeNode(nm, newattr);
-  print(out);
-  dumpChildren(nm, children);
+        nm = nodename(typ);
+        lbl_1 = typ::lbl;
+        lblstr = makeLabel(lbl_1);
+        newattr = ATTR("label",lblstr)::attr;
+        out = makeNode(nm, newattr);
+        print(out);
+        dumpChildren(nm, children);
       then
-  nm;
+        nm;
   end match;
 end dumpNode;
 
@@ -165,18 +165,18 @@ algorithm
 
     case {s1,s2}
       equation
-  s = stringAppend(s1, "\\n");
-  res = stringAppend(s, s2);
+        s = stringAppend(s1, "\\n");
+        res = stringAppend(s, s2);
       then
-  res;
+        res;
 
     case (s1 :: rest)
       equation
-  old = makeLabelReq(rest);
-  s = stringAppend(s1, "\\n");
-  res = stringAppend(s, old);
+        old = makeLabelReq(rest);
+        s = stringAppend(s1, "\\n");
+        res = stringAppend(s, old);
       then
-  res;
+        res;
   end matchcontinue;
 end makeLabelReq;
 
@@ -195,11 +195,11 @@ algorithm
 
     case (parent,(node :: rest))
       equation
-  nm = dumpNode(node);
-  printEdge(nm, parent);
-  dumpChildren(parent, rest);
+        nm = dumpNode(node);
+        printEdge(nm, parent);
+        dumpChildren(parent, rest);
       then
-  ();
+        ();
   end match;
 end dumpChildren;
 
@@ -278,20 +278,20 @@ algorithm
 
     case {ATTR(name = name,value = v)}
       equation
-  s = stringAppend(name, "=");
-  str = stringAppend(s, v);
+        s = stringAppend(name, "=");
+        str = stringAppend(s, v);
       then
-  str;
+        str;
 
     case ((ATTR(name = name,value = v) :: rest))
       equation
-  old = makeAttrReq(rest);
-  s = stringAppend(name, "=");
-  s_1 = stringAppend(s, v);
-  s_2 = stringAppend(s_1, ",");
-  str = stringAppend(s_2, old);
+        old = makeAttrReq(rest);
+        s = stringAppend(name, "=");
+        s_1 = stringAppend(s, v);
+        s_2 = stringAppend(s_1, ",");
+        str = stringAppend(s_2, old);
       then
-  str;
+        str;
   end matchcontinue;
 end makeAttrReq;
 

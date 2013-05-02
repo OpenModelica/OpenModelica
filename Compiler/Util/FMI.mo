@@ -29,7 +29,7 @@
  */
 
  encapsulated package FMI
-" file:   FMI.mo
+" file:         FMI.mo
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 

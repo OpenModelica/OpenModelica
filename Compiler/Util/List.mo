@@ -30,7 +30,7 @@
  */
 
 encapsulated package List
-" file:  List.mo
+" file:        List.mo
   package:     List
   description: List functions
 
@@ -45,30 +45,30 @@ encapsulated package List
     (operation(n)?(_m)?(prefix)*)+
 
   operation: The operation that the function does, i.e. mapping, folding, etc.
-    n: The number of extra arguments that the function takes.
-    m: The number of lists created.
+          n: The number of extra arguments that the function takes.
+          m: The number of lists created.
      prefix: One of the following prefixes:
        AllValue: Checks that all elements of the list matches a given value.
-     Bool: Returns true or false, instead of succeeding or failing.
-      Elt: Takes a single element instead of a list.
-        F: Will fail instead of returning the input list when
-           appropriate.
-     Flat: An operator function that would normally return an
-           element, such as in map, will return a list instead. The
-           returned lists are flattened into a single list.
-     IntN: A special version for integers between 1 and N.
-     Last: Operates on the tail of the list.
-     List: Operates on a list of lists.
-        N: Returns a list of N elements.
-   OnBool: Decides which operation to do based on a given boolean value.
+           Bool: Returns true or false, instead of succeeding or failing.
+            Elt: Takes a single element instead of a list.
+              F: Will fail instead of returning the input list when
+                 appropriate.
+           Flat: An operator function that would normally return an
+                 element, such as in map, will return a list instead. The
+                 returned lists are flattened into a single list.
+           IntN: A special version for integers between 1 and N.
+           Last: Operates on the tail of the list.
+           List: Operates on a list of lists.
+              N: Returns a list of N elements.
+         OnBool: Decides which operation to do based on a given boolean value.
       OnSuccess: Takes an operation function that succeeds or fails.
-   OnTrue: Takes an operation function that returns true or false.
-   Option: Operates on options.
-        r: Takes an operation function with the arguments reversed.
-  Reverse: Returns the processed list in reverse order.
-   Sorted: Expects the given list(s) to be sorted.
-    Tuple: Operates on tuples, either by expecting tuple types as
-           input or by returning tuples instead of multiple lists.
+         OnTrue: Takes an operation function that returns true or false.
+         Option: Operates on options.
+              r: Takes an operation function with the arguments reversed.
+        Reverse: Returns the processed list in reverse order.
+         Sorted: Expects the given list(s) to be sorted.
+          Tuple: Operates on tuples, either by expecting tuple types as
+                 input or by returning tuples instead of multiple lists.
 
   All operator functions has the same parameter order as the types defined
   below, i.e. ValueType before ElementType, and so on. Some types are
@@ -164,16 +164,16 @@ algorithm
   outList := matchcontinue(inElement, inCount)
     case (_, _)
       equation
-  true = inCount >= 0;
+        true = inCount >= 0;
       then
-  fill_tail(inElement, inCount, {});
+        fill_tail(inElement, inCount, {});
 
     else
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value "
-    +& intString(inCount));
+        Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value "
+          +& intString(inCount));
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end fill;
@@ -239,34 +239,34 @@ algorithm
 
     case (_, 0, _)
       equation
-  error_str = stringDelimitList(
-    map({inStart, inStep, inStop}, intString), ":");
-  Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
+        error_str = stringDelimitList(
+          map({inStart, inStep, inStop}, intString), ":");
+        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
       then
-  fail();
+        fail();
 
     case (_, _, _)
       equation
-  false = intEq(inStep, 0);
-  true = (inStart == inStop);
+        false = intEq(inStep, 0);
+        true = (inStart == inStop);
       then
-  {inStart};
+        {inStart};
 
     case (_, _, _)
       equation
-  false = intEq(inStep, 0);
-  true = (inStep > 0);
-  is_done = (inStart > inStop);
+        false = intEq(inStep, 0);
+        true = (inStep > 0);
+        is_done = (inStart > inStop);
       then
-  intRange_tail2(inStart, inStep, inStop, intGt, is_done, {});
+        intRange_tail2(inStart, inStep, inStop, intGt, is_done, {});
 
     case (_, _, _)
       equation
-  false = intEq(inStep, 0);
-  true = (inStep < 0);
-  is_done = (inStart < inStop);
+        false = intEq(inStep, 0);
+        true = (inStep < 0);
+        is_done = (inStart < inStop);
       then
-  intRange_tail2(inStart, inStep, inStop, intLt, is_done, {});
+        intRange_tail2(inStart, inStep, inStop, intLt, is_done, {});
 
   end matchcontinue;
 end intRange_tail;
@@ -298,11 +298,11 @@ algorithm
 
     else
       equation
-  next = inStart + inStep;
-  vals = inStart :: inValues;
-  is_done = compFunc(next, inStop);
+        next = inStart + inStep;
+        vals = inStart :: inValues;
+        is_done = compFunc(next, inStop);
       then
-  intRange_tail2(next, inStep, inStop, compFunc, is_done, vals);
+        intRange_tail2(next, inStep, inStop, compFunc, is_done, vals);
 
   end match;
 end intRange_tail2;
@@ -386,9 +386,9 @@ algorithm
     case (_, {}, false) then true;
     case (e1 :: rest1, e2 :: rest2, _)
       equation
-  equality(e1 = e2);
+        equality(e1 = e2);
       then
-  isEqual(rest1, rest2, inEqualLength);
+        isEqual(rest1, rest2, inEqualLength);
 
     else false;
   end matchcontinue;
@@ -418,9 +418,9 @@ algorithm
     case ({}, {}, _) then true;
     case (e1 :: rest1, e2 :: rest2, _)
       equation
-  true = inCompFunc(e1, e2);
+        true = inCompFunc(e1, e2);
       then
-  isEqualOnTrue(rest1, rest2, inCompFunc);
+        isEqualOnTrue(rest1, rest2, inCompFunc);
 
     else false;
   end matchcontinue;
@@ -451,9 +451,9 @@ algorithm
     case ({}, _, _) then true;
     case (e1 :: rest1, e2 :: rest2, _)
       equation
-  true = inCompFunc(e1, e2);
+        true = inCompFunc(e1, e2);
       then
-  isPrefixOnTrue(rest1, rest2, inCompFunc);
+        isPrefixOnTrue(rest1, rest2, inCompFunc);
 
     else false;
   end matchcontinue;
@@ -496,9 +496,9 @@ algorithm
   outList := matchcontinue(inElement, inList, inPredicate)
     case (_, _, _)
       equation
-  inPredicate(inElement);
+        inPredicate(inElement);
       then
-  inElement :: inList;
+        inElement :: inList;
 
     else inList;
   end matchcontinue;
@@ -536,15 +536,15 @@ algorithm
 
     case (true, _, _, _)
       equation
-  lst = inElement :: inTrueList;
+        lst = inElement :: inTrueList;
       then
-  (lst, inFalseList);
+        (lst, inFalseList);
 
     else
       equation
-  lst = inElement :: inFalseList;
+        lst = inElement :: inFalseList;
       then
-  (inTrueList, lst);
+        (inTrueList, lst);
   end match;
 end consOnBool;
 
@@ -560,9 +560,9 @@ algorithm
     case(0,_,_) then inList;
     case(_,_,_)
       equation
-  true = intGt(size,0);
+        true = intGt(size,0);
       then
-  consN_impl(size,inElement,inList);
+        consN_impl(size,inElement,inList);
     else then inList;
   end matchcontinue;
 end consN;
@@ -629,15 +629,15 @@ algorithm
 
     case ({l}, _)
       equation
-  l = listAppend(l, inList);
+        l = listAppend(l, inList);
       then
-  {l};
+        {l};
 
     case (l :: ll, _)
       equation
-  ll = appendLastList(ll, inList);
+        ll = appendLastList(ll, inList);
       then
-  l :: ll;
+        l :: ll;
   end match;
 end appendLastList;
 
@@ -800,10 +800,10 @@ algorithm
       case (_, 0, _) then inAccum;
 
       case (e :: rest, n, _)
-  equation
-    n = n - 1;
-  then
-    firstN_tail(rest, n, e :: inAccum);
+        equation
+          n = n - 1;
+        then
+          firstN_tail(rest, n, e :: inAccum);
 
   end match;
 end firstN_tail;
@@ -903,12 +903,12 @@ algorithm
     case ({e}, _) then {e};
     else
       equation
-  middle = intDiv(listLength(inList), 2);
-  (left, right) = split(inList, middle);
-  left = sort(left, inCompFunc);
-  right = sort(right, inCompFunc);
+        middle = intDiv(listLength(inList), 2);
+        (left, right) = split(inList, middle);
+        left = sort(left, inCompFunc);
+        right = sort(right, inCompFunc);
       then
-  merge(left, right, inCompFunc);
+        merge(left, right, inCompFunc);
 
   end match;
 end sort;
@@ -951,7 +951,7 @@ algorithm
     case (_::{}, _, _) then listReverse(inAcc);
     case (e1::(rest as e2::_), _, _)
       equation
-  b = inCompFunc(e1,e2);
+        b = inCompFunc(e1,e2);
       then sortedFilterDuplicatesWork(rest, inCompFunc, consOnTrue(b, e1, inAcc));
   end match;
 end sortedFilterDuplicatesWork;
@@ -994,7 +994,7 @@ algorithm
     case (e1::{}, _, _) then listReverse(e1::inAcc);
     case (e1::(rest as e2::_), _, _)
       equation
-  b = inCompFunc(e1,e2);
+        b = inCompFunc(e1,e2);
       then sortedUniqueWork(rest, inCompFunc, consOnTrue(not b, e1, inAcc));
   end match;
 end sortedUniqueWork;
@@ -1021,16 +1021,16 @@ algorithm
 
     case (l :: l_rest, r :: _, _)
       equation
-  true = inCompFunc(r, l);
-  res = merge(l_rest, inRight, inCompFunc);
+        true = inCompFunc(r, l);
+        res = merge(l_rest, inRight, inCompFunc);
       then
-  l :: res;
+        l :: res;
 
     case (l :: _, r :: r_rest, _)
       equation
-  res = merge(inLeft, r_rest, inCompFunc);
+        res = merge(inLeft, r_rest, inCompFunc);
       then
-  r :: res;
+        r :: res;
 
     case ({}, _, _) then inRight;
     case (_, {}, _) then inLeft;
@@ -1062,15 +1062,15 @@ algorithm
     case (l1, {}, _) then l1;
     case (e1 :: l1, l2 as (e2 :: _), _)
       equation
-  true = inCompFunc(e1, e2);
-  res = mergeSorted(l1, l2, inCompFunc);
+        true = inCompFunc(e1, e2);
+        res = mergeSorted(l1, l2, inCompFunc);
       then
-  e1 :: res;
+        e1 :: res;
     case (l1, e2 :: l2, _)
       equation
-  res = mergeSorted(l1, l2, inCompFunc);
+        res = mergeSorted(l1, l2, inCompFunc);
       then
-  e2 :: res;
+        e2 :: res;
   end matchcontinue;
 end mergeSorted;
 
@@ -1099,12 +1099,12 @@ algorithm
       list<Integer> acc;
     case(_,0,_)
       then
-  iAcc;
+        iAcc;
     else
       equation
-  acc = consOnTrue(a1[index], index, iAcc);
+        acc = consOnTrue(a1[index], index, iAcc);
       then
-  sortIntN1(a1,index-1,acc);
+        sortIntN1(a1,index-1,acc);
   end match;
 end sortIntN1;
 
@@ -1143,10 +1143,10 @@ algorithm
     case ({},_,_) then iAcc;
     case (i::ilst,_,_)
       equation
-  acc = consOnTrue(arr[i],i,iAcc);
-  _= arrayUpdate(arr,i,false);
+        acc = consOnTrue(arr[i],i,iAcc);
+        _= arrayUpdate(arr,i,false);
       then
-  uniqueIntN_work(ilst,arr,acc);
+        uniqueIntN_work(ilst,arr,acc);
   end match;
 end uniqueIntN_work;
 
@@ -1174,12 +1174,12 @@ algorithm
        _=arrayUpdate(markarr,len,mark+1);
        acc = uniqueIntNArr1(inList,len,mark+1,markarr,iAcc);
      then
-  acc;
+        acc;
     else
       equation
-  print("List.uniqueIntNArr failed entry to large\n");
+        print("List.uniqueIntNArr failed entry to large\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end uniqueIntNArr;
 
@@ -1199,16 +1199,16 @@ algorithm
     case ({},_,_,_,_) then iAcc;
     case (i::ilst,_,_,_,_)
       equation
-  true = intLt(i,len);
-  acc = consOnTrue(intNe(markarr[i],mark),i,iAcc);
-  _=arrayUpdate(markarr,i,mark);
+        true = intLt(i,len);
+        acc = consOnTrue(intNe(markarr[i],mark),i,iAcc);
+        _=arrayUpdate(markarr,i,mark);
       then
-  uniqueIntNArr1(ilst,len,mark,markarr,acc);
+        uniqueIntNArr1(ilst,len,mark,markarr,acc);
     else
       equation
-  print("List.uniqueIntNArr failed entrie to large\n");
+        print("List.uniqueIntNArr failed entrie to large\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end uniqueIntNArr1;
 
@@ -1256,17 +1256,17 @@ algorithm
     case (_, 0) then ({}, inList);
     case (_, _)
       equation
-  (inPosition >= 0) = true;
-  (list1, list2) = split2(inList, {}, inPosition);
+        (inPosition >= 0) = true;
+        (list1, list2) = split2(inList, {}, inPosition);
       then
-  (list2, list1);
+        (list2, list1);
 
     else
       equation
-  (inPosition < 0) = true;
-  print("Index out of bounds (less than zero) in relation List.split\n");
+        (inPosition < 0) = true;
+        print("Index out of bounds (less than zero) in relation List.split\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end split;
 
@@ -1287,16 +1287,16 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  new_pos = inPosition - 1;
-  (list1, list2) = split2(rest, e :: inList2, new_pos);
+        new_pos = inPosition - 1;
+        (list1, list2) = split2(rest, e :: inList2, new_pos);
       then
-  (list1, list2);
+        (list1, list2);
 
     case ({}, _, _)
       equation
-  print("Index out of bounds (greater than list length) in relation List.split\n");
+        print("Index out of bounds (greater than list length) in relation List.split\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end split2;
 
@@ -1342,11 +1342,11 @@ algorithm
 
     case (e :: rest_e, _, tl, fl)
       equation
-  pred = inFunc(e);
-  (tl, fl) = consOnBool(pred, e, tl, fl);
-  (tl, fl) = splitOnTrue_tail(rest_e, inFunc, tl, fl);
+        pred = inFunc(e);
+        (tl, fl) = consOnBool(pred, e, tl, fl);
+        (tl, fl) = splitOnTrue_tail(rest_e, inFunc, tl, fl);
       then
-  (tl, fl);
+        (tl, fl);
   end match;
 end splitOnTrue_tail;
 
@@ -1396,11 +1396,11 @@ algorithm
 
     case (e :: rest_e, _, _, tl, fl)
       equation
-  pred = inFunc(e, inArg1);
-  (tl, fl) = consOnBool(pred, e, tl, fl);
-  (tl, fl) = split1OnTrue_tail(rest_e, inFunc, inArg1, tl, fl);
+        pred = inFunc(e, inArg1);
+        (tl, fl) = consOnBool(pred, e, tl, fl);
+        (tl, fl) = split1OnTrue_tail(rest_e, inFunc, inArg1, tl, fl);
       then
-  (tl, fl);
+        (tl, fl);
   end match;
 end split1OnTrue_tail;
 
@@ -1454,11 +1454,11 @@ algorithm
 
     case (e :: rest_e, _, _, _, tl, fl)
       equation
-  pred = inFunc(e, inArg1, inArg2);
-  (tl, fl) = consOnBool(pred, e, tl, fl);
-  (tl, fl) = split2OnTrue_tail(rest_e, inFunc, inArg1, inArg2, tl, fl);
+        pred = inFunc(e, inArg1, inArg2);
+        (tl, fl) = consOnBool(pred, e, tl, fl);
+        (tl, fl) = split2OnTrue_tail(rest_e, inFunc, inArg1, inArg2, tl, fl);
       then
-  (tl, fl);
+        (tl, fl);
   end match;
 end split2OnTrue_tail;
 
@@ -1480,9 +1480,9 @@ algorithm
 
     case (_, _)
       equation
-  (l1, l2) = splitOnFirstMatch_tail(inList, inFunc, {});
+        (l1, l2) = splitOnFirstMatch_tail(inList, inFunc, {});
       then
-  (l1, l2);
+        (l1, l2);
 
     else (inList, {});
   end matchcontinue;
@@ -1507,15 +1507,15 @@ algorithm
 
     case (e :: _, _, _)
       equation
-  inFunc(e);
+        inFunc(e);
       then
-  (listReverse(inAccumList1), inList);
+        (listReverse(inAccumList1), inList);
 
     case (e :: rest, _, _)
       equation
-  (l1, l2) = splitOnFirstMatch_tail(rest, inFunc, e :: inAccumList1);
+        (l1, l2) = splitOnFirstMatch_tail(rest, inFunc, e :: inAccumList1);
       then
-  (l1, l2);
+        (l1, l2);
 
   end matchcontinue;
 end splitOnFirstMatch_tail;
@@ -1575,16 +1575,16 @@ algorithm
 
     case (e :: rest, _)
       equation
-  (e, rest) = splitLast_tail(rest, e :: inAccum);
+        (e, rest) = splitLast_tail(rest, e :: inAccum);
       then
-  (e, rest);
+        (e, rest);
   end match;
 end splitLast_tail;
 
 public function splitEqualParts
   "Splits a list into n equally sized parts.
      Example: splitEqualParts({1, 2, 3, 4, 5, 6, 7, 8}, 4) =>
-        {{1, 2}, {3, 4}, {5, 6}, {7, 8}}"
+              {{1, 2}, {3, 4}, {5, 6}, {7, 8}}"
   input list<ElementType> inList;
   input Integer inParts;
   output list<list<ElementType>> outParts;
@@ -1596,18 +1596,18 @@ algorithm
     case (_, 0) then {};
     case (_, _)
       equation
-  length = listLength(inList);
-  0 = intMod(length, inParts);
-  partsize = intDiv(length, inParts);
+        length = listLength(inList);
+        0 = intMod(length, inParts);
+        partsize = intDiv(length, inParts);
       then
-  partition(inList, partsize);
+        partition(inList, partsize);
 
     else
       equation
-  true = intMod(listLength(inList), inParts) > 0;
-  print("- List.splitEqualParts: split into non-integer size not possible.\n");
+        true = intMod(listLength(inList), inParts) > 0;
+        print("- List.splitEqualParts: split into non-integer size not possible.\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end splitEqualParts;
 
@@ -1642,15 +1642,15 @@ algorithm
 
     case (e :: rest, true :: brest, _, _)
       equation
-  (tl, fl) = splitOnBoolList_tail(rest, brest, e :: inTrueAccum, inFalseAccum);
+        (tl, fl) = splitOnBoolList_tail(rest, brest, e :: inTrueAccum, inFalseAccum);
       then
-  (tl, fl);
+        (tl, fl);
 
     case (e :: rest, false :: brest, _, _)
       equation
-  (tl, fl) = splitOnBoolList_tail(rest, brest, inTrueAccum, e :: inFalseAccum);
+        (tl, fl) = splitOnBoolList_tail(rest, brest, inTrueAccum, e :: inFalseAccum);
       then
-  (tl, fl);
+        (tl, fl);
 
   end match;
 end splitOnBoolList_tail;
@@ -1670,16 +1670,16 @@ algorithm
     case ({}, _) then {};
     case (_, _)
       equation
-  true = inPartitionLength > listLength(inList);
+        true = inPartitionLength > listLength(inList);
       then
-  {inList};
+        {inList};
 
     else
       equation
-  (pt, rest) = split(inList, inPartitionLength);
-  res = partition(rest, inPartitionLength);
+        (pt, rest) = split(inList, inPartitionLength);
+        res = partition(rest, inPartitionLength);
       then
-  pt :: res;
+        pt :: res;
 
   end matchcontinue;
 end partition;
@@ -1712,16 +1712,16 @@ algorithm
     case (_, _, 0, _) then listReverse(accumList);
     case (e :: rest_e, _, _, _)
       equation
-  (inOffset > 1) = true;
-  rest_e = sublist_tail(rest_e, inOffset - 1, inLength, accumList);
+        (inOffset > 1) = true;
+        rest_e = sublist_tail(rest_e, inOffset - 1, inLength, accumList);
       then
-  rest_e;
+        rest_e;
     case (e :: rest_e, _, _, _)
       equation
-  (inLength > 0) = true;
-  rest_e = sublist_tail(rest_e, 1, inLength - 1, accumList);
+        (inLength > 0) = true;
+        rest_e = sublist_tail(rest_e, 1, inLength - 1, accumList);
       then
-  e :: rest_e;
+        e :: rest_e;
   end matchcontinue;
 end sublist_tail;
 
@@ -1772,10 +1772,10 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  result = map1r_tail(inList2, inMapFunc, e, inAccumList);
-  result = productMap_tail(rest, inList2, inMapFunc, result);
+        result = map1r_tail(inList2, inMapFunc, e, inAccumList);
+        result = productMap_tail(rest, inList2, inMapFunc, result);
       then
-  result;
+        result;
 
   end match;
 end productMap_tail;
@@ -1810,12 +1810,12 @@ algorithm
 
     case (head :: rest, _, _)
       equation
-  res1 = map1(inList2, listAppend, head);
-  res2 = product_impl(rest, inList2, res1);
-  res = listAppend(res1, res2);
-  res = listAppend(inAccum, res);
+        res1 = map1(inList2, listAppend, head);
+        res2 = product_impl(rest, inList2, res1);
+        res = listAppend(res1, res2);
+        res = listAppend(inAccum, res);
       then
-  res;
+        res;
 
   end matchcontinue;
 end product_impl;
@@ -1844,9 +1844,9 @@ algorithm
     case ({} :: _, _) then listReverse(inAccum);
     else
       equation
-  (firstl, restl) = map_2(inList, splitFirst);
+        (firstl, restl) = map_2(inList, splitFirst);
       then
-  transposeList_tail(restl, firstl :: inAccum);
+        transposeList_tail(restl, firstl :: inAccum);
 
   end match;
 end transposeList_tail;
@@ -1872,12 +1872,12 @@ algorithm
 
     case (_, _, _)
       equation
-  lst = intersectionOnTrue(inList1, inList2, inCompFunc);
-  lst_size = listLength(lst);
-  true = intEq(lst_size, listLength(inList1));
-  true = intEq(lst_size, listLength(inList2));
+        lst = intersectionOnTrue(inList1, inList2, inCompFunc);
+        lst_size = listLength(lst);
+        true = intEq(lst_size, listLength(inList1));
+        true = intEq(lst_size, listLength(inList2));
       then
-  true;
+        true;
 
     else false;
   end matchcontinue;
@@ -1896,12 +1896,12 @@ algorithm
       array<Integer> a;
     case (_,_,_)
       equation
-  true = intGt(inN,0);
-  a = arrayCreate(inN, 0);
-  a = addPos(inList1, a, 1);
-  a = addPos(inList2, a, 1);
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
       then
-  intersectionIntVec(a, inN, {});
+        intersectionIntVec(a, inN, {});
     else then {};
  end matchcontinue;
 end intersectionIntN;
@@ -1919,13 +1919,13 @@ algorithm
 
     case(_, 0, _)
       then
-  iAcc;
+        iAcc;
 
     case(_, _, _)
       equation
-  acc = consOnTrue(intEq(inArray[inIndex],2),inIndex,iAcc);
+        acc = consOnTrue(intEq(inArray[inIndex],2),inIndex,iAcc);
       then
-  intersectionIntVec(inArray, inIndex - 1, acc);
+        intersectionIntVec(inArray, inIndex - 1, acc);
   end match;
 end intersectionIntVec;
 
@@ -1946,18 +1946,18 @@ algorithm
 
     case(i :: irest, _, _)
       equation
-  arr = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
-  arr = addPos(irest, inArray, inIndex);
+        arr = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
+        arr = addPos(irest, inArray, inIndex);
       then
-  arr;
+        arr;
 
     case(i :: _, _, _)
       equation
-  failure(_ = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex)));
-  print("Internal error in List.addPos, index = " +& intString(i) +&
-    " but array size is " +& intString(arrayLength(inArray)) +& "\n");
+        failure(_ = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex)));
+        print("Internal error in List.addPos, index = " +& intString(i) +&
+          " but array size is " +& intString(arrayLength(inArray)) +& "\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end addPos;
 
@@ -1986,10 +1986,10 @@ algorithm
     case ({}, _, _) then {};
     case (e :: rest, _, _)
       equation
-  _ = getMemberOnTrue(e, inList2, inCompFunc);
-  rest = intersectionOnTrue(rest, inList2, inCompFunc);
+        _ = getMemberOnTrue(e, inList2, inCompFunc);
+        rest = intersectionOnTrue(rest, inList2, inCompFunc);
       then
-  e :: rest;
+        e :: rest;
 
     case (e :: rest, _, _)
       then intersectionOnTrue(rest, inList2, inCompFunc);
@@ -2044,16 +2044,16 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  _ = getMemberOnTrue(e, inList2, inCompFunc);
-  (rest, rest1) = intersection1OnTrue_help(rest, inList2, inCompFunc);
+        _ = getMemberOnTrue(e, inList2, inCompFunc);
+        (rest, rest1) = intersection1OnTrue_help(rest, inList2, inCompFunc);
       then
-  (e :: rest, rest1);
+        (e :: rest, rest1);
 
     case (e :: rest, _, _)
       equation
-  (rest, rest1) = intersection1OnTrue_help(rest, inList2, inCompFunc);
+        (rest, rest1) = intersection1OnTrue_help(rest, inList2, inCompFunc);
       then
-  (rest, e :: rest1);
+        (rest, e :: rest1);
   end matchcontinue;
 end intersection1OnTrue_help;
 
@@ -2070,12 +2070,12 @@ algorithm
       array<Integer> a;
     case (_,_,_)
       equation
-  true = intGt(inN,0);
-  a = arrayCreate(inN, 0);
-  a = addPos(inList1, a, 1);
-  a = addPos(inList2, a, 1);
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
       then
-  setDifferenceIntVec(a, inN, {});
+        setDifferenceIntVec(a, inN, {});
     else then {};
  end matchcontinue;
 end setDifferenceIntN;
@@ -2093,13 +2093,13 @@ algorithm
 
     case(_, 0, _)
       then
-  iAcc;
+        iAcc;
 
     case(_, _, _)
       equation
-  acc = consOnTrue(intEq(inArray[inIndex],1),inIndex,iAcc);
+        acc = consOnTrue(intEq(inArray[inIndex],1),inIndex,iAcc);
       then
-  setDifferenceIntVec(inArray, inIndex - 1, acc);
+        setDifferenceIntVec(inArray, inIndex - 1, acc);
   end match;
 end setDifferenceIntVec;
 
@@ -2132,9 +2132,9 @@ algorithm
 
     case (_, e :: rest, _)
       equation
-  (rest1, _) = deleteMemberOnTrue(e, inList1, inCompFunc);
+        (rest1, _) = deleteMemberOnTrue(e, inList1, inCompFunc);
       then
-  setDifferenceOnTrue(rest1, rest, inCompFunc);
+        setDifferenceOnTrue(rest1, rest, inCompFunc);
 
   end match;
 end setDifferenceOnTrue;
@@ -2156,15 +2156,15 @@ algorithm
     case (_, {}) then inList1;
     case (_, e :: rest)
       equation
-  rest1 = deleteMember(inList1, e);
+        rest1 = deleteMember(inList1, e);
       then
-  setDifference(rest1, rest);
+        setDifference(rest1, rest);
 
     else
       equation
-  print("- List.setDifference failed\n");
+        print("- List.setDifference failed\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end setDifference;
@@ -2182,12 +2182,12 @@ algorithm
       array<Integer> a;
     case (_,_,_)
       equation
-  true = intGt(inN,0);
-  a = arrayCreate(inN, 0);
-  a = addPos(inList1, a, 1);
-  a = addPos(inList2, a, 1);
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
       then
-  unionIntVec(a, inN, {});
+        unionIntVec(a, inN, {});
     else then {};
  end matchcontinue;
 end unionIntN;
@@ -2205,13 +2205,13 @@ algorithm
 
     case(_, 0, _)
       then
-  iAcc;
+        iAcc;
 
     case(_, _, _)
       equation
-  acc = consOnTrue(intGt(inArray[inIndex],0),inIndex,iAcc);
+        acc = consOnTrue(intGt(inArray[inIndex],0),inIndex,iAcc);
       then
-  unionIntVec(inArray, inIndex - 1, acc);
+        unionIntVec(inArray, inIndex - 1, acc);
   end match;
 end unionIntVec;
 
@@ -2271,15 +2271,15 @@ algorithm
     case ({}, {}, _) then listReverse(inAccumList);
     case ({}, e :: rest, _)
       equation
-  accum = unionElt(e, inAccumList);
+        accum = unionElt(e, inAccumList);
       then
-  union_tail({}, rest, accum);
+        union_tail({}, rest, accum);
 
     case (e :: rest, _, _)
       equation
-  accum = unionElt(e, inAccumList);
+        accum = unionElt(e, inAccumList);
       then
-  union_tail(rest, inList2, accum);
+        union_tail(rest, inList2, accum);
 
   end match;
 end union_tail;
@@ -2311,9 +2311,9 @@ algorithm
     case ({}, _) then listReverse(inAccumList);
     case (e :: rest, _)
       equation
-  accum = unionElt(e, inAccumList);
+        accum = unionElt(e, inAccumList);
       then
-  unionAppendonUnion_tail(rest, accum);
+        unionAppendonUnion_tail(rest, accum);
   end match;
 end unionAppendonUnion_tail;
 
@@ -2358,15 +2358,15 @@ algorithm
     case ({}, {}, _, _) then listReverse(inAccumList);
     case ({}, e :: rest, _, _)
       equation
-  accum = unionEltOnTrue(e, inAccumList, inCompFunc);
+        accum = unionEltOnTrue(e, inAccumList, inCompFunc);
       then
-  unionOnTrue_tail({}, rest, inCompFunc, accum);
+        unionOnTrue_tail({}, rest, inCompFunc, accum);
 
     case (e :: rest, _, _, _)
       equation
-  accum = unionEltOnTrue(e, inAccumList, inCompFunc);
+        accum = unionEltOnTrue(e, inAccumList, inCompFunc);
       then
-  unionOnTrue_tail(rest, inList2, inCompFunc, accum);
+        unionOnTrue_tail(rest, inList2, inCompFunc, accum);
 
   end match;
 end unionOnTrue_tail;
@@ -2459,10 +2459,10 @@ algorithm
 
     case (head :: rest, _, _)
       equation
-  new_head = inFunc(head);
-  accum = map_tail(rest, inFunc, new_head :: inAccumList);
+        new_head = inFunc(head);
+        accum = map_tail(rest, inFunc, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map_tail;
 
@@ -2514,11 +2514,11 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  (new_head1, new_head2) = inFunc(head);
-  (accum1, accum2) = map_2_tail(rest, inFunc,
-    new_head1 :: inAccumList1, new_head2 :: inAccumList2);
+        (new_head1, new_head2) = inFunc(head);
+        (accum1, accum2) = map_2_tail(rest, inFunc,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
-  (accum1, accum2);
+        (accum1, accum2);
   end match;
 end map_2_tail;
 
@@ -2559,9 +2559,9 @@ algorithm
 
     case (SOME(head) :: rest, _, _)
       equation
-  new_head = inFunc(head);
+        new_head = inFunc(head);
       then
-  mapOption_tail(rest, inFunc, new_head :: inAccumList);
+        mapOption_tail(rest, inFunc, new_head :: inAccumList);
 
     case (NONE() :: rest, _, _)
       then mapOption_tail(rest, inFunc, inAccumList);
@@ -2609,9 +2609,9 @@ algorithm
 
     case (SOME(head) :: rest, _, _, _)
       equation
-  new_head = inFunc(head, inArg1);
+        new_head = inFunc(head, inArg1);
       then
-  map1Option_tail(rest, inFunc, inArg1, new_head :: inAccumList);
+        map1Option_tail(rest, inFunc, inArg1, new_head :: inAccumList);
 
     case (NONE() :: rest, _, _, _)
       then map1Option_tail(rest, inFunc, inArg1, inAccumList);
@@ -2636,10 +2636,10 @@ algorithm
     case ({}, _) then ();
     case (head :: rest, _)
       equation
-  inFunc(head);
-  map_0(rest, inFunc);
+        inFunc(head);
+        map_0(rest, inFunc);
       then
-  ();
+        ();
   end match;
 end map_0;
 
@@ -2703,10 +2703,10 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  new_head = inFunc(head, inArg1);
-  accum = map1_tail(rest, inFunc, inArg1, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1);
+        accum = map1_tail(rest, inFunc, inArg1, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map1_tail;
 
@@ -2753,10 +2753,10 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  new_head = inFunc(inArg1, head);
-  accum = map1r_tail(rest, inFunc, inArg1, new_head :: inAccumList);
+        new_head = inFunc(inArg1, head);
+        accum = map1r_tail(rest, inFunc, inArg1, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map1r_tail;
 
@@ -2780,10 +2780,10 @@ algorithm
     case ({}, _, _) then ();
     case (head :: rest, _, _)
       equation
-  inFunc(head, inArg1);
-  map1_0(rest, inFunc, inArg1);
+        inFunc(head, inArg1);
+        map1_0(rest, inFunc, inArg1);
       then
-  ();
+        ();
   end match;
 end map1_0;
 
@@ -2839,11 +2839,11 @@ algorithm
 
     case (head :: rest, _, _, _, _)
       equation
-  (new_head1, new_head2) = inFunc(head, inArg1);
-  (accum1, accum2) = map1_2_tail(rest, inFunc, inArg1,
-    new_head1 :: inAccumList1, new_head2 :: inAccumList2);
+        (new_head1, new_head2) = inFunc(head, inArg1);
+        (accum1, accum2) = map1_2_tail(rest, inFunc, inArg1,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
-  (accum1, accum2);
+        (accum1, accum2);
   end match;
 end map1_2_tail;
 
@@ -2907,12 +2907,12 @@ algorithm
 
     case (head :: rest, _, _, _, _, _)
       equation
-  (new_head1, new_head2, new_head3) = inFunc(head, inArg1);
-  (accum1, accum2, accum3) = map1_3_tail(rest, inFunc, inArg1,
-    new_head1 :: inAccumList1, new_head2 :: inAccumList2,
-    new_head3 :: inAccumList3);
+        (new_head1, new_head2, new_head3) = inFunc(head, inArg1);
+        (accum1, accum2, accum3) = map1_3_tail(rest, inFunc, inArg1,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2,
+          new_head3 :: inAccumList3);
       then
-  (accum1, accum2, accum3);
+        (accum1, accum2, accum3);
   end match;
 end map1_3_tail;
 
@@ -2982,10 +2982,10 @@ algorithm
 
     case (head :: rest, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2);
-  accum = map2_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2);
+        accum = map2_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map2_tail;
 
@@ -3036,10 +3036,10 @@ algorithm
 
     case (head :: rest, _, _, _, _)
       equation
-  new_head = inFunc(inArg1, inArg2, head);
-  accum = map2r_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
+        new_head = inFunc(inArg1, inArg2, head);
+        accum = map2r_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map2r_tail;
 
@@ -3065,10 +3065,10 @@ algorithm
     case ({}, _, _, _) then ();
     case (head :: rest, _, _, _)
       equation
-  inFunc(head, inArg1, inArg2);
-  map2_0(rest, inFunc, inArg1, inArg2);
+        inFunc(head, inArg1, inArg2);
+        map2_0(rest, inFunc, inArg1, inArg2);
       then
-  ();
+        ();
   end match;
 end map2_0;
 
@@ -3128,11 +3128,11 @@ algorithm
 
     case (head :: rest, _, _, _, _, _)
       equation
-  (new_head1, new_head2) = inFunc(head, inArg1, inArg2);
-  (accum1, accum2) = map2_2_tail(rest, inFunc, inArg1, inArg2,
-    new_head1 :: inAccumList1, new_head2 :: inAccumList2);
+        (new_head1, new_head2) = inFunc(head, inArg1, inArg2);
+        (accum1, accum2) = map2_2_tail(rest, inFunc, inArg1, inArg2,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
-  (accum1, accum2);
+        (accum1, accum2);
   end match;
 end map2_2_tail;
 
@@ -3186,10 +3186,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3);
-  accum = map3_tail(rest, inFunc, inArg1, inArg2, inArg3, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3);
+        accum = map3_tail(rest, inFunc, inArg1, inArg2, inArg3, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map3_tail;
 
@@ -3244,10 +3244,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _)
       equation
-  new_head = inFunc(inArg1, inArg2, inArg3, head);
-  accum = map3r_tail(rest, inFunc, inArg1, inArg2, inArg3, new_head :: inAccumList);
+        new_head = inFunc(inArg1, inArg2, inArg3, head);
+        accum = map3r_tail(rest, inFunc, inArg1, inArg2, inArg3, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map3r_tail;
 
@@ -3275,10 +3275,10 @@ algorithm
     case ({}, _, _, _, _) then ();
     case (head :: rest, _, _, _, _)
       equation
-  inFunc(head, inArg1, inArg2, inArg3);
-  map3_0(rest, inFunc, inArg1, inArg2, inArg3);
+        inFunc(head, inArg1, inArg2, inArg3);
+        map3_0(rest, inFunc, inArg1, inArg2, inArg3);
       then
-  ();
+        ();
   end match;
 end map3_0;
 
@@ -3343,11 +3343,11 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _)
       equation
-  (new_head1, new_head2) = inFunc(head, inArg1, inArg2, inArg3);
-  (accum1, accum2) = map3_2_tail(rest, inFunc, inArg1, inArg2, inArg3,
-    new_head1 :: inAccumList1, new_head2 :: inAccumList2);
+        (new_head1, new_head2) = inFunc(head, inArg1, inArg2, inArg3);
+        (accum1, accum2) = map3_2_tail(rest, inFunc, inArg1, inArg2, inArg3,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
-  (accum1, accum2);
+        (accum1, accum2);
   end match;
 end map3_2_tail;
 
@@ -3405,10 +3405,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4);
-  accum = map4_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4);
+        accum = map4_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map4_tail;
 
@@ -3438,10 +3438,10 @@ algorithm
     case ({}, _, _, _, _, _) then ();
     case (head :: rest, _, _, _, _, _)
       equation
-  inFunc(head, inArg1, inArg2, inArg3, inArg4);
-  map4_0(rest, inFunc, inArg1, inArg2, inArg3, inArg4);
+        inFunc(head, inArg1, inArg2, inArg3, inArg4);
+        map4_0(rest, inFunc, inArg1, inArg2, inArg3, inArg4);
       then
-  ();
+        ();
   end match;
 end map4_0;
 
@@ -3510,11 +3510,11 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _)
       equation
-  (new_head1, new_head2) = inFunc(head, inArg1, inArg2, inArg3, inArg4);
-  (accum1, accum2) = map4_2_tail(rest, inFunc, inArg1, inArg2, inArg3,
-    inArg4, new_head1 :: inAccumList1, new_head2 :: inAccumList2);
+        (new_head1, new_head2) = inFunc(head, inArg1, inArg2, inArg3, inArg4);
+        (accum1, accum2) = map4_2_tail(rest, inFunc, inArg1, inArg2, inArg3,
+          inArg4, new_head1 :: inAccumList1, new_head2 :: inAccumList2);
       then
-  (accum1, accum2);
+        (accum1, accum2);
   end match;
 end map4_2_tail;
 
@@ -3576,10 +3576,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5);
-  accum = map5_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5);
+        accum = map5_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map5_tail;
 
@@ -3645,10 +3645,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6);
-  accum = map6_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6);
+        accum = map6_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map6_tail;
 
@@ -3718,10 +3718,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7);
-  accum = map7_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7);
+        accum = map7_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map7_tail;
 
@@ -3795,10 +3795,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8);
-  accum = map8_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8);
+        accum = map8_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map8_tail;
 
@@ -3876,10 +3876,10 @@ algorithm
 
     case (head :: rest, _, _, _, _, _, _, _, _, _, _, _)
       equation
-  new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9);
-  accum = map9_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9, new_head :: inAccumList);
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9);
+        accum = map9_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9, new_head :: inAccumList);
       then
-  accum;
+        accum;
   end match;
 end map9_tail;
 
@@ -3938,10 +3938,10 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  res = inMapFunc(e);
-  res = listAppend(res, inAccum);
+        res = inMapFunc(e);
+        res = listAppend(res, inAccum);
       then
-  mapFlat_tail(rest, inMapFunc, res);
+        mapFlat_tail(rest, inMapFunc, res);
 
   end match;
 end mapFlat_tail;
@@ -3988,10 +3988,10 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  res = inMapFunc(e, inArg1);
-  res = listAppend(res, inAccum);
+        res = inMapFunc(e, inArg1);
+        res = listAppend(res, inAccum);
       then
-  map1Flat_tail(rest, inMapFunc, inArg1, res);
+        map1Flat_tail(rest, inMapFunc, inArg1, res);
 
   end match;
 end map1Flat_tail;
@@ -4042,10 +4042,10 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  res = inMapFunc(e, inArg1, inArg2);
-  res = listAppend(res, inAccum);
+        res = inMapFunc(e, inArg1, inArg2);
+        res = listAppend(res, inAccum);
       then
-  map2Flat_tail(rest, inMapFunc, inArg1, inArg2, res);
+        map2Flat_tail(rest, inMapFunc, inArg1, inArg2, res);
 
   end match;
 end map2Flat_tail;
@@ -4099,10 +4099,10 @@ algorithm
 
     case (a::xs, _, _, _)
       equation
-  b = inMapFunc1(a);
-  c = inMapFunc2(b);
+        b = inMapFunc1(a);
+        c = inMapFunc2(b);
       then
-  mapMap_tail(xs, inMapFunc1, inMapFunc2, c :: inAccum);
+        mapMap_tail(xs, inMapFunc1, inMapFunc2, c :: inAccum);
   end match;
 end mapMap_tail;
 
@@ -4131,11 +4131,11 @@ algorithm
 
     case (a::xs, _, _)
       equation
-  b = inMapFunc1(a);
-  inMapFunc2(b);
-  mapMap_0(xs, inMapFunc1, inMapFunc2);
+        b = inMapFunc1(a);
+        inMapFunc2(b);
+        mapMap_0(xs, inMapFunc1, inMapFunc2);
       then
-  ();
+        ();
   end match;
 end mapMap_0;
 
@@ -4161,11 +4161,11 @@ algorithm
 
     case (head :: rest, _, _)
       equation
-  new_head = inMapFunc(head);
-  equality(new_head = inValue);
-  mapAllValue(rest, inMapFunc, inValue);
+        new_head = inMapFunc(head);
+        equality(new_head = inValue);
+        mapAllValue(rest, inMapFunc, inValue);
       then
-  ();
+        ();
   end match;
 end mapAllValue;
 
@@ -4185,9 +4185,9 @@ algorithm
   outAllValue := matchcontinue(inList, inMapFunc, inValue)
     case (_, _, _)
       equation
-  mapAllValue(inList, inMapFunc, inValue);
+        mapAllValue(inList, inMapFunc, inValue);
       then
-  true;
+        true;
     else false;
   end matchcontinue;
 end mapAllValueBool;
@@ -4217,11 +4217,11 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  new_head = inMapFunc(head, inArg1);
-  equality(new_head = inValue);
-  map1AllValue(rest, inMapFunc, inValue, inArg1);
+        new_head = inMapFunc(head, inArg1);
+        equality(new_head = inValue);
+        map1AllValue(rest, inMapFunc, inValue, inArg1);
       then
-  ();
+        ();
   end match;
 end map1AllValue;
 
@@ -4250,11 +4250,11 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  new_head = inMapFunc(inArg1,head);
-  equality(new_head = inValue);
-  map1rAllValue(rest, inMapFunc, inValue, inArg1);
+        new_head = inMapFunc(inArg1,head);
+        equality(new_head = inValue);
+        map1rAllValue(rest, inMapFunc, inValue, inArg1);
       then
-  ();
+        ();
   end match;
 end map1rAllValue;
 
@@ -4285,11 +4285,11 @@ algorithm
 
     case (head :: rest, _, _, _, _)
       equation
-  new_head = inMapFunc(head, inArg1, inArg2);
-  equality(new_head = inValue);
-  map2AllValue(rest, inMapFunc, inValue, inArg1, inArg2);
+        new_head = inMapFunc(head, inArg1, inArg2);
+        equality(new_head = inValue);
+        map2AllValue(rest, inMapFunc, inValue, inArg1, inArg2);
       then
-  ();
+        ();
   end match;
 end map2AllValue;
 
@@ -4313,9 +4313,9 @@ algorithm
     case ({},_,_) then true;
     case (lst::rest, _, _)
       equation
-  mapAllValue(lst, inMapFunc, inValue);
+        mapAllValue(lst, inMapFunc, inValue);
       then
-  mapListAllValueBool(rest, inMapFunc, inValue);
+        mapListAllValueBool(rest, inMapFunc, inValue);
     else false;
   end matchcontinue;
 end mapListAllValueBool;
@@ -4347,11 +4347,11 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  (new_head,arg) = inMapFunc(head, inArg1);
-  equality(new_head = inValue);
-  foldAllValue(rest, inMapFunc, inValue, arg);
+        (new_head,arg) = inMapFunc(head, inArg1);
+        equality(new_head = inValue);
+        foldAllValue(rest, inMapFunc, inValue, arg);
       then
-  ();
+        ();
   end match;
 end foldAllValue;
 
@@ -4386,11 +4386,11 @@ algorithm
 
     case (head :: rest, _, _, _)
       equation
-  res = inApplyFunc(head);
-  fold_res = inFoldFunc(res, inFoldArg);
-  fold_res = applyAndFold(rest, inFoldFunc, inApplyFunc, fold_res);
+        res = inApplyFunc(head);
+        fold_res = inFoldFunc(res, inFoldArg);
+        fold_res = applyAndFold(rest, inFoldFunc, inApplyFunc, fold_res);
       then
-  fold_res;
+        fold_res;
 
   end match;
 end applyAndFold;
@@ -4428,11 +4428,11 @@ algorithm
 
     case (head :: rest, _, _, _, _)
       equation
-  res = inApplyFunc(head, inExtraArg);
-  fold_res = inFoldFunc(res, inFoldArg);
-  fold_res = applyAndFold1(rest, inFoldFunc, inApplyFunc, inExtraArg, fold_res);
+        res = inApplyFunc(head, inExtraArg);
+        fold_res = inFoldFunc(res, inFoldArg);
+        fold_res = applyAndFold1(rest, inFoldFunc, inApplyFunc, inExtraArg, fold_res);
       then
-  fold_res;
+        fold_res;
 
   end match;
 end applyAndFold1;
@@ -4441,7 +4441,7 @@ public function mapList
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists.
      Example: mapList({{1, 2},{3},{4}}, intString) =>
-                {{\"1\", \"2\"}, {\"3\"}, {\"4\"}}"
+                      {{\"1\", \"2\"}, {\"3\"}, {\"4\"}}"
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
   output list<list<ElementOutType>> outListList;
@@ -4529,7 +4529,7 @@ public function mapListReverse
    applying the function to all elements in  the list of lists. The order of the
    elements in the inner lists will be reversed compared to mapList.
      Example: mapListReverse({{1, 2}, {3}, {4}}, intString) =>
-                       {{\"4\"}, {\"3\"}, {\"2\", \"1\"}}"
+                             {{\"4\"}, {\"3\"}, {\"2\", \"1\"}}"
   input list<list<ElementInType>> inListList;
   input MapFunc inFunc;
   output list<list<ElementOutType>> outListList;
@@ -4581,7 +4581,7 @@ public function fold
    argument that is 'updated', thus returned from the function. fold will call
    the function for each element in a sequence, updating the start value.
      Example: fold({1, 2, 3}, intAdd, 2) => 8
-        intAdd(1, 2) => 3, intAdd(2, 3) => 5, intAdd(3, 5) => 8"
+              intAdd(1, 2) => 3, intAdd(2, 3) => 5, intAdd(3, 5) => 8"
   input list<ElementType> inList;
   input FoldFunc inFoldFunc;
   input FoldType inStartValue;
@@ -4603,9 +4603,9 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  arg = inFoldFunc(e, inStartValue);
+        arg = inFoldFunc(e, inStartValue);
       then
-  fold(rest, inFoldFunc, arg);
+        fold(rest, inFoldFunc, arg);
 
   end match;
 end fold;
@@ -4633,9 +4633,9 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  arg = inFoldFunc(inStartValue, e);
+        arg = inFoldFunc(inStartValue, e);
       then
-  foldr(rest, inFoldFunc, arg);
+        foldr(rest, inFoldFunc, arg);
 
   end match;
 end foldr;
@@ -4668,9 +4668,9 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  arg = inFoldFunc(e, inExtraArg, inStartValue);
+        arg = inFoldFunc(e, inExtraArg, inStartValue);
       then
-  fold1(rest, inFoldFunc, inExtraArg, arg);
+        fold1(rest, inFoldFunc, inExtraArg, arg);
 
   end match;
 end fold1;
@@ -4700,9 +4700,9 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  arg = inFoldFunc(inStartValue, e, inExtraArg);
+        arg = inFoldFunc(inStartValue, e, inExtraArg);
       then
-  fold1r(rest, inFoldFunc, inExtraArg, arg);
+        fold1r(rest, inFoldFunc, inExtraArg, arg);
 
   end match;
 end fold1r;
@@ -4737,9 +4737,9 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inStartValue);
+        arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inStartValue);
       then
-  fold2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
+        fold2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
 end fold2;
@@ -4774,9 +4774,9 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  arg = fold2(e, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue);
+        arg = fold2(e, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue);
       then 
-  foldList2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
+        foldList2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
 end foldList2;
@@ -4808,9 +4808,9 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  arg = inFoldFunc(inStartValue, e, inExtraArg1, inExtraArg2);
+        arg = inFoldFunc(inStartValue, e, inExtraArg1, inExtraArg2);
       then
-  fold2r(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
+        fold2r(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
 end fold2r;
@@ -4847,9 +4847,9 @@ algorithm
 
     case (e :: rest, _, _, _, _, _)
       equation
-  arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue);
+        arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue);
       then
-  fold3(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, arg);
+        fold3(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, arg);
 
   end match;
 end fold3;
@@ -4898,10 +4898,10 @@ algorithm
 
     case (e :: rest, _, _, _, _, _, _, _, _)
       equation
-  (arg1, arg2, arg3) = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue1, inStartValue2, inStartValue3);
-  (outResult1, outResult2, outResult3) = fold43(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, arg1, arg2, arg3);
+        (arg1, arg2, arg3) = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue1, inStartValue2, inStartValue3);
+        (outResult1, outResult2, outResult3) = fold43(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, arg1, arg2, arg3);
       then
-  (outResult1, outResult2, outResult3);
+        (outResult1, outResult2, outResult3);
 
   end match;
 end fold43;
@@ -4954,11 +4954,11 @@ algorithm
 
     case (e1 :: rest_e1, _, _, _)
       equation
-  (res, arg) = inFunc(e1, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = mapFold_tail(rest_e1, inFunc, arg, acc);
+        (res, arg) = inFunc(e1, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = mapFold_tail(rest_e1, inFunc, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
 
   end match;
 end mapFold_tail;
@@ -5014,11 +5014,11 @@ algorithm
     case ({}, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _)
       equation
-  (res, arg) = inFunc(e1, inConstArg, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = map1Fold_tail(rest_e1, inFunc, inConstArg, arg, acc);
+        (res, arg) = inFunc(e1, inConstArg, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map1Fold_tail(rest_e1, inFunc, inConstArg, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
   end match;
 end map1Fold_tail;
 
@@ -5077,11 +5077,11 @@ algorithm
     case ({}, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _)
       equation
-  (res, arg) = inFunc(e1, inConstArg, inConstArg2, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = map2Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, arg, acc);
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map2Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
   end match;
 end map2Fold_tail;
 
@@ -5144,11 +5144,11 @@ algorithm
     case ({}, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _, _)
       equation
-  (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = map3Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, arg, acc);
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map3Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
   end match;
 end map3Fold_tail;
 
@@ -5215,11 +5215,11 @@ algorithm
     case ({}, _, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _, _, _, _)
       equation
-  (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inConstArg4, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = map4Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, inConstArg4, arg, acc);
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inConstArg4, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map4Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, inConstArg4, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
   end match;
 end map4Fold_tail;
 
@@ -5268,12 +5268,12 @@ algorithm
 
     case (e1 :: rest_e1, _, _, _)
       equation
-  ((res, arg)) = inFunc((e1, inArg));
-  acc = res :: inAccumList;
-  (rest_res, arg) =
-    mapFoldTuple_tail(rest_e1, inFunc, arg, acc);
+        ((res, arg)) = inFunc((e1, inArg));
+        acc = res :: inAccumList;
+        (rest_res, arg) =
+          mapFoldTuple_tail(rest_e1, inFunc, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
 
   end match;
 end mapFoldTuple_tail;
@@ -5325,11 +5325,11 @@ algorithm
     case ({}, _, _, _) then (listReverse(inAccumList), inArg);
     case (lst :: rest_lst, _, _, _)
       equation
-  (res, arg) = mapFold(lst, inFunc, inArg);
-  accum = res :: inAccumList;
-  (rest_res, arg) = mapFoldList_tail(rest_lst, inFunc, arg, accum);
+        (res, arg) = mapFold(lst, inFunc, inArg);
+        accum = res :: inAccumList;
+        (rest_res, arg) = mapFoldList_tail(rest_lst, inFunc, arg, accum);
       then
-  (rest_res, arg);
+        (rest_res, arg);
   end match;
 end mapFoldList_tail;
 
@@ -5407,9 +5407,9 @@ algorithm
 
     case (_ , _, _)
       equation
-  arg = inFoldFunc(inStartValue);
+        arg = inFoldFunc(inStartValue);
       then
-  foldcallN(n-1, inFoldFunc, arg);
+        foldcallN(n-1, inFoldFunc, arg);
 
   end match;
 end foldcallN;
@@ -5437,21 +5437,21 @@ algorithm
     case ({e1}, _) then e1;
     case ({e1, e2}, _)
       equation
-  res = inReduceFunc(e1, e2);
+        res = inReduceFunc(e1, e2);
       then
-  res;
+        res;
 
     case (e1 :: e2 :: (rest as _ :: _), _)
       equation
-  res = inReduceFunc(e1, e2);
+        res = inReduceFunc(e1, e2);
       then
-  reduce(res :: rest, inReduceFunc);
+        reduce(res :: rest, inReduceFunc);
 
     case ({}, _)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
       then
-  fail();
+        fail();
   end match;
 end reduce;
 
@@ -5480,21 +5480,21 @@ algorithm
     case ({e1}, _, _) then e1;
     case ({e1, e2}, _, _)
       equation
-  res = inReduceFunc(e1, e2, inExtraArg1);
+        res = inReduceFunc(e1, e2, inExtraArg1);
       then
-  res;
+        res;
 
     case (e1 :: e2 :: (rest as _ :: _), _, _)
       equation
-  res = inReduceFunc(e1, e2, inExtraArg1);
+        res = inReduceFunc(e1, e2, inExtraArg1);
       then
-  reduce1(res :: rest, inReduceFunc, inExtraArg1);
+        reduce1(res :: rest, inReduceFunc, inExtraArg1);
 
     case ({}, _, _)
       equation
-  Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
       then
-  fail();
+        fail();
   end match;
 end reduce1;
 
@@ -5522,9 +5522,9 @@ algorithm
     case ({}, _) then inAccumList;
     case (e :: rest, _)
       equation
-  res = listAppend(e,inAccumList);
+        res = listAppend(e,inAccumList);
       then
-  flatten_tail(rest, res);
+        flatten_tail(rest, res);
 
   end match;
 end flatten_tail;
@@ -5561,7 +5561,7 @@ end thread_tail;
 public function thread3
   "Takes three lists of the same type and threads (interleaves) them together.
      Example: thread({1, 2, 3}, {4, 5, 6}, {7, 8, 9}) =>
-       {7, 4, 1, 8, 5, 2, 9, 6, 3}"
+             {7, 4, 1, 8, 5, 2, 9, 6, 3}"
   input list<ElementType> inList1;
   input list<ElementType> inList2;
   input list<ElementType> inList3;
@@ -5594,7 +5594,7 @@ public function threadTuple
   "Takes two lists and threads (interleaves) the arguments into a list of tuples
    consisting of the two element types.
      Example: threadTuple({1, 2, 3}, {true, false, true}) =>
-        {(1, true), (2, false), (3, true)}"
+              {(1, true), (2, false), (3, true)}"
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   output list<tuple<ElementType1, ElementType2>> outTuples;
@@ -5759,9 +5759,9 @@ algorithm
     case ({}, {}, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _)
       equation
-  res = inMapFunc(e1, e2);
+        res = inMapFunc(e1, e2);
       then
-  threadMap_tail(rest1, rest2, inMapFunc, res :: inAccum);
+        threadMap_tail(rest1, rest2, inMapFunc, res :: inAccum);
   end match;
 end threadMap_tail;
 
@@ -5787,7 +5787,7 @@ public function threadTupleList
   "Takes two lists of lists as arguments and produces a list of lists of a two
   tuple of the element types of each list.
   Example: threadTupleList({1}, {2, 3}}, {{'a'}, {'b', 'c'}}) =>
-       {{(1, 'a')}, {(2, 'b'), (3, 'c')}}"
+             {{(1, 'a')}, {(2, 'b'), (3, 'c')}}"
   input list<list<ElementType1>> inList1;
   input list<list<ElementType2>> inList2;
   output list<list<tuple<ElementType1, ElementType2>>> outList;
@@ -5800,7 +5800,7 @@ public function threadMapAllValue
    elements of two lists, and checks if the result is the same as the given
    value.
      Example: threadMapAllValue({true, true}, {false, true}, boolAnd, true) =>
-        fail"
+              fail"
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   input MapFunc inMapFunc;
@@ -5823,11 +5823,11 @@ algorithm
     case ({}, {}, _, _) then ();
     case (e1 :: rest1, e2 :: rest2, _, _)
       equation
-  res = inMapFunc(e1, e2);
-  equality(res = inValue);
-  threadMapAllValue(rest1, rest2, inMapFunc, inValue);
+        res = inMapFunc(e1, e2);
+        equality(res = inValue);
+        threadMapAllValue(rest1, rest2, inMapFunc, inValue);
       then
-  ();
+        ();
   end match;
 end threadMapAllValue;
 
@@ -5899,9 +5899,9 @@ algorithm
     case ({}, {}, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _)
       equation
-  res = inMapFunc(e1, e2, inArg1);
+        res = inMapFunc(e1, e2, inArg1);
       then
-  threadMap1_tail(rest1, rest2, inMapFunc, inArg1, res :: inAccum);
+        threadMap1_tail(rest1, rest2, inMapFunc, inArg1, res :: inAccum);
   end match;
 end threadMap1_tail;
 
@@ -5930,10 +5930,10 @@ algorithm
     case ({}, {}, _, _) then ();
     case (e1 :: rest1, e2 :: rest2, _, _)
       equation
-  inMapFunc(e1, e2, inArg1);
-  threadMap1_0(rest1, rest2, inMapFunc, inArg1);
+        inMapFunc(e1, e2, inArg1);
+        threadMap1_0(rest1, rest2, inMapFunc, inArg1);
       then
-  ();
+        ();
   end match;
 end threadMap1_0;
 
@@ -6013,9 +6013,9 @@ algorithm
     case ({}, {}, _, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _, _)
       equation
-  res = inMapFunc(e1, e2, inArg1, inArg2);
+        res = inMapFunc(e1, e2, inArg1, inArg2);
       then
-  threadMap2_tail(rest1, rest2, inMapFunc, inArg1, inArg2, res :: inAccum);
+        threadMap2_tail(rest1, rest2, inMapFunc, inArg1, inArg2, res :: inAccum);
   end match;
 end threadMap2_tail;
 
@@ -6080,10 +6080,10 @@ algorithm
     case ({}, {}, _, _, _, _, _) then (inAccum,inFoldArg);
     case (e1 :: rest1, e2 :: rest2, _, _, _, foldArg, _)
       equation
-  (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, foldArg);
-  (outList,foldArg) = threadMap2Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, foldArg, res :: inAccum);
+        (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, foldArg);
+        (outList,foldArg) = threadMap2Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, foldArg, res :: inAccum);
       then
-  (outList,foldArg);
+        (outList,foldArg);
   end match;
 end threadMap2Fold_tail;
 
@@ -6167,9 +6167,9 @@ algorithm
     case ({}, {}, _, _, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _, _, _)
       equation
-  res = inMapFunc(e1, e2, inArg1, inArg2, inArg3);
+        res = inMapFunc(e1, e2, inArg1, inArg2, inArg3);
       then
-  threadMap3_tail(rest1, rest2, inMapFunc, inArg1, inArg2, inArg3, res :: inAccum);
+        threadMap3_tail(rest1, rest2, inMapFunc, inArg1, inArg2, inArg3, res :: inAccum);
   end match;
 end threadMap3_tail;
 
@@ -6223,9 +6223,9 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _)
       equation
-  res = inFunc(e1, e2, e3);
+        res = inFunc(e1, e2, e3);
       then
-  thread3Map_tail(rest1, rest2, rest3, inFunc, res :: inAccum);
+        thread3Map_tail(rest1, rest2, rest3, inFunc, res :: inAccum);
   end match;
 end thread3Map_tail;
 
@@ -6294,10 +6294,10 @@ algorithm
     case ({}, {}, _, _, _, _, _, _) then (inAccum,inFoldArg);
     case (e1 :: rest1, e2 :: rest2, _, _, _, _, foldArg, _)
       equation
-  (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inArg3, foldArg);
-  (outList,foldArg) = threadMap3Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, inArg3, foldArg, res :: inAccum);
+        (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inArg3, foldArg);
+        (outList,foldArg) = threadMap3Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, inArg3, foldArg, res :: inAccum);
       then
-  (outList,foldArg);
+        (outList,foldArg);
   end match;
 end threadMap3Fold_tail;
 
@@ -6305,7 +6305,7 @@ public function thread3Map_2
   "Takes three lists and a function, and threads (interleaves) and maps the
    elements of the three lists, creating two new list.
      Example: thread3Map({1, 2}, {3, 4}, {5, 6}, intAddSub3) =>
-        ({1+3+5, 2+4+6}, {1-3-5, 2-4-6})"
+              ({1+3+5, 2+4+6}, {1-3-5, 2-4-6})"
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   input list<ElementType3> inList3;
@@ -6363,11 +6363,11 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _)
       equation
-  (res1, res2) = inFunc(e1, e2, e3);
-  (resl1, resl2) = thread3Map_2_tail(rest1, rest2, rest3, inFunc,
-    res1 :: inAccum1, res2 :: inAccum2);
+        (res1, res2) = inFunc(e1, e2, e3);
+        (resl1, resl2) = thread3Map_2_tail(rest1, rest2, rest3, inFunc,
+          res1 :: inAccum1, res2 :: inAccum2);
       then
-  (resl1, resl2);
+        (resl1, resl2);
   end match;
 end thread3Map_2_tail;
 
@@ -6433,11 +6433,11 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _)
       equation
-  (res,arg) = inFunc(e1, e2, e3, inArg);
-  (reslst,arg) = thread3MapFold_tail(rest1, rest2, rest3, inFunc,
-    arg, res :: inAccum);
+        (res,arg) = inFunc(e1, e2, e3, inArg);
+        (reslst,arg) = thread3MapFold_tail(rest1, rest2, rest3, inFunc,
+          arg, res :: inAccum);
       then
-  (reslst,arg);
+        (reslst,arg);
   end match;
 end thread3MapFold_tail;
 
@@ -6505,10 +6505,10 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _, _, _)
       equation
-  res = inFunc(e1, e2, e3, inArg1, inArg2, inArg3);
+        res = inFunc(e1, e2, e3, inArg1, inArg2, inArg3);
       then
-  thread3Map3_tail(rest1, rest2, rest3, inFunc,
-    inArg1, inArg2, inArg3, res :: inAccum);
+        thread3Map3_tail(rest1, rest2, rest3, inFunc,
+          inArg1, inArg2, inArg3, res :: inAccum);
   end match;
 end thread3Map3_tail;
 
@@ -6543,9 +6543,9 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, _, _, _)
       equation
-  res = inFoldFunc(e1, e2, inArg1, inFoldArg);
+        res = inFoldFunc(e1, e2, inArg1, inFoldArg);
       then
-  threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
+        threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
 
   end match;
 end threadFold1;
@@ -6583,9 +6583,9 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, _, _, _, _)
       equation
-  res = inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
+        res = inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
       then
-  threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
+        threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
 
   end match;
 end threadFold2;
@@ -6625,9 +6625,9 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, _, _, _, _, _)
       equation
-  res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
+        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
       then
-  threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
+        threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
 
   end match;
 end threadFold3;
@@ -6660,9 +6660,9 @@ algorithm
 
     case (e1 :: rest1, e2 :: rest2, _, _)
       equation
-  res = inFoldFunc(e1, e2, inFoldArg);
+        res = inFoldFunc(e1, e2, inFoldArg);
       then
-  threadFold(rest1, rest2, inFoldFunc, res);
+        threadFold(rest1, rest2, inFoldFunc, res);
 
   end match;
 end threadFold;
@@ -6721,11 +6721,11 @@ algorithm
 
     case (e1 :: rest_e1, e2 :: rest_e2, _, _, _)
       equation
-  (res, arg) = inFunc(e1, e2, inArg);
-  acc = res :: inAccumList;
-  (rest_res, arg) = threadMapFold_tail(rest_e1, rest_e2, inFunc, arg, acc);
+        (res, arg) = inFunc(e1, e2, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = threadMapFold_tail(rest_e1, rest_e2, inFunc, arg, acc);
       then
-  (rest_res, arg);
+        (rest_res, arg);
 
   end match;
 end threadMapFold_tail;
@@ -6755,9 +6755,9 @@ algorithm
 
     case (_, head :: _, _)
       equation
-  equality(head = inElement);
+        equality(head = inElement);
       then
-  inPosition;
+        inPosition;
 
     case (_, _ :: rest, _)
       then position_impl(inElement, rest, inPosition + 1);
@@ -6804,9 +6804,9 @@ algorithm
 
     case (_, head :: _, _, _)
       equation
-  true = inCompFunc(inValue, head);
+        true = inCompFunc(inValue, head);
       then
-  inPosition;
+        inPosition;
 
     case (_, _ :: rest, _, _)
       then positionOnTrue2(inValue, rest, inCompFunc, inPosition + 1);
@@ -6844,15 +6844,15 @@ algorithm
 
     case (_, e :: rest, _)
       equation
-  pos = position(inElement, e);
+        pos = position(inElement, e);
       then
-  (inListIndex, pos);
+        (inListIndex, pos);
 
     case (_, _ :: rest, _)
       equation
-  (index, pos) = positionList_impl(inElement, rest, inListIndex + 1);
+        (index, pos) = positionList_impl(inElement, rest, inListIndex + 1);
       then
-  (index, pos);
+        (index, pos);
 
   end matchcontinue;
 end positionList_impl;
@@ -6870,15 +6870,15 @@ algorithm
     case (_,{}) then false;
     case (x,(y :: ys))
       equation
-  equality(x = y);
+        equality(x = y);
       then
-  true;
+        true;
     case (x,(y :: ys))
       equation
-  failure(equality(x = y));
-  a = listPos2(x, ys);
+        failure(equality(x = y));
+        a = listPos2(x, ys);
       then
-  a;
+        a;
   end matchcontinue;
 end listPos2;
 
@@ -6886,7 +6886,7 @@ public function getMember
   "Takes a value and a list, and returns the value if it's present in the list.
    If not present the function will fail.
      Example: listGetMember(0, {1, 2, 3}) => fail
-        listGetMember(1, {1, 2, 3}) => 1"
+              listGetMember(1, {1, 2, 3}) => 1"
   input ElementType inElement;
   input list<ElementType> inList;
   output ElementType outElement;
@@ -6924,9 +6924,9 @@ algorithm
 
     case (_, e :: _, _)
       equation
-  true = inCompFunc(inValue, e);
+        true = inCompFunc(inValue, e);
       then
-  e;
+        e;
 
     case (_, _ :: rest, _)
       then getMemberOnTrue(inValue, rest, inCompFunc);
@@ -6960,9 +6960,9 @@ algorithm
   outIsMember := matchcontinue(inValue, inList, inCompFunc)
     case (_, _, _)
       equation
-  _ = getMemberOnTrue(inValue, inList, inCompFunc);
+        _ = getMemberOnTrue(inValue, inList, inCompFunc);
       then
-  true;
+        true;
 
     else false;
   end matchcontinue;
@@ -6989,12 +6989,12 @@ algorithm
       then false;
     case(h::t,_)
       equation
-  true = inFindFunc(h);
+        true = inFindFunc(h);
     then
       true;
     case(_::t,_)
        equation
-   ret = exist(t,inFindFunc);
+         ret = exist(t,inFindFunc);
        then ret;
   end matchcontinue;
 end exist;
@@ -7047,17 +7047,17 @@ algorithm
     // Add to front of extracted list if the condition works.
     case (e :: rest, _, _, _)
       equation
-  true = inFilterFunc(e);
-  (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, e :: inExtractedList, inRemainingList);
+        true = inFilterFunc(e);
+        (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, e :: inExtractedList, inRemainingList);
       then
-  (exted, remain);
+        (exted, remain);
 
     // Add to front of remaining list if the condition doesn't work.
     case (e :: rest, _, _, _)
       equation
-  (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, inExtractedList, e :: inRemainingList);
+        (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, inExtractedList, e :: inRemainingList);
       then
-  (exted, remain);
+        (exted, remain);
 
   end matchcontinue;
 end extractOnTrue_tail;
@@ -7100,9 +7100,9 @@ algorithm
     // Add to front if the condition works.
     case (e :: rest, _, _)
       equation
-  inFilterFunc(e);
+        inFilterFunc(e);
       then
-  filter_tail(rest, inFilterFunc, e :: inAccumList);
+        filter_tail(rest, inFilterFunc, e :: inAccumList);
 
     // Filter out and move along.
     case (_ :: rest, _, _)
@@ -7146,9 +7146,9 @@ algorithm
 
     case (ie :: rest, _, _)
       equation
-  oe = inFilterMapFunc(ie);
+        oe = inFilterMapFunc(ie);
       then
-  filterMap_tail(rest, inFilterMapFunc, oe :: inAccumList);
+        filterMap_tail(rest, inFilterMapFunc, oe :: inAccumList);
 
     case (_ :: rest, _, _)
       then filterMap_tail(rest, inFilterMapFunc, inAccumList);
@@ -7214,9 +7214,9 @@ algorithm
     // Add to front if the condition works.
     case (e :: rest, _, _)
       equation
-  true = inFilterFunc(e);
+        true = inFilterFunc(e);
       then
-  filterOnTrue_tail(rest, inFilterFunc, e :: inAccumList);
+        filterOnTrue_tail(rest, inFilterFunc, e :: inAccumList);
 
     // Filter out and move along.
     case (e :: rest, _, _)
@@ -7268,9 +7268,9 @@ algorithm
     // Add to front if the condition works.
     case (e :: rest, _, _, _)
       equation
-  inFilterFunc(e, inArg1);
+        inFilterFunc(e, inArg1);
       then
-  filter1_tail(rest, inFilterFunc, inArg1, e :: inAccumList);
+        filter1_tail(rest, inFilterFunc, inArg1, e :: inAccumList);
 
     // Filter out and move along.
     case (_ :: rest, _, _, _)
@@ -7323,10 +7323,10 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  filter = inFilterFunc(e, inArg1);
-  accum = consOnTrue(filter, e, inAccumList);
+        filter = inFilterFunc(e, inArg1);
+        accum = consOnTrue(filter, e, inAccumList);
       then
-  filter1OnTrue_tail(rest, inFilterFunc, inArg1, accum);
+        filter1OnTrue_tail(rest, inFilterFunc, inArg1, accum);
 
   end match;
 end filter1OnTrue_tail;
@@ -7375,10 +7375,10 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  filter = inFilterFunc(inArg1, e);
-  accum = consOnTrue(filter, e, inAccumList);
+        filter = inFilterFunc(inArg1, e);
+        accum = consOnTrue(filter, e, inAccumList);
       then
-  filter1rOnTrue_tail(rest, inFilterFunc, inArg1, accum);
+        filter1rOnTrue_tail(rest, inFilterFunc, inArg1, accum);
 
   end match;
 end filter1rOnTrue_tail;
@@ -7429,10 +7429,10 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  filter = inFilterFunc(e, inArg1, inArg2);
-  accum = consOnTrue(filter, e, inAccumList);
+        filter = inFilterFunc(e, inArg1, inArg2);
+        accum = consOnTrue(filter, e, inAccumList);
       then
-  filter2OnTrue_tail(rest, inFilterFunc, inArg1, inArg2, accum);
+        filter2OnTrue_tail(rest, inFilterFunc, inArg1, inArg2, accum);
 
   end match;
 end filter2OnTrue_tail;
@@ -7478,10 +7478,10 @@ algorithm
 
     case (_, _, e :: rest, _)
       equation
-  is_equal = inCompFunc(inValue, e);
-  accum = consOnTrue(not is_equal, e, inAccumList);
+        is_equal = inCompFunc(inValue, e);
+        accum = consOnTrue(not is_equal, e, inAccumList);
       then
-  removeOnTrue_tail(inValue, inCompFunc, rest, accum);
+        removeOnTrue_tail(inValue, inCompFunc, rest, accum);
 
   end match;
 end removeOnTrue_tail;
@@ -7524,9 +7524,9 @@ algorithm
 
     case (e :: rest, _, _)
       equation
-  res = inFunc(e);
+        res = inFunc(e);
       then
-  select_tail(rest, inFunc, consOnTrue(res, e , inAccum));
+        select_tail(rest, inFunc, consOnTrue(res, e , inAccum));
   end match;
 end select_tail;
 
@@ -7550,8 +7550,8 @@ algorithm
 
     case (e :: rest, _)
       equation
-  b = inFunc(e);
-  e = Debug.bcallret2(not b,selectFirst,rest,inFunc,e);
+        b = inFunc(e);
+        e = Debug.bcallret2(not b,selectFirst,rest,inFunc,e);
       then e;
 
   end match;
@@ -7579,8 +7579,8 @@ algorithm
 
     case (e :: rest, _, arg1)
       equation
-  b = inFunc(e,arg1);
-  e = Debug.bcallret3(not b,selectFirst1,rest,inFunc,arg1,e);
+        b = inFunc(e,arg1);
+        e = Debug.bcallret3(not b,selectFirst1,rest,inFunc,arg1,e);
       then e;
 
   end match;
@@ -7628,9 +7628,9 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  res = inFunc(e, inArg1);
+        res = inFunc(e, inArg1);
       then
-  select1_tail(rest, inFunc, inArg1, consOnTrue(res, e ,inAccum));
+        select1_tail(rest, inFunc, inArg1, consOnTrue(res, e ,inAccum));
   end match;
 end select1_tail;
 
@@ -7674,9 +7674,9 @@ algorithm
 
     case (e :: rest, _, _, _)
       equation
-  res = inFunc(inArg1, e);
+        res = inFunc(inArg1, e);
       then
-  select1r_tail(rest, inFunc, inArg1, consOnTrue(res, e, inAccum));
+        select1r_tail(rest, inFunc, inArg1, consOnTrue(res, e, inAccum));
   end match;
 end select1r_tail;
 
@@ -7726,10 +7726,10 @@ algorithm
 
     case (e :: rest, _, _, _, _)
       equation
-  res = inFunc(e, inArg1, inArg2);
+        res = inFunc(e, inArg1, inArg2);
       then
-  select2_tail(rest, inFunc, inArg1, inArg2,
-    consOnTrue(res, e, inAccum));
+        select2_tail(rest, inFunc, inArg1, inArg2,
+          consOnTrue(res, e, inAccum));
   end match;
 end select2_tail;
 
@@ -7783,11 +7783,11 @@ algorithm
 
     case (_, e :: _, _)
       equation
-  is_equal = inCompareFunc(inValue, e);
-  (el, e) = deleteMemberOnTrue_tail(inValue, inList, inCompareFunc,
-    {}, is_equal);
+        is_equal = inCompareFunc(inValue, e);
+        (el, e) = deleteMemberOnTrue_tail(inValue, inList, inCompareFunc,
+          {}, is_equal);
       then
-  (el, SOME(e));
+        (el, SOME(e));
 
     else then (inList, NONE());
   end matchcontinue;
@@ -7820,12 +7820,12 @@ algorithm
 
     case (_, e :: (el as e2 :: _), _, _, _)
       equation
-  accum_el = e :: inAccumList;
-  is_equal = inCompareFunc(inValue, e2);
-  (el, e) = deleteMemberOnTrue_tail(inValue, el, inCompareFunc,
-    accum_el, is_equal);
+        accum_el = e :: inAccumList;
+        is_equal = inCompareFunc(inValue, e2);
+        (el, e) = deleteMemberOnTrue_tail(inValue, el, inCompareFunc,
+          accum_el, is_equal);
       then
-  (el, e);
+        (el, e);
   end match;
 end deleteMemberOnTrue_tail;
 
@@ -7872,12 +7872,12 @@ algorithm
     case (_, {}, _, _) then listAppend(listReverse(inAccumList), inList);
     case (e :: rest, pos :: rest_pos, _, _)
       equation
-  // Matching index, remove.
-  true = pos == inIndex;
-  // Allows duplicate position elements.
-  rest_pos = removeMatchesFirst(rest_pos, inIndex);
+        // Matching index, remove.
+        true = pos == inIndex;
+        // Allows duplicate position elements.
+        rest_pos = removeMatchesFirst(rest_pos, inIndex);
       then
-  deletePositionsSorted2(rest, rest_pos, inIndex + 1, inAccumList);
+        deletePositionsSorted2(rest, rest_pos, inIndex + 1, inAccumList);
 
      case (e :: rest, _, _, _)
        then deletePositionsSorted2(rest, inPositions, inIndex + 1, e :: inAccumList);
@@ -7899,10 +7899,10 @@ algorithm
 
     case (n :: rest, _)
       equation
-  true = n == inN;
-  rest = removeMatchesFirst(rest, inN);
+        true = n == inN;
+        rest = removeMatchesFirst(rest, inN);
       then
-  rest;
+        rest;
 
     else inList;
   end matchcontinue;
@@ -7926,10 +7926,10 @@ algorithm
     case (_, 0, e :: rest) then inElement :: rest;
     case (_, _, e :: rest)
       equation
-  (inPosition >= 1) = true;
-  rest = replaceAt(inElement, inPosition - 1, rest);
+        (inPosition >= 1) = true;
+        rest = replaceAt(inElement, inPosition - 1, rest);
       then
-  e :: rest;
+        e :: rest;
   end match;
 end replaceAt;
 
@@ -7951,10 +7951,10 @@ algorithm
     case (_, 0, e :: rest) then listAppend(inReplacementList, rest);
     case (_, _, e :: rest)
       equation
-  (inPosition >= 1) = true;
-  rest = replaceAtWithList(inReplacementList, inPosition - 1, rest);
+        (inPosition >= 1) = true;
+        rest = replaceAtWithList(inReplacementList, inPosition - 1, rest);
       then
-  e :: rest;
+        e :: rest;
   end match;
 end replaceAtWithList;
 
@@ -7968,7 +7968,7 @@ public function replaceAtWithFill
    given position is out of range, the fill value is used to padd the list up to
    that element position and then insert the value at the position
      Example: replaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") =>
-        {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
+              {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input ElementType inElement;
   input Integer inPosition;
   input list<ElementType> inList;
@@ -7988,29 +7988,29 @@ algorithm
 
     case (x, numfills, {}, fillv)
       equation
-  (numfills > 1) = true;
-  numfills_1 = numfills - 1;
-  res = fill_tail(fillv, numfills_1, {});
-  res_1 = listReverse(x :: res);
+        (numfills > 1) = true;
+        numfills_1 = numfills - 1;
+        res = fill_tail(fillv, numfills_1, {});
+        res_1 = listReverse(x :: res);
       then
-  res_1;
+        res_1;
 
     case (x, n, (y :: ys), fillv)
       equation
-  (n >= 1) = true;
-  nn = n - 1;
-  res = replaceAtWithFill(x, nn, ys, fillv);
+        (n >= 1) = true;
+        nn = n - 1;
+        res = replaceAtWithFill(x, nn, ys, fillv);
       then
-  (y :: res);
+        (y :: res);
 
     case (_,p,_,_)
       equation
-  print("- List.replaceAtWithFill failed row: ");
-  pos = intString(p);
-  print(pos);
-  print("\n");
+        print("- List.replaceAtWithFill failed row: ");
+        pos = intString(p);
+        print(pos);
+        print("\n");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end replaceAtWithFill;
@@ -8054,10 +8054,10 @@ algorithm
 
     else
       equation
-  str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
-  str = stringAppendList({inListNameStr, inBeginStr, str, inEndStr});
+        str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
+        str = stringAppendList({inListNameStr, inBeginStr, str, inEndStr});
       then
-  str;
+        str;
 
   end match;
 end toString;
@@ -8097,8 +8097,8 @@ algorithm
     case({},_) then inLength;
     case(a::rest, _)
       equation
-  i = inLength+listLength(a);
-  outLength = lengthListElementsHelp(rest, i);
+        i = inLength+listLength(a);
+        outLength = lengthListElementsHelp(rest, i);
       then outLength;
   end match;
 end lengthListElementsHelp;
@@ -8240,12 +8240,12 @@ algorithm
 
     case (ie1 :: rest_ie1, _, _, _, acc)
       equation
-  (oe1, res) = inMapFunc(ie1);
-  res = inFoldFunc(res, inStartValue);
-  acc = oe1 :: acc;
-  (acc, res) = mapFoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, res, acc);
+        (oe1, res) = inMapFunc(ie1);
+        res = inFoldFunc(res, inStartValue);
+        acc = oe1 :: acc;
+        (acc, res) = mapFoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, res, acc);
       then
-  (acc, res);
+        (acc, res);
 
     case ({}, _, _, _, _) then (listReverse(inAccumList), inStartValue);
 
@@ -8312,13 +8312,13 @@ algorithm
 
     case (ie1 :: rest_ie1, _, _, _, _, acc)
       equation
-  (oe1, res) = inMapFunc(ie1, inConstArg);
-  res = inFoldFunc(res, inStartValue);
-  acc = oe1 :: acc;
-  (acc, res) =
-    map1FoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, inConstArg, res, acc);
+        (oe1, res) = inMapFunc(ie1, inConstArg);
+        res = inFoldFunc(res, inStartValue);
+        acc = oe1 :: acc;
+        (acc, res) =
+          map1FoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, inConstArg, res, acc);
       then
-  (acc, res);
+        (acc, res);
 
     case ({}, _, _, _, _, _) then (listReverse(inAccumList), inStartValue);
 
@@ -8382,9 +8382,9 @@ algorithm
 
     case (e :: rest_e, _, accum)
       equation
-  accum = inMapFunc(e, accum);
+        accum = inMapFunc(e, accum);
       then
-  accumulateMapAccum(rest_e, inMapFunc, accum);
+        accumulateMapAccum(rest_e, inMapFunc, accum);
 
     case ({}, _, _) then inAccumList;
   end match;
@@ -8415,9 +8415,9 @@ algorithm
 
     case (e :: rest_e, _, _, accum)
       equation
-  accum = inMapFunc(e, inArg, accum);
+        accum = inMapFunc(e, inArg, accum);
       then
-  accumulateMapAccum1(rest_e, inMapFunc, inArg, accum);
+        accumulateMapAccum1(rest_e, inMapFunc, inArg, accum);
 
     case ({}, _, _, _) then inAccumList;
   end match;
@@ -8466,10 +8466,10 @@ algorithm
 
     case (e :: rest_e, _, _, accum)
       equation
-  (accum, fold_arg) = inFunc(e, inFoldArg, accum);
-  (accum, fold_arg) = accumulateMapFoldAccum(rest_e, inFunc, fold_arg, accum);
+        (accum, fold_arg) = inFunc(e, inFoldArg, accum);
+        (accum, fold_arg) = accumulateMapFoldAccum(rest_e, inFunc, fold_arg, accum);
       then
-  (accum, fold_arg);
+        (accum, fold_arg);
 
     case ({}, _, _, _) then (inAccumList, inFoldArg);
 
@@ -8526,10 +8526,10 @@ algorithm
 
     case (false, head :: rest, _, accum)
       equation
-  (head, found) = inFunc(head);
-  (accum, found) = findMap_tail(found, rest, inFunc, head :: accum);
+        (head, found) = inFunc(head);
+        (accum, found) = findMap_tail(found, rest, inFunc, head :: accum);
       then
-  (accum, found);
+        (accum, found);
 
     case (true, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _) then (inAccum, false);
@@ -8581,10 +8581,10 @@ algorithm
 
     case (false, head :: rest, _, _, accum)
       equation
-  (head, found) = inFunc(head, inArg1);
-  (accum, found) = findMap1_tail(found, rest, inFunc, inArg1, head :: accum);
+        (head, found) = inFunc(head, inArg1);
+        (accum, found) = findMap1_tail(found, rest, inFunc, inArg1, head :: accum);
       then
-  (accum, found);
+        (accum, found);
 
     case (true, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _) then (inAccum, false);
@@ -8640,10 +8640,10 @@ algorithm
 
     case (false, head :: rest, _, _, _, accum)
       equation
-  (head, found) = inFunc(head, inArg1, inArg2);
-  (accum, found) = findMap2_tail(found, rest, inFunc, inArg1, inArg2, head :: accum);
+        (head, found) = inFunc(head, inArg1, inArg2);
+        (accum, found) = findMap2_tail(found, rest, inFunc, inArg1, inArg2, head :: accum);
       then
-  (accum, found);
+        (accum, found);
 
     case (true, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _, _) then (inAccum, false);
@@ -8703,10 +8703,10 @@ algorithm
 
     case (false, head :: rest, _, _, _, _, accum)
       equation
-  (head, found) = inFunc(head, inArg1, inArg2, inArg3);
-  (accum, found) = findMap3_tail(found, rest, inFunc, inArg1, inArg2, inArg3, head :: accum);
+        (head, found) = inFunc(head, inArg1, inArg2, inArg3);
+        (accum, found) = findMap3_tail(found, rest, inFunc, inArg1, inArg2, inArg3, head :: accum);
       then
-  (accum, found);
+        (accum, found);
 
     case (true, _, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
     case (_, {}, _, _, _, _, _) then (inAccum, false);
@@ -8754,10 +8754,10 @@ algorithm
 
     case (e1 :: rest_e1, e2 :: rest_e2, _, _)
       equation
-  true = inEqFunc(e1, e2);
-  (prefix, rest) = splitEqualPrefix_tail(rest_e1, rest_e2, inEqFunc, e1 :: inAccum);
+        true = inEqFunc(e1, e2);
+        (prefix, rest) = splitEqualPrefix_tail(rest_e1, rest_e2, inEqFunc, e1 :: inAccum);
       then
-  (prefix, rest);
+        (prefix, rest);
 
     else (listReverse(inAccum), inFullList);
 

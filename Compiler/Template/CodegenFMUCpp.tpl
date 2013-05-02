@@ -256,13 +256,13 @@ template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
       case SOME(v) then
       '<%str%> = <%initVal(v)%>;'
       case NONE() then
-  match type_
-    case T_INTEGER(__)
-    case T_REAL(__)
-    case T_ENUMERATION(__)
-    case T_BOOL(__) then '<%str%> = 0;'
-    case T_STRING(__) then '<%str%> = "";'
-    else 'UNKOWN_TYPE'
+        match type_
+          case T_INTEGER(__)
+          case T_REAL(__)
+          case T_ENUMERATION(__)
+          case T_BOOL(__) then '<%str%> = 0;'
+          case T_STRING(__) then '<%str%> = "";'
+          else 'UNKOWN_TYPE'
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=
@@ -296,10 +296,10 @@ case MODELINFO(vars=SIMVARS(__)) then
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
     switch (vr) {
     /*
-  <%externalFuncs%>
+        <%externalFuncs%>
     */
-  default:
-      return fmiError;
+        default:
+            return fmiError;
     }
     return fmiOK;
   }

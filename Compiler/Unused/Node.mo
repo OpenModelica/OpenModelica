@@ -30,7 +30,7 @@
  */
 
 encapsulated package Node
-" file:  Node.mo
+" file:        Node.mo
   package:     Node
   description: Node represents an node in our graph.
   @author:     adrpo

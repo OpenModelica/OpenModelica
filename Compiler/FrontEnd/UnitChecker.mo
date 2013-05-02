@@ -31,7 +31,7 @@
 
 encapsulated package UnitChecker
 "
-  file:   UnitChecker.mo
+  file:         UnitChecker.mo
   package:     UnitChecker
   description: Physical unit checking.
 
@@ -66,7 +66,7 @@ algorithm
 
     case (_,st)
       equation
-  false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then (st);
 
     // No more terms?
@@ -76,27 +76,27 @@ algorithm
     // Is consistent?
     case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res))
       equation
-  (UnitAbsyn.CONSISTENT(),_,st2) = checkTerm(tm1,st1);
-  (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
+        (UnitAbsyn.CONSISTENT(),_,st2) = checkTerm(tm1,st1);
+        (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
       then(st);
 
      // Is inconsistent?
      case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res))
        equation
-   (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
-   s1 = UnitAbsynBuilder.printTermsStr({tm1});
-   s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
-   s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
-   Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});
+         (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
+         s1 = UnitAbsynBuilder.printTermsStr({tm1});
+         s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
+         s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
+         Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});
        then
-   UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
+         UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
 
      // failtrace
      case (_,_) equation
        Debug.fprint(Flags.FAILTRACE, "UnitChecker::check() failed\n");
        print("check failed\n");
       then
-  fail();
+        fail();
    end matchcontinue;
 end check;
 
@@ -114,10 +114,10 @@ algorithm
 
     case (UnitAbsyn.STORE(vector,indx))
       equation
-  lst = arrayList(vector);
-  (comp,st2) = completeCheck(lst,1,UnitAbsyn.STORE(vector,indx));
+        lst = arrayList(vector);
+        (comp,st2) = completeCheck(lst,1,UnitAbsyn.STORE(vector,indx));
       then
-  (comp,st2);
+        (comp,st2);
   end match;
 end isComplete;
 
@@ -139,18 +139,18 @@ algorithm
 
     case (SOME(u1)::lst,_,st2)
       equation
-  (u2,st3) = normalize(indx,st2);
-  false = unitHasUnknown(u2);
-  (comp1,st4) = completeCheck(lst,indx+1,st3);
+        (u2,st3) = normalize(indx,st2);
+        false = unitHasUnknown(u2);
+        (comp1,st4) = completeCheck(lst,indx+1,st3);
       then
-  (comp1,st3);
+        (comp1,st3);
 
     case (SOME(u1)::lst,_,st2)
       equation
-  (u2,st3) = normalize(indx,st2);
-  true = unitHasUnknown(u2);
+        (u2,st3) = normalize(indx,st2);
+        true = unitHasUnknown(u2);
       then
-  (false,st2);
+        (false,st2);
 
     case(NONE()::_,_,st2) then (true,st2);
   end matchcontinue;
@@ -174,63 +174,63 @@ algorithm
 
      case (UnitAbsyn.ADD(ut1,ut2,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   (res2,su2,st3) = checkTerm(ut2,st2);
-   (res3,st4) = unify(su1,su2,st3);
-   res4 = chooseResult(res1,res2,res3);
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
        then (res4,su1,st4);
 
      case (UnitAbsyn.SUB(ut1,ut2,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   (res2,su2,st3) = checkTerm(ut2,st2);
-   (res3,st4) = unify(su1,su2,st3);
-   res4 = chooseResult(res1,res2,res3);
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
        then (res4,su1,st4);
 
      case (UnitAbsyn.MUL(ut1,ut2,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   (res2,su2,st3) = checkTerm(ut2,st2);
-   su3 = mulSpecUnit(su1,su2);
-   res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         su3 = mulSpecUnit(su1,su2);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
        then(res4,su3,st3);
 
      case (UnitAbsyn.DIV(ut1,ut2,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   (res2,su2,st3) = checkTerm(ut2,st2);
-   su3 = divSpecUnit(su1,su2);
-   res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         su3 = divSpecUnit(su1,su2);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
        then(res4,su3,st3);
 
      case (UnitAbsyn.EQN(ut1,ut2,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   (res2,su2,st3) = checkTerm(ut2,st2);
-   (res3,st4) = unify(su1,su2,st3);
-   res4 = chooseResult(res1,res2,res3);
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
        then(res4,su1,st4);
 
      case (UnitAbsyn.LOC(loc,_),st1)
        equation
-   (UnitAbsyn.UNSPECIFIED()) = UnitAbsynBuilder.find(loc,st1);
+         (UnitAbsyn.UNSPECIFIED()) = UnitAbsynBuilder.find(loc,st1);
        then(UnitAbsyn.CONSISTENT(),UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
 
      case (UnitAbsyn.LOC(loc,_),st1)
        equation
-   (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
+         (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
        then(UnitAbsyn.CONSISTENT(),su1,st1);
 
      case (UnitAbsyn.POW(ut1,expo1,_),st1)
        equation
-   (res1,su1,st2) = checkTerm(ut1,st1);
-   su2 = powSpecUnit(su1,expo1);
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         su2 = powSpecUnit(su1,expo1);
        then(res1,su2,st2);
 
      case (_,_)
        equation
-   Debug.fprint(Flags.FAILTRACE, "UnitChecker::checkTerm() failed\n");
+         Debug.fprint(Flags.FAILTRACE, "UnitChecker::checkTerm() failed\n");
        then fail();
    end matchcontinue;
 end checkTerm;
@@ -285,19 +285,19 @@ algorithm
 
     case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1))
       equation
-  r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},{}), UnitAbsyn.SPECUNIT({},rest1));
+        r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},{}), UnitAbsyn.SPECUNIT({},rest1));
       then r1;
 
     case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1),UnitAbsyn.SPECUNIT(_,{}))
       equation
-  r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
+        r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
       then r1;
 
     case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1), UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2))
       equation
-  true = intEq(i1a, i2a);
-  true = intEq(i1b, i2b);
-  r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
+        true = intEq(i1a, i2a);
+        true = intEq(i1b, i2b);
+        r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
       then r1;
 
     case(_,_)
@@ -321,28 +321,28 @@ algorithm
     // No unknown and the same on both sides
     case(su1,su2,st1)
       equation
-  false = hasUnknown(su1);
-  false = hasUnknown(su2);
-  true = isSpecUnitEq(su1,su2);
+        false = hasUnknown(su1);
+        false = hasUnknown(su2);
+        true = isSpecUnitEq(su1,su2);
       then
-  (UnitAbsyn.CONSISTENT(),st1);
+        (UnitAbsyn.CONSISTENT(),st1);
 
     // No unknown, but different on the sides
     case(su1,su2,st1)
       equation
-  false = hasUnknown(su1);
-  false = hasUnknown(su2);
+        false = hasUnknown(su1);
+        false = hasUnknown(su2);
       then
-  (UnitAbsyn.INCONSISTENT(su1,su2),st1);
+        (UnitAbsyn.INCONSISTENT(su1,su2),st1);
 
     // Move the unknown to left side and substitute
     case(su1,su2,st1)
       equation
-  su3 = divSpecUnit(su2,su1);
-  (loc1,su4) = getUnknown(su3);
-  st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
+        su3 = divSpecUnit(su2,su1);
+        (loc1,su4) = getUnknown(su3);
+        st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
       then
-  (UnitAbsyn.CONSISTENT(),st2);
+        (UnitAbsyn.CONSISTENT(),st2);
 
     // Unknowns are cancelling each other out
     case(_,_,st1)
@@ -372,16 +372,16 @@ algorithm
 
     case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1,unitvec1))
       equation
-  su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
-  expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
-  su2 = powSpecUnit(su1,expo2);
+        su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
+        expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
+        su2 = powSpecUnit(su1,expo2);
       then (loc1,su2);
 
     case(_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::getUnknown() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::getUnknown() failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end getUnknown;
 
@@ -407,7 +407,7 @@ algorithm
       UnitAbsyn.SpecUnit su;
     case(UnitAbsyn.SPECIFIED(su))
       equation
-  false = hasUnknown(su);
+        false = hasUnknown(su);
       then false;
     case(_) then true;
   end matchcontinue;
@@ -425,17 +425,17 @@ algorithm
 
     case (UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2))
       equation
-  tparams3 = listAppend(tparams1,tparams2);
-  tparams4 = normalizeParamsExponents(tparams3);
-  units = mulUnitVec(units1,units2);
+        tparams3 = listAppend(tparams1,tparams2);
+        tparams4 = normalizeParamsExponents(tparams3);
+        units = mulUnitVec(units1,units2);
       then
-  UnitAbsyn.SPECUNIT(tparams4,units);
+        UnitAbsyn.SPECUNIT(tparams4,units);
 
     case (_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnit() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnit() failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end mulSpecUnit;
 
@@ -454,25 +454,25 @@ algorithm
 
     case(expo1::rest1,expo2::rest2)
       equation
-  expo3 = MMath.addRational(expo1,expo2);
-  rest3 = mulUnitVec(rest1,rest2);
+        expo3 = MMath.addRational(expo1,expo2);
+        rest3 = mulUnitVec(rest1,rest2);
       then
-  (expo3::rest3);
+        (expo3::rest3);
 
     case(expo1::rest1,{})
       equation
-  rest3 = mulUnitVec(rest1,{});
+        rest3 = mulUnitVec(rest1,{});
       then
-  (expo1::rest3);
+        (expo1::rest3);
 
     case({},expo1::rest1)
       equation
-  rest3 = mulUnitVec({},rest1);
+        rest3 = mulUnitVec({},rest1);
       then (expo1::rest3);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end mulUnitVec;
@@ -489,16 +489,16 @@ algorithm
 
     case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2))
       equation
-  tparams3 = negParamList(tparams2,{});
-  tparams4 = listAppend(tparams1,tparams3);
-  tparams5 = normalizeParamsExponents(tparams4);
-  units = divUnitVec(units1,units2);
+        tparams3 = negParamList(tparams2,{});
+        tparams4 = listAppend(tparams1,tparams3);
+        tparams5 = normalizeParamsExponents(tparams4);
+        units = divUnitVec(units1,units2);
       then
-  UnitAbsyn.SPECUNIT(tparams5,units);
+        UnitAbsyn.SPECUNIT(tparams5,units);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::divSpecUnit() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::divSpecUnit() failed\n");
       then fail();
   end matchcontinue;
 end divSpecUnit;
@@ -517,27 +517,27 @@ algorithm
 
     case(expo1::rest1,expo2::rest2)
       equation
-  expo3 = MMath.subRational(expo1,expo2);
-  rest3 = divUnitVec(rest1,rest2);
+        expo3 = MMath.subRational(expo1,expo2);
+        rest3 = divUnitVec(rest1,rest2);
       then
-  (expo3::rest3);
+        (expo3::rest3);
 
     case(expo1::rest1,{})
       equation
-  rest3 = divUnitVec(rest1,{});
+        rest3 = divUnitVec(rest1,{});
       then
-  (expo1::rest3);
+        (expo1::rest3);
 
     case({},expo1::rest1)
       equation
-  expo2 = MMath.subRational(MMath.RATIONAL(0,1),expo1);
-  rest3 = divUnitVec({},rest1);
+        expo2 = MMath.subRational(MMath.RATIONAL(0,1),expo1);
+        rest3 = divUnitVec({},rest1);
       then
-  (expo2::rest3);
+        (expo2::rest3);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end divUnitVec;
@@ -554,16 +554,16 @@ algorithm
 
     case(UnitAbsyn.SPECUNIT(params1,unitvec1),_)
       equation
-  params2 = powUnitParams(params1,expo);
-  unitvec2 = powUnitVec(unitvec1,expo);
+        params2 = powUnitParams(params1,expo);
+        unitvec2 = powUnitVec(unitvec1,expo);
       then
-  UnitAbsyn.SPECUNIT(params2,unitvec2);
+        UnitAbsyn.SPECUNIT(params2,unitvec2);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::powSpecUnit() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powSpecUnit() failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end powSpecUnit;
 
@@ -582,14 +582,14 @@ algorithm
 
     case((expo1,param)::rest1,expo2)
       equation
-  expo3 = MMath.multRational(expo1,expo2);
-  rest2 = powUnitParams(rest1,expo2);
+        expo3 = MMath.multRational(expo1,expo2);
+        rest2 = powUnitParams(rest1,expo2);
       then
-  ((expo3,param)::rest2);
+        ((expo3,param)::rest2);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitParams() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitParams() failed\n");
       then fail();
   end matchcontinue;
 end powUnitParams;
@@ -608,14 +608,14 @@ algorithm
 
     case(expo1::rest1,expo2)
       equation
-  expo3 = MMath.multRational(expo1,expo2);
-  rest2 = powUnitVec(rest1,expo2);
+        expo3 = MMath.multRational(expo1,expo2);
+        rest2 = powUnitVec(rest1,expo2);
       then
-  (expo3::rest2);
+        (expo3::rest2);
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end powUnitVec;
@@ -636,13 +636,13 @@ algorithm
 
     case ((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))::rest,ac2)
       equation
-  qr = MMath.multRational(MMath.RATIONAL(-1,1),MMath.RATIONAL(i1,i2));
-  pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);
+        qr = MMath.multRational(MMath.RATIONAL(-1,1),MMath.RATIONAL(i1,i2));
+        pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);
       then pres;
 
     case(_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::negParamList() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::negParamList() failed\n");
       then fail();
   end matchcontinue;
 end negParamList;
@@ -679,14 +679,14 @@ algorithm
 
     case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),_)
       equation
-  (UnitAbsyn.SPECUNIT(params2,unitvec2),st2) = normalizeParamsValues(params1,UnitAbsyn.SPECUNIT({},unitvec1),st);
-  params3 = normalizeParamsExponents(params2);
+        (UnitAbsyn.SPECUNIT(params2,unitvec2),st2) = normalizeParamsValues(params1,UnitAbsyn.SPECUNIT({},unitvec1),st);
+        params3 = normalizeParamsExponents(params2);
       then
-  (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
+        (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
 
     case (_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeOnUnit() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeOnUnit() failed\n");
       then fail();
   end matchcontinue;
 end normalizeOnUnit;
@@ -709,31 +709,31 @@ algorithm
     // Case: Found duplicate parameter in list
     case ((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1)
       equation
-  (true,expo2,rest2) = getParam(rest1,loc1);
-  expo3 = MMath.addRational(expo1,expo2);
-  rest3 = normalizeParamsExponents((expo3,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest2);
+        (true,expo2,rest2) = getParam(rest1,loc1);
+        expo3 = MMath.addRational(expo1,expo2);
+        rest3 = normalizeParamsExponents((expo3,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest2);
       then
-  rest3;
+        rest3;
 
     // Case: No duplicates in list and exponent IS zero
     case ((MMath.RATIONAL(0,1),_)::rest1)
       equation
-  rest2 = normalizeParamsExponents(rest1);
+        rest2 = normalizeParamsExponents(rest1);
       then
-  rest2;
+        rest2;
 
     // Case: No duplicates in list and exponent is not zero
     case (param::rest1)
       equation
-  rest2 = normalizeParamsExponents(rest1);
+        rest2 = normalizeParamsExponents(rest1);
       then
-  (param::rest2);
+        (param::rest2);
 
     case (_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsExponents() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsExponents() failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end normalizeParamsExponents;
 
@@ -757,19 +757,19 @@ algorithm
 
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,_)
       equation
-  true = intEq(loc2, loc);
+        true = intEq(loc2, loc);
       then
-  (true,expo,rest);
+        (true,expo,rest);
 
     case (param::rest,_)
       equation
-  (found2,expo,rest2) = getParam(rest,loc);
+        (found2,expo,rest2) = getParam(rest,loc);
       then
-  (found2,expo,param::rest2);
+        (found2,expo,param::rest2);
 
     case (_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::getParam() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::getParam() failed\n");
       then fail();
   end matchcontinue;
 end getParam;
@@ -795,15 +795,15 @@ algorithm
 
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,_,_)
       equation
-  (u2,st2) = normalize(loc,st);
-  su2 = mulSpecUnitWithNorm(suin,u2,name,loc,expo);
-  (su3,st3) = normalizeParamsValues(rest,su2,st2);
+        (u2,st2) = normalize(loc,st);
+        su2 = mulSpecUnitWithNorm(suin,u2,name,loc,expo);
+        (su3,st3) = normalizeParamsValues(rest,su2,st2);
       then
-  (su3,st3);
+        (su3,st3);
 
     case (_,_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsValues() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsValues() failed\n");
       then fail();
   end matchcontinue;
 end normalizeParamsValues;
@@ -827,14 +827,14 @@ algorithm
 
     case (su2,UnitAbsyn.SPECIFIED(sunorm),_,_,_)
       equation
-  su3 = powSpecUnit(sunorm,expo);
-  su4 = mulSpecUnit(su2,su3);
+        su3 = powSpecUnit(sunorm,expo);
+        su4 = mulSpecUnit(su2,su3);
       then
-  su4;
+        su4;
 
     case(_,_,_,_,_)
       equation
-  Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnitWithNorm() failed\n");
+        Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnitWithNorm() failed\n");
       then fail();
   end matchcontinue;
 end mulSpecUnitWithNorm;
@@ -851,12 +851,12 @@ algorithm
 
     case(str,UnitAbsyn.SPECUNIT(params,unitvec))
       equation
-  print(str);
-  print(" \"");
-  print(UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su)));
-  print("\" {");
-  printSpecUnitParams(params);
-  print("}\n");
+        print(str);
+        print(" \"");
+        print(UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su)));
+        print("\" {");
+        printSpecUnitParams(params);
+        print("}\n");
       then ();
   end matchcontinue;
 end printSpecUnit;
@@ -874,16 +874,16 @@ algorithm
 
     case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,loc))::rest)
       equation
-  print("(\"");
-  print(name);
-  print("\",");
-  print(intString(loc));
-  print(")^(");
-  print(intString(i1));
-  print("/");
-  print(intString(i2));
-  print("),");
-  printSpecUnitParams(rest);
+        print("(\"");
+        print(name);
+        print("\",");
+        print(intString(loc));
+        print(")^(");
+        print(intString(i1));
+        print("/");
+        print(intString(i2));
+        print("),");
+        printSpecUnitParams(rest);
       then ();
   end matchcontinue;
 end printSpecUnitParams;
@@ -906,18 +906,18 @@ algorithm
 
     case (UnitAbsyn.CONSISTENT())
       equation
-  print("\n---\nThe system of units is consistent.\n---\n");
+        print("\n---\nThe system of units is consistent.\n---\n");
       then ();
 
     case (UnitAbsyn.INCONSISTENT(u1,u2))
       equation
-  print("\n---\nThe system of units is inconsistent. \"");
-  str1 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u1));
-  print(str1);
-  print("\" != \"");
-  str2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u2));
-  print(str2);
-  print("\"\n---\n");
+        print("\n---\nThe system of units is inconsistent. \"");
+        str1 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u1));
+        print(str1);
+        print("\" != \"");
+        str2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u2));
+        print(str2);
+        print("\"\n---\n");
       then ();
   end matchcontinue;
 end printResult;

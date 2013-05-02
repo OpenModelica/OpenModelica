@@ -96,10 +96,10 @@ char** read_csv_variables(FILE *fin)
       *buf = '\0';
       tmp++;
       if (buf[-1] == '"')
-  buf[-1] = '\0';
+        buf[-1] = '\0';
       if (buf[1] == '"') buf++;
       if (buf[1] != '\0' && buf[1] != '\r')
-  *tmp = ++buf;
+        *tmp = ++buf;
     } else {
       ++buf;
     }
@@ -131,25 +131,25 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
   {
     if(startReading) {
       if(header[i] != '"') {
-  variable.append(1,header[i]);
-  stringlen+=1;
+        variable.append(1,header[i]);
+        stringlen+=1;
       }
     }
 
     if(header[i] == '"') {
       if(startReading) {
-  if(header[i+1] == ',') {
-    startReading = false;
-    if(strncmp(variable.c_str(),var,stringlen)==0) {
-      found = 1;
-      break;
-    }
-    varpos+=1;
-    stringlen = 0;
-    variable.clear();
-  }
+        if(header[i+1] == ',') {
+          startReading = false;
+          if(strncmp(variable.c_str(),var,stringlen)==0) {
+            found = 1;
+            break;
+          }
+          varpos+=1;
+          stringlen = 0;
+          variable.clear();
+        }
       } else {
-  startReading = true;
+        startReading = true;
       }
     }
   }
@@ -162,15 +162,15 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
     for(int i = 0 ; i < length ; i++)
     {
       if(header[i] == ',') {
-  if(datapos == varpos) {
-    data.push_back(atof(value.c_str()));
-    break;
-  }
-  value.clear();
-  datapos +=1;
+        if(datapos == varpos) {
+          data.push_back(atof(value.c_str()));
+          break;
+        }
+        value.clear();
+        datapos +=1;
       }
       else
-  value.append(1,header[i]);
+        value.append(1,header[i]);
     }
     getline(stream,header);
     length = strlen(header.c_str());

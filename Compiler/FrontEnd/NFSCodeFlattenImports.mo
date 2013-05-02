@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeFlattenImports
-" file:  NFSCodeFlattenImports.mo
+" file:        NFSCodeFlattenImports.mo
   package:     NFSCodeFlattenImports
   description: SCode flattening
 
@@ -86,24 +86,24 @@ algorithm
 
     case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
       equation
-  (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
-    NFSCodeLookup.lookupInClass(name, inEnv);
-  env = NFSCodeEnv.enterFrame(cls_env, inEnv);
+        (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
+          NFSCodeLookup.lookupInClass(name, inEnv);
+        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
 
-  (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
-  cls = SCode.setElementClassDefinition(cdef, inClass);
-  item = NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
-  env = NFSCodeEnv.updateItemInEnv(item, env, name);
+        (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
+        cls = SCode.setElementClassDefinition(cdef, inClass);
+        item = NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
+        env = NFSCodeEnv.updateItemInEnv(item, env, name);
       then
-  (cls, env);
+        (cls, env);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +&
-    SCode.elementName(inClass) +& " in " +& NFSCodeEnv.getEnvName(inEnv));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +&
+          SCode.elementName(inClass) +& " in " +& NFSCodeEnv.getEnvName(inEnv));
       then
-  fail();
+        fail();
   end matchcontinue;
 end flattenClass;
 
@@ -133,35 +133,35 @@ algorithm
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
       equation
-  // Lookup elements.
-  el = List.filter(el, isNotImport);
-  (el, env) = List.mapFold(el, flattenElement, inEnv);
+        // Lookup elements.
+        el = List.filter(el, isNotImport);
+        (el, env) = List.mapFold(el, flattenElement, inEnv);
 
-  // Lookup equations and algorithm names.
-  neql = List.map1(neql, flattenEquation, env);
-  ieql = List.map1(ieql, flattenEquation, env);
-  nal = List.map1(nal, flattenAlgorithm, env);
-  ial = List.map1(ial, flattenAlgorithm, env);
-  nco = List.map2(nco, flattenConstraints, env, inInfo);
+        // Lookup equations and algorithm names.
+        neql = List.map1(neql, flattenEquation, env);
+        ieql = List.map1(ieql, flattenEquation, env);
+        nal = List.map1(nal, flattenAlgorithm, env);
+        ial = List.map1(ial, flattenAlgorithm, env);
+        nco = List.map2(nco, flattenConstraints, env, inInfo);
       then
-  (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
+        (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
       equation
-  (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
-  mods = flattenModifier(mods, env, inInfo);
+        (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
+        mods = flattenModifier(mods, env, inInfo);
       then
-  (SCode.CLASS_EXTENDS(bc, mods, cdef), env);
+        (SCode.CLASS_EXTENDS(bc, mods, cdef), env);
 
     case (SCode.DERIVED(ty, mods, attr), env, _)
       equation
-  mods = flattenModifier(mods, env, inInfo);
-  // Remove the extends from the local scope before flattening the derived
-  // type, because the type should not be looked up via itself.
-  env = NFSCodeEnv.removeExtendsFromLocalScope(env);
-  ty = flattenTypeSpec(ty, env, inInfo);
+        mods = flattenModifier(mods, env, inInfo);
+        // Remove the extends from the local scope before flattening the derived
+        // type, because the type should not be looked up via itself.
+        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
+        ty = flattenTypeSpec(ty, env, inInfo);
       then
-  (SCode.DERIVED(ty, mods, attr), inEnv);
+        (SCode.DERIVED(ty, mods, attr), inEnv);
 
     else then (inClassDef, inEnv);
   end match;
@@ -208,18 +208,18 @@ algorithm
     // Lookup component types, modifications and conditions.
     case (SCode.COMPONENT(name = name), _)
       equation
-  elem = flattenComponent(inElement, inEnv);
-  item = NFSCodeEnv.newVarItem(elem, true);
-  env = NFSCodeEnv.updateItemInEnv(item, inEnv, name);
+        elem = flattenComponent(inElement, inEnv);
+        item = NFSCodeEnv.newVarItem(elem, true);
+        env = NFSCodeEnv.updateItemInEnv(item, inEnv, name);
       then
-  (elem, env);
+        (elem, env);
 
     // Lookup class definitions.
     case (SCode.CLASS(name = _), _)
       equation
-  (elem, env) = flattenClass(inElement, inEnv);
+        (elem, env) = flattenClass(inElement, inEnv);
       then
-  (elem, env);
+        (elem, env);
 
     // Lookup base class and modifications in extends clauses.
     case (SCode.EXTENDS(baseClassPath = _), _)
@@ -285,9 +285,9 @@ algorithm
     // A normal type.
     case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
       equation
-  (_, path, _) = NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
+        (_, path, _) = NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
       then
-  Absyn.TPATH(path, ad);
+        Absyn.TPATH(path, ad);
 
     // A polymorphic type, i.e. replaceable type Type subtypeof Any.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic")), _, _)
@@ -296,9 +296,9 @@ algorithm
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
       equation
-  tys = List.map2(tys, flattenTypeSpec, inEnv, inInfo);
+        tys = List.map2(tys, flattenTypeSpec, inEnv, inInfo);
       then
-  Absyn.TCOMPLEX(path, tys, ad);
+        Absyn.TCOMPLEX(path, tys, ad);
 
   end match;
 end flattenTypeSpec;
@@ -350,26 +350,26 @@ algorithm
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
-  env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-  (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
-  ((equ, env));
+        ((equ, env));
 
     case ((SCode.EQ_REINIT(cref = cref, expReinit = exp, comment = cmt,
-  info = info), env))
+        info = info), env))
       equation
-  cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-  equ = SCode.EQ_REINIT(cref, exp, cmt, info);
-  (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+        equ = SCode.EQ_REINIT(cref, exp, cmt, info);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
-  ((equ, env));
+        ((equ, env));
 
     case ((equ, env))
       equation
-  info = SCode.getEEquationInfo(equ);
-  (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        info = SCode.getEEquationInfo(equ);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
-  ((equ, env));
+        ((equ, env));
 
   end match;
 end flattenEEquationTraverser;
@@ -434,24 +434,24 @@ algorithm
 
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
-  env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-  (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
-  ((stmt, env));
+        ((stmt, env));
 
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
-  env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-  (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
-  ((stmt, env));
+        ((stmt, env));
 
     case ((stmt, env))
       equation
-  info = SCode.getStatementInfo(stmt);
-  (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        info = SCode.getStatementInfo(stmt);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
-  ((stmt, env));
+        ((stmt, env));
 
   end match;
 end flattenStatementTraverser;
@@ -473,16 +473,16 @@ algorithm
 
     case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, _)
       equation
-  opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
-  sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
+        opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
+        sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
-  SCode.MOD(fp, ep, sub_mods, opt_exp, info);
+        SCode.MOD(fp, ep, sub_mods, opt_exp, info);
 
     case (SCode.REDECL(fp, ep, el), _, _)
       equation
-  el = flattenRedeclare(el, inEnv);
+        el = flattenRedeclare(el, inEnv);
       then
-  SCode.REDECL(fp, ep, el);
+        SCode.REDECL(fp, ep, el);
 
     case (SCode.NOMOD(), _, _) then inMod;
   end match;
@@ -501,9 +501,9 @@ algorithm
 
     case (SOME((exp, delay_elab)), _, _)
       equation
-  exp = flattenExp(exp, inEnv, inInfo);
+        exp = flattenExp(exp, inEnv, inInfo);
       then
-  SOME((exp, delay_elab));
+        SOME((exp, delay_elab));
 
     case (NONE(), _, _) then inOptExp;
   end match;
@@ -523,9 +523,9 @@ algorithm
 
     case (SCode.NAMEMOD(ident = ident, A = mod), _, _)
       equation
-  mod = flattenModifier(mod, inEnv, inInfo);
+        mod = flattenModifier(mod, inEnv, inInfo);
       then
-  SCode.NAMEMOD(ident, mod);
+        SCode.NAMEMOD(ident, mod);
 
   end match;
 end flattenSubMod;
@@ -548,28 +548,28 @@ algorithm
       SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes, ep, pp, res,
-    cdef as SCode.DERIVED(typeSpec = _), cmt, info), _)
+          cdef as SCode.DERIVED(typeSpec = _), cmt, info), _)
       equation
-  cdef = flattenDerivedClassDef(cdef, inEnv, info);
+        cdef = flattenDerivedClassDef(cdef, inEnv, info);
       then
-  SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
+        SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
 
     case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
       then
-  inElement;
+        inElement;
 
     case (SCode.COMPONENT(name = _), _)
       equation
-  element = flattenComponent(inElement, inEnv);
+        element = flattenComponent(inElement, inEnv);
       then
-  element;
+        element;
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"Unknown redeclare in NFSCodeFlattenImports.flattenRedeclare"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Unknown redeclare in NFSCodeFlattenImports.flattenRedeclare"});
       then
-  fail();
+        fail();
 
   end match;
 end flattenRedeclare;
@@ -586,9 +586,9 @@ algorithm
 
     case (Absyn.SUBSCRIPT(subscript = exp), _, _)
       equation
-  exp = flattenExp(exp, inEnv, inInfo);
+        exp = flattenExp(exp, inEnv, inInfo);
       then
-  Absyn.SUBSCRIPT(exp);
+        Absyn.SUBSCRIPT(exp);
 
     case (Absyn.NOSUB(), _, _) then inSub;
   end match;
@@ -615,9 +615,9 @@ algorithm
 
     case (SOME(exp), _, _)
       equation
-  exp = flattenExp(exp, inEnv, inInfo);
+        exp = flattenExp(exp, inEnv, inInfo);
       then
-  SOME(exp);
+        SOME(exp);
 
     case (NONE(), _, _) then inExp;
   end match;
@@ -639,41 +639,41 @@ algorithm
 
     case ((Absyn.CREF(componentRef = cref), tup as (env, info)))
       equation
-  cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
       then
-  ((Absyn.CREF(cref), tup));
+        ((Absyn.CREF(cref), tup));
 
     case ((exp as Absyn.CALL(functionArgs =
-  Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
+        Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
       equation
-  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
-  ((exp, (env, info)));
+        ((exp, (env, info)));
 
     case ((Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _))
       then inTuple;
 
     case ((Absyn.CALL(function_ = cref, functionArgs = args),
-  tup as (env, info)))
+        tup as (env, info)))
       equation
-  cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-  // TODO: handle function arguments
+        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+        // TODO: handle function arguments
       then
-  ((Absyn.CALL(cref, args), tup));
+        ((Absyn.CALL(cref, args), tup));
 
     case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args),
-  tup as (env, info)))
+        tup as (env, info)))
       equation
-  cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-  // TODO: handle function arguments
+        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+        // TODO: handle function arguments
       then
-  ((Absyn.PARTEVALFUNCTION(cref, args), tup));
+        ((Absyn.PARTEVALFUNCTION(cref, args), tup));
 
     case ((exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info)))
       equation
-  env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
-  ((exp, (env, info)));
+        ((exp, (env, info)));
     else then inTuple;
   end match;
 end flattenExpTraverserEnter;
@@ -689,14 +689,14 @@ algorithm
       Absyn.Info info;
 
     case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-  (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
-  ((e, (env, info)));
+        ((e, (env, info)));
 
     case ((e as Absyn.MATCHEXP(matchTy = _),
-  (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
-  ((e, (env, info)));
+        ((e, (env, info)));
 
     else then inTuple;
   end match;
@@ -716,22 +716,22 @@ algorithm
 
     case (Absyn.CREF_IDENT(name, subs), _, _)
       equation
-  subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
+        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
       then
-  Absyn.CREF_IDENT(name, subs);
+        Absyn.CREF_IDENT(name, subs);
 
     case (Absyn.CREF_QUAL(name, subs, cref), _, _)
       equation
-  subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
-  cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
+        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
       then
-  Absyn.CREF_QUAL(name, subs, cref);
+        Absyn.CREF_QUAL(name, subs, cref);
 
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _, _)
       equation
-  cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
       then
-  Absyn.CREF_FULLYQUALIFIED(cref);
+        Absyn.CREF_FULLYQUALIFIED(cref);
 
   end match;
 end flattenComponentRefSubs;

@@ -34,10 +34,10 @@
 #include <string.h>
 #include <stdio.h>
 
-static int flagSet(const char*, int, char**);                  /* -f */
+static int flagSet(const char*, int, char**);                        /* -f */
 static int optionSet(const char *option, int argc, char** argv);     /* -f=value */
-static const char* getOption(const char*, int, char **);       /* -f=value; returns NULL if not found */
-static const char* getFlagValue(const char *, int , char **);  /* -f value; returns NULL if not found */
+static const char* getOption(const char*, int, char **);             /* -f=value; returns NULL if not found */
+static const char* getFlagValue(const char *, int , char **);        /* -f value; returns NULL if not found */
 
 int omc_flag[FLAG_MAX];
 const char *omc_flagValue[FLAG_MAX];
@@ -80,62 +80,62 @@ int checkCommandLineArguments(int argc, char **argv)
     {
       if ((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
       {
-  if(omc_flag[j])
-  {
-    WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
-    return 1;
-  }
+        if(omc_flag[j])
+        {
+          WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+          return 1;
+        }
 
-  omc_flag[j] = 1;
-  found=1;
+        omc_flag[j] = 1;
+        found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-  INDENT(LOG_STDOUT);
-  DEBUG1(LOG_STDOUT, "-%s", FLAG_NAME[j]);
-  RELEASE(LOG_STDOUT);
+        INDENT(LOG_STDOUT);
+        DEBUG1(LOG_STDOUT, "-%s", FLAG_NAME[j]);
+        RELEASE(LOG_STDOUT);
 #endif
 
-  break;
+        break;
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
       {
-  if(omc_flag[j])
-  {
-    WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
-    return 1;
-  }
+        if(omc_flag[j])
+        {
+          WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+          return 1;
+        }
 
-  omc_flag[j] = 1;
-  omc_flagValue[j] = (char*)getFlagValue(FLAG_NAME[j], 1, argv+i);
-  i++;
-  found=1;
+        omc_flag[j] = 1;
+        omc_flagValue[j] = (char*)getFlagValue(FLAG_NAME[j], 1, argv+i);
+        i++;
+        found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-  INDENT(LOG_STDOUT);
-  DEBUG2(LOG_STDOUT, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
-  RELEASE(LOG_STDOUT);
+        INDENT(LOG_STDOUT);
+        DEBUG2(LOG_STDOUT, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
+        RELEASE(LOG_STDOUT);
 #endif
 
-  break;
+        break;
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i))
       {
-  if(omc_flag[j])
-  {
-    WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
-    return 1;
-  }
+        if(omc_flag[j])
+        {
+          WARNING1(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+          return 1;
+        }
 
-  omc_flag[j] = 1;
-  omc_flagValue[j] = (char*)getOption(FLAG_NAME[j], 1, argv+i);
-  found=1;
+        omc_flag[j] = 1;
+        omc_flagValue[j] = (char*)getOption(FLAG_NAME[j], 1, argv+i);
+        found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-  INDENT(LOG_STDOUT);
-  DEBUG2(LOG_STDOUT, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
-  RELEASE(LOG_STDOUT);
+        INDENT(LOG_STDOUT);
+        DEBUG2(LOG_STDOUT, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
+        RELEASE(LOG_STDOUT);
 #endif
-  break;
+        break;
       }
     }
 

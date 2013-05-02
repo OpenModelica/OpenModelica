@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInstUtil
-" file:  NFInstUtil.mo
+" file:        NFInstUtil.mo
   package:     NFInstUtil
   description: Utility functions for NFInstTypes.
 
@@ -91,17 +91,17 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(components = elems), _, false)
       equation
-  vars = List.accumulateMapReverse(elems, makeDaeVarsFromElement);
-  ty = DAE.T_COMPLEX(inState, vars, NONE(), DAE.emptyTypeSource);
+        vars = List.accumulateMapReverse(elems, makeDaeVarsFromElement);
+        ty = DAE.T_COMPLEX(inState, vars, NONE(), DAE.emptyTypeSource);
       then
-  (inClass, ty);
+        (inClass, ty);
 
     case (NFInstTypes.COMPLEX_CLASS(_, elems, {}, {}, {}, {}), _, true)
       equation
-  (NFInstTypes.EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
-    getSpecialExtends(elems);
+        (NFInstTypes.EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
+          getSpecialExtends(elems);
       then
-  (cls, ty);
+        (cls, ty);
 
   end match;
 end makeClassType;
@@ -123,15 +123,15 @@ algorithm
 
     case (NFInstTypes.ELEMENT(component = comp, cls = cls), vars)
       equation
-  var = componentToDaeVar(comp);
+        var = componentToDaeVar(comp);
       then
-  var :: vars;
+        var :: vars;
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(component = comp), vars)
       equation
-  var = componentToDaeVar(comp);
+        var = componentToDaeVar(comp);
       then
-  var :: vars;
+        var :: vars;
 
   end match;
 end makeDaeVarsFromElement;
@@ -151,49 +151,49 @@ algorithm
 
     case NFInstTypes.UNTYPED_COMPONENT(name = path, prefixes = prefs)
       equation
-  name = Absyn.pathLastIdent(path);
-  attr = prefixesToDaeAttr(prefs);
+        name = Absyn.pathLastIdent(path);
+        attr = prefixesToDaeAttr(prefs);
       then
-  DAE.TYPES_VAR(name, attr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, attr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE());
 
     case NFInstTypes.TYPED_COMPONENT(name = path, ty = ty, prefixes = dprefs)
       equation
-  name = Absyn.pathLastIdent(path);
-  attr = daePrefixesToDaeAttr(dprefs);
+        name = Absyn.pathLastIdent(path);
+        attr = daePrefixesToDaeAttr(dprefs);
       then
-  DAE.TYPES_VAR(name, attr, ty, DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, attr, ty, DAE.UNBOUND(), NONE());
 
     case NFInstTypes.CONDITIONAL_COMPONENT(name = path)
       equation
-  name = Absyn.pathLastIdent(path);
+        name = Absyn.pathLastIdent(path);
       then
-  DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
-    DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+          DAE.UNBOUND(), NONE());
 
     case NFInstTypes.OUTER_COMPONENT(name = path)
       equation
-  name = Absyn.pathLastIdent(path);
+        name = Absyn.pathLastIdent(path);
       then
-  DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
-    DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+          DAE.UNBOUND(), NONE());
 
     case NFInstTypes.COMPONENT_ALIAS(componentName = _)
       equation
-  print("Got component alias in componentToDaeVar\n");
+        print("Got component alias in componentToDaeVar\n");
       then
-  fail();
+        fail();
 
     case NFInstTypes.DELETED_COMPONENT(name = _)
       equation
-  print("Got deleted component\n");
+        print("Got deleted component\n");
       then
-  fail();
+        fail();
 
     case NFInstTypes.PACKAGE(name = _)
       equation
-  print("PACKAGE\n");
+        print("PACKAGE\n");
       then
-  fail();
+        fail();
   end match;
 end componentToDaeVar;
 
@@ -235,12 +235,12 @@ algorithm
     case NFInstTypes.NO_DAE_PREFIXES() then DAE.dummyAttrVar;
     case NFInstTypes.DAE_PREFIXES(dvis, dvar, _, io, ddir, dcty)
       equation
-  vis = daeToSCodeVisibility(dvis);
-  var = daeToSCodeVariability(dvar);
-  dir = daeToAbsynDirection(ddir);
-  cty = daeToSCodeConnectorType(dcty);
+        vis = daeToSCodeVisibility(dvis);
+        var = daeToSCodeVariability(dvar);
+        dir = daeToAbsynDirection(ddir);
+        cty = daeToSCodeConnectorType(dcty);
       then
-  DAE.ATTR(cty, SCode.NON_PARALLEL(), var, dir, io, vis);
+        DAE.ATTR(cty, SCode.NON_PARALLEL(), var, dir, io, vis);
 
   end match;
 end daePrefixesToDaeAttr;
@@ -324,9 +324,9 @@ algorithm
     case DAE.T_ARRAY(ty = ty) then arrayElementType(ty);
     case DAE.T_SUBTYPE_BASIC(state, _, ty, ec, src)
       equation
-  ty = arrayElementType(ty);
+        ty = arrayElementType(ty);
       then
-  DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
+        DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
 
     else inType;
   end match;
@@ -348,16 +348,16 @@ algorithm
 
     case (_, NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial))
       equation
-  el = listAppend(inElements, el);
+        el = listAppend(inElements, el);
       then
-  NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial);
+        NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial);
 
     case (_, NFInstTypes.BASIC_TYPE(name))
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFSCodeInst.addElementsToClass: Can't add elements to basic type.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFSCodeInst.addElementsToClass: Can't add elements to basic type.\n"});
       then
-  fail();
+        fail();
 
   end match;
 end addElementsToClass;
@@ -505,16 +505,16 @@ algorithm
     case NFInstTypes.ELEMENT(NFInstTypes.TYPED_COMPONENT(ty = ty),_) then ty;
     case NFInstTypes.ELEMENT(_, _)
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFInstUtil.getElementComponentType: Expected element with TYPED_COMPONENT \n"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstUtil.getElementComponentType: Expected element with TYPED_COMPONENT \n"});
       then
-  fail();
+        fail();
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFInstUtil.getElementComponentType: Expected ELEMENT. found either conditional or extended element \n"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstUtil.getElementComponentType: Expected ELEMENT. found either conditional or extended element \n"});
       then
-  fail();
+        fail();
 
   end match;
 end getElementComponentType;
@@ -530,7 +530,7 @@ algorithm
 
     case NFInstTypes.TYPED_COMPONENT(ty = ty)
       equation
-  dims = Types.getDimensions(ty);
+        dims = Types.getDimensions(ty);
       then dims;
   end match;
 end getComponentTypeDimensions;
@@ -630,25 +630,25 @@ algorithm
 
     case ((el as NFInstTypes.EXTENDED_ELEMENTS(ty = ty)) :: rest_el, _)
       equation
-  true = isSpecialExtends(ty);
-  rest_el = listAppend(listReverse(inAccumEl), rest_el);
+        true = isSpecialExtends(ty);
+        rest_el = listAppend(listReverse(inAccumEl), rest_el);
       then
-  (el, rest_el);
+        (el, rest_el);
 
     // TODO: Check for illegal elements here (components, etc.).
 
     case (el :: rest_el, _)
       equation
-  (el, rest_el) = getSpecialExtends2(rest_el, el :: inAccumEl);
+        (el, rest_el) = getSpecialExtends2(rest_el, el :: inAccumEl);
       then
-  (el, rest_el);
+        (el, rest_el);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.traceln("- NFSCodeInst.getSpecialExtends2 failed!");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFSCodeInst.getSpecialExtends2 failed!");
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end getSpecialExtends2;
@@ -688,10 +688,10 @@ algorithm
 
     case (NFInstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _, _)
       equation
-  index = Util.if_(intEq(pd, -1), inDimension,
-    inDimension + pd - inCompDimensions);
+        index = Util.if_(intEq(pd, -1), inDimension,
+          inDimension + pd - inCompDimensions);
       then
-  getExpDimension(exp, index);
+        getExpDimension(exp, index);
 
   end match;
 end getBindingDimension;
@@ -709,11 +709,11 @@ algorithm
 
     case (_, _)
       equation
-  ty = Expression.typeof(inExp);
-  dims = Types.getDimensions(ty);
-  dim = listGet(dims, inDimIndex);
+        ty = Expression.typeof(inExp);
+        dims = Types.getDimensions(ty);
+        dim = listGet(dims, inDimIndex);
       then
-  dim;
+        dim;
 
     // TODO: Error on index out of bounds!
 
@@ -821,11 +821,11 @@ algorithm
 
     case DAE.CREF(ty = ty)
       equation
-  DAE.T_ENUMERATION(path = path, names = enum_lits) =
-    Types.derivedBasicType(ty);
-  dim_size = listLength(enum_lits);
+        DAE.T_ENUMERATION(path = path, names = enum_lits) =
+          Types.derivedBasicType(ty);
+        dim_size = listLength(enum_lits);
       then
-  DAE.DIM_ENUM(path, enum_lits, dim_size);
+        DAE.DIM_ENUM(path, enum_lits, dim_size);
 
     else DAE.DIM_EXP(inExp);
   end matchcontinue;
@@ -896,19 +896,19 @@ algorithm
 
     case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, comment = comment, info = info), _)
       equation
-  prefs = makePrefixes(pf, attr, comment, info);
-  prefs = mergePrefixes(prefs, inPrefixes, inComponentName, "variable");
+        prefs = makePrefixes(pf, attr, comment, info);
+        prefs = mergePrefixes(prefs, inPrefixes, inComponentName, "variable");
       then
-  prefs;
+        prefs;
 
     else
       equation
-  err_str = Absyn.pathString(inComponentName);
-  err_str = "NFInstUtil.mergePrefixesFromComponent got " +& err_str +&
-    " which is not a component!";
-  Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+        err_str = Absyn.pathString(inComponentName);
+        err_str = "NFInstUtil.mergePrefixesFromComponent got " +& err_str +&
+          " which is not a component!";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
-  fail();
+        fail();
 
   end match;
 end mergePrefixesFromComponent;
@@ -934,17 +934,17 @@ algorithm
 
     // All prefixes are the default ones, same as having no prefixes.
     case (SCode.PREFIXES(visibility = SCode.PUBLIC(), finalPrefix =
-  SCode.NOT_FINAL(), innerOuter = Absyn.NOT_INNER_OUTER()), SCode.ATTR(
-  connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
-  direction = Absyn.BIDIR()), _, _)
+        SCode.NOT_FINAL(), innerOuter = Absyn.NOT_INNER_OUTER()), SCode.ATTR(
+        connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
+        direction = Absyn.BIDIR()), _, _)
       then NFInstTypes.NO_PREFIXES();
 
     // Otherwise, select the prefixes we are interested in and build a PREFIXES
     // record.
     case (SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io),
-    SCode.ATTR(connectorType = ct, variability = var, direction = dir), _, info)
+          SCode.ATTR(connectorType = ct, variability = var, direction = dir), _, info)
       equation
-  va = makeVarArg(dir,inComment);
+        va = makeVarArg(dir,inComment);
       then NFInstTypes.PREFIXES(vis, var, fp, io, (dir, info), (ct, info), va);
 
   end match;
@@ -958,7 +958,7 @@ algorithm
   varArgs := match (inDir,inComment)
     case (Absyn.INPUT(),_)
       then
-  Util.if_(SCode.optCommentHasBooleanNamedAnnotation(SOME(inComment),"__OpenModelica_varArgs"),NFInstTypes.IS_VARARG(),NFInstTypes.NO_VARARG());
+        Util.if_(SCode.optCommentHasBooleanNamedAnnotation(SOME(inComment),"__OpenModelica_varArgs"),NFInstTypes.IS_VARARG(),NFInstTypes.NO_VARARG());
       else NFInstTypes.NO_VARARG();
   end match;
 end makeVarArg;
@@ -978,10 +978,10 @@ algorithm
 
     case (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = attr), info = info), _)
       equation
-  prefs = makePrefixesFromAttributes(attr, info);
-  prefs = mergePrefixes(prefs, inPrefixes, inClassName, "class");
+        prefs = makePrefixesFromAttributes(attr, info);
+        prefs = mergePrefixes(prefs, inPrefixes, inClassName, "class");
       then
-  prefs;
+        prefs;
 
   end match;
 end mergePrefixesWithDerivedClass;
@@ -1000,7 +1000,7 @@ algorithm
 
     // All attributes are the default ones, same as having no prefixes.
     case (SCode.ATTR(connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
-  direction = Absyn.BIDIR()), _)
+        direction = Absyn.BIDIR()), _)
       then NFInstTypes.NO_PREFIXES();
 
     // Otherwise, select the attributes we are interested in and build a
@@ -1008,7 +1008,7 @@ algorithm
     // default values.
     case (SCode.ATTR(connectorType = ct, variability = var, direction = dir), _)
       then NFInstTypes.PREFIXES(SCode.PUBLIC(), var, SCode.NOT_FINAL(),
-  Absyn.NOT_INNER_OUTER(), (dir, inInfo), (ct, inInfo), NFInstTypes.NO_VARARG());
+        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (ct, inInfo), NFInstTypes.NO_VARARG());
 
   end match;
 end makePrefixesFromAttributes;
@@ -1042,15 +1042,15 @@ algorithm
 
     // Both outer and inner prefixes => merge them.
     case (NFInstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, ct1, _),
-    NFInstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, ct2, va2), _, _)
+          NFInstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, ct2, va2), _, _)
       equation
-  vis2 = mergeVisibility(vis1, vis2);
-  var2 = mergeVariability(var1, var2);
-  fp2 = mergeFinal(fp1, fp2);
-  dir2 = mergeDirection(dir1, dir2, inElementName, inElementType);
-  ct2 = mergeConnectorType(ct1, ct2, inElementName, inElementType);
+        vis2 = mergeVisibility(vis1, vis2);
+        var2 = mergeVariability(var1, var2);
+        fp2 = mergeFinal(fp1, fp2);
+        dir2 = mergeDirection(dir1, dir2, inElementName, inElementType);
+        ct2 = mergeConnectorType(ct1, ct2, inElementName, inElementType);
       then
-  NFInstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, ct2, va2);
+        NFInstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, ct2, va2);
 
   end match;
 end mergePrefixes;
@@ -1163,13 +1163,13 @@ algorithm
     // input/output prefixes.
     case ((dir1, info1), (dir2, info2), _, _)
       equation
-  dir_str1 = directionString(dir1);
-  dir_str2 = directionString(dir2);
-  el_name = Absyn.pathString(inElementName);
-  Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
-    {dir_str1, inElementType, el_name, dir_str2}, {info2, info1});
+        dir_str1 = directionString(dir1);
+        dir_str2 = directionString(dir2);
+        el_name = Absyn.pathString(inElementName);
+        Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {dir_str1, inElementType, el_name, dir_str2}, {info2, info1});
       then
-  fail();
+        fail();
 
   end match;
 end mergeDirection;
@@ -1207,13 +1207,13 @@ algorithm
     // Trying to overwrite a flow/stream prefix => show error.
     case ((ct1, info1), (ct2, info2), _, _)
       equation
-  ct1_str = SCodeDump.connectorTypeStr(ct1);
-  ct2_str = SCodeDump.connectorTypeStr(ct2);
-  el_name = Absyn.pathString(inElementName);
-  Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
-    {ct2_str, inElementType, el_name, ct1_str}, {info1, info2});
+        ct1_str = SCodeDump.connectorTypeStr(ct1);
+        ct2_str = SCodeDump.connectorTypeStr(ct2);
+        el_name = Absyn.pathString(inElementName);
+        Error.addMultiSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {ct2_str, inElementType, el_name, ct1_str}, {info1, info2});
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end mergeConnectorType;
@@ -1249,14 +1249,14 @@ algorithm
     case (_, NFInstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
 
     case (_, NFInstTypes.PREFIX(name = name,
-  restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
+        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
       then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 
     case (_, NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
-  cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+        cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
       then
-  prefixCref(cref, rest_prefix);
+        prefixCref(cref, rest_prefix);
 
   end match;
 end prefixCref;
@@ -1272,15 +1272,15 @@ algorithm
       DAE.ComponentRef cref;
 
     case (NFInstTypes.PREFIX(name = name,
-  restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
+        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
       then
-  DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+        DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
     case (NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
-  cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+        cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
       then
-  prefixCref(cref, rest_prefix);
+        prefixCref(cref, rest_prefix);
 
   end match;
 end prefixToCref;
@@ -1298,15 +1298,15 @@ algorithm
 
     case (_, NFInstTypes.EMPTY_PREFIX(classPath = _)) then inPath;
     case (_, NFInstTypes.PREFIX(name = name,
-  restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
+        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
       then
-  Absyn.QUALIFIED(name, inPath);
+        Absyn.QUALIFIED(name, inPath);
 
     case (_, NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
-  path = Absyn.QUALIFIED(name, inPath);
+        path = Absyn.QUALIFIED(name, inPath);
       then
-  prefixPath(path, rest_prefix);
+        prefixPath(path, rest_prefix);
 
   end match;
 end prefixPath;
@@ -1322,14 +1322,14 @@ algorithm
       Absyn.Path path;
 
     case NFInstTypes.PREFIX(name = name,
-  restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
+        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
       then Absyn.IDENT(name);
 
     case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
       equation
-  path = Absyn.IDENT(name);
+        path = Absyn.IDENT(name);
       then
-  prefixPath(path, rest_prefix);
+        prefixPath(path, rest_prefix);
 
   end match;
 end prefixToPath;
@@ -1373,9 +1373,9 @@ algorithm
 
     case _
       equation
-  path = NFEnv.envPath(inEnv);
+        path = NFEnv.envPath(inEnv);
       then
-  pathPrefix(path);
+        pathPrefix(path);
 
     else NFInstTypes.emptyPrefix;
 
@@ -1403,16 +1403,16 @@ algorithm
 
     case (NFInstTypes.ELEMENT(comp, cls), _)
       equation
-  comp = prefixComponent(comp, inPrefix);
-  cls = prefixClass(cls, inPrefix);
+        comp = prefixComponent(comp, inPrefix);
+        cls = prefixClass(cls, inPrefix);
       then
-  NFInstTypes.ELEMENT(comp, cls);
+        NFInstTypes.ELEMENT(comp, cls);
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(comp), _)
       equation
-  comp = prefixComponent(comp, inPrefix);
+        comp = prefixComponent(comp, inPrefix);
       then
-  NFInstTypes.CONDITIONAL_ELEMENT(comp);
+        NFInstTypes.CONDITIONAL_ELEMENT(comp);
 
   end match;
 end prefixElement;
@@ -1443,9 +1443,9 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _)
       equation
-  comps = List.map1(comps, prefixElement, inPrefix);
+        comps = List.map1(comps, prefixElement, inPrefix);
       then
-  NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial);
+        NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial);
 
     else inClass;
 
@@ -1465,9 +1465,9 @@ algorithm
 
     case NFInstTypes.COMPLEX_CLASS(components = comps)
       equation
-  count = List.fold(comps, countElementsInElement, 0);
+        count = List.fold(comps, countElementsInElement, 0);
       then
-  count;
+        count;
 
   end match;
 end countElementsInClass;
@@ -1505,25 +1505,25 @@ algorithm
 
     case (Absyn.IDENT(name = _), _)
       equation
-  cref = ComponentReference.crefLastCref(inOuterCref);
+        cref = ComponentReference.crefLastCref(inOuterCref);
       then
-  cref;
+        cref;
 
     case (Absyn.QUALIFIED(path = path), DAE.CREF_QUAL(id, ty, subs, cref))
       equation
-  cref = removeCrefOuterPrefix(path, cref);
+        cref = removeCrefOuterPrefix(path, cref);
       then
-  DAE.CREF_QUAL(id, ty, subs, cref);
+        DAE.CREF_QUAL(id, ty, subs, cref);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  err_msg = "NFSCodeInst.removeCrefOuterPrefix failed on inner path " +&
-    Absyn.pathString(inInnerPath) +& " and outer cref " +&
-    ComponentReference.printComponentRefStr(inOuterCref);
-  Debug.traceln(err_msg);
+        true = Flags.isSet(Flags.FAILTRACE);
+        err_msg = "NFSCodeInst.removeCrefOuterPrefix failed on inner path " +&
+          Absyn.pathString(inInnerPath) +& " and outer cref " +&
+          ComponentReference.printComponentRefStr(inOuterCref);
+        Debug.traceln(err_msg);
       then
-  fail();
+        fail();
 
   end match;
 end removeCrefOuterPrefix;
@@ -1541,10 +1541,10 @@ algorithm
 
     case (_, st)
       equation
-  (prefix_cref, rest_cref) = ComponentReference.splitCrefLast(inCref);
-  (cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
+        (prefix_cref, rest_cref) = ComponentReference.splitCrefLast(inCref);
+        (cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
       then
-  (cref, st);
+        (cref, st);
 
   end match;
 end replaceCrefOuterPrefix;
@@ -1566,20 +1566,20 @@ algorithm
 
     case (_, _, st)
       equation
-  comp = NFInstSymbolTable.lookupCref(inPrefixCref, st);
-  (inner_name, _, st) = NFInstSymbolTable.updateInnerReference(comp, st);
-  inner_cref = removeCrefOuterPrefix(inner_name, inPrefixCref);
-  new_cref = ComponentReference.joinCrefs(inner_cref, inSuffixCref);
+        comp = NFInstSymbolTable.lookupCref(inPrefixCref, st);
+        (inner_name, _, st) = NFInstSymbolTable.updateInnerReference(comp, st);
+        inner_cref = removeCrefOuterPrefix(inner_name, inPrefixCref);
+        new_cref = ComponentReference.joinCrefs(inner_cref, inSuffixCref);
       then
-  (new_cref, st);
+        (new_cref, st);
 
     case (_, _, st)
       equation
-  (prefix_cref, rest_cref) = ComponentReference.splitCrefLast(inPrefixCref);
-  rest_cref = ComponentReference.joinCrefs(rest_cref, inSuffixCref);
-  (new_cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
+        (prefix_cref, rest_cref) = ComponentReference.splitCrefLast(inPrefixCref);
+        rest_cref = ComponentReference.joinCrefs(rest_cref, inSuffixCref);
+        (new_cref, st) = replaceCrefOuterPrefix2(prefix_cref, rest_cref, st);
       then
-  (new_cref, st);
+        (new_cref, st);
 
   end matchcontinue;
 end replaceCrefOuterPrefix2;
@@ -1616,19 +1616,19 @@ algorithm
 
     case NFInstTypes.TYPED_COMPONENT(ty = ty)
       equation
-  ty = arrayElementType(ty);
+        ty = arrayElementType(ty);
       then
-  Types.isConnector(ty);
+        Types.isConnector(ty);
 
     case NFInstTypes.UNTYPED_COMPONENT(baseType = ty)
       then Types.isConnector(ty);
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"NFInstUtil.isConnectorComponent: Unknown component\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstUtil.isConnectorComponent: Unknown component\n"});
       then
-  fail();
+        fail();
 
   end match;
 end isConnectorComponent;
@@ -1659,9 +1659,9 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), arg, _)
       equation
-  (comps, arg) = traverseClassComponents2(comps, arg, inFunc, {});
+        (comps, arg) = traverseClassComponents2(comps, arg, inFunc, {});
       then
-  (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), arg);
+        (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), arg);
 
     else (inClass, inArg);
 
@@ -1684,10 +1684,10 @@ algorithm
 
     case (el :: rest_el, arg, _, _)
       equation
-  (el, arg) = traverseClassElement(el, inArg, inFunc);
-  (rest_el, arg) = traverseClassComponents2(rest_el, arg, inFunc, el :: inAccumEl);
+        (el, arg) = traverseClassElement(el, inArg, inFunc);
+        (rest_el, arg) = traverseClassComponents2(rest_el, arg, inFunc, el :: inAccumEl);
       then
-  (rest_el, arg);
+        (rest_el, arg);
 
     else (listReverse(inAccumEl), inArg);
 
@@ -1711,22 +1711,22 @@ algorithm
 
     case (NFInstTypes.ELEMENT(comp, cls), arg, _)
       equation
-  (comp, arg) = inFunc(comp, arg);
-  (cls, arg) = traverseClassComponents(cls, arg, inFunc);
+        (comp, arg) = inFunc(comp, arg);
+        (cls, arg) = traverseClassComponents(cls, arg, inFunc);
       then
-  (NFInstTypes.ELEMENT(comp, cls), arg);
+        (NFInstTypes.ELEMENT(comp, cls), arg);
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(comp), arg, _)
       equation
-  (comp, arg) = inFunc(comp, arg);
+        (comp, arg) = inFunc(comp, arg);
       then
-  (NFInstTypes.CONDITIONAL_ELEMENT(comp), arg);
+        (NFInstTypes.CONDITIONAL_ELEMENT(comp), arg);
 
     case (NFInstTypes.EXTENDED_ELEMENTS(bc, cls, ty), arg, _)
       equation
-  (cls, arg) = traverseClassComponents(cls, arg, inFunc);
+        (cls, arg) = traverseClassComponents(cls, arg, inFunc);
       then
-  (NFInstTypes.EXTENDED_ELEMENTS(bc, cls, ty), arg);
+        (NFInstTypes.EXTENDED_ELEMENTS(bc, cls, ty), arg);
 
   end match;
 end traverseClassElement;
@@ -1764,12 +1764,12 @@ algorithm
     case NFInstTypes.NO_PREFIXES() then NFInstTypes.NO_DAE_PREFIXES();
     case NFInstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (ct1, _), _)
       equation
-  vis2 = translateVisibility(vis1);
-  var2 = translateVariability(var1);
-  dir2 = translateDirection(dir1);
-  ct2 = translateConnectorType(ct1);
+        vis2 = translateVisibility(vis1);
+        var2 = translateVariability(var1);
+        dir2 = translateDirection(dir1);
+        ct2 = translateConnectorType(ct1);
       then
-  NFInstTypes.DAE_PREFIXES(vis2, var2, fp, io, dir2, ct2);
+        NFInstTypes.DAE_PREFIXES(vis2, var2, fp, io, dir2, ct2);
 
   end match;
 end translatePrefixes;
@@ -1830,9 +1830,9 @@ algorithm
     case NFInstTypes.SINGLE_CONDITION(condition = cond) then cond;
     case NFInstTypes.ARRAY_CONDITION(conditions = condl)
       equation
-  _ = List.selectFirst(condl, conditionFalse);
+        _ = List.selectFirst(condl, conditionFalse);
       then
-  false;
+        false;
 
     else true;
   end matchcontinue;
@@ -1850,9 +1850,9 @@ algorithm
     case NFInstTypes.SINGLE_CONDITION(condition = cond) then not cond;
     case NFInstTypes.ARRAY_CONDITION(conditions = condl)
       equation
-  _ = List.selectFirst(condl, conditionTrue);
+        _ = List.selectFirst(condl, conditionTrue);
       then
-  false;
+        false;
 
     else true;
   end matchcontinue;
@@ -1944,17 +1944,17 @@ algorithm
 
     case NFInstTypes.TYPED_COMPONENT(name = name)
       equation
-  (cref, _) = makeTypedComponentCref2(name, inComponent);
+        (cref, _) = makeTypedComponentCref2(name, inComponent);
       then
-  cref;
+        cref;
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.trace("- NFInstUtil.makeTypedComponentCref failed on component ");
-  Debug.traceln(NFInstDump.componentStr(inComponent));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- NFInstUtil.makeTypedComponentCref failed on component ");
+        Debug.traceln(NFInstDump.componentStr(inComponent));
       then
-  fail();
+        fail();
 
   end match;
 end makeTypedComponentCref;
@@ -1975,22 +1975,22 @@ algorithm
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _)
       equation
-  (cref, SOME(NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
-    makeTypedComponentCref2(rest_path, inComponent);
+        (cref, SOME(NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
+          makeTypedComponentCref2(rest_path, inComponent);
       then
-  (DAE.CREF_QUAL(id, ty, {}, cref), parent);
+        (DAE.CREF_QUAL(id, ty, {}, cref), parent);
 
     case (Absyn.IDENT(name = id),
-  NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
+        NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
       then (DAE.CREF_IDENT(id, ty, {}), parent);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.trace("- NFInstUtil.makeTypedComponentCref2 failed on path ");
-  Debug.traceln(Absyn.pathString(inPath));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- NFInstUtil.makeTypedComponentCref2 failed on path ");
+        Debug.traceln(Absyn.pathString(inPath));
       then
-  fail();
+        fail();
 
   end match;
 end makeTypedComponentCref2;
@@ -2008,9 +2008,9 @@ algorithm
 
     else
       equation
-  (cref, _) = typeCrefWithComponent2(inCref, inComponent);
+        (cref, _) = typeCrefWithComponent2(inCref, inComponent);
       then
-  cref;
+        cref;
 
   end match;
 end typeCrefWithComponent;
@@ -2030,25 +2030,25 @@ algorithm
       DAE.ComponentRef rest_cref;
 
     case (DAE.CREF_IDENT(id, _, subs),
-  NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
+        NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
       then (DAE.CREF_IDENT(id, ty, subs), parent);
 
     case (DAE.CREF_QUAL(id, _, subs, rest_cref), _)
       equation
-  (rest_cref, SOME(NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
-    typeCrefWithComponent2(rest_cref, inComponent);
+        (rest_cref, SOME(NFInstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
+          typeCrefWithComponent2(rest_cref, inComponent);
       then
-  (DAE.CREF_QUAL(id, ty, subs, rest_cref), parent);
+        (DAE.CREF_QUAL(id, ty, subs, rest_cref), parent);
 
     else
       equation
-  true = Flags.isSet(Flags.FAILTRACE);
-  Debug.trace("- NFInstUtil.typeCrefWithComponent2 failed on cref ");
-  Debug.trace(ComponentReference.printComponentRefStr(inCref));
-  Debug.trace(" and component ");
-  Debug.traceln(NFInstDump.componentStr(inComponent));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- NFInstUtil.typeCrefWithComponent2 failed on cref ");
+        Debug.trace(ComponentReference.printComponentRefStr(inCref));
+        Debug.trace(" and component ");
+        Debug.traceln(NFInstDump.componentStr(inComponent));
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end typeCrefWithComponent2;
@@ -2079,11 +2079,11 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(_, el, eq, ieq, al, ial), _)
       then
-  NFInstTypes.COMPLEX_CLASS(inClassName, el, eq, ieq, al, ial);
+        NFInstTypes.COMPLEX_CLASS(inClassName, el, eq, ieq, al, ial);
 
     case (NFInstTypes.BASIC_TYPE(_), _)
       then
-  NFInstTypes.BASIC_TYPE(inClassName);
+        NFInstTypes.BASIC_TYPE(inClassName);
 
   end match;
 end setClassName;
@@ -2098,11 +2098,11 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name = name))
       then
-  name;
+        name;
 
     case (NFInstTypes.BASIC_TYPE(name))
       then
-  name;
+        name;
 
   end match;
 end getClassName;
@@ -2121,15 +2121,15 @@ algorithm
 
     case NFInstTypes.EMPTY_PREFIX(classPath = SOME(path))
       equation
-  str = "E(" +& Absyn.pathLastIdent(path) +& ")";
+        str = "E(" +& Absyn.pathLastIdent(path) +& ")";
       then
-  str;
+        str;
 
     case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
       equation
-  str = prefixToStr(rest_prefix) +& "." +& name;
+        str = prefixToStr(rest_prefix) +& "." +& name;
       then
-  str;
+        str;
 
   end match;
 end prefixToStr;
@@ -2146,15 +2146,15 @@ algorithm
     case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
 
     case NFInstTypes.PREFIX(name = name,
-   restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
+         restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
       then
-  name;
+        name;
 
     case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
       equation
-  str = prefixToStrNoEmpty(rest_prefix) +& "." +& name;
+        str = prefixToStrNoEmpty(rest_prefix) +& "." +& name;
       then
-  str;
+        str;
 
   end match;
 end prefixToStrNoEmpty;
@@ -2219,7 +2219,7 @@ algorithm
 
     case(NFInstTypes.ELEMENT(comp, cls))
       equation
-  comp = markComponentAsInput(comp);
+        comp = markComponentAsInput(comp);
       then NFInstTypes.ELEMENT(comp, cls);
 
   end match;
@@ -2243,7 +2243,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsInput failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsInput failed"});
       then fail();
   end match;
 end markComponentAsInput;
@@ -2259,7 +2259,7 @@ algorithm
 
     case(NFInstTypes.ELEMENT(comp, cls))
       equation
-  comp = markComponentAsProtected(comp);
+        comp = markComponentAsProtected(comp);
       then NFInstTypes.ELEMENT(comp, cls);
 
   end match;
@@ -2283,7 +2283,7 @@ algorithm
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsProtected failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsProtected failed"});
       then fail();
   end match;
 end markComponentAsProtected;

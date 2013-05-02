@@ -380,8 +380,8 @@ L120:
     i__3 = i__;
     for(j = 1; j <= i__3; ++j) {
 /* L140: */
-  bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] +
-    vlag[i__] * w[j] + w[i__] * vlag[j];
+        bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] +
+          vlag[i__] * w[j] + w[i__] * vlag[j];
     }
       }
   }
@@ -403,17 +403,17 @@ L120:
     i__1 = *npt;
     for(i__ = 1; i__ <= i__1; ++i__) {
 /* L160: */
-  sum += w[i__] * xpt[i__ + j * xpt_dim1];
+        sum += w[i__] * xpt[i__ + j * xpt_dim1];
     }
     vlag[j] = sum;
     if(k < idz) {
-  sum = -sum;
+        sum = -sum;
     }
     i__1 = *npt;
     for(i__ = 1; i__ <= i__1; ++i__) {
 /* L170: */
-  bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k *
-    zmat_dim1];
+        bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k *
+          zmat_dim1];
     }
       }
       i__1 = *n;
@@ -421,12 +421,12 @@ L120:
     ip = i__ + *npt;
     temp = vlag[i__];
     if(k < idz) {
-  temp = -temp;
+        temp = -temp;
     }
     i__2 = i__;
     for(j = 1; j <= i__2; ++j) {
 /* L180: */
-  bmat[ip + j * bmat_dim1] += temp * vlag[j];
+        bmat[ip + j * bmat_dim1] += temp * vlag[j];
     }
       }
   }
@@ -448,7 +448,7 @@ L120:
       for(i__ = 1; i__ <= i__1; ++i__) {
     ++ih;
     if(i__ < j) {
-  gq[j] += hq[ih] * xopt[i__];
+        gq[j] += hq[ih] * xopt[i__];
     }
     gq[i__] += hq[ih] * xopt[j];
     hq[ih] = hq[ih] + w[i__] * xopt[j] + xopt[i__] * w[j];
@@ -551,9 +551,9 @@ L120:
   temp = one + alpha * beta / (d__1 * d__1);
   if(abs(temp) <= .8) {
       bigden_(n, npt, &xopt[1], &xpt[xpt_offset], &bmat[bmat_offset], &
-  zmat[zmat_offset], &idz, ndim, &kopt, &knew, &d__[1], &w[
-  1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim *
-  6 + 1]);
+        zmat[zmat_offset], &idz, ndim, &kopt, &knew, &d__[1], &w[
+        1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim *
+        6 + 1]);
   }
     }
 
@@ -793,7 +793,7 @@ L410:
     i__2 = *npt;
     for(k = 1; k <= i__2; ++k) {
 /* L710: */
-  sum += bmat[k + i__ * bmat_dim1] * vlag[k];
+        sum += bmat[k + i__ * bmat_dim1] * vlag[k];
     }
     gisq += sum * sum;
 /* L720: */
@@ -811,34 +811,34 @@ L410:
     i__1 = *n;
     for(i__ = 1; i__ <= i__1; ++i__) {
 /* L730: */
-  gq[i__] = w[i__];
+        gq[i__] = w[i__];
     }
     i__1 = nh;
     for(ih = 1; ih <= i__1; ++ih) {
 /* L740: */
-  hq[ih] = zero;
+        hq[ih] = zero;
     }
     i__1 = nptm;
     for(j = 1; j <= i__1; ++j) {
-  w[j] = zero;
-  i__2 = *npt;
-  for(k = 1; k <= i__2; ++k) {
+        w[j] = zero;
+        i__2 = *npt;
+        for(k = 1; k <= i__2; ++k) {
 /* L750: */
       w[j] += vlag[k] * zmat[k + j * zmat_dim1];
-  }
+        }
 /* L760: */
-  if(j < idz) {
+        if(j < idz) {
       w[j] = -w[j];
-  }
+        }
     }
     i__1 = *npt;
     for(k = 1; k <= i__1; ++k) {
-  pq[k] = zero;
-  i__2 = nptm;
-  for(j = 1; j <= i__2; ++j) {
+        pq[k] = zero;
+        i__2 = nptm;
+        for(j = 1; j <= i__2; ++j) {
 /* L770: */
       pq[k] += zmat[k + j * zmat_dim1] * w[j];
-  }
+        }
     }
     itest = 0;
       }

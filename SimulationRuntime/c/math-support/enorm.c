@@ -90,7 +90,7 @@ doublereal enorm_(integer *n, doublereal *x)
       goto L30;
   }
 
-/*        sum for large components. */
+/*              sum for large components. */
 
   if(xabs <= x1max) {
       goto L10;
@@ -108,7 +108,7 @@ L20:
   goto L60;
 L30:
 
-/*        sum for small components. */
+/*              sum for small components. */
 
   if(xabs <= x3max) {
       goto L40;
@@ -129,7 +129,7 @@ L60:
   goto L80;
 L70:
 
-/*     sum for intermediate components. */
+/*           sum for intermediate components. */
 
 /* Computing 2nd power */
   d__1 = xabs;

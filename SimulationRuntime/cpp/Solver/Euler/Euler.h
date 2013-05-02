@@ -161,52 +161,52 @@ private:
     // Member variables
     //---------------------------------------------------------------
     IEulerSettings
-  *_eulerSettings;                            ///< Settings for the solver
+        *_eulerSettings;                            ///< Settings for the solver
 
     long int
-  _dimSys,                                    ///< Temp             - (total) Dimension of systems (=number of ODE)
-  _idid;                                        ///< Input, Output    - Status Flag
+        _dimSys,                                    ///< Temp             - (total) Dimension of systems (=number of ODE)
+        _idid;                                        ///< Input, Output    - Status Flag
 
     int
-  _outputStps,                                ///< Output            - Number of output steps
-    _polynominalDegree;                   ///< Temp             - Degree of zero-function-polynominal
+        _outputStps,                                ///< Output            - Number of output steps
+    _polynominalDegree;                         ///< Temp             - Degree of zero-function-polynominal
     double
-  *_z,                                        ///< Temp            - State vector
-  *_z0,                                        ///< Temp            - (Old) state vector at left border of intervall (last step)
-  *_z1,                                        ///< Temp            - (New) state vector at right border of intervall (last step)
-  *_zInit,                                    ///< Temp            - Initial state vector
-  *_zLastSucess,                                ///< Temp            - State vector of last successfull step
-  *_zLargeStep,                                ///< Temp            - State vector of "large step" (used by "coupling step size controller" of SimManger)
-  *_denseOutPolynominal,                        ///< Temp            - Stores the coeffitions for the dense output polynominal
-  *_zWrite,                                    ///< Temp            - Zustand den das System rausschreibt
-  *_f0,
-  *_f1;
+        *_z,                                        ///< Temp            - State vector
+        *_z0,                                        ///< Temp            - (Old) state vector at left border of intervall (last step)
+        *_z1,                                        ///< Temp            - (New) state vector at right border of intervall (last step)
+        *_zInit,                                    ///< Temp            - Initial state vector
+        *_zLastSucess,                                ///< Temp            - State vector of last successfull step
+        *_zLargeStep,                                ///< Temp            - State vector of "large step" (used by "coupling step size controller" of SimManger)
+        *_denseOutPolynominal,                        ///< Temp            - Stores the coeffitions for the dense output polynominal
+        *_zWrite,                                    ///< Temp            - Zustand den das System rausschreibt
+        *_f0,
+        *_f1;
 
-                      double
-                          _hOut,                                        ///< Temp            - Ouput step size for dense output
-                          _hZero,                                        ///< Temp            - Downscale of step size to approach the zero crossing
-                          _hUpLim,                                    ///< Temp             - Maximal step size
-                          _hZeroCrossing,                                ///< Temp             - Stores the current step size (at the time the zero crossing occurs)
-                          _hUpLimZeroCrossing,                        ///< Temp             - Stores the upper limit of the step size (at the time the zero crossing occurs), because it is changed for zero search
-                          _h00,
-                          _h01,
-                          _h10,
-                          _h11;
+                            double
+                                _hOut,                                        ///< Temp            - Ouput step size for dense output
+                                _hZero,                                        ///< Temp            - Downscale of step size to approach the zero crossing
+                                _hUpLim,                                    ///< Temp             - Maximal step size
+                                _hZeroCrossing,                                ///< Temp             - Stores the current step size (at the time the zero crossing occurs)
+                                _hUpLimZeroCrossing,                        ///< Temp             - Stores the upper limit of the step size (at the time the zero crossing occurs), because it is changed for zero search
+                                _h00,
+                                _h01,
+                                _h10,
+                                _h11;
 
 
     double
-  _tOut,                                        ///< Output            - Time for dense output
-  _tLastZero,                                 ///< Temp            - Stores the time of the last zero (not last zero crossing!)
-  _tRealInitZero,                                ///< Temp            - Time of the very first zero in all zero functions
-  _doubleZeroDistance,                        ///< Temp            - In case of two zeros in one intervall (doubleZero): distance between zeros
-  _tZero,                                        ///< Temp            - Nullstelle
-  _tLastWrite;                                ///< Temp            - Letzter Ausgabezeitpunkt
+        _tOut,                                        ///< Output            - Time for dense output
+        _tLastZero,                                 ///< Temp            - Stores the time of the last zero (not last zero crossing!)
+        _tRealInitZero,                                ///< Temp            - Time of the very first zero in all zero functions
+        _doubleZeroDistance,                        ///< Temp            - In case of two zeros in one intervall (doubleZero): distance between zeros
+        _tZero,                                        ///< Temp            - Nullstelle
+        _tLastWrite;                                ///< Temp            - Letzter Ausgabezeitpunkt
 
     bool
-  _doubleZero,                                ///< Temp            - Flag to denote two zeros in intervall
-  *_Cond,
-  *_zeroInit;
+        _doubleZero,                                ///< Temp            - Flag to denote two zeros in intervall
+        *_Cond,
+        *_zeroInit;
 
     int
-  *_zeroSignIter;                                ///< Temp            - Temporary zeroSign Vector
+        *_zeroSignIter;                                ///< Temp            - Temporary zeroSign Vector
 };

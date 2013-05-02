@@ -3,17 +3,17 @@
 
    Release Notes:
       Sep. 24, 2004: by Martin Otter.
-               Final cleaning up of the code
+                     Final cleaning up of the code
 
       Sep.  9, 2004: by Dag Bruck, Dynasim AB.
-               Implementation of scan functions
+                     Implementation of scan functions
 
       Aug. 19, 2004: by Martin Otter, DLR.
-               Changed according to the decisions of the 37th
-               design meeting in Lund (see minutes)
+                     Changed according to the decisions of the 37th
+                     design meeting in Lund (see minutes)
 
       Jan.  7, 2002: by Martin Otter, DLR.
-               Implemented a first version
+                     Implemented a first version
 
    Copyright (C) 2002-2006, Modelica Association and DLR.
 
@@ -43,20 +43,20 @@ const char* ModelicaStrings_substring(const char* string, int startIndex, int en
 
   /* Check arguments */
      if( startIndex < 1 ) {
-  ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
-                      "  startIndex = %d (has to be > 0).\n"
-                      "  string     = \"%s\"\n", startIndex, string);
+        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
+                            "  startIndex = %d (has to be > 0).\n"
+                            "  string     = \"%s\"\n", startIndex, string);
      } else if( endIndex == -999 ) {
-  endIndex = startIndex;
+        endIndex = startIndex;
      } else if( endIndex < startIndex ) {
-  ModelicaFormatError("Wrong call of  Utilities.Strings.substring:\n"
-                      "  startIndex = %d\n"
-                      "  endIndex   = %d (>= startIndex required)\n"
-                      "  string     = \"%s\"\n", startIndex, endIndex, string);
+        ModelicaFormatError("Wrong call of  Utilities.Strings.substring:\n"
+                            "  startIndex = %d\n"
+                            "  endIndex   = %d (>= startIndex required)\n"
+                            "  string     = \"%s\"\n", startIndex, endIndex, string);
      } else if( endIndex > len1 ) {
-  ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
-                      "  endIndex = %d (<= %d required (=length(string)).\n"
-                      "  string   = \"%s\"\n", endIndex, len1, string);
+        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
+                            "  endIndex = %d (<= %d required (=length(string)).\n"
+                            "  string   = \"%s\"\n", endIndex, len1, string);
      };
 
   /* Allocate memory and copy string */
@@ -82,21 +82,21 @@ int ModelicaStrings_compare(const char* string1, const char* string2, int caseSe
     if(string1 == 0 || string2 == 0) return 2;
 
     if(caseSensitive) {
-  result = strcmp(string1, string2);
+        result = strcmp(string1, string2);
     } else {
-  while(tolower(*string1) == tolower(*string2) && *string1 != '\0') {
-      string1++;
-      string2++;
-  }
-  result = (int)(tolower(*string1)) - (int)(tolower(*string2));
+        while(tolower(*string1) == tolower(*string2) && *string1 != '\0') {
+            string1++;
+            string2++;
+        }
+        result = (int)(tolower(*string1)) - (int)(tolower(*string2));
     }
 
     if( result < 0 ) {
-  result = 1;
+        result = 1;
     } else if( result == 0 ) {
-  result = 2;
+        result = 2;
     } else {
-  result = 3;
+        result = 3;
     };
     return result;
 }
@@ -108,7 +108,7 @@ int ModelicaStrings_skipWhiteSpace(const char* string, int i)
 /* Return index in string after skipping ws, or position of terminating nul. */
 {
     while(string[i-1] != '\0' && isspace(string[i-1]))
-  ++i;
+        ++i;
     return i;
 }
 
@@ -126,12 +126,12 @@ int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* separators
    or position of terminating nul. */
 {
     while(string[i-1] != '\0' && (isspace(string[i-1]) || InSet(string, i, separators)))
-  ++i;
+        ++i;
     return i;
 }
 
 int get_token(const char* string, int startIndex, const char* separators,
-               int* output_index, int* token_start, int* token_length)
+                     int* output_index, int* token_start, int* token_length)
 {
     int past_token;
     int sep_pos;
@@ -151,9 +151,9 @@ int get_token(const char* string, int startIndex, const char* separators,
     *token_length = past_token-*token_start;
 
     if(*token_length == 0 || *token_length > MAX_TOKEN_SIZE) {
-  /* Token missing or too long. */
-  *output_index = startIndex;
-  return 0; /* error */
+        /* Token missing or too long. */
+        *output_index = startIndex;
+        return 0; /* error */
     }
 
     return 1; /* ok */
@@ -168,7 +168,7 @@ int MatchUnsignedInteger(const char* string, int start)
     const char* begin = &string[start-1];
     const char* p = begin;
     while(*p != '\0' && isdigit(*p))
-  ++p;
+        ++p;
     return p - begin;
 }
 
@@ -183,23 +183,23 @@ void ModelicaStrings_scanIdentifier(const char* string, int startIndex, int* nex
     /* Index of first char of token, after ws. */
 
     if(isalpha(string[token_start-1])) {
-  /* Identifier has begun. */
-  token_length = 1;
-  while(string[token_start+token_length-1] != '\0' &&
-      (isalpha(string[token_start+token_length-1]) ||
-      isdigit(string[token_start+token_length-1]) ||
-      string[token_start+token_length-1] == '_'))
-  {
-      ++token_length;
-  }
+        /* Identifier has begun. */
+        token_length = 1;
+        while(string[token_start+token_length-1] != '\0' &&
+            (isalpha(string[token_start+token_length-1]) ||
+            isdigit(string[token_start+token_length-1]) ||
+            string[token_start+token_length-1] == '_'))
+        {
+            ++token_length;
+        }
 
        {
-  char* s = ModelicaAllocateString(token_length);
-  strncpy(s, string+token_start-1, token_length);
-  s[token_length] = '\0';
-  *nextIndex = token_start + token_length;
-  *identifier = s;
-  return;
+        char* s = ModelicaAllocateString(token_length);
+        strncpy(s, string+token_start-1, token_length);
+        s[token_length] = '\0';
+        *nextIndex = token_start + token_length;
+        *identifier = s;
+        return;
        }
     }
 
@@ -210,7 +210,7 @@ void ModelicaStrings_scanIdentifier(const char* string, int startIndex, int* nex
 }
 
 void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsignedNumber,
-                                  int* nextIndex, int* integerNumber)
+                                        int* nextIndex, int* integerNumber)
 {
     int number_length=0;
     int sign = 0;
@@ -220,36 +220,36 @@ void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsigne
     /* Index of first char of token, after ws. */
 
     if(string[token_start-1] == '+' || string[token_start-1] == '-')
-  sign = 1;
+        sign = 1;
 
     if(unsignedNumber==0 || (unsignedNumber==1 && sign==0)) {
-  number_length = MatchUnsignedInteger(string, token_start + sign);
-  /* Number of characters in unsigned number. */
+        number_length = MatchUnsignedInteger(string, token_start + sign);
+        /* Number of characters in unsigned number. */
 
-  if(number_length > 0 && sign + number_length < MAX_TOKEN_SIZE) {
-    /* check if the scanned string is no Real number */
-    int next = token_start + sign + number_length - 1;
-    if(  string[next] == '\0' ||
-         (string[next] != '\0' && string[next] != '.'
-                               && string[next] != 'e'
-                               && string[next] != 'E') ) {
-       /* get Integer value */
-       char buf[MAX_TOKEN_SIZE+1];
-       int x;
+        if(number_length > 0 && sign + number_length < MAX_TOKEN_SIZE) {
+          /* check if the scanned string is no Real number */
+          int next = token_start + sign + number_length - 1;
+          if(  string[next] == '\0' ||
+               (string[next] != '\0' && string[next] != '.'
+                                     && string[next] != 'e'
+                                     && string[next] != 'E') ) {
+             /* get Integer value */
+             char buf[MAX_TOKEN_SIZE+1];
+             int x;
 
-       strncpy(buf, string+token_start-1, sign + number_length);
-       buf[sign + number_length] = '\0';
+             strncpy(buf, string+token_start-1, sign + number_length);
+             buf[sign + number_length] = '\0';
 #if !defined(NO_FILE_SYSTEM)
-       if(sscanf(buf, "%d", &x) == 1) {
-          *integerNumber = x;
-          *nextIndex = token_start + sign + number_length;
-          return;
-       }
+             if(sscanf(buf, "%d", &x) == 1) {
+                *integerNumber = x;
+                *nextIndex = token_start + sign + number_length;
+                return;
+             }
 #endif
-    } else {
-      ++number_length;
-    }
-  }
+          } else {
+            ++number_length;
+          }
+        }
     }
 
     /* Token missing or cannot be converted to result type. */
@@ -259,7 +259,7 @@ void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsigne
 }
 
 void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNumber,
-                               int* nextIndex, double* number)
+                                     int* nextIndex, double* number)
 {
     /*
     Grammar of real number:
@@ -284,8 +284,8 @@ void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNu
     /* Scan sign of decimal number */
 
     if(string[token_start-1] == '+' || string[token_start-1] == '-') {
-  total_length = 1;
-  if(unsignedNumber==1) goto error;
+        total_length = 1;
+        if(unsignedNumber==1) goto error;
     }
 
     /* Scan integer part of mantissa. */
@@ -296,41 +296,41 @@ void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNu
     /* Scan decimal part of mantissa. */
 
     if(string[token_start + total_length-1] == '.') {
-  total_length += 1;
-  len = MatchUnsignedInteger(string, token_start + total_length);
-  if(len > 0) {
-      total_length += len;
-  }
+        total_length += 1;
+        len = MatchUnsignedInteger(string, token_start + total_length);
+        if(len > 0) {
+            total_length += len;
+        }
     }
 
     /* Scan exponent part of mantissa. */
 
     if(string[token_start + total_length-1] == 'e' || string[token_start + total_length-1] == 'E') {
-  /* total_length += 1; */
-  int exp_len = 1;
+        /* total_length += 1; */
+        int exp_len = 1;
 
-  if(string[token_start + total_length] == '+' || string[token_start + total_length] == '-') {
-      exp_len += 1;
-  }
-  len = MatchUnsignedInteger(string, token_start + total_length + exp_len);
-  if(len == 0) goto error;
-  total_length += exp_len + len;
+        if(string[token_start + total_length] == '+' || string[token_start + total_length] == '-') {
+            exp_len += 1;
+        }
+        len = MatchUnsignedInteger(string, token_start + total_length + exp_len);
+        if(len == 0) goto error;
+        total_length += exp_len + len;
     }
 
     /* Convert accumulated characters into a number. */
 
     if(total_length > 0 && total_length < MAX_TOKEN_SIZE) {
-  char buf[MAX_TOKEN_SIZE+1];
-  double x;
+        char buf[MAX_TOKEN_SIZE+1];
+        double x;
 
-  strncpy(buf, string+token_start-1, total_length);
-  buf[total_length] = '\0';
+        strncpy(buf, string+token_start-1, total_length);
+        buf[total_length] = '\0';
 #if !defined(NO_FILE_SYSTEM)
-  if(sscanf(buf, "%lg", &x) == 1) {
-      *number = x;
-      *nextIndex = token_start + total_length;
-      return;
-  }
+        if(sscanf(buf, "%lg", &x) == 1) {
+            *number = x;
+            *nextIndex = token_start + total_length;
+            return;
+        }
 #endif
     }
 
@@ -344,7 +344,7 @@ error:
 
 
 void ModelicaStrings_scanString(const char* string, int startIndex,
-                                 int* nextIndex, const char** result)
+                                       int* nextIndex, const char** result)
 {
     int i, token_start, past_token, token_length;
 
@@ -356,12 +356,12 @@ void ModelicaStrings_scanString(const char* string, int startIndex,
 
     ++i;
     while(1) {
-  if(string[i-1] == '\0') goto error;
-  if(string[i-2] == '\\' && string[i-1] == '"')
-      ; /* escaped quote, consume */
-  else if(string[i-1] == '"')
-      break;      /* end quote */
-  ++i;
+        if(string[i-1] == '\0') goto error;
+        if(string[i-2] == '\\' && string[i-1] == '"')
+            ; /* escaped quote, consume */
+        else if(string[i-1] == '"')
+            break;      /* end quote */
+        ++i;
     }
     past_token = i + 1;
     /* Index of first char after token, ws or separator. */
@@ -369,12 +369,12 @@ void ModelicaStrings_scanString(const char* string, int startIndex,
     token_length = past_token-token_start-2;
 
     if(token_length > 0) {
-  char* s = ModelicaAllocateString(token_length);
-  strncpy(s, string+token_start, token_length);
-  s[token_length] = '\0';
-  *result = s;
-  *nextIndex = past_token;
-  return;
+        char* s = ModelicaAllocateString(token_length);
+        strncpy(s, string+token_start, token_length);
+        s[token_length] = '\0';
+        *result = s;
+        *nextIndex = past_token;
+        return;
     }
 
 error:

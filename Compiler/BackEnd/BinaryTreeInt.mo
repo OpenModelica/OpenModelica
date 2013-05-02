@@ -30,7 +30,7 @@
  */
 
 encapsulated package BinaryTreeInt
-" file:  BinaryTreeInt.mo
+" file:        BinaryTreeInt.mo
   package:     BinaryTreeInt
   description: BinaryTreeInt comprises functions for BinaryTrees.
 
@@ -142,12 +142,12 @@ algorithm
     // search right
     case (TREENODE(rightSubTree = SOME(right)),_,1)
       equation
-  compResult = treeGet2(right, ikey);
+        compResult = treeGet2(right, ikey);
       then treeGet3(right, ikey, compResult);
     // search left
     case (TREENODE(leftSubTree = SOME(left)),_,-1)
       equation
-  compResult = treeGet2(left, ikey);
+        compResult = treeGet2(left, ikey);
       then treeGet3(left, ikey, compResult);
   end match;
 end treeGet3;
@@ -168,10 +168,10 @@ algorithm
 
     case (bt,key::res)
       equation
-  bt_1 = treeAdd(bt,key,0);
-  bt_2 = treeAddList(bt_1,res);
+        bt_1 = treeAdd(bt,key,0);
+        bt_2 = treeAddList(bt_1,res);
       then
-  bt_2;
+        bt_2;
   end match;
 end treeAddList;
 
@@ -198,47 +198,47 @@ algorithm
 
     case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
       then
-  TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
+        TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),_,_)
       equation
-  0 = keyCmp(rkey,inKey);
+        0 = keyCmp(rkey,inKey);
       then
-  TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
+        TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),_,_)
       equation
-  1 = keyCmp(rkey,inKey);
-  t_1 = treeAdd(t, inKey, inValue);
+        1 = keyCmp(rkey,inKey);
+        t_1 = treeAdd(t, inKey, inValue);
       then
-  TREENODE(optVal,left,SOME(t_1));
+        TREENODE(optVal,left,SOME(t_1));
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),_,_)
       equation
-  1 = keyCmp(rkey,inKey);
-  right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+        1 = keyCmp(rkey,inKey);
+        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
-  TREENODE(optVal,left,SOME(right_1));
+        TREENODE(optVal,left,SOME(right_1));
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),_,_)
       equation
-  -1 = keyCmp(rkey,inKey);
-  t_1 = treeAdd(t, inKey, inValue);
+        -1 = keyCmp(rkey,inKey);
+        t_1 = treeAdd(t, inKey, inValue);
       then
-  TREENODE(optVal,SOME(t_1),right);
+        TREENODE(optVal,SOME(t_1),right);
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),_,_)
       equation
-  -1 = keyCmp(rkey,inKey);
-  left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+        -1 = keyCmp(rkey,inKey);
+        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
-  TREENODE(optVal,SOME(left_1),right);
+        TREENODE(optVal,SOME(left_1),right);
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTreeInt.treeAdd failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTreeInt.treeAdd failed\n"});
       then
-  fail();
+        fail();
   end matchcontinue;
 end treeAdd;
 
@@ -264,45 +264,45 @@ algorithm
 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_)
       equation
-  0 = keyCmp(rkey, inKey);
-  (rightmost,right) = treeDeleteRightmostValue(right);
-  optRight = treePruneEmptyNodes(right);
+        0 = keyCmp(rkey, inKey);
+        (rightmost,right) = treeDeleteRightmostValue(right);
+        optRight = treePruneEmptyNodes(right);
       then
-  TREENODE(SOME(rightmost),optLeft,optRight);
+        TREENODE(SOME(rightmost),optLeft,optRight);
 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_)
       equation
-  0 = keyCmp(rkey, inKey);
+        0 = keyCmp(rkey, inKey);
       then
-  left;
+        left;
 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_)
       equation
-  0 = keyCmp(rkey, inKey);
+        0 = keyCmp(rkey, inKey);
       then
-  TREENODE(NONE(),NONE(),NONE());
+        TREENODE(NONE(),NONE(),NONE());
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_)
       equation
-  1 = keyCmp(rkey, inKey);
-  t = treeDelete2(t, inKey);
-  optTree = treePruneEmptyNodes(t);
+        1 = keyCmp(rkey, inKey);
+        t = treeDelete2(t, inKey);
+        optTree = treePruneEmptyNodes(t);
       then
-  TREENODE(optVal,optLeft,optTree);
+        TREENODE(optVal,optLeft,optTree);
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_)
       equation
-  -1 = keyCmp(rkey, inKey);
-  t = treeDelete2(t, inKey);
-  optTree = treePruneEmptyNodes(t);
+        -1 = keyCmp(rkey, inKey);
+        t = treeDelete2(t, inKey);
+        optTree = treePruneEmptyNodes(t);
       then
-  TREENODE(optVal,optTree,optRight);
+        TREENODE(optVal,optTree,optRight);
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
       then
-  fail();
+        fail();
   end matchcontinue;
 end treeDelete2;
 
@@ -313,7 +313,7 @@ protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
   the binary tree deletion function \'tree_delete\'.
   inputs:  (BinTree)
   outputs: (TreeValue, /* deleted value */
-        BinTree    /* updated bintree */)
+              BinTree    /* updated bintree */)
 "
   input BinTree inBinTree;
   output TreeValue outTreeValue;
@@ -334,23 +334,23 @@ algorithm
 
     case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
       equation
-  (value,right) = treeDeleteRightmostValue(right);
-  optRight = treePruneEmptyNodes(right);
+        (value,right) = treeDeleteRightmostValue(right);
+        optRight = treePruneEmptyNodes(right);
       then
-  (value,TREENODE(optTreeVal,optLeft,optRight));
+        (value,TREENODE(optTreeVal,optLeft,optRight));
 
     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
-  failure((_,_) = treeDeleteRightmostValue(right));
-  print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
+        failure((_,_) = treeDeleteRightmostValue(right));
+        print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
       then
-  (treeVal,TREENODE(NONE(),NONE(),NONE()));
+        (treeVal,TREENODE(NONE(),NONE(),NONE()));
 
     else
       equation
-  Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
       then
-  fail();
+        fail();
   end matchcontinue;
 end treeDeleteRightmostValue;
 
@@ -386,23 +386,23 @@ algorithm
 
     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
       equation
-  ld = bintreeDepth(left);
-  rd = bintreeDepth(right);
-  res = intMax(ld, rd);
+        ld = bintreeDepth(left);
+        rd = bintreeDepth(right);
+        res = intMax(ld, rd);
       then
-  res + 1;
+        res + 1;
 
     case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
       equation
-  ld = bintreeDepth(left);
+        ld = bintreeDepth(left);
       then
-  ld;
+        ld;
 
     case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
-  rd = bintreeDepth(right);
+        rd = bintreeDepth(right);
       then
-  rd;
+        rd;
   end matchcontinue;
 end bintreeDepth;
 
@@ -425,14 +425,14 @@ algorithm
       BinTree bt;
     case (bt)
       equation
-  (klst,vlst) = bintreeToList2(bt, {}, {});
+        (klst,vlst) = bintreeToList2(bt, {}, {});
       then
-  (klst,vlst);
+        (klst,vlst);
     case (_)
       equation
-  print("- BackendDAEUtil.bintreeToList failed\n");
+        print("- BackendDAEUtil.bintreeToList failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end bintreeToList;
 
@@ -458,17 +458,17 @@ algorithm
 
     case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
-  (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-  (klst,vlst) = bintreeToListOpt(right, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(right, klst, vlst);
       then
-  ((key :: klst),(value :: vlst));
+        ((key :: klst),(value :: vlst));
 
     case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
-  (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-  (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
       then
-  (klst,vlst);
+        (klst,vlst);
   end matchcontinue;
 end bintreeToList2;
 
@@ -491,9 +491,9 @@ algorithm
 
     case (SOME(bt),klst,vlst)
       equation
-  (klst,vlst) = bintreeToList2(bt, klst, vlst);
+        (klst,vlst) = bintreeToList2(bt, klst, vlst);
       then
-  (klst,vlst);
+        (klst,vlst);
   end match;
 end bintreeToListOpt;
 

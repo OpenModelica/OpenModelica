@@ -30,32 +30,32 @@
  */
 
 encapsulated package EvaluateParameter
-" file:  EvaluateParameter.mo
+" file:        EvaluateParameter.mo
   package:     EvaluateParameter
   description: EvaluateParameter contains functions to evaluated the bindexp of parameters with final=true or
-         annotation(Evaluate=true) and parameters which depent only on evaluated parameters
+               annotation(Evaluate=true) and parameters which depent only on evaluated parameters
 
-         Conzept:
+               Conzept:
 
-         traverse all parameter and get the parameters which must be evaluated O(N)
+               traverse all parameter and get the parameters which must be evaluated O(N)
 
-         traverse the list and evaluate each parameter with a DFS  O(N)
-         -> replacements for evaluated parameter
+               traverse the list and evaluate each parameter with a DFS  O(N)
+               -> replacements for evaluated parameter
 
-         sort the parameters with tarjans algorithm O(N)
+               sort the parameters with tarjans algorithm O(N)
 
-         traverse the sorted parameters and replace in the bindexp the evaluated parameters
-         if a parameter have before a nonconstant bindexp and now a constant add it to the replacements
+               traverse the sorted parameters and replace in the bindexp the evaluated parameters
+               if a parameter have before a nonconstant bindexp and now a constant add it to the replacements
 
-        there are  main function
+              there are  main function
 
-        - evaluate and replace parameters with final=true in variables and parameters
-        - evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters
-        - evaluate and replace parameters with final=true or annotation(Evaluate=true) in variables and parameters
+              - evaluate and replace parameters with final=true in variables and parameters
+              - evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters
+              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in variables and parameters
 
-        - evaluate and replace parameters with final=true in equations, variables and parameters
-        - evaluate and replace parameters with annotation(Evaluate=true) in equations, variables and parameters
-        - evaluate and replace parameters with final=true or annotation(Evaluate=true) in equations, variables and parameters
+              - evaluate and replace parameters with final=true in equations, variables and parameters
+              - evaluate and replace parameters with annotation(Evaluate=true) in equations, variables and parameters
+              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in equations, variables and parameters
 
 
   RCS: $Id: EvaluateParameter.mo 15281 2013-02-22 17:30:41Z jfrenkel $"
@@ -211,29 +211,29 @@ algorithm
       list<Integer> selectedParameter;
     case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),_)
       equation
-  // get parameters with annotation(Evaluate=true)
-  size = BackendVariable.varsSize(knvars);
-  m = arrayCreate(size,{});
-  mt = arrayCreate(size,{});
-  ass = arrayCreate(size,-1);
-  ((_,_,_,selectedParameter,nselect,ass,m,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,selectParameterfunc,{},0,ass,m,mt));
-  // evaluate selected parameters
-  size = intMax(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
-  nselect = intMax(BaseHashTable.defaultBucketSize,nselect*2);
-  repl = BackendVarTransform.emptyReplacementsSized(size);
-  repleval = BackendVarTransform.emptyReplacementsSized(nselect);
-  markarr = arrayCreate(size,-1);
-  (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,env,1,markarr,repl,repleval);
-  // replace evaluated parameter in parameters
-  comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
-   // evaluate vars with bind expression consists of evaluated vars
-  (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,env,mark,markarr,repl,repleval);
-  Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repleval);
-  // replace evaluated parameter in variables
-  (systs,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
-  (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
+        // get parameters with annotation(Evaluate=true)
+        size = BackendVariable.varsSize(knvars);
+        m = arrayCreate(size,{});
+        mt = arrayCreate(size,{});
+        ass = arrayCreate(size,-1);
+        ((_,_,_,selectedParameter,nselect,ass,m,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,selectParameterfunc,{},0,ass,m,mt));
+        // evaluate selected parameters
+        size = intMax(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
+        nselect = intMax(BaseHashTable.defaultBucketSize,nselect*2);
+        repl = BackendVarTransform.emptyReplacementsSized(size);
+        repleval = BackendVarTransform.emptyReplacementsSized(nselect);
+        markarr = arrayCreate(size,-1);
+        (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,env,1,markarr,repl,repleval);
+        // replace evaluated parameter in parameters
+        comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
+         // evaluate vars with bind expression consists of evaluated vars
+        (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,env,mark,markarr,repl,repleval);
+        Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repleval);
+        // replace evaluated parameter in variables
+        (systs,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
+        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
       then
-  (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),repleval);
+        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),repleval);
   end match;
 end evaluateParameters;
 
@@ -279,36 +279,36 @@ algorithm
 
     case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
       equation
-  ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
-  select = selectParameter(v);
-  selectedParameter = List.consOnTrue(select, index, selectedParameter);
-  ass = arrayUpdate(ass,index,index);
-  m = arrayUpdate(m,index,ilst);
-  mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
+        ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
+        select = selectParameter(v);
+        selectedParameter = List.consOnTrue(select, index, selectedParameter);
+        ass = arrayUpdate(ass,index,index);
+        m = arrayUpdate(m,index,ilst);
+        mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
       then
-  ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
 
     case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
       equation
-  e = DAEUtil.getStartAttrFail(attr);
-  ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
-  select = selectParameter(v);
-  selectedParameter = List.consOnTrue(select, index, selectedParameter);
-  ass = arrayUpdate(ass,index,index);
-  m = arrayUpdate(m,index,ilst);
-  mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
+        e = DAEUtil.getStartAttrFail(attr);
+        ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
+        select = selectParameter(v);
+        selectedParameter = List.consOnTrue(select, index, selectedParameter);
+        ass = arrayUpdate(ass,index,index);
+        m = arrayUpdate(m,index,ilst);
+        mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
       then
-  ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
 
     case ((v,(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
       equation
-  select = selectParameter(v);
-  selectedParameter = List.consOnTrue(select, index, selectedParameter);
-  ass = arrayUpdate(ass,index,index);
-  ilst = {index};
-  mt = arrayUpdate(mt,index,ilst);
+        select = selectParameter(v);
+        selectedParameter = List.consOnTrue(select, index, selectedParameter);
+        ass = arrayUpdate(ass,index,index);
+        ilst = {index};
+        mt = arrayUpdate(mt,index,ilst);
       then
-  ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
   end matchcontinue;
 end getParameterIncidenceMatrix;
 
@@ -344,25 +344,25 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_) then (iKnVars,iCache,iRepl,iReplEvaluate,iMark);
     case (i::rest,_,_,_,_,_,_,_,_,_)
       equation
-  false = intGt(markarr[i],0) "not allready evaluated";
-  _ = arrayUpdate(markarr,i,iMark);
-  // evaluate needed parameters
-  (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-  // evaluate parameter
-  v = BackendVariable.getVarAt(knVars,i);
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
-  (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,knVars,inIEqns,repl,iReplEvaluate,cache,env);
-  (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl,repleval);
+        false = intGt(markarr[i],0) "not allready evaluated";
+        _ = arrayUpdate(markarr,i,iMark);
+        // evaluate needed parameters
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        // evaluate parameter
+        v = BackendVariable.getVarAt(knVars,i);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
+        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,knVars,inIEqns,repl,iReplEvaluate,cache,env);
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl,repleval);
       then
-  (knVars,cache,repl,repleval,mark);
+        (knVars,cache,repl,repleval,mark);
     case (i::rest,_,_,_,_,_,_,_,_,_)
       equation
-  // evaluate parameter
-  v = BackendVariable.getVarAt(iKnVars,i);
-  (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,iKnVars,inIEqns,iRepl,iReplEvaluate,iCache,env);
-  (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,iMark,markarr,repl,repleval);
+        // evaluate parameter
+        v = BackendVariable.getVarAt(iKnVars,i);
+        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,iKnVars,inIEqns,iRepl,iReplEvaluate,iCache,env);
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,iMark,markarr,repl,repleval);
       then
-  (knVars,cache,repl,repleval,mark);
+        (knVars,cache,repl,repleval,mark);
   end matchcontinue;
 end evaluateSelectedParameters;
 
@@ -395,20 +395,20 @@ algorithm
       then (iKnVars,iCache,iRepl,iMark);
     case (i::rest,_,_,_,_,_,_,_,_)
       equation
-  false = intGt(markarr[i],0) "not allready evaluated";
-  _ = arrayUpdate(markarr,i,iMark);
-  (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
-  v = BackendVariable.getVarAt(knVars,i);
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
-  (knVars,cache,repl) = evaluateParameter(v,knVars,inIEqns,repl,cache,env);
-  (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl);
+        false = intGt(markarr[i],0) "not allready evaluated";
+        _ = arrayUpdate(markarr,i,iMark);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        v = BackendVariable.getVarAt(knVars,i);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
+        (knVars,cache,repl) = evaluateParameter(v,knVars,inIEqns,repl,cache,env);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl);
       then
-  (knVars,cache,repl,mark);
+        (knVars,cache,repl,mark);
     case (_::rest,_,_,_,_,_,_,_,_)
       equation
-  (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
-  (knVars,cache,repl,mark);
+        (knVars,cache,repl,mark);
   end matchcontinue;
 end evaluateSelectedParameters1;
 
@@ -444,108 +444,108 @@ algorithm
     // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
-  true = Expression.isConst(e);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        true = Expression.isConst(e);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (inKnVars,iCache,repl,repleval);
+        (inKnVars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
-  // apply replacements
-  (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-  // evaluate expression
-  (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
-  e1 = ValuesUtil.valueExp(value);
-  // set bind value
-  v = BackendVariable.setBindExp(var, e1);
-  // update Vararray
-  knvars = BackendVariable.setVarAt(inKnVars, index, v);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        // apply replacements
+        (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setBindExp(var, e1);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (knvars,cache,repl,repleval);
+        (knvars,cache,repl,repleval);
     // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
-  true = Expression.isConst(e);
-  v = BackendVariable.setVarFinal(var, true);
-  // update Vararray
-  knvars = BackendVariable.setVarAt(inKnVars, index, v);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        true = Expression.isConst(e);
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (knvars,iCache,repl,repleval);
+        (knvars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_,_,_)
       equation
-  // apply replacements
-  (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-  // evaluate expression
-  (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
-  e1 = ValuesUtil.valueExp(value);
-  // set bind value
-  v = BackendVariable.setBindExp(var, e1);
-  v = BackendVariable.setVarFinal(v, true);
-  // update Vararray
-  knvars = BackendVariable.setVarAt(inKnVars, index, v);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        // apply replacements
+        (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setBindExp(var, e1);
+        v = BackendVariable.setVarFinal(v, true);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (knvars,cache,repl,repleval);
+        (knvars,cache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value)),_,_,_,_,_,_,_)
       equation
-  true = BackendVariable.varFixed(var);
-  e = ValuesUtil.valueExp(value);
-  v = BackendVariable.setVarFinal(var, true);
-  // update Vararray
-  knvars = BackendVariable.setVarAt(inKnVars, index, v);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e, NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        true = BackendVariable.varFixed(var);
+        e = ValuesUtil.valueExp(value);
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e, NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (knvars,iCache,repl,repleval);
+        (knvars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr),_,_,_,_,_,_,_)
       equation
-  true = BackendVariable.varFixed(var);
-  e = DAEUtil.getStartAttrFail(attr);
-  // apply replacements
-  (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-  // evaluate expression
-  (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
-  e1 = ValuesUtil.valueExp(value);
-  // set bind value
-  v = BackendVariable.setVarStartValue(var,e1);
-  v = BackendVariable.setVarFinal(v, true);
-  // update Vararray
-  knvars = BackendVariable.setVarAt(inKnVars, index, v);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-  repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1, NONE());
-  //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        true = BackendVariable.varFixed(var);
+        e = DAEUtil.getStartAttrFail(attr);
+        // apply replacements
+        (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setVarStartValue(var,e1);
+        v = BackendVariable.setVarFinal(v, true);
+        // update Vararray
+        knvars = BackendVariable.setVarAt(inKnVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1, NONE());
+        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
       then
-  (knvars,cache,repl,repleval);
+        (knvars,cache,repl,repleval);
     // try to evaluate with initial equations
 
     // report warning
     case(_,_,_,_,_,_,_,_)
       equation
-  true = Flags.isSet(Flags.PEDANTIC);
-  info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-  msg = "Cannot evaluate Variable \"" +& BackendDump.varString(var);
-  Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
+        true = Flags.isSet(Flags.PEDANTIC);
+        info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+        msg = "Cannot evaluate Variable \"" +& BackendDump.varString(var);
+        Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
-  (inKnVars,iCache,iRepl,iReplEvaluate);
+        (inKnVars,iCache,iRepl,iReplEvaluate);
     else
       then
-  (inKnVars,iCache,iRepl,iReplEvaluate);
+        (inKnVars,iCache,iRepl,iReplEvaluate);
   end matchcontinue;
 end evaluateSelectedParameter;
 
@@ -572,39 +572,39 @@ algorithm
       Values.Value value;
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_)
       equation
-  // applay replacements
-  (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-  // evaluate expression
-  (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(), 0);
-  e1 = ValuesUtil.valueExp(value);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-  //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
+        // applay replacements
+        (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(), 0);
+        e1 = ValuesUtil.valueExp(value);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
       then
-  (inKnVars,cache,repl);
+        (inKnVars,cache,repl);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value)),_,_,_,_,_)
       equation
-  true = BackendVariable.varFixed(var);
-  e = ValuesUtil.valueExp(value);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-  //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e) +& "\n");
+        true = BackendVariable.varFixed(var);
+        e = ValuesUtil.valueExp(value);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
+        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e) +& "\n");
       then
-  (inKnVars,iCache,repl);
+        (inKnVars,iCache,repl);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr),_,_,_,_,_)
       equation
-  true = BackendVariable.varFixed(var);
-  e = DAEUtil.getStartAttrFail(attr);
-  // applay replacements
-  (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-  // evaluate expression
-  (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(),0);
-  e1 = ValuesUtil.valueExp(value);
-  // save replacement
-  repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-  //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
+        true = BackendVariable.varFixed(var);
+        e = DAEUtil.getStartAttrFail(attr);
+        // applay replacements
+        (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
+        // evaluate expression
+        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Ceval.NO_MSG(),0);
+        e1 = ValuesUtil.valueExp(value);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
+        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
       then
-  (inKnVars,cache,repl);
+        (inKnVars,cache,repl);
     // try to evaluate with initial equations
 
     // not evaluated
@@ -643,39 +643,39 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case (BackendDAE.VAR(values= NONE()),_,_,_,_,_,_,_,_,_)
       then
-  (var,iKnVars,iCache,iRepl,iMark);
+        (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
-  (var,iKnVars,iCache,iRepl,iMark);
+        (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
-  (var,iKnVars,iCache,iRepl,iMark);
+        (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
-  (var,iKnVars,iCache,iRepl,iMark);
+        (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
-  (var,iKnVars,iCache,iRepl,iMark);
+        (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_REAL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
-  (v,knVars,cache,repl,mark);
+        (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_INT(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
-  (v,knVars,cache,repl,mark);
+        (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
-  (v,knVars,cache,repl,mark);
+        (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
-  (v,knVars,cache,repl,mark);
+        (v,knVars,cache,repl,mark);
     else then (var,iKnVars,iCache,iRepl,iMark);
   end match;
 end evaluateFixedAttribute;
@@ -736,12 +736,12 @@ algorithm
     case (true,_,_,_,_,_) then e1;
     case (false,_,_,_,_,_)
       equation
-  info = DAEUtil.getElementSourceFileInfo(source);
-  ((e2, (_,_,_))) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
-  msg = ComponentReference.printComponentRefStr(cr) +& " has unevaluateable fixed attribute value \"" +& ExpressionDump.printExpStr(e) +& "\" use values from start attribute(s) \"" +& ExpressionDump.printExpStr(e2) +& "\"";
-  Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        ((e2, (_,_,_))) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
+        msg = ComponentReference.printComponentRefStr(cr) +& " has unevaluateable fixed attribute value \"" +& ExpressionDump.printExpStr(e) +& "\" use values from start attribute(s) \"" +& ExpressionDump.printExpStr(e2) +& "\"";
+        Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
-  e2;
+        e2;
   end match;
 end evaluateFixedAttributeReportWarning;
 
@@ -760,18 +760,18 @@ algorithm
     // true if crefs replaced in expression
     case ((DAE.CREF(componentRef=cr), (vars,b,hs)))
       equation
-  // check for cyclic bindings in start value
-  false = BaseHashSet.has(cr, hs);
-  ({v}, _) = BackendVariable.getVar(cr, vars);
-  e = BackendVariable.varStartValueType(v);
-  hs = BaseHashSet.add(cr,hs);
-  ((e, (_,b,hs))) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
+        // check for cyclic bindings in start value
+        false = BaseHashSet.has(cr, hs);
+        ({v}, _) = BackendVariable.getVar(cr, vars);
+        e = BackendVariable.varStartValueType(v);
+        hs = BaseHashSet.add(cr,hs);
+        ((e, (_,b,hs))) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
       then
-  ((e, (vars,b,hs)));
+        ((e, (vars,b,hs)));
     // true if crefs in expression
     case ((e as DAE.CREF(componentRef=cr), (vars,_,hs)))
       then
-  ((e, (vars,true,hs)));
+        ((e, (vars,true,hs)));
     else then inTuple;
   end matchcontinue;
 end replaceCrefWithBindStartExp;
@@ -805,24 +805,24 @@ algorithm
 
     case({},_,_,_,_,_,_,_,_,_)
       then
-  (inKnVars,repl,replEvaluate,iCache,iMark);
+        (inKnVars,repl,replEvaluate,iCache,iMark);
     case({i}::rest,_,_,_,_,_,_,_,_,_)
       equation
-  v = BackendVariable.getVarAt(inKnVars,i);
-  (v,knvars,cache,repl1,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl);
-  (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,knvars,m,inIEqns,cache,env,mark,markarr,repl1,replEvaluate);
-  (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
+        v = BackendVariable.getVarAt(inKnVars,i);
+        (v,knvars,cache,repl1,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl);
+        (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,knvars,m,inIEqns,cache,env,mark,markarr,repl1,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
       then
-  (knvars,repl1,evrepl,cache,mark);
+        (knvars,repl1,evrepl,cache,mark);
     case (ilst::rest,_,_,_,_,_,_,_,_,_)
       equation
-  // vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
-  // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
-  // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
-  (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate);
-  (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
+        // vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
+        // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
+        // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
       then
-  (knvars,repl1,evrepl,cache,mark);
+        (knvars,repl1,evrepl,cache,mark);
   end matchcontinue;
 end traverseParameterSorted;
 
@@ -856,64 +856,64 @@ algorithm
     // Parameter with bind expression
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
-  // apply replacements
-  (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
-  (e,_) = ExpressionSimplify.simplify(e);
-  v = BackendVariable.setBindExp(var,e);
-  (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
-  (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
-  v = BackendVariable.setVarAttributes(v,attr);
-  //false = Expression.expHasCrefs(e);
-  // evaluate expression
-  //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
-  //e1 = ValuesUtil.valueExp(value);
-  // set bind value
-  //v = BackendVariable.setBindExp(var,e1);
-  v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
-  knVars = BackendVariable.setVarAt(inKnVars,index,v);
+        // apply replacements
+        (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
+        (e,_) = ExpressionSimplify.simplify(e);
+        v = BackendVariable.setBindExp(var,e);
+        (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
+        (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
+        v = BackendVariable.setVarAttributes(v,attr);
+        //false = Expression.expHasCrefs(e);
+        // evaluate expression
+        //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
+        //e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        //v = BackendVariable.setBindExp(var,e1);
+        v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
-  (knVars,repl,repleval,iCache,iMark);
+        (knVars,repl,repleval,iCache,iMark);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=NONE(),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
-  true = BackendVariable.varFixed(var);
-  e = DAEUtil.getStartAttrFail(attr);
-  // apply replacements
-  (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
-  (e,_) = ExpressionSimplify.simplify(e);
-  v = BackendVariable.setVarStartValue(var,e);
-  (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
-  (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
-  v = BackendVariable.setVarAttributes(v,attr);
-  //false = Expression.expHasCrefs(e);
-  // evaluate expression
-  //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
-  //e1 = ValuesUtil.valueExp(value);
-  // set bind value
-  //v = BackendVariable.setBindExp(var,e1);
-  v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
-  knVars = BackendVariable.setVarAt(inKnVars,index,v);
+        true = BackendVariable.varFixed(var);
+        e = DAEUtil.getStartAttrFail(attr);
+        // apply replacements
+        (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
+        (e,_) = ExpressionSimplify.simplify(e);
+        v = BackendVariable.setVarStartValue(var,e);
+        (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
+        (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
+        v = BackendVariable.setVarAttributes(v,attr);
+        //false = Expression.expHasCrefs(e);
+        // evaluate expression
+        //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
+        //e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        //v = BackendVariable.setBindExp(var,e1);
+        v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
-  (knVars,repl,repleval,iCache,iMark);
+        (knVars,repl,repleval,iCache,iMark);
     // other vars
     case (BackendDAE.VAR(bindExp=SOME(e),values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
-  // apply replacements
-  (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
-  (e,_) = ExpressionSimplify.simplify(e);
-  v = BackendVariable.setBindExp(var,e);
-  (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
-  v = BackendVariable.setVarAttributes(v,attr);
-  knVars = BackendVariable.setVarAt(inKnVars,index,v);
+        // apply replacements
+        (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
+        (e,_) = ExpressionSimplify.simplify(e);
+        v = BackendVariable.setBindExp(var,e);
+        (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
+        v = BackendVariable.setVarAttributes(v,attr);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
-  (knVars,iRepl,repleval,iCache,iMark);
+        (knVars,iRepl,repleval,iCache,iMark);
     case (BackendDAE.VAR(values=attr),_,_,_,_,_,_,_,_,_,_)
       equation
-  // apply replacements
-  (attr,(repleval,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
-  v = BackendVariable.setVarAttributes(var,attr);
-  knVars = BackendVariable.setVarAt(inKnVars,index,v);
+        // apply replacements
+        (attr,(repleval,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
+        v = BackendVariable.setVarAttributes(var,attr);
+        knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
-  (knVars,iRepl,repleval,iCache,iMark);
+        (knVars,iRepl,repleval,iCache,iMark);
     else
       then (inKnVars,iRepl,iReplEvaluate,iCache,iMark);
   end matchcontinue;
@@ -930,11 +930,11 @@ algorithm
   (outRepl,oReplEvaluate) := matchcontinue(inExp,cr,inRepl,iReplEvaluate)
     case (_,_,_,_)
       equation
-  true = Expression.isConst(inExp);
-  outRepl = BackendVarTransform.addReplacement(inRepl, cr, inExp,NONE());
-  oReplEvaluate = BackendVarTransform.addReplacement(iReplEvaluate, cr, inExp,NONE());
+        true = Expression.isConst(inExp);
+        outRepl = BackendVarTransform.addReplacement(inRepl, cr, inExp,NONE());
+        oReplEvaluate = BackendVarTransform.addReplacement(iReplEvaluate, cr, inExp,NONE());
       then
-  (outRepl,oReplEvaluate);
+        (outRepl,oReplEvaluate);
     else
       (inRepl,iReplEvaluate);
   end matchcontinue;
@@ -1002,26 +1002,26 @@ algorithm
       Boolean b;
     case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
       equation
-  // apply replacements
-  (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
-  (e1,_) = ExpressionSimplify.simplify(e1);
-  v = BackendVariable.setBindExp(v,e1);
-  (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
-  v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
+        // apply replacements
+        (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        v = BackendVariable.setBindExp(v,e1);
+        (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
+        v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
       then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
 
     case  ((v as BackendDAE.VAR(values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
       equation
-  // apply replacements
-  (attr,(replEvaluate,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
-  v = BackendVariable.setVarAttributes(v,attr);
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
+        // apply replacements
+        (attr,(replEvaluate,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
+        v = BackendVariable.setVarAttributes(v,attr);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
       then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
 
     case  ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
       equation
-  (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
       then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
@@ -1055,18 +1055,18 @@ algorithm
     case (true,_,_) then inDAE;
     case (false,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),_)
       equation
-  // do replacements in initial equations
-  eqnslst = BackendEquation.equationList(inieqns);
-  (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-  inieqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,inieqns);
-  // do replacements in simple equations
-  eqnslst = BackendEquation.equationList(remeqns);
-  (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-  remeqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,remeqns);
-  // do replacements in systems
-  systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
+        // do replacements in initial equations
+        eqnslst = BackendEquation.equationList(inieqns);
+        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
+        inieqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,inieqns);
+        // do replacements in simple equations
+        eqnslst = BackendEquation.equationList(remeqns);
+        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
+        remeqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,remeqns);
+        // do replacements in systems
+        systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
       then
-  BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
 end replaceEvaluatedParametersEqns;
 

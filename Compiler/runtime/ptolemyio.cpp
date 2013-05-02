@@ -96,9 +96,9 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
     stream.getline(buf,255);
     while( string(buf).find(var) == string(buf).npos || strlen(buf) > var.length()) {
       if (!stream.getline(buf,255)) {
-  // if we reached end of file return..
-  c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Variable %s not found in simulation result.", &cvar, 1);
-  return NULL;
+        // if we reached end of file return..
+        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Variable %s not found in simulation result.", &cvar, 1);
+        return NULL;
       }
     }
 
@@ -111,8 +111,8 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
       stream.getline(buf,255);
 
       if (string(buf).find("DataSet:") == 1) {
-  j = datasize;
-  break;
+        j = datasize;
+        break;
       }
       string values(buf);
       int commapos=values.find(",");
@@ -121,15 +121,15 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
       val = strtod(buf1,&buf2); // Second value after comma
 
       if (buf1 == buf2) {
-  // We may be trying to parse Infinity on a Windows platform.
-  // Don't we feel stupid expecting this to work?
-  if (0 == strncmp(buf1,"Inf",3)) val = INFINITY;
-  else if (0 == strncmp(buf1,"-Inf",4)) val = -INFINITY;
-  else if (0 == strncmp(buf1,"inf",3)) val = INFINITY;
-  else if (0 == strncmp(buf1,"-inf",4)) val = -INFINITY;
-  // Don't put 0.0 if the value is undefined.
-  // NaN sends a clear signal to the user that he has a problem.
-  else val = NAN;
+        // We may be trying to parse Infinity on a Windows platform.
+        // Don't we feel stupid expecting this to work?
+        if (0 == strncmp(buf1,"Inf",3)) val = INFINITY;
+        else if (0 == strncmp(buf1,"-Inf",4)) val = -INFINITY;
+        else if (0 == strncmp(buf1,"inf",3)) val = INFINITY;
+        else if (0 == strncmp(buf1,"-inf",4)) val = -INFINITY;
+        // Don't put 0.0 if the value is undefined.
+        // NaN sends a clear signal to the user that he has a problem.
+        else val = NAN;
       }
 
       lst = (void*)mk_cons(mk_rcon(val),lst);

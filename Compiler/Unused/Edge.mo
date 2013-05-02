@@ -30,7 +30,7 @@
  */
 
 encapsulated package Edge
-" file:  Edge.mo
+" file:        Edge.mo
   package:     Edge
   description: Edge represents an edge in a graph.
   @author:     adrpo

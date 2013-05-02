@@ -24,11 +24,11 @@ double get_tlevel(VertexID u, const TaskGraph &g,map<VertexID,double>*level) {
 
 
 TaskMerging::TaskMerging() : m_latency(0.001),
-     m_bandwidth(500.0),
-     m_change(true),
-     m_taskgraph(0),
-     m_containTasks(0),
-     m_num_rules(4)
+           m_bandwidth(500.0),
+           m_change(true),
+           m_taskgraph(0),
+           m_containTasks(0),
+           m_num_rules(4)
 {
   m_rules = new MergeRule*[m_num_rules];
 }
@@ -50,26 +50,26 @@ void TaskMerging::initializeRules()
   }
 
   m_rules[0] = (MergeRule*)new SingleChildMerge(m_taskgraph,m_orig_taskgraph,
-      m_containTasks,m_invartask,
-      m_outvartask,m_latency,
-      m_bandwidth,m_nproc,
-      &m_taskRemoved);
+            m_containTasks,m_invartask,
+            m_outvartask,m_latency,
+            m_bandwidth,m_nproc,
+            &m_taskRemoved);
   m_rules[1] = (MergeRule*)new DuplicateParentMerge(m_taskgraph,m_orig_taskgraph,
-          m_containTasks,m_invartask,
-          m_outvartask,m_latency,
-          m_bandwidth,m_nproc,
-          &m_taskRemoved);
+                m_containTasks,m_invartask,
+                m_outvartask,m_latency,
+                m_bandwidth,m_nproc,
+                &m_taskRemoved);
   m_rules[2] = (MergeRule*)new MergeAllParents(m_taskgraph,m_orig_taskgraph,
-           m_containTasks,m_invartask,
-           m_outvartask,m_latency,
-           m_bandwidth,m_nproc,
-           &m_taskRemoved);
+                 m_containTasks,m_invartask,
+                 m_outvartask,m_latency,
+                 m_bandwidth,m_nproc,
+                 &m_taskRemoved);
 
   m_rules[3] = (MergeRule*)new MergeSiblings(m_taskgraph,m_orig_taskgraph,
-         m_containTasks,m_invartask,
-         m_outvartask,m_latency,
-         m_bandwidth,m_nproc,
-         &m_taskRemoved);
+               m_containTasks,m_invartask,
+               m_outvartask,m_latency,
+               m_bandwidth,m_nproc,
+               &m_taskRemoved);
 
   // Add more rules here and change number of rules in constructor.
 }
@@ -201,8 +201,8 @@ void TaskMerging::removeSourceAndSink()
     tie(e,tmp) = edge(m_invartask,*c,*m_taskgraph);
     if (!tmp) { cerr << "Error, edge does not exist." << endl; exit(-1); }
     m_source_sink_edges.push_back(EdgeInfo(m_invarID,
-       getTaskID(*c,m_taskgraph),
-       copy_resultset(getResultSet(e,m_taskgraph))));
+             getTaskID(*c,m_taskgraph),
+             copy_resultset(getResultSet(e,m_taskgraph))));
   }
 
   for(tie(p,p_end) = parents(m_outvartask,*m_taskgraph); p != p_end; p++) {
@@ -210,8 +210,8 @@ void TaskMerging::removeSourceAndSink()
     tie(e,tmp) = edge(*p,m_outvartask,*m_taskgraph);
     if (!tmp) { cerr << "Error, edge does not exist." << endl; exit(-1); }
     m_source_sink_edges.push_back(EdgeInfo(getTaskID(*p,m_taskgraph),
-       m_outvarID,
-       copy_resultset(getResultSet(e,m_taskgraph))));
+             m_outvarID,
+             copy_resultset(getResultSet(e,m_taskgraph))));
   }
 
   clear_vertex(m_invartask,*m_taskgraph);
@@ -227,10 +227,10 @@ void TaskMerging::removeSourceAndSink()
 
   ofstream file("removed.viz");
   my_write_graphviz(file,
-  *m_taskgraph,
-  make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
-  make_label_writer(EdgeCommCostProperty(m_taskgraph))
-  );
+        *m_taskgraph,
+        make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
+        make_label_writer(EdgeCommCostProperty(m_taskgraph))
+        );
   file.close();
 }
 
@@ -265,7 +265,7 @@ void TaskMerging::mergeRules()
     change = false;
     for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
       change =  change || m_rules[0]->apply(*v)  ||
-  m_rules[1]->apply(*v) ||
+        m_rules[1]->apply(*v) ||
   m_rules[2]->apply(*v);
       if (change) break;
     }
@@ -275,9 +275,9 @@ void TaskMerging::mergeRules()
 
   ofstream file("merged_nosourcesink.viz");
   my_write_graphviz(file,*m_taskgraph,
-  make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
-  make_label_writer(EdgeCommCostProperty(m_taskgraph))
-  );
+        make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
+        make_label_writer(EdgeCommCostProperty(m_taskgraph))
+        );
   file.close();
 
   //  cerr << "Reinserting source and sink" << endl;
@@ -286,7 +286,7 @@ void TaskMerging::mergeRules()
   reinsertSourceAndSink();
   //  cerr << "Updating execution costs" << endl;
   updateExecCosts(); // When finished mergin, execcost should be calculated for each task
-   // from containSet.
+         // from containSet.
   //  cerr << "Leaving task merging.." << endl;
 }
 

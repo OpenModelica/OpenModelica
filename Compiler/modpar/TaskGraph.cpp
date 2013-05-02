@@ -249,7 +249,7 @@ siblings( VertexID, const TaskGraph &tg)
 }
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-  ResultSet &rset)
+        ResultSet &rset)
 {
   EdgeID e;
   bool edge_exist;
@@ -270,7 +270,7 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 }
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-  string * result,int prio)
+        string * result,int prio)
 {
   EdgeID e;
   bool edge_exist;

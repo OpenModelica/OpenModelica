@@ -30,7 +30,7 @@
  */
 
 encapsulated package Flags
-" file:  Flags.mo
+" file:        Flags.mo
   package:     Flags
   description: Tools for using compiler flags.
 
@@ -851,21 +851,21 @@ algorithm
 
     case ()
       equation
-  outFlags = getGlobalRoot(Global.flagsIndex);
+        outFlags = getGlobalRoot(Global.flagsIndex);
       then
-  outFlags;
+        outFlags;
 
     else
       equation
-  _ = List.fold(allDebugFlags, checkDebugFlag, 1);
-  config_count = listLength(allConfigFlags);
-  debug_flags = listArray(List.map(allDebugFlags,defaultDebugFlag));
-  config_flags = arrayCreate(config_count, EMPTY_FLAG());
-  _ = List.fold1(allConfigFlags, setDefaultConfig, config_flags, 1);
-  flags = FLAGS(debug_flags, config_flags);
-  saveFlags(flags);
+        _ = List.fold(allDebugFlags, checkDebugFlag, 1);
+        config_count = listLength(allConfigFlags);
+        debug_flags = listArray(List.map(allDebugFlags,defaultDebugFlag));
+        config_flags = arrayCreate(config_count, EMPTY_FLAG());
+        _ = List.fold1(allConfigFlags, setDefaultConfig, config_flags, 1);
+        flags = FLAGS(debug_flags, config_flags);
+        saveFlags(flags);
       then
-  flags;
+        flags;
 
   end matchcontinue;
 end loadFlags;
@@ -896,18 +896,18 @@ algorithm
 
     case (DEBUG_FLAG(index = index), _)
       equation
-  true = intEq(index, inFlagIndex);
+        true = intEq(index, inFlagIndex);
       then
-  inFlagIndex + 1;
+        inFlagIndex + 1;
 
     case (DEBUG_FLAG(index = index, name = name), _)
       equation
-  index_str = intString(index);
-  err_str = "Invalid flag " +& name +& " with index " +& index_str +&
-    " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
-  Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+        index_str = intString(index);
+        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
+          " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
-  fail();
+        fail();
   end matchcontinue;
 end checkDebugFlag;
 
@@ -935,19 +935,19 @@ algorithm
 
     case (CONFIG_FLAG(index = index, defaultValue = default_value), _, _)
       equation
-  true = intEq(index, inFlagIndex);
-  _ = arrayUpdate(inConfigData, index, default_value);
+        true = intEq(index, inFlagIndex);
+        _ = arrayUpdate(inConfigData, index, default_value);
       then
-  inFlagIndex + 1;
+        inFlagIndex + 1;
 
     case (CONFIG_FLAG(index = index, name = name), _, _)
       equation
-  index_str = intString(index);
-  err_str = "Invalid flag " +& name +& " with index " +& index_str +&
-    " in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly.";
-  Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+        index_str = intString(index);
+        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
+          " in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly.";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
-  fail();
+        fail();
   end matchcontinue;
 end setDefaultConfig;
 
@@ -1059,22 +1059,22 @@ algorithm
     // Ignore flags that don't start with + or -.
     case (_, _)
       equation
-  flag = stringGetStringChar(inArg, 1);
-  false = stringEq(flag, "+") or stringEq(flag, "-");
+        flag = stringGetStringChar(inArg, 1);
+        false = stringEq(flag, "+") or stringEq(flag, "-");
       then
-  true;
+        true;
 
     // Flags that start with --.
     case (_, _)
       equation
-  true = stringEq(System.substring(inArg, 1, 2), "--");
-  len = stringLength(inArg);
-  // Don't allow short names with --, like --a.
-  true = len > 3;
-  flag = System.substring(inArg, 3, len);
-  parseFlag(flag, inFlags);
+        true = stringEq(System.substring(inArg, 1, 2), "--");
+        len = stringLength(inArg);
+        // Don't allow short names with --, like --a.
+        true = len > 3;
+        flag = System.substring(inArg, 3, len);
+        parseFlag(flag, inFlags);
       then
-  false;
+        false;
 
     // Flags beginning with - are consumed by the RML runtime, until -- is
     // encountered. The bootstrapped compiler gets all flags though, so this
@@ -1084,11 +1084,11 @@ algorithm
     // Flags that start with +.
     else
       equation
-  true = stringEq(stringGetStringChar(inArg, 1), "+");
-  flag = System.substring(inArg, 2, stringLength(inArg));
-  parseFlag(flag, inFlags);
+        true = stringEq(stringGetStringChar(inArg, 1), "+");
+        flag = System.substring(inArg, 2, stringLength(inArg));
+        parseFlag(flag, inFlags);
       then
-  false;
+        false;
   end matchcontinue;
 end readArg;
 
@@ -1120,26 +1120,26 @@ algorithm
     // Special case for +d, set the given debug flags.
     case ("d", _, FLAGS(debugFlags = debug_flags))
       equation
-  List.map1_0(inValues, setDebugFlag, debug_flags);
+        List.map1_0(inValues, setDebugFlag, debug_flags);
       then
-  ();
+        ();
 
     // Special case for +help, show help text.
     case ("help", _, _)
       equation
-  values = List.map(inValues, System.tolower);
-  System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
-  print(printHelp(values));
-  setConfigBool(HELP, true);
+        values = List.map(inValues, System.tolower);
+        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
+        print(printHelp(values));
+        setConfigBool(HELP, true);
       then
-  ();
+        ();
 
     // All other configuration flags.
     case (_, _, FLAGS(configFlags = config_flags))
       equation
-  parseConfigFlag(inFlag, inValues, config_flags);
+        parseConfigFlag(inFlag, inValues, config_flags);
       then
-  ();
+        ();
 
   end match;
 end parseFlag2;
@@ -1156,16 +1156,16 @@ algorithm
 
     case (_, _, _)
       equation
-  config_flag = List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
-  setConfigFlag(config_flag, inFlags, inValues);
+        config_flag = List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
+        setConfigFlag(config_flag, inFlags, inValues);
       then
-  ();
+        ();
 
     else
       equation
-  Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
+        Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end parseConfigFlag;
@@ -1197,16 +1197,16 @@ algorithm
 
     case (_, _, _)
       equation
-  flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-  (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
+        flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
+        (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
       then
-  ();
+        ();
 
     else
       equation
-  Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
+        Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end setDebugFlag2;
@@ -1236,7 +1236,7 @@ algorithm
   CONFIG_FLAG(name = name, shortname = opt_shortname) := inFlag;
   shortname := Util.getOptionOrDefault(opt_shortname, "");
   outMatches := stringEq(inFlagName, shortname) or
-          stringEq(System.tolower(inFlagName), System.tolower(name));
+                stringEq(System.tolower(inFlagName), System.tolower(name));
 end matchConfigFlag;
 
 protected function setConfigFlag
@@ -1272,9 +1272,9 @@ algorithm
     // A boolean value.
     case ({s}, BOOL_FLAG(data = _), _)
       equation
-  b = Util.stringBool(s);
+        b = Util.stringBool(s);
       then
-  BOOL_FLAG(b);
+        BOOL_FLAG(b);
 
     // No value, but a boolean flag => enable the flag.
     case ({}, BOOL_FLAG(data = _), _) then BOOL_FLAG(true);
@@ -1282,20 +1282,20 @@ algorithm
     // An integer value.
     case ({s}, INT_FLAG(data = _), _)
       equation
-  i = stringInt(s);
-  true = stringEq(intString(i), s);
+        i = stringInt(s);
+        true = stringEq(intString(i), s);
       then
-  INT_FLAG(i);
+        INT_FLAG(i);
 
     // A real value.
     case ({s}, REAL_FLAG(data = _), _)
       equation
-  //r = stringReal(s);
-  Error.addMessage(Error.INTERNAL_ERROR,
-    {"Flags.stringFlagData: RML doesn't have stringReal, enable this for the bootstrapped compiler"});
+        //r = stringReal(s);
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Flags.stringFlagData: RML doesn't have stringReal, enable this for the bootstrapped compiler"});
       then
-  fail();
-  //REAL_FLAG(r);
+        fail();
+        //REAL_FLAG(r);
 
     // A string value.
     case ({s}, STRING_FLAG(data = _), _) then STRING_FLAG(s);
@@ -1306,18 +1306,18 @@ algorithm
     // An enumeration value.
     case ({s}, ENUM_FLAG(validValues = enums), _)
       equation
-  i = Util.assoc(s, enums);
+        i = Util.assoc(s, enums);
       then
-  ENUM_FLAG(i, enums);
+        ENUM_FLAG(i, enums);
 
     // Type mismatch, print error.
     else
       equation
-  et = printExpectedTypeStr(inExpectedType);
-  at = printActualTypeStr(inValues);
-  Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
+        et = printExpectedTypeStr(inExpectedType);
+        at = printActualTypeStr(inValues);
+        Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
       then
-  fail();
+        fail();
 
   end matchcontinue;
 end stringFlagData;
@@ -1339,9 +1339,9 @@ algorithm
     case STRING_LIST_FLAG(data = _) then "a comma-separated list of strings";
     case ENUM_FLAG(validValues = enums)
       equation
-  enum_strs = List.map(enums, Util.tuple21);
+        enum_strs = List.map(enums, Util.tuple21);
       then
-  "one of the values {" +& stringDelimitList(enum_strs, ", ") +& "}";
+        "one of the values {" +& stringDelimitList(enum_strs, ", ") +& "}";
   end match;
 end printExpectedTypeStr;
 
@@ -1359,12 +1359,12 @@ algorithm
     case {s} equation _ = Util.stringBool(s); then "the boolean value " +& s;
     case {s}
       equation
-  i = stringInt(s);
-  // intString returns 0 on failure, so this is to make sure that it
-  // actually succeeded.
-  true = stringEq(intString(i), s);
+        i = stringInt(s);
+        // intString returns 0 on failure, so this is to make sure that it
+        // actually succeeded.
+        true = stringEq(intString(i), s);
       then
-  "the number " +& intString(i);
+        "the number " +& intString(i);
     //case {s}
     //  equation
     //    _ = stringReal(s);
@@ -1401,23 +1401,23 @@ algorithm
     // +showErrorMessages needs to be sent to the C runtime.
     case (_, _)
       equation
-  true = configFlagsIsEqualIndex(inFlag, SHOW_ERROR_MESSAGES);
-  BOOL_FLAG(data = value) = inValue;
-  ErrorExt.setShowErrorMessages(value);
+        true = configFlagsIsEqualIndex(inFlag, SHOW_ERROR_MESSAGES);
+        BOOL_FLAG(data = value) = inValue;
+        ErrorExt.setShowErrorMessages(value);
       then
-  ();
+        ();
 
     // The corba session name needs to be sent to the C runtime, and if the name
     // is mdt it also enables the MetaModelica grammar.
     case (_, _)
       equation
-  true = configFlagsIsEqualIndex(inFlag, CORBA_SESSION);
-  STRING_FLAG(data = corba_name) = inValue;
-  Corba.setSessionName(corba_name);
-  value = stringEqual(corba_name, "mdt");
-  Debug.bcall2(value, setConfigEnum, GRAMMAR, METAMODELICA);
+        true = configFlagsIsEqualIndex(inFlag, CORBA_SESSION);
+        STRING_FLAG(data = corba_name) = inValue;
+        Corba.setSessionName(corba_name);
+        value = stringEqual(corba_name, "mdt");
+        Debug.bcall2(value, setConfigEnum, GRAMMAR, METAMODELICA);
       then
-  ();
+        ();
 
     else ();
   end matchcontinue;
@@ -1571,7 +1571,7 @@ algorithm
 end getConfigEnum;
 
 // Used by the print functions below to indent descriptions.
-protected constant String descriptionIndent = "                      ";
+protected constant String descriptionIndent = "                            ";
 
 public function printHelp
   "Prints out help for the given list of topics."
@@ -1594,64 +1594,64 @@ algorithm
 
     case {"topics"}
       equation
-  /* TODO: RML won't let us compile with the text inside the list directly... */
-  str1 = System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.");
-  str2 = System.gettext("The command-line options available for omc.");
-  str3 = System.gettext("Flags that enable debugging, diagnostics, and research prototypes.");
-  str4 = System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.");
-  str5 = System.gettext("The command-line options available for simulation executables generated by OpenModelica.");
-  str6 = System.gettext("This help-text.");
-  topics = {
-    ("mos",str1),
-    ("omc",str2),
-    ("debug",str3),
-    ("optmodules",str4),
-    ("simulation",str5),
-    ("topics",str6)
-  };
-  str = System.gettext("The available topics to get help on are as follows:\n");
-  strs = List.map(topics,makeTopicString);
-  help = str +& stringDelimitList(strs,"\n");
+        /* TODO: RML won't let us compile with the text inside the list directly... */
+        str1 = System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.");
+        str2 = System.gettext("The command-line options available for omc.");
+        str3 = System.gettext("Flags that enable debugging, diagnostics, and research prototypes.");
+        str4 = System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.");
+        str5 = System.gettext("The command-line options available for simulation executables generated by OpenModelica.");
+        str6 = System.gettext("This help-text.");
+        topics = {
+          ("mos",str1),
+          ("omc",str2),
+          ("debug",str3),
+          ("optmodules",str4),
+          ("simulation",str5),
+          ("topics",str6)
+        };
+        str = System.gettext("The available topics to get help on are as follows:\n");
+        strs = List.map(topics,makeTopicString);
+        help = str +& stringDelimitList(strs,"\n");
       then help;
 
     case {"simulation"}
       equation
-  help = System.gettext("The simulation executable takes the following flags:\n") +& System.getSimulationHelpText(true);
+        help = System.gettext("The simulation executable takes the following flags:\n") +& System.getSimulationHelpText(true);
       then help;
 
     case {"debug"}
       equation
-  str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with \"-\" or \"no\" will be disabled.\n");
-  str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
-  strs = List.map(List.sort(allDebugFlags,compareDebugFlags), printDebugFlag);
-  help = stringAppendList(str1 :: str2 :: strs);
+        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with \"-\" or \"no\" will be disabled.\n");
+        str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
+        strs = List.map(List.sort(allDebugFlags,compareDebugFlags), printDebugFlag);
+        help = stringAppendList(str1 :: str2 :: strs);
       then help;
 
     case {"optmodules"}
       equation
-  str1 = System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
-  str1 = stringAppendList(Util.stringWrap(str1,System.getTerminalWidth(),"\n"));
-  str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
-  str3 = System.gettext("The +matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
-  str3 = stringAppendList(Util.stringWrap(str3,System.getTerminalWidth(),"\n"));
-  str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
-  str5 = System.gettext("The +indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
-  str5 = stringAppendList(Util.stringWrap(str5,System.getTerminalWidth(),"\n"));
-  str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
-  str7 = System.gettext("The +postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
-  str7 = stringAppendList(Util.stringWrap(str7,System.getTerminalWidth(),"\n"));
-  str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
-  help = stringAppendList({str1,"\n\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str8,"\n"});
+        str1 = System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
+        str1 = stringAppendList(Util.stringWrap(str1,System.getTerminalWidth(),"\n"));
+        str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
+        str3 = System.gettext("The +matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
+        str3 = stringAppendList(Util.stringWrap(str3,System.getTerminalWidth(),"\n"));
+        str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
+        str5 = System.gettext("The +indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
+        str5 = stringAppendList(Util.stringWrap(str5,System.getTerminalWidth(),"\n"));
+        str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
+        str7 = System.gettext("The +postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
+        str7 = stringAppendList(Util.stringWrap(str7,System.getTerminalWidth(),"\n"));
+        str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+        help = stringAppendList({str1,"\n\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str8,"\n"});
       then help;
 
     case {str}
       equation
-  (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-  str = Util.translateContent(desc);
-  str = "    +" +& name +& " " +& str +& "\n";
-  str = stringAppendList(Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent));
-  str2 = printFlagValidOptionsDesc(config_flag);
-  help = stringAppendList({str,"\n",str2});
+        (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+        str = Util.translateContent(desc);
+        str = "    +" +& name +& " " +& str +& "\n";
+        str = stringAppendList(Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent));
+        str2 = printFlagValidOptionsDesc(config_flag);
+        help = stringAppendList({str,"\n",str2});
       then help;
 
     case {str}
@@ -1659,8 +1659,8 @@ algorithm
 
     case (str :: (rest_topics as _::_))
       equation
-  str = printHelp({str}) +& "\n";
-  help = printHelp(rest_topics);
+        str = printHelp({str}) +& "\n";
+        help = printHelp(rest_topics);
       then str +& help;
 
   end match;
@@ -1686,7 +1686,7 @@ protected
 algorithm
   (str1,str2) := topic;
   str1 := Util.stringPadRight(str1,13," ");
-  str := stringAppendList(Util.stringWrap(str1 +& str2, System.getTerminalWidth(), "\n         "));
+  str := stringAppendList(Util.stringWrap(str1 +& str2, System.getTerminalWidth(), "\n               "));
 end makeTopicString;
 
 public function printUsage
@@ -1698,21 +1698,21 @@ algorithm
   Print.printBuf(System.gettext("Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
-  Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n       The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
+  Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
   Print.printBuf(System.gettext("\n* +omcOptions:\n"));
   Print.printBuf(printAllConfigFlags());
   Print.printBuf(System.gettext("For more details on a specific topic, use +help=topic or help(\"topic\")\n\n"));
   Print.printBuf(System.gettext("* Examples:\n"));
-  Print.printBuf(System.gettext("  omc Model.mo       will produce flattened Model on standard output\n"));
-  Print.printBuf(System.gettext("  omc +s Model.mo    will produce simulation code for the model:\n"));
-  Print.printBuf(System.gettext("                      * Model.c           the model C code\n"));
-  Print.printBuf(System.gettext("                      * Model_functions.c the model functions C code\n"));
-  Print.printBuf(System.gettext("                      * Model.makefile    the makefile to compile the model.\n"));
-  Print.printBuf(System.gettext("                      * Model_init.xml    the initial values\n"));
-  //Print.printBuf("\tomc Model.mof      will produce flattened Model on standard output\n");
-  Print.printBuf(System.gettext("  omc Script.mos     will run the commands from Script.mos\n"));
-  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n\t                   flattened Model on standard output\n"));
-  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                   flattened Model1 on standard output\n"));
+  Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output\n"));
+  Print.printBuf(System.gettext("  omc +s Model.mo          will produce simulation code for the model:\n"));
+  Print.printBuf(System.gettext("                            * Model.c           the model C code\n"));
+  Print.printBuf(System.gettext("                            * Model_functions.c the model functions C code\n"));
+  Print.printBuf(System.gettext("                            * Model.makefile    the makefile to compile the model.\n"));
+  Print.printBuf(System.gettext("                            * Model_init.xml    the initial values\n"));
+  //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
+  Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos\n"));
+  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n\t                         flattened Model on standard output\n"));
+  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                         flattened Model1 on standard output\n"));
   Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
   //Print.printBuf("\t*.mof (Flat Modelica files) \n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
@@ -1744,15 +1744,15 @@ algorithm
 
     case CONFIG_FLAG(description = desc)
       equation
-  desc_str = Util.translateContent(desc);
-  name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
-  flag_str = stringAppendList({name, " ", desc_str});
-  delim_str = descriptionIndent +& "  ";
-  wrapped_str = Util.stringWrap(flag_str, System.getTerminalWidth(), delim_str);
-  opt_str = printValidOptions(inFlag);
-  flag_str = stringDelimitList(wrapped_str, "\n") +& opt_str +& "\n";
+        desc_str = Util.translateContent(desc);
+        name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
+        flag_str = stringAppendList({name, " ", desc_str});
+        delim_str = descriptionIndent +& "  ";
+        wrapped_str = Util.stringWrap(flag_str, System.getTerminalWidth(), delim_str);
+        opt_str = printValidOptions(inFlag);
+        flag_str = stringDelimitList(wrapped_str, "\n") +& opt_str +& "\n";
       then
-  flag_str;
+        flag_str;
 
   end match;
 end printConfigFlag;
@@ -1769,7 +1769,7 @@ algorithm
 
     case CONFIG_FLAG(name = name, shortname = SOME(shortname))
       equation
-  shortname = Util.stringPadLeft("+" +& shortname, 4, " ");
+        shortname = Util.stringPadLeft("+" +& shortname, 4, " ");
       then stringAppendList({shortname, ", +", name});
 
     case CONFIG_FLAG(name = name, shortname = NONE())
@@ -1792,16 +1792,16 @@ algorithm
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-  opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +&
-    stringDelimitList(strl, ", ");
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +&
+          stringDelimitList(strl, ", ");
       then
-  opt_str;
+        opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))
       equation
-  opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +&
-    stringAppendList(List.map(descl, printFlagOptionDescShort));
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +&
+          stringAppendList(List.map(descl, printFlagOptionDescShort));
       then
-  opt_str;
+        opt_str;
   end match;
 end printValidOptions;
 

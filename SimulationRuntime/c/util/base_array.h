@@ -67,7 +67,7 @@ int base_array_shape_eq(const base_array_t *a, const base_array_t *b);
 int base_array_one_element_ok(const base_array_t *a);
 
 size_t calc_base_index_spec(int ndims, const _index_t* idx_vec,
-                      const base_array_t *arr, const index_spec_t *spec);
+                            const base_array_t *arr, const index_spec_t *spec);
 size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *arr);
 size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap);
 

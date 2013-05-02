@@ -31,7 +31,7 @@
 
 
 encapsulated package IOStream
-"file:  IOStream.mo
+"file:        IOStream.mo
  package:     IOStream
  description: IOStream Utilities
  @author:     Adrian Pop [adrpo@ida.liu.se]
@@ -97,19 +97,19 @@ algorithm
 
     case (_, FILE(fileName))
       equation
-  fileID = IOStreamExt.createFile(fileName);
+        fileID = IOStreamExt.createFile(fileName);
       then
-  IOSTREAM(streamName, streamType, FILE_DATA(fileID));
+        IOSTREAM(streamName, streamType, FILE_DATA(fileID));
 
     case (_, LIST())
       then
-  IOSTREAM(streamName, streamType, LIST_DATA({}));
+        IOSTREAM(streamName, streamType, LIST_DATA({}));
 
     case (_, BUFFER())
       equation
-  bufferID = IOStreamExt.createBuffer();
+        bufferID = IOStreamExt.createBuffer();
       then
-  IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
+        IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
   end match;
 end create;
 
@@ -128,19 +128,19 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
       equation
-  IOStreamExt.appendFile(fileID, inString);
+        IOStreamExt.appendFile(fileID, inString);
       then
-  fStream;
+        fStream;
 
     case (lStream as IOSTREAM(streamName, streamType, LIST_DATA(listData)), _)
       then
-  IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
+        IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
       equation
-  IOStreamExt.appendBuffer(bufferID, inString);
+        IOStreamExt.appendBuffer(bufferID, inString);
       then
-  bStream;
+        bStream;
   end match;
 end append;
 
@@ -164,9 +164,9 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
       equation
-  IOStreamExt.closeFile(fileID);
+        IOStreamExt.closeFile(fileID);
       then
-  fStream;
+        fStream;
 
     // close does nothing for list or buffer streams
     case (lStream) then lStream;
@@ -184,19 +184,19 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
       equation
-  IOStreamExt.deleteFile(fileID);
+        IOStreamExt.deleteFile(fileID);
       then
-  ();
+        ();
 
     case (lStream as IOSTREAM(data = LIST_DATA(listData)))
       then
-  ();
+        ();
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
       equation
-  IOStreamExt.deleteBuffer(bufferID);
+        IOStreamExt.deleteBuffer(bufferID);
       then
-  ();
+        ();
   end matchcontinue;
 end delete;
 
@@ -215,19 +215,19 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
       equation
-  IOStreamExt.clearFile(fileID);
+        IOStreamExt.clearFile(fileID);
       then
-  fStream;
+        fStream;
 
     case (lStream as IOSTREAM(name, ty, data))
       then
-  IOSTREAM(name, ty, LIST_DATA({}));
+        IOSTREAM(name, ty, LIST_DATA({}));
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
       equation
-  IOStreamExt.clearBuffer(bufferID);
+        IOStreamExt.clearBuffer(bufferID);
       then
-  bStream;
+        bStream;
   end matchcontinue;
 end clear;
 
@@ -244,21 +244,21 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
       equation
-  str = IOStreamExt.readFile(fileID);
+        str = IOStreamExt.readFile(fileID);
       then
-  str;
+        str;
 
     case (lStream as IOSTREAM(data = LIST_DATA(listData)))
       equation
-  str = IOStreamExt.appendReversedList(listData);
+        str = IOStreamExt.appendReversedList(listData);
       then
-  str;
+        str;
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
       equation
-  str = IOStreamExt.readBuffer(bufferID);
+        str = IOStreamExt.readBuffer(bufferID);
       then
-  str;
+        str;
   end match;
 end string;
 
@@ -278,21 +278,21 @@ algorithm
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
       equation
-  IOStreamExt.printFile(fileID, whereToPrint);
+        IOStreamExt.printFile(fileID, whereToPrint);
       then
-  ();
+        ();
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
       equation
-  IOStreamExt.printBuffer(bufferID, whereToPrint);
+        IOStreamExt.printBuffer(bufferID, whereToPrint);
       then
-  ();
+        ();
 
     case (lStream as IOSTREAM(data = LIST_DATA(listData)), _)
       equation
-  IOStreamExt.printReversedList(listData, whereToPrint);
+        IOStreamExt.printReversedList(listData, whereToPrint);
       then
-  ();
+        ();
 
   end match;
 end print;

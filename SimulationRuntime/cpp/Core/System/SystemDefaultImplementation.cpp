@@ -9,8 +9,8 @@
 #include <System/AlgLoopDefaultImplementation.h>
 #include <LibrariesConfig.h>
 SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& globalSettings)
-: time  (0.0)
-, __z  (NULL)
+: time        (0.0)
+, __z        (NULL)
 , __zDot       (NULL)
 , _dimODE     (0)
 ,_conditions(NULL)
@@ -36,7 +36,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
 void SystemDefaultImplementation::Assert(bool cond,string msg)
 {
     if(!cond)
-  throw std::runtime_error(msg);
+        throw std::runtime_error(msg);
 }
 
 void SystemDefaultImplementation::Terminate(string msg)
@@ -65,7 +65,7 @@ int SystemDefaultImplementation::getDimRHS() const
     
     if((_dimVars) > 0)
     {
-  // Initialize "extended state vector"
+        // Initialize "extended state vector"
     if(__z) delete [] __z ; 
     if(__zDot) delete [] __zDot;
 

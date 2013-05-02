@@ -30,7 +30,7 @@
  */
 
 encapsulated package MetaUtil
-" file:  MetaUtil.mo
+" file:        MetaUtil.mo
   package:     MetaUtil
   description: Different MetaModelica extension functions.
 
@@ -76,19 +76,19 @@ algorithm
     case ({},localAccList) then listReverse(localAccList);
     case (Absyn.ARRAY({}) :: restList,localAccList)
       equation
-  localAccList = Absyn.LIST({})::localAccList;
-  localAccList = transformArrayNodesToListNodes(restList,localAccList);
+        localAccList = Absyn.LIST({})::localAccList;
+        localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (Absyn.ARRAY(es) :: restList,localAccList)
       equation
-  es = transformArrayNodesToListNodes(es,{});
-  localAccList = Absyn.LIST(es)::localAccList;
-  localAccList = transformArrayNodesToListNodes(restList,localAccList);
+        es = transformArrayNodesToListNodes(es,{});
+        localAccList = Absyn.LIST(es)::localAccList;
+        localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (firstExp :: restList,localAccList)
       equation
-  localAccList = firstExp::localAccList;
-  localAccList = transformArrayNodesToListNodes(restList,localAccList);
+        localAccList = firstExp::localAccList;
+        localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
   end matchcontinue;
 end transformArrayNodesToListNodes;
@@ -107,8 +107,8 @@ algorithm
     case (localT,0) then localT;
     case (localT,n)
       equation
-  t = DAE.T_METALIST(localT, DAE.emptyTypeSource);
-  t = createListType(t,n-1);
+        t = DAE.T_METALIST(localT, DAE.emptyTypeSource);
+        t = createListType(t,n-1);
       then t;
   end matchcontinue;
 end createListType;
@@ -139,9 +139,9 @@ algorithm
 
     case(SCode.CLASS(name = n)::rest)
       equation
-  slst = getListOfStrings(rest);
+        slst = getListOfStrings(rest);
       then
-  n::slst;
+        n::slst;
 
     case(_) then fail();
 
@@ -174,7 +174,7 @@ algorithm
 
     case(SCode.CLASS(restriction = re1),re2)
       equation
-  equality(re1 = re2);
+        equality(re1 = re2);
       then true;
 
     case(_,_) then false;
@@ -196,17 +196,17 @@ algorithm
 
     case _
       equation
-  false = Config.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
       then program;
 
     case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
       equation
-  metaClasses = List.map(classes, createMetaClasses);
-  metaClassesFlat = List.flatten(metaClasses);
-  classes = List.map(classes, createMetaClassesFromPackage);
-  classes = listAppend(classes, metaClassesFlat);
+        metaClasses = List.map(classes, createMetaClasses);
+        metaClassesFlat = List.flatten(metaClasses);
+        classes = List.map(classes, createMetaClassesFromPackage);
+        classes = listAppend(classes, metaClassesFlat);
       then
-  Absyn.PROGRAM(classes,w,ts);
+        Absyn.PROGRAM(classes,w,ts);
   end matchcontinue;
 end createMetaClassesInProgram;
 
@@ -223,7 +223,7 @@ algorithm
       Boolean     encapsulatedPrefix;
       Absyn.Restriction restriction;
       Absyn.ClassDef    body;
-      Absyn.Info  info;
+      Absyn.Info        info;
       list<Absyn.ClassPart> classParts;
       Option<String>  comment;
       list<String> typeVars;
@@ -232,8 +232,8 @@ algorithm
 
     case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts=classParts,ann=ann,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
-  classParts = List.map(classParts,createMetaClassesFromClassParts);
-  body = Absyn.PARTS(typeVars,classAttrs,classParts,ann,comment);
+        classParts = List.map(classParts,createMetaClassesFromClassParts);
+        body = Absyn.PARTS(typeVars,classAttrs,classParts,ann,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
 
     case _ then cl;
@@ -251,14 +251,14 @@ algorithm
 
     case (Absyn.PUBLIC(els))
       equation
-  lels = List.map(els, createMetaClassesFromElementItem);
-  els = List.flatten(lels);
+        lels = List.map(els, createMetaClassesFromElementItem);
+        els = List.flatten(lels);
       then Absyn.PUBLIC(els);
 
     case (Absyn.PROTECTED(els))
       equation
-  lels = List.map(els, createMetaClassesFromElementItem);
-  els = List.flatten(lels);
+        lels = List.map(els, createMetaClassesFromElementItem);
+        els = List.flatten(lels);
       then Absyn.PROTECTED(els);
 
     case _ then classPart;
@@ -278,10 +278,10 @@ algorithm
       list<Absyn.ElementItem> elementItems;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_,class_=class_),info=info)))
       equation
-  metaClasses = createMetaClasses(class_);
-  cl2 = createMetaClassesFromPackage(class_);
-  classes = cl2 :: metaClasses;
-  elementItems = List.map1r(classes,setElementItemClass,elementItem);
+        metaClasses = createMetaClasses(class_);
+        cl2 = createMetaClassesFromPackage(class_);
+        classes = cl2 :: metaClasses;
+        elementItems = List.map1r(classes,setElementItemClass,elementItem);
       then elementItems;
     case _ then {elementItem};
   end matchcontinue;
@@ -327,12 +327,12 @@ algorithm
       Absyn.Info file_info;
 
     case(c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-   body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
+         body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
       equation
-  r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
-  SCode.R_UNIONTYPE() = r_1;
-  els = fixElementItems(els,n,0,listLength(els)==1);
-  cllst = convertElementsToClasses(els);
+        r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
+        SCode.R_UNIONTYPE() = r_1;
+        els = fixElementItems(els,n,0,listLength(els)==1);
+        cllst = convertElementsToClasses(els);
       then cllst;
     case(_) then {};
   end matchcontinue;
@@ -354,9 +354,9 @@ algorithm
 
     case(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))::rest)
       equation
-  clst = convertElementsToClasses(rest);
+        clst = convertElementsToClasses(rest);
       then
-  c::clst;
+        c::clst;
 
     /* Strip annotation, comment */
     case(_::rest)
@@ -411,8 +411,8 @@ algorithm
       Absyn.Path path;
     case(Absyn.R_RECORD(),_,_,_)
       equation
-  ident = name;
-  path = Absyn.IDENT(ident);
+        ident = name;
+        path = Absyn.IDENT(ident);
       then Absyn.R_METARECORD(path,index,singleton);
     else resin;
   end matchcontinue;
@@ -438,7 +438,7 @@ algorithm
 
     case(Absyn.CLASS(n,p,f,e,res,b,i),_,_,_)
       equation
-  res = fixRestriction(res,name,index,singleton);
+        res = fixRestriction(res,name,index,singleton);
       then Absyn.CLASS(n,p,f,e,res,b,i);
     else classin;
   end matchcontinue;
@@ -458,7 +458,7 @@ algorithm
       Absyn.Class c;
     case(Absyn.CLASSDEF(rep,c),_,_,_)
       equation
-  c = fixClass(c,name,index,singleton);
+        c = fixClass(c,name,index,singleton);
       then Absyn.CLASSDEF(rep,c);
     else specin;
   end matchcontinue;
@@ -482,7 +482,7 @@ algorithm
       Option<Absyn.ConstrainClass> con;
     case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),_,_,_)
       equation
-  spec = fixElementSpecification(spec,name,index,singleton);
+        spec = fixElementSpecification(spec,name,index,singleton);
       then Absyn.ELEMENT(f,r,i,spec,inf,con);
   end match;
 end fixElement;
@@ -501,7 +501,7 @@ algorithm
       Absyn.Element element;
     case(Absyn.ELEMENTITEM(element),_,_,_)
       equation
-  element = fixElement(element,name,index,singleton);
+        element = fixElement(element,name,index,singleton);
       then Absyn.ELEMENTITEM(element);
       // Don't fix comments, annotations
     case(_,_,_,_)
@@ -523,12 +523,12 @@ algorithm
       list<Absyn.ElementItem> rest;
     case(element::rest,_,_,_)
       equation
-  element = fixElementItem(element,name,index,singleton);
-  rest = fixElementItems(rest,name,index+1,singleton);
+        element = fixElementItem(element,name,index,singleton);
+        rest = fixElementItems(rest,name,index+1,singleton);
       then (element::rest);
     case(element::{},_,_,_)
       equation
-  element = fixElementItem(element,name,index,singleton);
+        element = fixElementItem(element,name,index,singleton);
       then (element::{});
   end matchcontinue;
 end fixElementItems;
@@ -550,14 +550,14 @@ algorithm
 
     case (DAE.T_METARECORD(fields = fields))
       equation
-  names = List.map(fields, Types.getVarName);
-  types = List.map(fields, Types.getVarType);
+        names = List.map(fields, Types.getVarName);
+        types = List.map(fields, Types.getVarType);
       then (names,types);
 
     case (DAE.T_FUNCTION(funcArg = fargs,funcResultType = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))
       equation
-  names = List.map(fargs, Util.tuple41);
-  types = List.map(fargs, Util.tuple42);
+        names = List.map(fargs, Util.tuple41);
+        types = List.map(fargs, Util.tuple42);
       then (names,types);
   end matchcontinue;
 end constructorCallTypeToNamesAndTypes;
@@ -579,13 +579,13 @@ algorithm
 
     case (ClassInf.META_UNIONTYPE(p),_,SCode.PARTS(elementLst = els))
       equation
-  p = Absyn.FULLYQUALIFIED(p);
-  slst = getListOfStrings(els);
-  paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
-  b = listLength(paths)==1;
-  ts = Types.mkTypeSource(SOME(p));
+        p = Absyn.FULLYQUALIFIED(p);
+        slst = getListOfStrings(els);
+        paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
+        b = listLength(paths)==1;
+        ts = Types.mkTypeSource(SOME(p));
       then
-  SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
+        SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
 
     case (_,_,_) then t;
   end matchcontinue;
@@ -661,8 +661,8 @@ algorithm
       DAE.Type flatType;
     case (_,_)
       equation
-  (flatType,_) = Types.flattenArrayType(ty);
-  false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or Flags.isSet(Flags.RML) "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
+        (flatType,_) = Types.flattenArrayType(ty);
+        false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or Flags.isSet(Flags.RML) "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
       then (exp,ty);
   end match;
 end tryToConvertArrayToList;
@@ -686,12 +686,12 @@ algorithm
     case (false,_) then true;
     case (_,SCode.CLASS(info = info, restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)), classDef = SCode.PARTS(elementLst = elts, normalAlgorithmLst = {SCode.ALGORITHM({SCode.ALG_ASSIGN(assignComponent = comp, value = Absyn.MATCHEXP(inputExp = inputs))})})))
       equation
-  outcrefs = extractListFromTuple(comp,0);
-  increfs = extractListFromTuple(inputs,0);
-  inelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.INPUT());
-  outelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.OUTPUT());
-  innames = List.map(inelts, SCode.elementName);
-  outnames = List.map(outelts, SCode.elementName);
+        outcrefs = extractListFromTuple(comp,0);
+        increfs = extractListFromTuple(inputs,0);
+        inelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.INPUT());
+        outelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.OUTPUT());
+        innames = List.map(inelts, SCode.elementName);
+        outnames = List.map(outelts, SCode.elementName);
       then strictRMLCheck2(increfs,outcrefs,innames,outnames,info);
     case (_,_) then true;
   end matchcontinue;
@@ -714,41 +714,41 @@ algorithm
       list<String> names;
     case (_,_,_,_,_)
       equation
-  true = (listLength(increfs) <> listLength(innames));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of input arguments don't match"}, info);
+        true = (listLength(increfs) <> listLength(innames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of input arguments don't match"}, info);
       then false;
     case (_,_,_,_::_,_)
       equation
-  true = (listLength(outcrefs) <> listLength(outnames));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of output arguments don't match"}, info);
+        true = (listLength(outcrefs) <> listLength(outnames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of output arguments don't match"}, info);
       then false;
     case (_,_,_,_,_)
       equation
-  false = (listLength(outnames)+listLength(innames)) == listLength(List.union(innames,outnames));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"An argument in the output has the same name as one in the input"}, info);
+        false = (listLength(outnames)+listLength(innames)) == listLength(List.union(innames,outnames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"An argument in the output has the same name as one in the input"}, info);
       then false;
     case (_,_,_,_,_)
       equation
-  failure(_ = List.map(increfs, Absyn.expCref));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
+        failure(_ = List.map(increfs, Absyn.expCref));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
       then false;
     case (_,_,_,_,_)
       equation
-  failure(_ = List.map(outcrefs, Absyn.expCref));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Output expression was not a tuple of component references"}, info);
+        failure(_ = List.map(outcrefs, Absyn.expCref));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Output expression was not a tuple of component references"}, info);
       then false;
     case (_,_,_,_,_)
       equation
-  names = List.map(increfs, Absyn.expComponentRefStr);
-  failure(equality(names = innames));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
+        names = List.map(increfs, Absyn.expComponentRefStr);
+        failure(equality(names = innames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
       then false;
     case (_,{Absyn.CREF(Absyn.WILD())},_,{},_) then true;
     case (_,_,_,_,_)
       equation
-  names = List.map(outcrefs, Absyn.expComponentRefStr);
-  failure(equality(names = outnames));
-  Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The output does not match"}, info);
+        names = List.map(outcrefs, Absyn.expComponentRefStr);
+        failure(equality(names = outnames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The output does not match"}, info);
       then false;
     case (_,_,_,_,_) then true;
   end matchcontinue;

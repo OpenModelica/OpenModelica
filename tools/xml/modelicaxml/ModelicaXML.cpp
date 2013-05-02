@@ -2,7 +2,7 @@
  * Programming Environments Laboratory
  * Linkoping University Sweden, All Rights Reserved
 *******************************************************************************
-  File  : "modelicaXML.cpp"
+  File        : "modelicaXML.cpp"
   Author      : Adrian Pop 2003-10-25
   Description : Antlr Parser caller and XML serializer
 -------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ int usageModelicaXML(void)
 }
 
 //-----------------------------------------------------------------------------
-// func   : main function for the modelica XML serializer
+// func         : main function for the modelica XML serializer
 // author       : Adrian Pop 2003-10-25
 // organization : Linkoping University Sweden, Programming Environment Laboratory
 //-----------------------------------------------------------------------------
@@ -204,21 +204,21 @@ int main( int argc, char* argv[] )
     {
       for (unsigned int i = 0; i < filesToConvert.size(); i++)
       {
-  pModelicaXML->serializeMoFileToXML((char*)filesToConvert.front()->c_str());
-  filesToConvert.pop_front();
-  somethingToDo = true;
+        pModelicaXML->serializeMoFileToXML((char*)filesToConvert.front()->c_str());
+        filesToConvert.pop_front();
+        somethingToDo = true;
       }
       if (!serializedFile && directoryToConvert)
       {
-  pModelicaXML->serializeEachMoFileInDirectory((char*)directoryToConvert->c_str());
-  somethingToDo = true;
+        pModelicaXML->serializeEachMoFileInDirectory((char*)directoryToConvert->c_str());
+        somethingToDo = true;
       }
       if (serializedFile && directoryToConvert)
       {
-  pModelicaXML->serializeAllMoFilesInDirectoryInXMLFile(
-    (char*)directoryToConvert->c_str(),
-    (char*)serializedFile->c_str());
-  somethingToDo = true;
+        pModelicaXML->serializeAllMoFilesInDirectoryInXMLFile(
+          (char*)directoryToConvert->c_str(),
+          (char*)serializedFile->c_str());
+        somethingToDo = true;
       }
       if (!somethingToDo) usageModelicaXML();
     }
@@ -254,9 +254,9 @@ ModelicaXML::ModelicaXML(char* dtdURL)
 
   // create the <program> root element
   pModelicaXMLDoc = pDOMImpl->createDocument(
-					     0,              // root element namespace URI.
-					     X("modelica"),   // root element name
-					     pDoctype);             // document type object (DTD).
+					     0,                    // root element namespace URI.
+					     X("modelica"),         // root element name
+					     pDoctype);                   // document type object (DTD).
 
   pRootElementModelica = pModelicaXMLDoc->getDocumentElement();
 
@@ -264,12 +264,12 @@ ModelicaXML::ModelicaXML(char* dtdURL)
   // get a serializer, an instance of DOMLSSerializer
   XMLCh tempStr[3] = {chLatin_L, chLatin_S, chNull};
   DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
-  // create the writer      
+  // create the writer            
   domSerializer = ((DOMImplementationLS*)impl)->createLSSerializer();
   theOutputDesc = ((DOMImplementationLS*)impl)->createLSOutput();
-  static XMLCh*             gOutputEncoding        = 0;
+  static XMLCh*                   gOutputEncoding        = 0;
   // set user specified output encoding
-  theOutputDesc->setEncoding(gOutputEncoding);      
+  theOutputDesc->setEncoding(gOutputEncoding);            
 
   DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
 	// set the pretty print feature
@@ -347,8 +347,8 @@ int ModelicaXML::serializeAllMoFilesInDirectoryInXMLFile(char *directoryName, ch
       // if is not NULL append it to the <modelica></modelica> element
       if (pModelicaXML)
       {
-  pRootElementModelica->appendChild(pModelicaXML);
-  i++;
+        pRootElementModelica->appendChild(pModelicaXML);
+        i++;
       }
     }
     if (fileList.size()) cout << endl;

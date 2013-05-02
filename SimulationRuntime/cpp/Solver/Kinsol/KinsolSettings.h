@@ -20,9 +20,9 @@ public:
   virtual void      setDelta(double);
   virtual void load(string);
 private:
-  long int    iNewt_max;    ///< max. Anzahl an Newtonititerationen pro Schritt (default: 25)
+  long int    iNewt_max;          ///< max. Anzahl an Newtonititerationen pro Schritt (default: 25)
 
-  double    dRtol;      ///< Relative Toleranz für die Newtoniteration (default: 1e-6)
-  double    dAtol;      ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
-  double      dDelta;      ///< Dämpfungsfaktor (default: 0.9)
+  double    dRtol;            ///< Relative Toleranz für die Newtoniteration (default: 1e-6)
+  double    dAtol;            ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
+  double      dDelta;            ///< Dämpfungsfaktor (default: 0.9)
 };

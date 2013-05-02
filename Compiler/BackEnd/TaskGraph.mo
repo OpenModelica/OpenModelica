@@ -30,7 +30,7 @@
  */
 
 encapsulated package TaskGraph
-" file:  TaskGraph.mo
+" file:        TaskGraph.mo
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
 
@@ -80,32 +80,32 @@ algorithm
 
     case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vararr)::{},shared=BackendDAE.SHARED(knownVars = knvararr))),comps)
       equation
-  print("starting buildtaskgraph\n");
-  starttask = TaskGraphExt.newTask("start");
-  endtask = TaskGraphExt.newTask("end");
-  TaskGraphExt.setExecCost(starttask, 1.0);
-  TaskGraphExt.setExecCost(starttask, 1.0);
-  TaskGraphExt.registerStartStop(starttask, endtask);
-  vars = BackendVariable.varList(vararr);
-  knvars = BackendVariable.varList(knvararr);
-  List.map1_0(vars,addVariable, starttask);
-  List.map1_0(knvars,addVariable, starttask);
-  cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
-  addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
-                DAE.INPUT(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),
-                NONE(),DAE.NON_CONNECTOR())}, starttask);
-  buildBlocks(dae, comps);
-  print("done building taskgraph, about to build inits.\n");
-  buildInits(dae);
-  print("leaving TaskGraph.buildTaskgraph\n");
+        print("starting buildtaskgraph\n");
+        starttask = TaskGraphExt.newTask("start");
+        endtask = TaskGraphExt.newTask("end");
+        TaskGraphExt.setExecCost(starttask, 1.0);
+        TaskGraphExt.setExecCost(starttask, 1.0);
+        TaskGraphExt.registerStartStop(starttask, endtask);
+        vars = BackendVariable.varList(vararr);
+        knvars = BackendVariable.varList(knvararr);
+        List.map1_0(vars,addVariable, starttask);
+        List.map1_0(knvars,addVariable, starttask);
+        cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
+        addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
+                      DAE.INPUT(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),
+                      NONE(),DAE.NON_CONNECTOR())}, starttask);
+        buildBlocks(dae, comps);
+        print("done building taskgraph, about to build inits.\n");
+        buildInits(dae);
+        print("leaving TaskGraph.buildTaskgraph\n");
       then
-  ();
+        ();
 
     case (_,_)
       equation
-  print("-TaskGraph.buildTaskgraph failed\n");
+        print("-TaskGraph.buildTaskgraph failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildTaskgraph;
 
@@ -121,12 +121,12 @@ algorithm
       BackendDAE.Variables vararr,kvararr;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vararr)::{},shared=BackendDAE.SHARED(knownVars = kvararr)))
       equation
-  vars = BackendVariable.varList(vararr);
-  kvars = BackendVariable.varList(kvararr);
-  buildInits2(vars,1);
-  buildInits2(kvars,1);
+        vars = BackendVariable.varList(vararr);
+        kvars = BackendVariable.varList(kvararr);
+        buildInits2(vars,1);
+        buildInits2(kvars,1);
       then
-  ();
+        ();
   end match;
 end buildInits;
 
@@ -146,98 +146,98 @@ algorithm
     case ({},_) then ();
     case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  e = DAEUtil.getStartAttr(dae_var_attr);
-  v = ExpressionDump.printExpStr(e);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, v, origname_str);
-  buildInits2(rest,index+1);
+        e = DAEUtil.getStartAttr(dae_var_attr);
+        v = ExpressionDump.printExpStr(e);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  e = DAEUtil.getStartAttr(dae_var_attr);
-  v = ExpressionDump.printExpStr(e);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitState(index, v, origname_str);
-  buildInits2(rest,index+1);
+        e = DAEUtil.getStartAttr(dae_var_attr);
+        v = ExpressionDump.printExpStr(e);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitState(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitState(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitState(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  e = DAEUtil.getStartAttr(dae_var_attr);
-  v = ExpressionDump.printExpStr(e);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, v, origname_str);
-  buildInits2(rest,index+1);
+        e = DAEUtil.getStartAttr(dae_var_attr);
+        v = ExpressionDump.printExpStr(e);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  e = DAEUtil.getStartAttr(dae_var_attr);
-  v = ExpressionDump.printExpStr(e);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, v, origname_str);
-  buildInits2(rest,index+1);
+        e = DAEUtil.getStartAttr(dae_var_attr);
+        v = ExpressionDump.printExpStr(e);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitVar(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = SOME(value),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  v = ValuesUtil.valString(value);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitParam(index, v, origname_str);
-  buildInits2(rest,index+1);
+        v = ValuesUtil.valString(value);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitParam(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = NONE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitParam(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitParam(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = SOME(value),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  v = ValuesUtil.valString(value);
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitParam(index, v, origname_str);
-  buildInits2(rest,index+1);
+        v = ValuesUtil.valString(value);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitParam(index, v, origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
     case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = NONE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
-  origname_str = ComponentReference.printComponentRefStr(origname);
-  TaskGraphExt.addInitParam(index, "0.0", origname_str);
-  buildInits2(rest,index+1);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitParam(index, "0.0", origname_str);
+        buildInits2(rest,index+1);
       then
-  ();
+        ();
   end matchcontinue;
 end buildInits2;
 
@@ -254,10 +254,10 @@ algorithm
     case ({},start) then ();
     case ((v :: vs),start)
       equation
-  addVariable(v, start);
-  addVariables(vs, start);
+        addVariable(v, start);
+        addVariables(vs, start);
       then
-  ();
+        ();
   end match;
 end addVariables;
 
@@ -274,21 +274,21 @@ algorithm
     case (_,{}) then ();
     case (dae,(comp as BackendDAE.SINGLEEQUATION(eqn=_))::comps)
       equation
-  buildEquation(dae, comp) "for single equations" ;
-  buildBlocks(dae, comps);
+        buildEquation(dae, comp) "for single equations" ;
+        buildBlocks(dae, comps);
       then
-  ();
+        ();
     case (dae,comp::comps)
       equation
-  buildSystem(dae, comp) "For system of equations" ;
-  buildBlocks(dae, comps);
+        buildSystem(dae, comp) "For system of equations" ;
+        buildBlocks(dae, comps);
       then
-  ();
+        ();
     case (_,_)
       equation
-  print("-build_blocks failed\n");
+        print("-build_blocks failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildBlocks;
 
@@ -308,22 +308,22 @@ algorithm
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
-  e_1 = e - 1 "Solving for non-states" ;
-  BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
-  (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
-  varexp = Expression.crefExp(cr);
-  varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
-  (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-  cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
-  origname_str = ComponentReference.printComponentRefStr(cr);
-  buildAssignment(cr, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
+        e_1 = e - 1 "Solving for non-states" ;
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
+        origname_str = ComponentReference.printComponentRefStr(cr);
+        buildAssignment(cr, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
   Expression.print_exp_str e2 => e2s &
   print \"Equation \" & print e1s & print \" = \" & print e2s &
   print \" solved for \" & Expression.print_exp_str varexp => s &
   print s & print \" giving \" &
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
-  ();
+        ();
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1)) /* rule  intSub(e,1) => e\' &
   BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
   vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
@@ -336,20 +336,20 @@ algorithm
   build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
  */
       equation
-  e_1 = e - 1 "Solving nonlinear" ;
-  BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
-  (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
-  varexp = Expression.crefExp(cr);
-  varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
-  failure((_,_) = ExpressionSolve.solve(e1, e2, varexp)) "print \"Solving nonlinear \\n\" &";
-  buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
+        e_1 = e - 1 "Solving nonlinear" ;
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp)) "print \"Solving nonlinear \\n\" &";
+        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
       then
-  ();
+        ();
     case (_,_)
       equation
-  print("-TaskGraph.buildEquation failed\n");
+        print("-TaskGraph.buildEquation failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildEquation;
 
@@ -368,21 +368,21 @@ algorithm
       list<DAE.Exp> vars,residuals;
     case (vars,residuals) /* variables residuals */
       equation
-  size = listLength(vars);
-  size_str = intString(size);
-  taskname = buildResidualCode(vars, residuals);
-  tid = TaskGraphExt.newTask(taskname);
-  TaskGraphExt.setTaskType(tid, 3);
-  buildNonlinearEquations2(tid, vars, residuals) "See TaskType in TaskGraph.hpp" ;
-  varnames = List.map(vars, ExpressionDump.printExpStr);
-  storeMultipleResults(varnames, tid);
+        size = listLength(vars);
+        size_str = intString(size);
+        taskname = buildResidualCode(vars, residuals);
+        tid = TaskGraphExt.newTask(taskname);
+        TaskGraphExt.setTaskType(tid, 3);
+        buildNonlinearEquations2(tid, vars, residuals) "See TaskType in TaskGraph.hpp" ;
+        varnames = List.map(vars, ExpressionDump.printExpStr);
+        storeMultipleResults(varnames, tid);
       then
-  ();
+        ();
     case (vars,residuals)
       equation
-  print("build_nonlinear_equatins failed\n");
+        print("build_nonlinear_equatins failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildNonlinearEquations;
 
@@ -402,15 +402,15 @@ algorithm
       list<DAE.Exp> vars,es;
     case (vars,es) /* vars residuals */
       equation
-  repl = makeResidualReplacements(vars);
-  res = buildResidualCode2(es, 0, repl);
+        repl = makeResidualReplacements(vars);
+        res = buildResidualCode2(es, 0, repl);
       then
-  res;
+        res;
     case (_,_)
       equation
-  print("build_residual_code failed\n");
+        print("build_residual_code failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildResidualCode;
 
@@ -445,14 +445,14 @@ algorithm
     case (repl,{},_) then repl;
     case (repl,(DAE.CREF(componentRef = cr) :: es),pos)
       equation
-  pstr = intString(pos);
-  str = stringAppendList({"xloc[",pstr,"]"});
-  cref_ = ComponentReference.makeCrefIdent(str,DAE.T_REAL_DEFAULT,{});
-  repl_1 = VarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
-  pos_1 = pos + 1;
-  repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
+        pstr = intString(pos);
+        str = stringAppendList({"xloc[",pstr,"]"});
+        cref_ = ComponentReference.makeCrefIdent(str,DAE.T_REAL_DEFAULT,{});
+        repl_1 = VarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
+        pos_1 = pos + 1;
+        repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then
-  repl_2;
+        repl_2;
   end match;
 end makeResidualReplacements2;
 
@@ -473,20 +473,20 @@ algorithm
     case ({},_,_) then "";
     case ((e :: es),pos,repl)
       equation
-  (e_1,_) = VarTransform.replaceExp(e, repl,NONE());
-  //s1 = SimCodegen.printExpCppStr(e_1);
-  s1 = "NOT WORKING";
-  pos_1 = pos + 1;
-  s2 = buildResidualCode2(es, pos_1, repl);
-  pstr = intString(pos);
-  res = stringAppendList({"res[",pstr,"]=",s1,";\n",s2});
+        (e_1,_) = VarTransform.replaceExp(e, repl,NONE());
+        //s1 = SimCodegen.printExpCppStr(e_1);
+        s1 = "NOT WORKING";
+        pos_1 = pos + 1;
+        s2 = buildResidualCode2(es, pos_1, repl);
+        pstr = intString(pos);
+        res = stringAppendList({"res[",pstr,"]=",s1,";\n",s2});
       then
-  res;
+        res;
     case (_,_,_)
       equation
-  print("build_residual_code2 failed\n");
+        print("build_residual_code2 failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildResidualCode2;
 
@@ -506,15 +506,15 @@ algorithm
       Integer tid;
     case (varnames,tid) /* var names task id */
       equation
-  result_str = stringDelimitList(varnames, ";");
-  TaskGraphExt.storeResult(result_str, tid, true, result_str);
+        result_str = stringDelimitList(varnames, ";");
+        TaskGraphExt.storeResult(result_str, tid, true, result_str);
       then
-  ();
+        ();
     case (_,_)
       equation
-  print("store_multiple_results failed\n");
+        print("store_multiple_results failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end storeMultipleResults;
 
@@ -535,24 +535,24 @@ algorithm
     case (tid,_,{}) then ();  /* task id vars residuals */
     case (tid,vars,(res :: residuals))
       equation
-  vars1 = Expression.extractCrefsFromExp(res) "Collect all variables and construct
+        vars1 = Expression.extractCrefsFromExp(res) "Collect all variables and construct
    a string for the residual, that can be directly used in codegen." ;
-  vars_1 = List.map(vars, Expression.extractCrefsFromExp);
-  vars2 = List.flatten(vars_1);
-  vars1_1 = List.unionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
-  varslst = List.setDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
-  addEdgesFromVars(varslst, tid, 0);
+        vars_1 = List.map(vars, Expression.extractCrefsFromExp);
+        vars2 = List.flatten(vars_1);
+        vars1_1 = List.unionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
+        varslst = List.setDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
+        addEdgesFromVars(varslst, tid, 0);
       then
-  ();
+        ();
     case (_,_,(e :: _))
       equation
-  print("build_nonlinear_equations2 failed\n");
-  es = ExpressionDump.printExpStr(e);
-  print("first residual :");
-  print(es);
-  print("\n");
+        print("build_nonlinear_equations2 failed\n");
+        es = ExpressionDump.printExpStr(e);
+        print("first residual :");
+        print(es);
+        print("\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildNonlinearEquations2;
 
@@ -574,27 +574,27 @@ algorithm
     case ({},_,_) then ();  /* task priority */
     case ((v :: vs),tid,prio)
       equation
-  v_str = ComponentReference.crefStr(v);
-  predt = TaskGraphExt.getTask(v_str);
-  TaskGraphExt.addEdge(predt, tid, v_str, prio);
-  prio_1 = prio + 1;
-  addEdgesFromVars(vs, tid, prio_1);
+        v_str = ComponentReference.crefStr(v);
+        predt = TaskGraphExt.getTask(v_str);
+        TaskGraphExt.addEdge(predt, tid, v_str, prio);
+        prio_1 = prio + 1;
+        addEdgesFromVars(vs, tid, prio_1);
       then
-  ();
+        ();
     case ((v :: vs),_,_)
       equation
-  v_str = ComponentReference.crefStr(v);
-  failure(_ = TaskGraphExt.getTask(v_str));
-  print("task ");
-  print(v_str);
-  print(" not found\n");
+        v_str = ComponentReference.crefStr(v);
+        failure(_ = TaskGraphExt.getTask(v_str));
+        print("task ");
+        print(v_str);
+        print(" not found\n");
       then
-  fail();
+        fail();
     case (_,_,_)
       equation
-  print("add_edges_from_vars failed\n");
+        print("add_edges_from_vars failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end addEdgesFromVars;
 
@@ -613,19 +613,19 @@ algorithm
       list<Integer> eqns,vars;
     case (dae,comp)
       equation
-  print("build system\n");
-  tid = TaskGraphExt.newTask("equation system");
-  (eqns,vars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-  predtasks = buildSystem2(dae, eqns, vars, tid);
-  predtaskids = List.map(predtasks, TaskGraphExt.getTask);
-  addPredecessors(tid, predtaskids, predtasks, 0);
+        print("build system\n");
+        tid = TaskGraphExt.newTask("equation system");
+        (eqns,vars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        predtasks = buildSystem2(dae, eqns, vars, tid);
+        predtaskids = List.map(predtasks, TaskGraphExt.getTask);
+        addPredecessors(tid, predtaskids, predtasks, 0);
       then
-  ();
+        ();
     else
       equation
-  print("build_system failed\n");
+        print("build_system failed\n");
       then
-  fail();
+        fail();
   end match;
 end buildSystem;
 
@@ -653,26 +653,26 @@ algorithm
     case (dae,{},{},tid) then {};
     case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{})),(e :: reste),(v_1 :: restv),tid)
       equation
-  e_1 = e - 1;
-  BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
-  (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
-  cr1 = Expression.extractCrefsFromExp(e1);
-  cr2 = Expression.extractCrefsFromExp(e2);
-  crs = listAppend(cr1, cr2);
-  crs_1 = List.deleteMember(crs, cr);
-  crs_2 = List.map(crs_1, ComponentReference.crefStr);
-  crstr = ComponentReference.crefStr(cr);
-  origname_str = ComponentReference.printComponentRefStr(cr);
-  TaskGraphExt.storeResult(crstr, tid, true, origname_str);
-  crs2 = buildSystem2(dae, reste, restv, tid);
-  res = List.union(crs_2, crs2);
+        e_1 = e - 1;
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
+        cr1 = Expression.extractCrefsFromExp(e1);
+        cr2 = Expression.extractCrefsFromExp(e2);
+        crs = listAppend(cr1, cr2);
+        crs_1 = List.deleteMember(crs, cr);
+        crs_2 = List.map(crs_1, ComponentReference.crefStr);
+        crstr = ComponentReference.crefStr(cr);
+        origname_str = ComponentReference.printComponentRefStr(cr);
+        TaskGraphExt.storeResult(crstr, tid, true, origname_str);
+        crs2 = buildSystem2(dae, reste, restv, tid);
+        res = List.union(crs_2, crs2);
       then
-  res;
+        res;
     case (_,_,_,_)
       equation
-  print("TaskGraph.buildSystem2 failed\n");
+        print("TaskGraph.buildSystem2 failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildSystem2;
 
@@ -689,11 +689,11 @@ algorithm
       Integer start;
     case (BackendDAE.VAR(varName = cf,values = dae_var_attr,comment = comment),start)
       equation
-  cfs = ComponentReference.crefStr(cf);
-  name_str = ComponentReference.printComponentRefStr(cf) "print \"adding variable \" & print cfs & print \"\\n\" &" ;
-  TaskGraphExt.storeResult(cfs, start, false, name_str);
+        cfs = ComponentReference.crefStr(cf);
+        name_str = ComponentReference.printComponentRefStr(cf) "print \"adding variable \" & print cfs & print \"\\n\" &" ;
+        TaskGraphExt.storeResult(cfs, start, false, name_str);
       then
-  ();
+        ();
   end match;
 end addVariable;
 
@@ -712,27 +712,27 @@ algorithm
       DAE.Type tp;
     case (cr,(exp as DAE.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
       equation
-  (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
-  tid = TaskGraphExt.newTask("copy");
-  cr2s = ComponentReference.crefStr(cr2);
-  TaskGraphExt.addEdge(task, tid, cr2s, 0);
-  crs = ComponentReference.crefStr(cr);
-  TaskGraphExt.storeResult(crs, tid, true, origname);
-  TaskGraphExt.setTaskType(tid, 6) "See TaskType in TaskGraph.hpp" ;
+        (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
+        tid = TaskGraphExt.newTask("copy");
+        cr2s = ComponentReference.crefStr(cr2);
+        TaskGraphExt.addEdge(task, tid, cr2s, 0);
+        crs = ComponentReference.crefStr(cr);
+        TaskGraphExt.storeResult(crs, tid, true, origname);
+        TaskGraphExt.setTaskType(tid, 6) "See TaskType in TaskGraph.hpp" ;
       then
-  ();
+        ();
     case (cr,exp,origname)
       equation
-  (task,str) = buildExpression(exp);
-  crs = ComponentReference.crefStr(cr);
-  TaskGraphExt.storeResult(crs, task, true, origname);
+        (task,str) = buildExpression(exp);
+        crs = ComponentReference.crefStr(cr);
+        TaskGraphExt.storeResult(crs, task, true, origname);
       then
-  ();
+        ();
     case (cr,exp,origname)
       equation
-  print("-TaskGraph.buildAssignment failed\n");
+        print("-TaskGraph.buildAssignment failed\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildAssignment;
 
@@ -759,182 +759,182 @@ algorithm
       list<DAE.Exp> expl;
     case (DAE.ICONST(integer = i))
       equation
-  is = intString(i);
-  tid = TaskGraphExt.newTask(is) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
+        is = intString(i);
+        tid = TaskGraphExt.newTask(is) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
-  (tid,"");
+        (tid,"");
 
     case (DAE.RCONST(real = r))
       equation
-  rs = realString(r);
-  tid = TaskGraphExt.newTask(rs) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
+        rs = realString(r);
+        tid = TaskGraphExt.newTask(rs) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
-  (tid,"");
+        (tid,"");
 
     case (DAE.CREF(componentRef = cr))
       equation
-  crs = ComponentReference.crefStr(cr) "for state variables and alg. variables" ;
-  tid = TaskGraphExt.getTask(crs);
+        crs = ComponentReference.crefStr(cr) "for state variables and alg. variables" ;
+        tid = TaskGraphExt.getTask(crs);
       then
-  (tid,crs);
+        (tid,crs);
 
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")))
       equation
-  tid = TaskGraphExt.getTask("sim_time") "for state variables and alg. variables" ;
+        tid = TaskGraphExt.getTask("sim_time") "for state variables and alg. variables" ;
       then
-  (tid,"sim_time");
+        (tid,"sim_time");
 
     case (DAE.CREF(componentRef = cr))
       equation
-  crs = ComponentReference.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
-  tid = TaskGraphExt.newTask(crs);
+        crs = ComponentReference.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
+        tid = TaskGraphExt.newTask(crs);
       then
-  (tid,crs);
+        (tid,crs);
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.RCONST(real = rval)))
       equation
-  (t1,s1) = buildExpression(e1) "special case for pow" ;
-  ival = realInt(rval);
-  istr = intString(ival);
-  ts = stringAppendList({"pow(%s,",istr,")"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
+        (t1,s1) = buildExpression(e1) "special case for pow" ;
+        ival = realInt(rval);
+        istr = intString(ival);
+        ts = stringAppendList({"pow(%s,",istr,")"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
-  (t1,s1) = buildExpression(e1);
-  (t2,s2) = buildExpression(e2);
-  ops = ExpressionDump.binopSymbol1(op);
-  ts = stringAppendList({"%s",ops,"%s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
-  TaskGraphExt.addEdge(t2, t, s2, 1);
+        (t1,s1) = buildExpression(e1);
+        (t2,s2) = buildExpression(e2);
+        ops = ExpressionDump.binopSymbol1(op);
+        ts = stringAppendList({"%s",ops,"%s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
+        TaskGraphExt.addEdge(t2, t, s2, 1);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
-  (t1,s1) = buildExpression(e1);
-  (t2,s2) = buildExpression(e2);
-  ops = ExpressionDump.binopSymbol1(op);
-  ts = stringAppendList({"%s",ops,"%s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
-  TaskGraphExt.addEdge(t2, t, s2, 1);
+        (t1,s1) = buildExpression(e1);
+        (t2,s2) = buildExpression(e2);
+        ops = ExpressionDump.binopSymbol1(op);
+        ts = stringAppendList({"%s",ops,"%s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
+        TaskGraphExt.addEdge(t2, t, s2, 1);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.UNARY(operator = op,exp = e1))
       equation
-  (t1,s1) = buildExpression(e1);
-  ops = ExpressionDump.unaryopSymbol(op);
-  ts = stringAppendList({ops,"%s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
+        (t1,s1) = buildExpression(e1);
+        ops = ExpressionDump.unaryopSymbol(op);
+        ts = stringAppendList({ops,"%s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.LUNARY(operator = op,exp = e1))
       equation
-  (t1,s1) = buildExpression(e1);
-  ops = ExpressionDump.lunaryopSymbol(op);
-  ts = stringAppendList({ops,"%s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
+        (t1,s1) = buildExpression(e1);
+        ops = ExpressionDump.lunaryopSymbol(op);
+        ts = stringAppendList({ops,"%s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.RELATION(exp1 = e1,operator = relop,exp2 = e2))
       equation
-  (t1,s1) = buildExpression(e1);
-  (t2,s2) = buildExpression(e2);
-  ops = ExpressionDump.relopSymbol(relop);
-  ts = stringAppendList({"%s",ops,"%s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
-  TaskGraphExt.addEdge(t2, t, s2, 1);
+        (t1,s1) = buildExpression(e1);
+        (t2,s2) = buildExpression(e2);
+        ops = ExpressionDump.relopSymbol(relop);
+        ts = stringAppendList({"%s",ops,"%s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
+        TaskGraphExt.addEdge(t2, t, s2, 1);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
-  (t1,s1) = buildExpression(e1);
-  (t2,s2) = buildExpression(e2);
-  (t3,s3) = buildExpression(e3);
-  ts = stringAppendList({"%s ? %s : %s"});
-  t = TaskGraphExt.newTask(ts);
-  TaskGraphExt.addEdge(t1, t, s1, 0);
-  TaskGraphExt.addEdge(t2, t, s2, 1);
-  TaskGraphExt.addEdge(t3, t, s3, 2);
+        (t1,s1) = buildExpression(e1);
+        (t2,s2) = buildExpression(e2);
+        (t3,s3) = buildExpression(e3);
+        ts = stringAppendList({"%s ? %s : %s"});
+        t = TaskGraphExt.newTask(ts);
+        TaskGraphExt.addEdge(t1, t, s1, 0);
+        TaskGraphExt.addEdge(t2, t, s2, 1);
+        TaskGraphExt.addEdge(t3, t, s3, 2);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.CALL(path = func,expLst = expl))
       equation
-  funcstr = Absyn.pathString(func);
-  numargs = listLength(expl);
-  ts = buildCallStr(funcstr, numargs);
-  (tasks,strs) = List.map_2(expl, buildExpression);
-  t = TaskGraphExt.newTask(ts);
-  addPredecessors(t, tasks, strs, 0);
+        funcstr = Absyn.pathString(func);
+        numargs = listLength(expl);
+        ts = buildCallStr(funcstr, numargs);
+        (tasks,strs) = List.map_2(expl, buildExpression);
+        t = TaskGraphExt.newTask(ts);
+        addPredecessors(t, tasks, strs, 0);
       then
-  (t,"");
+        (t,"");
 
     case (DAE.ARRAY(ty = _))
       equation
-  print("TaskGraph.buildExpression(ARRAY) not impl. yet\n");
+        print("TaskGraph.buildExpression(ARRAY) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.ARRAY(ty = _))
       equation
-  print("TaskGraph.buildExpression(MATRIX) not impl. yet\n");
+        print("TaskGraph.buildExpression(MATRIX) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.RANGE(ty = _))
       equation
-  print("TaskGraph.buildExpression(RANGE) not impl. yet\n");
+        print("TaskGraph.buildExpression(RANGE) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.TUPLE(PR = _))
       equation
-  print("TaskGraph.buildExpression(TUPLE) not impl. yet\n");
+        print("TaskGraph.buildExpression(TUPLE) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.CAST(exp = e))
       equation
-  (t,s) = buildExpression(e);
+        (t,s) = buildExpression(e);
       then
-  (t,s);
+        (t,s);
     case (DAE.ASUB(exp = _))
       equation
-  print("TaskGraph.buildExpression(ASUB) not impl. yet\n");
+        print("TaskGraph.buildExpression(ASUB) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.SIZE(exp = _))
       equation
-  print("TaskGraph.buildExpression(SIZE) not impl. yet\n");
+        print("TaskGraph.buildExpression(SIZE) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.CODE(code = _))
       equation
-  print("TaskGraph.buildExpression(CODE) not impl. yet\n");
+        print("TaskGraph.buildExpression(CODE) not impl. yet\n");
       then
-  fail();
+        fail();
     case (DAE.REDUCTION(expr = _))
       equation
-  print("TaskGraph.buildExpression(REDUCTION) not impl. yet\n");
+        print("TaskGraph.buildExpression(REDUCTION) not impl. yet\n");
       then
-  fail();
+        fail();
     case (e)
       equation
-  print("-TaskGraph.buildExpression failed\n Exp = ");
-  es = ExpressionDump.printExpStr(e);
-  print(es);
-  print("\n");
+        print("-TaskGraph.buildExpression failed\n Exp = ");
+        es = ExpressionDump.printExpStr(e);
+        print(es);
+        print("\n");
       then
-  fail();
+        fail();
   end matchcontinue;
 end buildExpression;
 
@@ -967,11 +967,11 @@ algorithm
     case (_,{},{},_) then ();  /* task list of precessors prio */
     case (t,(t1 :: ts),(s :: strs),prio)
       equation
-  TaskGraphExt.addEdge(t1, t, s, prio);
-  prio_1 = prio + 1;
-  addPredecessors(t, ts, strs, prio_1);
+        TaskGraphExt.addEdge(t1, t, s, prio);
+        prio_1 = prio + 1;
+        addPredecessors(t, ts, strs, prio_1);
       then
-  ();
+        ();
   end match;
 end addPredecessors;
 

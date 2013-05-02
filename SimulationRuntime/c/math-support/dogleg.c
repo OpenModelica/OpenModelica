@@ -67,23 +67,23 @@ static integer c__1 = 1;
 /*       n is a positive integer input variable set to the order of r. */
 
 /*       r is an input array of length lr which must contain the upper */
-/*   triangular matrix r stored by rows. */
+/*         triangular matrix r stored by rows. */
 
 /*       lr is a positive integer input variable not less than */
-/*   (n*(n+1))/2. */
+/*         (n*(n+1))/2. */
 
 /*       diag is an input array of length n which must contain the */
-/*   diagonal elements of the matrix d. */
+/*         diagonal elements of the matrix d. */
 
 /*       qtb is an input array of length n which must contain the first */
-/*   n elements of the vector (q transpose)*b. */
+/*         n elements of the vector (q transpose)*b. */
 
 /*       delta is a positive input variable which specifies an upper */
-/*   bound on the euclidean norm of d*x. */
+/*         bound on the euclidean norm of d*x. */
 
 /*       x is an output array of length n which contains the desired */
-/*   convex combination of the gauss-newton direction and the */
-/*   scaled gradient direction. */
+/*         convex combination of the gauss-newton direction and the */
+/*         scaled gradient direction. */
 
 /*       wa1 and wa2 are work arrays of length n. */
 

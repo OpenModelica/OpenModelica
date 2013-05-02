@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFConnect2
-" file:  NFConnect2.mo
+" file:        NFConnect2.mo
   package:     NFConnect2
   description: Connection set management
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package ModelicaExternalC
-" file:  ModelicaExternalC.mo
+" file:        ModelicaExternalC.mo
   package:     ModelicaExternalC
   description: This file contains ModelicaExternalC external functions.
 

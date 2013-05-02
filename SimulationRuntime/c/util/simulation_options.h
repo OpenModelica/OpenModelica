@@ -71,7 +71,7 @@ enum _FLAG_TYPE
 {
   FLAG_TYPE_UNKNOWN = 0,
 
-  FLAG_TYPE_FLAG,   /* e.g. -f */
+  FLAG_TYPE_FLAG,         /* e.g. -f */
   FLAG_TYPE_OPTION,       /* e.g. -f=value or -f value */
 
   FLAG_TYPE_MAX

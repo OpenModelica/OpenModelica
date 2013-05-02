@@ -931,7 +931,7 @@ void flat_modelica_parser::initial_algorithm_clause() {
 		initial_algorithm_clause_AST = RefMyAST(currentAST.root);
 #line 311 "flat_modelica_parser.g"
 		
-			      initial_algorithm_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_ALGORITHM,"INTIAL_ALGORITHM")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(initial_algorithm_clause_AST))));
+			            initial_algorithm_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_ALGORITHM,"INTIAL_ALGORITHM")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(initial_algorithm_clause_AST))));
 				
 #line 937 "flat_modelica_parser.cpp"
 		currentAST.root = initial_algorithm_clause_AST;
