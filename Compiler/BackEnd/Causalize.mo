@@ -30,11 +30,11 @@
  */
 
 encapsulated package Causalize
-" file:        Causalize.mo
+" file:  Causalize.mo
   package:     Causalize
   description: Causalize contains functions to causalize the equation system.
-               This includes algorithms to check if the system is singulare,
-               match the equations with variables and sorting to BLT-Form.
+         This includes algorithms to check if the system is singulare,
+         match the equations with variables and sorting to BLT-Form.
 
 
   RCS: $Id: Causalize.mo 14235 2013-01-23 04:34:35Z jfrenkel $"
@@ -140,33 +140,33 @@ algorithm
       String esize_str,vsize_str;
     case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
       then
-        singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
+  singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
-        true = intEq(nvars,neqns);
+  true = intEq(nvars,neqns);
       then
-        singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
+  singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
-        true = intGt(nvars,neqns);
-        esize_str = intString(neqns);
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
+  true = intGt(nvars,neqns);
+  esize_str = intString(neqns);
+  vsize_str = intString(nvars);
+  Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
-        fail();
+  fail();
     case (_,_,_,_,_,_,_)
       equation
-        true = intLt(nvars,neqns);
-        esize_str = intString(neqns) ;
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
+  true = intLt(nvars,neqns);
+  esize_str = intString(neqns) ;
+  vsize_str = intString(nvars);
+  Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
-        fail();
+  fail();
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Causalize.singularSystemCheck failed\n");
+  Debug.fprint(Flags.FAILTRACE, "- Causalize.singularSystemCheck failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end singularSystemCheck;
 
@@ -231,9 +231,9 @@ algorithm
       BackendDAE.Var var;
     case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2)))
       equation
-        e = ass1[index];
-        ass1 = arrayUpdate(ass1,index,-1);
-        ass2 = arrayUpdate(ass2,e,-1);
+  e = ass1[index];
+  ass1 = arrayUpdate(ass1,index,-1);
+  ass2 = arrayUpdate(ass2,e,-1);
       then ((var,(index+1,ass1,ass2)));
     case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
   end match;
@@ -263,9 +263,9 @@ algorithm
     case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
     case (_::_,_,_,_,_,_,_)
       equation
-        singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+  singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
       then
-        fail();
+  fail();
   end match;
 end foundSingularSystem;
 

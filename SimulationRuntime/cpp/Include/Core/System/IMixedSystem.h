@@ -27,15 +27,15 @@ public:
     /// Enumeration to control the output
     enum OUTPUT
     {
-        UNDEF_OUTPUT    =    0x00000000,
+  UNDEF_OUTPUT    =    0x00000000,
 
-        WRITE            =    0x00000001,            ///< Store current position of curser and write out current results
-        RESET            =    0x00000002,            ///< Reset curser position
-        OVERWRITE        =    0x00000003,            ///< RESET|WRITE
+  WRITE            =    0x00000001,            ///< Store current position of curser and write out current results
+  RESET            =    0x00000002,            ///< Reset curser position
+  OVERWRITE        =    0x00000003,            ///< RESET|WRITE
 
-        HEAD_LINE        =    0x00000010,            ///< Write out head line
-        RESULTS            =    0x00000020,            ///< Write out results
-        SIMINFO            =    0x00000040            ///< Write out simulation info (e.g. number of steps)
+  HEAD_LINE        =    0x00000010,            ///< Write out head line
+  RESULTS            =    0x00000020,            ///< Write out results
+  SIMINFO            =    0x00000040            ///< Write out simulation info (e.g. number of steps)
     };
 
     virtual ~IMixedSystem()    {};

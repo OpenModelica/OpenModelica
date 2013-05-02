@@ -114,9 +114,9 @@ void Schedule::tdsPass1()
   //  cerr << "Created visitor." << endl;
 
   reverse_depth_first_search(*m_taskgraph,
-           vis,
-           get(vertex_color, *m_taskgraph),
-           m_end);
+     vis,
+     get(vertex_color, *m_taskgraph),
+     m_end);
 }
 
 void Schedule::tdsPass2()
@@ -218,18 +218,18 @@ void Schedule::tdsPass3()
   if (lst(x) - lct(y) >= cost) {
     for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
       if (isAssigned(*p)==-1) {
-        y = *p;
-        break;
+  y = *p;
+  break;
       }
     }
   } else {
     for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
       if (*p != y) {
-        z = *p;
-        if (ect(y) + cost == ect(z)+getExecCost(*p,m_taskgraph) && isAssigned(z)==-1) {
+  z = *p;
+  if (ect(y) + cost == ect(z)+getExecCost(*p,m_taskgraph) && isAssigned(z)==-1) {
     y = z;
     break;
-        }
+  }
       }
     }
   }
@@ -396,7 +396,7 @@ void Schedule::tdsPass4()
   } else {
     numProc-= temp;
     //    cerr << "reduced by " << temp << " to " << numProc
-    //         << " (" << m_proclists.size() << ")" << endl;
+    //   << " (" << m_proclists.size() << ")" << endl;
   }
       }
   }

@@ -50,18 +50,18 @@ extern "C" {
 struct mmc_GC_root_type
 {
   modelica_metatype*       start;
-  size_t                   count;
+  size_t             count;
 };
 typedef struct mmc_GC_root_type mmc_GC_root_type;
 
 /* the roots type is an array of void* with a current index and limits */
 struct mmc_GC_roots_type
 {
-    mmc_GC_root_type*        start;           /* the start of the array of roots */
-    size_t                   current;         /* the current limit */
-    size_t                   limit;           /* the limit of roots */
-    mmc_stack_type           *marks;          /* the marks in the roots, saves current at certain points */
-    size_t                   rootsStackIndex; /* the current state of the marks stack, basically number of elements */
+    mmc_GC_root_type*  start;           /* the start of the array of roots */
+    size_t             current;         /* the current limit */
+    size_t             limit;           /* the limit of roots */
+    mmc_stack_type     *marks;          /* the marks in the roots, saves current at certain points */
+    size_t             rootsStackIndex; /* the current state of the marks stack, basically number of elements */
 };
 typedef struct mmc_GC_roots_type mmc_GC_roots_type;
 
@@ -87,8 +87,8 @@ void mmc_GC_add_roots_fallback(modelica_metatype*, int, mmc_GC_local_state_type 
 /* unwind to current function */
 /*int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);*/
 
-#define mmc_GC_save_roots_state(name)                  (mmc_GC_state->roots.current)
-#define mmc_GC_undo_roots_state(local_GC_state)        (mmc_GC_state->roots.current = local_GC_state);
+#define mmc_GC_save_roots_state(name)            (mmc_GC_state->roots.current)
+#define mmc_GC_undo_roots_state(local_GC_state)  (mmc_GC_state->roots.current = local_GC_state);
 #define mmc_GC_unwind_roots_state(local_GC_state)
 
 
@@ -96,7 +96,7 @@ void mmc_GC_add_roots_fallback(modelica_metatype*, int, mmc_GC_local_state_type 
 
 #define mmc_GC_add_root(A,B,C)
 #define mmc_GC_add_roots(p, n, local_GC_state, name)
-#define mmc_GC_save_roots_state(name)                  (dummy_local_GC_state)
+#define mmc_GC_save_roots_state(name)            (dummy_local_GC_state)
 #define mmc_GC_undo_roots_state(local_GC_state)
 #define mmc_GC_unwind_roots_state(local_GC_state)
 

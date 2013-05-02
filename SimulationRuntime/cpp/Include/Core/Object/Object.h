@@ -53,31 +53,31 @@ public:
 
 
     /*! Sicheres Auslesen einer Object::PtrMap.
-    \param map:        map in dem das gesuchte Objekt enthalten ist
+    \param map:  map in dem das gesuchte Objekt enthalten ist
     \param obj_id:    Bezeichner des übergeordneten Objektes
     \param param_id:    Innerhalb des Objektes verwendeter Bezeichners des Parameters
     */
     template <class T>  static T& lookUp(const PtrMap& map, std::string obj_id, std::string param_id)
     {
-        boost::shared_ptr<T> pType;
-        std::string id = obj_id + "." + param_id;
-        PtrMap::const_iterator iter = map.find(id);
-        if (iter== map.end())
-            throw SimModelException(SimModelException::WRONG_OBJECT_ID, "  ID: " + id);
-        if (pType = boost::dynamic_pointer_cast<T>(iter->second))
-            return *pType.get();
-        else
-            throw SimModelException(SimModelException::WRONG_OBJECT_TYPE, "  ID: " + id + "  type: " + typeid(pType).name() + " ; instead of: " + typeid(iter->second).name());
+  boost::shared_ptr<T> pType;
+  std::string id = obj_id + "." + param_id;
+  PtrMap::const_iterator iter = map.find(id);
+  if (iter== map.end())
+      throw SimModelException(SimModelException::WRONG_OBJECT_ID, "  ID: " + id);
+  if (pType = boost::dynamic_pointer_cast<T>(iter->second))
+      return *pType.get();
+  else
+      throw SimModelException(SimModelException::WRONG_OBJECT_TYPE, "  ID: " + id + "  type: " + typeid(pType).name() + " ; instead of: " + typeid(iter->second).name());
     };
 
 
 
 protected:
     UIDSTR
-        _uid;        ///< Zur eindeutige Zuordnung zu Preprozessorobjekten.
+  _uid;        ///< Zur eindeutige Zuordnung zu Preprozessorobjekten.
 
     std::string
-        _name;        ///< Userdefinierter Bezeichner.
+  _name;        ///< Userdefinierter Bezeichner.
 
 };
 
@@ -101,15 +101,15 @@ Konstruktor mit ein Referenz auf den "echten" Typen aufrufen zu können.
 Übersichtshalber werden die Objekte in der folgenden Reihenfolge übergeben:
 
 Physikalische Eingänge:
-CInputHyd:        hydraulisch
-CInputLin:        transl. mechanisch
-CInputAng:        angular mechanisch
+CInputHyd:  hydraulisch
+CInputLin:  transl. mechanisch
+CInputAng:  angular mechanisch
 CInputMech3D:    räumlich mechanisch
 
 Physikalische Ausgänge:
-COutputHyd:        hydraulisch
-COutputLin:        transl. mechanisch
-COutputAng:        angular mechanisch
+COutputHyd:  hydraulisch
+COutputLin:  transl. mechanisch
+COutputAng:  angular mechanisch
 COutputMech3D:    räumlich mechanisch
 
 Andere Objekte:

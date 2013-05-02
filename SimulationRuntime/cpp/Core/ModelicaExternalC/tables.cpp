@@ -132,9 +132,9 @@ Holder<InterpolationTable2D> interpolationTables2D;
 class InterpolationTable {
 public:
   InterpolationTable(double time,double startTime, int ipoType, int expoType,
-         const char* tableName, const char* fileName,
-         const double *table,
-         int tableDim1, int tableDim2,int colWise);
+   const char* tableName, const char* fileName,
+   const double *table,
+   int tableDim1, int tableDim2,int colWise);
   InterpolationTable(InterpolationTable& orig);
   ~InterpolationTable();
   double interpolate(double time, size_t col) const;
@@ -162,8 +162,8 @@ private:
 class InterpolationTable2D {
 public:
   InterpolationTable2D(int ipoType, const char* tableName,
-           const char* fileName, const double *table,
-           int tableDim1, int tableDim2, int colWise);
+     const char* fileName, const double *table,
+     int tableDim1, int tableDim2, int colWise);
   ~InterpolationTable2D();
   double interpolate(double x1, double x2);
   bool compare(const char* fname, const char* tname, const double* table) const;
@@ -202,13 +202,13 @@ private:
  * tableDim1 - number of rows of table
  * tableDim2 - number of columns of table.
  * colWise - 0 = column major order
- *           1 = row major order
+ *     1 = row major order
  */
 
 extern "C"
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
-        const char *tableName, const char* fileName,
-        const double *table,int tableDim1, int tableDim2,int colWise)
+  const char *tableName, const char* fileName,
+  const double *table,int tableDim1, int tableDim2,int colWise)
 {
   // if table is already initialized, find it
   for(size_t i = 0; i < interpolationTables.size(); ++i)
@@ -216,10 +216,10 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
       return i;
   // otherwise initialize new table
   interpolationTables.push_back(new InterpolationTable(timeIn,startTime,
-                   ipoType,expoType,
-                   tableName, fileName,
-                   table, tableDim1,
-                   tableDim2, colWise));
+             ipoType,expoType,
+             tableName, fileName,
+             table, tableDim1,
+             tableDim2, colWise));
   return (interpolationTables.size()-1);
 }
 
@@ -260,7 +260,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
       return i;
   // otherwise initialize new table
   interpolationTables2D.push_back(new InterpolationTable2D(ipoType,tableName,
-                      fileName,table,tableDim1,tableDim2,colWise));
+                fileName,table,tableDim1,tableDim2,colWise));
   return (interpolationTables2D.size()-1);
 }
 
@@ -603,11 +603,11 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
       fptr = fileFormats[i].second(filename);
       if (!fptr)
   throw CustomError("Could not allocate memory to read file `%s'",
-        filename.c_str());
+  filename.c_str());
       return (fptr);
     }
   throw CustomError("Interpolation table: uknown file extension -- `%s'.",
-        fileExt.c_str());
+  fileExt.c_str());
   return NULL;
 }
 
@@ -615,10 +615,10 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
 // implementation of InterpolationTable methods
 //
 InterpolationTable::InterpolationTable(double time, double startTime,
-               int ipoType, int expoType,
-               const char* tableName, const char* fileName,
-               const double* table, int tableDim1,
-               int tableDim2, int colWise)
+         int ipoType, int expoType,
+         const char* tableName, const char* fileName,
+         const double* table, int tableDim1,
+         int tableDim2, int colWise)
   :tablename(tableName?tableName:""),own_data(false),data(NULL),
    rows(tableDim1),cols(tableDim2),colWise(colWise),
    ipoType(ipoType),expoType(expoType),startTime(startTime)
@@ -674,7 +674,7 @@ double InterpolationTable::interpolate(double time, size_t col) const
   return extrapolate(time,col,time <= minTime());
 }
 bool InterpolationTable::compare(const char* fname, const char* tname,
-         const double* table) const
+   const double* table) const
 {
   if (fname == NULL || tname == NULL) return false;
   if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
@@ -686,7 +686,7 @@ bool InterpolationTable::compare(const char* fname, const char* tname,
   return false;
 }
 double InterpolationTable::extrapolate(double time, size_t col,
-               bool beforeData) const
+         bool beforeData) const
 {
   size_t lastIdx;
 
@@ -743,8 +743,8 @@ void InterpolationTable::checkValidityOfData() const
 // interpolation 2D
 //
 InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
-           const char* fileName, const double *table,
-           int tableDim1, int tableDim2, int colWise)
+     const char* fileName, const double *table,
+     int tableDim1, int tableDim2, int colWise)
   :tablename(tableName?tableName:""),own_data(false),data(NULL),
    rows(tableDim1),cols(tableDim2), colWise(colWise)
 {
@@ -800,7 +800,7 @@ double InterpolationTable2D::interpolate(double x1, double x2)
   return linInterpolate(x2,getElt(0,j-1),getElt(0,j),f_1,f_2);
 }
 bool InterpolationTable2D::compare(const char* fname, const char* tname,
-         const double* table) const
+   const double* table) const
 {
   if (fname == NULL || tname == NULL) return false;
   if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
@@ -813,7 +813,7 @@ bool InterpolationTable2D::compare(const char* fname, const char* tname,
 }
 
 double InterpolationTable2D::linInterpolate(double x, double x_1, double x_2,
-              double f_1, double f_2) const
+        double f_1, double f_2) const
 {
   return ((x_2 - x)*f_1 + (x - x_1)*f_2) / (x_2-x_1);
 }

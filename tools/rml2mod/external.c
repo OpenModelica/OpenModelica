@@ -395,9 +395,9 @@ RML_BEGIN_LABEL(External__strtok)
   s=strtok(str,delimit);
   if (s == NULL)
   {
-          /* adrpo added 2004-10-27 */
-          free(str);
-          rmlA0=res; RML_TAILCALLK(rmlFC);
+    /* adrpo added 2004-10-27 */
+    free(str);
+    rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
   while (s=strtok(NULL,delimit))

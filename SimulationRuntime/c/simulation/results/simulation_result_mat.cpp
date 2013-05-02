@@ -116,7 +116,7 @@ static int calcDataSize(simulation_result *self,DATA *data)
     if(!modelData->booleanAlias[i].filterOutput)
     {
        if(modelData->booleanAlias[i].negate)
-          matData->negatedboolaliases++;
+    matData->negatedboolaliases++;
        sz++;
     }
   return sz;
@@ -336,8 +336,8 @@ void mat4_emit(simulation_result *self,DATA *data)
     {
       if(data->modelData.booleanAlias[i].negate)
       {
-        datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
-        matData->fp.write((char*)&datPoint,sizeof(double));
+  datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
+  matData->fp.write((char*)&datPoint,sizeof(double));
       }
     }
   if(!matData->fp)
@@ -385,7 +385,7 @@ long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& long
 /*  for(i=0;i<dims;i++) {
       len = strlen(useComment ? src[i]->comment : src[i]->name);
       for(j = 0; j < len; ++j) {
-         strncpy(ptr + i + j*dims,useComment ? &src[i]->comment[j] : &src[i]->name[j],1);
+   strncpy(ptr + i + j*dims,useComment ? &src[i]->comment[j] : &src[i]->name[j],1);
     }
     } */
   for(i = 0; i < dims; ++i) {
@@ -480,40 +480,40 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
       int table = 0;
       if(mdl_data->realAlias[i].aliasType == 0) /* variable */
       {
-        it = matData->r_indx_map.find(mdl_data->realAlias[i].nameID);
-        if(it != matData->r_indx_map.end())
-        {
-          table = 2;
-          aliascol = it->second+1;
-        }
+  it = matData->r_indx_map.find(mdl_data->realAlias[i].nameID);
+  if(it != matData->r_indx_map.end())
+  {
+    table = 2;
+    aliascol = it->second+1;
+  }
       }
       else if(mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
-        it = matData->r_indx_parammap.find(mdl_data->realAlias[i].nameID);
-        if(it != matData->r_indx_parammap.end())
-        {
-          table = 1;
-          aliascol = it->second+1;
-        }
+  it = matData->r_indx_parammap.find(mdl_data->realAlias[i].nameID);
+  if(it != matData->r_indx_parammap.end())
+  {
+    table = 1;
+    aliascol = it->second+1;
+  }
       } else if(mdl_data->realAlias[i].aliasType == 2) /* time */
       {
-        table = 2;
-        aliascol = 1;
+  table = 2;
+  aliascol = 1;
       }
       if(table)
       {
-        /* row 1 - which table */
-        dataInfo[ccol] = table;
-        /* row 2 - index of var in table (variable 'Time' have index 1) */
-        if(mdl_data->realAlias[i].negate)
-          dataInfo[ccol+1] = -aliascol;
-        else
-          dataInfo[ccol+1] = aliascol;
-        /* row 3 - linear interpolation == 0 */
-        dataInfo[ccol+2] = 0;
-        /* row 4 - not defined outside of the defined time range == -1 */
-        dataInfo[ccol+3] = -1;
-        ccol += 4;
+  /* row 1 - which table */
+  dataInfo[ccol] = table;
+  /* row 2 - index of var in table (variable 'Time' have index 1) */
+  if(mdl_data->realAlias[i].negate)
+    dataInfo[ccol+1] = -aliascol;
+  else
+    dataInfo[ccol+1] = aliascol;
+  /* row 3 - linear interpolation == 0 */
+  dataInfo[ccol+2] = 0;
+  /* row 4 - not defined outside of the defined time range == -1 */
+  dataInfo[ccol+3] = -1;
+  ccol += 4;
       }
     }
   }
@@ -523,30 +523,30 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
       int table = 0;
       if(mdl_data->integerAlias[i].aliasType == 0) /* variable */
       {
-        it = matData->i_indx_map.find(mdl_data->integerAlias[i].nameID);
-        if(it != matData->i_indx_map.end())
-          table = 2;
+  it = matData->i_indx_map.find(mdl_data->integerAlias[i].nameID);
+  if(it != matData->i_indx_map.end())
+    table = 2;
       }
       else if(mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
-        it = matData->i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if(it != matData->i_indx_parammap.end())
-          table = 1;
+  it = matData->i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
+  if(it != matData->i_indx_parammap.end())
+    table = 1;
       }
       if(table)
       {
-        /* row 1 - which table */
-        dataInfo[ccol] = table;
-        /* row 2 - index of var in table */
-        if(mdl_data->integerAlias[i].negate)
-          dataInfo[ccol+1] = -(it->second+1);
-        else
-          dataInfo[ccol+1] = it->second+1;
-        /* row 3 - linear interpolation == 0 */
-        dataInfo[ccol+2] = 0;
-        /* row 4 - not defined outside of the defined time range == -1 */
-        dataInfo[ccol+3] = -1;
-        ccol += 4;
+  /* row 1 - which table */
+  dataInfo[ccol] = table;
+  /* row 2 - index of var in table */
+  if(mdl_data->integerAlias[i].negate)
+    dataInfo[ccol+1] = -(it->second+1);
+  else
+    dataInfo[ccol+1] = it->second+1;
+  /* row 3 - linear interpolation == 0 */
+  dataInfo[ccol+2] = 0;
+  /* row 4 - not defined outside of the defined time range == -1 */
+  dataInfo[ccol+3] = -1;
+  ccol += 4;
       }
     }
   }
@@ -556,39 +556,39 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
       int table = 0;
 
       if(mdl_data->booleanAlias[i].negate)
-        table = 2;
+  table = 2;
       else
       {
-        if(mdl_data->booleanAlias[i].aliasType == 0) /* variable */
-        {
-          it = matData->b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-          if(it != matData->b_indx_map.end())
-            table = 2;
-        }
-        else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
-        {
-          it = matData->b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-          if(it != matData->b_indx_parammap.end())
-            table = 1;
-        }
+  if(mdl_data->booleanAlias[i].aliasType == 0) /* variable */
+  {
+    it = matData->b_indx_map.find(mdl_data->booleanAlias[i].nameID);
+    if(it != matData->b_indx_map.end())
+      table = 2;
+  }
+  else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
+  {
+    it = matData->b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
+    if(it != matData->b_indx_parammap.end())
+      table = 1;
+  }
       }
       if(table)
       {
-        /* row 1 - which table */
-        dataInfo[ccol] = table;
-        /* row 2 - index of var in table */
-        if(mdl_data->booleanAlias[i].negate)
-        {
-          dataInfo[ccol+1] = indx;
-          indx++;
-        }
-        else
-          dataInfo[ccol+1] = it->second+1;
-        /* row 3 - linear interpolation == 0 */
-        dataInfo[ccol+2] = 0;
-        /* row 4 - not defined outside of the defined time range == -1 */
-        dataInfo[ccol+3] = -1;
-        ccol += 4;
+  /* row 1 - which table */
+  dataInfo[ccol] = table;
+  /* row 2 - index of var in table */
+  if(mdl_data->booleanAlias[i].negate)
+  {
+    dataInfo[ccol+1] = indx;
+    indx++;
+  }
+  else
+    dataInfo[ccol+1] = it->second+1;
+  /* row 3 - linear interpolation == 0 */
+  dataInfo[ccol+2] = 0;
+  /* row 4 - not defined outside of the defined time range == -1 */
+  dataInfo[ccol+3] = -1;
+  ccol += 4;
       }
     }
   }
@@ -618,8 +618,8 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
   /* calculate number of rows and columns */
   rows = 2;
   cols = 1 + mData->nParametersReal +
-             mData->nParametersInteger +
-             mData->nParametersBoolean;
+       mData->nParametersInteger +
+       mData->nParametersBoolean;
 
   /* allocate data buffer */
   data_1 = (double*)calloc(rows*cols, sizeof(double));

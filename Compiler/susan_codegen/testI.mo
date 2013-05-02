@@ -20,7 +20,7 @@ package builtin
     end listMember;
 
   function listGet "Return the element of the list at the given index.
-                      The index starts from 1."
+                The index starts from 1."
       input list<TypeVar> lst;
       input Integer index;
       output TypeVar result;
@@ -41,12 +41,12 @@ package builtin
 
     uniontype PathIdent
       record IDENT
-        Ident ident;
+  Ident ident;
       end IDENT;
 
       record PATH_IDENT
-        Ident ident;
-        PathIdent path;
+  Ident ident;
+  PathIdent path;
       end PATH_IDENT;
     end PathIdent;
   end TplAbsyn;

@@ -30,7 +30,7 @@
  */
 
 encapsulated package Name
-" file:        Name.mo
+" file:  Name.mo
   package:     Name
   description: Name is name in a pool.
   @author:     adrpo
@@ -52,9 +52,9 @@ uniontype Names "an dictionary of shared names"
      NameInteger name2integer;
      IntegerName integer2name;
      Integer sequenceNo "starts at 0 and increments before each addUnique.
-                         if the returned value from addUnique is the same
-                         smaller than before the increment then the name
-                         is already in there!";
+                   if the returned value from addUnique is the same
+                   smaller than before the increment then the name
+                   is already in there!";
   end NAMES;
 end Names;
 
@@ -77,26 +77,26 @@ algorithm
     // was not there, add it to both
     case (NAMES(n2i, i2n, seqOld), inName)
       equation
-        seqNew = seqOld + 1;
-        // try to insert it into name2integer
-        (n2i, AvlTree.ITEM(val = id)) = AvlTree.addUnique(n2i, inName, seqNew);
-        // succesfull add!
-        true = intEq(id, seqNew);
-        // add to the i2n too!
-        i2n = AvlTree.add(i2n, seqNew, inName);
+  seqNew = seqOld + 1;
+  // try to insert it into name2integer
+  (n2i, AvlTree.ITEM(val = id)) = AvlTree.addUnique(n2i, inName, seqNew);
+  // succesfull add!
+  true = intEq(id, seqNew);
+  // add to the i2n too!
+  i2n = AvlTree.add(i2n, seqNew, inName);
       then
-        (NAMES(n2i, i2n, seqNew), id);
+  (NAMES(n2i, i2n, seqNew), id);
 
     // was there already, do no changes and return the old id!
     case (NAMES(n2i, i2n, seqOld), inName)
       equation
-        seqNew = seqOld + 1;
-        // try to insert it into name2integer
-        (n2i, AvlTree.ITEM(val = id)) = AvlTree.addUnique(n2i, inName, seqNew);
-        // already there
-        false = intEq(id, seqNew);
+  seqNew = seqOld + 1;
+  // try to insert it into name2integer
+  (n2i, AvlTree.ITEM(val = id)) = AvlTree.addUnique(n2i, inName, seqNew);
+  // already there
+  false = intEq(id, seqNew);
       then
-        (inNames, id);
+  (inNames, id);
   end matchcontinue;
 end new;
 

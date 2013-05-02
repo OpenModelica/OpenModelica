@@ -64,10 +64,10 @@
 
   typedef struct NLS_KINSOL_DATA
   {
-    double fnormtol;        /* function tolerance */
+    double fnormtol;  /* function tolerance */
     double scsteptol;       /* step tolerance */
 
-    double *res;            /* residuals */
+    double *res;      /* residuals */
 
     DATA *data;
     NONLINEAR_SYSTEM_DATA *nlsData; /* closing the circle - not so nice */
@@ -180,8 +180,8 @@
     N_Vector sEqns = NULL;
     N_Vector c = NULL;
 
-    int glstr = KIN_NONE;         /* globalization strategy applied to the Newton method. It must be one of KIN_NONE or KIN_LINESEARCH */
-    long int mset = 1;            /* maximum number of nonlinear iterations without a call to the preconditioner setup function. Pass 0 to indicate the default [10]. */
+    int glstr = KIN_NONE;   /* globalization strategy applied to the Newton method. It must be one of KIN_NONE or KIN_LINESEARCH */
+    long int mset = 1;      /* maximum number of nonlinear iterations without a call to the preconditioner setup function. Pass 0 to indicate the default [10]. */
     void *kmem = NULL;
     int error_code = -1;
 
@@ -218,7 +218,7 @@
 
     for(i=0; i<size; ++i)
     {
-      NV_Ith_S(c, i) =  0.0;        /* no constraint on z[i] */
+      NV_Ith_S(c, i) =  0.0;  /* no constraint on z[i] */
       NV_Ith_S(c, size+2*i+0) = 1.0;
       NV_Ith_S(c, size+2*i+1) = -1.0;
     }
@@ -239,11 +239,11 @@
     KINSetMaxSetupCalls(kmem, mset);
     /*KINSetNumMaxIters(kmem, 2000);*/
 
-    error_code = KINSol(kmem,           /* KINSol memory block */
-                        z,              /* initial guess on input; solution vector */
-                        glstr,          /* global stragegy choice */
-                        sVars,          /* scaling vector, for the variable cc */
-                        sEqns);         /* scaling vector for function values fval */
+    error_code = KINSol(kmem,     /* KINSol memory block */
+                  z,              /* initial guess on input; solution vector */
+                  glstr,          /* global stragegy choice */
+                  sVars,          /* scaling vector, for the variable cc */
+                  sEqns);         /* scaling vector for function values fval */
 
     KINGetNumNonlinSolvIters(kmem, &nni);
     KINGetNumFuncEvals(kmem, &nfe);
@@ -276,18 +276,18 @@
     {
       if(error_code == KIN_LINESEARCH_NONCONV)
       {
-        WARNING(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
-        return 0;
+  WARNING(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
+  return 0;
       }
       else if(error_code == KIN_MAXITER_REACHED)
       {
-        WARNING(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
-        return 0;
+  WARNING(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
+  return 0;
       }
       else if(error_code < 0)
       {
-        WARNING1(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
-        return 0;
+  WARNING1(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
+  return 0;
       }
     }
     else if(error_code < 0)

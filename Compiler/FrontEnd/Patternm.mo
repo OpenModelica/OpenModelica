@@ -30,7 +30,7 @@
  */
 
 encapsulated package Patternm
-" file:        Patternm.mo
+" file:  Patternm.mo
   package:     Patternm
   description: Patternmatching
 
@@ -98,8 +98,8 @@ algorithm
     case ({},_,localAccList) then (listReverse(localAccList),namedArgList);
     case (firstFieldName :: restFieldNames,localNamedArgList,localAccList)
       equation
-        (exp,localNamedArgList) = findFieldExpInList(firstFieldName,localNamedArgList);
-        (localAccList,localNamedArgList) = generatePositionalArgs(restFieldNames,localNamedArgList,exp::localAccList);
+  (exp,localNamedArgList) = findFieldExpInList(firstFieldName,localNamedArgList);
+  (localAccList,localNamedArgList) = generatePositionalArgs(restFieldNames,localNamedArgList,exp::localAccList);
       then (localAccList,localNamedArgList);
   end match;
 end generatePositionalArgs;
@@ -122,11 +122,11 @@ algorithm
     case (_,{}) then (Absyn.CREF(Absyn.WILD()),{});
     case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest)
       equation
-        true = stringEq(localFieldName,aName);
+  true = stringEq(localFieldName,aName);
       then (e,rest);
     case (localFieldName,first::rest)
       equation
-        (e,rest) = findFieldExpInList(localFieldName,rest);
+  (e,rest) = findFieldExpInList(localFieldName,rest);
       then (e,first::rest);
   end matchcontinue;
 end findFieldExpInList;
@@ -145,9 +145,9 @@ algorithm
     case ({},_,_) then status;
     case (_,_,_)
       equation
-        (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
-        str1 = stringDelimitList(argsNames, ",");
-        Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1}, info);
+  (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
+  str1 = stringDelimitList(argsNames, ",");
+  Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1}, info);
       then Util.FAILURE();
   end match;
 end checkInvalidPatternNamedArgs;
@@ -196,123 +196,123 @@ algorithm
 
     case (cache,_,Absyn.INTEGER(i),_,_,_)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
+  et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,_,Absyn.REAL(r),_,_,_)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
+  et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),_,_,_)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
-        i = -i;
+  et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
+  i = -i;
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(r)),_,_,_)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
-        r = realNeg(r);
+  et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
+  r = realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.STRING(s),_,_,_)
       equation
-        et = validPatternType(DAE.T_STRING_DEFAULT,ty,inLhs,info);
-        s = System.unescapedString(s);
+  et = validPatternType(DAE.T_STRING_DEFAULT,ty,inLhs,info);
+  s = System.unescapedString(s);
       then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
 
     case (cache,_,Absyn.BOOL(b),_,_,_)
       equation
-        et = validPatternType(DAE.T_BOOL_DEFAULT,ty,inLhs,info);
+  et = validPatternType(DAE.T_BOOL_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.BCONST(b)));
 
     case (cache,_,Absyn.ARRAY({}),_,_,_)
       equation
-        et = validPatternType(DAE.T_METALIST_DEFAULT,ty,inLhs,info);
+  et = validPatternType(DAE.T_METALIST_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.LIST({})));
 
     case (cache,_,Absyn.ARRAY(exps as _::_),_,_,_)
       equation
-        lhs = List.fold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
-        (cache,pattern) = elabPattern(cache,env,lhs,ty,info);
+  lhs = List.fold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
+  (cache,pattern) = elabPattern(cache,env,lhs,ty,info);
       then (cache,pattern);
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),_,_,_)
       equation
-        _ = validPatternType(DAE.T_NONE_DEFAULT,ty,inLhs,info);
+  _ = validPatternType(DAE.T_NONE_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(optionType = ty2),_,_)
       equation
-        (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
+  (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
       then (cache,DAE.PAT_SOME(pattern));
 
     case (cache,_,Absyn.CONS(head,tail),tyTail as DAE.T_METALIST(listType = tyHead),_,_)
       equation
-        tyHead = Types.boxIfUnboxedType(tyHead);
-        (cache,patternHead) = elabPattern(cache,env,head,tyHead,info);
-        (cache,patternTail) = elabPattern(cache,env,tail,tyTail,info);
+  tyHead = Types.boxIfUnboxedType(tyHead);
+  (cache,patternHead) = elabPattern(cache,env,head,tyHead,info);
+  (cache,patternTail) = elabPattern(cache,env,tail,tyTail,info);
       then (cache,DAE.PAT_CONS(patternHead,patternTail));
 
     case (cache,_,Absyn.TUPLE(exps),DAE.T_METATUPLE(types = tys),_,_)
       equation
-        tys = List.map(tys, Types.boxIfUnboxedType);
-        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
+  tys = List.map(tys, Types.boxIfUnboxedType);
+  (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_META_TUPLE(patterns));
 
     case (cache,_,Absyn.TUPLE(exps),DAE.T_TUPLE(tupleType = tys),_,_)
       equation
-        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
+  (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_CALL_TUPLE(patterns));
 
     case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {utPath}),_,_)
       equation
-        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+  (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
     case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METAUNIONTYPE(paths=_, source = {utPath}),_,_)
       equation
-        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+  (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
-        lhs = Absyn.CREF(Absyn.CREF_IDENT(id, {}));
-        Static.checkAssignmentToInput(lhs, attr, env, Static.bDisallowTopLevelInputs, info);
-        et = validPatternType(ty1,ty2,inLhs,info);
-        (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
+  (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
+  lhs = Absyn.CREF(Absyn.CREF_IDENT(id, {}));
+  Static.checkAssignmentToInput(lhs, attr, env, Static.bDisallowTopLevelInputs, info);
+  et = validPatternType(ty1,ty2,inLhs,info);
+  (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
+  pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
       then (cache,pattern);
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
-        Static.checkAssignmentToInput(inLhs, attr, env, Static.bDisallowTopLevelInputs, info);
-        et = validPatternType(ty1,ty2,inLhs,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
+  (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
+  Static.checkAssignmentToInput(inLhs, attr, env, Static.bDisallowTopLevelInputs, info);
+  et = validPatternType(ty1,ty2,inLhs,info);
+  pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);
 
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
+  failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+  Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
+  failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+  Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
     case (cache,_,Absyn.CREF(Absyn.WILD()),_,_,_) then (cache,DAE.PAT_WILD());
 
     case (cache,_,lhs,_,_,_)
       equation
-        true = numError == Error.getNumErrorMessages();
-        str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
-        Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
+  true = numError == Error.getNumErrorMessages();
+  str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
+  Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
 
   end matchcontinue;
@@ -342,15 +342,15 @@ algorithm
 
     case (cache,_,exp::exps,ty::tys,_,_)
       equation
-        (cache,pattern) = elabPattern(cache,env,exp,ty,info);
-        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
+  (cache,pattern) = elabPattern(cache,env,exp,ty,info);
+  (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
       then (cache,pattern::patterns);
 
     case (cache,_,_,_,_,_)
       equation
-        s = Dump.printExpStr(lhs);
-        s = "pattern " +& s;
-        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {s}, info);
+  s = Dump.printExpStr(lhs);
+  s = "pattern " +& s;
+  Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {s}, info);
       then fail();
   end match;
 end elabPatternTuple;
@@ -384,52 +384,52 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
-        (cache,t as DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) =
-          Lookup.lookupType(cache, env, callPath, NONE());
-        validUniontype(utPath1,utPath2,info,lhs);
+  (cache,t as DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) =
+    Lookup.lookupType(cache, env, callPath, NONE());
+  validUniontype(utPath1,utPath2,info,lhs);
 
-        fieldTypeList = List.map(fieldVarList, Types.getVarType);
-        fieldNameList = List.map(fieldVarList, Types.getVarName);
+  fieldTypeList = List.map(fieldVarList, Types.getVarType);
+  fieldNameList = List.map(fieldVarList, Types.getVarName);
 
-        (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
+  (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
 
-        numPosArgs = listLength(funcArgs);
-        (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
-        checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
-        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
-        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
-        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
-        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+  numPosArgs = listLength(funcArgs);
+  (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
+  checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
+  (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+  funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
+  Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+  (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns,knownSingleton));
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
-        (cache,t as DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), source = {fqPath}),_) =
-          Lookup.lookupType(cache, env, callPath, NONE());
-        true = Absyn.pathEqual(fqPath,utPath2);
+  (cache,t as DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), source = {fqPath}),_) =
+    Lookup.lookupType(cache, env, callPath, NONE());
+  true = Absyn.pathEqual(fqPath,utPath2);
 
-        fieldTypeList = List.map(fieldVarList, Types.getVarType);
-        fieldNameList = List.map(fieldVarList, Types.getVarName);
+  fieldTypeList = List.map(fieldVarList, Types.getVarType);
+  fieldNameList = List.map(fieldVarList, Types.getVarName);
 
-        (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
+  (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
 
-        numPosArgs = listLength(funcArgs);
-        (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
-        checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
+  numPosArgs = listLength(funcArgs);
+  (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
+  checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
 
-        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
-        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
-        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
-        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
-        namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
-        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
+  (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+  funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
+  Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+  (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+  namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
+  namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
 
     case (cache,_,_,_,_,_,_)
       equation
-        failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
-        s = Absyn.pathString(callPath);
-        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_RECORD, {s}, info);
+  failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
+  s = Absyn.pathString(callPath);
+  Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_RECORD, {s}, info);
       then fail();
   end matchcontinue;
 end elabPatternCall;
@@ -448,16 +448,16 @@ algorithm
     case (_,_,{},0,_) then ();
     case (_,_,strs,0,_)
       equation
-        str = stringDelimitList(strs,",");
-        str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
-        Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
+  str = stringDelimitList(strs,",");
+  str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
+  Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
     else then ();
     /*
     case (path,_,_,_,info)
       equation
-        str = Absyn.pathString(path) +& " mixing positional and named patterns";
-        Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
+  str = Absyn.pathString(path) +& " mixing positional and named patterns";
+  Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
     */
   end match;
@@ -494,25 +494,25 @@ algorithm
 
     case (ty1,DAE.T_METABOXED(ty = ty2),_,_)
       equation
-        cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
-        crefExp = Expression.crefExp(cr);
-        (_,ty1) = Types.matchType(crefExp,ty2,ty1,true);
-        et = Types.simplifyType(ty1);
+  cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+  crefExp = Expression.crefExp(cr);
+  (_,ty1) = Types.matchType(crefExp,ty2,ty1,true);
+  et = Types.simplifyType(ty1);
       then SOME(et);
 
     case (ty1,ty2,_,_)
       equation
-        cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
-        crefExp = Expression.crefExp(cr);
-        (_,_) = Types.matchType(crefExp,ty2,ty1,true);
+  cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+  crefExp = Expression.crefExp(cr);
+  (_,_) = Types.matchType(crefExp,ty2,ty1,true);
       then NONE();
 
     case (ty1,ty2,_,_)
       equation
-        s = Dump.printExpStr(lhs);
-        s1 = Types.unparseType(ty1);
-        s2 = Types.unparseType(ty2);
-        Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s,s1,s2}, info);
+  s = Dump.printExpStr(lhs);
+  s1 = Types.unparseType(ty1);
+  s2 = Types.unparseType(ty2);
+  Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
 end validPatternType;
@@ -528,14 +528,14 @@ algorithm
       String s,s1,s2;
     case (_,_,_,_)
       equation
-        true = Absyn.pathEqual(path1,path2);
+  true = Absyn.pathEqual(path1,path2);
       then ();
     else
       equation
-        s = Dump.printExpStr(lhs);
-        s1 = Absyn.pathString(path1);
-        s2 = Absyn.pathString(path2);
-        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
+  s = Dump.printExpStr(lhs);
+  s1 = Absyn.pathString(path1);
+  s2 = Absyn.pathString(path2);
+  Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
 end validUniontype;
@@ -558,30 +558,30 @@ algorithm
     case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
     case DAE.PAT_SOME(pat)
       equation
-        str = patternStr(pat);
+  str = patternStr(pat);
       then "SOME(" +& str +& ")";
     case DAE.PAT_META_TUPLE(pats)
       equation
-        str = stringDelimitList(List.map(pats,patternStr),",");
+  str = stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
 
     case DAE.PAT_CALL_TUPLE(pats)
       equation
-        str = stringDelimitList(List.map(pats,patternStr),",");
+  str = stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
 
     case DAE.PAT_CALL(name=name, patterns=pats)
       equation
-        id = Absyn.pathString(name);
-        str = stringDelimitList(List.map(pats,patternStr),",");
+  id = Absyn.pathString(name);
+  str = stringDelimitList(List.map(pats,patternStr),",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
       equation
-        id = Absyn.pathString(name);
-        fields = List.map(namedpats, Util.tuple32);
-        patsStr = List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str = stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
+  id = Absyn.pathString(name);
+  fields = List.map(namedpats, Util.tuple32);
+  patsStr = List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
+  str = stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
@@ -592,7 +592,7 @@ algorithm
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id +& " as " +& patternStr(pat);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
       then "*PATTERN*";
   end matchcontinue;
 end patternStr;
@@ -639,32 +639,32 @@ algorithm
 
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
       equation
-        // First do inputs
-        inExps = MetaUtil.extractListFromTuple(inExp, 0);
-        (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
-        // Then add locals
-        (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
-        tys = List.map(elabProps, Types.getPropType);
-        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
-        prop = DAE.PROP(resType,DAE.C_VAR());
-        et = Types.simplifyType(resType);
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
-        elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
-        // Do DCE before converting mc to m
-        matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
-        elabCases = optimizeContinueJumps(matchTy, elabCases);
-        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
-        (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
-        elabCases = filterUnusedAsBindings(elabCases,ht);
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
-        elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
-        exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,matchDecls,elabCases,et);
+  // First do inputs
+  inExps = MetaUtil.extractListFromTuple(inExp, 0);
+  (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
+  // Then add locals
+  (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
+  tys = List.map(elabProps, Types.getPropType);
+  (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
+  prop = DAE.PROP(resType,DAE.C_VAR());
+  et = Types.simplifyType(resType);
+  (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
+  elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
+  // Do DCE before converting mc to m
+  matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
+  elabCases = optimizeContinueJumps(matchTy, elabCases);
+  ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
+  (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
+  elabCases = filterUnusedAsBindings(elabCases,ht);
+  (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
+  elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
+  exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
       equation
-        true = numError == Error.getNumErrorMessages();
-        str = Dump.printExpStr(matchExp);
-        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str}, info);
+  true = numError == Error.getNumErrorMessages();
+  str = Dump.printExpStr(matchExp);
+  Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str}, info);
       then fail();
   end matchcontinue;
 end elabMatchExpression;
@@ -694,13 +694,13 @@ algorithm
     case (Absyn.MATCHCONTINUE(),_,_) then DAE.MATCHCONTINUE();
     case (_,_,_)
       equation
-        true = listLength(cases) > 2;
-        patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
-        (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
-        tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
-        (_,ty,_) = tpl;
-        str = Types.unparseType(ty);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
+  true = listLength(cases) > 2;
+  patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
+  (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
+  tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
+  (_,ty,_) = tpl;
+  str = Types.unparseType(ty);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
       then DAE.MATCH(SOME(tpl));
     else DAE.MATCH(NONE());
   end matchcontinue;
@@ -726,10 +726,10 @@ algorithm
 
     case (pats::patternMatrix,acc,numAcc)
       equation
-        alwaysMatch = allPatternsAlwaysMatch(List.stripLast(pats));
-        optPats = Util.if_(alwaysMatch,NONE(),SOME(pats));
-        numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
-        (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
+  alwaysMatch = allPatternsAlwaysMatch(List.stripLast(pats));
+  optPats = Util.if_(alwaysMatch,NONE(),SOME(pats));
+  numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
+  (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
       then (acc,numAcc);
   end match;
 end removeWildPatternColumnsFromMatrix;
@@ -750,7 +750,7 @@ algorithm
 
     case (SOME(pats)::patternMatrix,_,_,_)
       equation
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, numPatternsInMatrix);
+  (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, numPatternsInMatrix);
       then ((index,ty,extraarg));
     case (_::patternMatrix,_,_,_)
       then findPatternToConvertToSwitch(patternMatrix,index+1,numPatternsInMatrix,info);
@@ -774,33 +774,33 @@ algorithm
 
     case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,_,_,_)
       equation
-        ix = System.stringHashDjb2Mod(str,65536);
-        false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,numPatternsInMatrix);
+  ix = System.stringHashDjb2Mod(str,65536);
+  false = listMember(ix,ixs);
+  (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,numPatternsInMatrix);
       then (ty,extraarg);
 
     case (DAE.PAT_CALL(index=ix)::pats,_,_,_)
       equation
-        false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_METATYPE_DEFAULT,numPatternsInMatrix);
+  false = listMember(ix,ixs);
+  (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_METATYPE_DEFAULT,numPatternsInMatrix);
       then (ty,extraarg);
 
     case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,_,_,_)
       equation
-        false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,numPatternsInMatrix);
+  false = listMember(ix,ixs);
+  (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,numPatternsInMatrix);
       then (ty,extraarg);
 
     case ({},_,DAE.T_STRING(varLst = _),_)
       equation
-        true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
-        ix = findMinMod(ixs,1);
+  true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
+  ix = findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
     case ({_},_,DAE.T_STRING(varLst = _),1)
       equation
-        true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
-        ix = findMinMod(ixs,1);
+  true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
+  ix = findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
     case ({},_,_,_) then (ity,0);
@@ -820,14 +820,14 @@ algorithm
     local list<Integer> ixs; Integer mod;
     case (ixs,mod)
       equation
-        ixs = List.map1(ixs, intMod, mod);
-        ixs = List.sort(ixs, intLt);
-        (_,{}) = Util.splitUniqueOnBool(ixs, intEq);
-        // This mod was high enough that all values were distinct
+  ixs = List.map1(ixs, intMod, mod);
+  ixs = List.sort(ixs, intLt);
+  (_,{}) = Util.splitUniqueOnBool(ixs, intEq);
+  // This mod was high enough that all values were distinct
       then mod;
     else
       equation
-        true = inMod < 65536;
+  true = inMod < 65536;
       then findMinMod(inIxs,inMod*2);
   end matchcontinue;
 end findMinMod;
@@ -846,10 +846,10 @@ algorithm
 
     case (_,cases)
       equation
-        patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
-        (true,outInputs,patternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,false,{},{});
-        patternMatrix = List.transposeList(patternMatrix);
-        cases = List.threadMap(cases,patternMatrix,setCasePatterns);
+  patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
+  (true,outInputs,patternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,false,{},{});
+  patternMatrix = List.transposeList(patternMatrix);
+  cases = List.threadMap(cases,patternMatrix,setCasePatterns);
       then (outInputs,cases);
     else (inputs,inCases);
   end matchcontinue;
@@ -877,13 +877,13 @@ algorithm
       then (true,listReverse(inputsAcc),listReverse(patternMatrixAcc));
     case (e::inputs,pats::patternMatrix,_,_,_)
       equation
-        ((_,true)) = Expression.traverseExp(e,Expression.hasNoSideEffects,true);
-        true = allPatternsWild(pats);
-        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,true,inputsAcc,patternMatrixAcc);
+  ((_,true)) = Expression.traverseExp(e,Expression.hasNoSideEffects,true);
+  true = allPatternsWild(pats);
+  (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,true,inputsAcc,patternMatrixAcc);
       then (outChange,outInputs,outPatternMatrix);
     case (e::inputs,pats::patternMatrix,_,_,_)
       equation
-        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,change,e::inputsAcc,pats::patternMatrixAcc);
+  (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,change,e::inputsAcc,pats::patternMatrixAcc);
       then (outChange,outInputs,outPatternMatrix);
     else (false,{},{});
   end matchcontinue;
@@ -899,11 +899,11 @@ algorithm
       list<DAE.MatchCase> cases;
     case (true,_)
       equation
-        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
+  ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
       then ht;
     case (false,DAE.MATCHEXPRESSION(cases=cases))
       equation
-        (_,ht) = traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTable());
+  (_,ht) = traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTable());
       then ht;
   end match;
 end getUsedLocalCrefs;
@@ -926,8 +926,8 @@ algorithm
     case ({},_) then {};
     case (DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, jump, info)::cases,_)
       equation
-        (patterns,_) = traversePatternList(patterns, removePatternAsBinding, (ht,info));
-        cases = filterUnusedAsBindings(cases,ht);
+  (patterns,_) = traversePatternList(patterns, removePatternAsBinding, (ht,info));
+  cases = filterUnusedAsBindings(cases,ht);
       then DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, jump, info)::cases;
   end match;
 end filterUnusedAsBindings;
@@ -945,12 +945,12 @@ algorithm
       tuple<HashTableStringToPath.HashTable,Absyn.Info> tpl;
     case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
       equation
-        _ = BaseHashTable.get(id, ht);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
+  _ = BaseHashTable.get(id, ht);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then ((pat,tpl));
     case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,info)))
       equation
-        _ = BaseHashTable.get(id, ht);
+  _ = BaseHashTable.get(id, ht);
       then ((pat,tpl));
     else simplifyPattern(inTpl);
   end matchcontinue;
@@ -972,20 +972,20 @@ algorithm
       list<DAE.Subscript> subs;
     case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name,subscriptLst=subs)),ht))
       equation
-        ht = addLocalCrefSubs(subs,ht);
-        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+  ht = addLocalCrefSubs(subs,ht);
+  ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
       then ((exp,ht));
     case ((exp as DAE.CALL(path=Absyn.IDENT(name), attr=DAE.CALL_ATTR(builtin=false)),ht))
       equation
-        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+  ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
       then ((exp,ht));
     case ((exp as DAE.PATTERN(pattern=pat),ht))
       equation
-        ((_,ht)) = traversePattern((pat,ht), addPatternAsBindings);
+  ((_,ht)) = traversePattern((pat,ht), addPatternAsBindings);
       then ((exp,ht));
     case ((exp as DAE.MATCHEXPRESSION(cases=cases),ht))
       equation
-        ht = addCasesLocalCref(cases,ht);
+  ht = addCasesLocalCref(cases,ht);
       then ((exp,ht));
     else inTpl;
   end match;
@@ -1006,13 +1006,13 @@ algorithm
     case ({},ht) then ht;
     case (DAE.SLICE(exp)::subs,ht)
       equation
-        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
-        ht = addLocalCrefSubs(subs,ht);
+  ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
+  ht = addLocalCrefSubs(subs,ht);
       then ht;
     case (DAE.INDEX(exp)::subs,ht)
       equation
-        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
-        ht = addLocalCrefSubs(subs,ht);
+  ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
+  ht = addLocalCrefSubs(subs,ht);
       then ht;
     else iht;
   end match;
@@ -1032,8 +1032,8 @@ algorithm
     case ({},ht) then ht;
     case (DAE.CASE(patterns=pats)::cases,ht)
       equation
-        (_,ht) = traversePatternList(pats, addPatternAsBindings, ht);
-        ht = addCasesLocalCref(cases,ht);
+  (_,ht) = traversePatternList(pats, addPatternAsBindings, ht);
+  ht = addCasesLocalCref(cases,ht);
       then ht;
   end match;
 end addCasesLocalCref;
@@ -1053,16 +1053,16 @@ algorithm
       list<DAE.Pattern> patterns;
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
-        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
-        pat = Util.if_(List.isEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
+  namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
+  pat = Util.if_(List.isEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation
-        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+  pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
       then ((pat,a));
     case ((pat as DAE.PAT_META_TUPLE(patterns),a))
       equation
-        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+  pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
       then ((pat,a));
     else itpl;
   end match;
@@ -1080,11 +1080,11 @@ algorithm
       String id;
     case ((pat as DAE.PAT_AS(id=id),ht))
       equation
-        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
+  ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
       then ((pat,ht));
     case ((pat as DAE.PAT_AS_FUNC_PTR(id=id),ht))
       equation
-        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
+  ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
       then ((pat,ht));
     else inTpl;
   end matchcontinue;
@@ -1111,8 +1111,8 @@ algorithm
     case ({},_,a) then ({},a);
     case (pat::pats,_,a)
       equation
-        ((pat,a)) = traversePattern((pat,a),func);
-        (pats,a) = traversePatternList(pats,func,a);
+  ((pat,a)) = traversePattern((pat,a),func);
+  (pats,a) = traversePatternList(pats,func,a);
       then (pat::pats,a);
   end match;
 end traversePatternList;
@@ -1142,69 +1142,69 @@ algorithm
       Boolean knownSingleton;
     case ((DAE.PAT_AS(id,ty,pat2),a),_)
       equation
-        ((pat2,a)) = traversePattern((pat2,a),func);
-        pat = DAE.PAT_AS(id,ty,pat2);
-        outTpl = func((pat,a));
+  ((pat2,a)) = traversePattern((pat2,a),func);
+  pat = DAE.PAT_AS(id,ty,pat2);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_AS_FUNC_PTR(id,pat2),a),_)
       equation
-        ((pat2,a)) = traversePattern((pat2,a),func);
-        pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
-        outTpl = func((pat,a));
+  ((pat2,a)) = traversePattern((pat2,a),func);
+  pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CALL(name,index,pats,knownSingleton),a),_)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
-        pat = DAE.PAT_CALL(name,index,pats,knownSingleton);
-        outTpl = func((pat,a));
+  (pats,a) = traversePatternList(pats, func, a);
+  pat = DAE.PAT_CALL(name,index,pats,knownSingleton);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CALL_NAMED(name,namedpats),a),_)
       equation
-        pats = List.map(namedpats,Util.tuple31);
-        fields = List.map(namedpats,Util.tuple32);
-        types = List.map(namedpats,Util.tuple33);
-        (pats,a) = traversePatternList(pats, func, a);
-        namedpats = List.thread3Tuple(pats, fields, types);
-        pat = DAE.PAT_CALL_NAMED(name,namedpats);
-        outTpl = func((pat,a));
+  pats = List.map(namedpats,Util.tuple31);
+  fields = List.map(namedpats,Util.tuple32);
+  types = List.map(namedpats,Util.tuple33);
+  (pats,a) = traversePatternList(pats, func, a);
+  namedpats = List.thread3Tuple(pats, fields, types);
+  pat = DAE.PAT_CALL_NAMED(name,namedpats);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CALL_TUPLE(pats),a),_)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
-        pat = DAE.PAT_CALL_TUPLE(pats);
-        outTpl = func((pat,a));
+  (pats,a) = traversePatternList(pats, func, a);
+  pat = DAE.PAT_CALL_TUPLE(pats);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_META_TUPLE(pats),a),_)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
-        pat = DAE.PAT_META_TUPLE(pats);
-        outTpl = func((pat,a));
+  (pats,a) = traversePatternList(pats, func, a);
+  pat = DAE.PAT_META_TUPLE(pats);
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CONS(pat1,pat2),a),_)
       equation
-        ((pat1,a)) = traversePattern((pat1,a),func);
-        ((pat2,a)) = traversePattern((pat2,a),func);
-        pat = DAE.PAT_CONS(pat1,pat2);
-        outTpl = func((pat,a));
+  ((pat1,a)) = traversePattern((pat1,a),func);
+  ((pat2,a)) = traversePattern((pat2,a),func);
+  pat = DAE.PAT_CONS(pat1,pat2);
+  outTpl = func((pat,a));
       then outTpl;
     case ((pat as DAE.PAT_CONSTANT(ty=_),a),_)
       equation
-        outTpl = func((pat,a));
+  outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_SOME(pat1),a),_)
       equation
-        ((pat1,a)) = traversePattern((pat1,a),func);
-        pat = DAE.PAT_SOME(pat1);
-        outTpl = func((pat,a));
+  ((pat1,a)) = traversePattern((pat1,a),func);
+  pat = DAE.PAT_SOME(pat1);
+  outTpl = func((pat,a));
       then outTpl;
     case ((pat as DAE.PAT_WILD(),a),_)
       equation
-        outTpl = func((pat,a));
+  outTpl = func((pat,a));
       then outTpl;
     case ((pat,_),_)
       equation
-        str = "Patternm.traversePattern failed: " +& patternStr(pat);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "Patternm.traversePattern failed: " +& patternStr(pat);
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
 end traversePattern;
@@ -1230,14 +1230,14 @@ algorithm
     case ({},_,acc,unusedHt) then (listReverse(acc),unusedHt);
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest,_,acc,unusedHt)
       equation
-        failure(_ = BaseHashTable.get(name, ht));
-        unusedHt = BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_DECL, {name}, info);
-        (acc,unusedHt) = filterUnusedDecls(rest,ht,acc,unusedHt);
+  failure(_ = BaseHashTable.get(name, ht));
+  unusedHt = BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_DECL, {name}, info);
+  (acc,unusedHt) = filterUnusedDecls(rest,ht,acc,unusedHt);
       then (acc,unusedHt);
     case (el::rest,_,acc,unusedHt)
       equation
-        (acc,unusedHt) = filterUnusedDecls(rest,ht,el::acc,unusedHt);
+  (acc,unusedHt) = filterUnusedDecls(rest,ht,el::acc,unusedHt);
       then (acc,unusedHt);
   end matchcontinue;
 end filterUnusedDecls;
@@ -1266,21 +1266,21 @@ algorithm
     case (_,{},_,acc,true) then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
     case (_,DAE.CASE(body={},result=NONE(),info=info)::{},_,acc,_)
       equation
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
       then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
-        /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
+  /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
     case (Absyn.MATCH(),DAE.CASE(patterns=pats,info=info)::rest,prevPatterns as _::_,acc,iter)
       equation
-        oinfo = findOverlappingPattern(pats,acc);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
+  oinfo = findOverlappingPattern(pats,acc);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
       then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       */
     case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,_,acc,_)
       equation
-        false = Flags.isSet(Flags.PATTERNM_SKIP_MCDCE);
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
-        acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
+  false = Flags.isSet(Flags.PATTERNM_SKIP_MCDCE);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
+  acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
     case (_,(case_ as DAE.CASE(patterns=pats))::rest,_,acc,_) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
   end matchcontinue;
@@ -1297,7 +1297,7 @@ algorithm
       list<DAE.Pattern> ps1,ps2;
     case (ps1,DAE.CASE(patterns=ps2,info=info)::_)
       equation
-        true = patternListsDoOverlap(ps1,ps2); ???
+  true = patternListsDoOverlap(ps1,ps2); ???
       then info;
     case (ps1,_::prevCases) then findOverlappingPattern(ps1,prevCases);
   end matchcontinue;
@@ -1345,8 +1345,8 @@ algorithm
     case {} then {};
     case case_::cases
       equation
-        case_ = optimizeContinueJump(case_,cases,0);
-        cases = optimizeContinueJumps2(cases);
+  case_ = optimizeContinueJump(case_,cases,0);
+  cases = optimizeContinueJumps2(cases);
       then case_::cases;
   end match;
 end optimizeContinueJumps2;
@@ -1366,7 +1366,7 @@ algorithm
     case (case1,{},_) then updateMatchCaseJump(case1,jump);
     case (case1 as DAE.CASE(patterns=ps1),DAE.CASE(patterns=ps2)::cases,_)
       equation
-        true = patternListsDoNotOverlap(ps1,ps2);
+  true = patternListsDoNotOverlap(ps1,ps2);
       then optimizeContinueJump(case1,cases,jump+1);
     case (case1,_,_) then updateMatchCaseJump(case1,jump);
   end matchcontinue;
@@ -1434,11 +1434,11 @@ algorithm
 
     case ({},_,_)
       equation
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
       then Absyn.MATCH();
     case (DAE.CASE(patterns=patterns)::cases,_,_)
       equation
-        assertAllPatternListsDoNotOverlap(prevPatterns,patterns);
+  assertAllPatternListsDoNotOverlap(prevPatterns,patterns);
       then optimizeContinueToMatch2(cases,patterns::prevPatterns,info);
     else Absyn.MATCHCONTINUE();
   end matchcontinue;
@@ -1465,8 +1465,8 @@ algorithm
     case ({},_) then ();
     case (ps1::pss1,_)
       equation
-        true = patternListsDoNotOverlap(ps1,ps2);
-        assertAllPatternListsDoNotOverlap(pss1,ps2);
+  true = patternListsDoNotOverlap(ps1,ps2);
+  assertAllPatternListsDoNotOverlap(pss1,ps2);
       then ();
   end match;
 end assertAllPatternListsDoNotOverlap;
@@ -1486,8 +1486,8 @@ algorithm
     case ({},{}) then false;
     case (p1::ps1,p2::ps2)
       equation
-        res = patternsDoNotOverlap(p1,p2);
-        res = Debug.bcallret2(not res,patternListsDoNotOverlap,ps1,ps2,res);
+  res = patternsDoNotOverlap(p1,p2);
+  res = Debug.bcallret2(not res,patternListsDoNotOverlap,ps1,ps2,res);
       then res;
   end match;
 end patternListsDoNotOverlap;
@@ -1527,15 +1527,15 @@ algorithm
 
     case (DAE.PAT_CALL(name1,ix1,{},_),DAE.PAT_CALL(name2,ix2,{},_))
       equation
-        res = ix1 == ix2;
-        res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
+  res = ix1 == ix2;
+  res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
       then not res;
 
     case (DAE.PAT_CALL(name1,ix1,ps1,_),DAE.PAT_CALL(name2,ix2,ps2,_))
       equation
-        res = ix1 == ix2;
-        res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
-        res = Debug.bcallret2(res, patternListsDoNotOverlap, ps1, ps2, not res);
+  res = ix1 == ix2;
+  res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
+  res = Debug.bcallret2(res, patternListsDoNotOverlap, ps1, ps2, not res);
       then res;
 
     // TODO: PAT_CALLED_NAMED?
@@ -1607,8 +1607,8 @@ algorithm
     case (cache,env,{},_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
     case (cache,env,case_::rest,_,_,st,_,_,_,accExps,accTypes)
       equation
-        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
+  (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
+  (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
       then (cache,elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
@@ -1650,25 +1650,25 @@ algorithm
 
     case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
       equation
-        (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
-        patterns = MetaUtil.extractListFromTuple(pattern, 0);
-        patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
-        (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
-        (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
-        algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
-        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll, {});
-        (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
-        (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
+  (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
+  patterns = MetaUtil.extractListFromTuple(pattern, 0);
+  patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
+  (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
+  (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
+  algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
+  (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll, {});
+  (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
+  (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
     case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
       equation
-        // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
-        len = listLength(tys);
-        patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
-        pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre);
+  // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
+  len = listLength(tys);
+  patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
+  pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
+  (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre);
       then (cache,elabCase,elabResult,resType,st);
 
   end match;
@@ -1708,9 +1708,9 @@ algorithm
 
     case (cache,env,body,_,_,st,_,_,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (body,elabExp,info) = elabResultExp2(Flags.isSet(Flags.PATTERNM_SKIP_MOVE_LAST_EXP),body,elabExp,info);
-        ty = Types.getPropType(prop);
+  (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+  (body,elabExp,info) = elabResultExp2(Flags.isSet(Flags.PATTERNM_SKIP_MOVE_LAST_EXP),body,elabExp,info);
+  ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),info,SOME(ty),st);
   end matchcontinue;
 end elabResultExp;
@@ -1745,15 +1745,15 @@ algorithm
 
     case (cache,env,SOME(exp),_,st,_,_,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (elabExp,_) = Types.matchType(elabExp,Types.getPropType(prop),DAE.T_BOOL_DEFAULT,true);
+  (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+  (elabExp,_) = Types.matchType(elabExp,Types.getPropType(prop),DAE.T_BOOL_DEFAULT,true);
       then (cache,SOME(elabExp),st);
 
     case (cache,env,SOME(exp),_,st,_,_,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        str = Types.unparseType(Types.getPropType(prop));
-        Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
+  (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+  str = Types.unparseType(Types.getPropType(prop));
+  Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();
 
   end matchcontinue;
@@ -1790,15 +1790,15 @@ algorithm
     case (true,b,e,i) then (b,e,i);
     case (_,b,elabCr2 as DAE.CREF(ty=_),_)
       equation
-        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
-        true = Expression.expEqual(elabCr1,elabCr2);
-        (b,e,i) = elabResultExp2(false,b,e,i);
+  (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
+  true = Expression.expEqual(elabCr1,elabCr2);
+  (b,e,i) = elabResultExp2(false,b,e,i);
       then (b,e,i);
     case (_,b,DAE.TUPLE(elabCrs2),_)
       equation
-        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
-        List.threadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
-        (b,e,i) = elabResultExp2(false,b,e,i);
+  (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
+  List.threadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
+  (b,e,i) = elabResultExp2(false,b,e,i);
       then (b,e,i);
     else (body,elabExp,info);
   end matchcontinue;
@@ -1823,19 +1823,19 @@ algorithm
 
     case (cases,exps,tys,_)
       equation
-        ty = List.reduce(tys, Types.superType);
-        ty = Types.superType(ty, ty);
-        ty = Types.unboxedType(ty);
-        ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
-        (exps,_) = Types.matchTypes(exps, tys, ty, true);
-        cases = fixCaseReturnTypes2(cases,exps,info);
+  ty = List.reduce(tys, Types.superType);
+  ty = Types.superType(ty, ty);
+  ty = Types.unboxedType(ty);
+  ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
+  (exps,_) = Types.matchTypes(exps, tys, ty, true);
+  cases = fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     else
       equation
-        tys = List.unionOnTrue(itys, {}, Types.equivtypes);
-        str = stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
-        Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
+  tys = List.unionOnTrue(itys, {}, Types.equivtypes);
+  str = stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
+  Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
       then fail();
 
   end matchcontinue;
@@ -1865,17 +1865,17 @@ algorithm
 
     case (DAE.CASE(patterns,patternGuard,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
       equation
-        cases = fixCaseReturnTypes2(cases,exps,info);
+  cases = fixCaseReturnTypes2(cases,exps,info);
       then DAE.CASE(patterns,patternGuard,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
 
     case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
       equation
-        cases = fixCaseReturnTypes2(cases,exps,info);
+  cases = fixCaseReturnTypes2(cases,exps,info);
       then case_::cases;
 
     else
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
       then fail();
   end matchcontinue;
 end fixCaseReturnTypes2;
@@ -1906,10 +1906,10 @@ algorithm
     case ({},_,a) then ({},a);
     case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases,_,a)
       equation
-        (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
-        ((patternGuard,a)) = Expression.traverseExpOpt(patternGuard,func,a);
-        ((result,a)) = Expression.traverseExpOpt(result,func,a);
-        (cases,a) = traverseCases(cases,func,a);
+  (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
+  ((patternGuard,a)) = Expression.traverseExpOpt(patternGuard,func,a);
+  ((result,a)) = Expression.traverseExpOpt(result,func,a);
+  (cases,a) = traverseCases(cases,func,a);
       then (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases,a);
   end match;
 end traverseCases;
@@ -1951,56 +1951,56 @@ algorithm
     case (cache,env,{},_,_,_) then (cache,SOME((env,DAEUtil.emptyDae)));
     case (cache,env,ld,_,_,_)
       equation
-        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+  env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
-        // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
+  // Tranform declarations such as Real x,y; to Real x; Real y;
+  ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
-        // Filter out the components (just to be sure)
-        true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
-        ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
-        ld2 = Util.if_(b,{},ld2);
+  // Filter out the components (just to be sure)
+  true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
+  ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
+  ld2 = Util.if_(b,{},ld2);
 
-        // Transform the element list into a list of element,NOMOD
-        ld_mod = Inst.addNomod(ld2);
+  // Transform the element list into a list of element,NOMOD
+  ld_mod = Inst.addNomod(ld2);
 
-        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"), false);
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
-          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-          dummyFunc, ld_mod, {}, {}, {}, impl);
-        (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
-          cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
-          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
-        res = Util.if_(b,NONE(),SOME((env2,dae1)));
+  dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"), false);
+  (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
+    InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+    dummyFunc, ld_mod, {}, {}, {}, impl);
+  (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
+    cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+    DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
+    impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
+  res = Util.if_(b,NONE(),SOME((env2,dae1)));
       then (cache,res);
 
     case (cache,env,ld,_,_,_)
       equation
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
-        (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
-        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
-        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
+  ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
+  (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
+  str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+  Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 
     case (cache,env,ld,_,_,_)
       equation
-        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+  env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
-        // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
+  // Tranform declarations such as Real x,y; to Real x; Real y;
+  ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
-        // Filter out the components (just to be sure)
-        ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
-        ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
-        (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
-        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
-        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
+  // Filter out the components (just to be sure)
+  ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
+  ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
+  (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
+  str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+  Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 
     else
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Patternm.addLocalDecls failed"},info);
+  Error.addSourceMessage(Error.INTERNAL_ERROR,{"Patternm.addLocalDecls failed"},info);
       then (inCache,NONE());
   end matchcontinue;
 end addLocalDecls;
@@ -2019,16 +2019,16 @@ algorithm
       Absyn.Info info;
     case (SCode.COMPONENT(name=name),_,(cache,_))
       equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));
+  failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));
       then inTpl;
     case (SCode.COMPONENT(name=name),_,(cache,b))
       equation
-        (cache,DAE.ATTR(variability=SCode.CONST()),_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
-        // Allow shadowing constants. Should be safe since they become values pretty much straight away.
+  (cache,DAE.ATTR(variability=SCode.CONST()),_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
+  // Allow shadowing constants. Should be safe since they become values pretty much straight away.
       then ((cache,b));
     case (SCode.COMPONENT(name=name,info=info),_,(cache,b))
       equation
-        Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
+  Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
       then ((cache,true));
   end matchcontinue;
 end checkLocalShadowing;
@@ -2043,7 +2043,7 @@ algorithm
     case {} then {};
     case (DAE.CASE(result=SOME(exp))::cases)
       equation
-        exps = resultExps(cases);
+  exps = resultExps(cases);
       then exp::exps;
     case (_::cases) then resultExps(cases);
   end match;

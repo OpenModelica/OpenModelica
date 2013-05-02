@@ -30,7 +30,7 @@
  */
 
 encapsulated package AvlTree
-" file:        AvlTree.mo
+" file:  AvlTree.mo
   package:     AvlTree
   description: A MetaModelica AvlTree implementation
 
@@ -216,16 +216,16 @@ algorithm
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
       equation
-        node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+  node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
-        TREE(node, cf, kf, vf, uf, n);
+  TREE(node, cf, kf, vf, uf, n);
 
     else
       equation
-        str = "AvlTree.add name: " +& name(inTree) +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "AvlTree.add name: " +& name(inTree) +& " failed!";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end add;
@@ -258,21 +258,21 @@ algorithm
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
       equation
-        n = newLeafNode(ITEM(key, val), 1);
+  n = newLeafNode(ITEM(key, val), 1);
       then
-        n;
+  n;
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
       equation
-        order = keyCompareFunc(key, rkey);
-        n = balance(addNode_dispatch(inTree,inNode,order,key, val));
+  order = keyCompareFunc(key, rkey);
+  n = balance(addNode_dispatch(inTree,inNode,order,key, val));
       then
-        n;
+  n;
 
     else
       equation
-        str = "AvlTree.addNode name: " +& name(inTree) +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "AvlTree.addNode name: " +& name(inTree) +& " failed!";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
   end match;
@@ -299,47 +299,47 @@ algorithm
     // replacements of nodes is allowed! no update check function
     case (_, NODE(_, h, l, r), 0, key, val)
       equation
-        false = hasUpdateCheckFunction(inTree);
+  false = hasUpdateCheckFunction(inTree);
       then
-        NODE(ITEM(key,val), h, l, r);
+  NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, h, l, r), 0, key, val)
       equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
-        // update is allowed
-        true = updateCheckFunc(i, ITEM(key, val));
+  true = hasUpdateCheckFunction(inTree);
+  updateCheckFunc = getUpdateCheckFunc(inTree);
+  // update is allowed
+  true = updateCheckFunc(i, ITEM(key, val));
       then
-        NODE(ITEM(key,val), h, l, r);
+  NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, h, l, r), 0, key, val)
       equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
-        // update is NOT allowed
-        false = updateCheckFunc(i, ITEM(key, val));
+  true = hasUpdateCheckFunction(inTree);
+  updateCheckFunc = getUpdateCheckFunc(inTree);
+  // update is NOT allowed
+  false = updateCheckFunc(i, ITEM(key, val));
       then
-        inNode; // return the same node, no update!
+  inNode; // return the same node, no update!
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
       equation
-        n = emptyNodeIfNoNode(r);
-        n = addNode(inTree, n, key, val);
+  n = emptyNodeIfNoNode(r);
+  n = addNode(inTree, n, key, val);
       then
-        NODE(i, h, l, n);
+  NODE(i, h, l, n);
 
     // Insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
       equation
-        n = emptyNodeIfNoNode(l);
-        n = addNode(inTree, n, key, val);
+  n = emptyNodeIfNoNode(l);
+  n = addNode(inTree, n, key, val);
       then
-        NODE(i, h, n, r);
+  NODE(i, h, n, r);
   end matchcontinue;
 end addNode_dispatch;
 
@@ -423,14 +423,14 @@ algorithm
 
     case (TREE(node, keyCompareFunc, kf, vf, uf, n), key, val)
       equation
-        node = replaceNode(inTree, node, key, val);
+  node = replaceNode(inTree, node, key, val);
       then
-        TREE(node, keyCompareFunc, kf, vf, uf, n);
+  TREE(node, keyCompareFunc, kf, vf, uf, n);
 
     else
       equation
-        str = "AvlTree.replace name: " +& name(inTree) +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "AvlTree.replace name: " +& name(inTree) +& " failed!";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
   end match;
@@ -453,13 +453,13 @@ algorithm
       Integer order;
 
     case (TREE(keyCompareFunc = keyCompareFunc),
-          NODE(item = ITEM(key = rkey)),
-          key, val)
+    NODE(item = ITEM(key = rkey)),
+    key, val)
       equation
-        order = keyCompareFunc(key, rkey);
-        n = replaceNode_dispatch(inTree, inNode, order, key, val);
+  order = keyCompareFunc(key, rkey);
+  n = replaceNode_dispatch(inTree, inNode, order, key, val);
       then
-        n;
+  n;
 
   end match;
 end replaceNode;
@@ -484,23 +484,23 @@ algorithm
     // replace this node.
     case (_, NODE(item = ITEM(key = _), height = h, left = l, right = r), 0, key, val)
       then
-        NODE(ITEM(key, val), h, l, r);
+  NODE(ITEM(key, val), h, l, r);
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
       equation
-        n = emptyNodeIfNoNode(r);
-        n = replaceNode(inTree, n, key, val);
+  n = emptyNodeIfNoNode(r);
+  n = replaceNode(inTree, n, key, val);
       then
-        NODE(i, h, l, n);
+  NODE(i, h, l, n);
 
     // insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
       equation
-        n = emptyNodeIfNoNode(l);
-        n = replaceNode(inTree, n, key, val);
+  n = emptyNodeIfNoNode(l);
+  n = replaceNode(inTree, n, key, val);
       then
-        NODE(i, h, n, r);
+  NODE(i, h, n, r);
   end match;
 end replaceNode_dispatch;
 
@@ -553,14 +553,14 @@ algorithm
 
     case(true, n)
       equation
-        n = doBalance3(n);
-        n = rotateLeft(n);
+  n = doBalance3(n);
+  n = rotateLeft(n);
       then n;
 
     case(false,n)
       equation
-        n = doBalance4(n);
-        n = rotateRight(n);
+  n = doBalance4(n);
+  n = rotateRight(n);
       then n;
   end match;
 end doBalance2;
@@ -576,10 +576,10 @@ algorithm
 
     case(n)
       equation
-        rN = rightNode(n);
-        true = differenceInHeight(rN) > 0;
-        rr = rotateRight(rN);
-        n = setRight(n, rr);
+  rN = rightNode(n);
+  true = differenceInHeight(rN) > 0;
+  rr = rotateRight(rN);
+  n = setRight(n, rr);
       then n;
 
     else inNode;
@@ -597,10 +597,10 @@ algorithm
 
     case (n)
       equation
-        lN = leftNode(n);
-        true = differenceInHeight(lN) < 0;
-        rl = rotateLeft(lN);
-        n = setLeft(n, rl);
+  lN = leftNode(n);
+  true = differenceInHeight(lN) < 0;
+  rl = rotateLeft(lN);
+  n = setLeft(n, rl);
       then n;
 
     else inNode;
@@ -754,15 +754,15 @@ algorithm
 
     case (inTree, _)
       equation
-        false = hasPrintingFunctions(inTree);
+  false = hasPrintingFunctions(inTree);
       then
        "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED> name[" +& name(inTree) +& "]";
 
     case (TREE(root = node), _)
       equation
-        res = prettyPrintNodeStr(inTree, node, inIndent);
+  res = prettyPrintNodeStr(inTree, node, inIndent);
       then
-        res;
+  res;
 
   end matchcontinue;
 end prettyPrintTreeStr_dispatch;
@@ -785,21 +785,21 @@ algorithm
 
     case (_, NODE(item = NO_ITEM(), left = l, right = r), _)
       equation
-        indent = inIndent +& "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" +& s1 +& s2;
+  indent = inIndent +& "  ";
+  s1 = prettyPrintNodeStr(inTree, l, indent);
+  s2 = prettyPrintNodeStr(inTree, r, indent);
+  res = "\n" +& s1 +& s2;
       then
-        res;
+  res;
 
     case (_, NODE(item = item as ITEM(key = _), left = l, right = r), _)
       equation
-        indent = inIndent +& "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" +& inIndent +& printItemStr(inTree, item) +& s1 +& s2;
+  indent = inIndent +& "  ";
+  s1 = prettyPrintNodeStr(inTree, l, indent);
+  s2 = prettyPrintNodeStr(inTree, r, indent);
+  res = "\n" +& inIndent +& printItemStr(inTree, item) +& s1 +& s2;
       then
-        res;
+  res;
 
   end match;
 end prettyPrintNodeStr;
@@ -821,9 +821,9 @@ algorithm
 
     case TREE(root = node)
       equation
-        str = printNodeStr(inTree, node);
+  str = printNodeStr(inTree, node);
       then
-        str;
+  str;
 
   end matchcontinue;
 end printTreeStr;
@@ -843,12 +843,12 @@ algorithm
     case (_, NODE(item = NO_ITEM())) then "";
     case (_, NODE(item = item as ITEM(_,_), left = left, right = right))
       equation
-        left_str = printNodeStr(inTree, left);
-        right_str = printNodeStr(inTree, right);
-        item_str = printItemStr(inTree, item);
-        str = stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
+  left_str = printNodeStr(inTree, left);
+  right_str = printNodeStr(inTree, right);
+  item_str = printItemStr(inTree, item);
+  str = stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
       then
-        str;
+  str;
 
   end match;
 end printNodeStr;
@@ -869,13 +869,13 @@ algorithm
     case (_, NO_ITEM()) then "[]";
     case (_, ITEM(key = key, val = val))
       equation
-        key2Str = getKeyToStrFunc(inTree);
-        val2Str = getValToStrFunc(inTree);
-        keyStr = key2Str(key);
-        valStr = val2Str(val);
-        str = "[" +& keyStr +& ", " +& valStr +& "]";
+  key2Str = getKeyToStrFunc(inTree);
+  val2Str = getValToStrFunc(inTree);
+  keyStr = key2Str(key);
+  valStr = val2Str(val);
+  str = "[" +& keyStr +& ", " +& valStr +& "]";
       then
-        str;
+  str;
   end match;
 end printItemStr;
 
@@ -894,9 +894,9 @@ algorithm
 
     case (TREE(root = node), inVal)
       equation
-        key = getKeyOfValNode(inTree, node, inVal);
+  key = getKeyOfValNode(inTree, node, inVal);
       then
-        key;
+  key;
 
   end match;
 end getKeyOfVal;
@@ -920,25 +920,25 @@ algorithm
 
     case (_, NODE(item = item as ITEM(k,v), left = left, right = right), inVal)
       equation
-        true = valueEq(v, inVal);
+  true = valueEq(v, inVal);
       then
-        k;
+  k;
 
     // search left
     case (_, NODE(item = item as ITEM(k,v), left = left, right = right), inVal)
       equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, left, inVal);
+  false = valueEq(v, inVal);
+  k = getKeyOfValNode(inTree, left, inVal);
       then
-        k;
+  k;
 
     // search right
     case (_, NODE(item = item as ITEM(k,v), left = left, right = right), inVal)
       equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, right, inVal);
+  false = valueEq(v, inVal);
+  k = getKeyOfValNode(inTree, right, inVal);
       then
-        k;
+  k;
 
   end matchcontinue;
 end getKeyOfValNode;
@@ -969,16 +969,16 @@ algorithm
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
       equation
-        (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+  (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
-        (TREE(node, cf, kf, vf, uf, n), item);
+  (TREE(node, cf, kf, vf, uf, n), item);
 
     else
       equation
-        str = "AvlTree.addUnique name: " +& name(inTree) +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "AvlTree.addUnique name: " +& name(inTree) +& " failed!";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end addUnique;
@@ -1014,25 +1014,25 @@ algorithm
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
       equation
-        item = ITEM(key, val);
-        n = newLeafNode(item, 1);
+  item = ITEM(key, val);
+  n = newLeafNode(item, 1);
       then
-        (n, item);
+  (n, item);
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
       equation
-        order = keyCompareFunc(key, rkey);
-        (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
-        n = balance(n);
+  order = keyCompareFunc(key, rkey);
+  (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
+  n = balance(n);
       then
-        (n, item);
+  (n, item);
 
     else
       equation
-        str = "AvlTree.addNodeUnique name: " +& name(inTree) +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "AvlTree.addNodeUnique name: " +& name(inTree) +& " failed!";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        fail();
+  fail();
   end match;
 end addNodeUnique;
 
@@ -1059,23 +1059,23 @@ algorithm
     // we don't care about update check functions here
     case (_, NODE(i, h, l, r), 0, key, val)
       then
-        (inNode, i); // return the same node, no update for addUnique!
+  (inNode, i); // return the same node, no update for addUnique!
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
       equation
-        n = emptyNodeIfNoNode(r);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+  n = emptyNodeIfNoNode(r);
+  (n, it) = addNodeUnique(inTree, n, key, val);
       then
-        (NODE(i, h, l, n), it);
+  (NODE(i, h, l, n), it);
 
     // Insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
       equation
-        n = emptyNodeIfNoNode(l);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+  n = emptyNodeIfNoNode(l);
+  (n, it) = addNodeUnique(inTree, n, key, val);
       then
-        (NODE(i, h, n, r), it);
+  (NODE(i, h, n, r), it);
   end matchcontinue;
 end addNodeUnique_dispatch;
 

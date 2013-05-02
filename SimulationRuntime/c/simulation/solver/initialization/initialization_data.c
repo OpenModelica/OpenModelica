@@ -42,7 +42,7 @@
  *  \param [in]  [simData]
  *
  *  return NULL: no vars to initialize
- *         else: initialized init-data struct
+ *   else: initialized init-data struct
  *
  *  \author lochel
  */
@@ -121,15 +121,15 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->nominal[j] = simData->modelData.realVarsData[i].attribute.useNominal ? fabs(simData->modelData.realVarsData[i].attribute.nominal) : 1.0;
       if(initData->nominal[j] == 0.0)
       {
-        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
-         *                  because this breaks the FMI tests with these kind of messages:
-         *                  warning | (null)(nominal=0)
-         *                          | nominal value is set to 1.0
-         * put it back when everything works fine.
-         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-         * WARNING_AL("nominal value is set to 1.0");
-         */
-        initData->nominal[j] = 1.0;
+  /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
+   *                  because this breaks the FMI tests with these kind of messages:
+   *                  warning | (null)(nominal=0)
+   *                          | nominal value is set to 1.0
+   * put it back when everything works fine.
+   * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+   * WARNING_AL("nominal value is set to 1.0");
+   */
+  initData->nominal[j] = 1.0;
       }
 
       initData->vars[j] = simData->modelData.realVarsData[i].attribute.start;
@@ -151,15 +151,15 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->nominal[j] = fabs(simData->modelData.realParameterData[i].attribute.nominal);
       if(initData->nominal[j] == 0.0)
       {
-        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
-         *                  because this breaks the FMI tests with these kind of messages:
-         *                  warning | (null)(nominal=0)
-         *                          | nominal value is set to 1.0
-         * put it back when everything works fine.
-         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-         * WARNING_AL("nominal value is set to 1.0");
-         */
-        initData->nominal[j] = 1.0;
+  /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
+   *                  because this breaks the FMI tests with these kind of messages:
+   *                  warning | (null)(nominal=0)
+   *                          | nominal value is set to 1.0
+   * put it back when everything works fine.
+   * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+   * WARNING_AL("nominal value is set to 1.0");
+   */
+  initData->nominal[j] = 1.0;
       }
 
       initData->vars[j] = simData->modelData.realParameterData[i].attribute.start;
@@ -307,24 +307,24 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     /* for real variables */
     for(j=0; j<data->modelData.nVariablesReal; ++j)
       if(data->modelData.realVarsData[j].attribute.useStart)
-        tmpStartResidual2[ix++] = data->modelData.realVarsData[j].attribute.start - data->localData[0]->realVars[j];
+  tmpStartResidual2[ix++] = data->modelData.realVarsData[j].attribute.start - data->localData[0]->realVars[j];
     /* for real parameters */
     for(j=0; j<data->modelData.nParametersReal; ++j)
       if(data->modelData.realParameterData[j].attribute.useStart && !data->modelData.realParameterData[j].attribute.fixed)
-        tmpStartResidual2[ix++] = data->modelData.realParameterData[j].attribute.start - data->localData[0]->realVars[j];
+  tmpStartResidual2[ix++] = data->modelData.realParameterData[j].attribute.start - data->localData[0]->realVars[j];
 
     for(j=0; j<initData->nInitResiduals; ++j)
     {
       double f = fabs(initData->nominal[i] * (tmpResidual2[j] - tmpResidual1[j]) / h);
       if(f > residualScalingCoefficients[j])
-        residualScalingCoefficients[j] = f;
+  residualScalingCoefficients[j] = f;
     }
 
     for(j=0; j<initData->nStartValueResiduals; ++j)
     {
       double f = fabs(initData->nominal[i] * (tmpStartResidual2[j] - tmpStartResidual1[j]) / h);
       if(f > startValueResidualScalingCoefficients[j])
-        startValueResidualScalingCoefficients[j] = f;
+  startValueResidualScalingCoefficients[j] = f;
     }
     initData->vars[i] -= h;
   }

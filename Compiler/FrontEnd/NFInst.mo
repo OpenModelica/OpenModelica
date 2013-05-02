@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInst
-" file:        NFInst.mo
+" file:  NFInst.mo
   package:     NFInst
   description: Instantiation
 
@@ -132,99 +132,99 @@ algorithm
 
     case (_, _)
       equation
-        System.startTimer();
-        name = Absyn.pathLastIdent(inClassPath);
+  System.startTimer();
+  name = Absyn.pathLastIdent(inClassPath);
 
-        /*********************************************************************/
-        /* ------------------------- INSTANTIATION ------------------------- */
-        /*********************************************************************/
+  /*********************************************************************/
+  /* ------------------------- INSTANTIATION ------------------------- */
+  /*********************************************************************/
 
-        // Look up the class to instantiate in the environment.
-        (top_cls, env) = NFLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
+  // Look up the class to instantiate in the environment.
+  (top_cls, env) = NFLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
 
-        //// Instantiate that class.
-        functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
-        constants = NFInstSymbolTable.create();
-        (cls, _, _, (constants, functions)) = instClassEntry(inClassPath, top_cls,
-          NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(), env,
-          NFInstTypes.EMPTY_PREFIX(SOME(inClassPath)), INST_ALL(), (constants, functions));
+  //// Instantiate that class.
+  functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
+  constants = NFInstSymbolTable.create();
+  (cls, _, _, (constants, functions)) = instClassEntry(inClassPath, top_cls,
+    NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(), env,
+    NFInstTypes.EMPTY_PREFIX(SOME(inClassPath)), INST_ALL(), (constants, functions));
 
-        //builtin_el = instBuiltinElements((constants, functions));
+  //builtin_el = instBuiltinElements((constants, functions));
 
-        // print(NFInstDump.modelStr(name, cls)); print("\n");
+  // print(NFInstDump.modelStr(name, cls)); print("\n");
 
-        /*********************************************************************/
-        /* ----------------------------- TYPING ---------------------------- */
-        /*********************************************************************/
+  /*********************************************************************/
+  /* ----------------------------- TYPING ---------------------------- */
+  /*********************************************************************/
 
-        // Build the symboltable to use for typing.
-        symtab = NFInstSymbolTable.build(cls);
-        // Add the package constants found during instantiation.
-        symtab = NFInstSymbolTable.merge(symtab, constants);
-        // Add any builtin elements we might need, like StateSelect.
-        //symtab = NFInstSymbolTable.addClass(builtin_el, symtab);
+  // Build the symboltable to use for typing.
+  symtab = NFInstSymbolTable.build(cls);
+  // Add the package constants found during instantiation.
+  symtab = NFInstSymbolTable.merge(symtab, constants);
+  // Add any builtin elements we might need, like StateSelect.
+  //symtab = NFInstSymbolTable.addClass(builtin_el, symtab);
 
-        // Mark structural parameters.
-        (cls, symtab) = assignParamTypes(cls, symtab);
+  // Mark structural parameters.
+  (cls, symtab) = assignParamTypes(cls, symtab);
 
-        // Type all instantiated functions.
-        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
-          NFTyping.typeFunction, (functions, symtab));
+  // Type all instantiated functions.
+  ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
+    NFTyping.typeFunction, (functions, symtab));
 
-        // Type the instantiated class.
-        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
+  // Type the instantiated class.
+  (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
 
-        // Instantiate conditional components now that we have typed all crefs
-        // that might be used as conditions.
-        constants = NFInstSymbolTable.create();
-        //(cls, symtab, (constants, functions)) =
-        //  instConditionalComponents(cls, symtab, (constants, functions));
+  // Instantiate conditional components now that we have typed all crefs
+  // that might be used as conditions.
+  constants = NFInstSymbolTable.create();
+  //(cls, symtab, (constants, functions)) =
+  //  instConditionalComponents(cls, symtab, (constants, functions));
 
-        // Type the instantiated class again, to type any instantiated
-        // conditional components that might have been added.
-        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
+  // Type the instantiated class again, to type any instantiated
+  // conditional components that might have been added.
+  (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
 
-        // Type check the typed class components.
-        (cls, symtab) = NFTypeCheck.checkClassComponents(cls, NFTyping.CONTEXT_MODEL(), symtab);
+  // Type check the typed class components.
+  (cls, symtab) = NFTypeCheck.checkClassComponents(cls, NFTyping.CONTEXT_MODEL(), symtab);
 
-        // Type all equation and algorithm sections in the class.
-        (cls, conn) = NFTyping.typeSections(cls, symtab, functions);
+  // Type all equation and algorithm sections in the class.
+  (cls, conn) = NFTyping.typeSections(cls, symtab, functions);
 
-        // Generate connect equations.
-        flows = NFConnectUtil2.collectFlowConnectors(cls);
-        dae_conn = NFConnectEquations.generateEquations(conn, flows);
+  // Generate connect equations.
+  flows = NFConnectUtil2.collectFlowConnectors(cls);
+  dae_conn = NFConnectEquations.generateEquations(conn, flows);
 
-        System.stopTimer();
+  System.stopTimer();
 
-        //print(NFInstDump.modelStr(name, cls));
+  //print(NFInstDump.modelStr(name, cls));
 
-        //print("\n\nConnections:\n");
-        //print(NFInstDump.connectionsStr(conn));
-        //print("\n");
+  //print("\n\nConnections:\n");
+  //print(NFInstDump.connectionsStr(conn));
+  //print("\n");
 
-        //print("NFInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
+  //print("NFInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
-        /*********************************************************************/
-        /* --------------------------- EXPANSION --------------------------- */
-        /*********************************************************************/
+  /*********************************************************************/
+  /* --------------------------- EXPANSION --------------------------- */
+  /*********************************************************************/
 
-        // Expand the instantiated and typed class into scalar components,
-        // equations and algorithms.
-        (dae, func_tree) = NFSCodeExpand.expand(name, cls, functions);
-        dae = DAEUtil.appendToCompDae(dae, dae_conn);
+  // Expand the instantiated and typed class into scalar components,
+  // equations and algorithms.
+  (dae, func_tree) = NFSCodeExpand.expand(name, cls, functions);
+  dae = DAEUtil.appendToCompDae(dae, dae_conn);
 
-        //print("\nEXPANDED FORM:\n\n");
-        //print(DAEDump.dumpStr(dae, func_tree) +& "\n");
+  //print("\nEXPANDED FORM:\n\n");
+  //print(DAEDump.dumpStr(dae, func_tree) +& "\n");
       then
-        (dae, func_tree);
+  (dae, func_tree);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        name = Absyn.pathString(inClassPath);
-        Debug.traceln("NFInst.instClass failed on " +& name);
+  true = Flags.isSet(Flags.FAILTRACE);
+  name = Absyn.pathString(inClassPath);
+  Debug.traceln("NFInst.instClass failed on " +& name);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end instClass;
@@ -278,75 +278,75 @@ algorithm
 
     // A builtin type (only builtin types can be PARTS).
     case (_, NFEnv.ENTRY(element = SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
-        classDef = SCode.PARTS(elementLst = _))), _, _, _, _, _, ip, globals)
+  classDef = SCode.PARTS(elementLst = _))), _, _, _, _, _, ip, globals)
       equation
-        (vars, globals) = instBasicTypeAttributes(inClassMod, name, globals);
-        ty = instBasicType(name, {});
+  (vars, globals) = instBasicTypeAttributes(inClassMod, name, globals);
+  ty = instBasicType(name, {});
       then
-        (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
+  (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
 
     // A class with parts, instantiate all elements in it.
     case (_, NFEnv.ENTRY(element = SCode.CLASS(name = name, restriction = res,
-          classDef = cdef as SCode.PARTS(elementLst = el), info = info)), _, mods,
-        _, _, _, ip, globals)
+    classDef = cdef as SCode.PARTS(elementLst = el), info = info)), _, mods,
+  _, _, _, ip, globals)
       equation
-        // Enter the class scope.
-        env = NFEnv.enterEntryScope(inEntry, inEnv);
+  // Enter the class scope.
+  env = NFEnv.enterEntryScope(inEntry, inEnv);
 
-        // Instantiate the class' elements.
-        mods = NFMod.addClassModToTable(inClassMod, inPrefix, env, inOuterMods);
-        (elems, es, globals) = instElementList(el, mods, inPrefixes, env,
-            inTypePath, inPrefix, ip, globals);
+  // Instantiate the class' elements.
+  mods = NFMod.addClassModToTable(inClassMod, inPrefix, env, inOuterMods);
+  (elems, es, globals) = instElementList(el, mods, inPrefixes, env,
+      inTypePath, inPrefix, ip, globals);
 
-        // Instantiate all equation and algorithm sections.
-        (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, ip, globals);
+  // Instantiate all equation and algorithm sections.
+  (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, ip, globals);
 
-        // Flatten the class parts.
-        cls = NFInstTypes.COMPLEX_CLASS(inTypePath, elems, eq, ieq, alg, ialg);
-        cls = NFInstFlatten.flattenClass(cls, hasExtends(es));
+  // Flatten the class parts.
+  cls = NFInstTypes.COMPLEX_CLASS(inTypePath, elems, eq, ieq, alg, ialg);
+  cls = NFInstFlatten.flattenClass(cls, hasExtends(es));
 
-        // Create the class' type.
-        state = ClassInf.start(res, Absyn.IDENT(name));
-        (cls, ty) = NFInstUtil.makeClassType(cls, state, hasSpecialExtends(es));
+  // Create the class' type.
+  state = ClassInf.start(res, Absyn.IDENT(name));
+  (cls, ty) = NFInstUtil.makeClassType(cls, state, hasSpecialExtends(es));
       then
-        (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
+  (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
 
     // A derived class, look up the inherited class and instantiate it.
     case (_, NFEnv.ENTRY(element = scls as SCode.CLASS(name = name, classDef =
-        SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
-        restriction = res, info = info)), _, _, _, _, _, ip, globals)
+  SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
+  restriction = res, info = info)), _, _, _, _, _, ip, globals)
       equation
-        // Look up the inherited class.
-        (entry, env) = NFLookup.lookupTypeSpec(dty, inEnv, info);
-        path = Absyn.typeSpecPath(dty);
+  // Look up the inherited class.
+  (entry, env) = NFLookup.lookupTypeSpec(dty, inEnv, info);
+  path = Absyn.typeSpecPath(dty);
 
-        // Merge the modifiers and instantiate the inherited class.
-        dims = Absyn.typeSpecDimensions(dty);
-        dim_count = listLength(dims);
-        mod = NFMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
-        mod = NFMod.mergeMod(inClassMod, mod);
+  // Merge the modifiers and instantiate the inherited class.
+  dims = Absyn.typeSpecDimensions(dty);
+  dim_count = listLength(dims);
+  mod = NFMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
+  mod = NFMod.mergeMod(inClassMod, mod);
 
-        //    redecls = listAppend(
-        //      NFSCodeEnv.getDerivedClassRedeclares(name, dty, envDerived),
-        //      NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
-        //      (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
-        //
+  //    redecls = listAppend(
+  //      NFSCodeEnv.getDerivedClassRedeclares(name, dty, envDerived),
+  //      NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
+  //      (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
+  //
 
-        (cls, ty, prefs, globals) = instClassEntry(inTypePath, entry, mod,
-          inOuterMods, inPrefixes, env, inPrefix, ip, globals);
+  (cls, ty, prefs, globals) = instClassEntry(inTypePath, entry, mod,
+    inOuterMods, inPrefixes, env, inPrefix, ip, globals);
 
-        // Merge the attributes of this class and the attributes of the
-        // inherited class.
-        prefs = NFInstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
+  // Merge the attributes of this class and the attributes of the
+  // inherited class.
+  prefs = NFInstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
 
-        // Add any dimensions from this class to the resulting type.
-        (ty, globals) = liftArrayType(dims, ty, inEnv, inPrefix, info, globals);
+  // Add any dimensions from this class to the resulting type.
+  (ty, globals) = liftArrayType(dims, ty, inEnv, inPrefix, info, globals);
 
-        // Construct the type for this derived class.
-        state = ClassInf.start(res, Absyn.IDENT(name));
-        ty = NFInstUtil.makeDerivedClassType(ty, state);
+  // Construct the type for this derived class.
+  state = ClassInf.start(res, Absyn.IDENT(name));
+  ty = NFInstUtil.makeDerivedClassType(ty, state);
       then
-        (cls, ty, prefs, globals);
+  (cls, ty, prefs, globals);
 
     //case (_, NFSCodeEnv.CLASS(cls = scls, classType = NFSCodeEnv.CLASS_EXTENDS(), env = env),
     //    _, _, _, _, ip, globals)
@@ -357,18 +357,18 @@ algorithm
     //    (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
 
     case (_, NFEnv.ENTRY(element = SCode.CLASS(classDef =
-        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, _, globals)
+  SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, _, globals)
       equation
-        ty = NFInstUtil.makeEnumType(enums, inTypePath);
+  ty = NFInstUtil.makeEnumType(enums, inTypePath);
       then
-        (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
+  (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInst.instClassEntry failed on unknown class.\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFInst.instClassEntry failed on unknown class.\n");
       then
-        fail();
+  fail();
 
   end match;
 end instClassEntry;
@@ -404,24 +404,24 @@ end instClassEntry;
 //      Globals globals;
 //
 //    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
-//        composition = cdef)), _, _, _, _, _, ip, globals)
+//  composition = cdef)), _, _, _, _, _, ip, globals)
 //      equation
-//        (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
-//        ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
-//        cdef = SCode.addElementToCompositeClassDef(ext, cdef);
-//        scls = SCode.setElementClassDefinition(cdef, inClassExtends);
-//        item = NFSCodeEnv.CLASS(scls, inClassEnv, NFSCodeEnv.CLASS_EXTENDS());
-//        (comp_cls, comp_ty, _, globals) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, ip, globals);
+//  (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
+//  ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
+//  cdef = SCode.addElementToCompositeClassDef(ext, cdef);
+//  scls = SCode.setElementClassDefinition(cdef, inClassExtends);
+//  item = NFSCodeEnv.CLASS(scls, inClassEnv, NFSCodeEnv.CLASS_EXTENDS());
+//  (comp_cls, comp_ty, _, globals) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, ip, globals);
 //      then
-//        (comp_cls, comp_ty, globals);
+//  (comp_cls, comp_ty, globals);
 //
 //    else
 //      equation
-//        true = Flags.isSet(Flags.FAILTRACE);
-//        name = SCode.elementName(inClassExtends);
-//        Debug.traceln("NFInst.instClassExtends failed on " +& name);
+//  true = Flags.isSet(Flags.FAILTRACE);
+//  name = SCode.elementName(inClassExtends);
+//  Debug.traceln("NFInst.instClassExtends failed on " +& name);
 //      then
-//        fail();
+//  fail();
 //
 //  end matchcontinue;
 //end instClassExtends;
@@ -438,16 +438,16 @@ end instClassEntry;
 //      String name;
 //
 //    case (NFSCodeEnv.FRAME(extendsTable = NFSCodeEnv.EXTENDS_TABLE(
-//        baseClasses = NFSCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
+//  baseClasses = NFSCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
 //      then (bc, info);
 //
 //    else
 //      equation
-//        true = Flags.isSet(Flags.FAILTRACE);
-//        name = NFSCodeEnv.getEnvName(inClassEnv);
-//        Debug.traceln("NFInst.getClassExtendsBaseClass failed on " +& name);
+//  true = Flags.isSet(Flags.FAILTRACE);
+//  name = NFSCodeEnv.getEnvName(inClassEnv);
+//  Debug.traceln("NFInst.getClassExtendsBaseClass failed on " +& name);
 //      then
-//        fail();
+//  fail();
 //
 //  end matchcontinue;
 //end getClassExtendsBaseClass;
@@ -485,17 +485,17 @@ algorithm
 
     case (NFInstTypes.MODIFIER(subModifiers = submods), _, globals)
       equation
-        (vars, globals) =
-          List.map1Fold(submods, instBasicTypeAttribute, inTypeName, globals);
+  (vars, globals) =
+    List.map1Fold(submods, instBasicTypeAttribute, inTypeName, globals);
       then
-        (vars, globals);
+  (vars, globals);
 
     case (NFInstTypes.REDECLARE(element = el), _, _)
       equation
-        info = SCode.elementInfo(el);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
+  info = SCode.elementInfo(el);
+  Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
       then
-        fail();
+  fail();
 
   end match;
 end instBasicTypeAttributes;
@@ -520,14 +520,14 @@ algorithm
       Absyn.Info info;
 
     case (NFInstTypes.MODIFIER(name = ident, subModifiers = {}, binding =
-        NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
+  NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
       equation
-        ty = getBasicTypeAttributeType(inTypeName, ident, info);
-        (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
-        binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
-          DAE.BINDING_FROM_DEFAULT_VALUE());
+  ty = getBasicTypeAttributeType(inTypeName, ident, info);
+  (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
+  binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
+    DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
+  (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
 
   end match;
 end instBasicTypeAttribute;
@@ -545,10 +545,10 @@ algorithm
     case ("String", _, _) then getBasicTypeAttrTypeString(inAttributeName);
     else
       equation
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {inAttributeName, inTypeName}, inInfo);
+  Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+    {inAttributeName, inTypeName}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end getBasicTypeAttributeType;
@@ -627,16 +627,16 @@ end getBasicTypeAttrTypeString;
 //      Absyn.Info info;
 //
 //    case (NFInstTypes.MODIFIER(name = ident, subModifiers = {},
-//        binding = NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
+//  binding = NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
 //      equation
-//        NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
-//          Absyn.IDENT(tspec)))) = NFSCodeEnv.avlTreeGet(inAttributes, ident);
-//        ty = instBasicTypeAttributeType(tspec);
-//        (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
-//        binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
-//          DAE.BINDING_FROM_DEFAULT_VALUE());
+//  NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
+//    Absyn.IDENT(tspec)))) = NFSCodeEnv.avlTreeGet(inAttributes, ident);
+//  ty = instBasicTypeAttributeType(tspec);
+//  (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
+//  binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
+//    DAE.BINDING_FROM_DEFAULT_VALUE());
 //      then
-//        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
+//  (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
 //
 //    // TODO: Print error message for invalid attributes.
 //  end match;
@@ -702,22 +702,22 @@ algorithm
 
     case (elem :: rest_el, mods, _, env, _, _, accum_el, es, globals)
       equation
-        (accum_el, es, globals) = instElement(elem, mods, inPrefixes, env,
-          inPrefix, inInstPolicy, accum_el, es, globals);
-        (accum_el, es, globals) = instElementList2(rest_el, mods, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, accum_el, es, globals);
+  (accum_el, es, globals) = instElement(elem, mods, inPrefixes, env,
+    inPrefix, inInstPolicy, accum_el, es, globals);
+  (accum_el, es, globals) = instElementList2(rest_el, mods, inPrefixes,
+    inEnv, inPrefix, inInstPolicy, accum_el, es, globals);
       then
-        (accum_el, es, globals);
+  (accum_el, es, globals);
 
 //    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, globals)
 //      equation
-//        (elem, orig_mod, env, _) = resolveRedeclaredElement(elem, inEnv, inPrefix);
-//        (accum_el, exts, cse, globals) = instElement_dispatch(elem, orig_mod,
-//          inPrefixes, exts, env, inPrefix, inInstPolicy, accum_el, cse, globals);
-//        (accum_el, cse, globals) = instElementList2(rest_el, inPrefixes, exts,
-//          inEnv, inPrefix, inInstPolicy, accum_el, cse, globals);
+//  (elem, orig_mod, env, _) = resolveRedeclaredElement(elem, inEnv, inPrefix);
+//  (accum_el, exts, cse, globals) = instElement_dispatch(elem, orig_mod,
+//    inPrefixes, exts, env, inPrefix, inInstPolicy, accum_el, cse, globals);
+//  (accum_el, cse, globals) = instElementList2(rest_el, inPrefixes, exts,
+//    inEnv, inPrefix, inInstPolicy, accum_el, cse, globals);
 //      then
-//        (accum_el, cse, globals);
+//  (accum_el, cse, globals);
 //
 
     case ({}, _, _, _, _, _, _, es, globals)
@@ -752,13 +752,13 @@ end instElementList2;
 //    // Only components which are actually replaceable needs to be looked up,
 //    // since non-replaceable components can't have been replaced.
 //    case ((orig_el as SCode.COMPONENT(name = name, prefixes =
-//        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
+//  SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
 //      equation
-//        (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
-//        (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
-//        omod = getOriginalMod(orig_el, inEnv, inPrefix);
+//  (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
+//  (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
+//  omod = getOriginalMod(orig_el, inEnv, inPrefix);
 //      then
-//        ((new_el, mod), omod, env, previousItem);
+//  ((new_el, mod), omod, env, previousItem);
 //
 //    // Other elements doesn't need to be looked up. Extends may not be
 //    // replaceable, and classes are looked up in the environment anyway. The
@@ -787,12 +787,12 @@ end instElementList2;
 //      then NFInstTypes.NOMOD();
 //
 //    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-//        modifications = smod), _, _)
+//  modifications = smod), _, _)
 //      equation
-//        dim_count = listLength(ad);
-//        mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+//  dim_count = listLength(ad);
+//  mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
 //      then
-//        mod;
+//  mod;
 //
 //  end match;
 //end getOriginalMod;
@@ -827,37 +827,37 @@ algorithm
     // A component when we're in 'instantiate everything' mode.
     case (SCode.COMPONENT(name = _), _, _, _, _, INST_ALL(), _, es, globals)
       equation
-        (res, globals) = instComponent(inElement, inModifiers, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, globals);
+  (res, globals) = instComponent(inElement, inModifiers, inPrefixes,
+    inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, es, globals);
+  (res :: inAccumEl, es, globals);
 
     // A constant when we're in 'instantiate only constants' mode.
     case (SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), _, _, _, _, INST_ONLY_CONST(), _, es, globals)
+  SCode.CONST())), _, _, _, _, INST_ONLY_CONST(), _, es, globals)
       equation
-        (res, globals) = instComponent(inElement, inModifiers, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, globals);
+  (res, globals) = instComponent(inElement, inModifiers, inPrefixes,
+    inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, es, globals);
+  (res :: inAccumEl, es, globals);
 
     // An extends clause.
     case (SCode.EXTENDS(baseClassPath = _), _, _, _, _, ip, _, es, globals)
       equation
-        (res, es, globals) = instExtends(inElement, inModifiers, inPrefixes,
-          inEnv, inPrefix, es, ip, globals);
+  (res, es, globals) = instExtends(inElement, inModifiers, inPrefixes,
+    inEnv, inPrefix, es, ip, globals);
       then
-        (res :: inAccumEl, es, globals);
+  (res :: inAccumEl, es, globals);
 
     // A package which might contain constants we should instantiate.
     case (SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        _, _, _, _, ip, _, es, globals)
+  _, _, _, _, ip, _, es, globals)
       equation
-        (ores, globals) = instPackageConstants(inElement, inModifiers, inEnv,
-          inPrefix, globals);
-        accum_el = List.consOption(ores, inAccumEl);
+  (ores, globals) = instPackageConstants(inElement, inModifiers, inEnv,
+    inPrefix, globals);
+  accum_el = List.consOption(ores, inAccumEl);
       then
-        (accum_el, es, globals);
+  (accum_el, es, globals);
 
     // Ignore everything else.
     else (inAccumEl, inExtendsState, inGlobals);
@@ -902,104 +902,104 @@ algorithm
 
     // an outer component
     case (SCode.COMPONENT(name = name,
-        typeSpec = Absyn.TPATH(path = tpath),
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
+  typeSpec = Absyn.TPATH(path = tpath),
+  prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
       equation
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
-        path = NFInstUtil.prefixToPath(prefix);
-        comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
+  prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+  path = NFInstUtil.prefixToPath(prefix);
+  comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
       then
-        (NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath)), globals);
+  (NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath)), globals);
 
     case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
-        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
-        _, _, _, _, ip, globals)
+  Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
+  _, _, _, _, ip, globals)
       equation
-        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
-        enum_idx = stringInt(enum_idx_str);
+  Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
+  enum_idx = stringInt(enum_idx_str);
 
-        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+  (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+  path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
 
-        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
-          NFMod.emptyModTable, inPrefixes, env, inPrefix, ip, globals);
+  (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
+    NFMod.emptyModTable, inPrefixes, env, inPrefix, ip, globals);
 
-        binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
-        comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
-          NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
+  binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
+  comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
+    NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
       then
-        (NFInstTypes.ELEMENT(comp, cls), globals);
+  (NFInstTypes.ELEMENT(comp, cls), globals);
 
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-        typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _, ip, globals)
+  typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
+  condition = NONE(), info = info), _, _, _, _, ip, globals)
       equation
-        // Lookup the class of the component.
-        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+  // Lookup the class of the component.
+  (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
 
-        // NFSCodeCheck.checkPartialInstance(cls_entry, info);
+  // NFSCodeCheck.checkPartialInstance(cls_entry, info);
 
-        // Instantiate array dimensions and add them to the prefix.
-        (dims, globals) = instDimensions(ad, inEnv, inPrefix, info, globals);
-        prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
+  // Instantiate array dimensions and add them to the prefix.
+  (dims, globals) = instDimensions(ad, inEnv, inPrefix, info, globals);
+  prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
 
-        // Check that it's legal to instantiate the class.
-        //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
+  // Check that it's legal to instantiate the class.
+  //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
 
-        // Translate the component's modification.
-        dim_count = listLength(ad);
-        mod = NFMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+  // Translate the component's modification.
+  dim_count = listLength(ad);
+  mod = NFMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
 
-        // Merge the modifier from the class with this element's modifications.
-        cmod = NFMod.getModFromTable(name, inModifiers);
-        cmod = NFMod.propagateMod(cmod, dim_count);
-        mod = NFMod.mergeMod(cmod, mod);
+  // Merge the modifier from the class with this element's modifications.
+  cmod = NFMod.getModFromTable(name, inModifiers);
+  cmod = NFMod.propagateMod(cmod, dim_count);
+  mod = NFMod.mergeMod(cmod, mod);
 
-        // Merge prefixes from the instance hierarchy.
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
-        pty = NFInstUtil.paramTypeFromPrefixes(prefs);
+  // Merge prefixes from the instance hierarchy.
+  path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+  prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
+  pty = NFInstUtil.paramTypeFromPrefixes(prefs);
 
-        //redecl = NFMod.extractRedeclares(smod);
+  //redecl = NFMod.extractRedeclares(smod);
 
-        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, mod,
-          NFMod.emptyModTable, prefs, env, prefix, ip, globals);
+  (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, mod,
+    NFMod.emptyModTable, prefs, env, prefix, ip, globals);
 
-        prefs = NFInstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
+  prefs = NFInstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
 
-        // Add dimensions from the class type.
-        (dims, dim_count) = addDimensionsFromType(dims, ty);
-        ty = NFInstUtil.arrayElementType(ty);
-        dim_arr = NFInstUtil.makeDimensionArray(dims);
+  // Add dimensions from the class type.
+  (dims, dim_count) = addDimensionsFromType(dims, ty);
+  ty = NFInstUtil.arrayElementType(ty);
+  dim_arr = NFInstUtil.makeDimensionArray(dims);
 
-        // Instantiate the binding.
-        mod = NFMod.propagateMod(mod, dim_count);
-        binding = NFMod.getModifierBinding(mod);
-        (binding, globals) = instBinding(binding, dim_count, globals);
+  // Instantiate the binding.
+  mod = NFMod.propagateMod(mod, dim_count);
+  binding = NFMod.getModifierBinding(mod);
+  (binding, globals) = instBinding(binding, dim_count, globals);
 
-        // Create the component and add it to the program.
-        comp = NFInstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
+  // Create the component and add it to the program.
+  comp = NFInstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
       then
-        (NFInstTypes.ELEMENT(comp, cls), globals);
+  (NFInstTypes.ELEMENT(comp, cls), globals);
 
 //    // A conditional component, save it for later.
 //    case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
-//        _, _, _, _, _, _, globals)
+//  _, _, _, _, _, _, globals)
 //      equation
-//        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-//        (inst_exp, globals) = instExp(cond_exp, inEnv, inPrefix, info, globals);
-//        comp = NFInstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
-//          inClassMod, inPrefixes, inEnv, inPrefix, info);
+//  path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+//  (inst_exp, globals) = instExp(cond_exp, inEnv, inPrefix, info, globals);
+//  comp = NFInstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
+//    inClassMod, inPrefixes, inEnv, inPrefix, info);
 //      then
-//        (NFInstTypes.CONDITIONAL_ELEMENT(comp), globals);
+//  (NFInstTypes.CONDITIONAL_ELEMENT(comp), globals);
 //
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInst.instComponent failed on unknown component.\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFInst.instComponent failed on unknown component.\n");
       then
-        fail();
+  fail();
 
   end match;
 end instComponent;
@@ -1036,33 +1036,33 @@ algorithm
       ModTable mods;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        mods, _, _, _, es, ip, globals)
+  mods, _, _, _, es, ip, globals)
       equation
-        // Look up the base class in the environment.
-        (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
+  // Look up the base class in the environment.
+  (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
 //
-//        // Apply the redeclarations.
-//        (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-//          inRedeclares, item, env, inEnv, inPrefix);
+//  // Apply the redeclarations.
+//  (item, env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+//    inRedeclares, item, env, inEnv, inPrefix);
 //
-//        // Instantiate the class.
-        prefs = NFInstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
-        mod = NFMod.translateMod(smod, "", 0, inPrefix, inEnv);
+//  // Instantiate the class.
+  prefs = NFInstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
+  mod = NFMod.translateMod(smod, "", 0, inPrefix, inEnv);
 
-        (cls, ty, _, globals) =
-          instClassEntry(path, entry, mod, mods, prefs, env, inPrefix, ip, globals);
+  (cls, ty, _, globals) =
+    instClassEntry(path, entry, mod, mods, prefs, env, inPrefix, ip, globals);
 
-        special_ext = NFInstUtil.isSpecialExtends(ty);
-        es = updateExtendsState(es, special_ext);
+  special_ext = NFInstUtil.isSpecialExtends(ty);
+  es = updateExtendsState(es, special_ext);
       then
-        (NFInstTypes.EXTENDED_ELEMENTS(path, cls, ty), es, globals);
+  (NFInstTypes.EXTENDED_ELEMENTS(path, cls, ty), es, globals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInst.instExtends failed on unknown element.\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFInst.instExtends failed on unknown element.\n");
       then
-        fail();
+  fail();
 
   end match;
 end instExtends;
@@ -1131,13 +1131,13 @@ algorithm
 
     case (SCode.CLASS(name = name), _, _, _, globals)
       equation
-        (entry, env) = NFLookup.lookupInLocalScope(name, inEnv);
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _, _, globals) = instClassEntry(Absyn.IDENT(name), entry, NFInstTypes.NOMOD(),
-          inModifiers, NFInstTypes.NO_PREFIXES(), env, prefix, INST_ONLY_CONST(), globals);
-        oel = makeConstantsPackage(prefix, cls);
+  (entry, env) = NFLookup.lookupInLocalScope(name, inEnv);
+  prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+  (cls, _, _, globals) = instClassEntry(Absyn.IDENT(name), entry, NFInstTypes.NOMOD(),
+    inModifiers, NFInstTypes.NO_PREFIXES(), env, prefix, INST_ONLY_CONST(), globals);
+  oel = makeConstantsPackage(prefix, cls);
       then
-        (oel, globals);
+  (oel, globals);
 
     else (NONE(), inGlobals);
 
@@ -1156,17 +1156,17 @@ algorithm
 
     case (_, NFInstTypes.COMPLEX_CLASS(_, _ :: _, {}, {}, {}, {}))
       equation
-        name = NFInstUtil.prefixToPath(inPrefix);
-        el = NFInstTypes.ELEMENT(NFInstTypes.PACKAGE(name, NONE()), inClass);
+  name = NFInstUtil.prefixToPath(inPrefix);
+  el = NFInstTypes.ELEMENT(NFInstTypes.PACKAGE(name, NONE()), inClass);
       then
-        SOME(el);
+  SOME(el);
 
     case (_, NFInstTypes.COMPLEX_CLASS(components = _ :: _))
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"NFInst.makeConstantsPackage got complex class with equations or algorithms!"});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"NFInst.makeConstantsPackage got complex class with equations or algorithms!"});
       then
-        fail();
+  fail();
 
     else NONE();
 
@@ -1193,11 +1193,11 @@ end makeConstantsPackage;
 //
 //    case (enum_lit :: rest_lits, _, _, _, _)
 //      equation
-//        el = instEnumLiteral(enum_lit, inEnumPath, inType, inIndex);
-//        // adrpo: we need to append it because otherwise is reverse and has the wrong index!
-//        acc = listAppend(inAccumEl, {el});
+//  el = instEnumLiteral(enum_lit, inEnumPath, inType, inIndex);
+//  // adrpo: we need to append it because otherwise is reverse and has the wrong index!
+//  acc = listAppend(inAccumEl, {el});
 //      then
-//        instEnumLiterals(rest_lits, inEnumPath, inType, inIndex + 1, acc);
+//  instEnumLiterals(rest_lits, inEnumPath, inType, inIndex + 1, acc);
 //
 //  end match;
 //end instEnumLiterals;
@@ -1217,10 +1217,10 @@ end makeConstantsPackage;
 //
 //    case (SCode.ENUM(literal = name), _, _, _)
 //      equation
-//        path = Absyn.suffixPath(inEnumPath, name);
-//        comp = NFInstUtil.makeEnumLiteralComp(path, inType, inIndex);
+//  path = Absyn.suffixPath(inEnumPath, name);
+//  comp = NFInstUtil.makeEnumLiteralComp(path, inType, inIndex);
 //      then
-//        NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(inEnumPath));
+//  NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(inEnumPath));
 //
 //  end match;
 //end instEnumLiteral;
@@ -1235,12 +1235,12 @@ end makeConstantsPackage;
 //
 //    case (_)
 //      equation
-//        (stateselect_cls, _, _, _) = instClassItem(Absyn.IDENT("StateSelect"),
-//          NFLookup.BUILTIN_STATESELECT, NFInstTypes.NOMOD(),
-//          NFInstTypes.NO_PREFIXES(), {}, NFInstTypes.EMPTY_PREFIX(NONE()),
-//          INST_ALL(), inGlobals);
+//  (stateselect_cls, _, _, _) = instClassItem(Absyn.IDENT("StateSelect"),
+//    NFLookup.BUILTIN_STATESELECT, NFInstTypes.NOMOD(),
+//    NFInstTypes.NO_PREFIXES(), {}, NFInstTypes.EMPTY_PREFIX(NONE()),
+//    INST_ALL(), inGlobals);
 //      then
-//        stateselect_cls;
+//  stateselect_cls;
 //
 //  end matchcontinue;
 //end instBuiltinElements;
@@ -1264,9 +1264,9 @@ algorithm
 
     case (NFInstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, globals)
       equation
-        (dexp, globals) = instExp(aexp, env, prefix, info, globals);
+  (dexp, globals) = instExp(aexp, env, prefix, info, globals);
       then
-        (NFInstTypes.UNTYPED_BINDING(dexp, false, pl, info), globals);
+  (NFInstTypes.UNTYPED_BINDING(dexp, false, pl, info), globals);
 
     else (inBinding,inGlobals);
 
@@ -1306,9 +1306,9 @@ algorithm
 
     case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, globals)
       equation
-        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
+  (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (NFInstUtil.makeDimension(dexp), globals);
+  (NFInstUtil.makeDimension(dexp), globals);
 
   end match;
 end instDimension;
@@ -1346,9 +1346,9 @@ algorithm
 
     case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, globals)
       equation
-        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
+  (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (makeSubscript(dexp), globals);
+  (makeSubscript(dexp), globals);
 
   end match;
 end instSubscript;
@@ -1387,18 +1387,18 @@ algorithm
     case ({}, _, _, _, _, _) then (inType,inGlobals);
     case (_, DAE.T_ARRAY(ty, dims1, src), _, _, _, globals)
       equation
-        (dims2, globals) =
-          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, globals);
-        dims1 = listAppend(dims2, dims1);
+  (dims2, globals) =
+    List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, globals);
+  dims1 = listAppend(dims2, dims1);
       then
-        (DAE.T_ARRAY(ty, dims1, src), globals);
+  (DAE.T_ARRAY(ty, dims1, src), globals);
 
     else
       equation
-        (dims2, globals) =
-          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, inGlobals);
+  (dims2, globals) =
+    List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, inGlobals);
       then
-        (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource), globals);
+  (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource), globals);
 
   end match;
 end liftArrayType;
@@ -1416,11 +1416,11 @@ algorithm
 
     case (_, _)
       equation
-        dims = Types.getDimensions(inType);
-        added_dims = listLength(dims);
-        dims = listAppend(inDimensions, dims);
+  dims = Types.getDimensions(inType);
+  added_dims = listLength(dims);
+  dims = listAppend(inDimensions, dims);
       then
-        (dims, added_dims);
+  (dims, added_dims);
 
     else (inDimensions, 0);
 
@@ -1457,9 +1457,9 @@ algorithm
 
     case (SOME(aexp), _, _, _, globals)
       equation
-        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
+  (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (SOME(dexp), globals);
+  (SOME(dexp), globals);
 
     else (NONE(), inGlobals);
 
@@ -1481,43 +1481,43 @@ end instExpOpt;
 //
 //    case (Absyn.CREF_FULLYQUALIFIED(fname))
 //      then
-//        isBuiltinFunctionName(fname);
+//  isBuiltinFunctionName(fname);
 //
 //    case (Absyn.CREF_IDENT(name, {}))
 //      equation
-//        b = listMember(name,
-//          {
-//            "noEvent",
-//            "smooth",
-//            "sample",
-//            "pre",
-//            "edge",
-//            "change",
-//            "reinit",
-//            "size",
-//            "rooted",
-//            "transpose",
-//            "skew",
-//            "identity",
-//            "min",
-//            "max",
-//            "cross",
-//            "diagonal",
-//            "abs",
-//            "sum",
-//            "product",
-//            "assert",
-//            "array",
-//            "cat",
-//            "rem",
-//            "actualStream",
-//            "inStream",
-//            "String",
-//            "Real",
-//            "Integer"
-//            });
+//  b = listMember(name,
+//    {
+//      "noEvent",
+//      "smooth",
+//      "sample",
+//      "pre",
+//      "edge",
+//      "change",
+//      "reinit",
+//      "size",
+//      "rooted",
+//      "transpose",
+//      "skew",
+//      "identity",
+//      "min",
+//      "max",
+//      "cross",
+//      "diagonal",
+//      "abs",
+//      "sum",
+//      "product",
+//      "assert",
+//      "array",
+//      "cat",
+//      "rem",
+//      "actualStream",
+//      "inStream",
+//      "String",
+//      "Real",
+//      "Integer"
+//      });
 //      then
-//        b;
+//  b;
 //
 //    case (_) then false;
 //  end matchcontinue;
@@ -1551,260 +1551,260 @@ end instExpOpt;
 //      Env env;
 //
 //    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
 //      equation
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-//        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.SIZE(dexp1, SOME(dexp2)), globals);
+//  (DAE.SIZE(dexp1, SOME(dexp2)), globals);
 //
 //    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
 //      equation
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.SIZE(dexp1, NONE()), globals);
+//  (DAE.SIZE(dexp1, NONE()), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "smooth"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-//        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rooted"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "transpose"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "skew"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cross"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "diagonal"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "abs"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "product"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "pre"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "noEvent"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "sum"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "assert"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "change"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "array"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "array"),
-//        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
+//  functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-//        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+//  (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "sum"),
-//        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
+//  functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-//        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+//  (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
-//        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
+//  functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-//        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+//  (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
-//        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
+//  functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-//        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+//  (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "product"),
-//        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
+//  functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-//        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+//  (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cat"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rem"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "actualStream"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "inStream"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "String"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "Integer"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "Real"),
-//        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
 //      equation
-//        call_path = Absyn.crefToPath(acref);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  call_path = Absyn.crefToPath(acref);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
 //      then
-//        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 //
 //    // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
 //    case (Absyn.CALL(function_ = acref,
-//        functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, globals)
+//  functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, globals)
 //      equation
-//        (call_path, NFInstTypes.FUNCTION(inputs=inputs,outputs=outputs), globals) = instFunction(acref, inEnv, inPrefix, inInfo, globals);
-//        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
-//        (named_args, globals) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, globals);
-//        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
+//  (call_path, NFInstTypes.FUNCTION(inputs=inputs,outputs=outputs), globals) = instFunction(acref, inEnv, inPrefix, inInfo, globals);
+//  (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+//  (named_args, globals) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, globals);
+//  args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
 //      then
-//        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
+//  (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
 //
 // end match;
 //end instBuiltinFunctionCall;
@@ -1831,31 +1831,31 @@ algorithm
     // handle builtin
 //    case (Absyn.CALL(function_ = funcName), _, _, _, _)
 //      equation
-//        true = isBuiltinFunctionName(funcName);
-//        (dexp1, globals) = instBuiltinFunctionCall(inExp, inEnv, inPrefix, inInfo, inGlobals);
+//  true = isBuiltinFunctionName(funcName);
+//  (dexp1, globals) = instBuiltinFunctionCall(inExp, inEnv, inPrefix, inInfo, inGlobals);
 //      then
-//        (dexp1, globals);
+//  (dexp1, globals);
 
     // handle normal calls
     case (Absyn.CALL(function_ = funcName,
-        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, globals)
+  functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, globals)
       equation
-        //false = isBuiltinFunctionName(funcName);
-        (dexp1, globals) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, globals);
+  //false = isBuiltinFunctionName(funcName);
+  (dexp1, globals) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, globals);
       then
-        (dexp1, globals);
+  (dexp1, globals);
 
     // failure
     case (Absyn.CALL(function_ = funcName), _, _, _, globals)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        //bval = isBuiltinFunctionName(funcName);
-        bval = false;
-        str = Util.if_(bval, "*builtin*", "*regular*");
-        Debug.traceln("Failed to instantiate call to " +& str +& " function: " +&
-          Dump.printExpStr(inExp) +& " at position:" +& Error.infoStr(inInfo));
+  true = Flags.isSet(Flags.FAILTRACE);
+  //bval = isBuiltinFunctionName(funcName);
+  bval = false;
+  str = Util.if_(bval, "*builtin*", "*regular*");
+  Debug.traceln("Failed to instantiate call to " +& str +& " function: " +&
+    Dump.printExpStr(inExp) +& " at position:" +& Error.infoStr(inInfo));
       then
-        fail();
+  fail();
 
     // handle normal calls - put here for debugging so if it fails above you still can debug after.
     // Let's keep this commented out when not used, otherwise we'll get duplicate error messages.
@@ -1912,103 +1912,103 @@ algorithm
 
     case (Absyn.CREF(componentRef = acref), _, _, _, globals)
       equation
-        (dcref, globals) = instCref(acref, inEnv, inPrefix, inInfo, globals);
+  (dcref, globals) = instCref(acref, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT), globals);
+  (DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT), globals);
 
     case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
-        dop = instOperator(aop);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+  dop = instOperator(aop);
       then
-        (DAE.BINARY(dexp1, dop, dexp2), globals);
+  (DAE.BINARY(dexp1, dop, dexp2), globals);
 
     case (Absyn.UNARY(op = aop, exp = aexp1), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        dop = instOperator(aop);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  dop = instOperator(aop);
       then
-        (DAE.UNARY(dop, dexp1), globals);
+  (DAE.UNARY(dop, dexp1), globals);
 
     case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
-        dop = instOperator(aop);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+  dop = instOperator(aop);
       then
-        (DAE.LBINARY(dexp1, dop, dexp2), globals);
+  (DAE.LBINARY(dexp1, dop, dexp2), globals);
 
     case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        //dop = instOperator(aop);
-        dop = DAE.NOT(DAE.T_BOOL_DEFAULT);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  //dop = instOperator(aop);
+  dop = DAE.NOT(DAE.T_BOOL_DEFAULT);
       then
-        (DAE.LUNARY(dop, dexp1), globals);
+  (DAE.LUNARY(dop, dexp1), globals);
 
     case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
-        dop = instOperator(aop);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+  dop = instOperator(aop);
       then
-        (DAE.RELATION(dexp1, dop, dexp2, -1, NONE()), globals);
+  (DAE.RELATION(dexp1, dop, dexp2, -1, NONE()), globals);
 
     case (Absyn.ARRAY(arrayExp = aexpl), _, _, _, globals)
       equation
-        (dexp1, globals) = instArray(aexpl, inEnv, inPrefix, inInfo, globals);
+  (dexp1, globals) = instArray(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (dexp1, globals);
+  (dexp1, globals);
 
     case (Absyn.MATRIX(matrix = mat_expl), _, _, _, globals)
       equation
-        (dexpl, globals) =
-          List.map3Fold(mat_expl, instArray, inEnv, inPrefix, inInfo, globals);
+  (dexpl, globals) =
+    List.map3Fold(mat_expl, instArray, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl), globals);
+  (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl), globals);
 
     case (Absyn.CALL(function_ = _), _, _, _, _)
       equation
-        (dexp1, globals) = instFunctionCallDispatch(inExp, inEnv, inPrefix, inInfo, inGlobals);
+  (dexp1, globals) = instFunctionCallDispatch(inExp, inEnv, inPrefix, inInfo, inGlobals);
       then
-        (dexp1, globals);
+  (dexp1, globals);
 
     case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        (odexp, globals) = instExpOpt(oaexp, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  (odexp, globals) = instExpOpt(oaexp, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2), globals);
+  (DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2), globals);
 
     case (Absyn.TUPLE(expressions = aexpl), _, _, _, globals)
       equation
-        (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
+  (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.TUPLE(dexpl), globals);
+  (DAE.TUPLE(dexpl), globals);
 
     case (Absyn.LIST(exps = aexpl), _, _, _, globals)
       equation
-        (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
+  (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.LIST(dexpl), globals);
+  (DAE.LIST(dexpl), globals);
 
     case (Absyn.CONS(head = aexp1, rest = aexp2), _, _, _, globals)
       equation
-        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
+  (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CONS(dexp1, dexp2), globals);
+  (DAE.CONS(dexp1, dexp2), globals);
 
     case (Absyn.IFEXP(ifExp = _), _, _, _, globals)
       equation
-        Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(inExp);
-        (dexp1, globals) = instExp(e1, inEnv, inPrefix, inInfo, globals);
-        (dexp2, globals) = instExp(e2, inEnv, inPrefix, inInfo, globals);
-        (dexp3, globals) = instExp(e3, inEnv, inPrefix, inInfo, globals);
+  Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(inExp);
+  (dexp1, globals) = instExp(e1, inEnv, inPrefix, inInfo, globals);
+  (dexp2, globals) = instExp(e2, inEnv, inPrefix, inInfo, globals);
+  (dexp3, globals) = instExp(e3, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.IFEXP(dexp1, dexp2, dexp3), globals);
+  (DAE.IFEXP(dexp1, dexp2, dexp3), globals);
 
     //Absyn.PARTEVALFUNCTION
     //Absyn.END
@@ -2018,11 +2018,11 @@ algorithm
 
     else
       equation
-        str = Dump.printExpStr(inExp);
-        str = "NFInst.instExp: Unhandled Expression FIXME: " +& str;
-        print(str +& "\n");
+  str = Dump.printExpStr(inExp);
+  str = "NFInst.instExp: Unhandled Expression FIXME: " +& str;
+  print(str +& "\n");
       then
-        (DAE.SCONST(str),inGlobals);
+  (DAE.SCONST(str),inGlobals);
 
   end match;
 end instExp;
@@ -2100,26 +2100,26 @@ algorithm
     case (Absyn.ALLWILD(), _, _, _, _) then (DAE.WILD(),inGlobals);
     case (Absyn.CREF_FULLYQUALIFIED(acref), _, _, _, globals)
       equation
-        (cref, globals) = instCref2(acref, inEnv, inPrefix, inInfo, globals);
-        path = Absyn.crefToPathIgnoreSubs(inCref);
-        (cref, globals) = instPackageConstant(true, cref, path, inEnv, inInfo, inGlobals);
+  (cref, globals) = instCref2(acref, inEnv, inPrefix, inInfo, globals);
+  path = Absyn.crefToPathIgnoreSubs(inCref);
+  (cref, globals) = instPackageConstant(true, cref, path, inEnv, inInfo, inGlobals);
       then
-        (cref, globals);
+  (cref, globals);
 
     case (_, _, _, _, globals)
       equation
-        (cref, globals) = instCref2(inCref, inEnv, inPrefix, inInfo, globals);
-        path = Absyn.crefToPathIgnoreSubs(inCref);
-        (cref, globals) = prefixCref(cref, path, inPrefix, inEnv, inInfo, globals);
+  (cref, globals) = instCref2(inCref, inEnv, inPrefix, inInfo, globals);
+  path = Absyn.crefToPathIgnoreSubs(inCref);
+  (cref, globals) = prefixCref(cref, path, inPrefix, inEnv, inInfo, globals);
       then
-        (cref, globals);
+  (cref, globals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInst.instCref failed on " +& Dump.printComponentRefStr(inCref));
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- NFInst.instCref failed on " +& Dump.printComponentRefStr(inCref));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end instCref;
@@ -2148,24 +2148,24 @@ algorithm
 
     case (Absyn.CREF_IDENT(name, asubs), _, _, _, globals)
       equation
-        (dsubs, globals) =
-          instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
+  (dsubs, globals) =
+    instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs), globals);
+  (DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs), globals);
 
     case (Absyn.CREF_QUAL(name, asubs, cref), _, _, _, globals)
       equation
-        (dsubs, globals) =
-          instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
-        (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
+  (dsubs, globals) =
+    instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
+  (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref), globals);
+  (DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref), globals);
 
     case (Absyn.CREF_FULLYQUALIFIED(cref), _, _, _, globals)
       equation
-        (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
+  (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
       then
-        (dcref, globals);
+  (dcref, globals);
 
   end match;
 end instCref2;
@@ -2193,32 +2193,32 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        // Look up the first part of the cref
-        name_str = ComponentReference.crefFirstIdent(inCref);
-        (is_global, entry, env) = NFLookup.isNameGlobal(name_str, inEnv);
-        //entry = NFLookup.lookupUnresolvedSimpleName(name_str, inEnv);
-        //is_local = NFEnv.isLocalScopeEntry(entry, inEnv);
-        //(entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
-        //is_class = NFEnv.isClassEntry(entry);
-        //env = NFEnv.entryEnv(entry, env);
+  // Look up the first part of the cref
+  name_str = ComponentReference.crefFirstIdent(inCref);
+  (is_global, entry, env) = NFLookup.isNameGlobal(name_str, inEnv);
+  //entry = NFLookup.lookupUnresolvedSimpleName(name_str, inEnv);
+  //is_local = NFEnv.isLocalScopeEntry(entry, inEnv);
+  //(entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
+  //is_class = NFEnv.isClassEntry(entry);
+  //env = NFEnv.entryEnv(entry, env);
 
-        //// If it is a non-local class, consider it to be global.
-        //is_global = not is_local and is_class;
-        cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
-        (cref, globals) = instPackageConstant(is_global, cref, inCrefPath, env, inInfo, inGlobals);
+  //// If it is a non-local class, consider it to be global.
+  //is_global = not is_local and is_class;
+  cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
+  (cref, globals) = instPackageConstant(is_global, cref, inCrefPath, env, inInfo, inGlobals);
       then
-        (cref, globals);
+  (cref, globals);
 
     // If the cref couldn't be found, print an error message here instead of
     // letting SCodeLookup do it, to get the correct scope.
     else
       equation
-        name_str = ComponentReference.printComponentRefStr(inCref);
-        env_str = NFEnv.printEnvPathStr(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {name_str, env_str}, inInfo);
+  name_str = ComponentReference.printComponentRefStr(inCref);
+  env_str = NFEnv.printEnvPathStr(inEnv);
+  Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+    {name_str, env_str}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end prefixCref;
@@ -2259,9 +2259,9 @@ algorithm
     // Don't prefix iterators.
     case (DAE.CREF_IDENT(id, ty, subs), _, _)
       equation
-        iterIndex = NFEnv.getImplicitScopeIndex(inEnv);
+  iterIndex = NFEnv.getImplicitScopeIndex(inEnv);
       then
-        DAE.CREF_ITER(id, iterIndex, ty, subs);
+  DAE.CREF_ITER(id, iterIndex, ty, subs);
 
     // In any other case, apply the given prefix.
     else NFInstUtil.prefixCref(inCref, inPrefix);
@@ -2306,29 +2306,29 @@ algorithm
     // i.e.  'a.j' and not 'A.j', we need to apply only part of the prefix 'a.P'.
     case (_, _, _, _)
       equation
-        // Convert both environments to string lists.
-        (fenv as _ :: _) = NFEnv.scopeNames(inFoundEnv);
-        oenv = NFEnv.scopeNames(inOriginEnv);
-        // Reduce the environment by 'subtracting' inFoundEnv from inOriginEnv.
-        oenv = reduceEnv(oenv, fenv);
-        // Reverse the remaining env so that is has the same order as the prefix.
-        oenv = listReverse(oenv);
-        // Reduce the prefix by 'subtracting' the remaining scopes from the it.
-        prefix = reducePrefix(oenv, inPrefix);
-        // Apply the remaining prefix.
-        cref = NFInstUtil.prefixCref(inCref, prefix);
+  // Convert both environments to string lists.
+  (fenv as _ :: _) = NFEnv.scopeNames(inFoundEnv);
+  oenv = NFEnv.scopeNames(inOriginEnv);
+  // Reduce the environment by 'subtracting' inFoundEnv from inOriginEnv.
+  oenv = reduceEnv(oenv, fenv);
+  // Reverse the remaining env so that is has the same order as the prefix.
+  oenv = listReverse(oenv);
+  // Reduce the prefix by 'subtracting' the remaining scopes from the it.
+  prefix = reducePrefix(oenv, inPrefix);
+  // Apply the remaining prefix.
+  cref = NFInstUtil.prefixCref(inCref, prefix);
       then
-        cref;
+  cref;
 
     // If the previous case failed it means that a suitable prefix could not be
     // found, in which case the cref should be fully qualified instead. In that
     // case we prefix the cref with the environment where it was found.
     else
       equation
-        fenv = NFEnv.scopeNames(inFoundEnv);
-        cref = ComponentReference.crefPrefixStringList(fenv, inCref);
+  fenv = NFEnv.scopeNames(inFoundEnv);
+  cref = ComponentReference.crefPrefixStringList(fenv, inCref);
       then
-        cref;
+  cref;
 
   end matchcontinue;
 end prefixGlobalCref;
@@ -2350,9 +2350,9 @@ algorithm
     // Continue if the heads of both strings are the same.
     case (oname :: rest_oenv, fname :: rest_fenv)
       equation
-        true = stringEq(oname, fname);
+  true = stringEq(oname, fname);
       then
-        reduceEnv(rest_oenv, rest_fenv);
+  reduceEnv(rest_oenv, rest_fenv);
 
     // If we run out of inFoundEnv but still have parts of inOriginEnv left,
     // return the remaining environment.
@@ -2377,11 +2377,11 @@ algorithm
 
     // Continue if the heads of the environment and the prefix are the same.
     case (ename :: rest_env,
-          NFInstTypes.PREFIX(name = pname, restPrefix = rest_prefix))
+    NFInstTypes.PREFIX(name = pname, restPrefix = rest_prefix))
       equation
-        true = stringEq(ename, pname);
+  true = stringEq(ename, pname);
       then
-        reducePrefix(rest_env, rest_prefix);
+  reducePrefix(rest_env, rest_prefix);
 
     // If we managed to remove the whole environment from the prefix, return the
     // remaining prefix.
@@ -2407,19 +2407,19 @@ algorithm
 
     case (_, _, _)
       equation
-        name_str = Absyn.pathFirstIdent(inPath);
-        (is_global, _, env) = NFLookup.isNameGlobal(name_str, inEnv);
-        path = prefixPath2(inPath, inPrefix, inEnv, env, is_global);
+  name_str = Absyn.pathFirstIdent(inPath);
+  (is_global, _, env) = NFLookup.isNameGlobal(name_str, inEnv);
+  path = prefixPath2(inPath, inPrefix, inEnv, env, is_global);
       then
-        path;
+  path;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInst.prefixPath failed on " +&
-          Absyn.pathString(inPath) +& "\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- NFInst.prefixPath failed on " +&
+    Absyn.pathString(inPath) +& "\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end prefixPath;
@@ -2444,22 +2444,22 @@ algorithm
     // Partially global path, see prefixGlobalCref.
     case (_, _, _, _, true)
       equation
-        (fenv as _ :: _) = NFEnv.scopeNames(inFoundEnv);
-        oenv = NFEnv.scopeNames(inOriginEnv);
-        oenv = reduceEnv(oenv, fenv);
-        oenv = listReverse(oenv);
-        prefix = reducePrefix(oenv, inPrefix);
-        path = NFInstUtil.prefixPath(inPath, prefix);
+  (fenv as _ :: _) = NFEnv.scopeNames(inFoundEnv);
+  oenv = NFEnv.scopeNames(inOriginEnv);
+  oenv = reduceEnv(oenv, fenv);
+  oenv = listReverse(oenv);
+  prefix = reducePrefix(oenv, inPrefix);
+  path = NFInstUtil.prefixPath(inPath, prefix);
       then
-        path;
+  path;
 
     else
       equation
-        fenv = NFEnv.scopeNames(inFoundEnv);
-        fenv = listReverse(fenv);
-        path = List.fold(fenv, Absyn.prefixPath, inPath);
+  fenv = NFEnv.scopeNames(inFoundEnv);
+  fenv = listReverse(fenv);
+  path = List.fold(fenv, Absyn.prefixPath, inPath);
       then
-        path;
+  path;
 
   end matchcontinue;
 end prefixPath2;
@@ -2503,26 +2503,26 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        (entry, env) = NFLookup.lookupNameInPackage(inName, inEnv);
+  (entry, env) = NFLookup.lookupNameInPackage(inName, inEnv);
 
-        //print("Instantiating " +& Absyn.pathString(inName) +& "\n");
-        //print("Env: " +& NFEnv.printEnvPathStr(inEnv) +& "\n");
-        //print("Found env: " +& NFEnv.printEnvPathStr(env) +& "\n");
-        //print("Result: " +& Absyn.pathString(name) +& "\n");
+  //print("Instantiating " +& Absyn.pathString(inName) +& "\n");
+  //print("Env: " +& NFEnv.printEnvPathStr(inEnv) +& "\n");
+  //print("Found env: " +& NFEnv.printEnvPathStr(env) +& "\n");
+  //print("Result: " +& Absyn.pathString(name) +& "\n");
 
-        (prefix, name, cref) = makePackageConstantPrefix(inName, inCref, entry, env, inEnv);
+  (prefix, name, cref) = makePackageConstantPrefix(inName, inCref, entry, env, inEnv);
 
-        //print("Adding " +& Absyn.pathString(name) +& "\n");
-        globals = instPackageConstant2(name, entry, env, prefix, inGlobals);
+  //print("Adding " +& Absyn.pathString(name) +& "\n");
+  globals = instPackageConstant2(name, entry, env, prefix, inGlobals);
       then
-        (cref, globals);
+  (cref, globals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- instPackageConstant failed on " +& Absyn.pathString(inName));
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- instPackageConstant failed on " +& Absyn.pathString(inName));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end instPackageConstant;
@@ -2546,31 +2546,31 @@ algorithm
       DAE.ComponentRef cref;
 
     case (_, _, NFEnv.ENTRY(element = SCode.COMPONENT(name = name, typeSpec =
-        Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), _, _)
+  Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), _, _)
       equation
-        prefix = NFInstUtil.envPrefix(inFoundEnv);
-        path = NFEnv.prefixIdentWithEnv(name, inFoundEnv);
-        // The lookup rules forbid looking a class up in a component, so there's
-        // no way to have subscripts in the cref for a enumeration literal. So
-        // we can safely just convert the path to a cref here.
-        cref = ComponentReference.pathToCref(path);
+  prefix = NFInstUtil.envPrefix(inFoundEnv);
+  path = NFEnv.prefixIdentWithEnv(name, inFoundEnv);
+  // The lookup rules forbid looking a class up in a component, so there's
+  // no way to have subscripts in the cref for a enumeration literal. So
+  // we can safely just convert the path to a cref here.
+  cref = ComponentReference.pathToCref(path);
       then
-        (prefix, path, cref);
+  (prefix, path, cref);
 
     case (_, _, NFEnv.ENTRY(element = SCode.CLASS(name = name)), _, _)
       equation
-        prefix = NFInstUtil.envPrefix(inFoundEnv);
-        path = NFEnv.prefixIdentWithEnv(name, inFoundEnv);
-        cref = ComponentReference.pathToCref(path);
+  prefix = NFInstUtil.envPrefix(inFoundEnv);
+  path = NFEnv.prefixIdentWithEnv(name, inFoundEnv);
+  cref = ComponentReference.pathToCref(path);
       then
-        (prefix, path, cref);
+  (prefix, path, cref);
 
     else
       equation
-        prefix = NFInstUtil.envPrefix(inOriginEnv);
-        NFInstTypes.PREFIX(restPrefix = prefix) = NFInstUtil.addPathPrefix(inName, prefix);
+  prefix = NFInstUtil.envPrefix(inOriginEnv);
+  NFInstTypes.PREFIX(restPrefix = prefix) = NFInstUtil.addPathPrefix(inName, prefix);
       then
-        (prefix, inName, inCref);
+  (prefix, inName, inCref);
 
   end match;
 end makePackageConstantPrefix;
@@ -2599,51 +2599,51 @@ algorithm
 
     case (_, _, _, _, (consts, _))
       equation
-        //print("Looking for " +& Absyn.pathString(inName) +& " in symboltable\n");
-        _ = NFInstSymbolTable.lookupName(inName, consts);
-        //print(Absyn.pathString(inName) +& " already added\n");
+  //print("Looking for " +& Absyn.pathString(inName) +& " in symboltable\n");
+  _ = NFInstSymbolTable.lookupName(inName, consts);
+  //print(Absyn.pathString(inName) +& " already added\n");
       then
-        inGlobals;
+  inGlobals;
 
     case (_, NFEnv.ENTRY(element = selem as SCode.COMPONENT(typeSpec =
-        Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), env, _, _)
+  Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), env, _, _)
       equation
-        (elem, (consts, funcs)) = instComponent(selem, NFMod.emptyModTable,
-          NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
-        consts = NFInstSymbolTable.addElement(elem, consts);
+  (elem, (consts, funcs)) = instComponent(selem, NFMod.emptyModTable,
+    NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
+  consts = NFInstSymbolTable.addElement(elem, consts);
       then
-        ((consts, funcs));
+  ((consts, funcs));
 
     // A normal package constant.
     case (_, NFEnv.ENTRY(element = selem as SCode.COMPONENT(name = _)), env, _, _)
       equation
-        (elem, (consts, funcs)) = instComponent(selem, NFMod.emptyModTable,
-          NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
+  (elem, (consts, funcs)) = instComponent(selem, NFMod.emptyModTable,
+    NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
 
-        NFInstTypes.ELEMENT(component = comp) = elem;
-        name = NFInstUtil.getComponentName(comp);
+  NFInstTypes.ELEMENT(component = comp) = elem;
+  name = NFInstUtil.getComponentName(comp);
 
-        consts = NFInstSymbolTable.addElement(elem, consts);
+  consts = NFInstSymbolTable.addElement(elem, consts);
       then
-        ((consts, funcs));
+  ((consts, funcs));
 
     // An enumeration type used as a value.
     case (_, NFEnv.ENTRY(element = SCode.CLASS(name = cls_name, info = info)), _, _, _)
       equation
-        // Instantiate the enumeration type to get its type.
-        (_, ty, _, (consts, funcs)) = instClassEntry(inName, inEntry,
-          NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
-          inEnv, NFInstTypes.emptyPrefix, INST_ALL(), inGlobals);
-        /*********************************************************************/
-        // TODO: Check the type, make sure it's an enumeration! Any other types
-        // allowed to be used here?
-        /*********************************************************************/
+  // Instantiate the enumeration type to get its type.
+  (_, ty, _, (consts, funcs)) = instClassEntry(inName, inEntry,
+    NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
+    inEnv, NFInstTypes.emptyPrefix, INST_ALL(), inGlobals);
+  /*********************************************************************/
+  // TODO: Check the type, make sure it's an enumeration! Any other types
+  // allowed to be used here?
+  /*********************************************************************/
 
-        comp = NFInstTypes.TYPED_COMPONENT(inName, ty, NONE(),
-          NFInstTypes.NO_DAE_PREFIXES(), NFInstTypes.UNBOUND(), info);
-        consts = NFInstSymbolTable.addComponent(comp, consts);
+  comp = NFInstTypes.TYPED_COMPONENT(inName, ty, NONE(),
+    NFInstTypes.NO_DAE_PREFIXES(), NFInstTypes.UNBOUND(), info);
+  consts = NFInstSymbolTable.addComponent(comp, consts);
       then
-        ((consts, funcs));
+  ((consts, funcs));
 
   end matchcontinue;
 end instPackageConstant2;
@@ -2671,13 +2671,13 @@ algorithm
 
     case (_, _, _, _, _, _, globals)
       equation
-        (call_path, func, globals) = instFunction(inName, inEnv, inPrefix, inInfo, globals);
-        (pos_args, globals) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, globals);
-        (named_args, globals) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, globals);
-        inputs = NFInstUtil.getFunctionInputs(func);
-        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
+  (call_path, func, globals) = instFunction(inName, inEnv, inPrefix, inInfo, globals);
+  (pos_args, globals) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, globals);
+  (named_args, globals) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, globals);
+  inputs = NFInstUtil.getFunctionInputs(func);
+  args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
+  (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
 
   end match;
 end instFunctionCall;
@@ -2707,31 +2707,31 @@ algorithm
     /*
     case (_, _, _, _, globals)
       equation
-        path = Absyn.crefToPath(inName);
-        outFunction = BaseHashTable.get(path, globals);
+  path = Absyn.crefToPath(inName);
+  outFunction = BaseHashTable.get(path, globals);
       then (path, outFunction, globals);
     */
 
     case (_, _, _, _, _)
       equation
-        path = Absyn.crefToPath(inName);
-        (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
-        path = instFunctionName(path, entry, inEnv, inPrefix);
-        (cls, ty, _, (consts, functions)) = instClassEntry(path, entry,
-          NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
-          env, NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
-        is_record = Types.isRecord(ty);
-        func = instFunction2(path, cls, is_record);
-        functions = BaseHashTable.add((path, func), functions);
+  path = Absyn.crefToPath(inName);
+  (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
+  path = instFunctionName(path, entry, inEnv, inPrefix);
+  (cls, ty, _, (consts, functions)) = instClassEntry(path, entry,
+    NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
+    env, NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
+  is_record = Types.isRecord(ty);
+  func = instFunction2(path, cls, is_record);
+  functions = BaseHashTable.add((path, func), functions);
       then
-        (path, func, (consts, functions));
+  (path, func, (consts, functions));
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
-          " at position: " +& Error.infoStr(inInfo));
-        //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inGlobals);
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
+    " at position: " +& Error.infoStr(inInfo));
+  //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inGlobals);
       then fail();
   end matchcontinue;
 end instFunction;
@@ -2748,9 +2748,9 @@ algorithm
     // Don't prefix builtin functions.
     case (_, _, _, _)
       equation
-        true = NFEnv.entryHasBuiltinOrigin(inEntry);
+  true = NFEnv.entryHasBuiltinOrigin(inEntry);
       then
-        inPath;
+  inPath;
 
     else prefixPath(inPath, inPrefix, inEnv);
 
@@ -2775,48 +2775,48 @@ algorithm
     // Records, treat them the same as globals and add bindings as algorithm
     // statements.
     case (_, NFInstTypes.COMPLEX_CLASS(components = locals,
-        algorithms = algorithms), true)
+  algorithms = algorithms), true)
       equation
-        initBindings = {};
-        (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
-        (initBindings, {}) = Graph.topologicalSort(
-          Graph.buildGraph(initBindings, getStatementDependencies,
-            (initBindings, List.map(initBindings, getInitStatementName))),
-          statementLhsEqual);
-        algorithms = initBindings :: algorithms;
-        stmts = List.flatten(algorithms);
+  initBindings = {};
+  (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
+  (initBindings, {}) = Graph.topologicalSort(
+    Graph.buildGraph(initBindings, getStatementDependencies,
+      (initBindings, List.map(initBindings, getInitStatementName))),
+    statementLhsEqual);
+  algorithms = initBindings :: algorithms;
+  stmts = List.flatten(algorithms);
 
-        // make DAE vars for the return type. Includes all components in the record.
-        // No need to type and expand an NFInstTypes.ELEMENT. We know what we want.
-        vars = List.accumulateMapReverse(locals, NFInstUtil.makeDaeVarsFromElement);
-        recRetType = DAE.T_COMPLEX(ClassInf.RECORD(inName), vars, NONE(), DAE.emptyTypeSource);
+  // make DAE vars for the return type. Includes all components in the record.
+  // No need to type and expand an NFInstTypes.ELEMENT. We know what we want.
+  vars = List.accumulateMapReverse(locals, NFInstUtil.makeDaeVarsFromElement);
+  recRetType = DAE.T_COMPLEX(ClassInf.RECORD(inName), vars, NONE(), DAE.emptyTypeSource);
 
-        // extract all modifiable components in to 'inputs' the rest go in 'locals'
-        (inputs, locals) = List.extractOnTrue(locals, NFInstUtil.isModifiableElement);
-        // strip all other prefixes and mark as inputs
-        inputs = List.map(inputs, NFInstUtil.markElementAsInput);
-        // strip all other prefixes and mark as protected.
-        locals = List.map(locals, NFInstUtil.markElementAsProtected);
+  // extract all modifiable components in to 'inputs' the rest go in 'locals'
+  (inputs, locals) = List.extractOnTrue(locals, NFInstUtil.isModifiableElement);
+  // strip all other prefixes and mark as inputs
+  inputs = List.map(inputs, NFInstUtil.markElementAsInput);
+  // strip all other prefixes and mark as protected.
+  locals = List.map(locals, NFInstUtil.markElementAsProtected);
       then
-        NFInstTypes.RECORD_CONSTRUCTOR(inName, recRetType, inputs, locals, stmts);
+  NFInstTypes.RECORD_CONSTRUCTOR(inName, recRetType, inputs, locals, stmts);
 
     // Normal globals.
     case (_, NFInstTypes.COMPLEX_CLASS(algorithms = algorithms), false)
       equation
-        (inputs, outputs, locals) = getFunctionParameters(inFunction);
-        initBindings = {};
-        (outputs, initBindings) = List.mapFold(outputs, stripInitBinding, initBindings);
-        (locals, initBindings) = List.mapFold(locals, stripInitBinding, initBindings);
-        (outputs, initBindings) = List.mapFold(outputs, dimensionDeps, initBindings);
-        (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
-        (initBindings, {}) = Graph.topologicalSort(
-          Graph.buildGraph(initBindings, getStatementDependencies,
-            (initBindings, List.map(initBindings, getInitStatementName))),
-          statementLhsEqual);
-        algorithms = initBindings :: algorithms;
-        stmts = List.flatten(algorithms);
+  (inputs, outputs, locals) = getFunctionParameters(inFunction);
+  initBindings = {};
+  (outputs, initBindings) = List.mapFold(outputs, stripInitBinding, initBindings);
+  (locals, initBindings) = List.mapFold(locals, stripInitBinding, initBindings);
+  (outputs, initBindings) = List.mapFold(outputs, dimensionDeps, initBindings);
+  (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
+  (initBindings, {}) = Graph.topologicalSort(
+    Graph.buildGraph(initBindings, getStatementDependencies,
+      (initBindings, List.map(initBindings, getInitStatementName))),
+    statementLhsEqual);
+  algorithms = initBindings :: algorithms;
+  stmts = List.flatten(algorithms);
       then
-        NFInstTypes.FUNCTION(inName, inputs, outputs, locals, stmts);
+  NFInstTypes.FUNCTION(inName, inputs, outputs, locals, stmts);
 
   end match;
 end instFunction2;
@@ -2839,7 +2839,7 @@ algorithm
     case NFInstTypes.FUNCTION_ARRAY_INIT(name=name) then name;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"NFInst.getInitStatementName failed"});
+  Error.addMessage(Error.INTERNAL_ERROR,{"NFInst.getInitStatementName failed"});
       then fail();
   end match;
 end getInitStatementName;
@@ -2863,22 +2863,22 @@ algorithm
 
     case (NFInstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),rhs=exp,info=info), (allStatements,allPossible))
       equation
-        ((_, deps)) = Expression.traverseExp(exp,getExpDependencies,{});
-        Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
-        deps = List.intersectionOnTrue(allPossible,deps,stringEq);
+  ((_, deps)) = Expression.traverseExp(exp,getExpDependencies,{});
+  Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
+  deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
-        List.select2(allStatements,selectStatement,deps,SOME(name));
+  List.select2(allStatements,selectStatement,deps,SOME(name));
     case (NFInstTypes.FUNCTION_ARRAY_INIT(name,DAE.T_ARRAY(dims=dims),info), (allStatements,allPossible))
       equation
-        exps = Expression.dimensionsToExps(dims,{});
-        ((_, deps)) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
-        Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
-        deps = List.intersectionOnTrue(allPossible,deps,stringEq);
+  exps = Expression.dimensionsToExps(dims,{});
+  ((_, deps)) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
+  Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
+  deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
-        List.select2(allStatements,selectStatement,deps,NONE());
+  List.select2(allStatements,selectStatement,deps,NONE());
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"NFInst.getStatementDependencies failed"});
+  Error.addMessage(Error.INTERNAL_ERROR,{"NFInst.getStatementDependencies failed"});
       then fail();
   end match;
 end getStatementDependencies;
@@ -2931,8 +2931,8 @@ algorithm
 
     case (NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,NFInstTypes.UNTYPED_BINDING(bindingExp=bindingExp,info=bindingInfo),info),cls),_)
       equation
-        comp = NFInstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,NFInstTypes.UNBOUND(),info);
-        elt = NFInstTypes.ELEMENT(comp,cls);
+  comp = NFInstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,NFInstTypes.UNBOUND(),info);
+  elt = NFInstTypes.ELEMENT(comp,cls);
       then (elt,NFInstTypes.ASSIGN_STMT(DAE.CREF(DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {}),DAE.T_UNKNOWN_DEFAULT),bindingExp,bindingInfo)::inBindings);
     else (inElt,inBindings);
   end match;
@@ -2956,10 +2956,10 @@ algorithm
 
     case (elt as NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),cls),_)
       equation
-        dims = List.map(arrayList(dimensions),NFInstUtil.unwrapDimension);
-        bindings = Util.if_(arrayLength(dimensions)>0,
-          NFInstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,
-          inBindings);
+  dims = List.map(arrayList(dimensions),NFInstUtil.unwrapDimension);
+  bindings = Util.if_(arrayLength(dimensions)>0,
+    NFInstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,
+    inBindings);
       then (elt,bindings);
     else (inElt,inBindings);
   end match;
@@ -2996,18 +2996,18 @@ algorithm
 
     case NFInstTypes.COMPLEX_CLASS(components = comps)
       equation
-        (inputs, outputs, locals) = getFunctionParameters2(comps, {}, {}, {});
+  (inputs, outputs, locals) = getFunctionParameters2(comps, {}, {}, {});
       then
-        (inputs, outputs, locals);
+  (inputs, outputs, locals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        name = NFInstUtil.getClassName(inClass);
-        Debug.traceln("- NFInst.getFunctionParameters failed for: " +& Absyn.pathString(name) +& ".\n" +&
-        NFInstDump.modelStr(Absyn.pathString(name), inClass) +& "\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  name = NFInstUtil.getClassName(inClass);
+  Debug.traceln("- NFInst.getFunctionParameters failed for: " +& Absyn.pathString(name) +& ".\n" +&
+  NFInstDump.modelStr(Absyn.pathString(name), inClass) +& "\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end getFunctionParameters;
@@ -3032,22 +3032,22 @@ algorithm
       list<Element> inputs, outputs, locals;
 
     case ((el as NFInstTypes.ELEMENT(component = NFInstTypes.UNTYPED_COMPONENT(
-        name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
-        inputs, outputs, locals)
+  name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
+  inputs, outputs, locals)
       equation
-        validateFunctionVariable(name, ty, prefs, info);
-        (inputs, outputs, locals) =
-          getFunctionParameters3(name, prefs, info, el, inputs, outputs, locals);
-        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
+  validateFunctionVariable(name, ty, prefs, info);
+  (inputs, outputs, locals) =
+    getFunctionParameters3(name, prefs, info, el, inputs, outputs, locals);
+  (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
-        (inputs, outputs, locals);
+  (inputs, outputs, locals);
 
     // Ignore any elements which are not untyped components.
     case (_ :: rest_el, inputs, outputs, locals)
       equation
-        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
+  (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
-        (inputs, outputs, locals);
+  (inputs, outputs, locals);
 
     case ({}, _, _, _)
       then (listReverse(inAccumInputs), listReverse(inAccumOutputs), listReverse(inAccumLocals));
@@ -3072,21 +3072,21 @@ algorithm
 
     case (_, NFInstTypes.PREFIXES(direction = (Absyn.INPUT(), _)), _, _, _, _, _)
       equation
-        validateFormalParameter(inName, inPrefixes, inInfo);
+  validateFormalParameter(inName, inPrefixes, inInfo);
       then
-        (inElement :: inAccumInputs, inAccumOutputs, inAccumLocals);
+  (inElement :: inAccumInputs, inAccumOutputs, inAccumLocals);
 
     case (_, NFInstTypes.PREFIXES(direction = (Absyn.OUTPUT(), _)), _, _, _, _, _)
       equation
-        validateFormalParameter(inName, inPrefixes, inInfo);
+  validateFormalParameter(inName, inPrefixes, inInfo);
       then
-        (inAccumInputs, inElement :: inAccumOutputs, inAccumLocals);
+  (inAccumInputs, inElement :: inAccumOutputs, inAccumLocals);
 
     else
       equation
-        validateLocalFunctionVariable(inName, inPrefixes, inInfo);
+  validateLocalFunctionVariable(inName, inPrefixes, inInfo);
       then
-        (inAccumInputs, inAccumOutputs, inElement :: inAccumLocals);
+  (inAccumInputs, inAccumOutputs, inElement :: inAccumLocals);
 
   end match;
 end getFunctionParameters3;
@@ -3104,29 +3104,29 @@ algorithm
 
     case (_, _, NFInstTypes.PREFIXES(innerOuter = Absyn.NOT_INNER_OUTER()), _)
       equation
-        true = Types.isValidFunctionVarType(inType);
+  true = Types.isValidFunctionVarType(inType);
       then ();
 
     case (_, _, _, _)
       equation
-        false = Types.isValidFunctionVarType(inType);
-        name = Absyn.pathString(inName);
-        ty_str = Types.getTypeName(inType);
-        Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
-          {ty_str, name}, inInfo);
+  false = Types.isValidFunctionVarType(inType);
+  name = Absyn.pathString(inName);
+  ty_str = Types.getTypeName(inType);
+  Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
+    {ty_str, name}, inInfo);
       then
-        fail();
+  fail();
 
     // A formal parameter may not have an inner/outer prefix.
     case (_, _, NFInstTypes.PREFIXES(innerOuter = io), _)
       equation
-        false = Absyn.isNotInnerOuter(io);
-        name = Absyn.pathString(inName);
-        io_str = Dump.unparseInnerouterStr(io);
-        Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-          {io_str, name}, inInfo);
+  false = Absyn.isNotInnerOuter(io);
+  name = Absyn.pathString(inName);
+  io_str = Dump.unparseInnerouterStr(io);
+  Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+    {io_str, name}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end validateFunctionVariable;
@@ -3143,11 +3143,11 @@ algorithm
     // A formal parameter must be public.
     case (_, NFInstTypes.PREFIXES(visibility = SCode.PROTECTED()), _)
       equation
-        name = Absyn.pathString(inName);
-        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
-          {name}, inInfo);
+  name = Absyn.pathString(inName);
+  Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+    {name}, inInfo);
       then
-        fail();
+  fail();
 
     else ();
 
@@ -3166,10 +3166,10 @@ algorithm
     // A local function variable must be protected.
     case (_, NFInstTypes.PREFIXES(visibility = SCode.PUBLIC()), _)
       equation
-        name = Absyn.pathString(inName);
-        Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR, {name}, inInfo);
+  name = Absyn.pathString(inName);
+  Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR, {name}, inInfo);
       then
-        fail();
+  fail();
 
     else ();
 
@@ -3213,32 +3213,32 @@ algorithm
     // ignore cond components
     case (NFInstTypes.CONDITIONAL_ELEMENT(component = _) :: rest_inputs, _, slots, _, _)
       then
-        makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
+  makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
 
     // Last vararg input and no positional arguments means we're done.
     case ({NFInstTypes.ELEMENT(component = NFInstTypes.UNTYPED_COMPONENT(prefixes =
-        NFInstTypes.PREFIXES(varArgs = NFInstTypes.IS_VARARG())))}, {}, _, _, _)
+  NFInstTypes.PREFIXES(varArgs = NFInstTypes.IS_VARARG())))}, {}, _, _, _)
       then listReverse(inAccumSlots);
 
     // If the last input of the function is a vararg, handle it first
     case (rest_inputs as (NFInstTypes.ELEMENT(component = NFInstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding, prefixes = NFInstTypes.PREFIXES(varArgs =
-        NFInstTypes.IS_VARARG()))) :: {}),  _::_, slots, _, _)
+  Absyn.IDENT(param_name), binding = binding, prefixes = NFInstTypes.PREFIXES(varArgs =
+  NFInstTypes.IS_VARARG()))) :: {}),  _::_, slots, _, _)
       equation
-        (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
-        default_value = NFInstUtil.getBindingExpOpt(binding);
-        slots = NFInstTypes.SLOT(param_name, arg, default_value) :: slots;
+  (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
+  default_value = NFInstUtil.getBindingExpOpt(binding);
+  slots = NFInstTypes.SLOT(param_name, arg, default_value) :: slots;
       then
-        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);
+  makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);
 
     case (NFInstTypes.ELEMENT(component = NFInstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots, _, _)
+  Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots, _, _)
       equation
-        (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
-        default_value = NFInstUtil.getBindingExpOpt(binding);
-        slots = NFInstTypes.SLOT(param_name, arg, default_value) :: slots;
+  (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
+  default_value = NFInstUtil.getBindingExpOpt(binding);
+  slots = NFInstTypes.SLOT(param_name, arg, default_value) :: slots;
       then
-        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);
+  makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);
 
     // No more inputs and positional arguments means we're done.
     case ({}, {}, _, _, _) then listReverse(inAccumSlots);
@@ -3246,13 +3246,13 @@ algorithm
     // No more inputs but positional arguments left is an error.
     case ({}, _ :: _, _, _, _)
       equation
-        // TODO: Make this a proper error message.
-        print(Error.infoStr(inInfo) +& ": ");
-        name = Absyn.pathString(inFuncName);
-        print("NFInst.makeFunctionSlots: Too many arguments to function " +&
-          name +& "\n");
+  // TODO: Make this a proper error message.
+  print(Error.infoStr(inInfo) +& ": ");
+  name = Absyn.pathString(inFuncName);
+  print("NFInst.makeFunctionSlots: Too many arguments to function " +&
+    name +& "\n");
       then
-        fail();
+  fail();
 
   end match;
 end makeFunctionSlots;
@@ -3270,16 +3270,16 @@ algorithm
       Boolean eq;
 
       case ((arg_name, _), (slot as NFInstTypes.SLOT(name = slot_name)) :: rest_slots)
-        equation
-          eq = stringEq(arg_name, slot_name);
-        then
-          fillFunctionSlot2(eq, inNamedArg, slot, rest_slots);
+  equation
+    eq = stringEq(arg_name, slot_name);
+  then
+    fillFunctionSlot2(eq, inNamedArg, slot, rest_slots);
 
       case ((arg_name, _), {})
-        equation
-          print("No matching slot " +& arg_name +& "\n");
-        then
-          fail();
+  equation
+    print("No matching slot " +& arg_name +& "\n");
+  then
+    fail();
 
   end match;
 end fillFunctionSlot;
@@ -3301,23 +3301,23 @@ algorithm
     // Found a matching empty slot, fill it.
     case (true, (_, arg), NFInstTypes.SLOT(name = name, arg = NONE()), _)
       equation
-        slot = NFInstTypes.SLOT(name, SOME(arg), NONE());
+  slot = NFInstTypes.SLOT(name, SOME(arg), NONE());
       then
-        slot :: inRestSlots;
+  slot :: inRestSlots;
 
     // Slot not matching, search through the rest of the slots.
     case (false, _, _, _)
       equation
-        slots = fillFunctionSlot(inNamedArg, inRestSlots);
+  slots = fillFunctionSlot(inNamedArg, inRestSlots);
       then
-        inSlot :: slots;
+  inSlot :: slots;
 
     // Found a matching slot that is already filled, show error.
     case (true, _, NFInstTypes.SLOT(name = name, arg = SOME(arg)), _)
       equation
-        print("Slot " +& name +& " is already filled with: " +& ExpressionDump.printExpStr(arg) +& "\n");
+  print("Slot " +& name +& " is already filled with: " +& ExpressionDump.printExpStr(arg) +& "\n");
       then
-        fail();
+  fail();
 
   end match;
 end fillFunctionSlot2;
@@ -3335,9 +3335,9 @@ algorithm
     case NFInstTypes.SLOT(defaultValue = SOME(exp)) then exp;
     case NFInstTypes.SLOT(name = name)
       equation
-        print("Slot " +& name +& " has no value.\n");
+  print("Slot " +& name +& " has no value.\n");
       then
-        fail();
+  fail();
 
   end match;
 end extractFunctionSlotExp;
@@ -3366,15 +3366,15 @@ algorithm
 
     case (NFInstTypes.UNTYPED_COMPONENT(dimensions = dims), st)
       equation
-        st = Util.arrayFold(dims, assignParamTypesToDim, st);
+  st = Util.arrayFold(dims, assignParamTypesToDim, st);
       then
-        (inComponent, st);
+  (inComponent, st);
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(condition = cond), st)
       equation
-        st = markExpAsStructural(cond, st);
+  st = markExpAsStructural(cond, st);
       then
-        (inComponent, st);
+  (inComponent, st);
 
     else (inComponent, inSymbolTable);
 
@@ -3393,10 +3393,10 @@ algorithm
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = DAE.DIM_EXP(exp = dim_exp)), st)
       equation
-        ((_, st)) = Expression.traverseExpTopDown(dim_exp,
-          markDimExpAsStructuralTraverser, st);
+  ((_, st)) = Expression.traverseExpTopDown(dim_exp,
+    markDimExpAsStructuralTraverser, st);
       then
-        st;
+  st;
 
     else inSymbolTable;
 
@@ -3415,16 +3415,16 @@ algorithm
 
     case (((exp as DAE.CREF(componentRef = cref)), st))
       equation
-        st = markParamAsStructural(cref, st);
-        // TODO: Mark cref subscripts too.
+  st = markParamAsStructural(cref, st);
+  // TODO: Mark cref subscripts too.
       then
-        ((exp, true, st));
+  ((exp, true, st));
 
     case (((exp as DAE.SIZE(sz = SOME(index_exp))), st))
       equation
-        st = markExpAsStructural(index_exp, st);
+  st = markExpAsStructural(index_exp, st);
       then
-        ((exp, false, st));
+  ((exp, false, st));
 
     case ((exp, st)) then ((exp, true, st));
 
@@ -3452,9 +3452,9 @@ algorithm
 
     case (((exp as DAE.CREF(componentRef = cref)), st))
       equation
-        st = markParamAsStructural(cref, st);
+  st = markParamAsStructural(cref, st);
       then
-        ((exp, st));
+  ((exp, st));
 
     else inTuple;
 
@@ -3473,18 +3473,18 @@ algorithm
 
     case (_, st)
       equation
-        (comp, st) = NFInstSymbolTable.lookupCrefResolveOuter(inCref, st);
-        st = markComponentAsStructural(comp, st);
+  (comp, st) = NFInstSymbolTable.lookupCrefResolveOuter(inCref, st);
+  st = markComponentAsStructural(comp, st);
       then
-        st;
+  st;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInst.markParamAsStructural failed on " +&
-          ComponentReference.printComponentRefStr(inCref) +& "\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- NFInst.markParamAsStructural failed on " +&
+    ComponentReference.printComponentRefStr(inCref) +& "\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end markParamAsStructural;
@@ -3511,24 +3511,24 @@ algorithm
 
     case (NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, _, binding, info), st)
       equation
-        st = markBindingAsStructural(binding, st);
-        comp = NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs,
-          NFInstTypes.STRUCT_PARAM(), binding, info);
-        st = NFInstSymbolTable.updateComponent(comp, st);
+  st = markBindingAsStructural(binding, st);
+  comp = NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs,
+    NFInstTypes.STRUCT_PARAM(), binding, info);
+  st = NFInstSymbolTable.updateComponent(comp, st);
       then
-        st;
+  st;
 
     case (NFInstTypes.OUTER_COMPONENT(name = _), _)
       equation
-        print("NFInst.markComponentAsStructural: IMPLEMENT ME!\n");
+  print("NFInst.markComponentAsStructural: IMPLEMENT ME!\n");
       then
-        fail();
+  fail();
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = _), _)
       equation
-        print("NFInst.markComponentAsStructural: conditional component used as structural parameter!\n");
+  print("NFInst.markComponentAsStructural: conditional component used as structural parameter!\n");
       then
-        fail();
+  fail();
 
     else inSymbolTable;
   end match;
@@ -3573,14 +3573,14 @@ algorithm
       Globals globals;
 
     case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
-        _, INST_ALL(), globals)
+  _, INST_ALL(), globals)
       equation
-        (inel, globals) = instEquations(snel, inEnv, inPrefix, globals);
-        (iiel, globals) = instEquations(siel, inEnv, inPrefix, globals);
-        (inal, globals) = instAlgorithmSections(snal, inEnv, inPrefix, globals);
-        (iial, globals) = instAlgorithmSections(sial, inEnv, inPrefix, globals);
+  (inel, globals) = instEquations(snel, inEnv, inPrefix, globals);
+  (iiel, globals) = instEquations(siel, inEnv, inPrefix, globals);
+  (inal, globals) = instAlgorithmSections(snal, inEnv, inPrefix, globals);
+  (iial, globals) = instAlgorithmSections(sial, inEnv, inPrefix, globals);
       then
-        (inel, iiel, inal, iial, globals);
+  (inel, iiel, inal, iial, globals);
 
     case (_, _, _, INST_ONLY_CONST(), _) then ({}, {}, {}, {}, inGlobals);
 
@@ -3651,10 +3651,10 @@ algorithm
 
     case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
-        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.EQUALITY_EQUATION(dexp1, dexp2, info), globals);
+  (NFInstTypes.EQUALITY_EQUATION(dexp1, dexp2, info), globals);
 
     // To determine whether a connected component is inside or outside we need
     // to know the type of the first identifier in the cref. Since it's illegal
@@ -3663,86 +3663,86 @@ algorithm
     // lookup.
     case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _, globals)
       equation
-        (dcref1, globals) = instCref2(cref1, inEnv, inPrefix, info, globals);
-        (dcref2, globals) = instCref2(cref2, inEnv, inPrefix, info, globals);
+  (dcref1, globals) = instCref2(cref1, inEnv, inPrefix, info, globals);
+  (dcref2, globals) = instCref2(cref2, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.CONNECT_EQUATION(dcref1, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
-          dcref2, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), globals);
+  (NFInstTypes.CONNECT_EQUATION(dcref1, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
+    dcref2, NFConnect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), globals);
 
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
-        info = info), _, _, globals)
+  info = info), _, _, globals)
       equation
-        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
-        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
-        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
+  index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+  env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+  (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+  (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
       then
-        (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info), globals);
+  (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info), globals);
 
     case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
-        info = info), _, _, globals)
+  info = info), _, _, globals)
       equation
-        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
-        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
+  index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+  env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+  (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
       then
-        (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), globals);
+  (NFInstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), globals);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
-        elseBranch = eql, info = info), _, _, globals)
+  elseBranch = eql, info = info), _, _, globals)
       equation
-        (inst_branches, globals) = List.threadMap3ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, info, globals);
-        (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
-        // Add else branch as a branch with condition true last in the list.
-        inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
+  (inst_branches, globals) = List.threadMap3ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, info, globals);
+  (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
+  // Add else branch as a branch with condition true last in the list.
+  inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
       then
-        (NFInstTypes.IF_EQUATION(inst_branches, info), globals);
+  (NFInstTypes.IF_EQUATION(inst_branches, info), globals);
 
     case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
-        elseBranches = when_branches, info = info), _, _, globals)
+  elseBranches = when_branches, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
-        (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
-        (inst_branches, globals) = List.map3Fold(when_branches, instWhenBranch, inEnv, inPrefix, info, globals);
-        // Add else branch as a branch with condition true last in the list.
-        inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
+  (inst_branches, globals) = List.map3Fold(when_branches, instWhenBranch, inEnv, inPrefix, info, globals);
+  // Add else branch as a branch with condition true last in the list.
+  inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
       then
-        (NFInstTypes.WHEN_EQUATION(inst_branches, info), globals);
+  (NFInstTypes.WHEN_EQUATION(inst_branches, info), globals);
 
     case (SCode.EQ_ASSERT(condition = exp1, message = exp2, level = exp3, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
-        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
-        (dexp3, globals) = instExp(exp3, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
+  (dexp3, globals) = instExp(exp3, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.ASSERT_EQUATION(dexp1, dexp2, dexp3, info), globals);
+  (NFInstTypes.ASSERT_EQUATION(dexp1, dexp2, dexp3, info), globals);
 
     case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.TERMINATE_EQUATION(dexp1, info), globals);
+  (NFInstTypes.TERMINATE_EQUATION(dexp1, info), globals);
 
     case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _, globals)
       equation
-        (dcref1, globals) = instCref(cref1, inEnv, inPrefix, info, globals);
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dcref1, globals) = instCref(cref1, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.REINIT_EQUATION(dcref1, dexp1, info), globals);
+  (NFInstTypes.REINIT_EQUATION(dcref1, dexp1, info), globals);
 
     case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (NFInstTypes.NORETCALL_EQUATION(dexp1, info), globals);
+  (NFInstTypes.NORETCALL_EQUATION(dexp1, info), globals);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = SCodeDump.equationStr(inEquation);
-        Debug.traceln("Unknown or failed equation in NFInst.instEEquation: " +& str);
+  true = Flags.isSet(Flags.FAILTRACE);
+  str = SCodeDump.equationStr(inEquation);
+  Debug.traceln("Unknown or failed equation in NFInst.instEEquation: " +& str);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end instEEquation;
@@ -3807,55 +3807,55 @@ algorithm
 
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
-        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
       then (NFInstTypes.ASSIGN_STMT(dexp1, dexp2, info), globals);
 
     case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, globals)
       equation
-        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
-        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
-        (ibody, globals) = instStatements(body, env, inPrefix, globals);
+  index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+  env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+  (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+  (ibody, globals) = instStatements(body, env, inPrefix, globals);
       then
-        (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info), globals);
+  (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info), globals);
 
     case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, globals)
       equation
-        index = System.tmpTickIndex(NFEnv.tmpTickIndex);
-        env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (ibody, globals) = instStatements(body, env, inPrefix, globals);
+  index = System.tmpTickIndex(NFEnv.tmpTickIndex);
+  env = NFEnv.insertIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+  (ibody, globals) = instStatements(body, env, inPrefix, globals);
       then
-        (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info), globals);
+  (NFInstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info), globals);
 
     case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
-        (ibody, globals) = instStatements(body, inEnv, inPrefix, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (ibody, globals) = instStatements(body, inEnv, inPrefix, globals);
       then
-        (NFInstTypes.WHILE_STMT(dexp1, ibody, info), globals);
+  (NFInstTypes.WHILE_STMT(dexp1, ibody, info), globals);
 
     case (SCode.ALG_IF(boolExpr = if_condition, trueBranch = if_branch,
-        elseIfBranch = elseif_branches,
-        elseBranch = else_branch, info = info), _, _, globals)
+  elseIfBranch = elseif_branches,
+  elseBranch = else_branch, info = info), _, _, globals)
       equation
-        elseif_branches = (if_condition,if_branch)::elseif_branches;
-        /* Save some memory by making this more complicated than it is */
-        (inst_branches, globals) = List.map3Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,info, globals,{});
-        (inst_branches, globals) = List.map3Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,info, globals,inst_branches);
-        inst_branches = listReverse(inst_branches);
+  elseif_branches = (if_condition,if_branch)::elseif_branches;
+  /* Save some memory by making this more complicated than it is */
+  (inst_branches, globals) = List.map3Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,info, globals,{});
+  (inst_branches, globals) = List.map3Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,info, globals,inst_branches);
+  inst_branches = listReverse(inst_branches);
       then
-        (NFInstTypes.IF_STMT(inst_branches, info), globals);
+  (NFInstTypes.IF_STMT(inst_branches, info), globals);
 
     case (SCode.ALG_WHEN_A(branches = branches, info = info), _, _, globals)
       equation
-        (inst_branches, globals) = List.map3Fold(branches,instStatementBranch,inEnv,inPrefix,info, globals);
+  (inst_branches, globals) = List.map3Fold(branches,instStatementBranch,inEnv,inPrefix,info, globals);
       then
-        (NFInstTypes.WHEN_STMT(inst_branches, info), globals);
+  (NFInstTypes.WHEN_STMT(inst_branches, info), globals);
 
     case (SCode.ALG_NORETCALL(exp = exp1, info = info), _, _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+  (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then (NFInstTypes.NORETCALL_STMT(dexp1, info), globals);
 
     case (SCode.ALG_RETURN(info = info), _, _, globals)
@@ -3866,7 +3866,7 @@ algorithm
 
     else
       equation
-        print("NFInst.instStatement failed: " +& SCodeDump.statementStr(statement) +& "\n");
+  print("NFInst.instStatement failed: " +& SCodeDump.statementStr(statement) +& "\n");
       then fail();
 
   end match;
@@ -3949,9 +3949,9 @@ end instWhenBranch;
 //
 //    case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, globals)
 //      equation
-//        (comps, st, globals) = instConditionalElements(comps, st, {}, globals);
+//  (comps, st, globals) = instConditionalElements(comps, st, {}, globals);
 //      then
-//        (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, globals);
+//  (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, globals);
 //
 //    else (inClass, inSymbolTable, inGlobals);
 //
@@ -3979,11 +3979,11 @@ end instWhenBranch;
 //
 //    case (el :: rest_el, st, accum_el, globals)
 //      equation
-//        (oel, st, globals) = instConditionalElement(el, st, globals);
-//        accum_el = List.consOption(oel, accum_el);
-//        (accum_el, st, globals) = instConditionalElements(rest_el, st, accum_el, globals);
+//  (oel, st, globals) = instConditionalElement(el, st, globals);
+//  accum_el = List.consOption(oel, accum_el);
+//  (accum_el, st, globals) = instConditionalElements(rest_el, st, accum_el, globals);
 //      then
-//        (accum_el, st, globals);
+//  (accum_el, st, globals);
 //
 //  end match;
 //end instConditionalElements;
@@ -4005,9 +4005,9 @@ end instWhenBranch;
 //
 //    case (true, _, st, globals)
 //      equation
-//        (oel, st, globals) = instConditionalElement(inElement, st, globals);
+//  (oel, st, globals) = instConditionalElement(inElement, st, globals);
 //      then
-//        (oel, st, globals);
+//  (oel, st, globals);
 //
 //    else (NONE(), inSymbolTable, inGlobals);
 //
@@ -4035,16 +4035,16 @@ end instWhenBranch;
 //
 //    case (NFInstTypes.ELEMENT(comp, cls), st, globals)
 //      equation
-//        (cls, st, globals) = instConditionalComponents(cls, st, globals);
-//        el = NFInstTypes.ELEMENT(comp, cls);
+//  (cls, st, globals) = instConditionalComponents(cls, st, globals);
+//  el = NFInstTypes.ELEMENT(comp, cls);
 //      then
-//        (SOME(el), st, globals);
+//  (SOME(el), st, globals);
 //
 //    case (NFInstTypes.CONDITIONAL_ELEMENT(comp), st, globals)
 //      equation
-//        (oel, st, globals) = instConditionalComponent(comp, st, globals);
+//  (oel, st, globals) = instConditionalComponent(comp, st, globals);
 //      then
-//        (oel, st, globals);
+//  (oel, st, globals);
 //
 //    else (SOME(inElement), inSymbolTable, inGlobals);
 //
@@ -4076,23 +4076,23 @@ end instWhenBranch;
 //      Globals globals;
 //
 //    case (NFInstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
-//        prefix, info), st, globals)
+//  prefix, info), st, globals)
 //      equation
-//        (cond_exp, ty, _, st) = NFTyping.typeExpEmptyFunctionTable(cond_exp, NFTyping.EVAL_CONST_PARAM(),
-//          NFTyping.CONTEXT_MODEL(), st);
-//        (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
-//        cond = evaluateConditionalExp(cond_exp, ty, name, info);
-//        (el, st, globals) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, globals);
+//  (cond_exp, ty, _, st) = NFTyping.typeExpEmptyFunctionTable(cond_exp, NFTyping.EVAL_CONST_PARAM(),
+//    NFTyping.CONTEXT_MODEL(), st);
+//  (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
+//  cond = evaluateConditionalExp(cond_exp, ty, name, info);
+//  (el, st, globals) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, globals);
 //      then
-//        (el, st, globals);
+//  (el, st, globals);
 //
 //    else
 //      equation
-//        true = Flags.isSet(Flags.FAILTRACE);
-//        Debug.traceln("NFInst.instConditionalComponent failed on " +&
-//          NFInstDump.componentStr(inComponent) +& "\n");
+//  true = Flags.isSet(Flags.FAILTRACE);
+//  Debug.traceln("NFInst.instConditionalComponent failed on " +&
+//    NFInstDump.componentStr(inComponent) +& "\n");
 //      then
-//        fail();
+//  fail();
 //
 //  end matchcontinue;
 //end instConditionalComponent;
@@ -4124,29 +4124,29 @@ end instWhenBranch;
 //
 //    case (NFInstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st, globals)
 //      equation
-//        // We need to remove the condition from the element, otherwise
-//        // instElement will just add it as a conditional component again.
-//        sel = SCode.removeComponentCondition(inElement);
-//        // Instantiate the element and update the symbol table.
-//        (el, globals) = instElement(sel, inMod, NFInstTypes.NOMOD(), inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
-//        (st, added) = NFInstSymbolTable.addInstCondElement(el, st);
-//        // Recursively instantiate any conditional components in this element.
-//        (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);
+//  // We need to remove the condition from the element, otherwise
+//  // instElement will just add it as a conditional component again.
+//  sel = SCode.removeComponentCondition(inElement);
+//  // Instantiate the element and update the symbol table.
+//  (el, globals) = instElement(sel, inMod, NFInstTypes.NOMOD(), inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
+//  (st, added) = NFInstSymbolTable.addInstCondElement(el, st);
+//  // Recursively instantiate any conditional components in this element.
+//  (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);
 //      then
-//        (oel, st, globals);
+//  (oel, st, globals);
 //
 //    case (NFInstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st, globals)
 //      equation
-//        comp = NFInstTypes.DELETED_COMPONENT(inName);
-//        st = NFInstSymbolTable.updateComponent(comp, inSymbolTable);
+//  comp = NFInstTypes.DELETED_COMPONENT(inName);
+//  st = NFInstSymbolTable.updateComponent(comp, inSymbolTable);
 //      then
-//        (NONE(), st, globals);
+//  (NONE(), st, globals);
 //
 //    case (NFInstTypes.ARRAY_CONDITION(conditions = _), _, _, _, _, _, _, st, _)
 //      equation
-//        print("Sorry, complex arrays with conditional components are not yet supported.\n");
+//  print("Sorry, complex arrays with conditional components are not yet supported.\n");
 //      then
-//        fail();
+//  fail();
 //
 //  end match;
 //end instConditionalComponent2;
@@ -4171,31 +4171,31 @@ end instWhenBranch;
 //
 //    case (DAE.ARRAY(ty = ty, array = expl), DAE.T_BOOL(varLst = _), _, _)
 //      equation
-//        condl = List.map3(expl, evaluateConditionalExp, ty, inName, inInfo);
+//  condl = List.map3(expl, evaluateConditionalExp, ty, inName, inInfo);
 //      then
-//        NFInstTypes.ARRAY_CONDITION(condl);
+//  NFInstTypes.ARRAY_CONDITION(condl);
 //
 //    case (_, DAE.T_BOOL(varLst = _), _, _)
 //      equation
-//        // TODO: Return the variability of an expression from instExp, so that
-//        // we can see whether we got a variable expression here (which is an
-//        // error), or if we simply failed to evaluate it (which is a fault in
-//        // the compiler).
-//        exp_str = ExpressionDump.printExpStr(inExp);
-//        Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY,
-//          {exp_str}, inInfo);
+//  // TODO: Return the variability of an expression from instExp, so that
+//  // we can see whether we got a variable expression here (which is an
+//  // error), or if we simply failed to evaluate it (which is a fault in
+//  // the compiler).
+//  exp_str = ExpressionDump.printExpStr(inExp);
+//  Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY,
+//    {exp_str}, inInfo);
 //      then
-//        fail();
+//  fail();
 //
 //    case (_, _, _, _)
 //      equation
-//        exp_str = ExpressionDump.printExpStr(inExp);
-//        name_str = Absyn.pathString(inName);
-//        ty_str = Types.printTypeStr(inType);
-//        Error.addSourceMessage(Error.CONDITION_TYPE_ERROR,
-//          {exp_str, name_str, ty_str}, inInfo);
+//  exp_str = ExpressionDump.printExpStr(inExp);
+//  name_str = Absyn.pathString(inName);
+//  ty_str = Types.printTypeStr(inType);
+//  Error.addSourceMessage(Error.CONDITION_TYPE_ERROR,
+//    {exp_str, name_str, ty_str}, inInfo);
 //      then
-//        fail();
+//  fail();
 //
 //  end match;
 //end evaluateConditionalExp;

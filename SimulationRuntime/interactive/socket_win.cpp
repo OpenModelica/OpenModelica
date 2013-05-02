@@ -115,19 +115,19 @@ bool Socket::connect( const string &host, const int port ) {
    if ((addr = inet_addr( host.c_str() )) != INADDR_NONE) {
        /* argv[1] is a numeric IP-Address */
        memcpy( (char *)&m_addr.sin_addr,
-               &addr, sizeof(addr));
+         &addr, sizeof(addr));
    }
    else {
        /* If the address is given as a name  *
-        * e.g. "localhost" it should translated to an IP-Address */
+  * e.g. "localhost" it should translated to an IP-Address */
        host_info = gethostbyname( host.c_str() );
        if (NULL == host_info)
        {
-          cout << "Unknown host name: " << host.c_str() << "!" << endl; fflush(stdout);
-          exit(1);
+    cout << "Unknown host name: " << host.c_str() << "!" << endl; fflush(stdout);
+    exit(1);
        }
        memcpy( (char *)&m_addr.sin_addr, host_info->h_addr,
-                host_info->h_length);
+          host_info->h_length);
    }
    m_addr.sin_family = AF_INET;
    m_addr.sin_port = htons( port );
@@ -185,11 +185,11 @@ bool Socket::UDP_send( const string &addr, const string &s, const int port ) con
    }
    addr_sento.sin_family = h->h_addrtype;
    memcpy ( (char *) &addr_sento.sin_addr.s_addr,
-            h->h_addr_list[0], h->h_length);
+      h->h_addr_list[0], h->h_length);
    addr_sento.sin_port = htons (port);
    rc = sendto( m_sock, s.c_str(), s.size(), 0,
-                 (struct sockaddr *) &addr_sento,
-                  sizeof (addr_sento));
+           (struct sockaddr *) &addr_sento,
+            sizeof (addr_sento));
    if (rc == SOCKET_ERROR)
    {
       cout << "Socket::UDP_send: Could not send data: " << s.c_str() << "!" << endl; fflush(stdout);
@@ -207,7 +207,7 @@ int Socket::UDP_recv( string& s ) const {
    memset ( buf, 0, MAXRECV + 1 );
    len = sizeof (addr_recvfrom);
    n = recvfrom ( m_sock, buf, MAXRECV, 0,
-                  (struct sockaddr *) &addr_recvfrom, &len );
+            (struct sockaddr *) &addr_recvfrom, &len );
    if (n == SOCKET_ERROR)
    {
       cout << "Socket::UDP_recv: failed to receive data!" << endl; fflush(stdout);

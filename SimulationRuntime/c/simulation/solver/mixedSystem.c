@@ -106,7 +106,7 @@ int freemixedSystem(DATA *data)
 /*! \fn solve mixed systems
  *
  *  \param  [in]  [data]
- *                [sysNumber] index of corresponding mixed System
+ *          [sysNumber] index of corresponding mixed System
  *
  *  \author wbraun
  */

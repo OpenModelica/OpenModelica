@@ -54,10 +54,10 @@ cl_mem ocl_device_alloc(size_t size){
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
-            size, NULL, &err);
+      size, NULL, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
     return tmp;
@@ -69,11 +69,11 @@ cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     if (host_array)
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
-            CL_MEM_COPY_HOST_PTR, size, host_array, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
+      CL_MEM_COPY_HOST_PTR, size, host_array, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
 
@@ -87,11 +87,11 @@ cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     if (host_array)
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
-            CL_MEM_COPY_HOST_PTR, size, host_array, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
+      CL_MEM_COPY_HOST_PTR, size, host_array, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
 
@@ -105,15 +105,15 @@ cl_mem ocl_alloc_init(void* src_data, size_t size){
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     if (src_data)
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
-            CL_MEM_COPY_HOST_PTR, size, src_data, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
+      CL_MEM_COPY_HOST_PTR, size, src_data, &err);
 
     else
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
-            size, NULL, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
+      size, NULL, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
 
@@ -137,12 +137,12 @@ void ocl_create_execution_memory_buffer(device_buffer* d_buff){
     size = 30 * 1024 * 1024 * sizeof(modelica_integer);
     //printf("Allocating : %llu MB for execution memory buffer \n", size/1024/1024);
     tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
-            size, NULL, &err);
+      size, NULL, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
     if(err){
-        printf("Error: Allocating execution memory buffer");
-        exit(1);
+  printf("Error: Allocating execution memory buffer");
+  exit(1);
     }
 
     d_buff->buffer = tmp;
@@ -154,15 +154,15 @@ cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int a_size){
     cl_int err;
     cl_mem tmp;
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     if (host_array)
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
-            CL_MEM_COPY_HOST_PTR, sizeof(modelica_real) * a_size, host_array, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
+      CL_MEM_COPY_HOST_PTR, sizeof(modelica_real) * a_size, host_array, &err);
 
     else
-        tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
-            sizeof(modelica_real) * a_size, NULL, &err);
+  tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
+      sizeof(modelica_real) * a_size, NULL, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
 
@@ -173,15 +173,15 @@ cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int a_size){
 cl_mem ocl_alloc_init_integer_arr(cl_int* host_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     if (host_array)
-        return clCreateBuffer(device_context, CL_MEM_READ_WRITE |
-            CL_MEM_COPY_HOST_PTR, sizeof(modelica_integer) * a_size, host_array, &err);
+  return clCreateBuffer(device_context, CL_MEM_READ_WRITE |
+      CL_MEM_COPY_HOST_PTR, sizeof(modelica_integer) * a_size, host_array, &err);
 
     else
-        return clCreateBuffer(device_context, CL_MEM_READ_WRITE,
-            sizeof(modelica_integer) * a_size, NULL, &err);
+  return clCreateBuffer(device_context, CL_MEM_READ_WRITE,
+      sizeof(modelica_integer) * a_size, NULL, &err);
 
     ocl_error_check(OCL_CREATE_BUFFER, err);
 
@@ -193,10 +193,10 @@ cl_mem ocl_alloc_init_integer_arr(cl_int* host_array, int a_size){
 void ocl_copy_to_device_real(cl_mem dev_dest_array, modelica_real* src_host_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_to_device_real(): tryig to copy to device with no command queue created: not initialized OCL env?");
+  printf("ERROR: ocl_copy_to_device_real(): tryig to copy to device with no command queue created: not initialized OCL env?");
 
     err = clEnqueueWriteBuffer(device_comm_queue, dev_dest_array, CL_TRUE, 0,
-        a_size * sizeof(modelica_real), src_host_array, 0, NULL, NULL);
+  a_size * sizeof(modelica_real), src_host_array, 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_HOST_TO_DEV, err);
 }
@@ -204,10 +204,10 @@ void ocl_copy_to_device_real(cl_mem dev_dest_array, modelica_real* src_host_arra
 void ocl_copy_device_to_device_real(cl_mem dev_src_array, cl_mem device_dest_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_device_to_device_real(): tryig to copy device to device with no command queue created: not initialized OCL env?");
+  printf("ERROR: ocl_copy_device_to_device_real(): tryig to copy device to device with no command queue created: not initialized OCL env?");
 
     err = clEnqueueCopyBuffer(device_comm_queue, dev_src_array, device_dest_array, 0, 0,
-        a_size * sizeof(modelica_real), 0, NULL, NULL);
+  a_size * sizeof(modelica_real), 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_DEV_TO_DEV, err);
 }
@@ -215,10 +215,10 @@ void ocl_copy_device_to_device_real(cl_mem dev_src_array, cl_mem device_dest_arr
 void ocl_copy_back_to_host_real(cl_mem dev_output_array, modelica_real* dest_host_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_back_to_host_real(): tryig to copy back non existent data");
+  printf("ERROR: ocl_copy_back_to_host_real(): tryig to copy back non existent data");
 
     err = clEnqueueReadBuffer(device_comm_queue, dev_output_array, CL_TRUE, 0,
-        a_size * sizeof(modelica_real), dest_host_array, 0, NULL, NULL);
+  a_size * sizeof(modelica_real), dest_host_array, 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_DEV_TO_HOST, err);
 }
@@ -226,10 +226,10 @@ void ocl_copy_back_to_host_real(cl_mem dev_output_array, modelica_real* dest_hos
 void ocl_copy_to_device_integer(cl_mem dev_dest_array, modelica_integer* src_host_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_to_device_integer(): tryig to copy to device with no command queue created: not initialized OCL env?");
+  printf("ERROR: ocl_copy_to_device_integer(): tryig to copy to device with no command queue created: not initialized OCL env?");
 
     err = clEnqueueWriteBuffer(device_comm_queue, dev_dest_array, CL_TRUE, 0,
-        a_size * sizeof(modelica_integer), src_host_array, 0, NULL, NULL);
+  a_size * sizeof(modelica_integer), src_host_array, 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_HOST_TO_DEV, err);
 }
@@ -237,10 +237,10 @@ void ocl_copy_to_device_integer(cl_mem dev_dest_array, modelica_integer* src_hos
 void ocl_copy_device_to_device_integer(cl_mem dev_src_array, cl_mem device_dest_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_device_to_device_integer(): tryig to copy device to device with no command queue created: not initialized OCL env?");
+  printf("ERROR: ocl_copy_device_to_device_integer(): tryig to copy device to device with no command queue created: not initialized OCL env?");
 
     err = clEnqueueCopyBuffer(device_comm_queue, dev_src_array, device_dest_array, 0, 0,
-        a_size * sizeof(modelica_integer), 0, NULL, NULL);
+  a_size * sizeof(modelica_integer), 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_DEV_TO_DEV, err);
 }
@@ -249,10 +249,10 @@ void ocl_copy_device_to_device_integer(cl_mem dev_src_array, cl_mem device_dest_
 void ocl_copy_back_to_host_integer(cl_mem dev_output_array, modelica_integer* dest_host_array, int a_size){
     cl_int err;
     if (!device_comm_queue)
-        printf("ERROR: ocl_copy_back_to_host_int(): tryig to copy back non existent data");
+  printf("ERROR: ocl_copy_back_to_host_int(): tryig to copy back non existent data");
 
     err = clEnqueueReadBuffer(device_comm_queue, dev_output_array, CL_TRUE, 0,
-        a_size * sizeof(modelica_integer), dest_host_array, 0, NULL, NULL);
+  a_size * sizeof(modelica_integer), dest_host_array, 0, NULL, NULL);
 
     ocl_error_check(OCL_COPY_DEV_TO_HOST, err);
 }

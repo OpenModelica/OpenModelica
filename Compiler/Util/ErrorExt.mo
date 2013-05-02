@@ -31,7 +31,7 @@
 
 encapsulated package ErrorExt
 "
-  file:         ErrorExt.mo
+  file:   ErrorExt.mo
   package:     ErrorExt
   description: Error handling External interface
 

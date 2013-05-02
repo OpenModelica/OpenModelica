@@ -47,7 +47,7 @@ public:
     */
      virtual bool getDenseOutput();
      virtual void setDenseOutput(bool);
-        /**
+  /**
     Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
     */
      virtual double getIterTol();
@@ -56,16 +56,16 @@ public:
      virtual void load(std::string xml_file);
 private:
     int
-        _method,                ///< Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)
-        _zeroSearchMethod;        ///< Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
+  _method,                ///< Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)
+  _zeroSearchMethod;        ///< Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
 
     bool
-        _denseOutput,            ///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
-        _useNewtonIteration,        ///< For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gewählt werden. ([false,true]; default: false = Fixpunktiteration)
-        _useSturmSequence;        ///< Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
+  _denseOutput,            ///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
+  _useNewtonIteration,        ///< For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gewählt werden. ([false,true]; default: false = Fixpunktiteration)
+  _useSturmSequence;        ///< Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
 
     double
-        _iterTol;                ///< Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
+  _iterTol;                ///< Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
 
     //Serialization of settings class
     friend class boost::serialization::access;
@@ -74,23 +74,23 @@ private:
 
     {
 
-        try
-        {
-            using boost::serialization::make_nvp;
-            // serialize base class information
-            //ar & boost::serialization::base_object<SolverSettings>(*this);
-            ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(SolverSettings);
-            ar & make_nvp("EulerMethod", _method);
-            ar & make_nvp("ZeroSearchMethod", _zeroSearchMethod);
-            ar & make_nvp("UseDenseOutput", _denseOutput);
-            ar & make_nvp("UseNewtonIteration", _useNewtonIteration);
-            ar & make_nvp("UseSturm", _useSturmSequence);
+  try
+  {
+      using boost::serialization::make_nvp;
+      // serialize base class information
+      //ar & boost::serialization::base_object<SolverSettings>(*this);
+      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(SolverSettings);
+      ar & make_nvp("EulerMethod", _method);
+      ar & make_nvp("ZeroSearchMethod", _zeroSearchMethod);
+      ar & make_nvp("UseDenseOutput", _denseOutput);
+      ar & make_nvp("UseNewtonIteration", _useNewtonIteration);
+      ar & make_nvp("UseSturm", _useSturmSequence);
 
-        }
-        catch(std::exception& ex)
-        {
-            string error = ex.what();
-        }
+  }
+  catch(std::exception& ex)
+  {
+      string error = ex.what();
+  }
 
 
     }

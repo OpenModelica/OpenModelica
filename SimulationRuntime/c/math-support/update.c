@@ -121,7 +121,7 @@
   for(i__ = 1; i__ <= i__1; ++i__) {
 /* L40: */
       zmat[i__ + zmat_dim1] = tempa * zmat[i__ + zmat_dim1] - tempb *
-        vlag[i__];
+  vlag[i__];
   }
   if(*idz == 1 && temp < zero) {
       *idz = 2;
@@ -147,10 +147,10 @@
   i__1 = *npt;
   for(i__ = 1; i__ <= i__1; ++i__) {
       zmat[i__ + ja * zmat_dim1] = scala * (tau * zmat[i__ + ja *
-        zmat_dim1] - temp * vlag[i__]);
+  zmat_dim1] - temp * vlag[i__]);
 /* L50: */
       zmat[i__ + jb * zmat_dim1] = scalb * (zmat[i__ + jb * zmat_dim1]
-        - tempa * w[i__] - tempb * vlag[i__]);
+  - tempa * w[i__] - tempb * vlag[i__]);
   }
   if(denom <= zero) {
       if(*beta < zero) {
@@ -187,7 +187,7 @@
   i__2 = jp;
   for(i__ = 1; i__ <= i__2; ++i__) {
       bmat[i__ + j * bmat_dim1] = bmat[i__ + j * bmat_dim1] + tempa *
-        vlag[i__] + tempb * w[i__];
+  vlag[i__] + tempb * w[i__];
       if(i__ > *npt) {
     bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j *
       bmat_dim1];

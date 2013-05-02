@@ -56,16 +56,16 @@ extern modelica_string_const modelica_integer_to_modelica_string_format(modelica
 extern modelica_string_const modelica_string_to_modelica_string_format(modelica_string_const s, modelica_string_const format);
 
 extern modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,
-                                   modelica_boolean leftJustified,modelica_integer signDigits);
+                             modelica_boolean leftJustified,modelica_integer signDigits);
 
 extern modelica_string_const modelica_integer_to_modelica_string(modelica_integer i,
-                                   modelica_integer minLen,modelica_boolean leftJustified);
+                             modelica_integer minLen,modelica_boolean leftJustified);
 
 extern modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b,
-                                   modelica_integer minLen, modelica_boolean leftJustified);
+                             modelica_integer minLen, modelica_boolean leftJustified);
 
 extern modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr, const modelica_string_t e[],
-                                   modelica_integer minLen, modelica_boolean leftJustified);
+                             modelica_integer minLen, modelica_boolean leftJustified);
 
 
 /* Frees memory*/

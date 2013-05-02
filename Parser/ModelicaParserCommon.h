@@ -47,13 +47,13 @@ extern int ModelicaParser_lexerError;
 extern int ModelicaParser_langStd;
 extern const char *ModelicaParser_encoding;
 
-#define PARSE_MODELICA        0
-#define PARSE_FLAT            1<<0
+#define PARSE_MODELICA  0
+#define PARSE_FLAT      1<<0
 #define PARSE_META_MODELICA   1<<1
 #define PARSE_EXPRESSION      1<<2
 #define PARSE_CODE_EXPRESSION 1<<3
 #define PARSE_PARMODELICA     1<<4
-#define PARSE_OPTIMICA        1<<5
+#define PARSE_OPTIMICA  1<<5
 #define metamodelica_enabled() (ModelicaParser_flags&PARSE_META_MODELICA)
 #define parmodelica_enabled() (ModelicaParser_flags&PARSE_PARMODELICA)
 #define optimica_enabled() (ModelicaParser_flags&PARSE_OPTIMICA)

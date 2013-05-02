@@ -32,7 +32,7 @@
 #include "omc_error.h"
 #include "simulation_data.h"
 #include "simulation_result.h"
-#include "openmodelica.h"         /* for modelica types */
+#include "openmodelica.h"   /* for modelica types */
 #include "openmodelica_func.h"    /* for modelica fucntion */
 #include "simulation_runtime.h"
 #include "solver_main.h"
@@ -66,7 +66,7 @@ void initSample(DATA* data, double startTime, double stopTime)
 {
   long i;
 
-  function_initSample(data);                              /* set-up sample */
+  function_initSample(data);                        /* set-up sample */
   data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
   for(i=0; i<data->modelData.nSamples; ++i)
   {
@@ -202,8 +202,8 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     for(i=0; i<data->modelData.nSamples; ++i)
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
       {
-        data->simulationInfo.samples[i] = 1;
-        INFO3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
+  data->simulationInfo.samples[i] = 1;
+  INFO3(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
       }
   }
 
@@ -233,14 +233,14 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     {
       if(data->simulationInfo.samples[i])
       {
-        data->simulationInfo.samples[i] = 0;
-        data->simulationInfo.nextSampleTimes[i] += data->modelData.samplesInfo[i].interval;
+  data->simulationInfo.samples[i] = 0;
+  data->simulationInfo.nextSampleTimes[i] += data->modelData.samplesInfo[i].interval;
       }
     }
 
     for(i=0; i<data->modelData.nSamples; ++i)
       if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent))
-        data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
+  data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
 
     data->simulationInfo.sampleActivated = 0;
 
@@ -302,7 +302,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
       double fvalue = fabs(data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]);
       if(value > fvalue)
       {
-        value = fvalue;
+  value = fvalue;
       }
     }
     INFO1(LOG_ZEROCROSSINGS, "Minimum value: %e", value);
@@ -310,8 +310,8 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
     {
       if(value == fabs(data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]))
       {
-        listPushBack(tmpEventList, listNodeData(it));
-        INFO1(LOG_ZEROCROSSINGS, "added tmp event : %ld", *((long*) listNodeData(it)));
+  listPushBack(tmpEventList, listNodeData(it));
+  INFO1(LOG_ZEROCROSSINGS, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
   }
@@ -420,7 +420,7 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     {
       for(i=0; i < data->modelData.nStates; i++)
       {
-        states_b[i] = data->localData[0]->realVars[i];
+  states_b[i] = data->localData[0]->realVars[i];
       }
       *b = c;
       right = 0;
@@ -429,7 +429,7 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     {
       for(i=0; i < data->modelData.nStates; i++)
       {
-        states_a[i] = data->localData[0]->realVars[i];
+  states_a[i] = data->localData[0]->realVars[i];
       }
       *a = c;
       right = 1;
@@ -438,15 +438,15 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     {
       for(i=0; i < data->modelData.nZeroCrossings; i++)
       {
-        data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
-        data->simulationInfo.zeroCrossings[i] = backup_gout[i];
+  data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
+  data->simulationInfo.zeroCrossings[i] = backup_gout[i];
       }
     }
     else
     {
       for(i=0; i < data->modelData.nZeroCrossings; i++)
       {
-        backup_gout[i] = data->simulationInfo.zeroCrossings[i];
+  backup_gout[i] = data->simulationInfo.zeroCrossings[i];
       }
     }
   }
@@ -475,14 +475,14 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
   {
     /* found event in left section */
     if((data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == -1 &&
-        data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == 1) ||
+  data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == 1) ||
        (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1 &&
-        data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
+  data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
     {
       INFO3(LOG_ZEROCROSSINGS, "%ld changed from %s to current %s",
-            *((long*) listNodeData(it)),
-            (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE",
-            (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE");
+      *((long*) listNodeData(it)),
+      (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE",
+      (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE");
       listPushFront(tmpEventList, listNodeData(it));
     }
   }

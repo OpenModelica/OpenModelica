@@ -33,38 +33,38 @@ void delay(unsigned milliseconds);
 class Thread
 {
   public:
-         Thread();
-         ~Thread();
+   Thread();
+   ~Thread();
 #if defined(_MSC_VER)
-         bool Create(THREAD_RET_TYPE_NO_API (*func)(THREAD_PARAM_TYPE));
+   bool Create(THREAD_RET_TYPE_NO_API (*func)(THREAD_PARAM_TYPE));
 #else
-        bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
+  bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
 #endif
-         bool Join();
+   bool Join();
 
   private: // Not copyable
-         Thread(const Thread&);
-         Thread& operator= (const Thread&);
+   Thread(const Thread&);
+   Thread& operator= (const Thread&);
 
   private:
-         THREAD_HANDLE thread_handle;
+   THREAD_HANDLE thread_handle;
 };
 
 class Mutex
 {
   public:
-         Mutex();
-         ~Mutex();
+   Mutex();
+   ~Mutex();
 
-         bool Lock();
-         bool Unlock();
+   bool Lock();
+   bool Unlock();
 
   private: // Not copyable
-         Mutex(const Mutex&);
-         Mutex& operator= (const Mutex&);
+   Mutex(const Mutex&);
+   Mutex& operator= (const Mutex&);
 
   private:
-         MUTEX_HANDLE mutex_handle;
+   MUTEX_HANDLE mutex_handle;
 };
 
 class Semaphore
@@ -72,21 +72,21 @@ class Semaphore
   struct Impl;
 
   public:
-         Semaphore(unsigned initial_count, unsigned max_count);
-         ~Semaphore();
+   Semaphore(unsigned initial_count, unsigned max_count);
+   ~Semaphore();
 
-         bool Wait();
-         bool TryWait();
-         bool Post();
-         bool Post(unsigned count);
-
-  private:
-         Semaphore(const Semaphore&);
-         Semaphore& operator= (const Semaphore&);
+   bool Wait();
+   bool TryWait();
+   bool Post();
+   bool Post(unsigned count);
 
   private:
-         SEMAPHORE_HANDLE semaphore_handle;
-         Impl *impl;
+   Semaphore(const Semaphore&);
+   Semaphore& operator= (const Semaphore&);
+
+  private:
+   SEMAPHORE_HANDLE semaphore_handle;
+   Impl *impl;
 };
 
 #endif /* THREAD_H */

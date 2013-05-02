@@ -30,7 +30,7 @@
  */
 
 encapsulated package Reference
-" file:        Reference.mo
+" file:  Reference.mo
   package:     Reference
   description: Reference is a reference to an instance with a modification (a link).
 
@@ -90,7 +90,7 @@ uniontype Reference
  components).
  Examples:
    composite type reference: Modelica.SIunit.Voltage(mods) {(id1,IU,U),(id2,IU,U),(id3,IM(mods),U)}
-   composite comp reference: x[1].y.z                      {(id1,IS(1),U),(id2,IU,U),(id3,IU,U)}
+   composite comp reference: x[1].y.z                {(id1,IS(1),U),(id2,IU,U),(id3,IU,U)}
  Note: the names of the ids are in the Scopes pointed by Node.scopeId (and is always a full path).
        all reference nodes are added to the graph but only the top one in a composite reference
        is pointed by the instance nodes.

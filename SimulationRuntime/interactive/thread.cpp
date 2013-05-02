@@ -37,13 +37,13 @@ bool Thread::Join()
 Mutex::Mutex()
 {
   mutex_handle = CreateMutex(
-                NULL,                                                         // default security attributes
-                FALSE,                                                         // initially not owned
-                NULL);                                                        // unnamed mutex
+          NULL,                                                         // default security attributes
+          FALSE,                                                         // initially not owned
+          NULL);                                                        // unnamed mutex
 
   if(mutex_handle == NULL)
   {
-         throw std::runtime_error("CreateMutex error: " + GetLastError());
+   throw std::runtime_error("CreateMutex error: " + GetLastError());
   }
 }
 
@@ -184,7 +184,7 @@ bool Semaphore::Post()
 
   if(sem_getvalue(&semaphore_handle, &sem_val) == 0 && sem_val < (int)impl->max_count)
   {
-         success = (sem_post(&semaphore_handle) == 0);
+   success = (sem_post(&semaphore_handle) == 0);
   }
 
   impl->mutex.Unlock();
@@ -199,18 +199,18 @@ bool Semaphore::Post(unsigned count)
 
   if(sem_getvalue(&semaphore_handle, &sem_val) != 0)
   {
-         impl->mutex.Unlock();
-         return false;
+   impl->mutex.Unlock();
+   return false;
   }
 
   bool success = true;
   for(unsigned i = 0; i < count; ++i)
   {
-         if(!(sem_val + i < impl->max_count && sem_post(&semaphore_handle) == 0))
-         {
-                success = false;
-                break;
-         }
+   if(!(sem_val + i < impl->max_count && sem_post(&semaphore_handle) == 0))
+   {
+          success = false;
+          break;
+   }
   }
 
   impl->mutex.Unlock();

@@ -99,13 +99,13 @@ void StaticFunction::writeOutputs(Time t)
       //derX[stateNumber(*it)].sampledAt(t);
       //derX[stateNumber(*it)].setCoeff(0,out[i]);
       //if (order>1)
-        //derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
+  //derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     } else {
       //cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
       //alg[algNumber(*it)].sampledAt(t);
       //alg[algNumber(*it)].setCoeff(0,out[i]);
       //if (order>1)
-        //alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
+  //alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     }
     if (order==2)
     {
@@ -113,11 +113,11 @@ void StaticFunction::writeOutputs(Time t)
       const double tolerr=dQmin+dQrel*fabs(out[i]);
       if (ddf!=0)
       {
-        const double s=.9*sqrt(fabs(ddf/tolerr));
-        if (s<sigma) {
-          cout << "Adjusting sigma to " << s << endl;
-          sigma=s;
-        }
+  const double s=.9*sqrt(fabs(ddf/tolerr));
+  if (s<sigma) {
+    cout << "Adjusting sigma to " << s << endl;
+    sigma=s;
+  }
       }
     }
   }

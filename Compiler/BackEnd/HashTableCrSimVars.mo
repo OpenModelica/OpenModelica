@@ -5,7 +5,7 @@ encapsulated package HashTableCrSimVars "
 
   All rights reserved.
 
-  file:        HashTableCrSimVars.mo
+  file:  HashTableCrSimVars.mo
   package:     HashTableCrSimVars
   description: DAE.CR to DAE.Exp
 

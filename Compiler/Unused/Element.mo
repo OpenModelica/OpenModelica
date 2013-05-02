@@ -30,7 +30,7 @@
  */
 
 encapsulated package Element
-" file:        Element.mo
+" file:  Element.mo
   package:     Element
   description: Element represents an element.
   @author:     adrpo
@@ -97,15 +97,15 @@ algorithm
 
     case E(element = SCode.IMPORT(imp = imp))
       equation
-         n = Absyn.printImportString(imp);
+   n = Absyn.printImportString(imp);
       then
-        (n, Scope.NI(0,0));
+  (n, Scope.NI(0,0));
 
     case E(element = SCode.EXTENDS(baseClassPath = p))
       equation
-        n = Absyn.pathString(p);
+  n = Absyn.pathString(p);
       then
-        (n, Scope.EX(0));
+  (n, Scope.EX(0));
 
     case E(element = SCode.CLASS(name = n))
       then (n, Scope.TY());

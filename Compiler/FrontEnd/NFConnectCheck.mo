@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFConnectCheck
-" file:        NFConnectCheck.mo
+" file:  NFConnectCheck.mo
   package:     NFConnectCheck
   description: Connection checking functions
 
@@ -89,17 +89,17 @@ algorithm
     // been prefixed already. Need to check this before prefixing somehow.
     /*-----------------------------------------------------------------------*/
     case (DAE.CREF_QUAL(identType = ty1,
-        componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
+  componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
       equation
-        crefIsValidNode2(ty1, ty2, inFuncName, isFirst, inInfo);
+  crefIsValidNode2(ty1, ty2, inFuncName, isFirst, inInfo);
       then
-        ();
+  ();
 
     else
       equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST,Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND), {inFuncName}, inInfo);
+  Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST,Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND), {inFuncName}, inInfo);
       then
-        ();
+  ();
 
   end match;
 end crefIsValidNode;
@@ -114,17 +114,17 @@ algorithm
   _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
     case (_, _, _, _, _)
       equation
-        true = Types.isConnector(inType1);
-        true = Types.isOverdeterminedType(inType2);
+  true = Types.isConnector(inType1);
+  true = Types.isOverdeterminedType(inType2);
       then
-        ();
+  ();
 
     else
       equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST,Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND),
-          {inFuncName}, inInfo);
+  Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST,Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND),
+    {inFuncName}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end crefIsValidNode2;
@@ -143,27 +143,27 @@ algorithm
 
     case (_, _, _, _)
       equation
-        true = NFInstUtil.isConnectorComponent(inComponent);
+  true = NFInstUtil.isConnectorComponent(inComponent);
       then
-        ();
+  ();
 
     // A component in an expandable connector is seen as a connector.
     case (_, SOME(comp), _, _)
       equation
-        ty = NFInstUtil.getComponentType(comp);
-        true = Types.isComplexExpandableConnector(ty);
+  ty = NFInstUtil.getComponentType(comp);
+  true = Types.isComplexExpandableConnector(ty);
       then
-        ();
+  ();
 
     else
       equation
-        ty = NFInstUtil.getComponentType(inComponent);
-        ty_str = Types.unparseType(ty);
-        cref_str = ComponentReference.printComponentRefStr(inCref);
-        Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
-          {cref_str, ty_str}, inInfo);
+  ty = NFInstUtil.getComponentType(inComponent);
+  ty_str = Types.unparseType(ty);
+  cref_str = ComponentReference.printComponentRefStr(inCref);
+  Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+    {cref_str, ty_str}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkComponentIsConnector;
@@ -223,9 +223,9 @@ algorithm
 
     case ((ty, _, _, _))
       equation
-        true = Types.isComplexExpandableConnector(ty);
+  true = Types.isComplexExpandableConnector(ty);
       then
-        EXPANDABLE_CONNECTOR();
+  EXPANDABLE_CONNECTOR();
 
     case ((_, NFConnect2.NO_TYPE(), _, _)) then POTENTIALLY_PRESENT();
     else SIMPLE_CONNECTOR();
@@ -255,25 +255,25 @@ algorithm
 
     // Both connectors are non-expandable, check them.
     case ((lhs_ty, lhs_cty, lhs_var, lhs_dir), SIMPLE_CONNECTOR(),
-        (rhs_ty, rhs_cty, rhs_var, rhs_dir), SIMPLE_CONNECTOR(), err_info)
+  (rhs_ty, rhs_cty, rhs_var, rhs_dir), SIMPLE_CONNECTOR(), err_info)
       equation
-        compatibleConnectorTypes(lhs_cty, rhs_cty, err_info);
-        compatibleDirection(lhs_dir, rhs_dir, err_info);
-        compatibleVariability(lhs_var, lhs_ty, lhs_cty, rhs_var, rhs_ty, rhs_cty, err_info);
-        complexConnectorTypeCompatibility(lhs_ty, rhs_ty, err_info);
+  compatibleConnectorTypes(lhs_cty, rhs_cty, err_info);
+  compatibleDirection(lhs_dir, rhs_dir, err_info);
+  compatibleVariability(lhs_var, lhs_ty, lhs_cty, rhs_var, rhs_ty, rhs_cty, err_info);
+  complexConnectorTypeCompatibility(lhs_ty, rhs_ty, err_info);
       then
-        ();
+  ();
 
     // Both connectors are undeclared, show error.
     case (_, POTENTIALLY_PRESENT(), _, POTENTIALLY_PRESENT(),
-        (lhs_cref, rhs_cref, info))
+  (lhs_cref, rhs_cref, info))
       equation
-        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
-        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
-        Error.addSourceMessage(Error.UNDECLARED_CONNECTION,
-          {cref_str1, cref_str2}, info);
+  cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+  cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+  Error.addSourceMessage(Error.UNDECLARED_CONNECTION,
+    {cref_str1, cref_str2}, info);
       then
-        fail();
+  fail();
 
     // One of the connectors is only potentially present
     case (_, POTENTIALLY_PRESENT(), _, _, _) then ();
@@ -288,14 +288,14 @@ algorithm
     // One is expandable and one is non-expandable, show error.
     case (_, _, _, _, (lhs_cref, rhs_cref, info))
       equation
-        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
-        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
-        (cref_str1, cref_str2) =
-          Util.swap(isExpandableStatus(inRhsConnectorStatus), cref_str1, cref_str2);
-        Error.addSourceMessage(Error.EXPANDABLE_NON_EXPANDABLE_CONNECTION,
-          {cref_str1, cref_str2}, info);
+  cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+  cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+  (cref_str1, cref_str2) =
+    Util.swap(isExpandableStatus(inRhsConnectorStatus), cref_str1, cref_str2);
+  Error.addSourceMessage(Error.EXPANDABLE_NON_EXPANDABLE_CONNECTION,
+    {cref_str1, cref_str2}, info);
       then
-        fail();
+  fail();
 
   end match;
 end compatibleConnectors3;
@@ -327,22 +327,22 @@ algorithm
     // Equal connector types => ok.
     case (_, _, _)
       equation
-        true = NFConnectUtil2.connectorTypeEqual(inLhsType, inRhsType);
+  true = NFConnectUtil2.connectorTypeEqual(inLhsType, inRhsType);
       then
-        ();
+  ();
 
     // Nonequal connector types => error.
     case (_, _, (lhs_cref, rhs_cref, info))
       equation
-        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
-        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
-        cty_str1 = NFConnectUtil2.unparseConnectorType(inLhsType);
-        cty_str2 = NFConnectUtil2.unparseConnectorType(inRhsType);
-        err_strl = Util.if_(NFConnectUtil2.isPotential(inLhsType),
-          {cty_str2, cref_str2, cref_str1}, {cty_str1, cref_str1, cref_str2});
-        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
+  cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+  cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+  cty_str1 = NFConnectUtil2.unparseConnectorType(inLhsType);
+  cty_str2 = NFConnectUtil2.unparseConnectorType(inRhsType);
+  err_strl = Util.if_(NFConnectUtil2.isPotential(inLhsType),
+    {cty_str2, cref_str2, cref_str1}, {cty_str1, cref_str1, cref_str2});
+  Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end compatibleConnectorTypes;
@@ -364,23 +364,23 @@ algorithm
     // None or both are input/output => ok.
     case (_, _, _)
       equation
-        true = boolEq(DAEUtil.isBidirVarDirection(inLhsDirection),
-                      DAEUtil.isBidirVarDirection(inRhsDirection));
+  true = boolEq(DAEUtil.isBidirVarDirection(inLhsDirection),
+                DAEUtil.isBidirVarDirection(inRhsDirection));
       then
-        ();
+  ();
 
     // One is input/output, the other bidirectional => error.
     case (_, _, (lhs_cref, rhs_cref, info))
       equation
-        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
-        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
-        dir_str1 = DAEDump.unparseVarDirection(inLhsDirection);
-        dir_str2 = DAEDump.unparseVarDirection(inRhsDirection);
-        err_strl = Util.if_(DAEUtil.isBidirVarDirection(inLhsDirection),
-          {dir_str2, cref_str2, cref_str1}, {dir_str1, cref_str1, cref_str2});
-        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
+  cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+  cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+  dir_str1 = DAEDump.unparseVarDirection(inLhsDirection);
+  dir_str2 = DAEDump.unparseVarDirection(inRhsDirection);
+  err_strl = Util.if_(DAEUtil.isBidirVarDirection(inLhsDirection),
+    {dir_str2, cref_str2, cref_str1}, {dir_str1, cref_str1, cref_str2});
+  Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end compatibleDirection;
@@ -408,11 +408,11 @@ algorithm
 
     case (lhs_var, _, lhs_cty, rhs_var, _, rhs_cty, (lhs_cref, rhs_cref, info))
       equation
-        ipc = connectorVariabilityEq(lhs_var, rhs_var, inErrorInfo);
-        compatibleVariability2(ipc, inLhsType, lhs_cty, lhs_var, lhs_cref, info);
-        compatibleVariability2(ipc, inRhsType, rhs_cty, rhs_var, rhs_cref, info);
+  ipc = connectorVariabilityEq(lhs_var, rhs_var, inErrorInfo);
+  compatibleVariability2(ipc, inLhsType, lhs_cty, lhs_var, lhs_cref, info);
+  compatibleVariability2(ipc, inRhsType, rhs_cty, rhs_var, rhs_cref, info);
       then
-        ();
+  ();
 
   end match;
 end compatibleVariability;
@@ -437,25 +437,25 @@ algorithm
     // Both must be either constant/parameter or non-constant/parameter.
     case (_, _, _)
       equation
-        ipc1 = DAEUtil.isParamOrConstVarKind(inVariability1);
-        ipc2 = DAEUtil.isParamOrConstVarKind(inVariability2);
-        true = boolEq(ipc1, ipc2);
+  ipc1 = DAEUtil.isParamOrConstVarKind(inVariability1);
+  ipc2 = DAEUtil.isParamOrConstVarKind(inVariability2);
+  true = boolEq(ipc1, ipc2);
       then
-        ipc1;
+  ipc1;
 
     // Different variability => error.
     case (_, _, (cref1, cref2, info))
       equation
-        lhs_str = ComponentReference.printComponentRefStr(cref1);
-        rhs_str = ComponentReference.printComponentRefStr(cref2);
-        lhs_var_str = DAEDump.unparseVarKind(inVariability1);
-        rhs_var_str = DAEDump.unparseVarKind(inVariability2);
-        tokens = Util.if_(DAEUtil.isParamOrConstVarKind(inVariability1),
-          {lhs_var_str, lhs_str, rhs_str}, {rhs_var_str, rhs_str, lhs_str});
-        Error.addSourceMessage(Error.INCOMPATIBLE_CONNECTOR_VARIABILITY,
-          tokens, info);
+  lhs_str = ComponentReference.printComponentRefStr(cref1);
+  rhs_str = ComponentReference.printComponentRefStr(cref2);
+  lhs_var_str = DAEDump.unparseVarKind(inVariability1);
+  rhs_var_str = DAEDump.unparseVarKind(inVariability2);
+  tokens = Util.if_(DAEUtil.isParamOrConstVarKind(inVariability1),
+    {lhs_var_str, lhs_str, rhs_str}, {rhs_var_str, rhs_str, lhs_str});
+  Error.addSourceMessage(Error.INCOMPATIBLE_CONNECTOR_VARIABILITY,
+    tokens, info);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end connectorVariabilityEq;
@@ -482,33 +482,33 @@ algorithm
     // potential.
     case (true, _, _, _, _, _)
       equation
-        false = Types.isComplexConnector(inType);
-        true = NFConnectUtil2.isPotential(inConnectorType);
+  false = Types.isComplexConnector(inType);
+  true = NFConnectUtil2.isPotential(inConnectorType);
       then
-        ();
+  ();
 
     // A connector which is constant/parameter and complex is an error.
     case (true, _, _, _, _, _)
       equation
-        true = Types.isComplexConnector(inType);
-        cref_str = ComponentReference.printComponentRefStr(inCref);
-        var_str = DAEDump.unparseVarKind(inVariability);
-        Error.addSourceMessage(Error.INVALID_COMPLEX_CONNECTOR_VARIABILITY,
-          {cref_str, var_str}, inInfo);
+  true = Types.isComplexConnector(inType);
+  cref_str = ComponentReference.printComponentRefStr(inCref);
+  var_str = DAEDump.unparseVarKind(inVariability);
+  Error.addSourceMessage(Error.INVALID_COMPLEX_CONNECTOR_VARIABILITY,
+    {cref_str, var_str}, inInfo);
       then
-        fail();
+  fail();
 
     // A connector which is constant/parameter and not potential is an error.
     case (true, _, _, _, _, _)
       equation
-        false = NFConnectUtil2.isPotential(inConnectorType);
-        cref_str = ComponentReference.printComponentRefStr(inCref);
-        var_str = DAEDump.unparseVarKind(inVariability);
-        cty_str = NFConnectUtil2.unparseConnectorType(inConnectorType);
-        Error.addSourceMessage(Error.INVALID_CONNECTOR_PREFIXES,
-          {cref_str, var_str, cty_str}, inInfo);
+  false = NFConnectUtil2.isPotential(inConnectorType);
+  cref_str = ComponentReference.printComponentRefStr(inCref);
+  var_str = DAEDump.unparseVarKind(inVariability);
+  cty_str = NFConnectUtil2.unparseConnectorType(inConnectorType);
+  Error.addSourceMessage(Error.INVALID_CONNECTOR_PREFIXES,
+    {cref_str, var_str, cty_str}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end compatibleVariability2;
@@ -526,9 +526,9 @@ algorithm
     // Two complex connectors, check their components.
     case (DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2), _)
       equation
-        _ = List.threadMap1(vars1, vars2, varConnectorTypeCompatibility, inErrorInfo);
+  _ = List.threadMap1(vars1, vars2, varConnectorTypeCompatibility, inErrorInfo);
       then
-        ();
+  ();
 
     // Non-complex connectors, nothing to do.
     else ();
@@ -552,12 +552,12 @@ algorithm
 
     case (_, _, (lhs_cref, rhs_cref, info))
       equation
-        (lhs_cref, lhs_conn) = varConnectorTuple(inLhsVar, lhs_cref);
-        (rhs_cref, rhs_conn) = varConnectorTuple(inRhsVar, rhs_cref);
-        err_info = (lhs_cref, rhs_cref, info);
-        compatibleConnectors2(lhs_conn, rhs_conn, err_info);
+  (lhs_cref, lhs_conn) = varConnectorTuple(inLhsVar, lhs_cref);
+  (rhs_cref, rhs_conn) = varConnectorTuple(inRhsVar, rhs_cref);
+  err_info = (lhs_cref, rhs_cref, info);
+  compatibleConnectors2(lhs_conn, rhs_conn, err_info);
       then
-        0;
+  0;
 
   end match;
 end varConnectorTypeCompatibility;

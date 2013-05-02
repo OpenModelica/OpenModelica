@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 void read_input_xml(MODEL_DATA* modelData,
-                    SIMULATION_INFO* simulationData);
+              SIMULATION_INFO* simulationData);
 
 #ifdef __cplusplus
 }

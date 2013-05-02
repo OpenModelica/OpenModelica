@@ -45,7 +45,7 @@ extern "C"
 char *my_strdup(const char *s) {
     char *p = (char*)malloc(strlen(s) + 1);
     if(p != NULL) {
-        strcpy(p, s);
+  strcpy(p, s);
     }
     return p;
 }
@@ -83,8 +83,8 @@ void puttype(const type_description *desc)
       size_t e;
       fprintf(stderr, "TUPLE (%u):\n", (unsigned) desc->data.tuple.elements);
       for(e = 0; e < desc->data.tuple.elements; ++e) {
-        fprintf(stderr, "\t");
-        puttype(desc->data.tuple.element + e);
+  fprintf(stderr, "\t");
+  puttype(desc->data.tuple.element + e);
       }
     }
     break;
@@ -92,17 +92,17 @@ void puttype(const type_description *desc)
       int d;
       fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
       for(d = 0; d < desc->data.real_array.ndims; ++d) {
-        fprintf(stderr, "%d, ", (int) desc->data.real_array.dim_size[d]);
+  fprintf(stderr, "%d, ", (int) desc->data.real_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
       if(desc->data.real_array.ndims == 1) {
-        int e;
-        fprintf(stderr, "\t[");
-        for(e = 0; e < desc->data.real_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%g, ",
-                  ((modelica_real *) desc->data.real_array.data)[e]);
-        }
-        fprintf(stderr, "]\n");
+  int e;
+  fprintf(stderr, "\t[");
+  for(e = 0; e < desc->data.real_array.dim_size[0]; ++e) {
+    fprintf(stderr, "%g, ",
+            ((modelica_real *) desc->data.real_array.data)[e]);
+  }
+  fprintf(stderr, "]\n");
       }
     }
     break;
@@ -110,16 +110,16 @@ void puttype(const type_description *desc)
       int d;
       fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
       for(d = 0; d < desc->data.int_array.ndims; ++d) {
-        fprintf(stderr, "%d, ", (int) desc->data.int_array.dim_size[d]);
+  fprintf(stderr, "%d, ", (int) desc->data.int_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
       if(desc->data.int_array.ndims == 1) {
-        int e;
-        fprintf(stderr, "\t[");
-        for(e = 0; e < desc->data.int_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%ld, ", ((modelica_integer *) desc->data.int_array.data)[e]);
-        }
-        fprintf(stderr, "]\n");
+  int e;
+  fprintf(stderr, "\t[");
+  for(e = 0; e < desc->data.int_array.dim_size[0]; ++e) {
+    fprintf(stderr, "%ld, ", ((modelica_integer *) desc->data.int_array.data)[e]);
+  }
+  fprintf(stderr, "]\n");
       }
     }
     break;
@@ -127,17 +127,17 @@ void puttype(const type_description *desc)
       int d;
       fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
       for(d = 0; d < desc->data.bool_array.ndims; ++d) {
-        fprintf(stderr, "%d, ", (int) desc->data.bool_array.dim_size[d]);
+  fprintf(stderr, "%d, ", (int) desc->data.bool_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
       if(desc->data.bool_array.ndims == 1) {
-        int e;
-        fprintf(stderr, "\t[");
-        for(e = 0; e < desc->data.bool_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%c, ",
-                  ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
-        }
-        fprintf(stderr, "]\n");
+  int e;
+  fprintf(stderr, "\t[");
+  for(e = 0; e < desc->data.bool_array.dim_size[0]; ++e) {
+    fprintf(stderr, "%c, ",
+            ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
+  }
+  fprintf(stderr, "]\n");
       }
     }
     break;
@@ -145,17 +145,17 @@ void puttype(const type_description *desc)
       int d;
       fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
       for(d = 0; d < desc->data.string_array.ndims; ++d) {
-        fprintf(stderr, "%d, ", (int) desc->data.string_array.dim_size[d]);
+  fprintf(stderr, "%d, ", (int) desc->data.string_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
       if(desc->data.string_array.ndims == 1) {
-        int e;
-        fprintf(stderr, "\t[");
-        for(e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%s, ",
-                ((modelica_string_t *) desc->data.string_array.data)[e]);
-        }
-        fprintf(stderr, "]\n");
+  int e;
+  fprintf(stderr, "\t[");
+  for(e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
+    fprintf(stderr, "%s, ",
+          ((modelica_string_t *) desc->data.string_array.data)[e]);
+  }
+  fprintf(stderr, "]\n");
       }
     }
     break;
@@ -169,13 +169,13 @@ void puttype(const type_description *desc)
       size_t i;
       fprintf(stderr, "RECORD: %s ", desc->data.record.record_name?desc->data.record.record_name:"[no name]");
       if(!desc->data.record.elements) {
-        fprintf(stderr, "has no members!?\n");
+  fprintf(stderr, "has no members!?\n");
       } else {
-        fprintf(stderr, "has the following members:\n");
+  fprintf(stderr, "has the following members:\n");
       }
       for(i = 0; i < desc->data.record.elements; i++) {
-        fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
-        puttype(&(desc->data.record.element[i]));
+  fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
+  puttype(&(desc->data.record.element[i]));
       }
     }
     break;
@@ -243,10 +243,10 @@ void free_type_description(type_description *desc)
       size_t i, cnt;
       cnt = string_array_nr_of_elements(&(desc->data.string_array));
       for(i = 0; i < cnt; ++i) {
-        modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
-        if(s != NULL) {
-          free(s);
-        }
+  modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
+  if(s != NULL) {
+    free(s);
+  }
       }
       free(desc->data.string_array.dim_size);
       free(desc->data.string_array.data);
@@ -256,10 +256,10 @@ void free_type_description(type_description *desc)
       size_t i;
       type_description *e = desc->data.tuple.element;
       for(i = 0; i < desc->data.tuple.elements; ++i, ++e) {
-        free_type_description(e);
+  free_type_description(e);
       }
       if(desc->data.tuple.elements > 0) {
-        free(desc->data.tuple.element);
+  free(desc->data.tuple.element);
       }
     }
     break;
@@ -273,12 +273,12 @@ void free_type_description(type_description *desc)
       type_description *e = desc->data.record.element;
       /* char **n = desc->data.record.name; */
       for(i = 0; i < desc->data.record.elements; i++, e++) {
-        free(desc->data.record.name[i]);
-        free_type_description(e);
+  free(desc->data.record.name[i]);
+  free_type_description(e);
       }
       if(desc->data.record.elements > 0) {
-        free(desc->data.record.element);
-        free(desc->data.record.name);
+  free(desc->data.record.element);
+  free(desc->data.record.name);
       }
     }
     break;
@@ -485,7 +485,7 @@ void write_real_array(type_description *desc, const real_array_t *arr)
     nr_elements = real_array_nr_of_elements(arr);
     desc->data.real_array.data = malloc(sizeof(modelica_real) * nr_elements);
     memcpy(desc->data.real_array.data, arr->data,
-           sizeof(modelica_real) * nr_elements);
+     sizeof(modelica_real) * nr_elements);
   } else {
     copy_real_array(arr, &(desc->data.real_array));
   }
@@ -506,7 +506,7 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
     nr_elements = integer_array_nr_of_elements(arr);
     desc->data.int_array.data = malloc(sizeof(modelica_integer) * nr_elements);
     memcpy(desc->data.int_array.data, arr->data,
-           sizeof(modelica_integer) * nr_elements);
+     sizeof(modelica_integer) * nr_elements);
   } else {
     clone_integer_array_spec(arr, &(desc->data.int_array));
     copy_integer_array_data(arr, &(desc->data.int_array));
@@ -528,7 +528,7 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
     nr_elements = boolean_array_nr_of_elements(arr);
     desc->data.bool_array.data = malloc(sizeof(modelica_boolean) * nr_elements);
     memcpy(desc->data.bool_array.data, arr->data,
-           sizeof(modelica_boolean) * nr_elements);
+     sizeof(modelica_boolean) * nr_elements);
   } else {
     copy_boolean_array(arr, &(desc->data.bool_array));
   }
@@ -692,49 +692,49 @@ static int read_modelica_record_helper(type_description **descptr, va_list *arg)
     for(e = 0; e < desc->data.record.elements; ++e) {
       switch (elem->type) {
       case TYPE_DESC_NONE:
-        return -1;
+  return -1;
       case TYPE_DESC_REAL:
-        read_modelica_real(&elem, va_arg(*arg, modelica_real *));
-        break;
+  read_modelica_real(&elem, va_arg(*arg, modelica_real *));
+  break;
       case TYPE_DESC_REAL_ARRAY:
-        read_real_array(&elem, va_arg(*arg, real_array_t *));
-        break;
+  read_real_array(&elem, va_arg(*arg, real_array_t *));
+  break;
       case TYPE_DESC_INT:
-        read_modelica_integer(&elem, va_arg(*arg, modelica_integer *));
-        break;
+  read_modelica_integer(&elem, va_arg(*arg, modelica_integer *));
+  break;
       case TYPE_DESC_INT_ARRAY:
-        read_integer_array(&elem, va_arg(*arg, integer_array_t *));
-        break;
+  read_integer_array(&elem, va_arg(*arg, integer_array_t *));
+  break;
       case TYPE_DESC_BOOL:
-        read_modelica_boolean(&elem, va_arg(*arg, modelica_boolean *));
-        break;
+  read_modelica_boolean(&elem, va_arg(*arg, modelica_boolean *));
+  break;
       case TYPE_DESC_BOOL_ARRAY:
-        read_boolean_array(&elem, va_arg(*arg, boolean_array_t *));
-        break;
+  read_boolean_array(&elem, va_arg(*arg, boolean_array_t *));
+  break;
       case TYPE_DESC_STRING:
-        read_modelica_string(&elem, va_arg(*arg, modelica_string_t *));
-        break;
+  read_modelica_string(&elem, va_arg(*arg, modelica_string_t *));
+  break;
       case TYPE_DESC_STRING_ARRAY:
-        read_string_array(&elem, va_arg(*arg, string_array_t *));
-        break;
+  read_string_array(&elem, va_arg(*arg, string_array_t *));
+  break;
       case TYPE_DESC_TUPLE:
-        in_report("tuple in record is unsupported.");
-        return -1;
+  in_report("tuple in record is unsupported.");
+  return -1;
       case TYPE_DESC_COMPLEX:
-        read_modelica_complex(&elem, va_arg(*arg, modelica_complex *));
-        break;
+  read_modelica_complex(&elem, va_arg(*arg, modelica_complex *));
+  break;
       case TYPE_DESC_MMC:
-        read_modelica_metatype(&elem, va_arg(*arg, void **));
-        break;
+  read_modelica_metatype(&elem, va_arg(*arg, void **));
+  break;
       case TYPE_DESC_RECORD:
-        read_modelica_record_helper(&elem, arg);
-        break;
+  read_modelica_record_helper(&elem, arg);
+  break;
       case TYPE_DESC_FUNCTION:
-        in_report("function pointer in record is unsupported.");
-        return -1;
+  in_report("function pointer in record is unsupported.");
+  return -1;
       case TYPE_DESC_NORETCALL:
-        in_report("noretcall in record is invalid.");
-        return -1;
+  in_report("noretcall in record is invalid.");
+  return -1;
       }
     }
     return 0;
@@ -757,15 +757,15 @@ int read_modelica_record(type_description **descptr, ...)
 }
 
 type_description *add_modelica_record_member(type_description *desc,
-                                             const char *name, size_t nlen)
+                                       const char *name, size_t nlen)
 {
   type_description *elem;
   assert(desc->type == TYPE_DESC_RECORD);
   desc->data.record.name = (char**)realloc(desc->data.record.name, sizeof(char *)
-                                   * (desc->data.record.elements + 1));
+                             * (desc->data.record.elements + 1));
   desc->data.record.element = (struct type_desc_s*)realloc(desc->data.record.element,
-                                      sizeof(struct type_desc_s)
-                                      * (desc->data.record.elements + 1));
+                                sizeof(struct type_desc_s)
+                                * (desc->data.record.elements + 1));
   elem = desc->data.record.element + desc->data.record.elements;
   desc->data.record.name[desc->data.record.elements] = (char*)malloc(nlen + 1);
   memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1);
@@ -840,8 +840,8 @@ static void write_modelica_record_helper(type_description *desc, const void* rec
       assert(0);
       return;
     case TYPE_DESC_RECORD: {
-        struct record_description* new_desc = va_arg(*arg, struct record_description*);
-        write_modelica_record_helper(elem, new_desc, arg);
+  struct record_description* new_desc = va_arg(*arg, struct record_description*);
+  write_modelica_record_helper(elem, new_desc, arg);
       }
       break;
     case TYPE_DESC_FUNCTION:
@@ -869,8 +869,8 @@ type_description *add_tuple_member(type_description *desc)
   type_description *ret = NULL;
   assert(desc->type == TYPE_DESC_TUPLE);
   desc->data.tuple.element = (struct type_desc_s*)realloc(desc->data.tuple.element,
-                                     (desc->data.tuple.elements + 1)
-                                     * sizeof(struct type_desc_s));
+                               (desc->data.tuple.elements + 1)
+                               * sizeof(struct type_desc_s));
   ret = desc->data.tuple.element + desc->data.tuple.elements;
   ++(desc->data.tuple.elements);
   init_type_description(ret);
@@ -883,8 +883,8 @@ static type_description *add_tuple_item(type_description *desc)
 
   if(desc->type == TYPE_DESC_TUPLE) {
     desc->data.tuple.element = (struct type_desc_s*)realloc(desc->data.tuple.element,
-                                       (desc->data.tuple.elements + 1)
-                                       * sizeof(struct type_desc_s));
+                                 (desc->data.tuple.elements + 1)
+                                 * sizeof(struct type_desc_s));
     ret = desc->data.tuple.element + desc->data.tuple.elements;
     ++(desc->data.tuple.elements);
   } else {

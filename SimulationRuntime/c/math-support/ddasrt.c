@@ -169,13 +169,13 @@ static doublereal c_b588 = 1.;
 /* ***DATE WRITTEN   821001   (YYMMDD) */
 /* ***REVISION DATE  910624   (YYMMDD) */
 /* ***KEYWORDS  DIFFERENTIAL/ALGEBRAIC,BACKWARD DIFFERENTIATION FORMULAS */
-/*             IMPLICIT DIFFERENTIAL SYSTEMS */
+/*       IMPLICIT DIFFERENTIAL SYSTEMS */
 /* ***AUTHOR  PETZOLD,LINDA R.,COMPUTING AND MATHEMATICS RESEARCH DIVISION */
-/*             LAWRENCE LIVERMORE NATIONAL LABORATORY */
-/*             L - 316, P.O. Box 808, */
-/*             LIVERMORE, CA.    94550 */
+/*       LAWRENCE LIVERMORE NATIONAL LABORATORY */
+/*       L - 316, P.O. Box 808, */
+/*       LIVERMORE, CA.    94550 */
 /* ***PURPOSE  This code solves a system of differential/algebraic */
-/*            equations of the form F(T,Y,YPRIME) = 0. */
+/*      equations of the form F(T,Y,YPRIME) = 0. */
 /* ***DESCRIPTION */
 
 /* *Usage: */
@@ -195,7 +195,7 @@ static doublereal c_b588 = 1.;
 /* *Arguments: */
 
 /*  RES:EXT  This is a subroutine which you provide to define the */
-/*           differential/algebraic system. */
+/*     differential/algebraic system. */
 
 /*  NEQ:IN  This is the number of equations to be solved. */
 
@@ -204,43 +204,43 @@ static doublereal c_b588 = 1.;
 /*  Y(*):INOUT  This array contains the solution components at T. */
 
 /*  YPRIME(*):INOUT  This array contains the derivatives of the solution */
-/*                   components at T. */
+/*             components at T. */
 
 /*  TOUT:IN  This is a point at which a solution is desired. */
 
 /*  INFO(N):IN  The basic task of the code is to solve the system from T */
-/*              to TOUT and return an answer at TOUT.  INFO is an integer */
-/*              array which is used to communicate exactly how you want */
-/*              this task to be carried out.  N must be greater than or */
-/*              equal to 15. */
+/*        to TOUT and return an answer at TOUT.  INFO is an integer */
+/*        array which is used to communicate exactly how you want */
+/*        this task to be carried out.  N must be greater than or */
+/*        equal to 15. */
 
 /*  RTOL,ATOL:INOUT  These quantities represent absolute and relative */
-/*                   error tolerances which you provide to indicate how */
-/*                   accurately you wish the solution to be computed. */
-/*                   You may choose them to be both scalars or else */
-/*                   both vectors. */
+/*             error tolerances which you provide to indicate how */
+/*             accurately you wish the solution to be computed. */
+/*             You may choose them to be both scalars or else */
+/*             both vectors. */
 
 /*  IDID:OUT  This scalar quantity is an indicator reporting what the */
-/*            code did.  You must monitor this integer variable to decide */
-/*            what action to take next. */
+/*      code did.  You must monitor this integer variable to decide */
+/*      what action to take next. */
 
 /*  RWORK:WORK  A real work array of length LRW which provides the */
-/*               code with needed storage space. */
+/*         code with needed storage space. */
 
 /*  LRW:IN  The length of RWORK. */
 
 /*  IWORK:WORK  An integer work array of length LIW which probides the */
-/*               code with needed storage space. */
+/*         code with needed storage space. */
 
 /*  LIW:IN  The length of IWORK. */
 
 /*  RPAR,IPAR:IN  These are real and integer parameter arrays which */
-/*                you can use for communication between your calling */
-/*                program and the RES subroutine (and the JAC subroutine) */
+/*          you can use for communication between your calling */
+/*          program and the RES subroutine (and the JAC subroutine) */
 
 /*  JAC:EXT  This is the name of a subroutine which you may choose to */
-/*           provide for defining a matrix of partial derivatives */
-/*           described below. */
+/*     provide for defining a matrix of partial derivatives */
+/*     described below. */
 
 /*  G  This is the name of the subroutine for defining */
 /*     constraint functions, G(T,Y), whose roots are desired */
@@ -252,7 +252,7 @@ static doublereal c_b588 = 1.;
 /*      for G. */
 
 /*  JROOT  This is an integer array of length NG for output */
-/*         of root information. */
+/*   of root information. */
 
 
 /* *Description */
@@ -285,427 +285,427 @@ static doublereal c_b588 = 1.;
 
 
 /*  RES -- Provide a subroutine of the form */
-/*             SUBROUTINE RES(T,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
-/*         to define the system of differential/algebraic */
-/*         equations which is to be solved. For the given values */
-/*         of T,Y and YPRIME, the subroutine should */
-/*         return the residual of the defferential/algebraic */
-/*         system */
-/*             DELTA = F(T,Y,YPRIME) */
-/*         (DELTA(*) is a vector of length NEQ which is */
-/*         output for RES.) */
+/*       SUBROUTINE RES(T,Y,YPRIME,DELTA,IRES,RPAR,IPAR) */
+/*   to define the system of differential/algebraic */
+/*   equations which is to be solved. For the given values */
+/*   of T,Y and YPRIME, the subroutine should */
+/*   return the residual of the defferential/algebraic */
+/*   system */
+/*       DELTA = F(T,Y,YPRIME) */
+/*   (DELTA(*) is a vector of length NEQ which is */
+/*   output for RES.) */
 
-/*         Subroutine RES must not alter T,Y or YPRIME. */
-/*         You must declare the name RES in an external */
-/*         statement in your program that calls DDASRT. */
-/*         You must dimension Y,YPRIME and DELTA in RES. */
+/*   Subroutine RES must not alter T,Y or YPRIME. */
+/*   You must declare the name RES in an external */
+/*   statement in your program that calls DDASRT. */
+/*   You must dimension Y,YPRIME and DELTA in RES. */
 
-/*         IRES is an integer flag which is always equal to */
-/*         zero on input. Subroutine RES should alter IRES */
-/*         only if it encounters an illegal value of Y or */
-/*         a stop condition. Set IRES = -1 if an input value */
-/*         is illegal, and DDASRT will try to solve the problem */
-/*         without getting IRES = -1. If IRES = -2, DDASRT */
-/*         will return control to the calling program */
-/*         with IDID = -11. */
+/*   IRES is an integer flag which is always equal to */
+/*   zero on input. Subroutine RES should alter IRES */
+/*   only if it encounters an illegal value of Y or */
+/*   a stop condition. Set IRES = -1 if an input value */
+/*   is illegal, and DDASRT will try to solve the problem */
+/*   without getting IRES = -1. If IRES = -2, DDASRT */
+/*   will return control to the calling program */
+/*   with IDID = -11. */
 
-/*         RPAR and IPAR are real and integer parameter arrays which */
-/*         you can use for communication between your calling program */
-/*         and subroutine RES. They are not altered by DDASRT. If you */
-/*         do not need RPAR or IPAR, ignore these parameters by treat- */
-/*         ing them as dummy arguments. If you do choose to use them, */
-/*         dimension them in your calling program and in RES as arrays */
-/*         of appropriate length. */
+/*   RPAR and IPAR are real and integer parameter arrays which */
+/*   you can use for communication between your calling program */
+/*   and subroutine RES. They are not altered by DDASRT. If you */
+/*   do not need RPAR or IPAR, ignore these parameters by treat- */
+/*   ing them as dummy arguments. If you do choose to use them, */
+/*   dimension them in your calling program and in RES as arrays */
+/*   of appropriate length. */
 
 /*  NEQ -- Set it to the number of differential equations. */
-/*         (NEQ .GE. 1) */
+/*   (NEQ .GE. 1) */
 
 /*  T -- Set it to the initial point of the integration. */
 /*       T must be defined as a variable. */
 
 /*  Y(*) -- Set this vector to the initial values of the NEQ solution */
-/*          components at the initial point. You must dimension Y of */
-/*          length at least NEQ in your calling program. */
+/*    components at the initial point. You must dimension Y of */
+/*    length at least NEQ in your calling program. */
 
 /*  YPRIME(*) -- Set this vector to the initial values of */
-/*               the NEQ first derivatives of the solution */
-/*               components at the initial point. You */
-/*               must dimension YPRIME at least NEQ */
-/*               in your calling program. If you do not */
-/*               know initial values of some of the solution */
-/*               components, see the explanation of INFO(11). */
+/*         the NEQ first derivatives of the solution */
+/*         components at the initial point. You */
+/*         must dimension YPRIME at least NEQ */
+/*         in your calling program. If you do not */
+/*         know initial values of some of the solution */
+/*         components, see the explanation of INFO(11). */
 
 /*  TOUT - Set it to the first point at which a solution */
-/*         is desired. You can not take TOUT = T. */
-/*         integration either forward in T (TOUT .GT. T) or */
-/*         backward in T (TOUT .LT. T) is permitted. */
+/*   is desired. You can not take TOUT = T. */
+/*   integration either forward in T (TOUT .GT. T) or */
+/*   backward in T (TOUT .LT. T) is permitted. */
 
-/*         The code advances the solution from T to TOUT using */
-/*         step sizes which are automatically selected so as to */
-/*         achieve the desired accuracy. If you wish, the code will */
-/*         return with the solution and its derivative at */
-/*         intermediate steps (intermediate-output mode) so that */
-/*         you can monitor them, but you still must provide TOUT in */
-/*         accord with the basic aim of the code. */
+/*   The code advances the solution from T to TOUT using */
+/*   step sizes which are automatically selected so as to */
+/*   achieve the desired accuracy. If you wish, the code will */
+/*   return with the solution and its derivative at */
+/*   intermediate steps (intermediate-output mode) so that */
+/*   you can monitor them, but you still must provide TOUT in */
+/*   accord with the basic aim of the code. */
 
-/*         the first step taken by the code is a critical one */
-/*         because it must reflect how fast the solution changes near */
-/*         the initial point. The code automatically selects an */
-/*         initial step size which is practically always suitable for */
-/*         the problem. By using the fact that the code will not step */
-/*         past TOUT in the first step, you could, if necessary, */
-/*         restrict the length of the initial step size. */
+/*   the first step taken by the code is a critical one */
+/*   because it must reflect how fast the solution changes near */
+/*   the initial point. The code automatically selects an */
+/*   initial step size which is practically always suitable for */
+/*   the problem. By using the fact that the code will not step */
+/*   past TOUT in the first step, you could, if necessary, */
+/*   restrict the length of the initial step size. */
 
-/*         For some problems it may not be permissable to integrate */
-/*         past a point TSTOP because a discontinuity occurs there */
-/*         or the solution or its derivative is not defined beyond */
-/*         TSTOP. When you have declared a TSTOP point (SEE INFO(4) */
-/*         and RWORK(1)), you have told the code not to integrate */
-/*         past TSTOP. In this case any TOUT beyond TSTOP is invalid */
-/*         input. */
+/*   For some problems it may not be permissable to integrate */
+/*   past a point TSTOP because a discontinuity occurs there */
+/*   or the solution or its derivative is not defined beyond */
+/*   TSTOP. When you have declared a TSTOP point (SEE INFO(4) */
+/*   and RWORK(1)), you have told the code not to integrate */
+/*   past TSTOP. In this case any TOUT beyond TSTOP is invalid */
+/*   input. */
 
 /*  INFO(*) - Use the INFO array to give the code more details about */
-/*            how you want your problem solved. This array should be */
-/*            dimensioned of length 15, though DDASRT uses */
-/*            only the first eleven entries. You must respond to all of */
-/*            the following items which are arranged as questions. The */
-/*            simplest use of the code corresponds to answering all */
-/*            questions as yes, i.e. setting all entries of INFO to 0. */
+/*      how you want your problem solved. This array should be */
+/*      dimensioned of length 15, though DDASRT uses */
+/*      only the first eleven entries. You must respond to all of */
+/*      the following items which are arranged as questions. The */
+/*      simplest use of the code corresponds to answering all */
+/*      questions as yes, i.e. setting all entries of INFO to 0. */
 
 /*       INFO(1) - This parameter enables the code to initialize */
-/*              itself. You must set it to indicate the start of every */
-/*              new problem. */
+/*        itself. You must set it to indicate the start of every */
+/*        new problem. */
 
-/*          **** Is this the first call for this problem ... */
-/*                Yes - Set INFO(1) = 0 */
-/*                 No - Not applicable here. */
-/*                      See below for continuation calls.  **** */
+/*    **** Is this the first call for this problem ... */
+/*          Yes - Set INFO(1) = 0 */
+/*           No - Not applicable here. */
+/*                See below for continuation calls.  **** */
 
 /*       INFO(2) - How much accuracy you want of your solution */
-/*              is specified by the error tolerances RTOL and ATOL. */
-/*              The simplest use is to take them both to be scalars. */
-/*              To obtain more flexibility, they can both be vectors. */
-/*              The code must be told your choice. */
+/*        is specified by the error tolerances RTOL and ATOL. */
+/*        The simplest use is to take them both to be scalars. */
+/*        To obtain more flexibility, they can both be vectors. */
+/*        The code must be told your choice. */
 
-/*          **** Are both error tolerances RTOL, ATOL scalars ... */
-/*                Yes - Set INFO(2) = 0 */
-/*                      and input scalars for both RTOL and ATOL */
-/*                 No - Set INFO(2) = 1 */
-/*                      and input arrays for both RTOL and ATOL **** */
+/*    **** Are both error tolerances RTOL, ATOL scalars ... */
+/*          Yes - Set INFO(2) = 0 */
+/*                and input scalars for both RTOL and ATOL */
+/*           No - Set INFO(2) = 1 */
+/*                and input arrays for both RTOL and ATOL **** */
 
 /*       INFO(3) - The code integrates from T in the direction */
-/*              of TOUT by steps. If you wish, it will return the */
-/*              computed solution and derivative at the next */
-/*              intermediate step (the intermediate-output mode) or */
-/*              TOUT, whichever comes first. This is a good way to */
-/*              proceed if you want to see the behavior of the solution. */
-/*              If you must have solutions at a great many specific */
-/*              TOUT points, this code will compute them efficiently. */
+/*        of TOUT by steps. If you wish, it will return the */
+/*        computed solution and derivative at the next */
+/*        intermediate step (the intermediate-output mode) or */
+/*        TOUT, whichever comes first. This is a good way to */
+/*        proceed if you want to see the behavior of the solution. */
+/*        If you must have solutions at a great many specific */
+/*        TOUT points, this code will compute them efficiently. */
 
-/*          **** Do you want the solution only at */
-/*                TOUT (and not at the next intermediate step) ... */
-/*                 Yes - Set INFO(3) = 0 */
-/*                  No - Set INFO(3) = 1 **** */
+/*    **** Do you want the solution only at */
+/*          TOUT (and not at the next intermediate step) ... */
+/*           Yes - Set INFO(3) = 0 */
+/*            No - Set INFO(3) = 1 **** */
 
 /*       INFO(4) - To handle solutions at a great many specific */
-/*              values TOUT efficiently, this code may integrate past */
-/*              TOUT and interpolate to obtain the result at TOUT. */
-/*              Sometimes it is not possible to integrate beyond some */
-/*              point TSTOP because the equation changes there or it is */
-/*              not defined past TSTOP. Then you must tell the code */
-/*              not to go past. */
+/*        values TOUT efficiently, this code may integrate past */
+/*        TOUT and interpolate to obtain the result at TOUT. */
+/*        Sometimes it is not possible to integrate beyond some */
+/*        point TSTOP because the equation changes there or it is */
+/*        not defined past TSTOP. Then you must tell the code */
+/*        not to go past. */
 
-/*           **** Can the integration be carried out without any */
-/*                restrictions on the independent variable T ... */
-/*                 Yes - Set INFO(4)=0 */
-/*                  No - Set INFO(4)=1 */
-/*                       and define the stopping point TSTOP by */
-/*                       setting RWORK(1)=TSTOP **** */
+/*     **** Can the integration be carried out without any */
+/*          restrictions on the independent variable T ... */
+/*           Yes - Set INFO(4)=0 */
+/*            No - Set INFO(4)=1 */
+/*                 and define the stopping point TSTOP by */
+/*                 setting RWORK(1)=TSTOP **** */
 
 /*       INFO(5) - To solve differential/algebraic problems it is */
-/*              necessary to use a matrix of partial derivatives of the */
-/*              system of differential equations. If you do not */
-/*              provide a subroutine to evaluate it analytically (see */
-/*              description of the item JAC in the call list), it will */
-/*              be approximated by numerical differencing in this code. */
-/*              although it is less trouble for you to have the code */
-/*              compute partial derivatives by numerical differencing, */
-/*              the solution will be more reliable if you provide the */
-/*              derivatives via JAC. Sometimes numerical differencing */
-/*              is cheaper than evaluating derivatives in JAC and */
-/*              sometimes it is not - this depends on your problem. */
+/*        necessary to use a matrix of partial derivatives of the */
+/*        system of differential equations. If you do not */
+/*        provide a subroutine to evaluate it analytically (see */
+/*        description of the item JAC in the call list), it will */
+/*        be approximated by numerical differencing in this code. */
+/*        although it is less trouble for you to have the code */
+/*        compute partial derivatives by numerical differencing, */
+/*        the solution will be more reliable if you provide the */
+/*        derivatives via JAC. Sometimes numerical differencing */
+/*        is cheaper than evaluating derivatives in JAC and */
+/*        sometimes it is not - this depends on your problem. */
 
-/*           **** Do you want the code to evaluate the partial */
-/*                derivatives automatically by numerical differences ... */
-/*                   Yes - Set INFO(5)=0 */
-/*                    No - Set INFO(5)=1 */
-/*                  and provide subroutine JAC for evaluating the */
-/*                  matrix of partial derivatives **** */
+/*     **** Do you want the code to evaluate the partial */
+/*          derivatives automatically by numerical differences ... */
+/*             Yes - Set INFO(5)=0 */
+/*              No - Set INFO(5)=1 */
+/*            and provide subroutine JAC for evaluating the */
+/*            matrix of partial derivatives **** */
 
 /*       INFO(6) - DDASRT will perform much better if the matrix of */
-/*              partial derivatives, DG/DY + CJ*DG/DYPRIME, */
-/*              (here CJ is a scalar determined by DDASRT) */
-/*              is banded and the code is told this. In this */
-/*              case, the storage needed will be greatly reduced, */
-/*              numerical differencing will be performed much cheaper, */
-/*              and a number of important algorithms will execute much */
-/*              faster. The differential equation is said to have */
-/*              half-bandwidths ML (lower) and MU (upper) if equation i */
-/*              involves only unknowns Y(J) with */
-/*                             I-ML .LE. J .LE. I+MU */
-/*              for all I=1,2,...,NEQ. Thus, ML and MU are the widths */
-/*              of the lower and upper parts of the band, respectively, */
-/*              with the main diagonal being excluded. If you do not */
-/*              indicate that the equation has a banded matrix of partial */
-/*              derivatives, the code works with a full matrix of NEQ**2 */
-/*              elements (stored in the conventional way). Computations */
-/*              with banded matrices cost less time and storage than with */
-/*              full matrices if 2*ML+MU .LT. NEQ. If you tell the */
-/*              code that the matrix of partial derivatives has a banded */
-/*              structure and you want to provide subroutine JAC to */
-/*              compute the partial derivatives, then you must be careful */
-/*              to store the elements of the matrix in the special form */
-/*              indicated in the description of JAC. */
+/*        partial derivatives, DG/DY + CJ*DG/DYPRIME, */
+/*        (here CJ is a scalar determined by DDASRT) */
+/*        is banded and the code is told this. In this */
+/*        case, the storage needed will be greatly reduced, */
+/*        numerical differencing will be performed much cheaper, */
+/*        and a number of important algorithms will execute much */
+/*        faster. The differential equation is said to have */
+/*        half-bandwidths ML (lower) and MU (upper) if equation i */
+/*        involves only unknowns Y(J) with */
+/*                       I-ML .LE. J .LE. I+MU */
+/*        for all I=1,2,...,NEQ. Thus, ML and MU are the widths */
+/*        of the lower and upper parts of the band, respectively, */
+/*        with the main diagonal being excluded. If you do not */
+/*        indicate that the equation has a banded matrix of partial */
+/*        derivatives, the code works with a full matrix of NEQ**2 */
+/*        elements (stored in the conventional way). Computations */
+/*        with banded matrices cost less time and storage than with */
+/*        full matrices if 2*ML+MU .LT. NEQ. If you tell the */
+/*        code that the matrix of partial derivatives has a banded */
+/*        structure and you want to provide subroutine JAC to */
+/*        compute the partial derivatives, then you must be careful */
+/*        to store the elements of the matrix in the special form */
+/*        indicated in the description of JAC. */
 
-/*          **** Do you want to solve the problem using a full */
-/*               (dense) matrix (and not a special banded */
-/*               structure) ... */
-/*                Yes - Set INFO(6)=0 */
-/*                 No - Set INFO(6)=1 */
-/*                       and provide the lower (ML) and upper (MU) */
-/*                       bandwidths by setting */
-/*                       IWORK(1)=ML */
-/*                       IWORK(2)=MU **** */
+/*    **** Do you want to solve the problem using a full */
+/*         (dense) matrix (and not a special banded */
+/*         structure) ... */
+/*          Yes - Set INFO(6)=0 */
+/*           No - Set INFO(6)=1 */
+/*                 and provide the lower (ML) and upper (MU) */
+/*                 bandwidths by setting */
+/*                 IWORK(1)=ML */
+/*                 IWORK(2)=MU **** */
 
 
-/*        INFO(7) -- You can specify a maximum (absolute value of) */
-/*              stepsize, so that the code */
-/*              will avoid passing over very */
-/*              large regions. */
+/*  INFO(7) -- You can specify a maximum (absolute value of) */
+/*        stepsize, so that the code */
+/*        will avoid passing over very */
+/*        large regions. */
 
-/*          ****  Do you want the code to decide */
-/*                on its own maximum stepsize? */
-/*                Yes - Set INFO(7)=0 */
-/*                 No - Set INFO(7)=1 */
-/*                      and define HMAX by setting */
-/*                      RWORK(2)=HMAX **** */
+/*    ****  Do you want the code to decide */
+/*          on its own maximum stepsize? */
+/*          Yes - Set INFO(7)=0 */
+/*           No - Set INFO(7)=1 */
+/*                and define HMAX by setting */
+/*                RWORK(2)=HMAX **** */
 
-/*        INFO(8) -- Differential/algebraic problems */
-/*              may occaisionally suffer from */
-/*              severe scaling difficulties on the */
-/*              first step. If you know a great deal */
-/*              about the scaling of your problem, you can */
-/*              help to alleviate this problem by */
-/*              specifying an initial stepsize H0. */
+/*  INFO(8) -- Differential/algebraic problems */
+/*        may occaisionally suffer from */
+/*        severe scaling difficulties on the */
+/*        first step. If you know a great deal */
+/*        about the scaling of your problem, you can */
+/*        help to alleviate this problem by */
+/*        specifying an initial stepsize H0. */
 
-/*          ****  Do you want the code to define */
-/*                its own initial stepsize? */
-/*                Yes - Set INFO(8)=0 */
-/*                 No - Set INFO(8)=1 */
-/*                      and define H0 by setting */
-/*                      RWORK(3)=H0 **** */
+/*    ****  Do you want the code to define */
+/*          its own initial stepsize? */
+/*          Yes - Set INFO(8)=0 */
+/*           No - Set INFO(8)=1 */
+/*                and define H0 by setting */
+/*                RWORK(3)=H0 **** */
 
-/*        INFO(9) -- If storage is a severe problem, */
-/*              you can save some locations by */
-/*              restricting the maximum order MAXORD. */
-/*              the default value is 5. for each */
-/*              order decrease below 5, the code */
-/*              requires NEQ fewer locations, however */
-/*              it is likely to be slower. In any */
-/*              case, you must have 1 .LE. MAXORD .LE. 5 */
-/*          ****  Do you want the maximum order to */
-/*                default to 5? */
-/*                Yes - Set INFO(9)=0 */
-/*                 No - Set INFO(9)=1 */
-/*                      and define MAXORD by setting */
-/*                      IWORK(3)=MAXORD **** */
+/*  INFO(9) -- If storage is a severe problem, */
+/*        you can save some locations by */
+/*        restricting the maximum order MAXORD. */
+/*        the default value is 5. for each */
+/*        order decrease below 5, the code */
+/*        requires NEQ fewer locations, however */
+/*        it is likely to be slower. In any */
+/*        case, you must have 1 .LE. MAXORD .LE. 5 */
+/*    ****  Do you want the maximum order to */
+/*          default to 5? */
+/*          Yes - Set INFO(9)=0 */
+/*           No - Set INFO(9)=1 */
+/*                and define MAXORD by setting */
+/*                IWORK(3)=MAXORD **** */
 
-/*        INFO(10) --If you know that the solutions to your equations */
-/*               will always be nonnegative, it may help to set this */
-/*               parameter. However, it is probably best to */
-/*               try the code without using this option first, */
-/*               and only to use this option if that doesn't */
-/*               work very well. */
-/*           ****  Do you want the code to solve the problem without */
-/*                 invoking any special nonnegativity constraints? */
-/*                  Yes - Set INFO(10)=0 */
-/*                   No - Set INFO(10)=1 */
+/*  INFO(10) --If you know that the solutions to your equations */
+/*         will always be nonnegative, it may help to set this */
+/*         parameter. However, it is probably best to */
+/*         try the code without using this option first, */
+/*         and only to use this option if that doesn't */
+/*         work very well. */
+/*     ****  Do you want the code to solve the problem without */
+/*           invoking any special nonnegativity constraints? */
+/*            Yes - Set INFO(10)=0 */
+/*             No - Set INFO(10)=1 */
 
-/*        INFO(11) --DDASRT normally requires the initial T, */
-/*               Y, and YPRIME to be consistent. That is, */
-/*               you must have F(T,Y,YPRIME) = 0 at the initial */
-/*               time. If you do not know the initial */
-/*               derivative precisely, you can let DDASRT try */
-/*               to compute it. */
-/*          ****   Are the initial T, Y, YPRIME consistent? */
-/*                 Yes - Set INFO(11) = 0 */
-/*                  No - Set INFO(11) = 1, */
-/*                       and set YPRIME to an initial approximation */
-/*                       to YPRIME.  (If you have no idea what */
-/*                       YPRIME should be, set it to zero. Note */
-/*                       that the initial Y should be such */
-/*                       that there must exist a YPRIME so that */
-/*                       F(T,Y,YPRIME) = 0.) */
+/*  INFO(11) --DDASRT normally requires the initial T, */
+/*         Y, and YPRIME to be consistent. That is, */
+/*         you must have F(T,Y,YPRIME) = 0 at the initial */
+/*         time. If you do not know the initial */
+/*         derivative precisely, you can let DDASRT try */
+/*         to compute it. */
+/*    ****   Are the initial T, Y, YPRIME consistent? */
+/*           Yes - Set INFO(11) = 0 */
+/*            No - Set INFO(11) = 1, */
+/*                 and set YPRIME to an initial approximation */
+/*                 to YPRIME.  (If you have no idea what */
+/*                 YPRIME should be, set it to zero. Note */
+/*                 that the initial Y should be such */
+/*                 that there must exist a YPRIME so that */
+/*                 F(T,Y,YPRIME) = 0.) */
 
 /*   RTOL, ATOL -- You must assign relative (RTOL) and absolute (ATOL */
-/*               error tolerances to tell the code how accurately you */
-/*               want the solution to be computed. They must be defined */
-/*               as variables because the code may change them. You */
-/*               have two choices -- */
-/*                     Both RTOL and ATOL are scalars. (INFO(2)=0) */
-/*                     Both RTOL and ATOL are vectors. (INFO(2)=1) */
-/*               in either case all components must be non-negative. */
+/*         error tolerances to tell the code how accurately you */
+/*         want the solution to be computed. They must be defined */
+/*         as variables because the code may change them. You */
+/*         have two choices -- */
+/*               Both RTOL and ATOL are scalars. (INFO(2)=0) */
+/*               Both RTOL and ATOL are vectors. (INFO(2)=1) */
+/*         in either case all components must be non-negative. */
 
-/*               The tolerances are used by the code in a local error */
-/*               test at each step which requires roughly that */
-/*                     ABS(LOCAL ERROR) .LE. RTOL*ABS(Y)+ATOL */
-/*               for each vector component. */
-/*               (More specifically, a root-mean-square norm is used to */
-/*               measure the size of vectors, and the error test uses the */
-/*               magnitude of the solution at the beginning of the step.) */
+/*         The tolerances are used by the code in a local error */
+/*         test at each step which requires roughly that */
+/*               ABS(LOCAL ERROR) .LE. RTOL*ABS(Y)+ATOL */
+/*         for each vector component. */
+/*         (More specifically, a root-mean-square norm is used to */
+/*         measure the size of vectors, and the error test uses the */
+/*         magnitude of the solution at the beginning of the step.) */
 
-/*               The true (global) error is the difference between the */
-/*               true solution of the initial value problem and the */
-/*               computed approximation. Practically all present day */
-/*               codes, including this one, control the local error at */
-/*               each step and do not even attempt to control the global */
-/*               error directly. */
-/*               Usually, but not always, the true accuracy of the */
-/*               computed Y is comparable to the error tolerances. This */
-/*               code will usually, but not always, deliver a more */
-/*               accurate solution if you reduce the tolerances and */
-/*               integrate again. By comparing two such solutions you */
-/*               can get a fairly reliable idea of the true error in the */
-/*               solution at the bigger tolerances. */
+/*         The true (global) error is the difference between the */
+/*         true solution of the initial value problem and the */
+/*         computed approximation. Practically all present day */
+/*         codes, including this one, control the local error at */
+/*         each step and do not even attempt to control the global */
+/*         error directly. */
+/*         Usually, but not always, the true accuracy of the */
+/*         computed Y is comparable to the error tolerances. This */
+/*         code will usually, but not always, deliver a more */
+/*         accurate solution if you reduce the tolerances and */
+/*         integrate again. By comparing two such solutions you */
+/*         can get a fairly reliable idea of the true error in the */
+/*         solution at the bigger tolerances. */
 
-/*               Setting ATOL=0. results in a pure relative error test on */
-/*               that component. Setting RTOL=0. results in a pure */
-/*               absolute error test on that component. A mixed test */
-/*               with non-zero RTOL and ATOL corresponds roughly to a */
-/*               relative error test when the solution component is much */
-/*               bigger than ATOL and to an absolute error test when the */
-/*               solution component is smaller than the threshhold ATOL. */
+/*         Setting ATOL=0. results in a pure relative error test on */
+/*         that component. Setting RTOL=0. results in a pure */
+/*         absolute error test on that component. A mixed test */
+/*         with non-zero RTOL and ATOL corresponds roughly to a */
+/*         relative error test when the solution component is much */
+/*         bigger than ATOL and to an absolute error test when the */
+/*         solution component is smaller than the threshhold ATOL. */
 
-/*               The code will not attempt to compute a solution at an */
-/*               accuracy unreasonable for the machine being used. It */
-/*               will advise you if you ask for too much accuracy and */
-/*               inform you as to the maximum accuracy it believes */
-/*               possible. */
+/*         The code will not attempt to compute a solution at an */
+/*         accuracy unreasonable for the machine being used. It */
+/*         will advise you if you ask for too much accuracy and */
+/*         inform you as to the maximum accuracy it believes */
+/*         possible. */
 
 /*  RWORK(*) --  Dimension this real work array of length LRW in your */
-/*               calling program. */
+/*         calling program. */
 
 /*  LRW -- Set it to the declared length of the RWORK array. */
-/*               You must have */
-/*                    LRW .GE. 50+(MAXORD+4)*NEQ+NEQ**2+3*NG */
-/*               for the full (dense) JACOBIAN case (when INFO(6)=0), or */
-/*                    LRW .GE. 50+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ+3*NG */
-/*               for the banded user-defined JACOBIAN case */
-/*               (when INFO(5)=1 and INFO(6)=1), or */
-/*                     LRW .GE. 50+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
-/*                           +2*(NEQ/(ML+MU+1)+1)+3*NG */
-/*               for the banded finite-difference-generated JACOBIAN case */
-/*               (when INFO(5)=0 and INFO(6)=1) */
+/*         You must have */
+/*              LRW .GE. 50+(MAXORD+4)*NEQ+NEQ**2+3*NG */
+/*         for the full (dense) JACOBIAN case (when INFO(6)=0), or */
+/*              LRW .GE. 50+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ+3*NG */
+/*         for the banded user-defined JACOBIAN case */
+/*         (when INFO(5)=1 and INFO(6)=1), or */
+/*               LRW .GE. 50+(MAXORD+4)*NEQ+(2*ML+MU+1)*NEQ */
+/*                     +2*(NEQ/(ML+MU+1)+1)+3*NG */
+/*         for the banded finite-difference-generated JACOBIAN case */
+/*         (when INFO(5)=0 and INFO(6)=1) */
 
 /*  IWORK(*) --  Dimension this integer work array of length LIW in */
-/*               your calling program. */
+/*         your calling program. */
 
 /*  LIW -- Set it to the declared length of the IWORK array. */
-/*               you must have LIW .GE. 20+NEQ */
+/*         you must have LIW .GE. 20+NEQ */
 
 /*  RPAR, IPAR -- These are parameter arrays, of real and integer */
-/*               type, respectively. You can use them for communication */
-/*               between your program that calls DDASRT and the */
-/*               RES subroutine (and the JAC subroutine). They are not */
-/*               altered by DDASRT. If you do not need RPAR or IPAR, */
-/*               ignore these parameters by treating them as dummy */
-/*               arguments. If you do choose to use them, dimension */
-/*               them in your calling program and in RES (and in JAC) */
-/*               as arrays of appropriate length. */
+/*         type, respectively. You can use them for communication */
+/*         between your program that calls DDASRT and the */
+/*         RES subroutine (and the JAC subroutine). They are not */
+/*         altered by DDASRT. If you do not need RPAR or IPAR, */
+/*         ignore these parameters by treating them as dummy */
+/*         arguments. If you do choose to use them, dimension */
+/*         them in your calling program and in RES (and in JAC) */
+/*         as arrays of appropriate length. */
 
 /*  JAC -- If you have set INFO(5)=0, you can ignore this parameter */
-/*               by treating it as a dummy argument. Otherwise, you must */
-/*               provide a subroutine of the form */
-/*               JAC(T,Y,YPRIME,PD,CJ,RPAR,IPAR) */
-/*               to define the matrix of partial derivatives */
-/*               PD=DG/DY+CJ*DG/DYPRIME */
-/*               CJ is a scalar which is input to JAC. */
-/*               For the given values of T,Y,YPRIME, the */
-/*               subroutine must evaluate the non-zero partial */
-/*               derivatives for each equation and each solution */
-/*               component, and store these values in the */
-/*               matrix PD. The elements of PD are set to zero */
-/*               before each call to JAC so only non-zero elements */
-/*               need to be defined. */
+/*         by treating it as a dummy argument. Otherwise, you must */
+/*         provide a subroutine of the form */
+/*         JAC(T,Y,YPRIME,PD,CJ,RPAR,IPAR) */
+/*         to define the matrix of partial derivatives */
+/*         PD=DG/DY+CJ*DG/DYPRIME */
+/*         CJ is a scalar which is input to JAC. */
+/*         For the given values of T,Y,YPRIME, the */
+/*         subroutine must evaluate the non-zero partial */
+/*         derivatives for each equation and each solution */
+/*         component, and store these values in the */
+/*         matrix PD. The elements of PD are set to zero */
+/*         before each call to JAC so only non-zero elements */
+/*         need to be defined. */
 
-/*               Subroutine JAC must not alter T,Y,(*),YPRIME(*), or CJ. */
-/*               You must declare the name JAC in an */
-/*               EXTERNAL STATEMENT in your program that calls */
-/*               DDASRT. You must dimension Y, YPRIME and PD */
-/*               in JAC. */
+/*         Subroutine JAC must not alter T,Y,(*),YPRIME(*), or CJ. */
+/*         You must declare the name JAC in an */
+/*         EXTERNAL STATEMENT in your program that calls */
+/*         DDASRT. You must dimension Y, YPRIME and PD */
+/*         in JAC. */
 
-/*               The way you must store the elements into the PD matrix */
-/*               depends on the structure of the matrix which you */
-/*               indicated by INFO(6). */
-/*               *** INFO(6)=0 -- Full (dense) matrix *** */
-/*                   Give PD a first dimension of NEQ. */
-/*                   When you evaluate the (non-zero) partial derivative */
-/*                   of equation I with respect to variable J, you must */
-/*                   store it in PD according to */
-/*                   PD(I,J) = * DF(I)/DY(J)+CJ*DF(I)/DYPRIME(J)* */
-/*               *** INFO(6)=1 -- Banded JACOBIAN with ML lower and MU */
-/*                   upper diagonal bands (refer to INFO(6) description */
-/*                   of ML and MU) *** */
-/*                   Give PD a first dimension of 2*ML+MU+1. */
-/*                   when you evaluate the (non-zero) partial derivative */
-/*                   of equation I with respect to variable J, you must */
-/*                   store it in PD according to */
-/*                   IROW = I - J + ML + MU + 1 */
-/*                   PD(IROW,J) = *DF(I)/DY(J)+CJ*DF(I)/DYPRIME(J)* */
-/*               RPAR and IPAR are real and integer parameter arrays */
-/*               which you can use for communication between your calling */
-/*               program and your JACOBIAN subroutine JAC. They are not */
-/*               altered by DDASRT. If you do not need RPAR or IPAR, */
-/*               ignore these parameters by treating them as dummy */
-/*               arguments. If you do choose to use them, dimension */
-/*               them in your calling program and in JAC as arrays of */
-/*               appropriate length. */
+/*         The way you must store the elements into the PD matrix */
+/*         depends on the structure of the matrix which you */
+/*         indicated by INFO(6). */
+/*         *** INFO(6)=0 -- Full (dense) matrix *** */
+/*             Give PD a first dimension of NEQ. */
+/*             When you evaluate the (non-zero) partial derivative */
+/*             of equation I with respect to variable J, you must */
+/*             store it in PD according to */
+/*             PD(I,J) = * DF(I)/DY(J)+CJ*DF(I)/DYPRIME(J)* */
+/*         *** INFO(6)=1 -- Banded JACOBIAN with ML lower and MU */
+/*             upper diagonal bands (refer to INFO(6) description */
+/*             of ML and MU) *** */
+/*             Give PD a first dimension of 2*ML+MU+1. */
+/*             when you evaluate the (non-zero) partial derivative */
+/*             of equation I with respect to variable J, you must */
+/*             store it in PD according to */
+/*             IROW = I - J + ML + MU + 1 */
+/*             PD(IROW,J) = *DF(I)/DY(J)+CJ*DF(I)/DYPRIME(J)* */
+/*         RPAR and IPAR are real and integer parameter arrays */
+/*         which you can use for communication between your calling */
+/*         program and your JACOBIAN subroutine JAC. They are not */
+/*         altered by DDASRT. If you do not need RPAR or IPAR, */
+/*         ignore these parameters by treating them as dummy */
+/*         arguments. If you do choose to use them, dimension */
+/*         them in your calling program and in JAC as arrays of */
+/*         appropriate length. */
 
 /*  G -- This is the name of the subroutine for defining constraint */
-/*               functions, whose roots are desired during the */
-/*               integration.  It is to have the form */
-/*                   SUBROUTINE G(NEQ,T,Y,NG,GOUT,RPAR,IPAR) */
-/*                   DIMENSION Y(NEQ),GOUT(NG), */
-/*               where NEQ, T, Y and NG are INPUT, and the array GOUT is */
-/*               output.  NEQ, T, and Y have the same meaning as in the */
-/*               RES routine, and GOUT is an array of length NG. */
-/*               For I=1,...,NG, this routine is to load into GOUT(I) */
-/*               the value at (T,Y) of the I-th constraint function G(I). */
-/*               DDASRT will find roots of the G(I) of odd multiplicity */
-/*               (that is, sign changes) as they occur during */
-/*               the integration.  G must be declared EXTERNAL in the */
-/*               calling program. */
+/*         functions, whose roots are desired during the */
+/*         integration.  It is to have the form */
+/*             SUBROUTINE G(NEQ,T,Y,NG,GOUT,RPAR,IPAR) */
+/*             DIMENSION Y(NEQ),GOUT(NG), */
+/*         where NEQ, T, Y and NG are INPUT, and the array GOUT is */
+/*         output.  NEQ, T, and Y have the same meaning as in the */
+/*         RES routine, and GOUT is an array of length NG. */
+/*         For I=1,...,NG, this routine is to load into GOUT(I) */
+/*         the value at (T,Y) of the I-th constraint function G(I). */
+/*         DDASRT will find roots of the G(I) of odd multiplicity */
+/*         (that is, sign changes) as they occur during */
+/*         the integration.  G must be declared EXTERNAL in the */
+/*         calling program. */
 
-/*               CAUTION..because of numerical errors in the functions */
-/*               G(I) due to roundoff and integration error, DDASRT */
-/*               may return false roots, or return the same root at two */
-/*               or more nearly equal values of T.  If such false roots */
-/*               are suspected, the user should consider smaller error */
-/*               tolerances and/or higher precision in the evaluation of */
-/*               the G(I). */
+/*         CAUTION..because of numerical errors in the functions */
+/*         G(I) due to roundoff and integration error, DDASRT */
+/*         may return false roots, or return the same root at two */
+/*         or more nearly equal values of T.  If such false roots */
+/*         are suspected, the user should consider smaller error */
+/*         tolerances and/or higher precision in the evaluation of */
+/*         the G(I). */
 
-/*               If a root of some G(I) defines the end of the problem, */
-/*               the input to DDASRT should nevertheless allow */
-/*               integration to a point slightly past that ROOT, so */
-/*               that DDASRT can locate the root by interpolation. */
+/*         If a root of some G(I) defines the end of the problem, */
+/*         the input to DDASRT should nevertheless allow */
+/*         integration to a point slightly past that ROOT, so */
+/*         that DDASRT can locate the root by interpolation. */
 
 /*  NG -- The number of constraint functions G(I).  If there are none, */
-/*               set NG = 0, and pass a dummy name for G. */
+/*         set NG = 0, and pass a dummy name for G. */
 
 /* JROOT -- This is an integer array of length NG.  It is used only for */
-/*               output.  On a return where one or more roots have been */
-/*               found, JROOT(I)=1 If G(I) has a root at T, */
-/*               or JROOT(I)=0 if not. */
+/*         output.  On a return where one or more roots have been */
+/*         found, JROOT(I)=1 If G(I) has a root at T, */
+/*         or JROOT(I)=0 if not. */
 
 
 
@@ -739,136 +739,136 @@ static doublereal c_b588 = 1.;
 
 
 /*   T -- The solution was successfully advanced to the */
-/*               output value of T. */
+/*         output value of T. */
 
 /*   Y(*) -- Contains the computed solution approximation at T. */
 
 /*   YPRIME(*) -- Contains the computed derivative */
-/*               approximation at T. */
+/*         approximation at T. */
 
 /*   IDID -- Reports what the code did. */
 
-/*                     *** Task completed *** */
-/*                Reported by positive values of IDID */
+/*               *** Task completed *** */
+/*          Reported by positive values of IDID */
 
-/*           IDID = 1 -- A step was successfully taken in the */
-/*                   intermediate-output mode. The code has not */
-/*                   yet reached TOUT. */
+/*     IDID = 1 -- A step was successfully taken in the */
+/*             intermediate-output mode. The code has not */
+/*             yet reached TOUT. */
 
-/*           IDID = 2 -- The integration to TSTOP was successfully */
-/*                   completed (T=TSTOP) by stepping exactly to TSTOP. */
+/*     IDID = 2 -- The integration to TSTOP was successfully */
+/*             completed (T=TSTOP) by stepping exactly to TSTOP. */
 
-/*           IDID = 3 -- The integration to TOUT was successfully */
-/*                   completed (T=TOUT) by stepping past TOUT. */
-/*                   Y(*) is obtained by interpolation. */
-/*                   YPRIME(*) is obtained by interpolation. */
+/*     IDID = 3 -- The integration to TOUT was successfully */
+/*             completed (T=TOUT) by stepping past TOUT. */
+/*             Y(*) is obtained by interpolation. */
+/*             YPRIME(*) is obtained by interpolation. */
 
-/*           IDID = 4 -- The integration was successfully completed */
-/*                   by finding one or more roots of G at T. */
+/*     IDID = 4 -- The integration was successfully completed */
+/*             by finding one or more roots of G at T. */
 
-/*                    *** Task interrupted *** */
-/*                Reported by negative values of IDID */
+/*              *** Task interrupted *** */
+/*          Reported by negative values of IDID */
 
-/*           IDID = -1 -- A large amount of work has been expended. */
-/*                   (About 500 steps) */
+/*     IDID = -1 -- A large amount of work has been expended. */
+/*             (About 500 steps) */
 
-/*           IDID = -2 -- The error tolerances are too stringent. */
+/*     IDID = -2 -- The error tolerances are too stringent. */
 
-/*           IDID = -3 -- The local error test cannot be satisfied */
-/*                   because you specified a zero component in ATOL */
-/*                   and the corresponding computed solution */
-/*                   component is zero. Thus, a pure relative error */
-/*                   test is impossible for this component. */
+/*     IDID = -3 -- The local error test cannot be satisfied */
+/*             because you specified a zero component in ATOL */
+/*             and the corresponding computed solution */
+/*             component is zero. Thus, a pure relative error */
+/*             test is impossible for this component. */
 
-/*           IDID = -6 -- DDASRT had repeated error test */
-/*                   failures on the last attempted step. */
+/*     IDID = -6 -- DDASRT had repeated error test */
+/*             failures on the last attempted step. */
 
-/*           IDID = -7 -- The corrector could not converge. */
+/*     IDID = -7 -- The corrector could not converge. */
 
-/*           IDID = -8 -- The matrix of partial derivatives */
-/*                   is singular. */
+/*     IDID = -8 -- The matrix of partial derivatives */
+/*             is singular. */
 
-/*           IDID = -9 -- The corrector could not converge. */
-/*                   there were repeated error test failures */
-/*                   in this step. */
+/*     IDID = -9 -- The corrector could not converge. */
+/*             there were repeated error test failures */
+/*             in this step. */
 
-/*           IDID =-10 -- The corrector could not converge */
-/*                   because IRES was equal to minus one. */
+/*     IDID =-10 -- The corrector could not converge */
+/*             because IRES was equal to minus one. */
 
-/*           IDID =-11 -- IRES equal to -2 was encountered */
-/*                   and control is being returned to the */
-/*                   calling program. */
+/*     IDID =-11 -- IRES equal to -2 was encountered */
+/*             and control is being returned to the */
+/*             calling program. */
 
-/*           IDID =-12 -- DDASRT failed to compute the initial */
-/*                   YPRIME. */
+/*     IDID =-12 -- DDASRT failed to compute the initial */
+/*             YPRIME. */
 
 
 
-/*           IDID = -13,..,-32 -- Not applicable for this code */
+/*     IDID = -13,..,-32 -- Not applicable for this code */
 
-/*                    *** Task terminated *** */
-/*                Reported by the value of IDID=-33 */
+/*              *** Task terminated *** */
+/*          Reported by the value of IDID=-33 */
 
-/*           IDID = -33 -- The code has encountered trouble from which */
-/*                   it cannot recover. A message is printed */
-/*                   explaining the trouble and control is returned */
-/*                   to the calling program. For example, this occurs */
-/*                   when invalid input is detected. */
+/*     IDID = -33 -- The code has encountered trouble from which */
+/*             it cannot recover. A message is printed */
+/*             explaining the trouble and control is returned */
+/*             to the calling program. For example, this occurs */
+/*             when invalid input is detected. */
 
 /*   RTOL, ATOL -- These quantities remain unchanged except when */
-/*               IDID = -2. In this case, the error tolerances have been */
-/*               increased by the code to values which are estimated to */
-/*               be appropriate for continuing the integration. However, */
-/*               the reported solution at T was obtained using the input */
-/*               values of RTOL and ATOL. */
+/*         IDID = -2. In this case, the error tolerances have been */
+/*         increased by the code to values which are estimated to */
+/*         be appropriate for continuing the integration. However, */
+/*         the reported solution at T was obtained using the input */
+/*         values of RTOL and ATOL. */
 
 /*   RWORK, IWORK -- Contain information which is usually of no */
-/*               interest to the user but necessary for subsequent calls. */
-/*               However, you may find use for */
+/*         interest to the user but necessary for subsequent calls. */
+/*         However, you may find use for */
 
-/*               RWORK(3)--Which contains the step size H to be */
-/*                       attempted on the next step. */
+/*         RWORK(3)--Which contains the step size H to be */
+/*                 attempted on the next step. */
 
-/*               RWORK(4)--Which contains the current value of the */
-/*                       independent variable, i.e., the farthest point */
-/*                       integration has reached. This will be different */
-/*                       from T only when interpolation has been */
-/*                       performed (IDID=3). */
+/*         RWORK(4)--Which contains the current value of the */
+/*                 independent variable, i.e., the farthest point */
+/*                 integration has reached. This will be different */
+/*                 from T only when interpolation has been */
+/*                 performed (IDID=3). */
 
-/*               RWORK(7)--Which contains the stepsize used */
-/*                       on the last successful step. */
+/*         RWORK(7)--Which contains the stepsize used */
+/*                 on the last successful step. */
 
-/*               IWORK(7)--Which contains the order of the method to */
-/*                       be attempted on the next step. */
+/*         IWORK(7)--Which contains the order of the method to */
+/*                 be attempted on the next step. */
 
-/*               IWORK(8)--Which contains the order of the method used */
-/*                       on the last step. */
+/*         IWORK(8)--Which contains the order of the method used */
+/*                 on the last step. */
 
-/*               IWORK(11)--Which contains the number of steps taken so */
-/*                        far. */
+/*         IWORK(11)--Which contains the number of steps taken so */
+/*                  far. */
 
-/*               IWORK(12)--Which contains the number of calls to RES */
-/*                        so far. */
+/*         IWORK(12)--Which contains the number of calls to RES */
+/*                  so far. */
 
-/*               IWORK(13)--Which contains the number of evaluations of */
-/*                        the matrix of partial derivatives needed so */
-/*                        far. */
+/*         IWORK(13)--Which contains the number of evaluations of */
+/*                  the matrix of partial derivatives needed so */
+/*                  far. */
 
-/*               IWORK(14)--Which contains the total number */
-/*                        of error test failures so far. */
+/*         IWORK(14)--Which contains the total number */
+/*                  of error test failures so far. */
 
-/*               IWORK(15)--Which contains the total number */
-/*                        of convergence test failures so far. */
-/*                        (includes singular iteration matrix */
-/*                        failures.) */
+/*         IWORK(15)--Which contains the total number */
+/*                  of convergence test failures so far. */
+/*                  (includes singular iteration matrix */
+/*                  failures.) */
 
-/*               IWORK(16)--Which contains the total number of calls */
-/*                        to the constraint function g so far */
+/*         IWORK(16)--Which contains the total number of calls */
+/*                  to the constraint function g so far */
 
 
 
 /*   INPUT -- What to do to continue the integration */
-/*            (calls after the first)                ** */
+/*      (calls after the first)                ** */
 
 /*     This code is organized so that subsequent calls to continue the */
 /*     integration involve little (if any) additional effort on your */
@@ -905,107 +905,107 @@ static doublereal c_b588 = 1.;
 /*     Do not change INFO(5), INFO(6), IWORK(1), or IWORK(2) */
 /*     unless you are going to restart the code. */
 
-/*                    *** Following a completed task *** */
+/*              *** Following a completed task *** */
 /*     If */
 /*     IDID = 1, call the code again to continue the integration */
-/*                  another step in the direction of TOUT. */
+/*            another step in the direction of TOUT. */
 
 /*     IDID = 2 or 3, define a new TOUT and call the code again. */
-/*                  TOUT must be different from T. You cannot change */
-/*                  the direction of integration without restarting. */
+/*            TOUT must be different from T. You cannot change */
+/*            the direction of integration without restarting. */
 
 /*     IDID = 4, call the code again to continue the integration */
-/*                  another step in the direction of TOUT.  You may */
-/*                  change the functions in G after a return with IDID=4, */
-/*                  but the number of constraint functions NG must remain */
-/*                  the same.  If you wish to change */
-/*                  the functions in RES or in G, then you */
-/*                  must restart the code. */
+/*            another step in the direction of TOUT.  You may */
+/*            change the functions in G after a return with IDID=4, */
+/*            but the number of constraint functions NG must remain */
+/*            the same.  If you wish to change */
+/*            the functions in RES or in G, then you */
+/*            must restart the code. */
 
-/*                    *** Following an interrupted task *** */
-/*                  To show the code that you realize the task was */
-/*                  interrupted and that you want to continue, you */
-/*                  must take appropriate action and set INFO(1) = 1 */
+/*              *** Following an interrupted task *** */
+/*            To show the code that you realize the task was */
+/*            interrupted and that you want to continue, you */
+/*            must take appropriate action and set INFO(1) = 1 */
 /*     If */
 /*     IDID = -1, The code has taken about 500 steps. */
-/*                  If you want to continue, set INFO(1) = 1 and */
-/*                  call the code again. An additional 500 steps */
-/*                  will be allowed. */
+/*            If you want to continue, set INFO(1) = 1 and */
+/*            call the code again. An additional 500 steps */
+/*            will be allowed. */
 
 /*     IDID = -2, The error tolerances RTOL, ATOL have been */
-/*                  increased to values the code estimates appropriate */
-/*                  for continuing. You may want to change them */
-/*                  yourself. If you are sure you want to continue */
-/*                  with relaxed error tolerances, set INFO(1)=1 and */
-/*                  call the code again. */
+/*            increased to values the code estimates appropriate */
+/*            for continuing. You may want to change them */
+/*            yourself. If you are sure you want to continue */
+/*            with relaxed error tolerances, set INFO(1)=1 and */
+/*            call the code again. */
 
 /*     IDID = -3, A solution component is zero and you set the */
-/*                  corresponding component of ATOL to zero. If you */
-/*                  are sure you want to continue, you must first */
-/*                  alter the error criterion to use positive values */
-/*                  for those components of ATOL corresponding to zero */
-/*                  solution components, then set INFO(1)=1 and call */
-/*                  the code again. */
+/*            corresponding component of ATOL to zero. If you */
+/*            are sure you want to continue, you must first */
+/*            alter the error criterion to use positive values */
+/*            for those components of ATOL corresponding to zero */
+/*            solution components, then set INFO(1)=1 and call */
+/*            the code again. */
 
 /*     IDID = -4,-5  --- Cannot occur with this code. */
 
 /*     IDID = -6, Repeated error test failures occurred on the */
-/*                  last attempted step in DDASRT. A singularity in the */
-/*                  solution may be present. If you are absolutely */
-/*                  certain you want to continue, you should restart */
-/*                  the integration. (Provide initial values of Y and */
-/*                  YPRIME which are consistent) */
+/*            last attempted step in DDASRT. A singularity in the */
+/*            solution may be present. If you are absolutely */
+/*            certain you want to continue, you should restart */
+/*            the integration. (Provide initial values of Y and */
+/*            YPRIME which are consistent) */
 
 /*     IDID = -7, Repeated convergence test failures occurred */
-/*                  on the last attempted step in DDASRT. An inaccurate */
-/*                  or ill-conditioned JACOBIAN may be the problem. If */
-/*                  you are absolutely certain you want to continue, you */
-/*                  should restart the integration. */
+/*            on the last attempted step in DDASRT. An inaccurate */
+/*            or ill-conditioned JACOBIAN may be the problem. If */
+/*            you are absolutely certain you want to continue, you */
+/*            should restart the integration. */
 
 /*     IDID = -8, The matrix of partial derivatives is singular. */
-/*                  Some of your equations may be redundant. */
-/*                  DDASRT cannot solve the problem as stated. */
-/*                  It is possible that the redundant equations */
-/*                  could be removed, and then DDASRT could */
-/*                  solve the problem. It is also possible */
-/*                  that a solution to your problem either */
-/*                  does not exist or is not unique. */
+/*            Some of your equations may be redundant. */
+/*            DDASRT cannot solve the problem as stated. */
+/*            It is possible that the redundant equations */
+/*            could be removed, and then DDASRT could */
+/*            solve the problem. It is also possible */
+/*            that a solution to your problem either */
+/*            does not exist or is not unique. */
 
 /*     IDID = -9, DDASRT had multiple convergence test */
-/*                  failures, preceeded by multiple error */
-/*                  test failures, on the last attempted step. */
-/*                  It is possible that your problem */
-/*                  is ill-posed, and cannot be solved */
-/*                  using this code. Or, there may be a */
-/*                  discontinuity or a singularity in the */
-/*                  solution. If you are absolutely certain */
-/*                  you want to continue, you should restart */
-/*                  the integration. */
+/*            failures, preceeded by multiple error */
+/*            test failures, on the last attempted step. */
+/*            It is possible that your problem */
+/*            is ill-posed, and cannot be solved */
+/*            using this code. Or, there may be a */
+/*            discontinuity or a singularity in the */
+/*            solution. If you are absolutely certain */
+/*            you want to continue, you should restart */
+/*            the integration. */
 
 /*    IDID =-10, DDASRT had multiple convergence test failures */
-/*                  because IRES was equal to minus one. */
-/*                  If you are absolutely certain you want */
-/*                  to continue, you should restart the */
-/*                  integration. */
+/*            because IRES was equal to minus one. */
+/*            If you are absolutely certain you want */
+/*            to continue, you should restart the */
+/*            integration. */
 
 /*    IDID =-11, IRES=-2 was encountered, and control is being */
-/*                  returned to the calling program. */
+/*            returned to the calling program. */
 
 /*    IDID =-12, DDASRT failed to compute the initial YPRIME. */
-/*               This could happen because the initial */
-/*               approximation to YPRIME was not very good, or */
-/*               if a YPRIME consistent with the initial Y */
-/*               does not exist. The problem could also be caused */
-/*               by an inaccurate or singular iteration matrix. */
+/*         This could happen because the initial */
+/*         approximation to YPRIME was not very good, or */
+/*         if a YPRIME consistent with the initial Y */
+/*         does not exist. The problem could also be caused */
+/*         by an inaccurate or singular iteration matrix. */
 
 
 
 /*     IDID = -13,..,-32 --- Cannot occur with this code. */
 
-/*                       *** Following a terminated task *** */
+/*                 *** Following a terminated task *** */
 /*     If IDID= -33, you cannot continue the solution of this */
-/*                  problem. An attempt to do so will result in your */
-/*                  run being terminated. */
+/*            problem. An attempt to do so will result in your */
+/*            run being terminated. */
 
 /*  --------------------------------------------------------------------- */
 
@@ -1015,7 +1015,7 @@ static doublereal c_b588 = 1.;
 /*      Equations, Elsevier, New York, 1989. */
 
 /* ***ROUTINES CALLED  DDASTP,DDAINI,DDANRM,DDAWTS,DDATRP,DRCHEK,DROOTS, */
-/*                    XERRWV,D1MACH */
+/*              XERRWV,D1MACH */
 /* ***END PROLOGUE  DDASRT */
 
 /* **End */
@@ -2091,7 +2091,7 @@ L732:
        (ftnlen)47);
     xerrwv_(msg, &c__47, &c__32, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
       c_b30, (ftnlen)80);
-    s_copy(msg, "         TOO NEAR TO THE INITIAL POINT", (ftnlen)80, (ftnlen)
+    s_copy(msg, "   TOO NEAR TO THE INITIAL POINT", (ftnlen)80, (ftnlen)
       38);
     xerrwv_(msg, &c__38, &c__32, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
       c_b30, (ftnlen)80);
@@ -2163,33 +2163,33 @@ L760:
 /* IN ADDITION TO VARIABLES DESCRIBED PREVIOUSLY, DRCHEK */
 /* USES THE FOLLOWING FOR COMMUNICATION.. */
 /* JOB    = INTEGER FLAG INDICATING TYPE OF CALL.. */
-/*          JOB = 1 MEANS THE PROBLEM IS BEING INITIALIZED, AND DRCHEK */
-/*                  IS TO LOOK FOR A ROOT AT OR VERY NEAR THE INITIAL T. */
-/*          JOB = 2 MEANS A CONTINUATION CALL TO THE SOLVER WAS JUST */
-/*                  MADE, AND DRCHEK IS TO CHECK FOR A ROOT IN THE */
-/*                  RELEVANT PART OF THE STEP LAST TAKEN. */
-/*          JOB = 3 MEANS A SUCCESSFUL STEP WAS JUST TAKEN, AND DRCHEK */
-/*                  IS TO LOOK FOR A ROOT IN THE INTERVAL OF THE STEP. */
+/*    JOB = 1 MEANS THE PROBLEM IS BEING INITIALIZED, AND DRCHEK */
+/*            IS TO LOOK FOR A ROOT AT OR VERY NEAR THE INITIAL T. */
+/*    JOB = 2 MEANS A CONTINUATION CALL TO THE SOLVER WAS JUST */
+/*            MADE, AND DRCHEK IS TO CHECK FOR A ROOT IN THE */
+/*            RELEVANT PART OF THE STEP LAST TAKEN. */
+/*    JOB = 3 MEANS A SUCCESSFUL STEP WAS JUST TAKEN, AND DRCHEK */
+/*            IS TO LOOK FOR A ROOT IN THE INTERVAL OF THE STEP. */
 /* G0     = ARRAY OF LENGTH NG, CONTAINING THE VALUE OF G AT T = T0. */
-/*          G0 IS INPUT FOR JOB .GE. 2 AND ON OUTPUT IN ALL CASES. */
+/*    G0 IS INPUT FOR JOB .GE. 2 AND ON OUTPUT IN ALL CASES. */
 /* G1,GX  = ARRAYS OF LENGTH NG FOR WORK SPACE. */
 /* IRT    = COMPLETION FLAG.. */
-/*          IRT = 0  MEANS NO ROOT WAS FOUND. */
-/*          IRT = -1 MEANS JOB = 1 AND A ROOT WAS FOUND TOO NEAR TO T. */
-/*          IRT = 1  MEANS A LEGITIMATE ROOT WAS FOUND (JOB = 2 OR 3). */
-/*                   ON RETURN, T0 IS THE ROOT LOCATION, AND Y IS THE */
-/*                   CORRESPONDING SOLUTION VECTOR. */
+/*    IRT = 0  MEANS NO ROOT WAS FOUND. */
+/*    IRT = -1 MEANS JOB = 1 AND A ROOT WAS FOUND TOO NEAR TO T. */
+/*    IRT = 1  MEANS A LEGITIMATE ROOT WAS FOUND (JOB = 2 OR 3). */
+/*             ON RETURN, T0 IS THE ROOT LOCATION, AND Y IS THE */
+/*             CORRESPONDING SOLUTION VECTOR. */
 /* T0     = VALUE OF T AT ONE ENDPOINT OF INTERVAL OF INTEREST.  ONLY */
-/*          ROOTS BEYOND T0 IN THE DIRECTION OF INTEGRATION ARE SOUGHT. */
-/*          T0 IS INPUT IF JOB .GE. 2, AND OUTPUT IN ALL CASES. */
-/*          T0 IS UPDATED BY DRCHEK, WHETHER A ROOT IS FOUND OR NOT. */
-/*          STORED IN THE GLOBAL ARRAY RWORK. */
+/*    ROOTS BEYOND T0 IN THE DIRECTION OF INTEGRATION ARE SOUGHT. */
+/*    T0 IS INPUT IF JOB .GE. 2, AND OUTPUT IN ALL CASES. */
+/*    T0 IS UPDATED BY DRCHEK, WHETHER A ROOT IS FOUND OR NOT. */
+/*    STORED IN THE GLOBAL ARRAY RWORK. */
 /* TLAST  = LAST VALUE OF T RETURNED BY THE SOLVER (INPUT ONLY). */
-/*          STORED IN THE GLOBAL ARRAY RWORK. */
+/*    STORED IN THE GLOBAL ARRAY RWORK. */
 /* TOUT   = FINAL OUTPUT TIME FOR THE SOLVER. */
 /* IRFND  = INPUT FLAG SHOWING WHETHER THE LAST STEP TAKEN HAD A ROOT. */
-/*          IRFND = 1 IF IT DID, = 0 IF NOT. */
-/*          STORED IN THE GLOBAL ARRAY IWORK. */
+/*    IRFND = 1 IF IT DID, = 0 IF NOT. */
+/*    STORED IN THE GLOBAL ARRAY IWORK. */
 /* INFO3  = COPY OF INFO(3) (INPUT ONLY). */
 /* ----------------------------------------------------------------------- */
 
@@ -2476,65 +2476,65 @@ L390:
 /* DESCRIPTION OF PARAMETERS. */
 
 /* NG     = NUMBER OF FUNCTIONS GI, OR THE NUMBER OF COMPONENTS OF */
-/*          THE VECTOR VALUED FUNCTION G(X).  INPUT ONLY. */
+/*    THE VECTOR VALUED FUNCTION G(X).  INPUT ONLY. */
 
 /* HMIN   = RESOLUTION PARAMETER IN X.  INPUT ONLY.  WHEN A ROOT IS */
-/*          FOUND, IT IS LOCATED ONLY TO WITHIN AN ERROR OF HMIN IN X. */
-/*          TYPICALLY, HMIN SHOULD BE SET TO SOMETHING ON THE ORDER OF */
-/*               100 * UROUND * MAX(ABS(X0),ABS(X1)), */
-/*          WHERE UROUND IS THE UNIT ROUNDOFF OF THE MACHINE. */
+/*    FOUND, IT IS LOCATED ONLY TO WITHIN AN ERROR OF HMIN IN X. */
+/*    TYPICALLY, HMIN SHOULD BE SET TO SOMETHING ON THE ORDER OF */
+/*         100 * UROUND * MAX(ABS(X0),ABS(X1)), */
+/*    WHERE UROUND IS THE UNIT ROUNDOFF OF THE MACHINE. */
 
 /* JFLAG  = INTEGER FLAG FOR INPUT AND OUTPUT COMMUNICATION. */
 
-/*          ON INPUT, SET JFLAG = 0 ON THE FIRST CALL FOR THE PROBLEM, */
-/*          AND LEAVE IT UNCHANGED UNTIL THE PROBLEM IS COMPLETED. */
-/*          (THE PROBLEM IS COMPLETED WHEN JFLAG .GE. 2 ON RETURN.) */
+/*    ON INPUT, SET JFLAG = 0 ON THE FIRST CALL FOR THE PROBLEM, */
+/*    AND LEAVE IT UNCHANGED UNTIL THE PROBLEM IS COMPLETED. */
+/*    (THE PROBLEM IS COMPLETED WHEN JFLAG .GE. 2 ON RETURN.) */
 
-/*          ON OUTPUT, JFLAG HAS THE FOLLOWING VALUES AND MEANINGS.. */
-/*          JFLAG = 1 MEANS DROOTS NEEDS A VALUE OF G(X).  SET GX = G(X) */
-/*                    AND CALL DROOTS AGAIN. */
-/*          JFLAG = 2 MEANS A ROOT HAS BEEN FOUND.  THE ROOT IS */
-/*                    AT X, AND GX CONTAINS G(X).  (ACTUALLY, X IS THE */
-/*                    RIGHTMOST APPROXIMATION TO THE ROOT ON AN INTERVAL */
-/*                    (X0,X1) OF SIZE HMIN OR LESS.) */
-/*          JFLAG = 3 MEANS X = X1 IS A ROOT, WITH ONE OR MORE OF THE GI */
-/*                    BEING ZERO AT X1 AND NO SIGN CHANGES IN (X0,X1). */
-/*                    GX CONTAINS G(X) ON OUTPUT. */
-/*          JFLAG = 4 MEANS NO ROOTS (OF ODD MULTIPLICITY) WERE */
-/*                    FOUND IN (X0,X1) (NO SIGN CHANGES). */
+/*    ON OUTPUT, JFLAG HAS THE FOLLOWING VALUES AND MEANINGS.. */
+/*    JFLAG = 1 MEANS DROOTS NEEDS A VALUE OF G(X).  SET GX = G(X) */
+/*              AND CALL DROOTS AGAIN. */
+/*    JFLAG = 2 MEANS A ROOT HAS BEEN FOUND.  THE ROOT IS */
+/*              AT X, AND GX CONTAINS G(X).  (ACTUALLY, X IS THE */
+/*              RIGHTMOST APPROXIMATION TO THE ROOT ON AN INTERVAL */
+/*              (X0,X1) OF SIZE HMIN OR LESS.) */
+/*    JFLAG = 3 MEANS X = X1 IS A ROOT, WITH ONE OR MORE OF THE GI */
+/*              BEING ZERO AT X1 AND NO SIGN CHANGES IN (X0,X1). */
+/*              GX CONTAINS G(X) ON OUTPUT. */
+/*    JFLAG = 4 MEANS NO ROOTS (OF ODD MULTIPLICITY) WERE */
+/*              FOUND IN (X0,X1) (NO SIGN CHANGES). */
 
 /* X0,X1  = ENDPOINTS OF THE INTERVAL WHERE ROOTS ARE SOUGHT. */
-/*          X1 AND X0 ARE INPUT WHEN JFLAG = 0 (FIRST CALL), AND */
-/*          MUST BE LEFT UNCHANGED BETWEEN CALLS UNTIL THE PROBLEM IS */
-/*          COMPLETED.  X0 AND X1 MUST BE DISTINCT, BUT X1 - X0 MAY BE */
-/*          OF EITHER SIGN.  HOWEVER, THE NOTION OF -LEFT- AND -RIGHT- */
-/*          WILL BE USED TO MEAN NEARER TO X0 OR X1, RESPECTIVELY. */
-/*          WHEN JFLAG .GE. 2 ON RETURN, X0 AND X1 ARE OUTPUT, AND */
-/*          ARE THE ENDPOINTS OF THE RELEVANT INTERVAL. */
+/*    X1 AND X0 ARE INPUT WHEN JFLAG = 0 (FIRST CALL), AND */
+/*    MUST BE LEFT UNCHANGED BETWEEN CALLS UNTIL THE PROBLEM IS */
+/*    COMPLETED.  X0 AND X1 MUST BE DISTINCT, BUT X1 - X0 MAY BE */
+/*    OF EITHER SIGN.  HOWEVER, THE NOTION OF -LEFT- AND -RIGHT- */
+/*    WILL BE USED TO MEAN NEARER TO X0 OR X1, RESPECTIVELY. */
+/*    WHEN JFLAG .GE. 2 ON RETURN, X0 AND X1 ARE OUTPUT, AND */
+/*    ARE THE ENDPOINTS OF THE RELEVANT INTERVAL. */
 
 /* G0,G1  = ARRAYS OF LENGTH NG CONTAINING THE VECTORS G(X0) AND G(X1), */
-/*          RESPECTIVELY.  WHEN JFLAG = 0, G0 AND G1 ARE INPUT AND */
-/*          NONE OF THE G0(I) SHOULD BE BE ZERO. */
-/*          WHEN JFLAG .GE. 2 ON RETURN, G0 AND G1 ARE OUTPUT. */
+/*    RESPECTIVELY.  WHEN JFLAG = 0, G0 AND G1 ARE INPUT AND */
+/*    NONE OF THE G0(I) SHOULD BE BE ZERO. */
+/*    WHEN JFLAG .GE. 2 ON RETURN, G0 AND G1 ARE OUTPUT. */
 
 /* GX     = ARRAY OF LENGTH NG CONTAINING G(X).  GX IS INPUT */
-/*          WHEN JFLAG = 1, AND OUTPUT WHEN JFLAG .GE. 2. */
+/*    WHEN JFLAG = 1, AND OUTPUT WHEN JFLAG .GE. 2. */
 
 /* X      = INDEPENDENT VARIABLE VALUE.  OUTPUT ONLY. */
-/*          WHEN JFLAG = 1 ON OUTPUT, X IS THE POINT AT WHICH G(X) */
-/*          IS TO BE EVALUATED AND LOADED INTO GX. */
-/*          WHEN JFLAG = 2 OR 3, X IS THE ROOT. */
-/*          WHEN JFLAG = 4, X IS THE RIGHT ENDPOINT OF THE INTERVAL, X1. */
+/*    WHEN JFLAG = 1 ON OUTPUT, X IS THE POINT AT WHICH G(X) */
+/*    IS TO BE EVALUATED AND LOADED INTO GX. */
+/*    WHEN JFLAG = 2 OR 3, X IS THE ROOT. */
+/*    WHEN JFLAG = 4, X IS THE RIGHT ENDPOINT OF THE INTERVAL, X1. */
 
 /* JROOT  = INTEGER ARRAY OF LENGTH NG.  OUTPUT ONLY. */
-/*          WHEN JFLAG = 2 OR 3, JROOT INDICATES WHICH COMPONENTS */
-/*          OF G(X) HAVE A ROOT AT X.  JROOT(I) IS 1 IF THE I-TH */
-/*          COMPONENT HAS A ROOT, AND JROOT(I) = 0 OTHERWISE. */
+/*    WHEN JFLAG = 2 OR 3, JROOT INDICATES WHICH COMPONENTS */
+/*    OF G(X) HAVE A ROOT AT X.  JROOT(I) IS 1 IF THE I-TH */
+/*    COMPONENT HAS A ROOT, AND JROOT(I) = 0 OTHERWISE. */
 
 /* IMAX, LAST, ALPHA, X2 = */
-/*          BOOKKEEPING VARIABLES WHICH MUST BE SAVED FROM CALL */
-/*          TO CALL.  THEY ARE SAVED INSIDE THE CALLING ROUTINE, */
-/*          BUT THEY ARE USED ONLY WITHIN THIS ROUTINE. */
+/*    BOOKKEEPING VARIABLES WHICH MUST BE SAVED FROM CALL */
+/*    TO CALL.  THEY ARE SAVED INSIDE THE CALLING ROUTINE, */
+/*    BUT THEY ARE USED ONLY WITHIN THIS ROUTINE. */
 /* ----------------------------------------------------------------------- */
     /* Parameter adjustments */
     --jroot;

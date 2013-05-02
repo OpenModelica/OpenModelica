@@ -30,7 +30,7 @@
  */
 
 encapsulated package Main
-" file:        Main.mo
+" file:  Main.mo
   package:     Main
   description: Modelica main program
 
@@ -90,30 +90,30 @@ algorithm
       Integer shandle;
     case (shandle,isymb)
       equation
-        str = Socket.handlerequest(shandle);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
-        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
-        Print.clearBuf();
-        (true,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
-        Socket.sendreply(shandle, replystr);
-        ressymb = serverLoop(shandle, newsymb);
+  str = Socket.handlerequest(shandle);
+  Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
+  Debug.fprint(Flags.INTERACTIVE_DUMP, str);
+  Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
+  Print.clearBuf();
+  (true,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
+  Socket.sendreply(shandle, replystr);
+  ressymb = serverLoop(shandle, newsymb);
       then
-        ressymb;
+  ressymb;
     case (shandle,isymb)
       equation
-        str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
-        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
-        Print.clearBuf() "Print.clearErrorBuf &" ;
-        (false,replystr,newsymb) = handleCommand(str, isymb);
-        Print.printBuf("Exiting\n") "2004-11-27 - adrpo added part ends here" ;
-        Socket.sendreply(shandle, "quit requested, shutting server down\n");
-        Socket.close(shandle);
-        Socket.cleanup();
+  str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
+  Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
+  Debug.fprint(Flags.INTERACTIVE_DUMP, str);
+  Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
+  Print.clearBuf() "Print.clearErrorBuf &" ;
+  (false,replystr,newsymb) = handleCommand(str, isymb);
+  Print.printBuf("Exiting\n") "2004-11-27 - adrpo added part ends here" ;
+  Socket.sendreply(shandle, "quit requested, shutting server down\n");
+  Socket.close(shandle);
+  Socket.cleanup();
       then
-        isymb;
+  isymb;
   end matchcontinue;
 end serverLoop;
 
@@ -127,9 +127,9 @@ algorithm
       String debugstr,res_with_debug,flagstr;
     case (Flags.DEBUG_FLAG(name = flagstr),_)
       equation
-        true = Flags.isSet(inFlag);
-        debugstr = Print.getString();
-        res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+  true = Flags.isSet(inFlag);
+  debugstr = Print.getString();
+  res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     case (_,_) then res;
   end matchcontinue;
@@ -152,18 +152,18 @@ algorithm
 
     case (_)
       equation
-        ErrorExt.setCheckpoint("parsestring");
-        stmts = Parser.parsestringexp(inCommand, "<interactive>");
-        ErrorExt.delCheckpoint("parsestring");
+  ErrorExt.setCheckpoint("parsestring");
+  stmts = Parser.parsestringexp(inCommand, "<interactive>");
+  ErrorExt.delCheckpoint("parsestring");
       then
-        (SOME(stmts), NONE());
+  (SOME(stmts), NONE());
 
     case (_)
       equation
-        ErrorExt.rollBack("parsestring");
-        prog = Parser.parsestring(inCommand, "<interactive>");
+  ErrorExt.rollBack("parsestring");
+  prog = Parser.parsestring(inCommand, "<interactive>");
       then
-        (NONE(), SOME(prog));
+  (NONE(), SOME(prog));
 
     else (NONE(), NONE());
 
@@ -191,21 +191,21 @@ algorithm
 
     case (_, _)
       equation
-        true = Util.strncmp("quit()", inCommand, 6);
+  true = Util.strncmp("quit()", inCommand, 6);
       then
-        (false, "Ok\n", inSymbolTable);
+  (false, "Ok\n", inSymbolTable);
 
     else
       equation
-        Debug.fcall0(Flags.DUMP, Print.clearBuf);
-        Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
-        (stmts, prog) = parseCommand(inCommand);
-        (result, st) =
-          handleCommand2(stmts, prog, inCommand, inSymbolTable);
-        result = makeDebugResult(Flags.DUMP, result);
-        result = makeDebugResult(Flags.DUMP_GRAPHVIZ, result);
+  Debug.fcall0(Flags.DUMP, Print.clearBuf);
+  Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
+  (stmts, prog) = parseCommand(inCommand);
+  (result, st) =
+    handleCommand2(stmts, prog, inCommand, inSymbolTable);
+  result = makeDebugResult(Flags.DUMP, result);
+  result = makeDebugResult(Flags.DUMP_GRAPHVIZ, result);
       then
-        (true, result, st);
+  (true, result, st);
 
   end matchcontinue;
 end handleCommand;
@@ -230,52 +230,52 @@ algorithm
     // Interactively evaluate an algorithm statement or expression.
     case (SOME(stmts), NONE(), _, _)
       equation
-        (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
-        Debug.fcall(Flags.DUMP, Dump.dumpIstmt, stmts);
+  (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
+  Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
+  Debug.fcall(Flags.DUMP, Dump.dumpIstmt, stmts);
       then
-        (result, st);
+  (result, st);
 
     // Add a class or function to the interactive symbol table.
     case (NONE(), SOME(prog), _, Interactive.SYMBOLTABLE(ast = ast, lstVarVal = vars))
       equation
-        prog = Interactive.addScope(prog, vars);
-        prog = Interactive.updateProgram(prog, ast);
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog);
-        Debug.fcall(Flags.DUMP, Dump.dump, prog);
-        result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
-        st = Interactive.setSymbolTableAST(inSymbolTable, prog);
+  prog = Interactive.addScope(prog, vars);
+  prog = Interactive.updateProgram(prog, ast);
+  Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
+  Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog);
+  Debug.fcall(Flags.DUMP, Dump.dump, prog);
+  result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
+  st = Interactive.setSymbolTableAST(inSymbolTable, prog);
       then
-        (result, st);
+  (result, st);
 
     // A parser error occured in parseCommand, display the error message. This
     // is handled here instead of in parseCommand, since parseCommand does not
     // return a result string.
     case (NONE(), NONE(), _, _)
       equation
-        Print.printBuf("Error occurred building AST\n");
-        result = Print.getString();
-        result = stringAppend(result, "Syntax Error\n");
-        result = stringAppend(result, Error.printMessagesStr());
+  Print.printBuf("Error occurred building AST\n");
+  result = Print.getString();
+  result = stringAppend(result, "Syntax Error\n");
+  result = stringAppend(result, Error.printMessagesStr());
       then
-        (result, inSymbolTable);
+  (result, inSymbolTable);
 
     // A non-parser error occured, display the error message.
     case (_, _, _, _)
       equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        result = Error.printMessagesStr();
+  true = Util.isSome(inStatements) or Util.isSome(inProgram);
+  result = Error.printMessagesStr();
       then
-        (result, inSymbolTable);
+  (result, inSymbolTable);
 
     else
       equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        _ = setStackOverflowSignal(false);
-        Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
+  true = Util.isSome(inStatements) or Util.isSome(inProgram);
+  _ = setStackOverflowSignal(false);
+  Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
       then
-        ("", inSymbolTable);
+  ("", inSymbolTable);
 
   end matchcontinue;
 end handleCommand2;
@@ -293,15 +293,15 @@ algorithm
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
       equation
-        names = List.map(cls,Absyn.className);
-        names = List.map1(names,Absyn.joinPaths,scope);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
+  names = List.map(cls,Absyn.className);
+  names = List.map1(names,Absyn.joinPaths,scope);
+  res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
-        names = List.map(cls,Absyn.className);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
+  names = List.map(cls,Absyn.className);
+  res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
       then res;
 
   end match;
@@ -319,19 +319,19 @@ algorithm
 
     case (filename)
       equation
-        lst = System.strtok(filename, ".");
-        last :: _ = listReverse(lst);
-        true = stringEq(last, "mo");
+  lst = System.strtok(filename, ".");
+  last :: _ = listReverse(lst);
+  true = stringEq(last, "mo");
       then
-        ();
+  ();
 
     case (filename)
       equation
-        lst = System.strtok(filename, ".");
-        last :: _ = listReverse(lst);
-        true = stringEq(last, "mof");
+  lst = System.strtok(filename, ".");
+  last :: _ = listReverse(lst);
+  true = stringEq(last, "mof");
       then
-        ();
+  ();
 
   end matchcontinue;
 end isModelicaFile;
@@ -384,16 +384,16 @@ algorithm
     case("", "") then ();
     case(_, "")
       equation
-        print(errorString); print("\n");
+  print(errorString); print("\n");
       then ();
     case("", _)
       equation
-        print(errorMessages); print("\n");
+  print(errorMessages); print("\n");
       then ();
     case(_, _)
       equation
-        print(errorString); print("\n");
-        print(errorMessages); print("\n");
+  print(errorString); print("\n");
+  print(errorMessages); print("\n");
       then ();
  end matchcontinue;
 end showErrors;
@@ -436,8 +436,8 @@ algorithm
 
    case (str)
      equation
-        strLst = Util.stringSplitAtChar(str, ".");
-        p = createPathFromStringList(strLst);
+  strLst = Util.stringSplitAtChar(str, ".");
+  p = createPathFromStringList(strLst);
      then p;
 
    case (str)
@@ -528,123 +528,123 @@ algorithm
     // The last class in the first file will be instantiated.
     case (f :: libs)
       equation
-        //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
-        System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        Debug.execStat("Enter Main",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        // Check that it's a .mo-file.
-        isModelicaFile(f);
-        // Parse the first file.
-        (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f,"UTF-8");
-        // Parse libraries and extra mo-files that might have been given at the command line.
-        Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
-        // Show any errors that occured during parsing.
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+  //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
+  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  Debug.execStat("Enter Main",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  // Check that it's a .mo-file.
+  isModelicaFile(f);
+  // Parse the first file.
+  (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f,"UTF-8");
+  // Parse libraries and extra mo-files that might have been given at the command line.
+  Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
+  // Show any errors that occured during parsing.
+  showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
 
-        // Merge our program with the possible libs and models from extra .mo-files.
-        p = Interactive.updateProgram(pLibs, p);
+  // Merge our program with the possible libs and models from extra .mo-files.
+  p = Interactive.updateProgram(pLibs, p);
 
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, p);
-        Debug.fcall(Flags.DUMP, Dump.dump, p);
-        s = Debug.fcallret0(Flags.DUMP, Print.getString, "");
-        Debug.fcall(Flags.DUMP,print,s);
+  Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
+  Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, p);
+  Debug.fcall(Flags.DUMP, Dump.dump, p);
+  s = Debug.fcallret0(Flags.DUMP, Print.getString, "");
+  Debug.fcall(Flags.DUMP,print,s);
 
-        p = transformFlatProgram(p,f);
+  p = transformFlatProgram(p,f);
 
-        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
-        Debug.fprint(Flags.INFO, "---elaborating\n");
-        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
-        Debug.fprint(Flags.INFO, "---instantiating\n");
-        Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
+  Debug.fprint(Flags.INFO, "---elaborating\n");
+  Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
+  Debug.fprint(Flags.INFO, "---instantiating\n");
+  Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
-        // Instantiate the program.
-        (cache, env, d_1, cname) = instantiate(p);
+  // Instantiate the program.
+  (cache, env, d_1, cname) = instantiate(p);
 
-        Debug.fprint(Flags.BEFORE_FIX_MOD_OUT, "Explicit part:\n");
-        Debug.fcall(Flags.BEFORE_FIX_MOD_OUT, DAEDump.dumpDebug, d_1);
+  Debug.fprint(Flags.BEFORE_FIX_MOD_OUT, "Explicit part:\n");
+  Debug.fcall(Flags.BEFORE_FIX_MOD_OUT, DAEDump.dumpDebug, d_1);
 
-        d = fixModelicaOutput(d_1);
+  d = fixModelicaOutput(d_1);
 
-        d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
+  d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
 
-        funcs = Env.getFunctionTree(cache);
+  funcs = Env.getFunctionTree(cache);
 
-        Print.clearBuf();
-        Debug.fprint(Flags.INFO, "---dumping\n");
-        Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        s = Debug.fcallret2(Flags.FLAT_MODELICA, DAEDump.dumpStr, d, funcs, "");
-        Debug.fcall(Flags.FLAT_MODELICA, Print.printBuf, s);
-        Debug.execStat("Dump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        s = DAEDump.dumpStr(d, funcs);
-        Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        Print.printBuf(s);
-        Debug.fcall2(Flags.DAE_DUMP, DAEDump.dump, d, funcs);
-        Debug.fcall(Flags.DAE_DUMP2, DAEDump.dump2, d);
-        Debug.fcall(Flags.DAE_DUMP_DEBUG, DAEDump.dumpDebug, d);
-        Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
-        Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  Print.clearBuf();
+  Debug.fprint(Flags.INFO, "---dumping\n");
+  Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  s = Debug.fcallret2(Flags.FLAT_MODELICA, DAEDump.dumpStr, d, funcs, "");
+  Debug.fcall(Flags.FLAT_MODELICA, Print.printBuf, s);
+  Debug.execStat("Dump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  s = DAEDump.dumpStr(d, funcs);
+  Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  Print.printBuf(s);
+  Debug.fcall2(Flags.DAE_DUMP, DAEDump.dump, d, funcs);
+  Debug.fcall(Flags.DAE_DUMP2, DAEDump.dump2, d);
+  Debug.fcall(Flags.DAE_DUMP_DEBUG, DAEDump.dumpDebug, d);
+  Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
+  Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
-        // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
+  // Do any transformations required before going into code generation, e.g. if-equations to expressions.
+  d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
 
-        str = Print.getString();
-        silent = Config.silent();
-        notsilent = boolNot(silent);
-        Debug.bcall(notsilent, print, str);
-        Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  str = Print.getString();
+  silent = Config.silent();
+  notsilent = boolNot(silent);
+  Debug.bcall(notsilent, print, str);
+  Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
-        // Run the backend.
-        optimizeDae(cache, env, d, p, cname);
-        // Show any errors or warnings if there are any!
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+  // Run the backend.
+  optimizeDae(cache, env, d, p, cname);
+  // Show any errors or warnings if there are any!
+  showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then ();
 
     /* Modelica script file .mos */
     case (f::libs)
       equation
-        isModelicaScriptFile(f);
-        // loading possible libraries given at the command line
-        st = loadLibs(libs, Interactive.emptySymboltable);
+  isModelicaScriptFile(f);
+  // loading possible libraries given at the command line
+  st = loadLibs(libs, Interactive.emptySymboltable);
 
-        //System.startTimer();
-        //print("\nParseExp");
-        // parse our algorithm given in the script
-        stmts = Parser.parseexp(f);
-        //System.stopTimer();
-        //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));
+  //System.startTimer();
+  //print("\nParseExp");
+  // parse our algorithm given in the script
+  stmts = Parser.parseexp(f);
+  //System.stopTimer();
+  //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));
 
-        // are there any errors?
-        // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-        // evaluate statements and print the result to stdout directly
-        newst = Interactive.evaluateToStdOut(stmts, st, true);
+  // are there any errors?
+  // show errors if there are any
+  showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+  // evaluate statements and print the result to stdout directly
+  newst = Interactive.evaluateToStdOut(stmts, st, true);
       then
-        ();
+  ();
     case {f} /* A template file .tpl (in the Susan language)*/
       equation
-        isCodegenTemplateFile(f);
-        TplMain.main(f);
+  isCodegenTemplateFile(f);
+  TplMain.main(f);
       then
-        ();
+  ();
 
     // deal with problems
     case (f::_)
       equation
-        false = System.regularFileExists(f);
-        print(System.gettext("File does not exist: ")); print(f); print("\n");
-        // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+  false = System.regularFileExists(f);
+  print(System.gettext("File does not exist: ")); print(f); print("\n");
+  // show errors if there are any
+  showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
-        fail();
+  fail();
 
     case (f::_)
       equation
-        true = System.regularFileExists(f);
-        print("Error processing file: "); print(f); print("\n");
-        // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+  true = System.regularFileExists(f);
+  print("Error processing file: "); print(f); print("\n");
+  // show errors if there are any
+  showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
-        fail();
+  fail();
   end matchcontinue;
 end translateFile;
 
@@ -684,27 +684,27 @@ algorithm
       Interactive.SymbolTable st;
     case (_)
       equation
-        // If no class was explicitly specified, instantiate the last class in
-        // the program.
-        class_to_instantiate = Config.classToInstantiate();
-        true = stringEq(class_to_instantiate,"");
-        class_path = Absyn.lastClassname(program);
-        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
+  // If no class was explicitly specified, instantiate the last class in
+  // the program.
+  class_to_instantiate = Config.classToInstantiate();
+  true = stringEq(class_to_instantiate,"");
+  class_path = Absyn.lastClassname(program);
+  st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+  (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
-        (c, e, d, class_path);
+  (c, e, d, class_path);
 
     case (_)
       equation
-        // If a class to instantiate was given on the command line, instantiate
-        // that class.
-        class_to_instantiate = Config.classToInstantiate();
-        false = stringEq(class_to_instantiate,"");
-        class_path = Absyn.stringPath(class_to_instantiate);
-        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
+  // If a class to instantiate was given on the command line, instantiate
+  // that class.
+  class_to_instantiate = Config.classToInstantiate();
+  false = stringEq(class_to_instantiate,"");
+  class_path = Absyn.stringPath(class_to_instantiate);
+  st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+  (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
-        (c, e, d, class_path);
+  (c, e, d, class_path);
   end matchcontinue;
 end instantiate;
 
@@ -745,17 +745,17 @@ algorithm
 
     case (cache,env,_,_,classname)
       equation
-        true = runBackendQ();
-        dlow = BackendDAECreate.lower(dae,cache,env);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
-        modpar(dlow_1);
-        Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,classname,ap,dae);
+  true = runBackendQ();
+  dlow = BackendDAECreate.lower(dae,cache,env);
+  dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
+  modpar(dlow_1);
+  Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  simcodegen(dlow_1,classname,ap,dae);
       then
-        ();
+  ();
     else
       equation
-        false = runBackendQ() "so main can print error messages" ;
+  false = runBackendQ() "so main can print error messages" ;
       then ();
   end matchcontinue;
 end optimizeDae;
@@ -774,40 +774,40 @@ algorithm
       BackendDAE.StrongComponents comps;
     case _
       equation
-        true = 0==Config.noProc() or Flags.isSet(Flags.OPENMP) "If modpar not enabled, nproc = 0, return" ;
+  true = 0==Config.noProc() or Flags.isSet(Flags.OPENMP) "If modpar not enabled, nproc = 0, return" ;
       then
-        ();
+  ();
     case (dae as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}))
       equation
-        TaskGraph.buildTaskgraph(dae, comps);
-        TaskGraphExt.dumpGraph("model.viz");
-        l = Config.latency();
-        b = Config.bandwidth();
-        t1 = clock();
-        TaskGraphExt.mergeTasks(l, b);
-        t2 = clock();
-        t = t2 -. t1;
-        timestr = realString(t);
-        print("task merging took ");
-        print(timestr);
-        print(" seconds\n");
-        TaskGraphExt.dumpMergedGraph("merged_model.viz");
-        n = Config.noProc();
-        TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(dae);
-        nps = intString(np);
-        print("=======\nnp =");
-        print(nps);
-        print("=======\n");
-        TaskGraphExt.generateCode(nx, ny, np);
-        print("done\n");
+  TaskGraph.buildTaskgraph(dae, comps);
+  TaskGraphExt.dumpGraph("model.viz");
+  l = Config.latency();
+  b = Config.bandwidth();
+  t1 = clock();
+  TaskGraphExt.mergeTasks(l, b);
+  t2 = clock();
+  t = t2 -. t1;
+  timestr = realString(t);
+  print("task merging took ");
+  print(timestr);
+  print(" seconds\n");
+  TaskGraphExt.dumpMergedGraph("merged_model.viz");
+  n = Config.noProc();
+  TaskGraphExt.schedule(n);
+  (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(dae);
+  nps = intString(np);
+  print("=======\nnp =");
+  print(nps);
+  print("=======\n");
+  TaskGraphExt.generateCode(nx, ny, np);
+  print("done\n");
       then
-        ();
+  ();
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-modpar failed\n");
+  Debug.fprint(Flags.FAILTRACE, "-modpar failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end modpar;
 
@@ -831,39 +831,39 @@ algorithm
 
     case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
-        true = Config.simulationCg();
-        false = Config.acceptParModelicaGrammar();
-        Print.clearErrorBuf();
-        Print.clearBuf();
-        cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  true = Config.simulationCg();
+  false = Config.acceptParModelicaGrammar();
+  Print.clearErrorBuf();
+  Print.clearBuf();
+  cname_str = Absyn.pathString(classname);
+  simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
+  (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+  Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
-        ();
+  ();
 
      // If accepting parModelica create a slightly different default settings.
      // Temporary solution for now since Intel OpenCL dll calls hang.
      // So use simple Models and call the needed functions.
      case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
-        true = Config.simulationCg();
-        true = Config.acceptParModelicaGrammar();
-        Print.clearErrorBuf();
-        Print.clearBuf();
-        cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
-        (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+  true = Config.simulationCg();
+  true = Config.acceptParModelicaGrammar();
+  Print.clearErrorBuf();
+  Print.clearBuf();
+  cname_str = Absyn.pathString(classname);
+  simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
+  (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+  Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
-        ();
+  ();
 
     /* If not generating simulation code: Succeed so no error messages are printed */
     else
       equation
-        false = Config.simulationCg();
+  false = Config.simulationCg();
       then
-        ();
+  ();
   end matchcontinue;
 end simcodegen;
 
@@ -891,15 +891,15 @@ algorithm
       DAE.DAElist d;
     case d
       equation
-        true = Config.modelicaOutput();
-        print("DEPRECATED: modelicaOutput option no longer needed\n");
+  true = Config.modelicaOutput();
+  print("DEPRECATED: modelicaOutput option no longer needed\n");
       then
-        d;
+  d;
     case ((d as DAE.DAE(elementLst = dae)))
       equation
-        false = Config.modelicaOutput();
+  false = Config.modelicaOutput();
       then
-        d;
+  d;
   end matchcontinue;
 end fixModelicaOutput;
 
@@ -923,17 +923,17 @@ algorithm
      Interactive.SymbolTable symbolTable;
     case symbolTable
       equation
-        Corba.initialize();
-        _ = serverLoopCorba(symbolTable);
+  Corba.initialize();
+  _ = serverLoopCorba(symbolTable);
       then
-        ();
+  ();
     case symbolTable
       equation
-        failure(Corba.initialize());
-        Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
-        Print.printBuf("Exiting!\n");
+  failure(Corba.initialize());
+  Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
+  Print.printBuf("Exiting!\n");
       then
-        ();
+  ();
   end matchcontinue;
 end interactivemodeCorba;
 
@@ -951,23 +951,23 @@ algorithm
       Interactive.SymbolTable newsymb,ressymb,isymb;
     case (isymb)
       equation
-        str = Corba.waitForCommand();
-        Print.clearBuf();
-        (true,replystr,newsymb) = handleCommand(str, isymb);
-        Corba.sendreply(replystr);
-        ressymb = serverLoopCorba(newsymb);
+  str = Corba.waitForCommand();
+  Print.clearBuf();
+  (true,replystr,newsymb) = handleCommand(str, isymb);
+  Corba.sendreply(replystr);
+  ressymb = serverLoopCorba(newsymb);
       then
-        ressymb;
+  ressymb;
     case (isymb)
       equation
-        str = Corba.waitForCommand() "start - 2005-06-12 - adrpo added this part to make the loop deterministic" ;
-        Print.clearBuf();
-        (false,replystr,newsymb) = handleCommand(str, isymb);
-        Print.printBuf("Exiting\n") "end - 2005-06-12 -" ;
-        Corba.sendreply("quit requested, shutting server down\n");
-        Corba.close();
+  str = Corba.waitForCommand() "start - 2005-06-12 - adrpo added this part to make the loop deterministic" ;
+  Print.clearBuf();
+  (false,replystr,newsymb) = handleCommand(str, isymb);
+  Print.printBuf("Exiting\n") "end - 2005-06-12 -" ;
+  Corba.sendreply("quit requested, shutting server down\n");
+  Corba.close();
       then
-        isymb;
+  isymb;
   end matchcontinue;
 end serverLoopCorba;
 
@@ -989,18 +989,18 @@ algorithm
       Interactive.SymbolTable outSymbolTable;
     case (args)
       equation
-        outSymbolTable = Interactive.emptySymboltable;
-         "" = Util.flagValue("-s",args);
-//         this is out-commented because automatically reading settings.mos
-//         can make a system bad
-//         outSymbolTable = readSettingsFile("settings.mos", Interactive.emptySymboltable);
+  outSymbolTable = Interactive.emptySymboltable;
+   "" = Util.flagValue("-s",args);
+//   this is out-commented because automatically reading settings.mos
+//   can make a system bad
+//   outSymbolTable = readSettingsFile("settings.mos", Interactive.emptySymboltable);
       then
        outSymbolTable;
     case (args)
       equation
-        str = Util.flagValue("-s",args);
-        str = System.trim(str," \"");
-        outSymbolTable = readSettingsFile(str, Interactive.emptySymboltable);
+  str = Util.flagValue("-s",args);
+  str = System.trim(str," \"");
+  outSymbolTable = readSettingsFile(str, Interactive.emptySymboltable);
       then
        outSymbolTable;
   end matchcontinue;
@@ -1020,21 +1020,21 @@ algorithm
       String str;
     case (file,inSymbolTable)
       equation
-        true = System.regularFileExists(file);
-        str = stringAppendList({"runScript(\"",file,"\")"});
-        (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
+  true = System.regularFileExists(file);
+  str = stringAppendList({"runScript(\"",file,"\")"});
+  (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
       then
-        outSymbolTable;
+  outSymbolTable;
     case (file,inSymbolTable)
       equation
-        false = System.regularFileExists(file);
+  false = System.regularFileExists(file);
       then
-        inSymbolTable;
+  inSymbolTable;
     case (_,inSymbolTable)
       equation
-        print("-readSettingsFile another error\n");
+  print("-readSettingsFile another error\n");
       then
-        inSymbolTable;
+  inSymbolTable;
   end matchcontinue;
 end readSettingsFile;
 
@@ -1044,7 +1044,7 @@ public function setWindowsPaths
  set the windows paths for MinGW.
  do some checks on where needed things are present.
  BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW
-              changes you will need to change here!"
+        changes you will need to change here!"
   input String inOMHome;
 algorithm
   _ := matchcontinue(inOMHome)
@@ -1054,48 +1054,48 @@ algorithm
     // check if we have OMDEV set
     case (omHome)
       equation
-        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
-        omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
-        // we have something!
-        false = stringEq(omdevPath, "");
-        // do we have bin?
-        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        oldPath = System.readEnv("PATH");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omdevPath,"\\tools\\mingw\\bin;",
-                                    omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        _ = System.setEnv("PATH",newPath,true);
+  _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+  omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
+  // we have something!
+  false = stringEq(omdevPath, "");
+  // do we have bin?
+  true = System.directoryExists(omdevPath +& "\\tools\\mingw\\bin");
+  // do we have the correct libexec stuff?
+  true = System.directoryExists(omdevPath +& "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+  oldPath = System.readEnv("PATH");
+  newPath = stringAppendList({omHome,"\\bin;",
+                              omHome,"\\lib;",
+                              omdevPath,"\\tools\\mingw\\bin;",
+                              omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
+                              oldPath});
+  _ = System.setEnv("PATH",newPath,true);
       then
-        ();
+  ();
 
     case (omHome)
       equation
-        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
-        oldPath = System.readEnv("PATH");
-        // do we have bin?
-        true = System.directoryExists(omHome +& "\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omHome +& "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omHome,"\\mingw\\bin;",
-                                    omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        _ = System.setEnv("PATH",newPath,true);
+  _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+  oldPath = System.readEnv("PATH");
+  // do we have bin?
+  true = System.directoryExists(omHome +& "\\mingw\\bin");
+  // do we have the correct libexec stuff?
+  true = System.directoryExists(omHome +& "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+  newPath = stringAppendList({omHome,"\\bin;",
+                              omHome,"\\lib;",
+                              omHome,"\\mingw\\bin;",
+                              omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
+                              oldPath});
+  _ = System.setEnv("PATH",newPath,true);
       then
-        ();
+  ();
 
     else
       equation
-        print("We could not find any of:\n");
-        print("\t$OPENMODELICAHOME/MinGW/bin and $OPENMODELICAHOME/MinGW/libexec/gcc/mingw32/4.4.0\n");
-        print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
+  print("We could not find any of:\n");
+  print("\t$OPENMODELICAHOME/MinGW/bin and $OPENMODELICAHOME/MinGW/libexec/gcc/mingw32/4.4.0\n");
+  print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
       then
-        ();
+  ();
 
   end matchcontinue;
 end setWindowsPaths;
@@ -1111,16 +1111,16 @@ algorithm
   _ := matchcontinue args
     case _
       equation
-        System.realtimeTick(CevalScript.RT_CLOCK_SIMULATE_TOTAL);
-        args_1 = Flags.new(args);
-        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
-        main2(args_1);
+  System.realtimeTick(CevalScript.RT_CLOCK_SIMULATE_TOTAL);
+  args_1 = Flags.new(args);
+  System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+  main2(args_1);
       then ();
     else
       equation
-        ErrorExt.clearMessages();
-        failure(_ = Flags.new(args));
-        print(ErrorExt.printMessagesStr()); print("\n");
+  ErrorExt.clearMessages();
+  failure(_ = Flags.new(args));
+  print(ErrorExt.printMessagesStr()); print("\n");
       then fail();
   end matchcontinue;
 end main;
@@ -1140,115 +1140,115 @@ algorithm
     // Version requested using --version
     case _ // try first to see if we had a version request among flags.
       equation
-        true = Config.versionRequest();
-        print(Settings.getVersionNr());
-        print("\n");
+  true = Config.versionRequest();
+  print(Settings.getVersionNr());
+  print("\n");
       then ();
 
     // Setup mingw path only once
     // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT
-    //        without asking Adrian.Pop@liu.se
+    //  without asking Adrian.Pop@liu.se
     case _
       equation
-        true = "Windows_NT" ==& System.os();
-        omhome = Settings.getInstallationDirectoryPath();
-        setWindowsPaths(omhome);
+  true = "Windows_NT" ==& System.os();
+  omhome = Settings.getInstallationDirectoryPath();
+  setWindowsPaths(omhome);
 
-        // setup an file database (for in-memory use :memory: as name)
-        //Database.open(0, "omc.db");
-        //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
-        //_ = Database.query(0, "begin transaction;");
+  // setup an file database (for in-memory use :memory: as name)
+  //Database.open(0, "omc.db");
+  //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
+  //_ = Database.query(0, "begin transaction;");
       then
-        fail();
+  fail();
 
     case _
       equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        true = Flags.isSet(Flags.INTERACTIVE);
-        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        _ = Settings.getInstallationDirectoryPath();
-        symbolTable = readSettings(args);
-        interactivemode(symbolTable);
+  true = not System.userIsRoot() or Config.getRunningTestsuite();
+  true = Flags.isSet(Flags.INTERACTIVE);
+  false = Flags.isSet(Flags.INTERACTIVE_CORBA);
+  _ = Settings.getInstallationDirectoryPath();
+  symbolTable = readSettings(args);
+  interactivemode(symbolTable);
       then ();
 
     case _
       equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        false = Flags.isSet(Flags.INTERACTIVE);
-        true = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        _ = Settings.getInstallationDirectoryPath();
-        symbolTable = readSettings(args);
-        interactivemodeCorba(symbolTable);
+  true = not System.userIsRoot() or Config.getRunningTestsuite();
+  false = Flags.isSet(Flags.INTERACTIVE);
+  true = Flags.isSet(Flags.INTERACTIVE_CORBA);
+  _ = Settings.getInstallationDirectoryPath();
+  symbolTable = readSettings(args);
+  interactivemodeCorba(symbolTable);
       then ();
 
     case _::_
       equation
-        false = Flags.isSet(Flags.INTERACTIVE);
-        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        _ = Settings.getInstallationDirectoryPath();
+  false = Flags.isSet(Flags.INTERACTIVE);
+  false = Flags.isSet(Flags.INTERACTIVE_CORBA);
+  true = not System.userIsRoot() or Config.getRunningTestsuite();
+  _ = Settings.getInstallationDirectoryPath();
 
-        // debug_show_depth(2);
+  // debug_show_depth(2);
 
-        // reset the timer used to calculate
-        // cummulative time of some functions
-        // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
-        // System.resetTimer();
+  // reset the timer used to calculate
+  // cummulative time of some functions
+  // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
+  // System.resetTimer();
 
-        //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
-        //Env.globalCache = fill(Env.emptyCache,1);
-        symbolTable = readSettings(args);
-        // non of the interactive mode was set, flatten the file
-        translateFile(args);
-        /*
-        errstr = Print.getErrorString();
-        Debug.fcall(Flags.ERRORBUF, print, errstr);
-        */
-        //print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
-        //dbResult = Database.query(0, "end transaction;");
-        //dbResult = Database.query(0, "select * from Inst");
+  //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
+  //Env.globalCache = fill(Env.emptyCache,1);
+  symbolTable = readSettings(args);
+  // non of the interactive mode was set, flatten the file
+  translateFile(args);
+  /*
+  errstr = Print.getErrorString();
+  Debug.fcall(Flags.ERRORBUF, print, errstr);
+  */
+  //print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
+  //dbResult = Database.query(0, "end transaction;");
+  //dbResult = Database.query(0, "select * from Inst");
       then
-        ();
+  ();
 
     case _
       equation
-        true = System.userIsRoot();
-        print(System.gettext("You are trying to run OpenModelica as root.\n"));
-        print("This is a very bad idea. Why you ask?\n");
-        print("* The socket interface does not authenticate the user.\n");
-        print("* OpenModelica allows execution of arbitrary commands.\n");
-        print("The good news is there is no reason to run OpenModelica as root.\n");
+  true = System.userIsRoot();
+  print(System.gettext("You are trying to run OpenModelica as root.\n"));
+  print("This is a very bad idea. Why you ask?\n");
+  print("* The socket interface does not authenticate the user.\n");
+  print("* OpenModelica allows execution of arbitrary commands.\n");
+  print("The good news is there is no reason to run OpenModelica as root.\n");
       then fail();
 
     case {}
       equation
-        false = System.userIsRoot();
-        print(Debug.bcallret0(not Config.helpRequest() /* Already printed help */, Flags.printUsage, ""));
+  false = System.userIsRoot();
+  print(Debug.bcallret0(not Config.helpRequest() /* Already printed help */, Flags.printUsage, ""));
       then ();
 
     case _
       equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        _ = Settings.getInstallationDirectoryPath();
-        print("# Error encountered! Exiting...\n");
-        print("# Please check the error message and the flags.\n");
-        errstr = Print.getErrorString();
-        Print.printBuf("\n\n----\n\nError buffer:\n\n");
-        print(errstr);
-        print(ErrorExt.printMessagesStr()); print("\n");
+  true = not System.userIsRoot() or Config.getRunningTestsuite();
+  _ = Settings.getInstallationDirectoryPath();
+  print("# Error encountered! Exiting...\n");
+  print("# Please check the error message and the flags.\n");
+  errstr = Print.getErrorString();
+  Print.printBuf("\n\n----\n\nError buffer:\n\n");
+  print(errstr);
+  print(ErrorExt.printMessagesStr()); print("\n");
       then
-        fail();
+  fail();
 
     case _
       equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        failure(_ = Settings.getInstallationDirectoryPath());
-        print("Error: OPENMODELICAHOME was not set.\n");
-        print("  Read the documentation for instructions on how to set it properly.\n");
-        print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+  true = not System.userIsRoot() or Config.getRunningTestsuite();
+  failure(_ = Settings.getInstallationDirectoryPath());
+  print("Error: OPENMODELICAHOME was not set.\n");
+  print("  Read the documentation for instructions on how to set it properly.\n");
+  print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
 
-        // Functions used by external code that needs to be included for linking
-        _ = Absyn.isDerCref;
+  // Functions used by external code that needs to be included for linking
+  _ = Absyn.isDerCref;
       then fail();
   end matchcontinue;
 end main2;

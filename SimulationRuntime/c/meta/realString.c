@@ -175,8 +175,8 @@ static void* dtostr(double d)
       *res++ = *cp++;
       if (expt && ndig > 1) *res++ = '.';
       if (expt == 1 && ndig == 1) {
-        *res++ = '.';
-        *res++ = '0';
+  *res++ = '.';
+  *res++ = '0';
       }
     }
     strcpy(res,cp);
@@ -233,7 +233,7 @@ modelica_string _old_realString(modelica_real r)
     ignore = strtol(buffer,&endptr,10);
     if (errno == 0 && *endptr == '\0') {
       if (ix > 30)
-        MMC_THROW();
+  MMC_THROW();
       buffer[ix++] = '.';
       buffer[ix++] = '0';
       buffer[ix] = '\0';

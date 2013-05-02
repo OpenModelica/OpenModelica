@@ -46,7 +46,7 @@
 
 /* the SQLite error codes are 0 (success) until 101, so to be safe we start at 500 */
 #define DATABASE_ERROR_DATABASE_INDEX_OVERFLOW  500
-#define DATABASE_ERROR_NOT_INITIALIZED          501
+#define DATABASE_ERROR_NOT_INITIALIZED    501
 
 // say we can have 1024 DBs active at any time.
 #define DATABASE_MAX_DATABASES 1024

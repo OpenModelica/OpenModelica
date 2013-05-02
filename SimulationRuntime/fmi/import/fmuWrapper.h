@@ -31,10 +31,10 @@ extern "C"{
 typedef const char* (*fGetModelTypesPlatform)();
 typedef const char* (*fGetVersion)();
 typedef fmiComponent (*fInstantiateModel)(fmiString instanceName, fmiString GUID,
-                                        fmiCallbackFunctions functions, fmiBoolean loggingOn);
+                                  fmiCallbackFunctions functions, fmiBoolean loggingOn);
 typedef void      (*fFreeModelInstance)  (fmiComponent c);
 typedef fmiStatus (*fSetDebugLogging)    (fmiComponent c, fmiBoolean loggingOn);
-typedef fmiStatus (*fSetTime)            (fmiComponent c, fmiReal time);
+typedef fmiStatus (*fSetTime)      (fmiComponent c, fmiReal time);
 typedef fmiStatus (*fSetContinuousStates)(fmiComponent c, const fmiReal x[], size_t nx);
 typedef fmiStatus (*fCompletedIntegratorStep)(fmiComponent c, fmiBoolean* callEventUpdate);
 typedef fmiStatus (*fSetReal)   (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal    value[]);
@@ -42,18 +42,18 @@ typedef fmiStatus (*fSetInteger)(fmiComponent c, const fmiValueReference vr[], s
 typedef fmiStatus (*fSetBoolean)(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]);
 typedef fmiStatus (*fSetString) (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString  value[]);
 typedef fmiStatus (*fInitialize)(fmiComponent c, fmiBoolean toleranceControlled,
-                               fmiReal relativeTolerance, fmiEventInfo* eventInfo);
+                         fmiReal relativeTolerance, fmiEventInfo* eventInfo);
 typedef fmiStatus (*fGetDerivatives)    (fmiComponent c, fmiReal derivatives[]    , size_t nx);
 typedef fmiStatus (*fGetEventIndicators)(fmiComponent c, fmiReal eventIndicators[], size_t ni);
 typedef fmiStatus (*fGetReal)   (fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal    value[]);
 typedef fmiStatus (*fGetInteger)(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[]);
 typedef fmiStatus (*fGetBoolean)(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]);
 typedef fmiStatus (*fGetString) (fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[]);
-typedef fmiStatus (*fEventUpdate)               (fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo);
+typedef fmiStatus (*fEventUpdate)         (fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo);
 typedef fmiStatus (*fGetContinuousStates)       (fmiComponent c, fmiReal states[], size_t nx);
 typedef fmiStatus (*fGetNominalContinuousStates)(fmiComponent c, fmiReal x_nominal[], size_t nx);
 typedef fmiStatus (*fGetStateValueReferences)   (fmiComponent c, fmiValueReference vrx[], size_t nx);
-typedef fmiStatus (*fTerminate)                 (fmiComponent c);
+typedef fmiStatus (*fTerminate)           (fmiComponent c);
 
 /* typedef of the data structure FMI containing loaded FMI functions */
 typedef struct {
@@ -91,7 +91,7 @@ typedef enum {
     modelInstantiated = 1<<0,
     modelInitialized  = 1<<1,
     modelTerminated   = 1<<2,
-    modelError        = 1<<3
+    modelError  = 1<<3
 } ModelState;
 
 typedef struct {

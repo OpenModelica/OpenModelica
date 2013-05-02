@@ -19,7 +19,7 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {
     if(algLoop->getDimVars() > 0)
     {
-        string nonlin_solver_dll;
+  string nonlin_solver_dll;
    string nonlinsolver = _global_settings.getSelectedNonLinSolver();
     string nonlinsolversettings = _global_settings.getSelectedNonLinSolver().append("Settings");
   if(_global_settings.getSelectedNonLinSolver().compare("Newton")==0)
@@ -42,9 +42,9 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
    std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(types.get());
    iter2 = nonLinSolversettingsfactory.find(nonlinsolversettings);
       if (iter2 ==nonLinSolversettingsfactory.end()) 
-        {
-            throw std::invalid_argument("No such nonlinear solver Settings");
-        }
+  {
+      throw std::invalid_argument("No such nonlinear solver Settings");
+  }
     boost::shared_ptr<INonLinSolverSettings> algsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter2->second.create());
     _algsolversettings.push_back(algsolversetting);
     iter = nonlinSolverFactory.find(nonlinsolver);

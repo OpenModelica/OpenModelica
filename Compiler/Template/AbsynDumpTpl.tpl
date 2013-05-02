@@ -97,7 +97,7 @@ match exp
     '{<%array_str%>}'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
-        (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
+  (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
     '[<%matrix_str%>]'
   case e as RANGE(step = SOME(step)) then
     let start_str = dumpOperand(start, e)

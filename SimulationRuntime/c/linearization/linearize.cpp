@@ -75,7 +75,7 @@ int functionJacA(DATA* data, double* jac){
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+  INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -95,7 +95,7 @@ int functionJacA(DATA* data, double* jac){
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++) {
-        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+  printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
       }
       printf("\n");
     }
@@ -116,7 +116,7 @@ int functionJacB(DATA* data, double* jac){
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+  INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -136,7 +136,7 @@ int functionJacB(DATA* data, double* jac){
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+  printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
       printf("\n");
     }
   }
@@ -155,7 +155,7 @@ int functionJacC(DATA* data, double* jac){
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+  INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
     functionJacC_column(data);
@@ -174,7 +174,7 @@ int functionJacC(DATA* data, double* jac){
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+  printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
       printf("\n");
     }
   }
@@ -193,7 +193,7 @@ int functionJacD(DATA* data, double* jac){
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+  INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
     functionJacD_column(data);
@@ -212,7 +212,7 @@ int functionJacD(DATA* data, double* jac){
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+  printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
       printf("\n");
     }
   }
@@ -242,28 +242,28 @@ int linearize(DATA* data)
     /* Determine Matrix A */
     if(!initialAnalyticJacobianA(data)){
       if(functionJacA(data, matrixA))
-        THROW("Error, can not get Matrix A ");
+  THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
     if(!initialAnalyticJacobianB(data)){
       if(functionJacB(data, matrixB))
-        THROW("Error, can not get Matrix B ");
+  THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
     if(!initialAnalyticJacobianC(data)){
       if(functionJacC(data, matrixC))
-        THROW("Error, can not get Matrix C ");
+  THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
     if(!initialAnalyticJacobianD(data)){
       if(functionJacD(data, matrixD))
-        THROW("Error, can not get Matrix D ");
+  THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 

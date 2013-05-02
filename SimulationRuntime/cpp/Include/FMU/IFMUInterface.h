@@ -43,13 +43,13 @@ class IFMUInterface
     virtual fmiStatus setDebugLogging  (fmiBoolean loggingOn) = 0;
 
 /*  independent variables and re-initialization of caching */
-    virtual fmiStatus setTime                (fmiReal time) = 0;
+    virtual fmiStatus setTime          (fmiReal time) = 0;
     virtual fmiStatus setContinuousStates    (const fmiReal x[], size_t nx) = 0;
     virtual fmiStatus completedIntegratorStep(fmiBoolean* callEventUpdate) = 0;
-    virtual fmiStatus setReal                (const fmiValueReference vr[], size_t nvr, const fmiReal    value[]) = 0;
-    virtual fmiStatus setInteger             (const fmiValueReference vr[], size_t nvr, const fmiInteger value[]) = 0;
-    virtual fmiStatus setBoolean             (const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]) = 0;
-    virtual fmiStatus setString              (const fmiValueReference vr[], size_t nvr, const fmiString  value[]) = 0;
+    virtual fmiStatus setReal          (const fmiValueReference vr[], size_t nvr, const fmiReal    value[]) = 0;
+    virtual fmiStatus setInteger       (const fmiValueReference vr[], size_t nvr, const fmiInteger value[]) = 0;
+    virtual fmiStatus setBoolean       (const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]) = 0;
+    virtual fmiStatus setString        (const fmiValueReference vr[], size_t nvr, const fmiString  value[]) = 0;
 
 /*  of the model equations */
     virtual fmiStatus initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo) = 0;
@@ -62,19 +62,19 @@ class IFMUInterface
     virtual fmiStatus getBoolean(const fmiValueReference vr[], size_t nvr, fmiBoolean value[]) = 0;
     virtual fmiStatus getString (const fmiValueReference vr[], size_t nvr, fmiString  value[]) = 0;
 
-    virtual fmiStatus eventUpdate               (fmiBoolean intermediateResults, fmiEventInfo& eventInfo) = 0;
+    virtual fmiStatus eventUpdate         (fmiBoolean intermediateResults, fmiEventInfo& eventInfo) = 0;
     virtual fmiStatus getContinuousStates       (fmiReal states[], size_t nx) = 0;
     virtual fmiStatus getNominalContinuousStates(fmiReal x_nominal[], size_t nx) = 0;
     virtual fmiStatus getStateValueReferences   (fmiValueReference vrx[], size_t nx) = 0;
-    virtual fmiStatus terminate                 () = 0;
+    virtual fmiStatus terminate           () = 0;
     virtual fmiStatus setExternalFunction       (fmiValueReference vr[], size_t nvr, const void* value[]) = 0;
 
   private:
     typedef enum {
-        modelInstantiated = 1<<0,
-        modelInitialized  = 1<<1,
-        modelTerminated   = 1<<2,
-        modelError        = 1<<3
+  modelInstantiated = 1<<0,
+  modelInitialized  = 1<<1,
+  modelTerminated   = 1<<2,
+  modelError        = 1<<3
     } ModelState;
 
     fmiString instanceName;

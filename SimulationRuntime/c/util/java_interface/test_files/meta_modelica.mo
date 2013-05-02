@@ -114,11 +114,11 @@ algorithm
     case ({}, l, _) then listReverse(l);
     case (hd::rest, l, fn)
       equation
-        hdChanged = fn(hd);
-        l = hdChanged::l;
-        result = listMap_impl_2(rest, l, fn);
+  hdChanged = fn(hd);
+  l = hdChanged::l;
+  result = listMap_impl_2(rest, l, fn);
     then
-        result;
+  result;
   end matchcontinue;
 end listMap_impl_2;
 
@@ -139,10 +139,10 @@ algorithm
     case ({},_) then ();
     case ((f :: r),fn)
       equation
-        fn(f);
-        listMap0(r, fn);
+  fn(f);
+  listMap0(r, fn);
       then
-        ();
+  ();
   end matchcontinue;
 end listMap0;
 

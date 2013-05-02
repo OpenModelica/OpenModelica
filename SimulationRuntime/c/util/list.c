@@ -154,7 +154,7 @@ void listPopFront(LIST *list)
       list->first = tmpNode;
       --(list->length);
       if(!list->first)
-        list->last = list->first;
+  list->last = list->first;
     }
   }
 }

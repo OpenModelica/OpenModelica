@@ -30,7 +30,7 @@
  */
 
 encapsulated package Util
-" file:        Util.mo
+" file:  Util.mo
   package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
 
@@ -103,10 +103,10 @@ public constant String rightParStr = "$rP";
 public constant String commaStr = "$c";
 
 protected constant list<ReplacePattern> replaceStringPatterns=
-         {REPLACEPATTERN(".",pointStr),
-          REPLACEPATTERN("[",leftBraketStr),REPLACEPATTERN("]",rightBraketStr),
-          REPLACEPATTERN("(",leftParStr),REPLACEPATTERN(")",rightParStr),
-          REPLACEPATTERN(",",commaStr)};
+   {REPLACEPATTERN(".",pointStr),
+    REPLACEPATTERN("[",leftBraketStr),REPLACEPATTERN("]",rightBraketStr),
+    REPLACEPATTERN("(",leftParStr),REPLACEPATTERN(")",rightParStr),
+    REPLACEPATTERN(",",commaStr)};
 
 public function isIntGreater "Author: BZ"
 input Integer lhs;
@@ -128,8 +128,8 @@ algorithm
   str := matchcontinue()
     case()
       equation
-        str = System.os();
-        true = ("linux" ==& str) or ("OSX" ==& str);
+  str = System.os();
+  true = ("linux" ==& str) or ("OSX" ==& str);
       then "./";
     case() then "";
   end matchcontinue;
@@ -152,19 +152,19 @@ algorithm
    case (_,{}) then "";
    case(_,arg::{})
       equation
-        0 = stringCompare(flag,arg);
+  0 = stringCompare(flag,arg);
       then
-        "";
+  "";
    case(_,arg::value::args)
       equation
-        0 = stringCompare(flag,arg);
+  0 = stringCompare(flag,arg);
       then
-        value;
+  value;
    case(_,arg::args)
       equation
-        value = flagValue(flag,args);
+  value = flagValue(flag,args);
       then
-        value;
+  value;
    case(_,_)
       equation
        print("- Util.flagValue failed\n");
@@ -207,8 +207,8 @@ algorithm
     local Type_b result;
     case(element, f, accLst)
       equation
-        result = f(element);
-        accLst = listAppend(accLst, {result});
+  result = f(element);
+  accLst = listAppend(accLst, {result});
       then accLst;
   end matchcontinue;
 end applyAndAppend;
@@ -233,7 +233,7 @@ algorithm
     local Type_b result;
     case(element, f, accLst)
       equation
-        result = f(element);
+  result = f(element);
       then result::accLst;
   end matchcontinue;
 end applyAndCons;
@@ -440,18 +440,18 @@ algorithm
     // if the array is empty, use list transformations to fix the types!
     case (_, _)
       equation
-        true = intEq(0, arrayLength(array));
-        outArray = listArray({});
+  true = intEq(0, arrayLength(array));
+  outArray = listArray({});
       then
-        outArray;
+  outArray;
     // otherwise, use the first element to create the new array
     case (_, _)
       equation
-        false = intEq(0, arrayLength(array));
-        initElt = func(array[1]);
-        outArray = arrayMapHelp(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
+  false = intEq(0, arrayLength(array));
+  initElt = func(array[1]);
+  outArray = arrayMapHelp(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
       then
-        outArray;
+  outArray;
 
   end matchcontinue;
 end arrayMap;
@@ -516,18 +516,18 @@ algorithm
     // if the array is empty, use list transformations to fix the types!
     case (_, _, _)
       equation
-        true = intEq(0, arrayLength(array));
-        outArray = listArray({});
+  true = intEq(0, arrayLength(array));
+  outArray = listArray({});
       then
-        outArray;
+  outArray;
     // otherwise, use the first element to create the new array
     case (_, _, _)
       equation
-        false = intEq(0, arrayLength(array));
-        initElt = func(array[1], arg1);
-        outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array),arg1);
+  false = intEq(0, arrayLength(array));
+  initElt = func(array[1], arg1);
+  outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array),arg1);
       then
-        outArray;
+  outArray;
   end matchcontinue;
 end arrayMap1;
 
@@ -595,9 +595,9 @@ algorithm
     case (0,_,_) then ();
     case (ix,array,func)
       equation
-        i = arrayLength(array)-ix+1;
-        func(array[i]);
-        arrayMap0work(ix-1,array,func);
+  i = arrayLength(array)-ix+1;
+  func(array[i]);
+  arrayMap0work(ix-1,array,func);
       then ();
   end match;
 end arrayMap0work;
@@ -650,16 +650,16 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = inIndex > inArraySize;
+  true = inIndex > inArraySize;
       then
-        inFoldValue;
+  inFoldValue;
 
     else
       equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inFoldValue);
+  e = arrayGet(inArray, inIndex);
+  res = inFoldFunc(e, inFoldValue);
       then
-        arrayFold_impl(inArray, inFoldFunc, res, inIndex + 1, inArraySize);
+  arrayFold_impl(inArray, inFoldFunc, res, inIndex + 1, inArraySize);
 
   end matchcontinue;
 end arrayFold_impl;
@@ -717,8 +717,8 @@ algorithm
     case ({}, _, _, _) then ();
     case (a::rest, inStartListLength, inArrayA, inArrayB)
       equation
-        arrayUpdatewithArrayIndexFirst(inStartListLength, inArrayA, inArrayB);
-        arrayUpdatewithListIndexFirst(rest, inStartListLength+1, inArrayA, inArrayB);
+  arrayUpdatewithArrayIndexFirst(inStartListLength, inArrayA, inArrayB);
+  arrayUpdatewithListIndexFirst(rest, inStartListLength+1, inArrayA, inArrayB);
     then ();
    end match;
 end arrayUpdatewithListIndexFirst;
@@ -837,24 +837,24 @@ algorithm
       Type_a x,fillv;
     case (pos,x,fillv,arr)
       equation
-        alen = arrayLength(arr) "Replacing element with index in range of the array" ;
-        (pos <= alen) = true;
-        res = arrayUpdate(arr, pos , x);
+  alen = arrayLength(arr) "Replacing element with index in range of the array" ;
+  (pos <= alen) = true;
+  res = arrayUpdate(arr, pos , x);
       then
-        res;
+  res;
     case (pos,x,fillv,arr)
       equation
-        //Replacing element out of range of array, create new array, and copy elts.
-        newarr = arrayCreate(pos, fillv);
-        res = arrayCopy(arr, newarr);
-        res_1 = arrayUpdate(res, pos , x);
+  //Replacing element out of range of array, create new array, and copy elts.
+  newarr = arrayCreate(pos, fillv);
+  res = arrayCopy(arr, newarr);
+  res_1 = arrayUpdate(res, pos , x);
       then
-        res_1;
+  res_1;
     case (_,_,_,_)
       equation
-        print("- Util.arrayReplaceAtWithFill failed\n");
+  print("- Util.arrayReplaceAtWithFill failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end arrayReplaceAtWithFill;
 
@@ -873,10 +873,10 @@ algorithm
       array<Type_a> newarr;
     case (_,_,_)
       equation
-        // do nothing if n is negative or zero
-        true = intLt(n,1);
+  // do nothing if n is negative or zero
+  true = intLt(n,1);
       then
-        arr;
+  arr;
     case (_,_,_)
       equation
        len = arrayLength(arr);
@@ -887,10 +887,10 @@ algorithm
        newarr_1;
     else
       equation
-        print("Util.arrayExpand failed!\n");
-        print("OldSize: " +& intString(arrayLength(arr)) +& " additional elements: " +& intString(n) +& "\n");
+  print("Util.arrayExpand failed!\n");
+  print("OldSize: " +& intString(arrayLength(arr)) +& " additional elements: " +& intString(n) +& "\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end arrayExpand;
 
@@ -913,18 +913,18 @@ algorithm
     // Space left in the array, do nothing.
     case (_, _, _, _)
       equation
-        true = inNewSize <= arrayLength(inArray);
+  true = inNewSize <= arrayLength(inArray);
       then
-        inArray;
+  inArray;
 
     // Otherwise, resize the array.
     else
       equation
-        new_size = realInt(intReal(arrayLength(inArray)) *. inExpansionFactor);
-        new_arr = arrayCreate(new_size, inFillValue);
-        new_arr = arrayCopy(inArray, new_arr);
+  new_size = realInt(intReal(arrayLength(inArray)) *. inExpansionFactor);
+  new_arr = arrayCreate(new_size, inFillValue);
+  new_arr = arrayCopy(inArray, new_arr);
       then
-        new_arr;
+  new_arr;
 
   end matchcontinue;
 end arrayExpandOnDemand;
@@ -1003,20 +1003,20 @@ algorithm
       array<Type_a> src,dst,dst_1;
     case (src,dst) /* src dst */
       equation
-        srclen = arrayLength(src);
-        dstlen = arrayLength(dst);
-        (srclen > dstlen) = true;
-        print(
-          "- Util.arrayCopy failed. Can not fit elements into dest array\n");
+  srclen = arrayLength(src);
+  dstlen = arrayLength(dst);
+  (srclen > dstlen) = true;
+  print(
+    "- Util.arrayCopy failed. Can not fit elements into dest array\n");
       then
-        fail();
+  fail();
     case (src,dst)
       equation
-        srclen = arrayLength(src);
-        srclen = srclen - 1;
-        dst_1 = arrayCopy2(src, dst, srclen);
+  srclen = arrayLength(src);
+  srclen = srclen - 1;
+  dst_1 = arrayCopy2(src, dst, srclen);
       then
-        dst_1;
+  dst_1;
   end matchcontinue;
 end arrayCopy;
 
@@ -1036,12 +1036,12 @@ algorithm
     case (src,dst,-1) then dst;  /* src dst current pos */
     case (src,dst,pos)
       equation
-        elt = src[pos + 1];
-        dst_1 = arrayUpdate(dst, pos + 1, elt);
-        pos = pos - 1;
-        dst_2 = arrayCopy2(src, dst_1, pos);
+  elt = src[pos + 1];
+  dst_1 = arrayUpdate(dst, pos + 1, elt);
+  pos = pos - 1;
+  dst_2 = arrayCopy2(src, dst_1, pos);
       then
-        dst_2;
+  dst_2;
   end match;
 end arrayCopy2;
 
@@ -1059,22 +1059,22 @@ algorithm
       array<Type_a> newarr;
     case (_,_,_,_)
       equation
-        // do nothing if start is grather than end_
-        true = intGt(start,end_);
+  // do nothing if start is grather than end_
+  true = intGt(start,end_);
       then
-        arr;
+  arr;
     case (_,_,_,_)
       equation
-        false = intGt(start,end_);
-        newarr = arrayUpdate(arr, start, v);
+  false = intGt(start,end_);
+  newarr = arrayUpdate(arr, start, v);
       then
-        arraySet(start+1,end_,newarr,v);
+  arraySet(start+1,end_,newarr,v);
     else
       equation
-        print("Util.arraySet failed!\n");
-        print("Size: " +& intString(arrayLength(arr)) +& " start: " +& intString(start) +& " end: " +& intString(end_) +& "\n");
+  print("Util.arraySet failed!\n");
+  print("Size: " +& intString(arrayLength(arr)) +& " start: " +& intString(start) +& " end: " +& intString(end_) +& "\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end arraySet;
 
@@ -1282,9 +1282,9 @@ algorithm
     case ({}) then ({},{});
     case (((x,y) :: rest))
       equation
-        (xs,ys) = splitTuple2List(rest);
+  (xs,ys) = splitTuple2List(rest);
       then
-        ((x :: xs),(y :: ys));
+  ((x :: xs),(y :: ys));
   end match;
 end splitTuple2List;
 
@@ -1305,9 +1305,9 @@ algorithm
     case ({}) then ({});
     case (((x,_) :: rest))
       equation
-        (xs) = splitTuple211List(rest);
+  (xs) = splitTuple211List(rest);
       then
-        ((x :: xs));
+  ((x :: xs));
   end match;
 end splitTuple211List;
 
@@ -1328,9 +1328,9 @@ algorithm
     case ({}) then ({});
     case (((_,x) :: rest))
       equation
-        (xs) = splitTuple212List(rest);
+  (xs) = splitTuple212List(rest);
       then
-        ((x :: xs));
+  ((x :: xs));
   end match;
 end splitTuple212List;
 
@@ -1355,15 +1355,15 @@ algorithm
     case(lst,{},_) then lst;
     case(head::tail,x::xs,pos)
       equation
-        true = intEq(x, pos); // equality(x=pos);
-        res = filterList(tail,xs,pos+1);
+  true = intEq(x, pos); // equality(x=pos);
+  res = filterList(tail,xs,pos+1);
       then
-        res;
+  res;
     case(head::tail,x::xs,pos)
       equation
-        res = filterList(tail,x::xs,pos+1);
+  res = filterList(tail,x::xs,pos+1);
       then
-        head::res;
+  head::res;
 end matchcontinue;
 end filterList;
 
@@ -1415,12 +1415,12 @@ algorithm
     case ({f},delim) equation Print.printBuf(f); then ();
     case ((f :: r),delim)
       equation
-        stringDelimitListPrintBuf(r, delim);
-        Print.printBuf(f);
-        Print.printBuf(delim);
+  stringDelimitListPrintBuf(r, delim);
+  Print.printBuf(f);
+  Print.printBuf(delim);
 
       then
-        ();
+  ();
   end matchcontinue;
 end stringDelimitListPrintBuf;
 
@@ -1465,30 +1465,30 @@ algorithm
     then ();
     case ((f :: r),sep1,sep2,n,0)
       equation
-        Print.printBuf(f);Print.printBuf(sep1);
-        stringDelimitListAndSeparate2(r, sep1, sep2, n, 1) "special case for first element" ;
+  Print.printBuf(f);Print.printBuf(sep1);
+  stringDelimitListAndSeparate2(r, sep1, sep2, n, 1) "special case for first element" ;
       then
-        ();
+  ();
     case ((f :: r),sep1,sep2,n,iter)
       equation
-        0 = intMod(iter, n) "insert second delimiter" ;
-        iter_1 = iter + 1;
-        Print.printBuf(f);Print.printBuf(sep1);Print.printBuf(sep2);
-        stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
+  0 = intMod(iter, n) "insert second delimiter" ;
+  iter_1 = iter + 1;
+  Print.printBuf(f);Print.printBuf(sep1);Print.printBuf(sep2);
+  stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
-        ();
+  ();
     case ((f :: r),sep1,sep2,n,iter)
       equation
-        iter_1 = iter + 1 "not inserting second delimiter" ;
-        Print.printBuf(f);Print.printBuf(sep1);
-        stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
+  iter_1 = iter + 1 "not inserting second delimiter" ;
+  Print.printBuf(f);Print.printBuf(sep1);
+  stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
-        ();
+  ();
     case (_,_,_,_,_)
       equation
-        print("- stringDelimitListAndSeparate2 failed\n");
+  print("- stringDelimitListAndSeparate2 failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end stringDelimitListAndSeparate2;
 
@@ -1510,7 +1510,7 @@ public function stringReplaceChar "function stringReplaceChar
   Takes a string and two chars and replaces the first char with the second char:
   Example: string_replace_char(\"hej.b.c\",\".\",\"_\") => \"hej_b_c\"
   2007-11-26 BZ: Now it is possible to replace chars with emptychar, and
-                 replace a char with a string
+           replace a char with a string
   Example: string_replace_char(\"hej.b.c\",\".\",\"_dot_\") => \"hej_dot_b_dot_c\"
   "
   input String inString1;
@@ -1526,16 +1526,16 @@ algorithm
       String fromChar,toChar;
     case (str,fromChar,toChar)
       equation
-        strList = stringListStringChar(str);
-        resList = stringReplaceChar2(strList, fromChar, toChar);
-        res = stringCharListString(resList);
+  strList = stringListStringChar(str);
+  resList = stringReplaceChar2(strList, fromChar, toChar);
+  res = stringCharListString(resList);
       then
-        res;
+  res;
     case (_,_,_)
       equation
-        print("- Util.stringReplaceChar failed\n");
+  print("- Util.stringReplaceChar failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end stringReplaceChar;
 
@@ -1553,32 +1553,32 @@ algorithm
     case ({},_,_) then {};
     case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
       equation
-        true = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, "");
+  true = stringEq(firstChar, fromChar);
+  res = stringReplaceChar2(rest, fromChar, "");
       then
-        (res);
+  (res);
 
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        true = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, toChar);
-        charList2 = stringListStringChar(toChar);
-        res = listAppend(charList2,res);
+  true = stringEq(firstChar, fromChar);
+  res = stringReplaceChar2(rest, fromChar, toChar);
+  charList2 = stringListStringChar(toChar);
+  res = listAppend(charList2,res);
       then
-        res;
+  res;
 
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        false = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, toChar);
+  false = stringEq(firstChar, fromChar);
+  res = stringReplaceChar2(rest, fromChar, toChar);
       then
-        (firstChar :: res);
+  (firstChar :: res);
 
     case (strList,_,_)
       equation
-        print("- Util.stringReplaceChar2 failed\n");
+  print("- Util.stringReplaceChar2 failed\n");
       then
-        strList;
+  strList;
   end matchcontinue;
 end stringReplaceChar2;
 
@@ -1597,10 +1597,10 @@ algorithm
       String chr;
     case (str,chr)
       equation
-        chrList = stringListStringChar(str);
-        stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
+  chrList = stringListStringChar(str);
+  stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
       then
-        stringList;
+  stringList;
     case (strList,_) then {strList};
   end matchcontinue;
 end stringSplitAtChar;
@@ -1618,30 +1618,30 @@ algorithm
 
     case ({},_,chr_rest)
       equation
-        chr_rest_1 = listReverse(chr_rest);
-        str = stringCharListString(chr_rest_1);
+  chr_rest_1 = listReverse(chr_rest);
+  str = stringCharListString(chr_rest_1);
       then
-        {str};
+  {str};
 
     case ((firstChar :: rest),chr,chr_rest)
       equation
-        true = stringEq(firstChar, chr);
-        chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
-        str = stringCharListString(chrList);
-        res = stringSplitAtChar2(rest, chr, {});
+  true = stringEq(firstChar, chr);
+  chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
+  str = stringCharListString(chrList);
+  res = stringSplitAtChar2(rest, chr, {});
       then
-        (str :: res);
+  (str :: res);
     case ((firstChar :: rest),chr,chr_rest)
       equation
-        false = stringEq(firstChar, chr);
-        res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
+  false = stringEq(firstChar, chr);
+  res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
-        res;
+  res;
     case (_,_,_)
       equation
-        print("- Util.stringSplitAtChar2 failed\n");
+  print("- Util.stringSplitAtChar2 failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end stringSplitAtChar2;
 
@@ -1660,13 +1660,13 @@ algorithm
   res_str := matchcontinue(str,changeDerCall)
     case(str,false) // BoschRexroth specifics
       equation
-        false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
-        then
-          str;
+  false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
+  then
+    str;
     case(str,false)
       equation
-        res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
-        // debug_print("prefix$", res_str);
+  res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
+  // debug_print("prefix$", res_str);
       then res_str;
     case(str,true) equation
       str = modelicaStringToCStr2(str);
@@ -1715,15 +1715,15 @@ algorithm
     case (str,{}) then str;
     case (str,(REPLACEPATTERN(from = from,to = to) :: res))
       equation
-        str_1 = modelicaStringToCStr1(str, res);
-        res_str = System.stringReplace(str_1, from, to);
+  str_1 = modelicaStringToCStr1(str, res);
+  res_str = System.stringReplace(str_1, from, to);
       then
-        res_str;
+  res_str;
     case (str,_)
       equation
-        print("- Util.modelicaStringToCStr1 failed for str:"+&str+&"\n");
+  print("- Util.modelicaStringToCStr1 failed for str:"+&str+&"\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end modelicaStringToCStr1;
 
@@ -1752,10 +1752,10 @@ algorithm
     case (str,{}) then str;
     case (str,(REPLACEPATTERN(from = from,to = to) :: res))
       equation
-        str_1 = cStrToModelicaString1(str, res);
-        res_str = System.stringReplace(str_1, to, from);
+  str_1 = cStrToModelicaString1(str, res);
+  res_str = System.stringReplace(str_1, to, from);
       then
-        res_str;
+  res_str;
   end match;
 end cStrToModelicaString1;
 
@@ -1825,9 +1825,9 @@ algorithm
     case (NONE(),_) then NONE();
     case (SOME(a),rel)
       equation
-        b = rel(a);
+  b = rel(a);
       then
-        SOME(b);
+  SOME(b);
   end match;
 end applyOption;
 
@@ -1852,7 +1852,7 @@ algorithm
     case (NONE(),_,_) then NONE();
     case (SOME(a),_,_)
       equation
-        c = func(a,b);
+  c = func(a,b);
       then SOME(c);
   end match;
 end applyOption1;
@@ -1881,9 +1881,9 @@ algorithm
 
     case (SOME(value), _, _)
       equation
-        res = inFunc(value);
+  res = inFunc(value);
       then
-        res;
+  res;
 
     else inDefaultValue;
 
@@ -1917,9 +1917,9 @@ algorithm
 
     case (SOME(value), _, _, _)
       equation
-        res = inFunc(value, inArg);
+  res = inFunc(value, inArg);
       then
-        res;
+  res;
 
     else inDefaultValue;
 
@@ -2053,7 +2053,7 @@ algorithm
     case 0 then 0;
     case _
       equation
-        j = if_(i>0,1,-1);
+  j = if_(i>0,1,-1);
       then j;
   end match;
 end intSign;
@@ -2113,15 +2113,15 @@ algorithm
     local String filename,str,error_str;
     case (filename,str) /* filename the string to be written */
       equation
-        System.writeFile(filename, str);
+  System.writeFile(filename, str);
       then
-        ();
+  ();
     case (filename,str)
       equation
-        error_str = stringAppendList({"# Cannot write to file: ",filename,"."});
-        Print.printErrorBuf(error_str);
+  error_str = stringAppendList({"# Cannot write to file: ",filename,"."});
+  Print.printErrorBuf(error_str);
       then
-        ();
+  ();
   end matchcontinue;
 end writeFileOrErrorMsg;
 
@@ -2137,14 +2137,14 @@ algorithm
     local String s_call,e_msg;
     case (s_call,_) /* command errorMsg to errorBuf if fail */
       equation
-        0 = System.systemCall(s_call);
+  0 = System.systemCall(s_call);
       then
-        ();
+  ();
     case (_,e_msg)
       equation
-        Print.printErrorBuf(e_msg);
+  Print.printErrorBuf(e_msg);
       then
-        fail();
+  fail();
   end matchcontinue;
 end systemCallWithErrorMsg;
 
@@ -2205,33 +2205,33 @@ algorithm
       list<String> list_path_1,list_path;
     case (file_1)
       equation
-        file = replaceSlashWithPathDelimiter(file_1);
-        pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = stringListStringChar(pd); */
-        (path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
-        res = System.pwd();
+  file = replaceSlashWithPathDelimiter(file_1);
+  pd = System.pathDelimiter();
+  /* (pd_chr :: {}) = stringListStringChar(pd); */
+  (path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
+  res = System.pwd();
       then
-        (res,path);
+  (res,path);
     case (file_1)
       equation
-        file = replaceSlashWithPathDelimiter(file_1);
-        pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = stringListStringChar(pd); */
-        list_path = stringSplitAtChar(file, pd);
-        file_path = List.last(list_path);
-        list_path_1 = List.stripLast(list_path);
-        dir_path = stringDelimitList(list_path_1, pd);
-        current_dir = System.pwd();
-        0 = System.cd(dir_path);
-        res = System.pwd();
-        0 = System.cd(current_dir);
+  file = replaceSlashWithPathDelimiter(file_1);
+  pd = System.pathDelimiter();
+  /* (pd_chr :: {}) = stringListStringChar(pd); */
+  list_path = stringSplitAtChar(file, pd);
+  file_path = List.last(list_path);
+  list_path_1 = List.stripLast(list_path);
+  dir_path = stringDelimitList(list_path_1, pd);
+  current_dir = System.pwd();
+  0 = System.cd(dir_path);
+  res = System.pwd();
+  0 = System.cd(current_dir);
       then
-        (res,file_path);
+  (res,file_path);
     case (name)
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Util.getAbsoluteDirectoryAndFile failed");
+  Debug.fprint(Flags.FAILTRACE, "- Util.getAbsoluteDirectoryAndFile failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end getAbsoluteDirectoryAndFile;
 
@@ -2248,10 +2248,10 @@ algorithm
       String retString,rawString;
     case (rawString)
       equation
-         retString = System.stringReplace(rawString, "\\\"", "\"") "change backslash-double-quote to double-quote ";
-         retString = System.stringReplace(retString, "\\\\", "\\") "double-backslash with backslash ";
+   retString = System.stringReplace(rawString, "\\\"", "\"") "change backslash-double-quote to double-quote ";
+   retString = System.stringReplace(retString, "\\\\", "\\") "double-backslash with backslash ";
       then
-        (retString);
+  (retString);
   end match;
 end  rawStringToInputString;
 
@@ -2313,12 +2313,12 @@ algorithm
     case ({}, acc) then acc;
     case (SOME(ii)::rest, acc)
       equation
-        acc = ii * acc;
-        iii = mulListIntegerOpt(rest, acc);
+  acc = ii * acc;
+  iii = mulListIntegerOpt(rest, acc);
       then iii;
     case (NONE()::rest, acc)
       equation
-        iii = mulListIntegerOpt(rest, acc);
+  iii = mulListIntegerOpt(rest, acc);
       then iii;
   end matchcontinue;
 end mulListIntegerOpt;
@@ -2372,9 +2372,9 @@ algorithm
     case (NONE(),NONE(),_) then true;
     case (SOME(a1),SOME(a2),fn)
       equation
-        b = fn(a1,a2);
+  b = fn(a1,a2);
       then
-        b;
+  b;
     case (_,_,_) then false;
   end matchcontinue;
 end optionEqual;
@@ -2398,7 +2398,7 @@ algorithm
       FuncAToB fn;
     case (fn,_,_)
       equation
-        res = fn(inArg);
+  res = fn(inArg);
       then res;
     case (_,_,_) then default;
   end matchcontinue;
@@ -2465,7 +2465,7 @@ algorithm
     case (true::_,head::_,_) then head;
     case (false::bools,_::lst,x)
       equation
-        head = selectList(bools,lst,x);
+  head = selectList(bools,lst,x);
       then head;
   end match;
 end selectList;
@@ -2572,30 +2572,30 @@ algorithm
     // i = n (we reach the end)
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
-        false = intLt(i, n);
+  false = intLt(i, n);
       then
-        bArr;
+  bArr;
 
     // i < n
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
-        true = intLt(i, n);
-        // get the element from the input array
-        elA = arrayGet(aArr, i + 1);
-        // transform the element
-        elB = inFuncTypeAToTypeB(elA);
-        // put it in the array
-        iArr = arrayUpdate(bArr, i+1, elB);
-        iArr = arrayMapDispatch(iArr, inFuncTypeAToTypeB, i + 1, n, bArr);
+  true = intLt(i, n);
+  // get the element from the input array
+  elA = arrayGet(aArr, i + 1);
+  // transform the element
+  elB = inFuncTypeAToTypeB(elA);
+  // put it in the array
+  iArr = arrayUpdate(bArr, i+1, elB);
+  iArr = arrayMapDispatch(iArr, inFuncTypeAToTypeB, i + 1, n, bArr);
       then
-        iArr;
+  iArr;
 
     // failure!
     case (aArr, inFuncTypeAToTypeB, i, n, bArr)
       equation
-        print("- Util.arrayMapDispatch failed\n");
+  print("- Util.arrayMapDispatch failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end arrayMapDispatch;
 */
@@ -2618,16 +2618,16 @@ algorithm
 
     case ({fa},{fb}, md, ed)
       equation
-        str = stringAppendList({fa, md, fb});
+  str = stringAppendList({fa, md, fb});
       then
-        str;
+  str;
 
     case (fa :: ra,fb :: rb, md, ed)
       equation
-        str = buildMapStr(ra, rb, md, ed);
-        str = stringAppendList({fa, md, fb, ed, str});
+  str = buildMapStr(ra, rb, md, ed);
+  str = stringAppendList({fa, md, fb, ed, str});
       then
-        str;
+  str;
   end matchcontinue;
 end buildMapStr;
 
@@ -2678,18 +2678,18 @@ algorithm
 
     case ({},_,uniqueAcc,duplicateAcc)
       equation
-        uniqueAcc = listReverse(uniqueAcc);
-        duplicateAcc = listReverse(duplicateAcc);
+  uniqueAcc = listReverse(uniqueAcc);
+  duplicateAcc = listReverse(duplicateAcc);
       then (uniqueAcc,duplicateAcc);
     case ({a1},_,uniqueAcc,duplicateAcc)
       equation
-        uniqueAcc = listReverse(a1::uniqueAcc);
-        duplicateAcc = listReverse(duplicateAcc);
+  uniqueAcc = listReverse(a1::uniqueAcc);
+  duplicateAcc = listReverse(duplicateAcc);
       then (uniqueAcc,duplicateAcc);
     case (a1::a2::rest,_,uniqueAcc,duplicateAcc)
       equation
-        b = comp(a1,a2);
-        (uniqueAcc,duplicateAcc) = splitUniqueOnBoolWork(a2::rest,comp,if_(b,uniqueAcc,a1::uniqueAcc),if_(b,a1::duplicateAcc,duplicateAcc));
+  b = comp(a1,a2);
+  (uniqueAcc,duplicateAcc) = splitUniqueOnBoolWork(a2::rest,comp,if_(b,uniqueAcc,a1::uniqueAcc),if_(b,a1::duplicateAcc,duplicateAcc));
       then (uniqueAcc,duplicateAcc);
   end match;
 end splitUniqueOnBoolWork;
@@ -2738,8 +2738,8 @@ end assoc;
 //    case ({}::_,_) then listReverse(acc);
 //    case (lst,acc)
 //      equation
-//        a = List.map(lst,List.first);
-//        lst = List.map(lst,List.rest);
+//  a = List.map(lst,List.first);
+//  lst = List.map(lst,List.rest);
 //      then transposeList2(lst,a::acc);
 //  end match;
 //end transposeList2;
@@ -2761,15 +2761,15 @@ algorithm
       Integer sz,maxSz;
     case (_,SOME(maxSz),_)
       equation
-        sz = intMul(listLength(lst),List.fold(List.map(lst,listLength),intMul,1));
-        true = (sz <= maxSz);
+  sz = intMul(listLength(lst),List.fold(List.map(lst,listLength),intMul,1));
+  true = (sz <= maxSz);
       then allCombinations2(lst);
 
     case (_,NONE(),_) then allCombinations2(lst);
 
     case (_,SOME(_),_)
       equation
-        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Util.allCombinations failed because the input was too large"}, info);
+  Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Util.allCombinations failed because the input was too large"}, info);
       then fail();
   end matchcontinue;
 end allCombinations;
@@ -2791,8 +2791,8 @@ algorithm
     case {} then {};
     case (x::lst)
       equation
-        lst = allCombinations2(lst);
-        lst = allCombinations3(x, lst, {});
+  lst = allCombinations2(lst);
+  lst = allCombinations3(x, lst, {});
       then lst;
   end match;
 end allCombinations2;
@@ -2815,8 +2815,8 @@ algorithm
     case ({},_,acc) then listReverse(acc);
     case (x::lst1,lst2,acc)
       equation
-        acc = allCombinations4(x, lst2, acc);
-        acc = allCombinations3(lst1, lst2, acc);
+  acc = allCombinations4(x, lst2, acc);
+  acc = allCombinations3(lst1, lst2, acc);
       then acc;
   end match;
 end allCombinations3;
@@ -2838,7 +2838,7 @@ algorithm
     case (_,{l},acc) then (x::l)::acc;
     case (_,l::lst,acc)
       equation
-        acc = allCombinations4(x, lst, (x::l)::acc);
+  acc = allCombinations4(x, lst, (x::l)::acc);
       then acc;
   end match;
 end allCombinations4;
@@ -2861,16 +2861,16 @@ algorithm
     // array is empty
     case (arr, inFilledSize, inElement)
       equation
-        true = intEq(0, inFilledSize);
+  true = intEq(0, inFilledSize);
       then
-        0;
+  0;
 
     // array is not empty
     case (arr, inFilledSize, inElement)
       equation
-        i = arrayMemberLoop(arr, inElement, 1, inFilledSize);
+  i = arrayMemberLoop(arr, inElement, 1, inFilledSize);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayMember;
 
@@ -2894,26 +2894,26 @@ algorithm
     // we're at the end
     case (arr, inElement, i, len)
       equation
-        true = intEq(i, len);
+  true = intEq(i, len);
       then
-        0;
+  0;
 
     // not at the end, see if we find it
     case (arr, inElement, i, len)
       equation
-        e = arrayGet(arr, i);
-        true = valueEq(e, inElement);
+  e = arrayGet(arr, i);
+  true = valueEq(e, inElement);
       then
-        i;
+  i;
 
     // not at the end, see if we find it
     case (arr, inElement, i, len)
       equation
-        e = arrayGet(arr, i);
-        false = valueEq(e, inElement);
-        i = arrayMemberLoop(arr, inElement, i + 1, len);
+  e = arrayGet(arr, i);
+  false = valueEq(e, inElement);
+  i = arrayMemberLoop(arr, inElement, i + 1, len);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayMemberLoop;
 
@@ -2942,16 +2942,16 @@ algorithm
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        true = intEq(0, inFilledSize);
+  true = intEq(0, inFilledSize);
       then
-        0;
+  0;
 
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        i = arrayFindLoop(arr, inFunc, inExtra, 1, inFilledSize);
+  i = arrayFindLoop(arr, inFunc, inExtra, 1, inFilledSize);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayFind;
 
@@ -2982,34 +2982,34 @@ algorithm
     // we're at the end
     case (arr, _, _, i, len)
       equation
-        true = intEq(i, len);
+  true = intEq(i, len);
       then
-        0;
+  0;
 
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
-        SOME(e) = arrayGet(arr, i);
-        true = inFunc(e, inExtra);
+  SOME(e) = arrayGet(arr, i);
+  true = inFunc(e, inExtra);
       then
-        i;
+  i;
 
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
-        SOME(e) = arrayGet(arr, i);
-        false = inFunc(e, inExtra);
-        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
+  SOME(e) = arrayGet(arr, i);
+  false = inFunc(e, inExtra);
+  i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
       then
-        i;
+  i;
 
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
-        NONE() = arrayGet(arr, i);
-        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
+  NONE() = arrayGet(arr, i);
+  i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayFindLoop;
 
@@ -3036,16 +3036,16 @@ algorithm
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        true = intEq(0, inFilledSize);
+  true = intEq(0, inFilledSize);
       then
-        arr;
+  arr;
 
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        arr = arrayApplyLoop(arr, inFunc, inExtra, 1, inFilledSize);
+  arr = arrayApplyLoop(arr, inFunc, inExtra, 1, inFilledSize);
       then
-        arr;
+  arr;
   end matchcontinue;
 end arrayApply;
 
@@ -3075,18 +3075,18 @@ algorithm
     // we're at the end
     case (arr, _, _, i, len)
       equation
-        true = intEq(i, len);
+  true = intEq(i, len);
       then
-        arr;
+  arr;
 
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
-        e = arrayGet(arr, i);
-        inFunc(e, inExtra);
-        arr = arrayApplyLoop(arr, inFunc, inExtra, i + 1, len);
+  e = arrayGet(arr, i);
+  inFunc(e, inExtra);
+  arr = arrayApplyLoop(arr, inFunc, inExtra, i + 1, len);
       then
-        arr;
+  arr;
   end matchcontinue;
 end arrayApplyLoop;
 
@@ -3114,16 +3114,16 @@ algorithm
     // array is empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        true = intEq(0, inFilledSize);
+  true = intEq(0, inFilledSize);
       then
-        arr;
+  arr;
 
     // array is not empty
     case (arr, inFilledSize, inFunc, inExtra)
       equation
-        arr = arrayApplyRLoop(arr, inFunc, inExtra, 1, inFilledSize);
+  arr = arrayApplyRLoop(arr, inFunc, inExtra, 1, inFilledSize);
       then
-        arr;
+  arr;
   end matchcontinue;
 end arrayApplyR;
 
@@ -3153,18 +3153,18 @@ algorithm
     // we're at the end
     case (arr, _, _, i, len)
       equation
-        true = intEq(i, len);
+  true = intEq(i, len);
       then
-        arr;
+  arr;
 
     // not at the end, see if we find it
     case (arr, inFunc, inExtra, i, len)
       equation
-        e = arrayGet(arr, i);
-        inFunc(inExtra, e);
-        arr = arrayApplyRLoop(arr, inFunc, inExtra, i + 1, len);
+  e = arrayGet(arr, i);
+  inFunc(inExtra, e);
+  arr = arrayApplyRLoop(arr, inFunc, inExtra, i + 1, len);
       then
-        arr;
+  arr;
   end matchcontinue;
 end arrayApplyRLoop;
 
@@ -3193,16 +3193,16 @@ algorithm
     // array is empty
     case (arr, inFilledSize, inElement, _)
       equation
-        true = intEq(0, inFilledSize);
+  true = intEq(0, inFilledSize);
       then
-        0;
+  0;
 
     // array is not empty
     case (arr, inFilledSize, inElement, inEqualityCheckFunction)
       equation
-        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, 1, inFilledSize);
+  i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, 1, inFilledSize);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayMemberEqualityFunc;
 
@@ -3232,26 +3232,26 @@ algorithm
     // we're at the end
     case (arr, inElement, _, i, len)
       equation
-        true = intEq(i, len);
+  true = intEq(i, len);
       then
-        0;
+  0;
 
     // not at the end, see if we find it
     case (arr, inElement, inEqualityCheckFunction, i, len)
       equation
-        e = arrayGet(arr, i);
-        true = inEqualityCheckFunction(e, inElement);
+  e = arrayGet(arr, i);
+  true = inEqualityCheckFunction(e, inElement);
       then
-        i;
+  i;
 
     // not at the end, see if we find it
     case (arr, inElement, inEqualityCheckFunction, i, len)
       equation
-        e = arrayGet(arr, i);
-        false = inEqualityCheckFunction(e, inElement);
-        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, i + 1, len);
+  e = arrayGet(arr, i);
+  false = inEqualityCheckFunction(e, inElement);
+  i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, i + 1, len);
       then
-        i;
+  i;
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 
@@ -3327,11 +3327,11 @@ algorithm
 
     case (_, _, _)
       equation
-        pad_length = inPadWidth - stringLength(inString);
-        true = pad_length > 0;
-        pad_str = stringAppendList(List.fill(inPadString, pad_length));
+  pad_length = inPadWidth - stringLength(inString);
+  true = pad_length > 0;
+  pad_str = stringAppendList(List.fill(inPadString, pad_length));
       then
-        inString +& pad_str;
+  inString +& pad_str;
 
     else inString;
   end matchcontinue;
@@ -3353,11 +3353,11 @@ algorithm
 
     case (_, _, _)
       equation
-        pad_length = inPadWidth - stringLength(inString);
-        true = pad_length > 0;
-        pad_str = stringAppendList(List.fill(inPadString, pad_length));
+  pad_length = inPadWidth - stringLength(inString);
+  true = pad_length > 0;
+  pad_str = stringAppendList(List.fill(inPadString, pad_length));
       then
-        pad_str +& inString;
+  pad_str +& inString;
 
     else inString;
   end matchcontinue;
@@ -3408,42 +3408,42 @@ algorithm
     // Wrap on newline (the newline will be thrown away).
     case ("\n" :: rest_str, wl, delim, dl, acc_str, sl, acc_strl)
       equation
-        // The delimiter should not be applied to the first string.
-        delim = if_(List.isEmpty(acc_strl), "", delim);
-        str = delim +& stringAppendList(listReverse(acc_str));
-        acc_strl = str :: acc_strl;
+  // The delimiter should not be applied to the first string.
+  delim = if_(List.isEmpty(acc_strl), "", delim);
+  str = delim +& stringAppendList(listReverse(acc_str));
+  acc_strl = str :: acc_strl;
       then
-        stringWrap2(rest_str, wl, inDelimiter, dl, {}, 0, acc_strl);
+  stringWrap2(rest_str, wl, inDelimiter, dl, {}, 0, acc_strl);
 
     // The string is empty, assemble the accumulated string and return the
     // wrapped strings.
     case ({}, _, delim, _, acc_str, _, acc_strl)
       equation
-        // The delimiter should not be applied to the first string.
-        delim = if_(List.isEmpty(acc_strl), "", delim);
-        str = delim +& stringAppendList(listReverse(acc_str));
-        acc_strl = str :: acc_strl;
+  // The delimiter should not be applied to the first string.
+  delim = if_(List.isEmpty(acc_strl), "", delim);
+  str = delim +& stringAppendList(listReverse(acc_str));
+  acc_strl = str :: acc_strl;
       then
-        listReverse(acc_strl);
+  listReverse(acc_strl);
 
     // The length of the accumulated string is equal to the wrap length, time to
     // assemble it and start accumulate a new string.
     case (_, wl, delim, dl, acc_str, sl, acc_strl)
       equation
-        // The delimiter should not be applied to the first string.
-        ((delim, dl)) = if_(List.isEmpty(acc_strl), ("", 0), (delim, dl));
-        true = sl + dl >= wl;
-        // Split the string at the first space (will be the last since the
-        // string is reversed). The first part before the space will be the new
-        // accumulated string, while the rest is added to the list of result
-        // strings.
-        pos = List.position(" ", acc_str);
-        (acc_str, rest_str) = List.split(acc_str, pos);
-        sl = listLength(acc_str);
-        str = delim +& stringAppendList(listReverse(rest_str));
+  // The delimiter should not be applied to the first string.
+  ((delim, dl)) = if_(List.isEmpty(acc_strl), ("", 0), (delim, dl));
+  true = sl + dl >= wl;
+  // Split the string at the first space (will be the last since the
+  // string is reversed). The first part before the space will be the new
+  // accumulated string, while the rest is added to the list of result
+  // strings.
+  pos = List.position(" ", acc_str);
+  (acc_str, rest_str) = List.split(acc_str, pos);
+  sl = listLength(acc_str);
+  str = delim +& stringAppendList(listReverse(rest_str));
       then
-        stringWrap2(inString, wl, inDelimiter, inDelimiterLength, acc_str,
-          sl, str :: acc_strl);
+  stringWrap2(inString, wl, inDelimiter, inDelimiterLength, acc_str,
+    sl, str :: acc_strl);
 
     // None of the above cases matches, add the first character to the
     // accumulated string and continue with the rest of the string.
@@ -3488,9 +3488,9 @@ algorithm
     // number and call nextPrime2.
     case _
       equation
-        true = inN > 2;
+  true = inN > 2;
       then
-        nextPrime2(inN + intMod(inN + 1, 2));
+  nextPrime2(inN + intMod(inN + 1, 2));
 
     // Cases for number 0, 1 and 2.
     case 0 then 2;
@@ -3500,10 +3500,10 @@ algorithm
     // Anything else must be negative.
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Util.nextPrime called with negative number."});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"Util.nextPrime called with negative number."});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end nextPrime;
@@ -3518,9 +3518,9 @@ algorithm
     // Return the given number if it's a prime.
     case _
       equation
-        true = nextPrime_isPrime(inN);
+  true = nextPrime_isPrime(inN);
       then
-        inN;
+  inN;
 
     // Otherwise, check the next possible prime.
     else nextPrime2(inN + 2);
@@ -3551,24 +3551,24 @@ algorithm
     // Stop when all factors up to sqrt(inN) has been checked.
     case (_, _, _)
       equation
-        true = inQ < inI;
+  true = inQ < inI;
       then
-        true;
+  true;
 
     // The number is divisible by a factor => not a prime.
     case (_, _, _)
       equation
-        true = (inN == inQ * inI);
+  true = (inN == inQ * inI);
       then
-        false;
+  false;
 
     // Continue checking factors.
     else
       equation
-        i = inI + 2;
-        q = intDiv(inN, i);
+  i = inI + 2;
+  q = intDiv(inN, i);
       then
-        nextPrime_isPrime2(inN, i, q);
+  nextPrime_isPrime2(inN, i, q);
 
   end matchcontinue;
 end nextPrime_isPrime2;
@@ -3597,7 +3597,7 @@ algorithm
   str := match msg
     case gettext(str)
       equation
-        str = System.gettext(str);
+  str = System.gettext(str);
       then str;
     case notrans(str) then str;
   end match;
@@ -3651,9 +3651,9 @@ algorithm
     case (false, _) then ();
     case (true, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{message});
+  Error.addMessage(Error.INTERNAL_ERROR,{message});
       then
-        ();
+  ();
   end match;
 end addInternalError;
 
@@ -3679,9 +3679,9 @@ algorithm
     
     case (true,_,_)
       equation
-        newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
-        (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
-        friendly = listGet(strs,i);
+  newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
+  (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
+  friendly = listGet(strs,i);
       then friendly;
     
     else name;

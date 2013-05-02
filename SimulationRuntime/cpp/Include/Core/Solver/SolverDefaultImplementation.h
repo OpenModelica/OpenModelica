@@ -4,8 +4,8 @@
 #include <System/IContinuous.h>
 #include <System/IEvent.h>
 #include <System/ISystemInitialization.h>
-#include <Solver/IDAESolver.h>                // Solver interface
-#include <Solver/ISolverSettings.h>            // SolverSettings interface
+#include <Solver/IDAESolver.h>          // Solver interface
+#include <Solver/ISolverSettings.h>      // SolverSettings interface
 #include <Solver/Initialization.h>
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
@@ -61,60 +61,60 @@ public:
     // Member variables
     //---------------------------------------------------------------
     IMixedSystem
-        *_system;                        ///< System to be solved
+  *_system;                        ///< System to be solved
 
     ISolverSettings
-        *_settings;                        ///< Settings for the solver
+  *_settings;                        ///< Settings for the solver
 
 
     double
-        _tInit,                            ///< (initiale) Startzeit (wird nicht vom Solver verändert)
-        _tCurrent,                        ///< current time (is changed by the solver)
-        _tEnd,                            ///< end time
-        _tLastSuccess,                    ///< time of last successfull integration step (before zero crossing)
-        _tLastUnsucess,                    ///< time of last unsuccessfull integration step (after zero crossing)
-        _tLargeStep;
+  _tInit,                            ///< (initiale) Startzeit (wird nicht vom Solver verändert)
+  _tCurrent,                        ///< current time (is changed by the solver)
+  _tEnd,                            ///< end time
+  _tLastSuccess,                    ///< time of last successfull integration step (before zero crossing)
+  _tLastUnsucess,                    ///< time of last unsuccessfull integration step (after zero crossing)
+  _tLargeStep;
 
     double
-        _h;                                ///< step size (changed by the solver)
+  _h;                                ///< step size (changed by the solver)
 
     bool
-        _firstCall,                        ///< Denotes the first call to the solver. May be used to call init()
-        _firstStep;                        ///< Denotes the first step. May be used for (re-)initialization to call giveVars(...)
+  _firstCall,                        ///< Denotes the first call to the solver. May be used to call init()
+  _firstStep;                        ///< Denotes the first step. May be used for (re-)initialization to call giveVars(...)
 
 
     int
-        _totStps,                        ///< Total number of time integration steps
-        _accStps,                        ///< Number of accepted time integration steps
-        _rejStps,                        ///< Number of rejected time integration steps
-        _zeroStps,                        ///< Number of zero search steps during whole time integration intervall
-        _zeros;                            ///< Number of zeros in whole time integration intervall
+  _totStps,                        ///< Total number of time integration steps
+  _accStps,                        ///< Number of accepted time integration steps
+  _rejStps,                        ///< Number of rejected time integration steps
+  _zeroStps,                        ///< Number of zero search steps during whole time integration intervall
+  _zeros;                            ///< Number of zeros in whole time integration intervall
 
     int
-        _dimSys,                        ///< Number of equations (=dimension of the system)
-        _dimZeroFunc;                    ///< Number of zero functions
+  _dimSys,                        ///< Number of equations (=dimension of the system)
+  _dimZeroFunc;                    ///< Number of zero functions
 
     bool*
-        _events;                        ///< Vector (of dimension _dimZeroF) indicating which zero function caused an event
-     event_times_type                    ///< Map including all time entries and the event ID occuring a time event
-        _time_events;
+  _events;                        ///< Vector (of dimension _dimZeroF) indicating which zero function caused an event
+     event_times_type              ///< Map including all time entries and the event ID occuring a time event
+  _time_events;
 
     double
-        *_zeroVal,                        ///< Vector (of dimension _dimZeroF) containing values of all zero functions
-        *_zeroValInit,                    ///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
-        *_zeroValLastSuccess,        ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing)
-        *_zeroValLargeStep;
+  *_zeroVal,                        ///< Vector (of dimension _dimZeroF) containing values of all zero functions
+  *_zeroValInit,                    ///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
+  *_zeroValLastSuccess,        ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing)
+  *_zeroValLargeStep;
     bool
-        _zeroSearchActive;                ///< Denotes whether zero search is currently active
+  _zeroSearchActive;                ///< Denotes whether zero search is currently active
 
     IDAESolver::ZEROSTATUS
-        _zeroStatus;                        ///< Denotes whether a change in sign in at least one zero function occured
+  _zeroStatus;                        ///< Denotes whether a change in sign in at least one zero function occured
 
     IDAESolver::SOLVERSTATUS
-        _solverStatus;                    ///< Denotes the current status of the solver
+  _solverStatus;                    ///< Denotes the current status of the solver
 
     IMixedSystem::OUTPUT
-        _outputCommand;                    ///< Controls the output
+  _outputCommand;                    ///< Controls the output
 
     Initialization* _initialization;
 
@@ -122,7 +122,7 @@ private:
     /// Definition of signum function
     inline static int sgn (const double &c)
     {
-        return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
+  return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
     }
 
 

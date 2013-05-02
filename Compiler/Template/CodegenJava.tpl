@@ -89,7 +89,7 @@ template dotPath(Path path)
   match path
   case QUALIFIED(__)      then '<%name%>.<%dotPath(path)%>'
 
-  case IDENT(__)          then name
+  case IDENT(__)    then name
   case FULLYQUALIFIED(__) then dotPath(path)
 end dotPath;
 
@@ -250,7 +250,7 @@ template functionInitializeDataStruc()
     public DATA initializeDataStruc(DATA_FLAGS flags)
     {
       DATA returnData = new DATA(fortran_integer, fortran_integer, fortran_integer, long, long,
-        fortran_integer, long, long, long, long, long);
+  fortran_integer, long, long, long, long, long);
 
       return returnData;
     }
@@ -332,7 +332,7 @@ template functionDaeRes()
       localData.states = x;
 
       for (i = 0; i < localData.nStates; i++) {
-        temp_xd[i] = localData.statesDerivatives[i];
+  temp_xd[i] = localData.statesDerivatives[i];
       }
 
       localData.statesDerivatives = temp_xd;
@@ -341,9 +341,9 @@ template functionDaeRes()
       functionODE();
 
       /* get the difference between the temp_xd(=localData->statesDerivatives)
-        and xd(=statesDerivativesBackup) */
+  and xd(=statesDerivativesBackup) */
       for (i = 0; i < localData.nStates; i++) {
-        delta[i] = localData.statesDerivatives[i] - statesDerivativesBackup[i];
+  delta[i] = localData.statesDerivatives[i] - statesDerivativesBackup[i];
       }
 
       localData.states = statesBackup;
@@ -363,7 +363,7 @@ template functionStoreDelayed(DelayedExpression delayed)
   let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e,_,_)) =>
       let &preExp = buffer "" /*BUFD*/
       let eRes = daeExp(e, contextSimulationNonDiscrete,
-                      &preExp /*BUFC*/, &varDecls /*BUFC*/)
+                &preExp /*BUFC*/, &varDecls /*BUFC*/)
       <<
       <%preExp%>
       storeDelayedExpression(<%id%>, <%eRes%>);
@@ -395,7 +395,7 @@ template functionODE(list<SimEqSystem> derivativEquations, ModelInfo modelInfo)
   <<
       public int functionODE(DATA localData)
       {
-        <%addGlobalDefinition(modelInfo)%>
+  <%addGlobalDefinition(modelInfo)%>
 
       <%varDecls%>
 
@@ -403,7 +403,7 @@ template functionODE(list<SimEqSystem> derivativEquations, ModelInfo modelInfo)
 
       <%addVarReverseDefinition(modelInfo)%>
 
-        return 0;
+  return 0;
       }
 
   }// end main class
@@ -432,7 +432,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 end equation_;
 
 template equationSimpleAssign(SimEqSystem eq, Context context,
-                              Text &varDecls /*BUFP*/)
+                        Text &varDecls /*BUFP*/)
  "Generates an equation that is just a simple assignment."
 ::=
 match eq
@@ -449,22 +449,22 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__)         then integer
-  case e as RCONST(__)         then real
-  case e as BCONST(__)         then if bool then "(1)" else "(0)"
-  case e as CREF(__)           then cref(componentRef)
-  case e as BINARY(__)         then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as UNARY(__)          then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as LBINARY(__)        then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as LUNARY(__)         then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as ICONST(__)   then integer
+  case e as RCONST(__)   then real
+  case e as BCONST(__)   then if bool then "(1)" else "(0)"
+  case e as CREF(__)     then cref(componentRef)
+  case e as BINARY(__)   then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as UNARY(__)    then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as LBINARY(__)  then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as LUNARY(__)   then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as RELATION(__)       then daeExpRelation(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as IFEXP(__)          then daeExpIf(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  //case e as CALL(__)         then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as IFEXP(__)    then daeExpIf(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  //case e as CALL(__)   then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   else "UNKNOWN_EXP"
 end daeExp;
 
 template daeExpBinary(Exp exp, Context context, Text &preExp /*BUFP*/,
-                      Text &varDecls /*BUFP*/)
+                Text &varDecls /*BUFP*/)
  "Generates code for a binary expression."
 ::=
 
@@ -483,7 +483,7 @@ case BINARY(__) then
 end daeExpBinary;
 
 template daeExpUnary(Exp exp, Context context, Text &preExp /*BUFP*/,
-                     Text &varDecls /*BUFP*/)
+               Text &varDecls /*BUFP*/)
  "Generates code for a unary expression."
 ::=
 match exp
@@ -496,7 +496,7 @@ case UNARY(__) then
 end daeExpUnary;
 
 template daeExpLbinary(Exp exp, Context context, Text &preExp /*BUFP*/,
-                       Text &varDecls /*BUFP*/)
+                 Text &varDecls /*BUFP*/)
  "Generates code for a logical binary expression."
 ::=
 match exp
@@ -511,7 +511,7 @@ end daeExpLbinary;
 
 
 template daeExpLunary(Exp exp, Context context, Text &preExp /*BUFP*/,
-                      Text &varDecls /*BUFP*/)
+                Text &varDecls /*BUFP*/)
  "Generates code for a logical unary expression."
 ::=
 match exp
@@ -522,7 +522,7 @@ case LUNARY(__) then
 end daeExpLunary;
 
 template daeExpRelation(Exp exp, Context context, Text &preExp /*BUFP*/,
-                        Text &varDecls /*BUFP*/)
+                  Text &varDecls /*BUFP*/)
  "Generates code for a relation expression."
 ::=
 match exp
@@ -530,10 +530,10 @@ case rel as RELATION(__) then
     let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     match rel.operator
-    case LESS(ty = T_BOOL(__))        then '(!<%e1%> && <%e2%>)'
+    case LESS(ty = T_BOOL(__))  then '(!<%e1%> && <%e2%>)'
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
-    case LESS(ty = T_INTEGER(__))         then '(<%e1%> < <%e2%>)'
-    case LESS(ty = T_REAL(__))        then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_INTEGER(__))   then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_REAL(__))  then '(<%e1%> < <%e2%>)'
     case GREATER(ty = T_BOOL(__))     then '(<%e1%> && !<%e2%>)'
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))      then '(<%e1%> > <%e2%>)'
@@ -548,7 +548,7 @@ case rel as RELATION(__) then
     case GREATEREQ(ty = T_REAL(__))   then '(<%e1%> >= <%e2%>)'
     case EQUAL(ty = T_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
     case EQUAL(ty = T_STRING(__))     then '(<%e1%>.equals(<%e2%>))'
-    case EQUAL(ty = T_INTEGER(__))        then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_INTEGER(__))  then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_ENUMERATION(__))then '(<%e1%> == <%e2%>)'
     case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
@@ -563,7 +563,7 @@ end daeExpRelation;
 /* IF and CALL start */
 
 template daeExpIf(Exp exp, Context context, Text &preExp /*BUFP*/,
-                  Text &varDecls /*BUFP*/)
+            Text &varDecls /*BUFP*/)
  "Generates code for an if expression."
 ::=
 match exp
@@ -586,35 +586,35 @@ case IFEXP(__) then
       <<
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
-        <%preExpThen%>
-        <%resVar%> = (<%resVarType%>)<%eThen%>;
+  <%preExpThen%>
+  <%resVar%> = (<%resVarType%>)<%eThen%>;
       } else {
-        <%preExpElse%>
-        <%resVar%> = (<%resVarType%>)<%eElse%>;
+  <%preExpElse%>
+  <%resVar%> = (<%resVarType%>)<%eElse%>;
       }<%\n%>
       >>
       resVar)
 end daeExpIf;
 
 // template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
-                    // Text &varDecls /*BUFP*/)
+              // Text &varDecls /*BUFP*/)
  // "Generates code for a function call."
 // ::=
   // match call
   //special builtins
   // case CALL(path=IDENT(name="DIVISION"),
-            // expLst={e1, e2, DAE.SCONST(string=string)}) then
+      // expLst={e1, e2, DAE.SCONST(string=string)}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // let var3 = Util.escapeModelicaStringToCString(string)
     // 'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
 
   // case CALL(attr=CALL_ATTR(ty=ty),
-            // path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            // expLst={e1, e2, DAE.SCONST(string=string)}) then
+      // path=IDENT(name="DIVISION_ARRAY_SCALAR"),
+      // expLst={e1, e2, DAE.SCONST(string=string)}) then
     // let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
-                        // case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
-                        // else "real_array"
+                  // case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
+                  // else "real_array"
     // let var = tempDecl(type, &varDecls)
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
@@ -626,43 +626,43 @@ end daeExpIf;
     // '$P$DER<%cref(arg.componentRef)%>'
 
   // case CALL(
-            // path=IDENT(name="max"), expLst={e1,e2}) then
+      // path=IDENT(name="max"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::max(<%var1%>,<%var2%>)'
 
   // case CALL(ty = T_INTEGER(),
-            // path=IDENT(name="min"), expLst={e1,e2}) then
+      // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
 
   // case CALL(ty = T_ENUMERATION(__),
-            // path=IDENT(name="min"), expLst={e1,e2}) then
+      // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
 
   // case CALL( ty = T_REAL(),
-            // path=IDENT(name="min"), expLst={e1,e2}) then
+      // path=IDENT(name="min"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'std::min(<%var1%>,<%var2%>)'
 
   // case CALL(
-            // path=IDENT(name="abs"), expLst={e1}, ty = T_INTEGER()) then
+      // path=IDENT(name="abs"), expLst={e1}, ty = T_INTEGER()) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // 'std::abs(<%var1%>)'
 
   // case CALL(
-            // path=IDENT(name="abs"), expLst={e1}) then
+      // path=IDENT(name="abs"), expLst={e1}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // 'fabs(<%var1%>)'
 
    // sqrt
   // case CALL(
-            // path=IDENT(name="sqrt"),
-            // expLst={e1}) then
+      // path=IDENT(name="sqrt"),
+      // expLst={e1}) then
    // relation = DAE.LBINARY(e1,DAE.GREATEREQ(T_REAL()),DAE.RCONST(0))
    // string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
     //let retPre = assertCommon(relation,s, context, &varDecls)
@@ -676,19 +676,19 @@ end daeExpIf;
     // if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
 
   // case CALL(
-            // path=IDENT(name="div"), expLst={e1,e2}, ty = T_INTEGER()) then
+      // path=IDENT(name="div"), expLst={e1,e2}, ty = T_INTEGER()) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'ldiv(<%var1%>,<%var2%>).quot'
 
   // case CALL(
-            // path=IDENT(name="div"), expLst={e1,e2}) then
+      // path=IDENT(name="div"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'trunc(<%var1%>/<%var2%>)'
 
   // case CALL(
-            // path=IDENT(name="mod"), expLst={e1,e2}) then
+      // path=IDENT(name="mod"), expLst={e1,e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // 'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
@@ -698,16 +698,16 @@ end daeExpIf;
 
 
   // case CALL(
-            // path=IDENT(name="rem"),
-            // expLst={e1, e2}) then
+      // path=IDENT(name="rem"),
+      // expLst={e1, e2}) then
     // let var1 = daeExp(e1, context, &preExp, &varDecls)
     // let var2 = daeExp(e2, context, &preExp, &varDecls)
     // let typeStr = expTypeFromExpShort(e1)
     // 'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
 
   // case CALL(
-            // path=IDENT(name="String"),
-            // expLst={s, format}) then
+      // path=IDENT(name="String"),
+      // expLst={s, format}) then
     // let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     // let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -717,8 +717,8 @@ end daeExpIf;
 
 
   // case CALL(
-            // path=IDENT(name="String"),
-            // expLst={s, minlen, leftjust}) then
+      // path=IDENT(name="String"),
+      // expLst={s, minlen, leftjust}) then
     // let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     // let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -728,8 +728,8 @@ end daeExpIf;
     // '<%tvar%>'
 
   // case CALL(
-            // path=IDENT(name="String"),
-            // expLst={s, minlen, leftjust, signdig}) then
+      // path=IDENT(name="String"),
+      // expLst={s, minlen, leftjust, signdig}) then
     // let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     // let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -739,8 +739,8 @@ end daeExpIf;
     // '<%tvar%>'
 
   // case CALL(
-            // path=IDENT(name="delay"),
-            // expLst={ICONST(integer=index), e, d, delayMax}) then
+      // path=IDENT(name="delay"),
+      // expLst={ICONST(integer=index), e, d, delayMax}) then
     // let tvar = tempDecl("modelica_real", &varDecls /*BUFD*/)
     // let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -749,14 +749,14 @@ end daeExpIf;
     // '<%tvar%>'
 
   // case CALL(
-            // path=IDENT(name="integer"),
-            // expLst={toBeCasted}) then
+      // path=IDENT(name="integer"),
+      // expLst={toBeCasted}) then
     // let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // '((modelica_integer)<%castedVar%>)'
 
   // case CALL(
-            // path=IDENT(name="Integer"),
-            // expLst={toBeCasted}) then
+      // path=IDENT(name="Integer"),
+      // expLst={toBeCasted}) then
     // let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // '((modelica_integer)<%castedVar%>)'
 
@@ -764,25 +764,25 @@ end daeExpIf;
     // 'mmc_clock()'
 
   // case CALL(
-            // path=IDENT(name="noEvent"),
-            // expLst={e1}) then
+      // path=IDENT(name="noEvent"),
+      // expLst={e1}) then
     // daeExp(e1, context, &preExp, &varDecls)
 
   // case CALL(
-            // path=IDENT(name="anyString"),
-            // expLst={e1}) then
+      // path=IDENT(name="anyString"),
+      // expLst={e1}) then
     // 'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'
 
   // case CALL(
-            // path=IDENT(name="mmc_get_field"),
-            // expLst={s1, ICONST(integer=i)}) then
+      // path=IDENT(name="mmc_get_field"),
+      // expLst={s1, ICONST(integer=i)}) then
     // let tvar = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
     // let expPart = daeExp(s1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     // '<%tvar%>'
 
   // case CALL( path=IDENT(name = "mmc_unbox_record"),
-            // expLst={s1}, ty=ty) then
+      // expLst={s1}, ty=ty) then
     // let argStr = daeExp(s1, context, &preExp, &varDecls)
     // unboxRecord(argStr, ty, &preExp, &varDecls)
 
@@ -811,10 +811,10 @@ end daeExpIf;
       // case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
       //non tuple calls (single return value)
       // case CALL(attr=CALL_ATTR(tuple_=false)) then
-        // if attr.builtin then '<%retVar%>' else '<%retVar%>.c1'
+  // if attr.builtin then '<%retVar%>' else '<%retVar%>.c1'
       //tuple calls (multiple return values)
       // else
-        // '<%retVar%>'
+  // '<%retVar%>'
 // end daeExpCall;
 
 
@@ -908,7 +908,7 @@ template cref(ComponentRef cr)
 end cref;
 
 template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
-                       Text &varDecls /*BUFP*/)
+                 Text &varDecls /*BUFP*/)
  "Generates code for a component reference."
 ::=
   match exp
@@ -1020,21 +1020,21 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
  "Generate type helper."
 ::=
   match exp
-  case ICONST(__)        then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
-  case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
-  case SCONST(__)        then if acceptMetaModelicaGrammar() then
-                                (match flag case 1 then "metatype" else "modelica_metatype")
-                              else
-                                (match flag case 1 then "string" else "modelica_string")
-  case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
+  case ICONST(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
+  case RCONST(__)  then match flag case 1 then "real" else "modelica_real"
+  case SCONST(__)  then if acceptMetaModelicaGrammar() then
+                          (match flag case 1 then "metatype" else "modelica_metatype")
+                        else
+                          (match flag case 1 then "string" else "modelica_string")
+  case BCONST(__)  then match flag case 1 then "boolean" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
   case e as UNARY(__)
   case e as LBINARY(__)
   case e as LUNARY(__)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
-  case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
-  case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag) // alachew case CALL(__)          then expTypeFlag(ty, flag)
+  case IFEXP(__)   then expTypeFromExpFlag(expThen, flag)
+  case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag) // alachew case CALL(__)    then expTypeFlag(ty, flag)
   else '#error "expTypeFromExpFlag:<%printExpStr(exp)%>"'
 end expTypeFromExpFlag;
 
@@ -1042,15 +1042,15 @@ template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case T_INTEGER(__)         then "integer"
-  case T_REAL(__)        then "real"
+  case T_INTEGER(__)   then "integer"
+  case T_REAL(__)  then "real"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
-  case T_BOOL(__)        then "boolean"
+  case T_BOOL(__)  then "boolean"
   case T_ENUMERATION(__) then "integer"
   // alachew case T_OTHER(__)       then "complex"
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "complex"
+                then "complex"
   case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>' // alachew 'struct <%underscorePath(name)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
@@ -1179,13 +1179,13 @@ end unboxRecord;
 template mmcExpTypeShort(DAE.Type type)
 ::=
   match type
-  case T_INTEGER(__)                 then "integer"
-  case T_REAL(__)                    then "real"
-  case T_STRING(__)                  then "string"
-  case T_BOOL(__)                    then "integer"
-  case T_ENUMERATION(__)             then "integer"
-  case T_ARRAY(__)                   then "array"
-  case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
+  case T_INTEGER(__)           then "integer"
+  case T_REAL(__)              then "real"
+  case T_STRING(__)            then "string"
+  case T_BOOL(__)              then "integer"
+  case T_ENUMERATION(__)       then "integer"
+  case T_ARRAY(__)             then "array"
+  case T_METATYPE(__) case T_METABOXED(__)          then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
   else "mmcExpTypeShort:ERROR"
 end mmcExpTypeShort;
@@ -1272,7 +1272,7 @@ template simulationInitFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)),
-             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
+       simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
   then
   <<
   <%s.startTime%> // start value
@@ -1308,13 +1308,13 @@ template initVals(list<SimVar> varsLst) ::=
   <<
   <%match initialValue
       case SOME(v) then
-        match v
-        case ICONST(__) then integer
-        case RCONST(__) then real
-        case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
-        case BCONST(__) then if bool then "true" else "false"
-        case ENUM_LITERAL(__) then '<%index%>'
-        else "*ERROR* initial value of unknown type"
+  match v
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%>'
+  else "*ERROR* initial value of unknown type"
       else "0.0 //default"
     %>
     >>
@@ -1322,9 +1322,9 @@ template initVals(list<SimVar> varsLst) ::=
 end initVals;
 
 template functionsFile(String filePrefix,
-                       Option<Function> mainFunction,
-                       list<Function> functions,
-                       list<Exp> literals)
+                 Option<Function> mainFunction,
+                 list<Function> functions,
+                 list<Exp> literals)
  "Generates the contents of the main C file for the function case."
 ::=
   <<

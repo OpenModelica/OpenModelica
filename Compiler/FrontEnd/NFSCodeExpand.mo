@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeExpand
-" file:        NFSCodeExpand.mo
+" file:  NFSCodeExpand.mo
   package:     NFSCodeExpand
   description: Expands the output from SCodeInst into DAE form.
 
@@ -95,27 +95,27 @@ algorithm
 
     case (_, _, _)
       equation
-        el = expandClass(inClass, {}, {});
-        el = listReverse(el);
-        dae = DAE.DAE({DAE.COMP(inName, el, DAE.emptyElementSource, NONE())});
+  el = expandClass(inClass, {}, {});
+  el = listReverse(el);
+  dae = DAE.DAE({DAE.COMP(inName, el, DAE.emptyElementSource, NONE())});
 
-        funcs = List.map(BaseHashTable.hashTableValueList(inFunctions), expandFunction);
+  funcs = List.map(BaseHashTable.hashTableValueList(inFunctions), expandFunction);
 
-        tree = DAEUtil.emptyFuncTree;
-        tree = DAEUtil.addDaeFunction(funcs, tree);
+  tree = DAEUtil.emptyFuncTree;
+  tree = DAEUtil.addDaeFunction(funcs, tree);
 
-        (vars, params) = countElements(el, 0, 0);
-        //print("\nFound " +& intString(vars) +& " components and " +&
-        //  intString(params) +& " parameters.\n");
+  (vars, params) = countElements(el, 0, 0);
+  //print("\nFound " +& intString(vars) +& " components and " +&
+  //  intString(params) +& " parameters.\n");
       then
-        (dae, tree);
+  (dae, tree);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFSCodeExpand.expand failed.\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFSCodeExpand.expand failed.\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end expand;
@@ -136,27 +136,27 @@ algorithm
 
     case (DAE.VAR(kind = DAE.VARIABLE()) :: rest_el, _, _)
       equation
-        (vars, params) = countElements(rest_el, inVarCount + 1, inParamCount);
+  (vars, params) = countElements(rest_el, inVarCount + 1, inParamCount);
       then
-        (vars, params);
+  (vars, params);
 
     case (DAE.VAR(kind = DAE.DISCRETE()) :: rest_el, _, _)
       equation
-        (vars, params) = countElements(rest_el, inVarCount + 1, inParamCount);
+  (vars, params) = countElements(rest_el, inVarCount + 1, inParamCount);
       then
-        (vars, params);
+  (vars, params);
 
     case (DAE.VAR(kind = DAE.PARAM()) :: rest_el, _, _)
       equation
-        (vars, params) = countElements(rest_el, inVarCount, inParamCount + 1);
+  (vars, params) = countElements(rest_el, inVarCount, inParamCount + 1);
       then
-        (vars, params);
+  (vars, params);
 
     case (_ :: rest_el, _, _)
       equation
-        (vars, params) = countElements(rest_el, inVarCount, inParamCount);
+  (vars, params) = countElements(rest_el, inVarCount, inParamCount);
       then
-        (vars, params);
+  (vars, params);
 
   end match;
 end countElements;
@@ -178,11 +178,11 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(components = comps, equations = eq, algorithms = al), _, _)
       equation
-        el = List.fold2(comps, expandElement, EXPAND_MODEL(), inSubscripts, inAccumEl);
-        el = List.fold1(eq, expandEquation, inSubscripts, el);
-        el = expandArray((al,EXPAND_MODEL(),false /* not initial */), EXPAND_MODEL(), {}, {}::inSubscripts, el, expandStatementsList);
+  el = List.fold2(comps, expandElement, EXPAND_MODEL(), inSubscripts, inAccumEl);
+  el = List.fold1(eq, expandEquation, inSubscripts, el);
+  el = expandArray((al,EXPAND_MODEL(),false /* not initial */), EXPAND_MODEL(), {}, {}::inSubscripts, el, expandStatementsList);
       then
-        el;
+  el;
 
   end match;
 end expandClass;
@@ -206,31 +206,31 @@ algorithm
 
     case (NFInstTypes.ELEMENT(component = comp, cls = NFInstTypes.BASIC_TYPE(_)), _, _, _)
       equation
-        el = expandComponent(comp, inKind, inSubscripts, inAccumEl);
+  el = expandComponent(comp, inKind, inSubscripts, inAccumEl);
       then
-        el;
+  el;
 
     case (NFInstTypes.ELEMENT(component = NFInstTypes.TYPED_COMPONENT(ty =
-        DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _, _)
+  DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _, _)
       equation
-        el = expandArray(cls, inKind, dims, {} :: inSubscripts, inAccumEl, expandClass);
+  el = expandArray(cls, inKind, dims, {} :: inSubscripts, inAccumEl, expandClass);
       then
-        el;
+  el;
 
     case (NFInstTypes.ELEMENT(component = comp, cls = cls), _, _, _)
       equation
-        el = expandClass(cls, {} :: inSubscripts, inAccumEl);
+  el = expandClass(cls, {} :: inSubscripts, inAccumEl);
       then
-        el;
+  el;
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(component = comp), _, _, _)
       equation
-        path = NFInstUtil.getComponentName(comp);
-        err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +&
-          Absyn.pathString(path) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
+  path = NFInstUtil.getComponentName(comp);
+  err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +&
+    Absyn.pathString(path) +& "\n";
+  Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
-        inAccumEl;
+  inAccumEl;
 
   end match;
 end expandElement;
@@ -253,32 +253,32 @@ algorithm
 
     case (NFInstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, _)
       equation
-        comp = unliftComponentType(inComponent);
-        el = expandArray(comp, inKind, dims, {} :: inSubscripts, inAccumEl, expandScalar);
+  comp = unliftComponentType(inComponent);
+  el = expandArray(comp, inKind, dims, {} :: inSubscripts, inAccumEl, expandScalar);
       then
-        el;
+  el;
 
     case (NFInstTypes.TYPED_COMPONENT(ty = _), _, _, _)
       equation
-        el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
+  el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
       then
-        el;
+  el;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _, _, _)
       equation
-        err_msg = "NFSCodeExpand.expandComponent got untyped component " +&
-          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
+  err_msg = "NFSCodeExpand.expandComponent got untyped component " +&
+    Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
+  Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
-        fail();
+  fail();
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name, info = info), _, _, _)
       equation
-        err_msg = "NFSCodeExpand.expandComponent got unresolved conditional component " +&
-          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
+  err_msg = "NFSCodeExpand.expandComponent got unresolved conditional component " +&
+    Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
+  Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
-        inAccumEl;
+  inAccumEl;
 
     case (NFInstTypes.OUTER_COMPONENT(name = _), _, _, _)
       then inAccumEl;
@@ -311,27 +311,27 @@ algorithm
 
     case (_, _, {}, subs :: rest_subs, _, _)
       equation
-        subs = listReverse(subs);
-        el = inScalarFunc(inElement, subs :: rest_subs, inAccumEl);
+  subs = listReverse(subs);
+  el = inScalarFunc(inElement, subs :: rest_subs, inAccumEl);
       then
-        el;
+  el;
 
     case (_, _, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
       equation
-        start = Util.if_(isExpandFunction(inKind),dim,1);
-        el = expandArrayIntDim(inElement, inKind, start, dim, rest_dims, inSubscripts,
-            inAccumEl, inScalarFunc);
+  start = Util.if_(isExpandFunction(inKind),dim,1);
+  el = expandArrayIntDim(inElement, inKind, start, dim, rest_dims, inSubscripts,
+      inAccumEl, inScalarFunc);
       then
-        el;
+  el;
 
     case (_, _, DAE.DIM_ENUM(enumTypeName = enum_path, literals = enum_lits) ::
-        rest_dims, _, _, _)
+  rest_dims, _, _, _)
       equation
-        enum_expl = Expression.makeEnumLiterals(enum_path, enum_lits);
-        el = expandArrayEnumDim(inElement, inKind, enum_expl, rest_dims,
-          inSubscripts, inAccumEl, inScalarFunc);
+  enum_expl = Expression.makeEnumLiterals(enum_path, enum_lits);
+  el = expandArrayEnumDim(inElement, inKind, enum_expl, rest_dims,
+    inSubscripts, inAccumEl, inScalarFunc);
       then
-        el;
+  el;
 
     case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, subs :: rest_subs, _, _)
       then expandArrayExpDim(inElement, DAE.INDEX(exp), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
@@ -341,10 +341,10 @@ algorithm
 
     else
       equation
-        dim_str = ExpressionDump.dimensionString(List.first(inDimensions));
-        print("Unknown dimension " +& dim_str +& " in NFSCodeExpand.expandArray\n");
+  dim_str = ExpressionDump.dimensionString(List.first(inDimensions));
+  print("Unknown dimension " +& dim_str +& " in NFSCodeExpand.expandArray\n");
       then
-        fail();
+  fail();
 
   end match;
 end expandArray;
@@ -369,18 +369,18 @@ algorithm
 
     case (_, _, _, _, _, _, _, _)
       equation
-        true = (inIndex > inDimSize);
+  true = (inIndex > inDimSize);
       then
-        inAccumEl;
+  inAccumEl;
 
     case (_, _, _, _, _, subs :: rest_subs, _, _)
       equation
-        subs = DAE.INDEX(DAE.ICONST(inIndex)) :: subs;
-        el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
-            inAccumEl, inScalarFunc);
+  subs = DAE.INDEX(DAE.ICONST(inIndex)) :: subs;
+  el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
+      inAccumEl, inScalarFunc);
       then
-        expandArrayIntDim(inElement, inKind, inIndex + 1, inDimSize, inDimensions,
-          inSubscripts, el, inScalarFunc);
+  expandArrayIntDim(inElement, inKind, inIndex + 1, inDimSize, inDimensions,
+    inSubscripts, el, inScalarFunc);
 
   end matchcontinue;
 end expandArrayIntDim;
@@ -406,12 +406,12 @@ algorithm
 
     case (_, _, lit :: rest_lits, _, subs :: rest_subs, _, _)
       equation
-        subs = DAE.INDEX(lit) :: subs;
-        el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
-          inAccumEl, inScalarFunc);
+  subs = DAE.INDEX(lit) :: subs;
+  el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
+    inAccumEl, inScalarFunc);
       then
-        expandArrayEnumDim(inElement, inKind, rest_lits, inDimensions,
-          inSubscripts, el, inScalarFunc);
+  expandArrayEnumDim(inElement, inKind, rest_lits, inDimensions,
+    inSubscripts, el, inScalarFunc);
 
     case (_, _, {}, _, _, _, _) then inAccumEl;
 
@@ -434,7 +434,7 @@ algorithm
 
     case (_, _, _, subs :: rest_subs, _, _)
       equation
-        subs = inSub :: subs;
+  subs = inSub :: subs;
       then expandArray(inElement, EXPAND_FUNCTION(), inDimensions, subs :: rest_subs, inAccumEl, inScalarFunc);
 
   end match;
@@ -462,33 +462,33 @@ algorithm
       NFInstTypes.DaePrefixes prefs;
 
     case (NFInstTypes.TYPED_COMPONENT(prefixes =
-        NFInstTypes.DAE_PREFIXES(variability = DAE.CONST())), _, _)
+  NFInstTypes.DAE_PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
     case (NFInstTypes.TYPED_COMPONENT(name = name, ty = ty, prefixes = prefs,
-        binding = binding), subs, _)
+  binding = binding), subs, _)
       equation
-        subs = listReverse(subs);
-        bind_exp = expandBinding(binding, subs);
-        cref = subscriptPath(name, subs);
-        (var_kind, dir, vis, ct) = getPrefixes(prefs);
-        elem = DAE.VAR(cref, var_kind, dir, DAE.NON_PARALLEL(), vis, ty,
-          bind_exp, {}, ct, DAE.emptyElementSource, NONE(), NONE(),
-          Absyn.NOT_INNER_OUTER());
+  subs = listReverse(subs);
+  bind_exp = expandBinding(binding, subs);
+  cref = subscriptPath(name, subs);
+  (var_kind, dir, vis, ct) = getPrefixes(prefs);
+  elem = DAE.VAR(cref, var_kind, dir, DAE.NON_PARALLEL(), vis, ty,
+    bind_exp, {}, ct, DAE.emptyElementSource, NONE(), NONE(),
+    Absyn.NOT_INNER_OUTER());
       then
-        elem :: inAccumEl;
+  elem :: inAccumEl;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name), _, _)
       equation
-        print("Got untyped component " +& Absyn.pathString(name) +& "\n");
+  print("Got untyped component " +& Absyn.pathString(name) +& "\n");
       then
-        fail();
+  fail();
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
       equation
-        print("Got conditional component " +& Absyn.pathString(name) +& "\n");
+  print("Got conditional component " +& Absyn.pathString(name) +& "\n");
       then
-        fail();
+  fail();
 
     case (NFInstTypes.OUTER_COMPONENT(name = _), _, _)
       then inAccumEl;
@@ -515,19 +515,19 @@ algorithm
 
     case (NFInstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _)
       equation
-        flat_subs = List.flatten(inSubscripts);
-        flat_subs = List.lastN(flat_subs, pd);
-        sub_exps = List.map(flat_subs, Expression.getSubscriptExp);
-        exp = DAE.ASUB(exp, sub_exps);
-        (exp, _) = ExpressionSimplify.simplify(exp);
+  flat_subs = List.flatten(inSubscripts);
+  flat_subs = List.lastN(flat_subs, pd);
+  sub_exps = List.map(flat_subs, Expression.getSubscriptExp);
+  exp = DAE.ASUB(exp, sub_exps);
+  (exp, _) = ExpressionSimplify.simplify(exp);
       then
-        SOME(exp);
+  SOME(exp);
 
     else
       equation
-        print("NFSCodeExpand.expandBinding got unknown binding\n");
+  print("NFSCodeExpand.expandBinding got unknown binding\n");
       then
-        fail();
+  fail();
 
   end match;
 end expandBinding;
@@ -561,26 +561,26 @@ algorithm
 
     case (Absyn.QUALIFIED(name = name, path = path), subs :: rest_subs)
       equation
-        cref = subscriptPath2(path, rest_subs);
+  cref = subscriptPath2(path, rest_subs);
       then
-        DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, subs, cref);
+  DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, subs, cref);
 
     case (Absyn.FULLYQUALIFIED(path = path), _)
       then subscriptPath2(path, inSubscripts);
 
     case (_, {})
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"NFSCodeExpand.subscriptPath ran out of subscripts!\n"});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"NFSCodeExpand.subscriptPath ran out of subscripts!\n"});
       then
-        fail();
+  fail();
 
     case (Absyn.IDENT(name = _), _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"NFSCodeExpand.subscriptPath got too many subscripts!\n"});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"NFSCodeExpand.subscriptPath got too many subscripts!\n"});
       then
-        fail();
+  fail();
 
   end match;
 end subscriptPath2;
@@ -626,35 +626,35 @@ algorithm
 
     case (DAE.CREF_QUAL(id, ty, {}, cref), subs :: rest_subs, _, _)
       equation
-        cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
+  cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
       then
-        DAE.CREF_QUAL(id, ty, subs, cref);
+  DAE.CREF_QUAL(id, ty, subs, cref);
 
     case (DAE.CREF_QUAL(id, ty, subs, cref), _ :: rest_subs, _, _)
       equation
-        cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
+  cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
       then
-        DAE.CREF_QUAL(id, ty, subs, cref);
+  DAE.CREF_QUAL(id, ty, subs, cref);
 
     case (DAE.WILD(), _, _, _) then inCref;
 
     case (_, {}, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +&
-          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
-          ComponentReference.printComponentRefStr(inCref) +& "!\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +&
+    ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
+    ComponentReference.printComponentRefStr(inCref) +& "!\n";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        inCref;
+  inCref;
 
     case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +&
-          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
-          ComponentReference.printComponentRefStr(inCref) +& "!\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +&
+    ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
+    ComponentReference.printComponentRefStr(inCref) +& "!\n";
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        inCref;
+  inCref;
 
   end match;
 end subscriptCref2;
@@ -714,7 +714,7 @@ algorithm
       Absyn.Path path;
       Absyn.Info info;
       list<DAE.Exp> expLst;
-      String name           "The name of the index/iterator variable.";
+      String name     "The name of the index/iterator variable.";
       Integer index;
       DAE.Type indexType    "The type of the index/iterator variable.";
       Option<DAE.Exp> range "The range expression to loop over.";
@@ -724,80 +724,80 @@ algorithm
 
     case (NFInstTypes.EQUALITY_EQUATION(lhs = lhs, rhs = rhs), _, _)
       equation
-        ty1 = Expression.typeof(lhs);
-        dims = Types.getDimensions(ty1);
-        accum_el = expandArray((lhs, rhs), EXPAND_MODEL(), dims, {} :: inSubscripts, inAccumEl,
-          expandEqEquation);
+  ty1 = Expression.typeof(lhs);
+  dims = Types.getDimensions(ty1);
+  accum_el = expandArray((lhs, rhs), EXPAND_MODEL(), dims, {} :: inSubscripts, inAccumEl,
+    expandEqEquation);
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.CONNECT_EQUATION(lhs = _), _, _)
       equation
-        print("Skipping expansion of connect\n");
+  print("Skipping expansion of connect\n");
       then
-        inAccumEl;
+  inAccumEl;
 
     case (NFInstTypes.FOR_EQUATION(name, index, indexType, range, body, info), _, _)
       equation
-        accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
-        accum_el = listAppend(accum_el, inAccumEl);
+  accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
+  accum_el = listAppend(accum_el, inAccumEl);
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.IF_EQUATION(branches, info), _, _)
       equation
-         //accum_el = DAE.IF_EQUATION();
-         print("Skipping if equation\n");
-         accum_el = inAccumEl;
+   //accum_el = DAE.IF_EQUATION();
+   print("Skipping if equation\n");
+   accum_el = inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.WHEN_EQUATION(branches, info), _, _)
       equation
-         //accum_el = DAE.IF_EQUATION();
-         print("Skipping when equation\n");
-         accum_el = inAccumEl;
+   //accum_el = DAE.IF_EQUATION();
+   print("Skipping when equation\n");
+   accum_el = inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level, info = info), _, _)
       equation
-        ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
-        accum_el = DAE.ASSERT(exp, msg, level, DAE.emptyElementSource)::inAccumEl;
+  ty1 = Expression.typeof(exp);
+  dims = Types.getDimensions(ty1);
+  accum_el = DAE.ASSERT(exp, msg, level, DAE.emptyElementSource)::inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.TERMINATE_EQUATION(message = msg, info = info), _, _)
       equation
-        ty1 = Expression.typeof(msg);
-        dims = Types.getDimensions(ty1);
-        accum_el = DAE.TERMINATE(msg, DAE.emptyElementSource)::inAccumEl;
+  ty1 = Expression.typeof(msg);
+  dims = Types.getDimensions(ty1);
+  accum_el = DAE.TERMINATE(msg, DAE.emptyElementSource)::inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp, info = info), _, _)
       equation
-        ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
-        accum_el = DAE.REINIT(cref1, exp, DAE.emptyElementSource)::inAccumEl;
+  ty1 = Expression.typeof(exp);
+  dims = Types.getDimensions(ty1);
+  accum_el = DAE.REINIT(cref1, exp, DAE.emptyElementSource)::inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.NORETCALL_EQUATION(exp = exp as DAE.CALL(path, expLst, _)), _, _)
       equation
-        ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
-        accum_el = DAE.NORETCALL(path, expLst, DAE.emptyElementSource)::inAccumEl;
+  ty1 = Expression.typeof(exp);
+  dims = Types.getDimensions(ty1);
+  accum_el = DAE.NORETCALL(path, expLst, DAE.emptyElementSource)::inAccumEl;
       then
-        accum_el;
+  accum_el;
 
     else
       equation
-        print("NFSCodeExpand.expandEquation failed on equation:\n" +&
-            NFInstDump.equationStr(inEquation) +& "\n");
+  print("NFSCodeExpand.expandEquation failed on equation:\n" +&
+      NFInstDump.equationStr(inEquation) +& "\n");
       then
-        inAccumEl;
+  inAccumEl;
 
   end matchcontinue;
 end expandEquation;
@@ -818,15 +818,15 @@ algorithm
 
     case ((lhs, rhs), subs as comp_subs :: _, _)
       equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
-        lhs = subscriptExp(lhs, sub_expl, subs);
-        (lhs, _) = ExpressionSimplify.simplify(lhs);
-        rhs = subscriptExp(rhs, sub_expl, subs);
-        (rhs, _) = ExpressionSimplify.simplify(rhs);
-        eq = DAE.EQUATION(lhs, rhs, DAE.emptyElementSource);
+  subs = listReverse(subs);
+  sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
+  lhs = subscriptExp(lhs, sub_expl, subs);
+  (lhs, _) = ExpressionSimplify.simplify(lhs);
+  rhs = subscriptExp(rhs, sub_expl, subs);
+  (rhs, _) = ExpressionSimplify.simplify(rhs);
+  eq = DAE.EQUATION(lhs, rhs, DAE.emptyElementSource);
       then
-        eq :: inAccumEl;
+  eq :: inAccumEl;
 
   end match;
 end expandEqEquation;
@@ -852,30 +852,30 @@ algorithm
 
     case (DAE.CREF(cref, ty), _, _)
       equation
-        cref = subscriptCref(cref, inAllSubscripts);
+  cref = subscriptCref(cref, inAllSubscripts);
       then
-        DAE.CREF(cref, ty);
+  DAE.CREF(cref, ty);
 
     case (DAE.BINARY(e1, op, e2), _, _)
       equation
-        e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
-        e2 = subscriptExp(e2, inEqSubscripts, inAllSubscripts);
+  e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
+  e2 = subscriptExp(e2, inEqSubscripts, inAllSubscripts);
       then
-        DAE.BINARY(e1, op, e2);
+  DAE.BINARY(e1, op, e2);
 
     case (DAE.ARRAY(ty = _), _, _)
       equation
-        e1 = subscriptArrayElements(inExp, inAllSubscripts);
-        e2 = DAE.ASUB(e1, inEqSubscripts);
+  e1 = subscriptArrayElements(inExp, inAllSubscripts);
+  e2 = DAE.ASUB(e1, inEqSubscripts);
       then
-        e2;
+  e2;
     case (DAE.CAST(ty,e1), _, _)
       equation
-        e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
-        ty = Types.arrayElementType(ty);
-        e1 = DAE.CAST(ty,e1);
+  e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
+  ty = Types.arrayElementType(ty);
+  e1 = DAE.CAST(ty,e1);
       then
-        e1;
+  e1;
 
     else inExp;
   end match;
@@ -894,15 +894,15 @@ algorithm
 
     case (DAE.ARRAY(ty as DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = _)), scalar, expl), _)
       equation
-        expl = List.map1(expl, subscriptArrayElements, inAllSubscripts);
+  expl = List.map1(expl, subscriptArrayElements, inAllSubscripts);
       then
-        DAE.ARRAY(ty, scalar, expl);
+  DAE.ARRAY(ty, scalar, expl);
 
     case (DAE.ARRAY(ty, scalar, expl), _)
       equation
-        expl = List.map2(expl, subscriptExp, {}, inAllSubscripts);
+  expl = List.map2(expl, subscriptExp, {}, inAllSubscripts);
       then
-        DAE.ARRAY(ty, scalar, expl);
+  DAE.ARRAY(ty, scalar, expl);
 
   end match;
 end subscriptArrayElements;
@@ -970,53 +970,53 @@ algorithm
 
     case (NFInstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, subs as comp_subs :: _, _)
       equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
-        lhs = subscriptExp(lhs, sub_expl, subs);
-        /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
-        rhs = subscriptExp(rhs, sub_expl, subs);
-        (rhs, _) = ExpressionSimplify.simplify(rhs);
+  subs = listReverse(subs);
+  sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
+  lhs = subscriptExp(lhs, sub_expl, subs);
+  /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
+  rhs = subscriptExp(rhs, sub_expl, subs);
+  (rhs, _) = ExpressionSimplify.simplify(rhs);
       then
-        DAE.STMT_ASSIGN(DAE.T_ANYTYPE_DEFAULT, lhs, rhs, DAE.emptyElementSource)::inAccumEl;
+  DAE.STMT_ASSIGN(DAE.T_ANYTYPE_DEFAULT, lhs, rhs, DAE.emptyElementSource)::inAccumEl;
 
     case (NFInstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty as DAE.T_ARRAY(dims=dims)), _, _, _)
       equation
-        accum_el = Util.if_(not Expression.arrayContainWholeDimension(dims),
-          DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl,
-          inAccumEl);
+  accum_el = Util.if_(not Expression.arrayContainWholeDimension(dims),
+    DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl,
+    inAccumEl);
       then
-        accum_el;
+  accum_el;
 
     case (NFInstTypes.NORETCALL_STMT(exp = exp), _, subs as comp_subs :: _, _)
       equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
-        exp = subscriptExp(exp, sub_expl, subs);
-        (exp, _) = ExpressionSimplify.simplify(exp);
+  subs = listReverse(subs);
+  sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
+  exp = subscriptExp(exp, sub_expl, subs);
+  (exp, _) = ExpressionSimplify.simplify(exp);
       then DAE.STMT_NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
 
     case (NFInstTypes.IF_STMT(branches = branches), _, subs as comp_subs :: _, _)
       equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
-        dbranches = List.map3(branches,expandBranch,inKind,subs,sub_expl);
-        dbody = Algorithm.makeIfFromBranches(dbranches,DAE.emptyElementSource);
+  subs = listReverse(subs);
+  sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
+  dbranches = List.map3(branches,expandBranch,inKind,subs,sub_expl);
+  dbody = Algorithm.makeIfFromBranches(dbranches,DAE.emptyElementSource);
       then listAppend(dbody,inAccumEl);
 
     case (NFInstTypes.FOR_STMT(name=name,index=index,indexType=ty,range=SOME(exp),body=body), _, subs as comp_subs :: _, _)
       equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
-        exp = subscriptExp(exp, sub_expl, subs);
-        (exp, _) = ExpressionSimplify.simplify(exp);
-        dbody = List.fold2(body,expandStatement,inKind,subs,{});
+  subs = listReverse(subs);
+  sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
+  exp = subscriptExp(exp, sub_expl, subs);
+  (exp, _) = ExpressionSimplify.simplify(exp);
+  dbody = List.fold2(body,expandStatement,inKind,subs,{});
       then DAE.STMT_FOR(ty,false /*???*/,name,index,exp,dbody,DAE.emptyElementSource)::inAccumEl;
 
     else
       equation
-        print("NFSCodeExpand.expandStatement failed\n");
+  print("NFSCodeExpand.expandStatement failed\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end expandStatement;
@@ -1053,28 +1053,28 @@ algorithm
 
     case NFInstTypes.FUNCTION(path=path,inputs=inputs,outputs=outputs,locals=locals,algorithms=al)
       equation
-        el = {};
-        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, el);
-        el = List.fold2(outputs, expandElement, EXPAND_FUNCTION(), {}, el);
-        el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
-        el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
-        el = listReverse(el);
+  el = {};
+  el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, el);
+  el = List.fold2(outputs, expandElement, EXPAND_FUNCTION(), {}, el);
+  el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
+  el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
+  el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
 
 
     case NFInstTypes.RECORD_CONSTRUCTOR(path, recType , inputs, locals, _)
       equation
-        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, {});
-        el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
+  el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, {});
+  el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
 
-        // Create the return variable for the record constructor which will have the type of the
-        // record itself.
-        outRec = DAE.VAR(DAE.CREF_IDENT("$res", DAE.T_UNKNOWN_DEFAULT, {}), DAE.VARIABLE(),
-          DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.PUBLIC(), recType,
-          NONE(), {}, DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE(), NONE(),
-          Absyn.NOT_INNER_OUTER());
-        el = outRec::el;
-        el = listReverse(el);
+  // Create the return variable for the record constructor which will have the type of the
+  // record itself.
+  outRec = DAE.VAR(DAE.CREF_IDENT("$res", DAE.T_UNKNOWN_DEFAULT, {}), DAE.VARIABLE(),
+    DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.PUBLIC(), recType,
+    NONE(), {}, DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE(), NONE(),
+    Absyn.NOT_INNER_OUTER());
+  el = outRec::el;
+  el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
 
   end match;

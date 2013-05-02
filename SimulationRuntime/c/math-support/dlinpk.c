@@ -43,33 +43,33 @@ static integer c__1 = 1;
 
 /*     on entry */
 
-/*        a       double precision(lda, n) */
-/*                the matrix to be factored. */
+/*  a       double precision(lda, n) */
+/*          the matrix to be factored. */
 
-/*        lda     integer */
-/*                the leading dimension of the array  a . */
+/*  lda     integer */
+/*          the leading dimension of the array  a . */
 
-/*        n       integer */
-/*                the order of the matrix  a . */
+/*  n       integer */
+/*          the order of the matrix  a . */
 
 /*     on return */
 
-/*        a       an upper triangular matrix and the multipliers */
-/*                which were used to obtain it. */
-/*                the factorization can be written  a = l*u  where */
-/*                l  is a product of permutation and unit lower */
-/*                triangular matrices and  u  is upper triangular. */
+/*  a       an upper triangular matrix and the multipliers */
+/*          which were used to obtain it. */
+/*          the factorization can be written  a = l*u  where */
+/*          l  is a product of permutation and unit lower */
+/*          triangular matrices and  u  is upper triangular. */
 
-/*        ipvt    integer(n) */
-/*                an integer vector of pivot indices. */
+/*  ipvt    integer(n) */
+/*          an integer vector of pivot indices. */
 
-/*        info    integer */
-/*                = 0  normal value. */
-/*                = k  if  u(k,k) .eq. 0.0 .  this is not an error */
-/*                     condition for this subroutine, but it does */
-/*                     indicate that dgesl or dgedi will divide by zero */
-/*                     if called.  use  rcond  in dgeco for a reliable */
-/*                     indication of singularity. */
+/*  info    integer */
+/*          = 0  normal value. */
+/*          = k  if  u(k,k) .eq. 0.0 .  this is not an error */
+/*               condition for this subroutine, but it does */
+/*               indicate that dgesl or dgedi will divide by zero */
+/*               if called.  use  rcond  in dgeco for a reliable */
+/*               indication of singularity. */
 
 /*     linpack. this version dated 08/14/78 . */
 /*     cleve moler, university of new mexico, argonne national lab. */
@@ -100,19 +100,19 @@ static integer c__1 = 1;
     for(k = 1; k <= i__1; ++k) {
   kp1 = k + 1;
 
-/*        find l = pivot index */
+/*  find l = pivot index */
 
   i__2 = *n - k + 1;
   l = _omc_internal_dlinpk_idamax_(&i__2, &a[k + k * a_dim1], &c__1) + k - 1;
   ipvt[k] = l;
 
-/*        zero pivot implies this column already triangularized */
+/*  zero pivot implies this column already triangularized */
 
   if(a[l + k * a_dim1] == 0.) {
       goto L40;
   }
 
-/*           interchange if necessary */
+/*     interchange if necessary */
 
   if(l == k) {
       goto L10;
@@ -122,13 +122,13 @@ static integer c__1 = 1;
   a[k + k * a_dim1] = t;
 L10:
 
-/*           compute multipliers */
+/*     compute multipliers */
 
   t = -1. / a[k + k * a_dim1];
   i__2 = *n - k;
   _omc_internal_dlinpk_dscal_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1);
 
-/*           row elimination with column indexing */
+/*     row elimination with column indexing */
 
   i__2 = *n;
   for(j = kp1; j <= i__2; ++j) {
@@ -141,7 +141,7 @@ L10:
 L20:
       i__3 = *n - k;
       _omc_internal_dlinpk_daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
-        a_dim1], &c__1);
+  a_dim1], &c__1);
 /* L30: */
   }
   goto L50;
@@ -176,46 +176,46 @@ L70:
 
 /*     on entry */
 
-/*        a       double precision(lda, n) */
-/*                the output from dgeco or dgefa. */
+/*  a       double precision(lda, n) */
+/*          the output from dgeco or dgefa. */
 
-/*        lda     integer */
-/*                the leading dimension of the array  a . */
+/*  lda     integer */
+/*          the leading dimension of the array  a . */
 
-/*        n       integer */
-/*                the order of the matrix  a . */
+/*  n       integer */
+/*          the order of the matrix  a . */
 
-/*        ipvt    integer(n) */
-/*                the pivot vector from dgeco or dgefa. */
+/*  ipvt    integer(n) */
+/*          the pivot vector from dgeco or dgefa. */
 
-/*        b       double precision(n) */
-/*                the right hand side vector. */
+/*  b       double precision(n) */
+/*          the right hand side vector. */
 
-/*        job     integer */
-/*                = 0         to solve  a*x = b , */
-/*                = nonzero   to solve  trans(a)*x = b  where */
-/*                            trans(a)  is the transpose. */
+/*  job     integer */
+/*          = 0         to solve  a*x = b , */
+/*          = nonzero   to solve  trans(a)*x = b  where */
+/*                      trans(a)  is the transpose. */
 
 /*     on return */
 
-/*        b       the solution vector  x . */
+/*  b       the solution vector  x . */
 
 /*     error condition */
 
-/*        a division by zero will occur if the input factor contains a */
-/*        zero on the diagonal.  technically this indicates singularity */
-/*        but it is often caused by improper arguments or improper */
-/*        setting of lda .  it will not occur if the subroutines are */
-/*        called correctly and if dgeco has set rcond .gt. 0.0 */
-/*        or dgefa has set info .eq. 0 . */
+/*  a division by zero will occur if the input factor contains a */
+/*  zero on the diagonal.  technically this indicates singularity */
+/*  but it is often caused by improper arguments or improper */
+/*  setting of lda .  it will not occur if the subroutines are */
+/*  called correctly and if dgeco has set rcond .gt. 0.0 */
+/*  or dgefa has set info .eq. 0 . */
 
 /*     to compute  inverse(a) * c  where  c  is a matrix */
 /*     with  p  columns */
-/*           call dgeco(a,lda,n,ipvt,rcond,z) */
-/*           if(rcond is too small) go to ... */
-/*           do 10 j = 1, p */
-/*              call dgesl(a,lda,n,ipvt,c(1,j),0) */
-/*        10 continue */
+/*     call dgeco(a,lda,n,ipvt,rcond,z) */
+/*     if(rcond is too small) go to ... */
+/*     do 10 j = 1, p */
+/*        call dgesl(a,lda,n,ipvt,c(1,j),0) */
+/*  10 continue */
 
 /*     linpack. this version dated 08/14/78 . */
 /*     cleve moler, university of new mexico, argonne national lab. */
@@ -240,8 +240,8 @@ L70:
   goto L50;
     }
 
-/*        job = 0 , solve  a * x = b */
-/*        first solve  l*y = b */
+/*  job = 0 , solve  a * x = b */
+/*  first solve  l*y = b */
 
     if(nm1 < 1) {
   goto L30;
@@ -262,7 +262,7 @@ L10:
     }
 L30:
 
-/*        now solve  u*x = y */
+/*  now solve  u*x = y */
 
     i__1 = *n;
     for(kb = 1; kb <= i__1; ++kb) {
@@ -276,8 +276,8 @@ L30:
     goto L100;
 L50:
 
-/*        job = nonzero, solve  trans(a) * x = b */
-/*        first solve  trans(u)*y = b */
+/*  job = nonzero, solve  trans(a) * x = b */
+/*  first solve  trans(u)*y = b */
 
     i__1 = *n;
     for(k = 1; k <= i__1; ++k) {
@@ -287,7 +287,7 @@ L50:
 /* L60: */
     }
 
-/*        now solve trans(l)*x = y */
+/*  now solve trans(l)*x = y */
 
     if(nm1 < 1) {
   goto L90;
@@ -331,70 +331,70 @@ L100:
 
 /*     on entry */
 
-/*        abd     double precision(lda, n) */
-/*                contains the matrix in band storage.  the columns */
-/*                of the matrix are stored in the columns of  abd  and */
-/*                the diagonals of the matrix are stored in rows */
-/*                ml+1 through 2*ml+mu+1 of  abd . */
-/*                see the comments below for details. */
+/*  abd     double precision(lda, n) */
+/*          contains the matrix in band storage.  the columns */
+/*          of the matrix are stored in the columns of  abd  and */
+/*          the diagonals of the matrix are stored in rows */
+/*          ml+1 through 2*ml+mu+1 of  abd . */
+/*          see the comments below for details. */
 
-/*        lda     integer */
-/*                the leading dimension of the array  abd . */
-/*                lda must be .ge. 2*ml + mu + 1 . */
+/*  lda     integer */
+/*          the leading dimension of the array  abd . */
+/*          lda must be .ge. 2*ml + mu + 1 . */
 
-/*        n       integer */
-/*                the order of the original matrix. */
+/*  n       integer */
+/*          the order of the original matrix. */
 
-/*        ml      integer */
-/*                number of diagonals below the main diagonal. */
-/*                0 .le. ml .lt. n . */
+/*  ml      integer */
+/*          number of diagonals below the main diagonal. */
+/*          0 .le. ml .lt. n . */
 
-/*        mu      integer */
-/*                number of diagonals above the main diagonal. */
-/*                0 .le. mu .lt. n . */
-/*                more efficient if  ml .le. mu . */
+/*  mu      integer */
+/*          number of diagonals above the main diagonal. */
+/*          0 .le. mu .lt. n . */
+/*          more efficient if  ml .le. mu . */
 /*     on return */
 
-/*        abd     an upper triangular matrix in band storage and */
-/*                the multipliers which were used to obtain it. */
-/*                the factorization can be written  a = l*u  where */
-/*                l  is a product of permutation and unit lower */
-/*                triangular matrices and  u  is upper triangular. */
+/*  abd     an upper triangular matrix in band storage and */
+/*          the multipliers which were used to obtain it. */
+/*          the factorization can be written  a = l*u  where */
+/*          l  is a product of permutation and unit lower */
+/*          triangular matrices and  u  is upper triangular. */
 
-/*        ipvt    integer(n) */
-/*                an integer vector of pivot indices. */
+/*  ipvt    integer(n) */
+/*          an integer vector of pivot indices. */
 
-/*        info    integer */
-/*                = 0  normal value. */
-/*                = k  if  u(k,k) .eq. 0.0 .  this is not an error */
-/*                     condition for this subroutine, but it does */
-/*                     indicate that dgbsl will divide by zero if */
-/*                     called.  use  rcond  in dgbco for a reliable */
-/*                     indication of singularity. */
+/*  info    integer */
+/*          = 0  normal value. */
+/*          = k  if  u(k,k) .eq. 0.0 .  this is not an error */
+/*               condition for this subroutine, but it does */
+/*               indicate that dgbsl will divide by zero if */
+/*               called.  use  rcond  in dgbco for a reliable */
+/*               indication of singularity. */
 
 /*     band storage */
 
-/*           if  a  is a band matrix, the following program segment */
-/*           will set up the input. */
+/*     if  a  is a band matrix, the following program segment */
+/*     will set up the input. */
 
-/*                   ml = (band width below the diagonal) */
-/*                   mu = (band width above the diagonal) */
-/*                   m = ml + mu + 1 */
-/*                   do 20 j = 1, n */
-/*                      i1 = max0(1, j-mu) */
-/*                      i2 = min0(n, j+ml) */
-/*                      do 10 i = i1, i2 */
-/*                         k = i - j + m */
-/*                         abd(k,j) = a(i,j) */
-/*                10    continue */
-/*                20 continue */
+/*             ml = (band width below the diagonal) */
+/*             mu = (band width above the diagonal) */
+/*             m = ml + mu + 1 */
+/*             do 20 j = 1, n */
+/*                i1 = max0(1, j-mu) */
+/*                i2 = min0(n, j+ml) */
+/*                do 10 i = i1, i2 */
+/*                   k = i - j + m */
+/*                   abd(k,j) = a(i,j) */
+/*          10    continue */
+/*          20 continue */
 
-/*           this uses rows  ml+1  through  2*ml+mu+1  of  abd . */
-/*           in addition, the first  ml  rows in  abd  are used for */
-/*           elements generated during the triangularization. */
-/*           the total number of rows needed in  abd  is  2*ml+mu+1 . */
-/*           the  ml+mu by ml+mu  upper left triangle and the */
-/*           ml by ml  lower right triangle are not referenced. */
+/*     this uses rows  ml+1  through  2*ml+mu+1  of  abd . */
+/*     in addition, the first  ml  rows in  abd  are used for */
+/*     elements generated during the triangularization. */
+/*     the total number of rows needed in  abd  is  2*ml+mu+1 . */
+/*     the  ml+mu by ml+mu  upper left triangle and the */
+/*     ml by ml  lower right triangle are not referenced. */
 
 /*     linpack. this version dated 08/14/78 . */
 /*     cleve moler, university of new mexico, argonne national lab. */
@@ -449,7 +449,7 @@ L30:
     for(k = 1; k <= i__1; ++k) {
   kp1 = k + 1;
 
-/*        zero next fill-in column */
+/*  zero next fill-in column */
 
   ++jz;
   if(jz > *n) {
@@ -465,7 +465,7 @@ L30:
   }
 L50:
 
-/*        find l = pivot index */
+/*  find l = pivot index */
 
 /* Computing MIN */
   i__2 = *ml, i__3 = *n - k;
@@ -474,13 +474,13 @@ L50:
   l = _omc_internal_dlinpk_idamax_(&i__2, &abd[m + k * abd_dim1], &c__1) + m - 1;
   ipvt[k] = l + k - m;
 
-/*        zero pivot implies this column already triangularized */
+/*  zero pivot implies this column already triangularized */
 
   if(abd[l + k * abd_dim1] == 0.) {
       goto L100;
   }
 
-/*           interchange if necessary */
+/*     interchange if necessary */
 
   if(l == m) {
       goto L60;
@@ -490,12 +490,12 @@ L50:
   abd[m + k * abd_dim1] = t;
 L60:
 
-/*           compute multipliers */
+/*     compute multipliers */
 
   t = -1. / abd[m + k * abd_dim1];
   _omc_internal_dlinpk_dscal_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1);
 
-/*           row elimination with column indexing */
+/*     row elimination with column indexing */
 
 /* Computing MIN */
 /* Computing MAX */
@@ -518,7 +518,7 @@ L60:
       abd[mm + j * abd_dim1] = t;
 L70:
       _omc_internal_dlinpk_daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
-        j * abd_dim1], &c__1);
+  j * abd_dim1], &c__1);
 /* L80: */
   }
 L90:
@@ -554,52 +554,52 @@ L130:
 
 /*     on entry */
 
-/*        abd     double precision(lda, n) */
-/*                the output from dgbco or dgbfa. */
+/*  abd     double precision(lda, n) */
+/*          the output from dgbco or dgbfa. */
 
-/*        lda     integer */
-/*                the leading dimension of the array  abd . */
+/*  lda     integer */
+/*          the leading dimension of the array  abd . */
 
-/*        n       integer */
-/*                the order of the original matrix. */
+/*  n       integer */
+/*          the order of the original matrix. */
 
-/*        ml      integer */
-/*                number of diagonals below the main diagonal. */
+/*  ml      integer */
+/*          number of diagonals below the main diagonal. */
 
-/*        mu      integer */
-/*                number of diagonals above the main diagonal. */
+/*  mu      integer */
+/*          number of diagonals above the main diagonal. */
 
-/*        ipvt    integer(n) */
-/*                the pivot vector from dgbco or dgbfa. */
+/*  ipvt    integer(n) */
+/*          the pivot vector from dgbco or dgbfa. */
 
-/*        b       double precision(n) */
-/*                the right hand side vector. */
+/*  b       double precision(n) */
+/*          the right hand side vector. */
 
-/*        job     integer */
-/*                = 0         to solve  a*x = b , */
-/*                = nonzero   to solve  trans(a)*x = b , where */
-/*                            trans(a)  is the transpose. */
+/*  job     integer */
+/*          = 0         to solve  a*x = b , */
+/*          = nonzero   to solve  trans(a)*x = b , where */
+/*                      trans(a)  is the transpose. */
 
 /*     on return */
 
-/*        b       the solution vector  x . */
+/*  b       the solution vector  x . */
 
 /*     error condition */
 
-/*        a division by zero will occur if the input factor contains a */
-/*        zero on the diagonal.  technically this indicates singularity */
-/*        but it is often caused by improper arguments or improper */
-/*        setting of lda .  it will not occur if the subroutines are */
-/*        called correctly and if dgbco has set rcond .gt. 0.0 */
-/*        or dgbfa has set info .eq. 0 . */
+/*  a division by zero will occur if the input factor contains a */
+/*  zero on the diagonal.  technically this indicates singularity */
+/*  but it is often caused by improper arguments or improper */
+/*  setting of lda .  it will not occur if the subroutines are */
+/*  called correctly and if dgbco has set rcond .gt. 0.0 */
+/*  or dgbfa has set info .eq. 0 . */
 
 /*     to compute  inverse(a) * c  where  c  is a matrix */
 /*     with  p  columns */
-/*           call dgbco(abd,lda,n,ml,mu,ipvt,rcond,z) */
-/*           if(rcond is too small) go to ... */
-/*           do 10 j = 1, p */
-/*              call dgbsl(abd,lda,n,ml,mu,ipvt,c(1,j),0) */
-/*        10 continue */
+/*     call dgbco(abd,lda,n,ml,mu,ipvt,rcond,z) */
+/*     if(rcond is too small) go to ... */
+/*     do 10 j = 1, p */
+/*        call dgbsl(abd,lda,n,ml,mu,ipvt,c(1,j),0) */
+/*  10 continue */
 
 /*     linpack. this version dated 08/14/78 . */
 /*     cleve moler, university of new mexico, argonne national lab. */
@@ -626,8 +626,8 @@ L130:
   goto L50;
     }
 
-/*        job = 0 , solve  a * x = b */
-/*        first solve l*y = b */
+/*  job = 0 , solve  a * x = b */
+/*  first solve l*y = b */
 
     if(*ml == 0) {
   goto L30;
@@ -653,7 +653,7 @@ L10:
     }
 L30:
 
-/*        now solve  u*x = y */
+/*  now solve  u*x = y */
 
     i__1 = *n;
     for(kb = 1; kb <= i__1; ++kb) {
@@ -669,8 +669,8 @@ L30:
     goto L100;
 L50:
 
-/*        job = nonzero, solve  trans(a) * x = b */
-/*        first solve  trans(u)*y = b */
+/*  job = nonzero, solve  trans(a) * x = b */
+/*  first solve  trans(u)*y = b */
 
     i__1 = *n;
     for(k = 1; k <= i__1; ++k) {
@@ -682,7 +682,7 @@ L50:
 /* L60: */
     }
 
-/*        now solve trans(l)*x = y */
+/*  now solve trans(l)*x = y */
 
     if(*ml == 0) {
   goto L90;
@@ -744,8 +744,8 @@ L100:
   goto L20;
     }
 
-/*        code for unequal increments or equal increments */
-/*          not equal to 1 */
+/*  code for unequal increments or equal increments */
+/*    not equal to 1 */
 
     ix = 1;
     iy = 1;
@@ -764,10 +764,10 @@ L100:
     }
     return 0;
 
-/*        code for both increments equal to 1 */
+/*  code for both increments equal to 1 */
 
 
-/*        clean-up loop */
+/*  clean-up loop */
 
 L20:
     m = *n % 4;
@@ -822,8 +822,8 @@ L40:
   goto L20;
     }
 
-/*        code for unequal increments or equal increments */
-/*          not equal to 1 */
+/*  code for unequal increments or equal increments */
+/*    not equal to 1 */
 
     ix = 1;
     iy = 1;
@@ -842,10 +842,10 @@ L40:
     }
     return 0;
 
-/*        code for both increments equal to 1 */
+/*  code for both increments equal to 1 */
 
 
-/*        clean-up loop */
+/*  clean-up loop */
 
 L20:
     m = *n % 7;
@@ -902,7 +902,7 @@ L40:
   goto L20;
     }
 
-/*        code for increment not equal to 1 */
+/*  code for increment not equal to 1 */
 
     nincx = *n * *incx;
     i__1 = nincx;
@@ -913,10 +913,10 @@ L40:
     }
     return 0;
 
-/*        code for increment equal to 1 */
+/*  code for increment equal to 1 */
 
 
-/*        clean-up loop */
+/*  clean-up loop */
 
 L20:
     m = *n % 5;
@@ -976,8 +976,8 @@ doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx,
   goto L20;
     }
 
-/*        code for unequal increments or equal increments */
-/*          not equal to 1 */
+/*  code for unequal increments or equal increments */
+/*    not equal to 1 */
 
     ix = 1;
     iy = 1;
@@ -997,10 +997,10 @@ doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx,
     ret_val = dtemp;
     return ret_val;
 
-/*        code for both increments equal to 1 */
+/*  code for both increments equal to 1 */
 
 
-/*        clean-up loop */
+/*  clean-up loop */
 
 L20:
     m = *n % 5;
@@ -1070,16 +1070,16 @@ doublereal _omc_dnrm2_(integer *n, doublereal *dx, integer *incx)
 /*     if    n .le. 0 return with result = 0. */
 /*     if n .ge. 1 then incx must be .ge. 1 */
 
-/*           c.l.lawson, 1978 jan 08 */
+/*     c.l.lawson, 1978 jan 08 */
 
 /*     four phase method     using two built-in constants that are */
 /*     hopefully applicable to all machines. */
-/*         cutlo = maximum of  dsqrt(u/eps)  over all known machines. */
-/*         cuthi = minimum of  dsqrt(v)      over all known machines. */
+/*   cutlo = maximum of  dsqrt(u/eps)  over all known machines. */
+/*   cuthi = minimum of  dsqrt(v)      over all known machines. */
 /*     where */
-/*         eps = smallest no. such that eps + 1. .gt. 1. */
-/*         u   = smallest positive no.   (underflow limit) */
-/*         v   = largest  no.            (overflow  limit) */
+/*   eps = smallest no. such that eps + 1. .gt. 1. */
+/*   u   = smallest positive no.   (underflow limit) */
+/*   v   = largest  no.            (overflow  limit) */
 
 /*     brief outline of algorithm.. */
 
@@ -1093,12 +1093,12 @@ doublereal _omc_dnrm2_(integer *n, doublereal *dx, integer *incx)
 /*     from the environmental parameters listed in the imsl converter */
 /*     document the limiting values are as follows.. */
 /*     cutlo, s.p.   u/eps = 2**(-102) for  honeywell.  close seconds are */
-/*                   univac and dec at 2**(-103) */
-/*                   thus cutlo = 2**(-51) = 4.44089e-16 */
+/*             univac and dec at 2**(-103) */
+/*             thus cutlo = 2**(-51) = 4.44089e-16 */
 /*     cuthi, s.p.   v = 2**127 for univac, honeywell, and dec. */
-/*                   thus cuthi = 2**(63.5) = 1.30438e19 */
+/*             thus cuthi = 2**(63.5) = 1.30438e19 */
 /*     cutlo, d.p.   u/eps = 2**(-67) for honeywell and dec. */
-/*                   thus cutlo = 2**(-33.5) = 8.23181d-11 */
+/*             thus cutlo = 2**(-33.5) = 8.23181d-11 */
 /*     cuthi, d.p.   same as s.p.  cuthi = 1.30438d19 */
 /*     data cutlo, cuthi / 8.232d-11,  1.304d19 / */
 /*     data cutlo, cuthi / 4.441e-16,  1.304e19 / */
@@ -1114,7 +1114,7 @@ L10:
     next_fmt = fmt_30;
     sum = zero;
     nn = *n * *incx;
-/*                                                 begin main loop */
+/*                                           begin main loop */
     i__ = 1;
 L20:
     switch (next) {
@@ -1131,7 +1131,7 @@ L30:
     next_fmt = fmt_50;
     xmax = zero;
 
-/*                        phase 1.  sum is zero */
+/*                  phase 1.  sum is zero */
 
 L50:
     if(dx[i__] == zero) {
@@ -1141,12 +1141,12 @@ L50:
   goto L85;
     }
 
-/*                                prepare for phase 2. */
+/*                          prepare for phase 2. */
     next = 2;
     next_fmt = fmt_70;
     goto L105;
 
-/*                                prepare for phase 4. */
+/*                          prepare for phase 4. */
 
 L100:
     i__ = j;
@@ -1157,16 +1157,16 @@ L105:
     xmax = (d__1 = dx[i__], abs(d__1));
     goto L115;
 
-/*                   phase 2.  sum is small. */
-/*                             scale to avoid destructive underflow. */
+/*             phase 2.  sum is small. */
+/*                       scale to avoid destructive underflow. */
 
 L70:
     if((d__1 = dx[i__], abs(d__1)) > cutlo) {
   goto L75;
     }
 
-/*                     common code for phases 2 and 4. */
-/*                     in phase 4 sum is large.  scale to avoid overflow. */
+/*               common code for phases 2 and 4. */
+/*               in phase 4 sum is large.  scale to avoid overflow. */
 
 L110:
     if((d__1 = dx[i__], abs(d__1)) <= xmax) {
@@ -1185,7 +1185,7 @@ L115:
     goto L200;
 
 
-/*                  prepare for phase 3. */
+/*            prepare for phase 3. */
 
 L75:
     sum = sum * xmax * xmax;
@@ -1197,7 +1197,7 @@ L75:
 L85:
     hitest = cuthi / (real) (*n);
 
-/*                   phase 3.  sum is mid-range.  no scaling. */
+/*             phase 3.  sum is mid-range.  no scaling. */
 
     i__1 = nn;
     i__2 = *incx;
@@ -1219,9 +1219,9 @@ L200:
   goto L20;
     }
 
-/*              end of main loop. */
+/*        end of main loop. */
 
-/*              compute square root and adjust for scaling. */
+/*        compute square root and adjust for scaling. */
 
     ret_val = xmax * sqrt(sum);
 L300:
@@ -1259,7 +1259,7 @@ integer _omc_internal_dlinpk_idamax_(integer *n, doublereal *dx, integer *incx)
   goto L20;
     }
 
-/*        code for increment not equal to 1 */
+/*  code for increment not equal to 1 */
 
     ix = 1;
     dmax__ = abs(dx[1]);
@@ -1277,7 +1277,7 @@ L5:
     }
     return ret_val;
 
-/*        code for increment equal to 1 */
+/*  code for increment equal to 1 */
 
 L20:
     dmax__ = abs(dx[1]);

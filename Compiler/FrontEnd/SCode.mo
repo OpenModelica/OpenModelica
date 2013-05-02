@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCode
-" file:        SCode.mo
+" file:  SCode.mo
   package:     SCode
   description: SCode intermediate form
 
@@ -76,7 +76,7 @@ uniontype Restriction
 
   // predefined internal types
   record R_PREDEFINED_INTEGER     "predefined IntegerType" end R_PREDEFINED_INTEGER;
-  record R_PREDEFINED_REAL        "predefined RealType"    end R_PREDEFINED_REAL;
+  record R_PREDEFINED_REAL  "predefined RealType"    end R_PREDEFINED_REAL;
   record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
   record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
   record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
@@ -124,8 +124,8 @@ uniontype Mod "- Modifications"
   end MOD;
 
   record REDECL
-    Final         finalPrefix "final prefix";
-    Each          eachPrefix  "each prefix";
+    Final   finalPrefix "final prefix";
+    Each    eachPrefix  "each prefix";
     Element       element     "The new element declaration.";
   end REDECL;
 
@@ -175,20 +175,20 @@ uniontype ClassDef
   end A;"
 
   record PARTS "a class made of parts"
-    list<Element>              elementLst          "the list of elements";
-    list<Equation>             normalEquationLst   "the list of equations";
-    list<Equation>             initialEquationLst  "the list of initial equations";
+    list<Element>        elementLst          "the list of elements";
+    list<Equation>       normalEquationLst   "the list of equations";
+    list<Equation>       initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
     list<ConstraintSection>    constraintLst       "the list of constraints";
-    list<Absyn.NamedArg>       clsattrs            "the list of class attributes. Currently for Optimica extensions";
-    Option<ExternalDecl>       externalDecl        "used by external functions";
+    list<Absyn.NamedArg>       clsattrs      "the list of class attributes. Currently for Optimica extensions";
+    Option<ExternalDecl>       externalDecl  "used by external functions";
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
-    Ident                      baseClassName       "the name of the base class we have to extend";
-    Mod                        modifications       "the modifications that need to be applied to the base class";
-    ClassDef                   composition         "the new composition";
+    Ident                baseClassName       "the name of the base class we have to extend";
+    Mod                  modifications       "the modifications that need to be applied to the base class";
+    ClassDef             composition         "the new composition";
   end CLASS_EXTENDS;
 
   record DERIVED "a derived class"
@@ -237,7 +237,7 @@ end Annotation;
 public
 uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
   record EXTERNALDECL
-    Option<Ident>        funcName "The name of the external function" ;
+    Option<Ident>  funcName "The name of the external function" ;
     Option<String>       lang     "Language of the external function" ;
     Option<Absyn.ComponentRef> output_  "output parameter as return value" ;
     list<Absyn.Exp>      args     "only positional arguments, i.e. expression list" ;
@@ -290,7 +290,7 @@ uniontype EEquation
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
-    Absyn.Exp        condition "the when condition";
+    Absyn.Exp  condition "the when condition";
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> elseBranches "the elsewhen expression and equation list";
     Comment comment;
@@ -313,7 +313,7 @@ uniontype EEquation
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
-    Absyn.Exp          expReinit "the new value" ;
+    Absyn.Exp    expReinit "the new value" ;
     Comment comment;
     Absyn.Info info;
   end EQ_REINIT;
@@ -495,10 +495,10 @@ end ConnectorType;
 public
 uniontype Prefixes "the common class or component prefixes"
   record PREFIXES "the common class or component prefixes"
-    Visibility       visibility           "the protected/public prefix";
-    Redeclare        redeclarePrefix      "redeclare prefix";
-    Final            finalPrefix          "final prefix, be it at the element or top level";
-    Absyn.InnerOuter innerOuter           "the inner/outer/innerouter prefix";
+    Visibility       visibility     "the protected/public prefix";
+    Redeclare  redeclarePrefix      "redeclare prefix";
+    Final      finalPrefix          "final prefix, be it at the element or top level";
+    Absyn.InnerOuter innerOuter     "the inner/outer/innerouter prefix";
     Replaceable      replaceablePrefix    "replaceable prefix";
   end PREFIXES;
 end Prefixes;
@@ -513,46 +513,46 @@ uniontype Element "- Elements
   DEFINEUNIT (for units)"
 
   record IMPORT "an import element"
-    Absyn.Import imp                 "the import definition";
-    Visibility   visibility          "the protected/public prefix";
-    Absyn.Info   info                "the import information";
+    Absyn.Import imp           "the import definition";
+    Visibility   visibility    "the protected/public prefix";
+    Absyn.Info   info          "the import information";
   end IMPORT;
 
   record EXTENDS "the extends element"
-    Path baseClassPath               "the extends path";
-    Visibility visibility            "the protected/public prefix";
-    Mod modifications                "the modifications applied to the base class";
-    Option<Annotation> ann           "the extends annotation";
-    Absyn.Info info                  "the extends info";
+    Path baseClassPath         "the extends path";
+    Visibility visibility      "the protected/public prefix";
+    Mod modifications          "the modifications applied to the base class";
+    Option<Annotation> ann     "the extends annotation";
+    Absyn.Info info            "the extends info";
   end EXTENDS;
 
   record CLASS "a class definition"
-    Ident   name                     "the name of the class";
-    Prefixes prefixes                "the common class or component prefixes";
+    Ident   name               "the name of the class";
+    Prefixes prefixes          "the common class or component prefixes";
     Encapsulated encapsulatedPrefix  "the encapsulated prefix";
-    Partial partialPrefix            "the partial prefix";
-    Restriction restriction          "the restriction of the class";
-    ClassDef classDef                "the class specification";
-    Comment cmt                      "the class annotation and string-comment";
-    Absyn.Info info                  "the class information";
+    Partial partialPrefix      "the partial prefix";
+    Restriction restriction    "the restriction of the class";
+    ClassDef classDef          "the class specification";
+    Comment cmt                "the class annotation and string-comment";
+    Absyn.Info info            "the class information";
   end CLASS;
 
   record COMPONENT "a component"
-    Ident name                      "the component name";
-    Prefixes prefixes               "the common class or component prefixes";
-    Attributes attributes           "the component attributes";
-    Absyn.TypeSpec typeSpec         "the type specification";
-    Mod modifications               "the modifications to be applied to the component";
-    Comment comment                 "this if for extraction of comments and annotations from Absyn";
+    Ident name                "the component name";
+    Prefixes prefixes         "the common class or component prefixes";
+    Attributes attributes     "the component attributes";
+    Absyn.TypeSpec typeSpec   "the type specification";
+    Mod modifications         "the modifications to be applied to the component";
+    Comment comment           "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition     "the conditional declaration of a component";
-    Absyn.Info info                 "this is for line and column numbers, also file name.";
+    Absyn.Info info           "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
     Ident name;
-    Visibility visibility            "the protected/public prefix";
-    Option<String> exp               "the unit expression";
-    Option<Real> weight              "the weight";
+    Visibility visibility      "the protected/public prefix";
+    Option<String> exp         "the unit expression";
+    Option<Real> weight        "the weight";
   end DEFINEUNIT;
 
 end Element;
@@ -570,17 +570,17 @@ end Attributes;
 
 public
 uniontype Parallelism "Parallelism"
-  record PARGLOBAL  "Global variables for CUDA and OpenCL"            end PARGLOBAL;
-  record PARLOCAL "Shared for CUDA and local for OpenCL"              end PARLOCAL;
-  record NON_PARALLEL  "Non parallel/Normal variables"                 end NON_PARALLEL;
+  record PARGLOBAL  "Global variables for CUDA and OpenCL"      end PARGLOBAL;
+  record PARLOCAL "Shared for CUDA and local for OpenCL"        end PARLOCAL;
+  record NON_PARALLEL  "Non parallel/Normal variables"           end NON_PARALLEL;
 end Parallelism;
 
 public
 uniontype Variability "the variability of a component"
-  record VAR      "a variable"          end VAR;
+  record VAR      "a variable"    end VAR;
   record DISCRETE "a discrete variable" end DISCRETE;
-  record PARAM    "a parameter"         end PARAM;
-  record CONST    "a constant"          end CONST;
+  record PARAM    "a parameter"   end PARAM;
+  record CONST    "a constant"    end CONST;
 end Variability;
 
 public /* adrpo: previously present in Inst.mo */
@@ -644,16 +644,16 @@ algorithm
 
     case (id,CLASS(classDef = PARTS(elementLst = elts)))
       equation
-        elt = getElementNamedFromElts(id, elts);
+  elt = getElementNamedFromElts(id, elts);
       then
-        elt;
+  elt;
 
     /* adrpo: handle also the case model extends X then X; */
     case (id,CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
-        elt = getElementNamedFromElts(id, elts);
+  elt = getElementNamedFromElts(id, elts);
       then
-        elt;
+  elt;
   end match;
 end getElementNamed;
 
@@ -672,42 +672,42 @@ algorithm
 
     case (id2,((comp as COMPONENT(name = id1)) :: _))
       equation
-        true = stringEq(id1, id2);
+  true = stringEq(id1, id2);
       then
-        comp;
+  comp;
 
     case (id2,(COMPONENT(name = id1) :: xs))
       equation
-        false = stringEq(id1, id2);
-        elt = getElementNamedFromElts(id2, xs);
+  false = stringEq(id1, id2);
+  elt = getElementNamedFromElts(id2, xs);
       then
-        elt;
+  elt;
 
     case (id2,(CLASS(name = id1) :: xs))
       equation
-        false = stringEq(id1, id2);
-        elt = getElementNamedFromElts(id2, xs);
+  false = stringEq(id1, id2);
+  elt = getElementNamedFromElts(id2, xs);
       then
-        elt;
+  elt;
 
     case (id2,(EXTENDS(baseClassPath = _) :: xs))
       equation
-        elt = getElementNamedFromElts(id2, xs);
+  elt = getElementNamedFromElts(id2, xs);
       then
-        elt;
+  elt;
 
     case (id2,((cdef as CLASS(name = id1)) :: _))
       equation
-        true = stringEq(id1, id2);
+  true = stringEq(id1, id2);
       then
-        cdef;
+  cdef;
 
     // Try next.
     case (id2, _:: xs)
       equation
-        elt = getElementNamedFromElts(id2, xs);
+  elt = getElementNamedFromElts(id2, xs);
       then
-        elt;
+  elt;
   end matchcontinue;
 end getElementNamedFromElts;
 
@@ -771,16 +771,16 @@ algorithm
 
     case CLASS(classDef = PARTS(elementLst = elts))
       equation
-        res = listLength(elts);
+  res = listLength(elts);
       then
-        res;
+  res;
 
     /* adrpo: handle also model extends X ... parts ... end X; */
     case CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))
       equation
-        res = listLength(elts);
+  res = listLength(elts);
       then
-        res;
+  res;
 
     case _ then 0;
 
@@ -798,16 +798,16 @@ algorithm
 
     case (CLASS(classDef = PARTS(elementLst = elts)))
       equation
-        res = componentNamesFromElts(elts);
+  res = componentNamesFromElts(elts);
       then
-        res;
+  res;
 
     /* adrpo: handle also the case model extends X end X;*/
     case (CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
-        res = componentNamesFromElts(elts);
+  res = componentNamesFromElts(elts);
       then
-        res;
+  res;
 
     case (_) then {};
 
@@ -926,9 +926,9 @@ algorithm
     case ({}) then {};
     case ((COMPONENT(name = id) :: rest))
       equation
-        res = componentNamesFromElts(rest);
+  res = componentNamesFromElts(rest);
       then
-        (id :: res);
+  (id :: res);
     case _ :: rest
       then componentNamesFromElts(rest);
   end matchcontinue;
@@ -1034,12 +1034,12 @@ algorithm
       Comment cmt;
 
     case (CLASS(name = id,
-                prefixes = prefixes,
-                encapsulatedPrefix = enc,
-                restriction = restr,
-                classDef = def,
-                cmt = cmt,
-                info = info),partialPrefix)
+          prefixes = prefixes,
+          encapsulatedPrefix = enc,
+          restriction = restr,
+          classDef = def,
+          cmt = cmt,
+          info = info),partialPrefix)
       then CLASS(id,prefixes,enc,partialPrefix,restr,def,cmt,info);
   end match;
 end classSetPartial;
@@ -1072,47 +1072,47 @@ public function elementEqual
 
     case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,_,_),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
        equation
-         true = stringEq(name1,name2);
-         true = prefixesEqual(prefixes1,prefixes2);
-         true = valueEq(en1,en2);
-         true = valueEq(p1,p2);
-         true = restrictionEqual(restr1,restr2);
-         true = classDefEqual(cd1,cd2);
+   true = stringEq(name1,name2);
+   true = prefixesEqual(prefixes1,prefixes2);
+   true = valueEq(en1,en2);
+   true = valueEq(p1,p2);
+   true = restrictionEqual(restr1,restr2);
+   true = classDefEqual(cd1,cd2);
        then
-         true;
+   true;
 
     case (COMPONENT(name1,prefixes1,attr1,tp1,mod1,_,cond1,_),
-          COMPONENT(name2,prefixes2,attr2,tp2,mod2,_,cond2,_))
+    COMPONENT(name2,prefixes2,attr2,tp2,mod2,_,cond2,_))
        equation
-         equality(cond1 = cond2);
-         true = stringEq(name1,name2);
-         true = prefixesEqual(prefixes1,prefixes2);
-         true = attributesEqual(attr1,attr2);
-         true = modEqual(mod1,mod2);
-         true = Absyn.typeSpecEqual(tp1,tp2);
+   equality(cond1 = cond2);
+   true = stringEq(name1,name2);
+   true = prefixesEqual(prefixes1,prefixes2);
+   true = attributesEqual(attr1,attr2);
+   true = modEqual(mod1,mod2);
+   true = Absyn.typeSpecEqual(tp1,tp2);
        then
-         true;
+   true;
 
      case (EXTENDS(path1,_,mod1,_,_), EXTENDS(path2,_,mod2,_,_))
        equation
-         true = Absyn.pathEqual(path1,path2);
-         true = modEqual(mod1,mod2);
+   true = Absyn.pathEqual(path1,path2);
+   true = modEqual(mod1,mod2);
        then
-         true;
+   true;
 
     case (IMPORT(imp = im1), IMPORT(imp = im2))
        equation
-         true = Absyn.importEqual(im1,im2);
+   true = Absyn.importEqual(im1,im2);
        then
-         true;
+   true;
 
      case (DEFINEUNIT(name1,_,os1,or1), DEFINEUNIT(name2,_,os2,or2))
        equation
-         true = stringEq(name1,name2);
-         equality(os1 = os2);
-         equality(or1 = or2);
+   true = stringEq(name1,name2);
+   equality(os1 = os2);
+   equality(or1 = or2);
        then
-         true;
+   true;
 
      // otherwise false
      else false;
@@ -1133,9 +1133,9 @@ algorithm
       Boolean res;
     case(ANNOTATION(mod1),ANNOTATION(mod2))
       equation
-        res = modEqual(mod1,mod2);
+  res = modEqual(mod1,mod2);
       then
-        res;
+  res;
     case(_,_) then false;
   end matchcontinue;
 end annotationEqual;
@@ -1200,8 +1200,8 @@ algorithm
 
     case (ENUM(s1,_), ENUM(s2,_))
       equation
-        b1 = stringEq(s1, s2);
-        // ignore comments here.
+  b1 = stringEq(s1, s2);
+  // ignore comments here.
       then b1;
   end match;
 end enumEqual;
@@ -1231,59 +1231,59 @@ protected function classDefEqual
        list<Absyn.NamedArg> clsttrs1,clsttrs2;
 
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_))
+    PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_))
        equation
-         List.threadMapAllValue(elts1,elts2,elementEqual,true);
-         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
-         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
-         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
+   List.threadMapAllValue(elts1,elts2,elementEqual,true);
+   List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
+   List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+   List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
+   List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
        then true;
 
      case (DERIVED(tySpec1,mod1,attr1),
-           DERIVED(tySpec2,mod2,attr2))
+     DERIVED(tySpec2,mod2,attr2))
        equation
-         true = Absyn.typeSpecEqual(tySpec1, tySpec2);
-         true = modEqual(mod1,mod2);
-         true = attributesEqual(attr1, attr2);
+   true = Absyn.typeSpecEqual(tySpec1, tySpec2);
+   true = modEqual(mod1,mod2);
+   true = attributesEqual(attr1, attr2);
        then
-         true;
+   true;
 
      case (ENUMERATION(elst1),ENUMERATION(elst2))
        equation
-         List.threadMapAllValue(elst1,elst2,enumEqual,true);
+   List.threadMapAllValue(elst1,elst2,enumEqual,true);
        then
-         true;
+   true;
 
      case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_)),
-           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_)))
+     CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_)))
        equation
-         List.threadMapAllValue(elts1,elts2,elementEqual,true);
-         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
-         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
-         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-         true = stringEq(bcName1,bcName2);
-         true = modEqual(mod1,mod2);
+   List.threadMapAllValue(elts1,elts2,elementEqual,true);
+   List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
+   List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+   List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
+   List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
+   true = stringEq(bcName1,bcName2);
+   true = modEqual(mod1,mod2);
        then
-         true;
+   true;
 
      case (PDER(p1,ilst1),PDER(p2,ilst2))
        equation
-         List.threadMapAllValue(ilst1,ilst2,stringEq,true);
+   List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then
-         true;
+   true;
 
     /* adrpo: TODO! FIXME! are these below really needed??!!
     // as far as I can tell we handle all the cases.
     case(cdef1, cdef2)
       equation
-        equality(cdef1=cdef2);
+  equality(cdef1=cdef2);
       then true;
 
     case(cdef1, cdef2)
       equation
-        failure(equality(cdef1=cdef2));
+  failure(equality(cdef1=cdef2));
       then false;*/
 
     case (_,_) then fail();
@@ -1304,9 +1304,9 @@ protected function arraydimOptEqual
     case(NONE(),NONE()) then true;
     case(SOME(lst1),SOME(lst2))
       equation
-        List.threadMapAllValue(lst1,lst2,subscriptEqual,true);
+  List.threadMapAllValue(lst1,lst2,subscriptEqual,true);
       then
-        true;
+  true;
     // oth. false
     case(SOME(lst1),SOME(lst2)) then false;
   end matchcontinue;
@@ -1325,7 +1325,7 @@ algorithm
     case(Absyn.NOSUB(),Absyn.NOSUB()) then true;
     case(Absyn.SUBSCRIPT(e1),Absyn.SUBSCRIPT(e2))
       equation
-        equal=Absyn.expEqual(e1,e2);
+  equal=Absyn.expEqual(e1,e2);
       then equal;
     case (_,_) then false;
   end matchcontinue;
@@ -1344,9 +1344,9 @@ algorithm
 
     case(ALGORITHM(a1),ALGORITHM(a2))
       equation
-        List.threadMapAllValue(a1,a2,algorithmEqual2,true);
+  List.threadMapAllValue(a1,a2,algorithmEqual2,true);
       then
-        true;
+  true;
 
     // false otherwise!
     case (_, _) then false;
@@ -1369,27 +1369,27 @@ algorithm
       Boolean b1,b2;
 
     case(ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1),
-        ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))
+  ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))
       equation
-        b1 = Absyn.crefEqual(cr1,cr2);
-        b2 = Absyn.expEqual(e1,e2);
-        equal = boolAnd(b1,b2);
+  b1 = Absyn.crefEqual(cr1,cr2);
+  b2 = Absyn.expEqual(e1,e2);
+  equal = boolAnd(b1,b2);
       then equal;
     case(ALG_ASSIGN(assignComponent = e11 as Absyn.TUPLE(_), value = e12),ALG_ASSIGN(assignComponent = e21 as Absyn.TUPLE(_), value = e22))
       equation
-        b1 = Absyn.expEqual(e11,e21);
-        b2 = Absyn.expEqual(e12,e22);
-        equal = boolAnd(b1,b2);
+  b1 = Absyn.expEqual(e11,e21);
+  b2 = Absyn.expEqual(e12,e22);
+  equal = boolAnd(b1,b2);
       then equal;
     // base it on equality for now as the ones below are not implemented!
     case(a1, a2)
       equation
-        Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1);
-        Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2);
-        // Don't compare comments and line numbers
-        equality(alg1 = alg2);
+  Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1);
+  Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2);
+  // Don't compare comments and line numbers
+  equality(alg1 = alg2);
       then
-        true;
+  true;
     // maybe replace failure/equality with these:
     //case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: ALG_IF
     //case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: ALG_FOR
@@ -1411,8 +1411,8 @@ algorithm
     local EEquation eq1,eq2;
     case (EQUATION(eq1),EQUATION(eq2))
       equation
-        equal = equationEqual2(eq1,eq2);
-        then equal;
+  equal = equationEqual2(eq1,eq2);
+  then equal;
   end match;
 end equationEqual;
 
@@ -1435,67 +1435,67 @@ algorithm
 
     case (EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       equation
-        true = equationEqual22(tb1,tb2);
-        List.threadMapAllValue(fb1,fb2,equationEqual2,true);
-        List.threadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
+  true = equationEqual22(tb1,tb2);
+  List.threadMapAllValue(fb1,fb2,equationEqual2,true);
+  List.threadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
       then
-        true;
+  true;
 
     case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
       equation
-        true = Absyn.expEqual(e11,e21);
-        true = Absyn.expEqual(e12,e22);
+  true = Absyn.expEqual(e11,e21);
+  true = Absyn.expEqual(e12,e22);
       then
-        true;
+  true;
 
     case(EQ_CONNECT(crefLeft = cr11, crefRight = cr12),EQ_CONNECT(crefLeft = cr21, crefRight = cr22))
       equation
-        true = Absyn.crefEqual(cr11,cr21);
-        true = Absyn.crefEqual(cr12,cr22);
+  true = Absyn.crefEqual(cr11,cr21);
+  true = Absyn.crefEqual(cr12,cr22);
       then
-        true;
+  true;
 
     case (EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
       equation
-        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
-        true = Absyn.expEqual(exp1,exp2);
-        true = stringEq(id1,id2);
+  List.threadMapAllValue(eql1,eql2,equationEqual2,true);
+  true = Absyn.expEqual(exp1,exp2);
+  true = stringEq(id1,id2);
       then
-        true;
+  true;
 
     case (EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1),EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))
       equation
-        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
-        true = stringEq(id1,id2);
+  List.threadMapAllValue(eql1,eql2,equationEqual2,true);
+  true = stringEq(id1,id2);
       then
-        true;
+  true;
 
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
-        List.threadMapAllValue(elst1,elst2,equationEqual2,true);
-        true = Absyn.expEqual(cond1,cond2);
+  List.threadMapAllValue(elst1,elst2,equationEqual2,true);
+  true = Absyn.expEqual(cond1,cond2);
       then
-        true;
+  true;
 
     case (EQ_ASSERT(condition = c1, message = m1),EQ_ASSERT(condition = c2, message = m2))
       equation
-        true = Absyn.expEqual(c1,c2);
-        true = Absyn.expEqual(m1,m2);
+  true = Absyn.expEqual(c1,c2);
+  true = Absyn.expEqual(m1,m2);
       then
-        true;
+  true;
 
     case (EQ_REINIT(cref = cr1, expReinit = e1),EQ_REINIT(cref = cr2, expReinit = e2))
       equation
-        true = Absyn.expEqual(e1,e2);
-        true = Absyn.crefEqual(cr1,cr2);
+  true = Absyn.expEqual(e1,e2);
+  true = Absyn.crefEqual(cr1,cr2);
       then
-        true;
+  true;
 
     case (EQ_NORETCALL(exp = e1), EQ_NORETCALL(exp = e2))
       equation
-        true = Absyn.expEqual(e1,e2);
+  true = Absyn.expEqual(e1,e2);
       then
-        true;
+  true;
 
     // otherwise false
     case(_,_) then false;
@@ -1519,10 +1519,10 @@ algorithm
     case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
       equation
-        List.threadMapAllValue(tb_1,tb_2,equationEqual2,true);
-        true = equationEqual22(tb1,tb2);
+  List.threadMapAllValue(tb_1,tb_2,equationEqual2,true);
+  true = equationEqual22(tb1,tb2);
       then
-        true;
+  true;
     case(tb_1::tb1,tb_2::tb2) then false;
 
   end matchcontinue;
@@ -1544,30 +1544,30 @@ algorithm
 
     case (MOD(f1,each1,submodlst1,SOME((e1,_)),_),MOD(f2,each2,submodlst2,SOME((e2,_)),_))
       equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = subModsEqual(submodlst1,submodlst2);
-        true = Absyn.expEqual(e1,e2);
+  true = valueEq(f1,f2);
+  true = eachEqual(each1,each2);
+  true = subModsEqual(submodlst1,submodlst2);
+  true = Absyn.expEqual(e1,e2);
       then
-        true;
+  true;
 
     case (MOD(f1,each1,submodlst1,NONE(),_),MOD(f2,each2,submodlst2,NONE(),_))
       equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = subModsEqual(submodlst1,submodlst2);
+  true = valueEq(f1,f2);
+  true = eachEqual(each1,each2);
+  true = subModsEqual(submodlst1,submodlst2);
       then
-        true;
+  true;
 
     case (NOMOD(),NOMOD()) then true;
 
     case (REDECL(f1,each1,elt1),REDECL(f2,each2,elt2))
       equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = elementEqual(elt1, elt2);
+  true = valueEq(f1,f2);
+  true = eachEqual(each1,each2);
+  true = elementEqual(elt1, elt2);
       then
-        true;
+  true;
 
     case(_,_) then false;
 
@@ -1591,12 +1591,12 @@ algorithm
     case ({},{}) then true;
 
     case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
-        equation
-          true = stringEq(id1,id2);
-          true = modEqual(mod1,mod2);
-          true = subModsEqual(subModLst1,subModLst2);
-        then
-          true;
+  equation
+    true = stringEq(id1,id2);
+    true = modEqual(mod1,mod2);
+    true = subModsEqual(subModLst1,subModLst2);
+  then
+    true;
 
     else false;
   end matchcontinue;
@@ -1621,10 +1621,10 @@ algorithm
 
     case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
       equation
-        true = Absyn.expEqual(e1,e2);
-        true = subscriptsEqual(ss1,ss2);
+  true = Absyn.expEqual(e1,e2);
+  true = subscriptsEqual(ss1,ss2);
       then
-        true;
+  true;
 
     case(_,_) then false;
   end matchcontinue;
@@ -1647,13 +1647,13 @@ algorithm
 
     case(ATTR(ad1,ct1,prl1,var1,dir1),ATTR(ad2,ct2,prl2,var2,dir2))
       equation
-        true = arrayDimEqual(ad1,ad2);
-        true = valueEq(ct1, ct2);
-        true = parallelismEqual(prl1,prl2);
-        true = variabilityEqual(var1,var2);
-        true = directionEqual(dir1,dir2);
+  true = arrayDimEqual(ad1,ad2);
+  true = valueEq(ct1, ct2);
+  true = parallelismEqual(prl1,prl2);
+  true = variabilityEqual(var1,var2);
+  true = directionEqual(dir1,dir2);
       then
-        true;
+  true;
 
     case(_, _) then false;
 
@@ -1722,16 +1722,16 @@ protected function arrayDimEqual
 
      case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2)
        equation
-         true = arrayDimEqual(ad1,ad2);
+   true = arrayDimEqual(ad1,ad2);
        then
-         true;
+   true;
 
      case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
        equation
-         true = Absyn.expEqual(e1,e2);
-         true =  arrayDimEqual(ad1,ad2);
+   true = Absyn.expEqual(e1,e2);
+   true =  arrayDimEqual(ad1,ad2);
        then
-         true;
+   true;
 
      case(_,_) then false;
    end matchcontinue;
@@ -1756,9 +1756,9 @@ algorithm
     // check if restrictions are equal, so you can return the same thing!
     case(r, CLASS(restriction = oldR))
       equation
-        true = restrictionEqual(r, oldR);
+  true = restrictionEqual(r, oldR);
       then
-        cl;
+  cl;
 
     // not equal, change
     case(r, CLASS(id,prefixes,e,p,_,parts,cmt,info))
@@ -1785,9 +1785,9 @@ algorithm
     // check if restrictions are equal, so you can return the same thing!
     case(_, CLASS(name = id))
       equation
-        true = stringEqual(name, id);
+  true = stringEqual(name, id);
       then
-        cl;
+  cl;
 
     // not equal, change
     case(_, CLASS(_,prefixes,e,p,r,parts,cmt,info))
@@ -1814,9 +1814,9 @@ algorithm
     // check if partial prefix are equal, so you can return the same thing!
     case(_,CLASS(partialPrefix = oldPartialPrefix))
       equation
-        true = valueEq(partialPrefix, oldPartialPrefix);
+  true = valueEq(partialPrefix, oldPartialPrefix);
       then
-        cl;
+  cl;
 
     // not the same, change
     case(_,CLASS(id,prefixes,e,_,restriction,parts,cmt,info))
@@ -1841,71 +1841,71 @@ algorithm
       list<tuple<Absyn.Exp, list<EEquation>>> ew;
 
       case (id,EQ_IF(condition = eLst, thenBranch = eeqLstLst, elseBranch = eeqLst))
-        equation
-          lst_1=Absyn.findIteratorInExpLst(id,eLst);
-          lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
-          lst_3=findIteratorInEEquationLst(id,eeqLst);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExpLst(id,eLst);
+    lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
+    lst_3=findIteratorInEEquationLst(id,eeqLst);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
       case (id,EQ_EQUALS(expLeft = e_1, expRight = e_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=Absyn.findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,EQ_CONNECT(crefLeft = cr_1, crefRight = cr_2))
-        equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);
-          lst_2=Absyn.findIteratorInCRef(id,cr_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInCRef(id,cr_1);
+    lst_2=Absyn.findIteratorInCRef(id,cr_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
-        equation
-          false = stringEq(id, id_1);
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInEEquationLst(id,eeqLst);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    false = stringEq(id, id_1);
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=findIteratorInEEquationLst(id,eeqLst);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
-        equation
-          true = stringEq(id, id_1);
-          lst=Absyn.findIteratorInExp(id,e_1);
-        then lst;
+  equation
+    true = stringEq(id, id_1);
+    lst=Absyn.findIteratorInExp(id,e_1);
+  then lst;
       case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
-        equation
-          false = stringEq(id, id_1);
-          lst=findIteratorInEEquationLst(id,eeqLst);
-        then lst;
+  equation
+    false = stringEq(id, id_1);
+    lst=findIteratorInEEquationLst(id,eeqLst);
+  then lst;
       case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
-        equation
-          true = stringEq(id, id_1);
-        then {};
+  equation
+    true = stringEq(id, id_1);
+  then {};
       case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, elseBranches = ew))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInEEquationLst(id,eeqLst);
-          lst_3=findIteratorInElsewhen(id,ew);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=findIteratorInEEquationLst(id,eeqLst);
+    lst_3=findIteratorInElsewhen(id,ew);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
       case (id,EQ_ASSERT(condition = e_1, message = e_2, level = e_3))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst_3=Absyn.findIteratorInExp(id,e_3);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=Absyn.findIteratorInExp(id,e_2);
+    lst_3=Absyn.findIteratorInExp(id,e_3);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
       case (id,EQ_TERMINATE(message = e_1))
-        equation
-          lst=Absyn.findIteratorInExp(id,e_1);
-        then lst;
+  equation
+    lst=Absyn.findIteratorInExp(id,e_1);
+  then lst;
       case (id,EQ_REINIT(cref = cr_1, expReinit = e_2))
-        equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInCRef(id,cr_1);
+    lst_2=Absyn.findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,EQ_NORETCALL(exp = e_1))
-        then Absyn.findIteratorInExp(id,e_1);
+  then Absyn.findIteratorInExp(id,e_1);
 
   end matchcontinue;
 end findIteratorInEEquation;
@@ -1924,11 +1924,11 @@ algorithm
       EEquation eeq;
       case (id,{}) then {};
       case (id,eeq::rest)
-        equation
-          lst_1=findIteratorInEEquation(id,eeq);
-          lst_2=findIteratorInEEquationLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInEEquation(id,eeq);
+    lst_2=findIteratorInEEquationLst(id,rest);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
   end match;
 end findIteratorInEEquationLst;
 
@@ -1946,11 +1946,11 @@ algorithm
       list<EEquation> eeq;
       case (id,{}) then {};
       case (id,eeq::rest)
-        equation
-          lst_1=findIteratorInEEquationLst(id,eeq);
-          lst_2=findIteratorInEEquationLstLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInEEquationLst(id,eeq);
+    lst_2=findIteratorInEEquationLstLst(id,rest);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
   end match;
 end findIteratorInEEquationLstLst;
 
@@ -1969,12 +1969,12 @@ algorithm
       list<EEquation> eeq;
       case (id,{}) then {};
       case (id,(e,eeq)::rest)
-        equation
-          lst_1 = Absyn.findIteratorInExp(id,e);
-          lst_2 = findIteratorInEEquationLst(id,eeq);
-          lst_3 = findIteratorInElsewhen(id,rest);
-          lst = List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1 = Absyn.findIteratorInExp(id,e);
+    lst_2 = findIteratorInEEquationLst(id,eeq);
+    lst_3 = findIteratorInElsewhen(id,rest);
+    lst = List.flatten({lst_1,lst_2,lst_3});
+  then lst;
   end match;
 end findIteratorInElsewhen;
 
@@ -1995,12 +1995,12 @@ algorithm
     // collect components
     case (( comp as COMPONENT(name=name)) :: rest)
       equation
-        (comps, names) = filterComponents(rest);
+  (comps, names) = filterComponents(rest);
       then (comp::comps,name::names);
     // ignore others
     case (_ :: rest)
       equation
-        (comps, names) = filterComponents(rest);
+  (comps, names) = filterComponents(rest);
       then (comps, names);
   end matchcontinue;
 end filterComponents;
@@ -2018,11 +2018,11 @@ algorithm
 
     case (CLASS(classDef = PARTS(elementLst = elts)))
       equation
-        (comps, names) = filterComponents(elts);
+  (comps, names) = filterComponents(elts);
       then (comps,names);
     case (CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
-        (comps, names) = filterComponents(elts);
+  (comps, names) = filterComponents(elts);
       then (comps,names);
   end match;
 end getClassComponents;
@@ -2091,37 +2091,37 @@ algorithm
 
     case ALG_IF(boolExpr,trueBranch,branches,elseBranch,_,info)
       equation
-        algs1 = List.map(trueBranch,statementToAlgorithmItem);
+  algs1 = List.map(trueBranch,statementToAlgorithmItem);
 
-        conditions = List.map(branches, Util.tuple21);
-        stmtsList = List.map(branches, Util.tuple22);
-        algsLst = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.threadTuple(conditions,algsLst);
+  conditions = List.map(branches, Util.tuple21);
+  stmtsList = List.map(branches, Util.tuple22);
+  algsLst = List.mapList(stmtsList, statementToAlgorithmItem);
+  abranches = List.threadTuple(conditions,algsLst);
 
-        algs2 = List.map(elseBranch,statementToAlgorithmItem);
+  algs2 = List.map(elseBranch,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
 
     case ALG_FOR(iterator,range,body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
     case ALG_PARFOR(iterator,range,body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
     case ALG_WHILE(boolExpr,body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr,algs1),NONE(),info);
 
     case ALG_WHEN_A(branches,_,info)
       equation
-        (boolExpr::conditions) = List.map(branches, Util.tuple21);
-        stmtsList = List.map(branches, Util.tuple22);
-        (algs1::algsLst) = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.threadTuple(conditions,algsLst);
+  (boolExpr::conditions) = List.map(branches, Util.tuple21);
+  stmtsList = List.map(branches, Util.tuple22);
+  (algs1::algsLst) = List.mapList(stmtsList, statementToAlgorithmItem);
+  abranches = List.threadTuple(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
     case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),_,info)
@@ -2135,12 +2135,12 @@ algorithm
 
     case ALG_TRY(body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs1),NONE(),info);
 
     case ALG_CATCH(body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_CATCH(algs1),NONE(),info);
 
     case ALG_THROW(_,info)
@@ -2148,7 +2148,7 @@ algorithm
 
     case ALG_FAILURE(body,_,info)
       equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+  algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
   end match;
 end statementToAlgorithmItem;
@@ -2171,70 +2171,70 @@ algorithm
       Boolean bool;
 
       case (id,ALG_ASSIGN(assignComponent = e_1, value = e_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=Absyn.findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,ALG_IF(boolExpr = e_1, trueBranch = algLst_1, elseIfBranch = elseIfBranch, elseBranch = algLst_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInStatements(id,algLst_1);
-          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
-          lst_4=findIteratorInStatements(id,algLst_2);
-          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=findIteratorInStatements(id,algLst_1);
+    lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
+    lst_4=findIteratorInStatements(id,algLst_2);
+    lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
+  then lst;
 /*      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          true=iteratorPresentAmongIterators(id,forIterators);
-          lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;
+  equation
+    true=iteratorPresentAmongIterators(id,forIterators);
+    lst=findIteratorInForIteratorsBounds(id,forIterators);
+  then lst;
       case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          false=iteratorPresentAmongIterators(id,forIterators);
-          lst_1=findIteratorInStatements(id,algLst_1);
-          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
-          lst=listAppend(lst_1,lst_2);
-        then lst; */
+  equation
+    false=iteratorPresentAmongIterators(id,forIterators);
+    lst_1=findIteratorInStatements(id,algLst_1);
+    lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+    lst=listAppend(lst_1,lst_2);
+  then lst; */
       case (id, ALG_FOR(index = iter, range = range, forBody = algLst_1))
-        equation
-          forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
-          lst_1=findIteratorInStatements(id,algLst_1);
-          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
+    lst_1=findIteratorInStatements(id,algLst_1);
+    (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
+    lst_1=Util.if_(bool, {}, lst_1);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id, ALG_PARFOR(index = iter, range = range, parforBody = algLst_1))
-        equation
-          forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
-          lst_1=findIteratorInStatements(id,algLst_1);
-          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
+    lst_1=findIteratorInStatements(id,algLst_1);
+    (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
+    lst_1=Util.if_(bool, {}, lst_1);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id, ALG_WHILE(boolExpr = e_1, whileBody = algLst_1))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInStatements(id,algLst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,e_1);
+    lst_2=findIteratorInStatements(id,algLst_1);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case (id,ALG_WHEN_A(branches = {})) then {};
       case (id,ALG_WHEN_A(branches = (e_1,algLst_1)::branches))
-        equation
-          lst_1=Absyn.findIteratorInExpLst(id,List.map(branches,Util.tuple21));
-          lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
-          lst=List.flatten(lst_1::lst_lst);
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExpLst(id,List.map(branches,Util.tuple21));
+    lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
+    lst=List.flatten(lst_1::lst_lst);
+  then lst;
       case (id,ALG_NORETCALL(exp = e_1))
-        then Absyn.findIteratorInExp(id,e_1);
+  then Absyn.findIteratorInExp(id,e_1);
       case (id,ALG_TRY(tryBody = algLst_1))
-        equation
-          lst=findIteratorInStatements(id,algLst_1);
-        then lst;
+  equation
+    lst=findIteratorInStatements(id,algLst_1);
+  then lst;
       case (id,ALG_CATCH(catchBody = algLst_1))
-        equation
-          lst=findIteratorInStatements(id,algLst_1);
-        then lst;
+  equation
+    lst=findIteratorInStatements(id,algLst_1);
+  then lst;
       case (_,_) then {};
   end matchcontinue;
 end findIteratorInStatement;
@@ -2255,11 +2255,11 @@ algorithm
       Statement algItem;
       case (id,{}) then {};
       case (id,algItem::rest)
-        equation
-          lst_1=findIteratorInStatement(id,algItem);
-          lst_2=findIteratorInStatements(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInStatement(id,algItem);
+    lst_2=findIteratorInStatements(id,rest);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
   end match;
 end findIteratorInStatements;
 
@@ -2277,12 +2277,12 @@ algorithm
       list<Statement> algItemLst;
       case (id,{}) then {};
       case (id,(exp,algItemLst)::rest)
-        equation
-          lst_1=Absyn.findIteratorInExp(id,exp);
-          lst_2=findIteratorInStatements(id,algItemLst);
-          lst_3=findIteratorInElseIfBranch(id,rest);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=Absyn.findIteratorInExp(id,exp);
+    lst_2=findIteratorInStatements(id,algItemLst);
+    lst_3=findIteratorInElseIfBranch(id,rest);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
   end match;
 end findIteratorInElseIfBranch;
 
@@ -2421,25 +2421,25 @@ algorithm
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
       equation
-        (then_branch, tup) = List.mapFold(then_branch,
-          traverseEEquationsList, tup);
-        (else_branch, tup) = traverseEEquationsList(else_branch, tup);
+  (then_branch, tup) = List.mapFold(then_branch,
+    traverseEEquationsList, tup);
+  (else_branch, tup) = traverseEEquationsList(else_branch, tup);
       then
-        (EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
+  (EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
 
     case (EQ_FOR(index, oe1, eql, comment, info), tup)
       equation
-        (eql, tup) = traverseEEquationsList(eql, tup);
+  (eql, tup) = traverseEEquationsList(eql, tup);
       then
-        (EQ_FOR(index, oe1, eql, comment, info), tup);
+  (EQ_FOR(index, oe1, eql, comment, info), tup);
 
     case (EQ_WHEN(e1, eql, else_when, comment, info), tup)
       equation
-        (eql, tup) = traverseEEquationsList(eql, tup);
-        (else_when, tup) = List.mapFold(else_when,
-          traverseElseWhenEEquations, tup);
+  (eql, tup) = traverseEEquationsList(eql, tup);
+  (else_when, tup) = List.mapFold(else_when,
+    traverseElseWhenEEquations, tup);
       then
-        (EQ_WHEN(e1, eql, else_when, comment, info), tup);
+  (EQ_WHEN(e1, eql, else_when, comment, info), tup);
 
     else then (inEEquation, inTuple);
   end match;
@@ -2521,64 +2521,64 @@ algorithm
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg))
       equation
-        ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
+  ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
       then
-        (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg));
+  (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg));
 
     case (EQ_EQUALS(e1, e2, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
+  ((e1, arg)) = traverser((e1, arg));
+  ((e2, arg)) = traverser((e2, arg));
       then
-        (EQ_EQUALS(e1, e2, comment, info), (traverser, arg));
+  (EQ_EQUALS(e1, e2, comment, info), (traverser, arg));
 
     case (EQ_CONNECT(cr1, cr2, comment, info), _)
       equation
-        (cr1, tup) = traverseComponentRefExps(cr1, inTuple);
-        (cr2, tup) = traverseComponentRefExps(cr2, tup);
+  (cr1, tup) = traverseComponentRefExps(cr1, inTuple);
+  (cr2, tup) = traverseComponentRefExps(cr2, tup);
       then
-        (EQ_CONNECT(cr1, cr2, comment, info), tup);
+  (EQ_CONNECT(cr1, cr2, comment, info), tup);
 
     case (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg));
+  (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg));
 
     case (EQ_WHEN(e1, eql, else_when, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        (else_when, tup) = List.mapFold(else_when, traverseElseWhenExps,
-          (traverser, arg));
+  ((e1, arg)) = traverser((e1, arg));
+  (else_when, tup) = List.mapFold(else_when, traverseElseWhenExps,
+    (traverser, arg));
       then
-        (EQ_WHEN(e1, eql, else_when, comment, info), tup);
+  (EQ_WHEN(e1, eql, else_when, comment, info), tup);
 
     case (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
-        ((e3, arg)) = traverser((e3, arg));
+  ((e1, arg)) = traverser((e1, arg));
+  ((e2, arg)) = traverser((e2, arg));
+  ((e3, arg)) = traverser((e3, arg));
       then
-        (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg));
+  (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg));
 
     case (EQ_TERMINATE(e1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (EQ_TERMINATE(e1, comment, info), (traverser, arg));
+  (EQ_TERMINATE(e1, comment, info), (traverser, arg));
 
     case (EQ_REINIT(cr1, e1, comment, info), _)
       equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, inTuple);
-        ((e1, arg)) = traverser((e1, arg));
+  (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, inTuple);
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (EQ_REINIT(cr1, e1, comment, info), (traverser, arg));
+  (EQ_REINIT(cr1, e1, comment, info), (traverser, arg));
 
     case (EQ_NORETCALL(e1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (EQ_NORETCALL(e1, comment, info), (traverser, arg));
+  (EQ_NORETCALL(e1, comment, info), (traverser, arg));
 
     else then (inEEquation, inTuple);
   end match;
@@ -2608,22 +2608,22 @@ algorithm
 
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _)
       equation
-        (cr, tup) = traverseComponentRefExps(cr, inTuple);
+  (cr, tup) = traverseComponentRefExps(cr, inTuple);
       then
-        (Absyn.CREF_FULLYQUALIFIED(cr), tup);
+  (Absyn.CREF_FULLYQUALIFIED(cr), tup);
 
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
-        (cr, tup) = traverseComponentRefExps(cr, inTuple);
-        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, tup);
+  (cr, tup) = traverseComponentRefExps(cr, inTuple);
+  (subs, tup) = List.mapFold(subs, traverseSubscriptExps, tup);
       then
-        (Absyn.CREF_QUAL(name, subs, cr), tup);
+  (Absyn.CREF_QUAL(name, subs, cr), tup);
 
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, inTuple);
+  (subs, tup) = List.mapFold(subs, traverseSubscriptExps, inTuple);
       then
-        (Absyn.CREF_IDENT(name, subs), tup);
+  (Absyn.CREF_IDENT(name, subs), tup);
 
     case (Absyn.WILD(), _) then (inCref, inTuple);
   end match;
@@ -2651,9 +2651,9 @@ algorithm
 
     case (Absyn.SUBSCRIPT(subscript = sub_exp), (traverser, arg))
       equation
-        ((sub_exp, arg)) = traverser((sub_exp, arg));
+  ((sub_exp, arg)) = traverser((sub_exp, arg));
       then
-        (Absyn.SUBSCRIPT(sub_exp), (traverser, arg));
+  (Absyn.SUBSCRIPT(sub_exp), (traverser, arg));
 
     case (Absyn.NOSUB(), _) then (inSubscript, inTuple);
   end match;
@@ -2738,26 +2738,26 @@ algorithm
 
     case (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg))
       then
-        (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg));
+  (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg));
 
     case (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg))
       equation
-        ((range, arg)) = traverser((range, arg));
+  ((range, arg)) = traverser((range, arg));
       then
-        (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg));
+  (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg));
 
     case (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg))
       equation
-        ((guardExp, arg)) = traverser((guardExp, arg));
-        ((range, arg)) = traverser((range, arg));
+  ((guardExp, arg)) = traverser((guardExp, arg));
+  ((range, arg)) = traverser((range, arg));
       then
-        (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg));
+  (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg));
 
     case (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg))
       equation
-        ((guardExp, arg)) = traverser((guardExp, arg));
+  ((guardExp, arg)) = traverser((guardExp, arg));
       then
-        (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg));
+  (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg));
 
   end match;
 end traverseForIteratorExps;
@@ -2836,55 +2836,55 @@ algorithm
 
     case (ALG_IF(e, stmts1, branches, stmts2, comment, info), (traverser, arg))
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
-        (branches, tup) = List.mapFold(branches,
-          traverseBranchStatements, tup);
-        (stmts2, tup) = traverseStatementsList(stmts2, (traverser, arg));
+  (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
+  (branches, tup) = List.mapFold(branches,
+    traverseBranchStatements, tup);
+  (stmts2, tup) = traverseStatementsList(stmts2, (traverser, arg));
       then
-        (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup);
+  (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup);
 
     case (ALG_FOR(iter, range, stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+  (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
-        (ALG_FOR(iter, range, stmts1, comment, info), tup);
+  (ALG_FOR(iter, range, stmts1, comment, info), tup);
 
     case (ALG_PARFOR(iter, range, stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+  (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
-        (ALG_PARFOR(iter, range, stmts1, comment, info), tup);
+  (ALG_PARFOR(iter, range, stmts1, comment, info), tup);
 
     case (ALG_WHILE(e, stmts1, comment, info), (traverser, arg))
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
+  (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
       then
-        (ALG_WHILE(e, stmts1, comment, info), tup);
+  (ALG_WHILE(e, stmts1, comment, info), tup);
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
-        (branches, tup) = List.mapFold(branches,
-          traverseBranchStatements, tup);
+  (branches, tup) = List.mapFold(branches,
+    traverseBranchStatements, tup);
       then
-        (ALG_WHEN_A(branches, comment, info), tup);
+  (ALG_WHEN_A(branches, comment, info), tup);
 
     case (ALG_TRY(stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+  (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
-        (ALG_TRY(stmts1, comment, info), tup);
+  (ALG_TRY(stmts1, comment, info), tup);
 
     case (ALG_CATCH(stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+  (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
-        (ALG_CATCH(stmts1, comment, info), tup);
+  (ALG_CATCH(stmts1, comment, info), tup);
 
     case (ALG_FAILURE(stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+  (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
-        (ALG_FAILURE(stmts1, comment, info), tup);
+  (ALG_FAILURE(stmts1, comment, info), tup);
 
     else then (inStatement, inTuple);
   end match;
@@ -2963,49 +2963,49 @@ algorithm
 
     case (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
+  ((e1, arg)) = traverser((e1, arg));
+  ((e2, arg)) = traverser((e2, arg));
       then
-        (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg));
+  (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg));
 
     case (ALG_IF(e1, stmts1, branches, stmts2, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        (branches, tup) = List.mapFold(branches, traverseBranchExps,
-          (traverser, arg));
+  ((e1, arg)) = traverser((e1, arg));
+  (branches, tup) = List.mapFold(branches, traverseBranchExps,
+    (traverser, arg));
       then
-        (ALG_IF(e1, stmts1, branches, stmts2, comment, info), tup);
+  (ALG_IF(e1, stmts1, branches, stmts2, comment, info), tup);
 
     case (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
+  (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
 
 
     case (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
+  (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
 
     case (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1, arg));
+  ((e1, arg)) = traverser((e1, arg));
       then
-        (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg));
+  (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg));
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
-        (branches, tup) = List.mapFold(branches, traverseBranchExps, tup);
+  (branches, tup) = List.mapFold(branches, traverseBranchExps, tup);
       then
-        (ALG_WHEN_A(branches, comment, info), tup);
+  (ALG_WHEN_A(branches, comment, info), tup);
 
     case (ALG_NORETCALL(e1, comment, info), (traverser, arg))
       equation
-        ((e1, arg)) = traverser((e1,  arg));
+  ((e1, arg)) = traverser((e1,  arg));
       then
-        (ALG_NORETCALL(e1, comment, info), (traverser, arg));
+  (ALG_NORETCALL(e1, comment, info), (traverser, arg));
 
     else then (inStatement, inTuple);
   end match;
@@ -3081,16 +3081,16 @@ algorithm
       then name;
     case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
       equation
-        true = listMember(name,knownExternalCFunctions);
-        true = outVar2 ==& outVar1;
-        argsStr = List.mapMap(args, Absyn.expCref, Absyn.crefIdent);
-        equality(argsStr = inVars);
+  true = listMember(name,knownExternalCFunctions);
+  true = outVar2 ==& outVar1;
+  argsStr = List.mapMap(args, Absyn.expCref, Absyn.crefIdent);
+  equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
       restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),
       classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
-        true = listMember(name,knownExternalCFunctions);
+  true = listMember(name,knownExternalCFunctions);
       then name;
   end match;
 end isBuiltinFunction;
@@ -3327,7 +3327,7 @@ algorithm
     case (true, inOptConstrainClass) then REPLACEABLE(inOptConstrainClass);
     case (false, SOME(_))
       equation
-        print("Ignoring constraint class because replaceable prefix is not present!\n");
+  print("Ignoring constraint class because replaceable prefix is not present!\n");
       then NOT_REPLACEABLE();
     case (false, _) then NOT_REPLACEABLE();
   end matchcontinue;
@@ -3485,9 +3485,9 @@ algorithm
 
     case (_, CLASS(classDef = DERIVED(attributes = cls_attr)))
       equation
-        SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr));
+  SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr));
       then
-        attr;
+  attr;
 
     else inAttributes;
   end match;
@@ -3512,13 +3512,13 @@ algorithm
     case (_,NONE()) then SOME(ele);
     case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(ad2,ct2,p2,v2,d2)))
       equation
-        ct = propagateConnectorType(ct1, ct2);
-        p = propagateParallelism(p1,p2);
-        v = propagateVariability(v1,v2);
-        d = propagateDirection(d1,d2);
-        ad = ad1; // TODO! CHECK if ad1 == ad2!
+  ct = propagateConnectorType(ct1, ct2);
+  p = propagateParallelism(p1,p2);
+  v = propagateVariability(v1,v2);
+  d = propagateDirection(d1,d2);
+  ad = ad1; // TODO! CHECK if ad1 == ad2!
       then
-        SOME(ATTR(ad,ct,p,v,d));
+  SOME(ATTR(ad,ct,p,v,d));
   end match;
 end mergeAttributes;
 
@@ -3544,13 +3544,13 @@ algorithm
     case (NON_PARALLEL(), _) then inParallelism2;
     case(_,_)
       equation
-        equality(inParallelism1 = inParallelism2);
+  equality(inParallelism1 = inParallelism2);
       then inParallelism1;
     case(_,_)
       equation
-        print(" failure in propagateParallelism, Parallelism mismatch.");
+  print(" failure in propagateParallelism, Parallelism mismatch.");
       then
-        fail();
+  fail();
   end match;
 end propagateParallelism;
 
@@ -3577,13 +3577,13 @@ algorithm
     case (_,Absyn.BIDIR()) then d1;
     case(_,_)
       equation
-        equality(d1 = d2);
+  equality(d1 = d2);
       then d1;
     case(_,_)
       equation
-        print(" failure in propagateAbsynDirection, inner outer mismatch");
+  print(" failure in propagateAbsynDirection, inner outer mismatch");
       then
-        fail();
+  fail();
   end matchcontinue;
 end propagateDirection;
 
@@ -3633,12 +3633,12 @@ algorithm
     case(NOT_REPLACEABLE(),NOT_REPLACEABLE()) then true;
 
     case(REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p1, modifier = m1))),
-         REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
+   REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
       equation
-        true = Absyn.pathEqual(p1, p2);
-        true = modEqual(m1, m2);
+  true = Absyn.pathEqual(p1, p2);
+  true = modEqual(m1, m2);
       then
-        true;
+  true;
 
     case(REPLACEABLE(NONE()),REPLACEABLE(NONE())) then true;
 
@@ -3662,13 +3662,13 @@ algorithm
 
     case(PREFIXES(v1,rd1,f1,io1,rpl1),PREFIXES(v2,rd2,f2,io2,rpl2))
       equation
-        true = valueEq(v1, v2);
-        true = valueEq(rd1, rd2);
-        true = valueEq(f1, f2);
-        true = Absyn.innerOuterEqual(io1, io2);
-        true = replaceableEqual(rpl1, rpl2);
+  true = valueEq(v1, v2);
+  true = valueEq(rd1, rd2);
+  true = valueEq(f1, f2);
+  true = Absyn.innerOuterEqual(io1, io2);
+  true = replaceableEqual(rpl1, rpl2);
       then
-        true;
+  true;
 
     case(_,_) then false;
 
@@ -3854,12 +3854,12 @@ algorithm
       Mod mod;
     case (ANNOTATION(modification = mod) :: rest,_)
       equation
-        true = hasBooleanNamedAnnotation2(mod,annotationName);
+  true = hasBooleanNamedAnnotation2(mod,annotationName);
       then
-        true;
+  true;
     case (ANNOTATION(modification = mod) :: rest,_)
       equation
-        false = hasBooleanNamedAnnotation2(mod,annotationName);
+  false = hasBooleanNamedAnnotation2(mod,annotationName);
       then hasBooleanNamedAnnotation(rest,annotationName);
     case ({}, _) then false;
   end matchcontinue;
@@ -3894,13 +3894,13 @@ algorithm
       String id;
     case (NAMEMOD(ident = id,A=MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,_)
       equation
-        true = id ==& namedAnnotation;
+  true = id ==& namedAnnotation;
       then true;
     case (submod :: rest,_)
       equation
-        b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
+  b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
       then
-        b;
+  b;
     case ({}, _) then false;
   end matchcontinue;
 end hasBooleanNamedAnnotation3;
@@ -4008,7 +4008,7 @@ algorithm
 
     case COMPONENT(name, PREFIXES(_, rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)
       then COMPONENT(name, PREFIXES(PROTECTED(), rdp, fp, io, rpp),
-        attr, ty, mod, cmt, cnd, info);
+  attr, ty, mod, cmt, cnd, info);
 
     case EXTENDS(visibility = PROTECTED())
       then inElement;
@@ -4040,25 +4040,25 @@ algorithm
 
     case (_, _, Absyn.QUALIFIED(i, p))
       equation
-        e = getElementWithId(inProgram, i);
-        sp = getElementsFromElement(inProgram, e);
-        sp = replaceOrAddElementInProgram(sp, inElement, p);
-        e = replaceElementsInElement(inProgram, e, sp);
-        sp = replaceOrAddElementWithId(inProgram, e, i);
+  e = getElementWithId(inProgram, i);
+  sp = getElementsFromElement(inProgram, e);
+  sp = replaceOrAddElementInProgram(sp, inElement, p);
+  e = replaceElementsInElement(inProgram, e, sp);
+  sp = replaceOrAddElementWithId(inProgram, e, i);
       then
-        sp;
+  sp;
 
     case (_, _, Absyn.IDENT(i))
       equation
-        sp = replaceOrAddElementWithId(inProgram, inElement, i);
+  sp = replaceOrAddElementWithId(inProgram, inElement, i);
       then
-        sp;
+  sp;
 
     case (_, _, Absyn.FULLYQUALIFIED(p))
       equation
-        sp = replaceOrAddElementInProgram(inProgram, inElement, p);
+  sp = replaceOrAddElementInProgram(inProgram, inElement, p);
       then
-        sp;
+  sp;
   end matchcontinue;
 end replaceOrAddElementInProgram;
 
@@ -4079,34 +4079,34 @@ algorithm
 
     case (CLASS(name = n)::rest, _, i)
       equation
-        true = stringEq(n, i);
+  true = stringEq(n, i);
       then
-        inElement::rest;
+  inElement::rest;
 
     case (COMPONENT(name = n)::rest, _, i)
       equation
-        true = stringEq(n, i);
+  true = stringEq(n, i);
       then
-        inElement::rest;
+  inElement::rest;
 
     case (EXTENDS(baseClassPath = p)::rest, _, i)
       equation
-        true = stringEq(Absyn.pathString(p), i);
+  true = stringEq(Absyn.pathString(p), i);
       then
-        inElement::rest;
+  inElement::rest;
 
     case (e::rest, _, i)
       equation
-        sp = replaceOrAddElementWithId(rest, inElement, i);
+  sp = replaceOrAddElementWithId(rest, inElement, i);
       then
-        e::sp;
+  e::sp;
 
     // not found, add it
     case ({}, _, i)
       equation
-        sp = {inElement};
+  sp = {inElement};
       then
-        sp;
+  sp;
   end matchcontinue;
 end replaceOrAddElementWithId;
 
@@ -4126,34 +4126,34 @@ algorithm
 
     case ((e as CLASS(name = n))::rest, i)
       equation
-        true = stringEq(n, i);
+  true = stringEq(n, i);
       then
-        e;
+  e;
 
     case ((e as COMPONENT(name = n))::rest, i)
       equation
-        true = stringEq(n, i);
+  true = stringEq(n, i);
       then
-        e;
+  e;
 
     case ((e as EXTENDS(baseClassPath = p))::rest, i)
       equation
-        true = stringEq(Absyn.pathString(p), i);
+  true = stringEq(Absyn.pathString(p), i);
       then
-        e;
+  e;
 
     case (_::rest, i)
       equation
-        e = getElementWithId(rest, i);
+  e = getElementWithId(rest, i);
       then
-        e;
+  e;
 
     // not found, fail
     case ({}, i)
       equation
-        print("SCode.getElementWithId: an element with name: " +& i +& " was not found in the given program.");
+  print("SCode.getElementWithId: an element with name: " +& i +& " was not found in the given program.");
       then
-        fail();
+  fail();
   end matchcontinue;
 end getElementWithId;
 
@@ -4176,17 +4176,17 @@ algorithm
 
     case (_, Absyn.IDENT(i))
       equation
-        e = getElementWithId(inProgram, i);
+  e = getElementWithId(inProgram, i);
       then
-        e;
+  e;
 
     case (_, Absyn.QUALIFIED(i, p))
       equation
-        e = getElementWithId(inProgram, i);
-        sp = getElementsFromElement(inProgram, e);
-        e = getElementWithPath(sp, p);
+  e = getElementWithId(inProgram, i);
+  sp = getElementsFromElement(inProgram, e);
+  e = getElementWithPath(sp, p);
       then
-        e;
+  e;
   end matchcontinue;
 end getElementWithPath;
 
@@ -4209,10 +4209,10 @@ algorithm
     // a derived class
     case (_, CLASS(classDef = DERIVED(typeSpec = Absyn.TPATH(path = p))))
       equation
-        e = getElementWithPath(inProgram, p);
-        els = getElementsFromElement(inProgram, e);
+  e = getElementWithPath(inProgram, p);
+  els = getElementsFromElement(inProgram, e);
       then
-        els;
+  els;
   end matchcontinue;
 end getElementsFromElement;
 
@@ -4241,16 +4241,16 @@ algorithm
     // a class with parts, non derived
     case (_, CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)
       equation
-        (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements);
+  (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements);
       then
-        CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
+  CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
 
     // a class derived
     case (_, CLASS(classDef = classDef), _)
       equation
-        (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements);
+  (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements);
       then
-        e;
+  e;
 
   end matchcontinue;
 end replaceElementsInElement;
@@ -4287,46 +4287,46 @@ algorithm
     // a derived class
     case (_, DERIVED(typeSpec = Absyn.TPATH(path = p)), _)
       equation
-        e = getElementWithPath(inProgram, p);
-        e = replaceElementsInElement(inProgram, e, inElements);
+  e = getElementWithPath(inProgram, p);
+  e = replaceElementsInElement(inProgram, e, inElements);
       then
-        (inClassDef, SOME(e));
+  (inClassDef, SOME(e));
 
     // a parts
     case (_,
-          PARTS(
-            elementLst,
-            normalEquationLst,
-            initialEquationLst,
-            normalAlgorithmLst,
-            initialAlgorithmLst,
-            constraintLst,
-            clsattrs,
-            externalDecl),
-          _)
+    PARTS(
+      elementLst,
+      normalEquationLst,
+      initialEquationLst,
+      normalAlgorithmLst,
+      initialAlgorithmLst,
+      constraintLst,
+      clsattrs,
+      externalDecl),
+    _)
       then
-        (PARTS(inElements,
-               normalEquationLst,
-               initialEquationLst,
-               normalAlgorithmLst,
-               initialAlgorithmLst,
-               constraintLst,
-               clsattrs,
-               externalDecl), NONE());
+  (PARTS(inElements,
+         normalEquationLst,
+         initialEquationLst,
+         normalAlgorithmLst,
+         initialAlgorithmLst,
+         constraintLst,
+         clsattrs,
+         externalDecl), NONE());
 
     // a class extends, non derived
     case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
       equation
-        (composition, NONE()) = replaceElementsInClassDef(inProgram, composition, inElements);
+  (composition, NONE()) = replaceElementsInClassDef(inProgram, composition, inElements);
       then
-        (CLASS_EXTENDS(baseClassName, modifications, composition), NONE());
+  (CLASS_EXTENDS(baseClassName, modifications, composition), NONE());
 
     // a class extends
     case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
       equation
-        (composition, SOME(e)) = replaceElementsInClassDef(inProgram, composition, inElements);
+  (composition, SOME(e)) = replaceElementsInClassDef(inProgram, composition, inElements);
       then
-        (inClassDef, SOME(e));
+  (inClassDef, SOME(e));
   end matchcontinue;
 end replaceElementsInClassDef;
 
@@ -4544,9 +4544,9 @@ algorithm
     local Boolean b;
     case (_)
       equation
-        b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
+  b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
       then
-        b;
+  b;
   end match;
 end equationsContainReinit;
 
@@ -4566,24 +4566,24 @@ algorithm
     case EQ_REINIT(info = _) then true;
     case EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
       equation
-        b = equationsContainReinit(eqs);
-        eqs_lst = List.map(tpl_el, Util.tuple22);
-        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+  b = equationsContainReinit(eqs);
+  eqs_lst = List.map(tpl_el, Util.tuple22);
+  b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
       then
-        b;
+  b;
 
     case EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
       equation
-        b = equationsContainReinit(eqs);
-        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+  b = equationsContainReinit(eqs);
+  b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
       then
-        b;
+  b;
 
     case EQ_FOR(eEquationLst = eqs)
       equation
-        b = equationsContainReinit(eqs);
+  b = equationsContainReinit(eqs);
       then
-        b;
+  b;
 
     else false;
 
@@ -4600,9 +4600,9 @@ algorithm
     local Boolean b;
     case (_)
       equation
-        b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
+  b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
       then
-        b;
+  b;
   end match;
 end algorithmsContainReinit;
 
@@ -4623,32 +4623,32 @@ algorithm
 
     case ALG_WHEN_A(branches = tpl_alg)
       equation
-        algs_lst = List.map(tpl_alg, Util.tuple22);
-        b = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false);
+  algs_lst = List.map(tpl_alg, Util.tuple22);
+  b = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false);
       then
-        b;
+  b;
 
     case ALG_IF(trueBranch = algs1, elseIfBranch = tpl_alg, elseBranch = algs2)
       equation
-        b1 = algorithmsContainReinit(algs1);
-        algs_lst = List.map(tpl_alg, Util.tuple22);
-        b2 = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1);
-        b3 = algorithmsContainReinit(algs2);
-        b = boolOr(b1, boolOr(b2, b3));
+  b1 = algorithmsContainReinit(algs1);
+  algs_lst = List.map(tpl_alg, Util.tuple22);
+  b2 = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1);
+  b3 = algorithmsContainReinit(algs2);
+  b = boolOr(b1, boolOr(b2, b3));
       then
-        b;
+  b;
 
     case ALG_FOR(forBody = algs)
       equation
-        b = algorithmsContainReinit(algs);
+  b = algorithmsContainReinit(algs);
       then
-        b;
+  b;
 
     case ALG_WHILE(whileBody = algs)
       equation
-        b = algorithmsContainReinit(algs);
+  b = algorithmsContainReinit(algs);
       then
-        b;
+  b;
 
     else false;
 
@@ -4747,42 +4747,42 @@ algorithm
 
     case ((el as COMPONENT(name = _)) :: rest_el, comp, cls, ext, imp, def)
       equation
-        (comp, cls, ext, imp, def) =
-          partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def) =
+    partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
       then
-        (comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def);
 
     case ((el as CLASS(name = _)) :: rest_el, comp, cls, ext, imp, def)
       equation
-        (comp, cls, ext, imp, def) =
-          partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
+  (comp, cls, ext, imp, def) =
+    partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
       then
-        (comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def);
 
     case ((el as EXTENDS(info = _)) :: rest_el, comp, cls, ext, imp, def)
       equation
-        (comp, cls, ext, imp, def) =
-          partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
+  (comp, cls, ext, imp, def) =
+    partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
       then
-        (comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def);
 
     case ((el as IMPORT(imp = _)) :: rest_el, comp, cls, ext, imp, def)
       equation
-        (comp, cls, ext, imp, def) =
-          partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
+  (comp, cls, ext, imp, def) =
+    partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
       then
-        (comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def);
 
     case ((el as DEFINEUNIT(name = _)) :: rest_el, comp, cls, ext, imp, def)
       equation
-        (comp, cls, ext, imp, def) =
-          partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
+  (comp, cls, ext, imp, def) =
+    partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
       then
-        (comp, cls, ext, imp, def);
+  (comp, cls, ext, imp, def);
 
     case ({}, comp, cls, ext, imp, def)
       then (listReverse(comp), listReverse(cls), listReverse(ext),
-            listReverse(imp), listReverse(def));
+      listReverse(imp), listReverse(def));
 
   end match;
 end partitionElements2;
@@ -4846,15 +4846,15 @@ algorithm
 
     case (COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)
       equation
-        prefs = prefixesSetVisibility(prefs, inVisibility);
+  prefs = prefixesSetVisibility(prefs, inVisibility);
       then
-        COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
+  COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
 
     case (CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)
       equation
-        prefs = prefixesSetVisibility(prefs, inVisibility);
+  prefs = prefixesSetVisibility(prefs, inVisibility);
       then
-        CLASS(name, prefs, ep, pp, res, cdef, cmt, info);
+  CLASS(name, prefs, ep, pp, res, cdef, cmt, info);
 
     case (EXTENDS(bc, _, mod, ann, info), _)
       then EXTENDS(bc, inVisibility, mod, ann, info);

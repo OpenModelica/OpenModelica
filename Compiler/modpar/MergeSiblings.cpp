@@ -1,10 +1,10 @@
 #include "MergeSiblings.hpp"
 
 MergeSiblings::MergeSiblings(TaskGraph *tg,TaskGraph * orig_tg,
-           ContainSetMap *cmap,
-           VertexID inv, VertexID outv,
-           double l,double B, int nproc,
-           map<VertexID,bool>*removed)
+     ContainSetMap *cmap,
+     VertexID inv, VertexID outv,
+     double l,double B, int nproc,
+     map<VertexID,bool>*removed)
   : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,nproc,removed)
 {
 }
@@ -71,7 +71,7 @@ bool MergeSiblings::try_merge(ExecCostQueue & queue)
     clear_vertex(b,*m_taskgraph);
     remove_vertex(b,*m_taskgraph);
     queue.push(a);  // The new task is added with new execcost,
-        // it might be merged again...
+  // it might be merged again...
     return true;
   } else {
     queue.push(a); //put back if no merge.

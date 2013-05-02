@@ -56,8 +56,8 @@ static integer c__1 = 1;
 /*     such that a*p = q*r. the householder transformation for */
 /*     column k, k = 1,2,...,min(m,n), is of the form */
 
-/*                           t */
-/*           i - (1/u(k))*u*u */
+/*                     t */
+/*     i - (1/u(k))*u*u */
 
 /*     where u has zeros in the first k-1 positions. the form of */
 /*     this transformation and the method of pivoting first */
@@ -70,44 +70,44 @@ static integer c__1 = 1;
 /*     where */
 
 /*       m is a positive integer input variable set to the number */
-/*         of rows of a. */
+/*   of rows of a. */
 
 /*       n is a positive integer input variable set to the number */
-/*         of columns of a. */
+/*   of columns of a. */
 
 /*       a is an m by n array. on input a contains the matrix for */
-/*         which the qr factorization is to be computed. on output */
-/*         the strict upper trapezoidal part of a contains the strict */
-/*         upper trapezoidal part of r, and the lower trapezoidal */
-/*         part of a contains a factored form of q (the non-trivial */
-/*         elements of the u vectors described above). */
+/*   which the qr factorization is to be computed. on output */
+/*   the strict upper trapezoidal part of a contains the strict */
+/*   upper trapezoidal part of r, and the lower trapezoidal */
+/*   part of a contains a factored form of q (the non-trivial */
+/*   elements of the u vectors described above). */
 
 /*       lda is a positive integer input variable not less than m */
-/*         which specifies the leading dimension of the array a. */
+/*   which specifies the leading dimension of the array a. */
 
 /*       pivot is a logical input variable. if pivot is set true, */
-/*         then column pivoting is enforced. if pivot is set false, */
-/*         then no column pivoting is done. */
+/*   then column pivoting is enforced. if pivot is set false, */
+/*   then no column pivoting is done. */
 
 /*       ipvt is an integer output array of length lipvt. ipvt */
-/*         defines the permutation matrix p such that a*p = q*r. */
-/*         column j of p is column ipvt(j) of the identity matrix. */
-/*         if pivot is false, ipvt is not referenced. */
+/*   defines the permutation matrix p such that a*p = q*r. */
+/*   column j of p is column ipvt(j) of the identity matrix. */
+/*   if pivot is false, ipvt is not referenced. */
 
 /*       lipvt is a positive integer input variable. if pivot is false, */
-/*         then lipvt may be as small as 1. if pivot is true, then */
-/*         lipvt must be at least n. */
+/*   then lipvt may be as small as 1. if pivot is true, then */
+/*   lipvt must be at least n. */
 
 /*       rdiag is an output array of length n which contains the */
-/*         diagonal elements of r. */
+/*   diagonal elements of r. */
 
 /*       acnorm is an output array of length n which contains the */
-/*         norms of the corresponding columns of the input matrix a. */
-/*         if this information is not needed, then acnorm can coincide */
-/*         with rdiag. */
+/*   norms of the corresponding columns of the input matrix a. */
+/*   if this information is not needed, then acnorm can coincide */
+/*   with rdiag. */
 
 /*       wa is a work array of length n. if pivot is false, then wa */
-/*         can coincide with rdiag. */
+/*   can coincide with rdiag. */
 
 /*     subprograms called */
 
@@ -156,7 +156,7 @@ static integer c__1 = 1;
       goto L40;
   }
 
-/*        bring the column of largest norm into the pivot position. */
+/*  bring the column of largest norm into the pivot position. */
 
   kmax = j;
   i__2 = *n;
@@ -183,8 +183,8 @@ static integer c__1 = 1;
   ipvt[kmax] = k;
 L40:
 
-/*        compute the householder transformation to reduce the */
-/*        j-th column of a to a multiple of the j-th unit vector. */
+/*  compute the householder transformation to reduce the */
+/*  j-th column of a to a multiple of the j-th unit vector. */
 
   i__2 = *m - j + 1;
   ajnorm = enorm_(&i__2, &a[j + j * a_dim1]);
@@ -201,8 +201,8 @@ L40:
   }
   a[j + j * a_dim1] += one;
 
-/*        apply the transformation to the remaining columns */
-/*        and update the norms. */
+/*  apply the transformation to the remaining columns */
+/*  and update the norms. */
 
   jp1 = j + 1;
   if(*n < jp1) {

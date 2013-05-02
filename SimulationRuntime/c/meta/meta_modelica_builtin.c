@@ -580,7 +580,7 @@ modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
     if (MMC_NILTEST(lst))
     {
       if (tmpArr)
-        free(tmpArr);
+  free(tmpArr);
       MMC_THROW();
     }
     tmpArr[i] = MMC_CAR(lst);

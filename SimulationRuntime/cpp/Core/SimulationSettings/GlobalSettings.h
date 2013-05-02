@@ -41,20 +41,20 @@ public:
     virtual string getRuntimeLibrarypath();
 private:
     double
-        _startTime,///< Start time of integration (default: 0.0)
-        _endTime,///< End time of integraiton (default: 1.0)
-        _hOutput;//< Output step size (default: 20 ms)
+  _startTime,///< Start time of integration (default: 0.0)
+  _endTime,///< End time of integraiton (default: 1.0)
+  _hOutput;//< Output step size (default: 20 ms)
 
     bool
-        _resultsOutput,   ///< Write out results ([false,true]; default: true)
-        _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
-        _endless_sim;
+  _resultsOutput,   ///< Write out results ([false,true]; default: true)
+  _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
+  _endless_sim;
     string
-        _output_path,
-        _selected_solver,
-        _selected_nonlin_solver,
-        _resultsfile_name,
-        _runtimeLibraryPath;
+  _output_path,
+  _selected_solver,
+  _selected_nonlin_solver,
+  _resultsfile_name,
+  _runtimeLibraryPath;
 
     //Serialization of settings class
     friend class boost::serialization::access;
@@ -63,23 +63,23 @@ private:
 
     {
 
-        try
-        {
-            using boost::serialization::make_nvp;
-            ar & make_nvp("SelectedSolver", _selected_solver);
-            ar & make_nvp("SelectedNonLinSolver", _selected_nonlin_solver);
-            ar & make_nvp("StartTime", _startTime);
-            ar & make_nvp("EndTime", _endTime);
-            ar & make_nvp("HOutput", _hOutput);
-            ar &   make_nvp("ResultsOutput", _resultsOutput);
-            ar &   make_nvp("InfoOutput", _infoOutput);
-            ar &   make_nvp("OutputPath", _output_path);
+  try
+  {
+      using boost::serialization::make_nvp;
+      ar & make_nvp("SelectedSolver", _selected_solver);
+      ar & make_nvp("SelectedNonLinSolver", _selected_nonlin_solver);
+      ar & make_nvp("StartTime", _startTime);
+      ar & make_nvp("EndTime", _endTime);
+      ar & make_nvp("HOutput", _hOutput);
+      ar &   make_nvp("ResultsOutput", _resultsOutput);
+      ar &   make_nvp("InfoOutput", _infoOutput);
+      ar &   make_nvp("OutputPath", _output_path);
 
-        }
-        catch(std::exception& ex)
-        {
-            string error = ex.what();
-        }
+  }
+  catch(std::exception& ex)
+  {
+      string error = ex.what();
+  }
 
 
     }

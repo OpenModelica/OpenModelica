@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFConnectionSets
-" file:        NFConnectionSets.mo
+" file:  NFConnectionSets.mo
   package:     NFConnectionSets
   description: Data structure and utilities to store connection sets.
 
@@ -188,19 +188,19 @@ algorithm
     // A node already exists in the forest, return its root.
     case (_, DISJOINT_SETS(nodes = nodes, indices = indices))
       equation
-        // Look up the index for the connector.
-        index = BaseHashTable.get(inConnector, indices);
-        // Look up the node corresponding to that index.
-        node = arrayGet(nodes, index);
+  // Look up the index for the connector.
+  index = BaseHashTable.get(inConnector, indices);
+  // Look up the node corresponding to that index.
+  node = arrayGet(nodes, index);
       then
-        (node, inSets);
+  (node, inSets);
 
     // A node doesn't exist in the forest, create a new node and return it.
     else
       equation
-        (node, sets) = add_impl(inConnector, inSets);
+  (node, sets) = add_impl(inConnector, inSets);
       then
-        (node, sets);
+  (node, sets);
 
   end matchcontinue;
 end find;
@@ -255,10 +255,10 @@ algorithm
 
     case (_, _, sets)
       equation
-        (set1, sets) = findSet(inConnector1, sets);
-        (set2, sets) = findSet(inConnector2, sets);
+  (set1, sets) = findSet(inConnector1, sets);
+  (set2, sets) = findSet(inConnector2, sets);
       then
-        union(set1, set2, sets);
+  union(set1, set2, sets);
 
   end match;
 end merge;
@@ -276,11 +276,11 @@ algorithm
 
     case (NFConnect2.CONNECTION(lhs = lhs, rhs = rhs), sets)
       equation
-        lhs_connl = NFConnectUtil2.expandConnector(lhs);
-        rhs_connl = NFConnectUtil2.expandConnector(rhs);
-        sets = List.threadFold(lhs_connl, rhs_connl, merge, sets);
+  lhs_connl = NFConnectUtil2.expandConnector(lhs);
+  rhs_connl = NFConnectUtil2.expandConnector(rhs);
+  sets = List.threadFold(lhs_connl, rhs_connl, merge, sets);
       then
-        sets;
+  sets;
 
   end match;
 end expandAddConnection;
@@ -308,17 +308,17 @@ algorithm
 
     case (DISJOINT_SETS(nodes = nodes, nodeCount = node_count))
       equation
-        // For each node, assign it an index which indicates which set it
-        // belongs to. Collect the nodes in a list.
-        (node_list, set_count) = assignSetIndices(nodes, node_count, 1, 0, {});
-        // Create an array of connector lists, and use the nodes' set index to
-        // put them in the array.
-        sets = arrayCreate(set_count, {});
-        sets = List.fold(node_list, collectSets, sets);
-        // Finally, convert the array into a list and return it.
-        set_list = arrayList(sets);
+  // For each node, assign it an index which indicates which set it
+  // belongs to. Collect the nodes in a list.
+  (node_list, set_count) = assignSetIndices(nodes, node_count, 1, 0, {});
+  // Create an array of connector lists, and use the nodes' set index to
+  // put them in the array.
+  sets = arrayCreate(set_count, {});
+  sets = List.fold(node_list, collectSets, sets);
+  // Finally, convert the array into a list and return it.
+  set_list = arrayList(sets);
       then
-        set_list;
+  set_list;
 
   end match;
 end extractSets;
@@ -344,20 +344,20 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = inPos > inNodeCount;
+  true = inPos > inNodeCount;
       then
-        (inAccumNodes, inNextIndex);
+  (inAccumNodes, inNextIndex);
 
     else
       equation
-        node = inNodes[inPos];
-        (node, next_index, is_node) = assignSetIndex(node, inNodes, inNextIndex);
-        accum = List.consOnTrue(is_node, node, inAccumNodes);
-        pos = inPos + 1;
-        (accum, next_index) =
-          assignSetIndices(inNodes, inNodeCount, pos, next_index, accum);
+  node = inNodes[inPos];
+  (node, next_index, is_node) = assignSetIndex(node, inNodes, inNextIndex);
+  accum = List.consOnTrue(is_node, node, inAccumNodes);
+  pos = inPos + 1;
+  (accum, next_index) =
+    assignSetIndices(inNodes, inNodeCount, pos, next_index, accum);
       then
-        (accum, next_index);
+  (accum, next_index);
 
   end matchcontinue;
 end assignSetIndices;
@@ -389,26 +389,26 @@ algorithm
     // A root node, assign it the next available index.
     case (NODE(conn, parent, index), _, _)
       equation
-        true = parent < 0;
-        next_index = inNextIndex + 1;
-        node = NODE(conn, 0, next_index);
-        _ = arrayUpdate(inNodes, index, node);
+  true = parent < 0;
+  next_index = inNextIndex + 1;
+  node = NODE(conn, 0, next_index);
+  _ = arrayUpdate(inNodes, index, node);
       then
-        (node, next_index, true);
+  (node, next_index, true);
 
     // An unassigned node, assign it the same index as the root of its tree.
     case (NODE(conn, parent, index), _, _)
       equation
-        // Find the parent.
-        node = inNodes[parent];
-        // Assign the parent an index.
-        (NODE(index = index2), next_index, _) =
-          assignSetIndex(node, inNodes, inNextIndex);
-        // Assign this node its parent's index.
-        node = NODE(conn, 0, index2);
-        _ = arrayUpdate(inNodes, index, node);
+  // Find the parent.
+  node = inNodes[parent];
+  // Assign the parent an index.
+  (NODE(index = index2), next_index, _) =
+    assignSetIndex(node, inNodes, inNextIndex);
+  // Assign this node its parent's index.
+  node = NODE(conn, 0, index2);
+  _ = arrayUpdate(inNodes, index, node);
       then
-        (node, next_index, true);
+  (node, next_index, true);
 
   end matchcontinue;
 end assignSetIndex;
@@ -457,25 +457,25 @@ algorithm
 
     case (_, DISJOINT_SETS(nodes, indices, nc))
       equation
-        // Increase the node count and use that as the node index.
-        nc = nc + 1;
-        node = makeNode(inConnector, nc);
-        // Make sure that we have space available in the node array.
-        nodes = Util.arrayExpandOnDemand(nc, nodes, 1.4, NO_NODE());
-        // Add the new node to the node array and register its index in the
-        // index table.
-        nodes = arrayUpdate(nodes, nc, node);
-        indices = BaseHashTable.addNoUpdCheck((inConnector, nc), indices);
+  // Increase the node count and use that as the node index.
+  nc = nc + 1;
+  node = makeNode(inConnector, nc);
+  // Make sure that we have space available in the node array.
+  nodes = Util.arrayExpandOnDemand(nc, nodes, 1.4, NO_NODE());
+  // Add the new node to the node array and register its index in the
+  // index table.
+  nodes = arrayUpdate(nodes, nc, node);
+  indices = BaseHashTable.addNoUpdCheck((inConnector, nc), indices);
       then
-        (node, DISJOINT_SETS(nodes, indices, nc));
+  (node, DISJOINT_SETS(nodes, indices, nc));
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- ConnecionSets.add_impl failed on connector ");
-        Debug.traceln(NFConnectUtil2.connectorStr(inConnector));
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.trace("- ConnecionSets.add_impl failed on connector ");
+  Debug.traceln(NFConnectUtil2.connectorStr(inConnector));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end add_impl;
@@ -495,29 +495,29 @@ algorithm
     // Found the root, return it.
     case (NODE(parent = parent_id), _)
       equation
-        true = parent_id < 0;
+  true = parent_id < 0;
       then
-        inNode;
+  inNode;
 
     case (NODE(conn, parent_id, index), _)
       equation
-        // Look up the parent to this node and continue looking.
-        parent = arrayGet(inNodes, parent_id);
-        (parent as NODE(index = parent_id)) = findRoot(parent, inNodes);
+  // Look up the parent to this node and continue looking.
+  parent = arrayGet(inNodes, parent_id);
+  (parent as NODE(index = parent_id)) = findRoot(parent, inNodes);
 
-        // Path compression. Any node found while looking for the root may as
-        // well be attached to the root node directly so that future look up is
-        // faster.
-        /*********************************************************************/
-        // TODO: This should in theory make the algorithm faster, but
-        // constructed tests show that it makes it slower due to the
-        // array update overhead. The performance needs to be tested on real
-        // models to see how it behaves.
-        /*********************************************************************/
-        //node = NODE(conn, parent_id, index, rank);
-        //_ = arrayUpdate(inNodes, index, node);
+  // Path compression. Any node found while looking for the root may as
+  // well be attached to the root node directly so that future look up is
+  // faster.
+  /*********************************************************************/
+  // TODO: This should in theory make the algorithm faster, but
+  // constructed tests show that it makes it slower due to the
+  // array update overhead. The performance needs to be tested on real
+  // models to see how it behaves.
+  /*********************************************************************/
+  //node = NODE(conn, parent_id, index, rank);
+  //_ = arrayUpdate(inNodes, index, node);
       then
-        parent;
+  parent;
 
   end matchcontinue;
 end findRoot;
@@ -538,18 +538,18 @@ algorithm
     // The nodes are the same, do nothing.
     case (NODE(index = index), NODE(index = index2), _)
       equation
-        true = intEq(index, index2);
+  true = intEq(index, index2);
       then
-        inSets;
+  inSets;
 
     // Otherwise, merge them.
     case (NODE(parent = rank1), NODE(parent = rank2),
-        DISJOINT_SETS(nodes, indices, nc))
+  DISJOINT_SETS(nodes, indices, nc))
       equation
-        rc = Util.intCompare(rank1, rank2);
-        nodes = union2(rc, inSet1, inSet2, nodes);
+  rc = Util.intCompare(rank1, rank2);
+  nodes = union2(rc, inSet1, inSet2, nodes);
       then
-        DISJOINT_SETS(nodes, indices, nc);
+  DISJOINT_SETS(nodes, indices, nc);
 
   end matchcontinue;
 end union;
@@ -575,29 +575,29 @@ algorithm
     // The first set is the smallest, attach it to the second set.
     case ( 1, NODE(conn, _, index), NODE(index = parent), _)
       equation
-        set = NODE(conn, parent, index);
+  set = NODE(conn, parent, index);
       then
-        arrayUpdate(inNodes, index, set);
+  arrayUpdate(inNodes, index, set);
 
     // The second set is the smallest, attach it to the first set.
     case (-1, NODE(index = parent), NODE(conn, _, index), _)
       equation
-        set = NODE(conn, parent, index);
+  set = NODE(conn, parent, index);
       then
-        arrayUpdate(inNodes, index, set);
+  arrayUpdate(inNodes, index, set);
 
     // Both trees are equally high. Attach the second to the first, and increase
     // the rank of the first with one.
     case ( 0, NODE(conn, rank, index),
-              NODE(conn2, _, index2), nodes)
+        NODE(conn2, _, index2), nodes)
       equation
-        rank = rank - 1;
-        set = NODE(conn, rank, index);
-        nodes = arrayUpdate(nodes, index, set);
-        set2 = NODE(conn2, index, index2);
-        nodes = arrayUpdate(nodes, index2, set2);
+  rank = rank - 1;
+  set = NODE(conn, rank, index);
+  nodes = arrayUpdate(nodes, index, set);
+  set2 = NODE(conn2, index, index2);
+  nodes = arrayUpdate(nodes, index2, set2);
       then
-        nodes;
+  nodes;
 
   end match;
 end union2;
@@ -626,10 +626,10 @@ algorithm
     case (NO_NODE() :: rest) equation printNodes(rest); then ();
     case (node :: rest)
       equation
-        printNode(node);
-        printNodes(rest);
+  printNode(node);
+  printNodes(rest);
       then
-        ();
+  ();
     case ({}) then ();
 
   end match;
@@ -647,11 +647,11 @@ algorithm
 
     case NODE(conn, parent_id, index)
       equation
-        conn_str = NFConnectUtil2.connectorStr(conn);
-        print("[" +& intString(index) +& "] " +& conn_str +& " -> " +&
-          intString(parent_id) +& "\n");
+  conn_str = NFConnectUtil2.connectorStr(conn);
+  print("[" +& intString(index) +& "] " +& conn_str +& " -> " +&
+    intString(parent_id) +& "\n");
       then
-        ();
+  ();
 
   end match;
 end printNode;

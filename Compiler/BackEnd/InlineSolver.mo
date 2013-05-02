@@ -30,10 +30,10 @@
  */
 
 encapsulated package InlineSolver
-" file:        InlineSolver.mo
+" file:  InlineSolver.mo
   package:     InlineSolver
   description: InlineSolver.mo contains everything needed to set up the
-               BackendDAE for the inline solver
+         BackendDAE for the inline solver
 
   RCS: $Id$"
 

@@ -56,7 +56,7 @@ size_t modelica_array_nr_of_elements(base_array_t *a){
     int i;
     size_t nr_of_elements = 1;
     for (i = 0; i < a->ndims; ++i) {
-        nr_of_elements *= a->dim_size[i];
+  nr_of_elements *= a->dim_size[i];
     }
     return nr_of_elements;
 }
@@ -65,7 +65,7 @@ size_t device_array_nr_of_elements(device_array *a){
     int i;
     size_t nr_of_elements = 1;
     for (i = 1; i <= a->info[0]; ++i) {
-        nr_of_elements *= a->info[i];
+  nr_of_elements *= a->info[i];
     }
     return nr_of_elements;
 }
@@ -93,8 +93,8 @@ size_t ocl_calc_base_index_va(base_array_t *source, int ndims, va_list ap){
 
     index = 0;
     for (i = 0; i < ndims; ++i) {
-        dim_i = va_arg(ap, modelica_integer) - 1;
-        index = index * source->dim_size[i] + dim_i;
+  dim_i = va_arg(ap, modelica_integer) - 1;
+  index = index * source->dim_size[i] + dim_i;
     }
 
     return index;
@@ -114,7 +114,7 @@ size_t alloc_device_base_array(device_array *dest, int ndims, va_list ap){
     dest->info[0] = ndims;
 
     for (i = 1; i < ndims + 1; i++) {
-        dest->info[i] = va_arg(ap, modelica_integer);
+  dest->info[i] = va_arg(ap, modelica_integer);
     }
     va_end(ap);
     return device_array_nr_of_elements(dest);
@@ -131,7 +131,7 @@ void alloc_integer_array(device_integer_array *dest, int ndims, ...){
     va_end(ap);
     dest->data = ocl_device_alloc(elements*sizeof(modelica_integer));
     dest->info_dev = ocl_device_alloc_init(dest->info,
-        (ndims+1)*sizeof(modelica_integer));
+  (ndims+1)*sizeof(modelica_integer));
 
 }
 
@@ -145,7 +145,7 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
     va_end(ap);
     dest->data = ocl_device_alloc(elements*sizeof(modelica_real));
     dest->info_dev = ocl_device_alloc_init(dest->info,
-        (ndims+1)*sizeof(modelica_integer));
+  (ndims+1)*sizeof(modelica_integer));
 
 }
 
@@ -366,7 +366,7 @@ void print_array_info(device_real_array* arr){
     printf("nr of dims = %ld \n", arr->info[0]);
 
     for (int i = 1; i <= arr->info[0]; i++){
-        printf("size of dim %d = %ld \n", i,arr->info[i]);
+  printf("size of dim %d = %ld \n", i,arr->info[i]);
     }
     printf("array data pts to %d\n", arr->data);
 }

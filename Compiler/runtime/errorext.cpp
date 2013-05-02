@@ -206,8 +206,8 @@ extern void ErrorImpl__delCheckpoint(const char* id)
     cp = checkPoints[checkPoints.size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
-          id,
-          cp.second.c_str());
+    id,
+    cp.second.c_str());
       printCheckpointStack();
       exit(-1);
     }
@@ -232,8 +232,8 @@ extern void ErrorImpl__rollBack(const char* id)
     while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
       //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back().first);
       /*if(!errorMessageQueue.empty()){
-        res = res+errorMessageQueue.top()->getMessage()+string("\n");
-        printf( (string("Deleted: ") + res).c_str());
+  res = res+errorMessageQueue.top()->getMessage()+string("\n");
+  printf( (string("Deleted: ") + res).c_str());
       }*/
       pop_message(true);
     }
@@ -245,8 +245,8 @@ extern void ErrorImpl__rollBack(const char* id)
     cp = checkPoints[checkPoints.size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
-          id,
-          cp.second.c_str());
+    id,
+    cp.second.c_str());
       printCheckpointStack();
       exit(-1);
     }
@@ -270,8 +270,8 @@ extern char* ErrorImpl__rollBackAndPrint(const char* id)
     cp = checkPoints[checkPoints.size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
-          id,
-          cp.second.c_str());
+    id,
+    cp.second.c_str());
       printCheckpointStack();
       exit(-1);
     }

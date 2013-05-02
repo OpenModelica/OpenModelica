@@ -123,20 +123,20 @@ static void initialize(void)
 
        if (debugLevelControl > 0)
        {
-              cout << "Control:\tMessage: Store the DataNames Start" << endl; fflush(stdout);
+        cout << "Control:\tMessage: Store the DataNames Start" << endl; fflush(stdout);
        }
        fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
-                     p_simDataNames_SimulationResult, p_simDataNamesFilterForTransfer);
+               p_simDataNames_SimulationResult, p_simDataNamesFilterForTransfer);
 
        if (debugLevelControl  > 0)
        {
-              cout << "Control:\tMessage: Store the DataNames End" << endl; fflush(stdout);
+        cout << "Control:\tMessage: Store the DataNames End" << endl; fflush(stdout);
        }
 //TODO initDone is obsolete
        initDone = true;
        if (debugLevelControl  > 0)
        {
-              cout << "Control:\tMessage: Initialize done..." << endl; fflush(stdout);
+        cout << "Control:\tMessage: Initialize done..." << endl; fflush(stdout);
        }
 }//End Initialize
 
@@ -149,24 +149,24 @@ static void createProducerAndConsumer(void)
        std::cout << "Creating producers and consumers!" << std::endl; fflush(stdout);
        if (transferDone)
        {
-              for(int i = 0; i < NUMBER_PRODUCER; ++i)
-              {
-                     producerThreads[i].Create(threadSimulationCalculation);
-              }
+        for(int i = 0; i < NUMBER_PRODUCER; ++i)
+        {
+               producerThreads[i].Create(threadSimulationCalculation);
+        }
 
-              for(int i = 0; i < NUMBER_CONSUMER; ++i)
-              {
-                     consumerThreads[i].Create(threadClientTransfer);
-              }
+        for(int i = 0; i < NUMBER_CONSUMER; ++i)
+        {
+               consumerThreads[i].Create(threadClientTransfer);
+        }
 
-              if (debugLevelControl  > 0)
-              {
-                     cout << "Control:\tMessage: Create producer and consumer done..." << endl; fflush(stdout);
-              }
+        if (debugLevelControl  > 0)
+        {
+               cout << "Control:\tMessage: Create producer and consumer done..." << endl; fflush(stdout);
+        }
        }
        else
        {
-              //Set Transfer IP & PORT
+        //Set Transfer IP & PORT
        }
 }
 
@@ -178,14 +178,14 @@ static void createControlClient(void)
 {
        if (clientDone) {
 
-              /*
-               * Creates client thread to communicate with GUI
-               */
-              threadClient.Create(threadClientControl);
-              if (debugLevelControl > 0)
-              {
-                     cout << "Control:\tMessage: Create client done..." << endl; fflush(stdout);
-              }
+        /*
+         * Creates client thread to communicate with GUI
+         */
+        threadClient.Create(threadClientControl);
+        if (debugLevelControl > 0)
+        {
+               cout << "Control:\tMessage: Create client done..." << endl; fflush(stdout);
+        }
        }
 }
 
@@ -197,7 +197,7 @@ static void createControlClient(void)
 void setControlClientIPandPort(string ip, int port){
        if (debugLevelControl > 0)
        {
-              cout << "Control:\tMessage: Control-Client IP and Port: " << ip << ":" << port << endl; fflush(stdout);
+        cout << "Control:\tMessage: Control-Client IP and Port: " << ip << ":" << port << endl; fflush(stdout);
        }
        control_client_ip = ip;
        control_client_port = port;
@@ -235,45 +235,45 @@ static void connectToControlServer(Socket* p_sock)
 {
        if (control_client_ip != string(""))
        {
-              if (control_client_port != 0)
-              {
-                     if (debugLevelControl > 0)
-                     {
-                            cout << "Control:\tMessage: Connect to server with user specific ip and port, ip = " << control_client_ip << ", port = " << control_client_port << endl; fflush(stdout);
-                     }
-                     // Connect to server with user specific ip and port
-                     (*p_sock).connect(control_client_ip, control_client_port);
-              }
-              else
-              {
-                     if (debugLevelControl > 0)
-                     {
-                            cout << "Control:\tMessage: Connect to server with user specific ip and default port (10500)"       << endl; fflush(stdout);
-                     }
-                     // Connect to server with user specific ip and default port
-                     (*p_sock).connect(control_client_ip, control_default_client_port);
-              }
+        if (control_client_port != 0)
+        {
+               if (debugLevelControl > 0)
+               {
+                      cout << "Control:\tMessage: Connect to server with user specific ip and port, ip = " << control_client_ip << ", port = " << control_client_port << endl; fflush(stdout);
+               }
+               // Connect to server with user specific ip and port
+               (*p_sock).connect(control_client_ip, control_client_port);
+        }
+        else
+        {
+               if (debugLevelControl > 0)
+               {
+                      cout << "Control:\tMessage: Connect to server with user specific ip and default port (10500)"       << endl; fflush(stdout);
+               }
+               // Connect to server with user specific ip and default port
+               (*p_sock).connect(control_client_ip, control_default_client_port);
+        }
        }
        else
        {
-              if (control_client_port != 0)
-              {
-                     if (debugLevelControl > 0)
-                     {
-                            cout << "Control:\tMessage: Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
-                     }
-                     // Connect to server on default IP(localhost) but user specific port
-                     (*p_sock).connect(control_default_client_ip, control_client_port);
-              }
-              else
-              {
-                     if (debugLevelControl > 0)
-                     {
-                            cout << "Control:\tMessage: Connect to server on default IP(localhost) and default port (10500)" << endl; fflush(stdout);
-                     }
-                     // Connect to server on default IP(localhost) and default port (10502)
-                     (*p_sock).connect(control_default_client_ip, control_default_client_port);
-              }
+        if (control_client_port != 0)
+        {
+               if (debugLevelControl > 0)
+               {
+                      cout << "Control:\tMessage: Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
+               }
+               // Connect to server on default IP(localhost) but user specific port
+               (*p_sock).connect(control_default_client_ip, control_client_port);
+        }
+        else
+        {
+               if (debugLevelControl > 0)
+               {
+                      cout << "Control:\tMessage: Connect to server on default IP(localhost) and default port (10500)" << endl; fflush(stdout);
+               }
+               // Connect to server on default IP(localhost) and default port (10502)
+               (*p_sock).connect(control_default_client_ip, control_default_client_port);
+        }
        }
 }
 
@@ -412,7 +412,7 @@ static void changeSimulationTime(double changedSimulationTime)
    }
 
    SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(stepSize,
-         changedSimulationTime);
+   changedSimulationTime);
    if (debugLevelControl > 0)
    {
       cout << "Control:\tFunct.: changeSimulationTime\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
@@ -426,8 +426,8 @@ static void changeSimulationTime(double changedSimulationTime)
       setSimulationTimeReversed(stepSize + changedSimulationTime);
       if (debugLevelControl > 0)
       {
-         cout << "Control:\tFunct.: changeSimulationTime\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
-         cout << "Control:\tFunct.: changeSimulationTime\tData: globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
+   cout << "Control:\tFunct.: changeSimulationTime\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+   cout << "Control:\tFunct.: changeSimulationTime\tData: globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
       }
    }
    else
@@ -603,192 +603,192 @@ static void parseMessageFromClient(string message)
        // IMPORTANT: The Control Server should be able to reply with an error message while the Control Client is not initialized e.g. if an user sends an malformed operation
 
        /*SYSTEMTIME systime;
-        GetSystemTime(&systime);
-        cout << systime.wSecond << systime.wMilliseconds << endl; fflush(stdout);
-        cout << operation << endl; fflush(stdout); */
+  GetSystemTime(&systime);
+  cout << systime.wSecond << systime.wMilliseconds << endl; fflush(stdout);
+  cout << operation << endl; fflush(stdout); */
 
        //"start","pause","stop","shutdown","init","setfilter","changetime","changevalue",
        //string::npos is the maximum value for size_t
        string::size_type checkForSharpSymbol = message.find_last_of("#");
        if (checkForSharpSymbol != string::npos) {
-              string end = message.substr(checkForSharpSymbol + 1);
+        string end = message.substr(checkForSharpSymbol + 1);
 
-              if (end.compare("end") == 0) {
-                     //Operation send via message
-                     string operation;
-                     //Sequence number send via message
-                     string seqNumber;
-                     //Attributes send via message
-                     string attributes;
+        if (end.compare("end") == 0) {
+               //Operation send via message
+               string operation;
+               //Sequence number send via message
+               string seqNumber;
+               //Attributes send via message
+               string attributes;
 
-                     //op#seq#attr
-                     string opANDseqANDattr;
+               //op#seq#attr
+               string opANDseqANDattr;
 
-                     opANDseqANDattr = message.substr(0, checkForSharpSymbol);
-                     string::size_type checkForSharpSymbolAfterOperation =
-                                   opANDseqANDattr.find_first_of("#");
+               opANDseqANDattr = message.substr(0, checkForSharpSymbol);
+               string::size_type checkForSharpSymbolAfterOperation =
+                             opANDseqANDattr.find_first_of("#");
 
-                     if (checkForSharpSymbolAfterOperation != string::npos) {
-                            operation = opANDseqANDattr.substr(0,
-                                          checkForSharpSymbolAfterOperation);
+               if (checkForSharpSymbolAfterOperation != string::npos) {
+                      operation = opANDseqANDattr.substr(0,
+                                    checkForSharpSymbolAfterOperation);
 
-                            //seq#attr
-                            string seqANDattr;
-                            seqANDattr = opANDseqANDattr.substr(
-                                          checkForSharpSymbolAfterOperation + 1);
+                      //seq#attr
+                      string seqANDattr;
+                      seqANDattr = opANDseqANDattr.substr(
+                                    checkForSharpSymbolAfterOperation + 1);
 
-                            string::size_type checkForSharpSymbolAfterSeqNumber =
-                                          seqANDattr.find_first_of("#");
-                            if (checkForSharpSymbolAfterSeqNumber != string::npos) { //Used with operations which needs seq and attribute
-                                   seqNumber = seqANDattr.substr(0,
-                                                 checkForSharpSymbolAfterSeqNumber);
-                                   attributes = seqANDattr.substr(
-                                                 checkForSharpSymbolAfterSeqNumber + 1);
-                                   //Used with operations which doesn't need attributes e.g. start, stop, pause,...
-                            } else if ((operation.compare("start") == 0)
-                                          || (operation.compare("pause") == 0)
-                                          || (operation.compare("stop") == 0)
-                                          || (operation.compare("shutdown") == 0)) {
-                                   seqNumber = seqANDattr;
-                            } else {
-                                   createMessage(
-                                                 "Error: Missing '#' symbol to separate sequence number from attribute");
-                                   return;
-                            }
-                     } else {
-                            createMessage(
-                                          "Error: Missing '#' symbol to separate operation from sequence number");
-                            return;
-                     }
-                     /*
-                      * To optimize the reaction on a user interaction, most used operations should
-                      * be at beginning of the if else queries
-                      */
-                     if (debugLevelControl > 0) {
-                            cout << "Control:\tMessage: Operation: " << operation << endl;
-                            fflush( stdout);
-                     }
+                      string::size_type checkForSharpSymbolAfterSeqNumber =
+                                    seqANDattr.find_first_of("#");
+                      if (checkForSharpSymbolAfterSeqNumber != string::npos) { //Used with operations which needs seq and attribute
+                             seqNumber = seqANDattr.substr(0,
+                                           checkForSharpSymbolAfterSeqNumber);
+                             attributes = seqANDattr.substr(
+                                           checkForSharpSymbolAfterSeqNumber + 1);
+                             //Used with operations which doesn't need attributes e.g. start, stop, pause,...
+                      } else if ((operation.compare("start") == 0)
+                                    || (operation.compare("pause") == 0)
+                                    || (operation.compare("stop") == 0)
+                                    || (operation.compare("shutdown") == 0)) {
+                             seqNumber = seqANDattr;
+                      } else {
+                             createMessage(
+                                           "Error: Missing '#' symbol to separate sequence number from attribute");
+                             return;
+                      }
+               } else {
+                      createMessage(
+                                    "Error: Missing '#' symbol to separate operation from sequence number");
+                      return;
+               }
+               /*
+                * To optimize the reaction on a user interaction, most used operations should
+                * be at beginning of the if else queries
+                */
+               if (debugLevelControl > 0) {
+                      cout << "Control:\tMessage: Operation: " << operation << endl;
+                      fflush( stdout);
+               }
 
-                     if (operation.compare("setcontrolclienturl") == 0) {
-                            string ip = parseIP(attributes);
+               if (operation.compare("setcontrolclienturl") == 0) {
+                      string ip = parseIP(attributes);
 
-                            if (debugLevelControl > 0) {
-                                   cout << "Control:\tMessage: control client ip: " << ip << endl;
-                                   fflush( stdout);
-                            }
+                      if (debugLevelControl > 0) {
+                             cout << "Control:\tMessage: control client ip: " << ip << endl;
+                             fflush( stdout);
+                      }
 
-                            int port = parsePort(attributes);
-                            if (debugLevelControl > 0) {
-                                   cout << " port: " << port << endl;
-                                   fflush( stdout);
-                            }
-                            setControlClientIPandPort(ip, port);
-                            clientDone = true;
-                            createControlClient();
-                     } else if (operation.compare("settransferclienturl") == 0) {
-                            string ip = parseIP(attributes);
+                      int port = parsePort(attributes);
+                      if (debugLevelControl > 0) {
+                             cout << " port: " << port << endl;
+                             fflush( stdout);
+                      }
+                      setControlClientIPandPort(ip, port);
+                      clientDone = true;
+                      createControlClient();
+               } else if (operation.compare("settransferclienturl") == 0) {
+                      string ip = parseIP(attributes);
 
-                            if (debugLevelControl > 0) {
-                                   cout << "Control:\tMessage: transfer client ip: " << ip << endl;
-                                   fflush( stdout);
-                            }
+                      if (debugLevelControl > 0) {
+                             cout << "Control:\tMessage: transfer client ip: " << ip << endl;
+                             fflush( stdout);
+                      }
 
-                            int port = parsePort(attributes);
+                      int port = parsePort(attributes);
 
-                            if (debugLevelControl > 0) {
-                                   cout << " port: " << port << endl;
-                                   fflush( stdout);
-                            }
+                      if (debugLevelControl > 0) {
+                             cout << " port: " << port << endl;
+                             fflush( stdout);
+                      }
 
-                            setTransferIPandPort(ip, port);
-                            transferDone = true;
-                            createProducerAndConsumer();
-                     } else {
+                      setTransferIPandPort(ip, port);
+                      transferDone = true;
+                      createProducerAndConsumer();
+               } else {
 
-                            /*
-                             * If the default network settings should be used the clientDone and transferDone variables are false
-                             */
-                            {
-                                   if (!clientDone) {
-                                          setControlClientIPandPort(control_default_client_ip,
-                                                        control_default_client_port);
-                                          clientDone = true;
-                                          createControlClient();
-                                   }
-                                   if (!transferDone) {
-                                          setTransferIPandPort(transfer_default_server_ip,
-                                                        transfer_default_server_port);
-                                          transferDone = true;
-                                          createProducerAndConsumer();
-                                   }
-                            }
+                      /*
+                       * If the default network settings should be used the clientDone and transferDone variables are false
+                       */
+                      {
+                             if (!clientDone) {
+                                    setControlClientIPandPort(control_default_client_ip,
+                                                  control_default_client_port);
+                                    clientDone = true;
+                                    createControlClient();
+                             }
+                             if (!transferDone) {
+                                    setTransferIPandPort(transfer_default_server_ip,
+                                                  transfer_default_server_port);
+                                    transferDone = true;
+                                    createProducerAndConsumer();
+                             }
+                      }
 
-                            //This block parses the commonly used messages from a client
-                            {
-                                   if (operation.compare("changevalue") == 0) {
-                                          string::size_type endOfTime = attributes.find_first_of(
-                                                        "#");
-                                          if (endOfTime != string::npos) {
-                                                 string time = attributes.substr(0, endOfTime);
-                                                 string parameter = attributes.substr(endOfTime + 1);
+                      //This block parses the commonly used messages from a client
+                      {
+                             if (operation.compare("changevalue") == 0) {
+                                    string::size_type endOfTime = attributes.find_first_of(
+                                                  "#");
+                                    if (endOfTime != string::npos) {
+                                           string time = attributes.substr(0, endOfTime);
+                                           string parameter = attributes.substr(endOfTime + 1);
 
-                                                 //Check if time is a valid double value
-                                                 char* rest = 0;
-                                                 double d = strtod(time.c_str(), &rest);
-                                                 if (*rest == 0)
-                                                        changeParameterValues(d, parameter);
-                                                 else {
-                                                        createMessage(
-                                                                      "Error: The time value is not a valid double value");
-                                                        return;
-                                                 }
-                                          } else {
-                                                 createMessage(
-                                                               "Error: Missing '#' symbol to separate time from parameter");
-                                                 return;
-                                          }
-                                   } else if (operation.compare("changetime") == 0) {
-                                          string time = attributes;
-                                          //Check if time is a valid double value
-                                          char* rest = 0;
-                                          double d = strtod(time.c_str(), &rest);
-                                          if (*rest == 0)
-                                                 changeSimulationTime(d);
-                                          else {
-                                                 createMessage(
-                                                               "Error: The time value is not a valid double value");
-                                                 return;
-                                          }
-                                   } else if (operation.compare("pause") == 0) {
-                                          pauseSimulation();
-                                   } else if (operation.compare("start") == 0) {
-                                          startSimulation();
-                                   } else if (operation.compare("stop") == 0) {
-                                          stopSimulation();
-                                   } else if (operation.compare("shutdown") == 0) {
-                                          endSimulation();
-                                   } else if (operation.compare("setfilter") == 0) {
-                                          string parameter = attributes;
-                                          setFilterForTransfer(parameter);
-                                   } else {
-                                          createMessage(
-                                                        "Error: Unknown operation [please view documentation]");
-                                          return;
-                                   }
-                            }
-                     }
-              //Send done message if the message was correct and the operation has been executed
-              ostringstream formatter;
-              formatter << "done#" << seqNumber << "#end";
-              createMessage(formatter.str());
-              } else {
-                     createMessage(
-                                   "Error: Missing 'end' string at the end of the message");
-                     return;
-              }
+                                           //Check if time is a valid double value
+                                           char* rest = 0;
+                                           double d = strtod(time.c_str(), &rest);
+                                           if (*rest == 0)
+                                                  changeParameterValues(d, parameter);
+                                           else {
+                                                  createMessage(
+                                                                "Error: The time value is not a valid double value");
+                                                  return;
+                                           }
+                                    } else {
+                                           createMessage(
+                                                         "Error: Missing '#' symbol to separate time from parameter");
+                                           return;
+                                    }
+                             } else if (operation.compare("changetime") == 0) {
+                                    string time = attributes;
+                                    //Check if time is a valid double value
+                                    char* rest = 0;
+                                    double d = strtod(time.c_str(), &rest);
+                                    if (*rest == 0)
+                                           changeSimulationTime(d);
+                                    else {
+                                           createMessage(
+                                                         "Error: The time value is not a valid double value");
+                                           return;
+                                    }
+                             } else if (operation.compare("pause") == 0) {
+                                    pauseSimulation();
+                             } else if (operation.compare("start") == 0) {
+                                    startSimulation();
+                             } else if (operation.compare("stop") == 0) {
+                                    stopSimulation();
+                             } else if (operation.compare("shutdown") == 0) {
+                                    endSimulation();
+                             } else if (operation.compare("setfilter") == 0) {
+                                    string parameter = attributes;
+                                    setFilterForTransfer(parameter);
+                             } else {
+                                    createMessage(
+                                                  "Error: Unknown operation [please view documentation]");
+                                    return;
+                             }
+                      }
+               }
+        //Send done message if the message was correct and the operation has been executed
+        ostringstream formatter;
+        formatter << "done#" << seqNumber << "#end";
+        createMessage(formatter.str());
+        } else {
+               createMessage(
+                             "Error: Missing 'end' string at the end of the message");
+               return;
+        }
        } else {
-              createMessage("Error: Missing '#' symbol to separate tokens from end");
-              return;
+        createMessage("Error: Missing '#' symbol to separate tokens from end");
+        return;
        }
 }
 
@@ -814,11 +814,11 @@ static string parseIP(string ip_port)
 {
        string::size_type checkForSharpSymbol = ip_port.find_first_of("#");
        if (checkForSharpSymbol != string::npos) {
-              string ip = ip_port.substr(0, checkForSharpSymbol);
-              return ip;
+        string ip = ip_port.substr(0, checkForSharpSymbol);
+        return ip;
        } else {
-              createMessage("Error: Missing '#' symbol to separate ip from parameter");
-              return "";
+        createMessage("Error: Missing '#' symbol to separate ip from parameter");
+        return "";
        }
 }
 
@@ -830,16 +830,16 @@ static int parsePort(string ip_port)
 {
        string::size_type checkForSharpSymbol = ip_port.find_first_of("#");
        if (checkForSharpSymbol != string::npos) {
-              string port = ip_port.substr(checkForSharpSymbol + 1);
-              std::istringstream stream(port);
-              int portvalue;
-              stream >> portvalue;
-              return portvalue;
+        string port = ip_port.substr(checkForSharpSymbol + 1);
+        std::istringstream stream(port);
+        int portvalue;
+        stream >> portvalue;
+        return portvalue;
 
        } else {
-              createMessage(
-                            "Error: Missing '#' symbol to separate port from parameter");
-              return 0;
+        createMessage(
+                      "Error: Missing '#' symbol to separate port from parameter");
+        return 0;
        }
 }
 
@@ -850,12 +850,12 @@ static void parseState(SimStepData* p_SSD, string state)
 {
        string::size_type checkForDoublePoint = state.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
-              string statenameANDstatevalue = state.substr(0, checkForDoublePoint);
-              state = state.substr(checkForDoublePoint + 1);
-              setValuesFrom_A_SSD(p_SSD, 's', statenameANDstatevalue);
-              parseState(p_SSD, state);
+        string statenameANDstatevalue = state.substr(0, checkForDoublePoint);
+        state = state.substr(checkForDoublePoint + 1);
+        setValuesFrom_A_SSD(p_SSD, 's', statenameANDstatevalue);
+        parseState(p_SSD, state);
        } else {
-              setValuesFrom_A_SSD(p_SSD, 's', state);
+        setValuesFrom_A_SSD(p_SSD, 's', state);
        }
 }
 
@@ -866,12 +866,12 @@ static void parseAlgebraic(SimStepData* p_SSD, string algebraic)
 {
        string::size_type checkForDoublePoint = algebraic.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
-              string algnameANDalgvalue = algebraic.substr(0, checkForDoublePoint);
-              algebraic = algebraic.substr(checkForDoublePoint + 1);
-              setValuesFrom_A_SSD(p_SSD, 'a', algnameANDalgvalue);
-              parseAlgebraic(p_SSD, algebraic);
+        string algnameANDalgvalue = algebraic.substr(0, checkForDoublePoint);
+        algebraic = algebraic.substr(checkForDoublePoint + 1);
+        setValuesFrom_A_SSD(p_SSD, 'a', algnameANDalgvalue);
+        parseAlgebraic(p_SSD, algebraic);
        } else {
-              setValuesFrom_A_SSD(p_SSD, 'a', algebraic);
+        setValuesFrom_A_SSD(p_SSD, 'a', algebraic);
        }
 }
 
@@ -882,12 +882,12 @@ static void parseParameter(SimStepData* p_SSD, string parameter)
 {
        string::size_type checkForDoublePoint = parameter.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
-              string parnameANDparvalue = parameter.substr(0, checkForDoublePoint);
-              parameter = parameter.substr(checkForDoublePoint + 1);
-              setValuesFrom_A_SSD(p_SSD, 'p', parnameANDparvalue);
-              parseParameter(p_SSD, parameter);
+        string parnameANDparvalue = parameter.substr(0, checkForDoublePoint);
+        parameter = parameter.substr(checkForDoublePoint + 1);
+        setValuesFrom_A_SSD(p_SSD, 'p', parnameANDparvalue);
+        parseParameter(p_SSD, parameter);
        } else {
-              setValuesFrom_A_SSD(p_SSD, 'p', parameter);
+        setValuesFrom_A_SSD(p_SSD, 'p', parameter);
        }
 }
 
@@ -902,26 +902,26 @@ static void parseNameTypes(string filterstring)
 {
        if (debugLevelControl > 0)
        {
-              cout << "Control:\tFunct.: parseNameTypes\tData: filter string: " << filterstring << endl; fflush(stdout);
+        cout << "Control:\tFunct.: parseNameTypes\tData: filter string: " << filterstring << endl; fflush(stdout);
        }
        string::size_type checkForSharp;
        /*
-        * Filter for variables (state and algebraic)
-        */
+  * Filter for variables (state and algebraic)
+  */
        checkForSharp = filterstring.find_first_of("#");
        if (checkForSharp != string::npos) {
-              string variablesNames = filterstring.substr(0, checkForSharp);
-              filterstring = filterstring.substr(checkForSharp + 1);
-              if (variablesNames.compare("") != 0) //If false, there is no filter for this type
-                     parseNames(p_simDataNamesFilterForTransfer, 'v', variablesNames);
+        string variablesNames = filterstring.substr(0, checkForSharp);
+        filterstring = filterstring.substr(checkForSharp + 1);
+        if (variablesNames.compare("") != 0) //If false, there is no filter for this type
+               parseNames(p_simDataNamesFilterForTransfer, 'v', variablesNames);
        }
 
        /*
-        * Filter for parameter
-        */
+  * Filter for parameter
+  */
        string parametersNames = filterstring;
        if (parametersNames.compare("") != 0) //If false, there is no filter for this type
-              parseNames(p_simDataNamesFilterForTransfer, 'p', parametersNames);
+        parseNames(p_simDataNamesFilterForTransfer, 'p', parametersNames);
 }
 
 /**
@@ -932,12 +932,12 @@ static void parseNames(SimDataNamesFilter* p_SDN, char type, string names)
        //if(debugLevelControl) { cout << "Type: "<< type << " Name: " << names << endl; fflush(stdout); }
        string::size_type checkForDoublePoint = names.find_first_of(":");
        if (checkForDoublePoint != string::npos) {
-              string name = names.substr(0, checkForDoublePoint);//single name
-              names = names.substr(checkForDoublePoint + 1); //rest of string with more names
-              addNameTo_A_SimDataNames(p_SDN, type, name);
-              parseNames(p_SDN, type, names);
+        string name = names.substr(0, checkForDoublePoint);//single name
+        names = names.substr(checkForDoublePoint + 1); //rest of string with more names
+        addNameTo_A_SimDataNames(p_SDN, type, name);
+        parseNames(p_SDN, type, names);
        } else {
-              addNameTo_A_SimDataNames(p_SDN, type, names);
+        addNameTo_A_SimDataNames(p_SDN, type, names);
        }
 }
 
@@ -949,77 +949,77 @@ static void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, strin
 {
        if (debugLevelControl > 1)
        {
-              cout << "Type: " << type << " Name: " << name << endl; fflush(stdout);
+        cout << "Type: " << type << " Name: " << name << endl; fflush(stdout);
        }
 
        switch (type) {
        case 'v':
-              //Check if the variable is an state or an algebraic and what index does it have
+        //Check if the variable is an state or an algebraic and what index does it have
        {
-              bool found = false;
-              int indexInFilterArr = 0;
-              for (int var = 0; var < nStates; var++, indexInFilterArr++) {
-                     if (debugLevelControl > 1)
-                     {
-                            cout << "STATENAME: " << p_simDataNames_SimulationResult->statesNames[var] << endl; fflush(stdout);
-                     }
+        bool found = false;
+        int indexInFilterArr = 0;
+        for (int var = 0; var < nStates; var++, indexInFilterArr++) {
+               if (debugLevelControl > 1)
+               {
+                      cout << "STATENAME: " << p_simDataNames_SimulationResult->statesNames[var] << endl; fflush(stdout);
+               }
 
-                     if (p_simDataNames_SimulationResult->statesNames[var] == name
-                                   && p_SDN->variablesNames[indexInFilterArr] == string("")) {
-                            p_SDN->variablesNames[indexInFilterArr] = name;
-                            found = true;
-                            if (debugLevelControl > 1)
-                            {
-                                   cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
-                            }
-                            break;
-                     }
-              }
+               if (p_simDataNames_SimulationResult->statesNames[var] == name
+                             && p_SDN->variablesNames[indexInFilterArr] == string("")) {
+                      p_SDN->variablesNames[indexInFilterArr] = name;
+                      found = true;
+                      if (debugLevelControl > 1)
+                      {
+                             cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
+                      }
+                      break;
+               }
+        }
 
-              if (!found) {
-                     if (debugLevelControl > 1)
-                     {
-                            cout << "is not state" << endl; fflush(stdout);
-                     }
-                     for (int var = 0; var < (nStates + nAlgebraic); var++, indexInFilterArr++) {
-                            if (debugLevelControl > 1)
-                            {
-                                   cout << "ALGNAME: " << p_simDataNames_SimulationResult->algebraicsNames[var] << endl; fflush(stdout);
-                            }
-                            if (p_simDataNames_SimulationResult->algebraicsNames[var]
-                                          == name && p_SDN->variablesNames[indexInFilterArr]
-                                          == string("")) {
-                                   p_SDN->variablesNames[indexInFilterArr] = name;
-                                   if (debugLevelControl > 1)
-                                   {
-                                          cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
-                                   }
-                                   break;
-                            }
-                     }
-              }
+        if (!found) {
+               if (debugLevelControl > 1)
+               {
+                      cout << "is not state" << endl; fflush(stdout);
+               }
+               for (int var = 0; var < (nStates + nAlgebraic); var++, indexInFilterArr++) {
+                      if (debugLevelControl > 1)
+                      {
+                             cout << "ALGNAME: " << p_simDataNames_SimulationResult->algebraicsNames[var] << endl; fflush(stdout);
+                      }
+                      if (p_simDataNames_SimulationResult->algebraicsNames[var]
+                                    == name && p_SDN->variablesNames[indexInFilterArr]
+                                    == string("")) {
+                             p_SDN->variablesNames[indexInFilterArr] = name;
+                             if (debugLevelControl > 1)
+                             {
+                                    cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
+                             }
+                             break;
+                      }
+               }
+        }
        }
-              break;
+        break;
 
        case 'p':
-              for (int var = 0; var < nParameters; var++) {
-                     if (p_SDN->parametersNames[var] == string("")) {
-                            p_SDN->parametersNames[var] = name;
-                            if (debugLevelControl > 1)
-                            {
-                                   cout << "PARFILTERNAME: " << name << endl; fflush(stdout);
-                            }
-                            break;
-                     }
-              }
-              break;
+        for (int var = 0; var < nParameters; var++) {
+               if (p_SDN->parametersNames[var] == string("")) {
+                      p_SDN->parametersNames[var] = name;
+                      if (debugLevelControl > 1)
+                      {
+                             cout << "PARFILTERNAME: " << name << endl; fflush(stdout);
+                      }
+                      break;
+               }
+        }
+        break;
 
        default:
-              if (debugLevelControl > 0)
-              {
-                     cout << "Incorrect Type" << endl; fflush(stdout);
-              }
-              break;
+        if (debugLevelControl > 0)
+        {
+               cout << "Incorrect Type" << endl; fflush(stdout);
+        }
+        break;
        }
 }
 /*
@@ -1041,63 +1041,63 @@ static void setValuesFrom_A_SSD(SimStepData* p_SSD, char type, string nameANDval
 
        string::size_type checkForEquals = nameANDvalue.find_first_of("=");
        if (checkForEquals != string::npos) {
-              string name = nameANDvalue.substr(0, checkForEquals);
-              string valueString = nameANDvalue.substr(checkForEquals + 1);
+        string name = nameANDvalue.substr(0, checkForEquals);
+        string valueString = nameANDvalue.substr(checkForEquals + 1);
 
-              //Check if time is a valid double value
-              char* rest = 0;
-              double valueDouble = strtod(valueString.c_str(), &rest);
-              if (*rest == 0) {
+        //Check if time is a valid double value
+        char* rest = 0;
+        double valueDouble = strtod(valueString.c_str(), &rest);
+        if (*rest == 0) {
 
-                     switch (type) {
-                     case 's':
-                            for (int var = 0; var < nStates; var++) {
-                                   if (p_simDataNames_SimulationResult->statesNames[var]
-                                                 == string(name)) {
-                                          findElement = true;
-                                          p_SSD->states[var] = valueDouble;
-                                          break;
-                                   }
-                            }
-                            break;
+               switch (type) {
+               case 's':
+                      for (int var = 0; var < nStates; var++) {
+                             if (p_simDataNames_SimulationResult->statesNames[var]
+                                           == string(name)) {
+                                    findElement = true;
+                                    p_SSD->states[var] = valueDouble;
+                                    break;
+                             }
+                      }
+                      break;
 
-                     case 'a':
-                            for (int var = 0; var < nAlgebraic; var++) {
-                                   if (p_simDataNames_SimulationResult->algebraicsNames[var]
-                                                 == string(name)) {
-                                          findElement = true;
-                                          p_SSD->algebraics[var] = valueDouble;
-                                          break;
-                                   }
-                            }
-                            break;
+               case 'a':
+                      for (int var = 0; var < nAlgebraic; var++) {
+                             if (p_simDataNames_SimulationResult->algebraicsNames[var]
+                                           == string(name)) {
+                                    findElement = true;
+                                    p_SSD->algebraics[var] = valueDouble;
+                                    break;
+                             }
+                      }
+                      break;
 
-                     case 'p':
-                            for (int var = 0; var < nParameters; var++) {
-                                   if (p_simDataNames_SimulationResult->parametersNames[var]
-                                                 == string(name)) {
-                                          findElement = true;
-                                          p_SSD->parameters[var] = valueDouble;
-                                          break;
-                                   }
-                            }
-                            break;
+               case 'p':
+                      for (int var = 0; var < nParameters; var++) {
+                             if (p_simDataNames_SimulationResult->parametersNames[var]
+                                           == string(name)) {
+                                    findElement = true;
+                                    p_SSD->parameters[var] = valueDouble;
+                                    break;
+                             }
+                      }
+                      break;
 
-                     default:
-                            if (debugLevelControl > 0)
-                            {
-                                   cout << "Incorrect Type" << endl; fflush(stdout);
-                            }
-                            break;
-                     }
-              } else {
-                     createMessage("Error: The value is not a valid double value");
-              }
+               default:
+                      if (debugLevelControl > 0)
+                      {
+                             cout << "Incorrect Type" << endl; fflush(stdout);
+                      }
+                      break;
+               }
+        } else {
+               createMessage("Error: The value is not a valid double value");
+        }
 
-              if (!findElement)
-                     createMessage("Error: Parameter " + name + " not found");
+        if (!findElement)
+               createMessage("Error: Parameter " + name + " not found");
        } else {
-              createMessage("Error: Missing '=' between name and value");
+        createMessage("Error: Missing '=' between name and value");
        }
 }
 
@@ -1113,9 +1113,9 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
        Socket sock1;
        sock1.create();
        if (control_server_port != 0) {
-              sock1.bind(control_server_port);
+        sock1.bind(control_server_port);
        } else {
-              sock1.bind(control_default_server_port);
+        sock1.bind(control_default_server_port);
        }
 
        sock1.listen();
@@ -1125,17 +1125,17 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
        initialize();
 
        while (!shutDownSignal && !error) {
-              string operation;
-              delay(1000);
-              sock2.recv(operation);
-              if (operation.compare("") != 0) {
-                     if (debugLevelControl > 0)
-                     {
-                            cout << "Client Message: "; fflush(stdout);
-                            cout << operation << endl; fflush(stdout);
-                     }
-                     parseMessageFromClient(operation);
-              }
+        string operation;
+        delay(1000);
+        sock2.recv(operation);
+        if (operation.compare("") != 0) {
+               if (debugLevelControl > 0)
+               {
+                      cout << "Client Message: "; fflush(stdout);
+                      cout << operation << endl; fflush(stdout);
+               }
+               parseMessageFromClient(operation);
+        }
        }
        sock2.close();
        sock1.close();
@@ -1154,17 +1154,17 @@ THREAD_RET_TYPE threadClientControl(THREAD_PARAM_TYPE lpParam) {
 
        //Waits for a message to the client
        while (!shutDownSignal) {
-              semaphoreMessagesToClient.Wait();
+        semaphoreMessagesToClient.Wait();
 
-              bool status = sock.send(messageForClient);
-              if (status)
-              {
-                     cout << "Message send: " << messageForClient << endl; fflush(stdout);
-              }
-              else
-              {
-                     cout << "Fail to send" << endl; fflush(stdout);
-              }
+        bool status = sock.send(messageForClient);
+        if (status)
+        {
+               cout << "Message send: " << messageForClient << endl; fflush(stdout);
+        }
+        else
+        {
+               cout << "Fail to send" << endl; fflush(stdout);
+        }
        }
        sock.close();
 

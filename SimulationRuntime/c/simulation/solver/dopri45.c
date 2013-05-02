@@ -40,31 +40,31 @@ const int dop5dense_s = 9;
 
 
 const double dop_bst[9][6] = { { 696.0, -2439.0, 3104.0, -1710.0, 384.0, 384.0 },
-                                         { 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 },
-                                         { -12000.0, 25500.0, -16000.0, 3000.0, 0.0, 1113.0 },
-                                         { -3000.0, 6375.0, -4000.0, 750.0, 0.0, 192.0 },
-                                         { 52488.0, -111537.0, 69984.0, -13122.0, 0.0, 6784.0 },
-                                         { -264.0, 561.0, -352.0, 66.0, 0.0, 84.0 },
-                                         { 32.0, -63.0, 38.0, -7.0, 0.0, 8.0 },
-                                         { 0.0, 125.0, -250.0, 125.0, 0.0, 24.0 },
-                                         { 48.0, -112.0, 80.0, -16.0, 0.0, 3.0 } };
+                                   { 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 },
+                                   { -12000.0, 25500.0, -16000.0, 3000.0, 0.0, 1113.0 },
+                                   { -3000.0, 6375.0, -4000.0, 750.0, 0.0, 192.0 },
+                                   { 52488.0, -111537.0, 69984.0, -13122.0, 0.0, 6784.0 },
+                                   { -264.0, 561.0, -352.0, 66.0, 0.0, 84.0 },
+                                   { 32.0, -63.0, 38.0, -7.0, 0.0, 8.0 },
+                                   { 0.0, 125.0, -250.0, 125.0, 0.0, 24.0 },
+                                   { 48.0, -112.0, 80.0, -16.0, 0.0, 3.0 } };
 const double dop_b5[9] = { 5179.0 / 57600.0, 0.0, 7571.0 / 16695.0,
-                                     393.0 / 640.0, -92097.0 / 339200.0, 187.0 / 2100.0,
-                                     1.0 / 40.0, 0.0, 0.0 }; /* b_i */
+                               393.0 / 640.0, -92097.0 / 339200.0, 187.0 / 2100.0,
+                               1.0 / 40.0, 0.0, 0.0 }; /* b_i */
 const double dop_b4[9] = { 35.0 / 384.0, 0.0, 500.0 / 1113.0,
-                                     125.0 / 192.0, -2187.0 / 6784.0, 11.0 / 84.0,
-                                     0.0, 0.0, 0.0 }; /* ^b_i */
+                               125.0 / 192.0, -2187.0 / 6784.0, 11.0 / 84.0,
+                               0.0, 0.0, 0.0 }; /* ^b_i */
 const double dop_c[9] = { 0.0, 1.0 / 5.0, 3.0 / 10.0, 4.0 / 5.0, 8.0 / 9.0,
-                                    1.0, 1.0, 1.0 / 5.0, 1.0 / 2.0 };
+                              1.0, 1.0, 1.0 / 5.0, 1.0 / 2.0 };
 const double dop_a[][9] = { { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 1.0 / 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 3.0 / 40.0, 9.0 / 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 44.0 / 45.0, -56.0 / 15.0, 32.0 / 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 19372.0 / 6561.0, -25360.0 / 2187.0, 64448.0 / 6561.0, -212.0 / 729.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 9017.0 / 3168.0, -355.0 / 33.0, 46732.0 / 5247.0, 49.0 / 176.0, -5103.0 / 18656.0, 0.0, 0.0, 0.0, 0.0 },
-                                      { 35.0 / 384.0, 0.0, 500.0 / 1113.0, 125.0 / 192.0, -2187.0 / 6784.0, 11.0 / 84.0, 0.0, 0.0, 0.0 },
-                                      { 5207.0 / 48000.0, 0.0, 92.0 / 795.0, -79.0 / 960.0, 53217.0 / 848000.0, -11.0 / 300.0, 4.0 / 125.0, 0.0, 0.0 },
-                                      { 613.0 / 6144.0, 0.0, 125.0 / 318.0, -125.0 / 3072.0, 8019.0 / 108544.0, -11.0 / 192.0, 1.0 / 32.0, 0.0, 0.0 } };
+                                { 1.0 / 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+                                { 3.0 / 40.0, 9.0 / 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+                                { 44.0 / 45.0, -56.0 / 15.0, 32.0 / 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+                                { 19372.0 / 6561.0, -25360.0 / 2187.0, 64448.0 / 6561.0, -212.0 / 729.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
+                                { 9017.0 / 3168.0, -355.0 / 33.0, 46732.0 / 5247.0, 49.0 / 176.0, -5103.0 / 18656.0, 0.0, 0.0, 0.0, 0.0 },
+                                { 35.0 / 384.0, 0.0, 500.0 / 1113.0, 125.0 / 192.0, -2187.0 / 6784.0, 11.0 / 84.0, 0.0, 0.0, 0.0 },
+                                { 5207.0 / 48000.0, 0.0, 92.0 / 795.0, -79.0 / 960.0, 53217.0 / 848000.0, -11.0 / 300.0, 4.0 / 125.0, 0.0, 0.0 },
+                                { 613.0 / 6144.0, 0.0, 125.0 / 318.0, -125.0 / 3072.0, 8019.0 / 108544.0, -11.0 / 192.0, 1.0 / 32.0, 0.0, 0.0 } };
 
 
 /*********************variable declaration for DOPRI5(4)***************************************/
@@ -107,7 +107,7 @@ euklidnorm(double* a) {
 int
 init_stepsize(int(*f)(), double tolerence) {
   double p = 4.0, d0norm = 0.0, d1norm = 0.0, d2norm = 0.0, h0 = 0.0, h1 = 0.0,
-         d, backupTime;
+   d, backupTime;
   double* sc = (double*) malloc(globalData->nStates * sizeof(double*));
   double* d0 = (double*) malloc(globalData->nStates * sizeof(double*));
   double* d1 = (double*) malloc(globalData->nStates * sizeof(double*));
@@ -174,7 +174,7 @@ init_stepsize(int(*f)(), double tolerence) {
   if (sim_verbose >= LOG_SOLVER)
   {
       fprintf(stdout, "stepsize initialized: step = %g\n",
-            globalData->current_stepsize); fflush(NULL);
+      globalData->current_stepsize); fflush(NULL);
   }
 
   for (i = 0; i < globalData->nStates; i++) {
@@ -193,7 +193,7 @@ init_stepsize(int(*f)(), double tolerence) {
 
 int
 stepsize_control(double start, double stop, double fixStep, int(*f)(),
-                 int reinit_step, int useInterpolation, double tolerance, int* reject) {
+           int reinit_step, int useInterpolation, double tolerance, int* reject) {
 
   double maxVal = 0, alpha, delta, TTOL, erg;
   double backupTime;
@@ -220,9 +220,9 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
 
     for (i = 0; i < globalData->nStates; i++) {
       for (l = 0; l < dopri5_s; l++) {
-        erg = fabs((dop_b5[l] - dop_b4[l]) * k[l][i]);
-        if (erg > maxVal)
-          maxVal = erg;
+  erg = fabs((dop_b5[l] - dop_b4[l]) * k[l][i]);
+  if (erg > maxVal)
+    maxVal = erg;
       }
     }
 
@@ -237,7 +237,7 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
 
     if (delta < tolerance) {
       for (i = 0; i < globalData->nStates; i++) {
-            globalData->states[i] += globalData->current_stepsize * x4[i]; /* give new states */
+      globalData->states[i] += globalData->current_stepsize * x4[i]; /* give new states */
       }
       f(); /* get new statesDerivatives */
       retry = 0;
@@ -249,18 +249,18 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
 
       if (sim_verbose >= LOG_SOLVER)
       {
-        fprintf(stdout, "| info | DOPRI5: ***!! step rejected !!***\n"); fflush(NULL);
+  fprintf(stdout, "| info | DOPRI5: ***!! step rejected !!***\n"); fflush(NULL);
       }
 
       globalData->timeValue = backupTime; /* reset time */
 
       if ((*reject > (int)10e+4) || (globalData->current_stepsize < 1e-10)) /* to avoid infinite loops */
       {
-        fprintf(stdout, "| error | DOPRI5: Too many steps rejected (>10e+4) or desired stepsize too small (< 1e-10)!.\n"); fflush(NULL);
-        free(x4);
-        free(x5);
+  fprintf(stdout, "| error | DOPRI5: Too many steps rejected (>10e+4) or desired stepsize too small (< 1e-10)!.\n"); fflush(NULL);
+  free(x4);
+  free(x5);
 
-        return 1;
+  return 1;
       }
     }
 
@@ -273,7 +273,7 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
     if (sim_verbose >= LOG_SOLVER)
     {
       fprintf(stdout, "| info | DOPRI5: stepsize on next step: %g\n",
-              globalData->current_stepsize); fflush(NULL);
+        globalData->current_stepsize); fflush(NULL);
     }
   } while (retry);
 
@@ -314,7 +314,7 @@ dopri54(int(*f)(), double* x4, double* x5) {
     for (i = 0; i < globalData->nStates; i++) {
       sum = 0;
       for (l = 0; l < dop5dense_s; l++) {
-        sum = sum + dop_a[j][l] * k[l][i];
+  sum = sum + dop_a[j][l] * k[l][i];
       }
       globalData->states[i] = backupstats[i] + globalData->current_stepsize * sum;
     }
@@ -356,7 +356,7 @@ dopri54(int(*f)(), double* x4, double* x5) {
 /******************************* interpolation module ************************************************/
 int
 interpolation_control(const int dideventstep, double interpolationStep,
-                      double fixStep, double stop) {
+                double fixStep, double stop) {
 
   int i,l;
   if (sim_verbose >= LOG_SOLVER){
@@ -393,38 +393,38 @@ interpolation_control(const int dideventstep, double interpolationStep,
     do {
       if (!(backupTime == backupTime_old)) /* don't interpolate during an event */
       {
-        /* calculate dense output interpolation parameter sigma */
-        sh = interpolationStep - globalData->timeValue;
-        sigma = sh / globalData->current_stepsize;
+  /* calculate dense output interpolation parameter sigma */
+  sh = interpolationStep - globalData->timeValue;
+  sigma = sh / globalData->current_stepsize;
 
-        for (i = 0; i < dop5dense_s; i++) {
-          /* compute bstar vector components using Horner's scheme */
-          numerator = dop_bst[i][4] +
-                      sigma * (dop_bst[i][3] +
-                      sigma * (dop_bst[i][2] +
-                      sigma * (dop_bst[i][1] +
-                      sigma * dop_bst[i][0])));
-          bstar[i] = numerator / dop_bst[i][5];
-        }
+  for (i = 0; i < dop5dense_s; i++) {
+    /* compute bstar vector components using Horner's scheme */
+    numerator = dop_bst[i][4] +
+                sigma * (dop_bst[i][3] +
+                sigma * (dop_bst[i][2] +
+                sigma * (dop_bst[i][1] +
+                sigma * dop_bst[i][0])));
+    bstar[i] = numerator / dop_bst[i][5];
+  }
 
-        for (i = 0; i < globalData->nStates; i++) {
-          sum = 0;
-          for (l = 0; l < dop5dense_s; l++) {
-            sum = sum + bstar[l] * k[l][i];
-          }
-          globalData->states[i] = globalData->states[i] + sh * sum;
-        }
+  for (i = 0; i < globalData->nStates; i++) {
+    sum = 0;
+    for (l = 0; l < dop5dense_s; l++) {
+      sum = sum + bstar[l] * k[l][i];
+    }
+    globalData->states[i] = globalData->states[i] + sh * sum;
+  }
 
-        /* set global time value to interpolated time */
-        globalData->timeValue = interpolationStep;
+  /* set global time value to interpolated time */
+  globalData->timeValue = interpolationStep;
 
-        /* update all dependent variables */
-        functionODE(NULL);
-        functionAlgebraics(NULL);
-        saveZeroCrossings();
+  /* update all dependent variables */
+  functionODE(NULL);
+  functionAlgebraics(NULL);
+  saveZeroCrossings();
 
-        /* Emit interpolated data at the current time step */
-        sim_result.emit(&sim_result,data);
+  /* Emit interpolated data at the current time step */
+  sim_result.emit(&sim_result,data);
       }
 
       interpolationStep = interpolationStep + fixStep;

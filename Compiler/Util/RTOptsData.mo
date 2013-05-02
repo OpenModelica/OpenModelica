@@ -30,7 +30,7 @@
  */
 
 encapsulated package RTOptsData
-" file:         RTOptsData.mo
+" file:   RTOptsData.mo
   package:     RTOpts
   description: Data structures for RTOpts
 

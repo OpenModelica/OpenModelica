@@ -80,9 +80,9 @@ static InterpolationTable2D** interpolationTables2D=NULL;
 static size_t ninterpolationTables2D=0;
 
 InterpolationTable *InterpolationTable_init(double time,double startTime, int ipoType, int expoType,
-         const char* tableName, const char* fileName,
-         const double *table,
-         int tableDim1, int tableDim2,int colWise);
+   const char* tableName, const char* fileName,
+   const double *table,
+   int tableDim1, int tableDim2,int colWise);
 /* InterpolationTable *InterpolationTable_Copy(InterpolationTable *orig); */
 void InterpolationTable_deinit(InterpolationTable *tpl);
 double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size_t col);
@@ -97,8 +97,8 @@ void InterpolationTable_checkValidityOfData(InterpolationTable *tpl);
 
 
 InterpolationTable2D *InterpolationTable2D_init(int ipoType, const char* tableName,
-           const char* fileName, const double *table,
-           int tableDim1, int tableDim2, int colWise);
+     const char* fileName, const double *table,
+     int tableDim1, int tableDim2, int colWise);
 void InterpolationTable2D_deinit(InterpolationTable2D *table);
 double InterpolationTable2D_interpolate(InterpolationTable2D *tpl, double x1, double x2);
 char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, const char* tname, const double* table);
@@ -123,13 +123,13 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl);
  * tableDim1 - number of rows of table
  * tableDim2 - number of columns of table.
  * colWise - 0 = column major order
- *           1 = row major order
+ *     1 = row major order
  */
 
 
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
-        const char *tableName, const char* fileName,
-        const double *table,int tableDim1, int tableDim2,int colWise)
+  const char *tableName, const char* fileName,
+  const double *table,int tableDim1, int tableDim2,int colWise)
 {
   size_t i = 0;
   InterpolationTable** tmp = NULL;
@@ -161,10 +161,10 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
   ninterpolationTables++;
   /* otherwise initialize new table */
   interpolationTables[ninterpolationTables-1] = InterpolationTable_init(timeIn,startTime,
-                   ipoType,expoType,
-                   tableName, fileName,
-                   table, tableDim1,
-                   tableDim2, colWise);
+             ipoType,expoType,
+             tableName, fileName,
+             table, tableDim1,
+             tableDim2, colWise);
   return (ninterpolationTables-1);
 }
 
@@ -258,7 +258,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
   ninterpolationTables2D++;
   /* otherwise initialize new table */
   interpolationTables2D[ninterpolationTables2D-1] = InterpolationTable2D_init(ipoType,tableName,
-                      fileName,table,tableDim1,tableDim2,colWise);
+                fileName,table,tableDim1,tableDim2,colWise);
   return (ninterpolationTables2D-1);
 }
 
@@ -440,9 +440,9 @@ size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
       char *tmp = (char*)calloc(*size+100,sizeof(char));
      // throw std::runtime_error"Not enough memory for Filename %s");
       for (i = 0; i < *size; i++)
-        tmp[i] = buf[i];
+  tmp[i] = buf[i];
       if (buf)
-        free(buf);
+  free(buf);
       *data = tmp;
       buf = *data;
       *size = *size+100;
@@ -484,11 +484,11 @@ char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, size_t *r
       /* is table name the one we are looking for? */
       if (strncmp(tblName,tableName,strlen(tableName))==0)
       {
-        *cols = _cols;
-        *rows = _rows;
-        if (strLn)
-          free(strLn);
-        return 1;
+  *cols = _cols;
+  *rows = _rows;
+  if (strLn)
+    free(strLn);
+  return 1;
       }
     }
   }
@@ -610,17 +610,17 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
     {
       if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
       {
-        fclose(f->fp);
+  fclose(f->fp);
        // throw std::runtime_error"Table `%s' not in supported format.");
       }
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
-        fclose(f->fp);
+  fclose(f->fp);
        // throw std::runtime_error"Table `%s' has zero dimensions.");
       }
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
-        fclose(f->fp);
+  fclose(f->fp);
        // throw std::runtime_error"Table `%s' has zero dimensions [%d,%d].");
       }
       *rows = f->hdr.mrows;
@@ -773,9 +773,9 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
       char *tmp = (char*)calloc(*size+100,sizeof(char));
      // throw std::runtime_error"Not enough memory for Filename %s");
       for (i = 0; i < *size; i++)
-        tmp[i] = buf[i];
+  tmp[i] = buf[i];
       if (buf)
-        free(buf);
+  free(buf);
       *data = tmp;
       buf = *data;
       *size = *size+100;
@@ -816,36 +816,36 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *row
       f->data = ftell (f->fp);
       if (ferror(f->fp))
       {
-        perror ("The following error occurred");
+  perror ("The following error occurred");
        // throw std::runtime_error"Cannot get File Position! from File %s");
       }
       while (!feof(f->fp) && (stop==0))
       {
-        col = csv_readLine(f,&strLn,&buflen);
-        for (i = 0; i<buflen;i++)
-        {
-          if(strLn[i]== ',')
-          {
-            _cols++;
-            continue;
-          }
-          if(strLn[i]== 0)
-            break;
-          if (isdigit(strLn[i]) == 0)
-          {
-            if(strLn[i] != 'e')
-              if(strLn[i] != 'E')
-                if(strLn[i] != '+')
-                  if(strLn[i] != '-')
-                    stop = 1;
-          }
-        }
-        (*rows)++;
-        *cols = fmax(_cols,*cols);
-        _cols = 1;
+  col = csv_readLine(f,&strLn,&buflen);
+  for (i = 0; i<buflen;i++)
+  {
+    if(strLn[i]== ',')
+    {
+      _cols++;
+      continue;
+    }
+    if(strLn[i]== 0)
+      break;
+    if (isdigit(strLn[i]) == 0)
+    {
+      if(strLn[i] != 'e')
+        if(strLn[i] != 'E')
+          if(strLn[i] != '+')
+            if(strLn[i] != '-')
+              stop = 1;
+    }
+  }
+  (*rows)++;
+  *cols = fmax(_cols,*cols);
+  _cols = 1;
       }
       if (strLn)
-        free(strLn);
+  free(strLn);
       return 1;
     }
   }
@@ -880,14 +880,14 @@ void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows
     {
       for (row=0;row<rows;row++)
       {
-        c = csv_readLine(f,&strLn,&buflen);
-        number = strLn;
-        for (col=0;col<cols;col++)
-        {
-          data[row*cols+col] = strtod(number,&entp);
-          trim(&entp,&lh);
-          number = entp+1;
-        }
+  c = csv_readLine(f,&strLn,&buflen);
+  number = strLn;
+  for (col=0;col<cols;col++)
+  {
+    data[row*cols+col] = strtod(number,&entp);
+    trim(&entp,&lh);
+    number = entp+1;
+  }
       }
       break;
     }
@@ -987,10 +987,10 @@ char *copyTableNameFile(const char *name)
 }
 
 InterpolationTable* InterpolationTable_init(double time, double startTime,
-               int ipoType, int expoType,
-               const char* tableName, const char* fileName,
-               const double* table, int tableDim1,
-               int tableDim2, int colWise)
+         int ipoType, int expoType,
+         const char* tableName, const char* fileName,
+         const double* table, int tableDim1,
+         int tableDim2, int colWise)
 {
   size_t i=0;
   size_t l=0;
@@ -1074,7 +1074,7 @@ double InterpolationTable_minTime(InterpolationTable *tpl)
 }
 
 char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname,
-         const double* table)
+   const double* table)
 {
   if ( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
   {
@@ -1089,7 +1089,7 @@ char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, cons
   }
 }
 double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col,
-               char beforeData)
+         char beforeData)
 {
   size_t lastIdx;
 
@@ -1141,8 +1141,8 @@ void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
   interpolation 2D
 */
 InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableName,
-           const char* fileName, const double *table,
-           int tableDim1, int tableDim2, int colWise)
+     const char* fileName, const double *table,
+     int tableDim1, int tableDim2, int colWise)
 {
   size_t i=0;
   size_t l=0;
@@ -1253,22 +1253,22 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
       pos = 0;
       for(i = -2; i < 3; ++i)
       {
-        q[pos] = (ty[index+i]-ty[index+i-1])/(tx[index+i]-tx[index+i-1]);
-        pos = pos + 1;
+  q[pos] = (ty[index+i]-ty[index+i-1])/(tx[index+i]-tx[index+i-1]);
+  pos = pos + 1;
       }
 
       a1 = abs(q[3]-q[2]);
       a2 = abs(q[1]-q[0]);
       if (a1+a2 == 0)
-        yd0 = (q[1] + q[2])/2;
+  yd0 = (q[1] + q[2])/2;
       else
-        yd0 = (q[1]*a1 + q[2]*a2)/(a1+a2);
+  yd0 = (q[1]*a1 + q[2]*a2)/(a1+a2);
       a1 = abs(q[4]-q[3]);
       a2 = abs(q[2]-q[1]);
       if (a1+a2 == 0)
-        yd1 = (q[2] + q[3])/2;
+  yd1 = (q[2] + q[3])/2;
       else
-        yd1 = (q[2]*a1 + q[3]*a2)/(a1+a2);
+  yd1 = (q[2]*a1 + q[3]*a2)/(a1+a2);
     }
     else
     {
@@ -1289,8 +1289,8 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
       }
       else
       {
-        yd0 = 2*a*x2 - b;
-        yd1 = 2*a*x3 - b;
+  yd0 = 2*a*x2 - b;
+  yd1 = 2*a*x3 - b;
       }
     }
   }
@@ -1365,14 +1365,14 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
       /* smooth interpolation with Akima Splines such that der(y) is continuous */
       tlen=0;
       if (i < 4)
-        start = 1;
+  start = 1;
       else
-        start = i-3;
+  start = i-3;
       for(j = start; (j < table->rows) & (j < i+3); ++j)
       {
-        tx[tlen] = InterpolationTable2D_getElt(table,j,0);
-        ty[tlen] = InterpolationTable2D_getElt(table,j,1);
-        tlen++;
+  tx[tlen] = InterpolationTable2D_getElt(table,j,0);
+  ty[tlen] = InterpolationTable2D_getElt(table,j,1);
+  tlen++;
       }
       return InterpolationTable2D_akime(tx,ty,tlen,x1);
     }
@@ -1391,14 +1391,14 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
       /* smooth interpolation with Akima Splines such that der(y) is continuous */
       tlen=0;
       if (j < 4)
-        start = 1;
+  start = 1;
       else
-        start = j-3;
+  start = j-3;
       for(i = start; (i < table->cols) & (i < j+3); ++i)
       {
-        tx[tlen] = InterpolationTable2D_getElt(table,0,i);
-        ty[tlen] = InterpolationTable2D_getElt(table,1,i);
-        tlen++;
+  tx[tlen] = InterpolationTable2D_getElt(table,0,i);
+  ty[tlen] = InterpolationTable2D_getElt(table,1,i);
+  tlen++;
       }
       return InterpolationTable2D_akime(tx,ty,tlen,x2);
     }
@@ -1438,8 +1438,8 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
       tlen=0;
       for(k = start; (k < table->rows) & (k < i+3); ++k)
       {
-        ty[tlen] = InterpolationTable2D_getElt(table,k,l);
-        tlen++;
+  ty[tlen] = InterpolationTable2D_getElt(table,k,l);
+  tlen++;
       }
       te[telen] = InterpolationTable2D_akime(tx,ty,tlen,x1);
       telen++;
@@ -1475,7 +1475,7 @@ char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, 
 }
 
 double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2,
-              double f_1, double f_2)
+        double f_1, double f_2)
 {
   return ((x_2 - x)*f_1 + (x - x_1)*f_2) / (x_2-x_1);
 }
@@ -1495,11 +1495,11 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
  // {
  //   if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
  //    // throw std::runtime_error"Table: %s independent variable u1 not strictly \
- //           monotonous: %g >= %g.");
+ //     monotonous: %g >= %g.");
  // //for(i=2; i < tpl->cols; ++i)
  //  // if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
  //    // throw std::runtime_error"Table: %s independent variable u2 not strictly \
- //           monotonous: %g >= %g.");
+ //     monotonous: %g >= %g.");
  //// }
 }
 

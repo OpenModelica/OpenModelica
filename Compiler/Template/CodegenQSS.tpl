@@ -92,7 +92,7 @@ case SIMCODE(__) then
   algorithm
   /* Discontinuities(<% listLength(zeroCrossings) %>) */
   <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
-                     whenClauses,BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
+               whenClauses,BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
   end <% getName(modelInfo) %>;
   >>
 end generateQsmModel;
@@ -108,8 +108,8 @@ case MODELINFO(__) then
 end getName;
 
 template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states,
-                      list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
-                      list<SimEqSystem> parameterEquations)
+                list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
+                list<SimEqSystem> parameterEquations)
  "Generates the first part a QSM model for simulation ."
 ::=
 match modelInfo
@@ -294,8 +294,8 @@ else
 end generateOdeEq;
 
 template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states,
-                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
-                    BackendDAE.EquationArray eqs,list<DAE.Exp> zc_exps, Integer offset)
+              list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs,
+              BackendDAE.EquationArray eqs,list<DAE.Exp> zc_exps, Integer offset)
  "Generates one zc equation of the model"
 ::=
   <<
@@ -304,7 +304,7 @@ template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> st
 end generateZC;
 
 template generateAssigment(BackendDAE.EqSystem eq,list<DAE.ComponentRef> states,
-                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+              list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
 "gnereates an assigment"
 ::=
 <<
@@ -312,8 +312,8 @@ template generateAssigment(BackendDAE.EqSystem eq,list<DAE.ComponentRef> states,
 end generateAssigment;
 
 template generateOneZC(BackendDAE.ZeroCrossing zc,list<DAE.ComponentRef> states,
-                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, BackendDAE.EquationArray eqs,
-                    list<DAE.Exp> zc_exps, Integer offset)
+              list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, BackendDAE.EquationArray eqs,
+              list<DAE.Exp> zc_exps, Integer offset)
 "generates one "
 ::=
   match zc
@@ -369,7 +369,7 @@ else
 end generateWhen;
 
 template generateCond(list<DAE.ComponentRef> conds, list<DAE.ComponentRef> states,
-                      list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
+                list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
 ::=
   match (conds)
     case ({e}) then
@@ -439,8 +439,8 @@ void fsolve<%index%>(<%
   <%beqs |> exp hasindex i0 =>
     'gsl_vector_set(b<%index%>,<%i0%>,<%
       System.stringReplace(CodegenC.daeExp(
-        BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
-        contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
+  BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+  contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
 
   /* Invert matrix if necesary */
   if (invert_matrix)
@@ -449,8 +449,8 @@ void fsolve<%index%>(<%
     gsl_matrix_set_zero(A<%index%>);
     <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      'gsl_matrix_set(A<%index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
-        BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
-        contextOther,&preExp,&varDecls),"$P","") %>);'
+  BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+  contextOther,&preExp,&varDecls),"$P","") %>);'
     ;separator="\n"%>
     gsl_linalg_LU_decomp(A<%index%>, p<%index%>, &signum);
     gsl_linalg_LU_invert(A<%index%>, p<%index%> ,invA<%index%>);

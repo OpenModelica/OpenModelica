@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFTypeCheck
-" file:        NFTypeCheck.mo
+" file:  NFTypeCheck.mo
   package:     NFTypeCheck
   description: SCodeInst type checking.
 
@@ -112,9 +112,9 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st)
       equation
-        (comps, st) = List.map2Fold(comps, checkElement, inParent, inContext, st);
+  (comps, st) = List.map2Fold(comps, checkElement, inParent, inContext, st);
       then
-        (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
+  (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
 
   end match;
 end checkClass;
@@ -138,19 +138,19 @@ algorithm
       String str;
 
     case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), cls),
-        _, _, st)
+  _, _, st)
       equation
-        str = "Found untyped component: " +& Absyn.pathString(name);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+  str = "Found untyped component: " +& Absyn.pathString(name);
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
-        fail();
+  fail();
 
     case (NFInstTypes.ELEMENT(comp, cls), _, _, st)
       equation
-        (comp, st)= checkComponent(comp, inParent, inContext, st);
-        (cls, st) = checkClass(cls, SOME(comp), inContext, st);
+  (comp, st)= checkComponent(comp, inParent, inContext, st);
+  (cls, st) = checkClass(cls, SOME(comp), inContext, st);
       then
-        (NFInstTypes.ELEMENT(comp, cls), st);
+  (NFInstTypes.ELEMENT(comp, cls), st);
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(_), _, _, st)
       then (inElement, inSymbolTable);
@@ -179,50 +179,50 @@ algorithm
       Absyn.Info info;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding, info = info),
-        _, c, st)
+  _, c, st)
       equation
-        str = "Found untyped component: " +& Absyn.pathString(name);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+  str = "Found untyped component: " +& Absyn.pathString(name);
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
-        fail();
+  fail();
 
     // check and convert if needed the type of
     // the binding vs the type of the component
     case (NFInstTypes.TYPED_COMPONENT(name = name), _, _, st)
       equation
-        comp = NFInstUtil.setComponentParent(inComponent, inParent);
-        comp = checkComponentBindingType(comp);
+  comp = NFInstUtil.setComponentParent(inComponent, inParent);
+  comp = checkComponentBindingType(comp);
       then
-        (comp, st);
+  (comp, st);
 
     case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st)
       equation
-        comp = NFInstSymbolTable.lookupName(name, st);
-        (comp, st) = checkComponent(comp, inParent, inContext, st);
+  comp = NFInstSymbolTable.lookupName(name, st);
+  (comp, st) = checkComponent(comp, inParent, inContext, st);
       then
-        (comp, st);
+  (comp, st);
 
     case (NFInstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st)
       equation
-        (_, SOME(inner_comp), st) = NFInstSymbolTable.updateInnerReference(inComponent, st);
-        (inner_comp, st) = checkComponent(inner_comp, inParent, inContext, st);
+  (_, SOME(inner_comp), st) = NFInstSymbolTable.updateInnerReference(inComponent, st);
+  (inner_comp, st) = checkComponent(inner_comp, inParent, inContext, st);
       then
-        (inner_comp, st);
+  (inner_comp, st);
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
       equation
-        print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
+  print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
       then
-        fail();
+  fail();
 
     case (NFInstTypes.DELETED_COMPONENT(name = name), _, _, st)
       then (inComponent, st);
 
     case (NFInstTypes.PACKAGE(name = name), _, _, st)
       equation
-        comp = NFInstUtil.setComponentParent(inComponent, inParent);
+  comp = NFInstUtil.setComponentParent(inComponent, inParent);
       then
-        (comp, st);
+  (comp, st);
 
   end match;
 end checkComponent;
@@ -249,49 +249,49 @@ algorithm
     // nothing to check
     case (NFInstTypes.TYPED_COMPONENT(binding = NFInstTypes.UNBOUND()))
       then
-        inC;
+  inC;
 
     // when the component name is equal to the component type we have a constant enumeration!
     // StateSelect = {StateSelect.always, StateSelect.prefer, StateSelect.default, StateSelect.avoid, StateSelect.never}
     case (NFInstTypes.TYPED_COMPONENT(name = name, ty = DAE.T_ENUMERATION(path = eName), binding = binding))
       equation
-        true = Absyn.pathEqual(name, eName);
+  true = Absyn.pathEqual(name, eName);
       then
-        inC;
+  inC;
 
     case (NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info))
       equation
-        NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, binfo) = binding;
-        parentDimensions = getParentDimensions(parent, {});
-        propagatedTy = liftArray(ty, parentDimensions, propagatedDims);
-        (bindingExp, convertedTy) = Types.matchType(bindingExp, bindingType, propagatedTy, true);
-        binding = NFInstTypes.TYPED_BINDING(bindingExp, convertedTy, propagatedDims, binfo);
+  NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, binfo) = binding;
+  parentDimensions = getParentDimensions(parent, {});
+  propagatedTy = liftArray(ty, parentDimensions, propagatedDims);
+  (bindingExp, convertedTy) = Types.matchType(bindingExp, bindingType, propagatedTy, true);
+  binding = NFInstTypes.TYPED_BINDING(bindingExp, convertedTy, propagatedDims, binfo);
       then
-        NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info);
+  NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info);
 
     case (NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info))
       equation
-        NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, binfo) = binding;
-        parentDimensions = getParentDimensions(parent, {});
-        propagatedTy = liftArray(ty, parentDimensions, propagatedDims);
-        failure((_, _) = Types.matchType(bindingExp, bindingType, propagatedTy, true));
-        nStr = Absyn.pathString(name);
-        eStr = ExpressionDump.printExpStr(bindingExp);
-        etStr = Types.unparseType(propagatedTy);
-        etStr = etStr +& " propDim: " +& intString(propagatedDims);
-        btStr = Types.unparseType(bindingType);
-        Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-        {nStr, eStr, etStr, btStr}, info);
+  NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, binfo) = binding;
+  parentDimensions = getParentDimensions(parent, {});
+  propagatedTy = liftArray(ty, parentDimensions, propagatedDims);
+  failure((_, _) = Types.matchType(bindingExp, bindingType, propagatedTy, true));
+  nStr = Absyn.pathString(name);
+  eStr = ExpressionDump.printExpStr(bindingExp);
+  etStr = Types.unparseType(propagatedTy);
+  etStr = etStr +& " propDim: " +& intString(propagatedDims);
+  btStr = Types.unparseType(bindingType);
+  Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+  {nStr, eStr, etStr, btStr}, info);
       then
-        fail();
+  fail();
 
     case (_)
       equation
-        //name = NFInstUtil.getComponentName(inC);
-        //nStr = "Found untyped component: " +& Absyn.pathString(name);
-        //Error.addMessage(Error.INTERNAL_ERROR, {nStr});
+  //name = NFInstUtil.getComponentName(inC);
+  //nStr = "Found untyped component: " +& Absyn.pathString(name);
+  //Error.addMessage(Error.INTERNAL_ERROR, {nStr});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkComponentBindingType;
@@ -310,16 +310,16 @@ algorithm
     case (NONE(), _) then inDimensionsAcc;
     case (SOME(c as NFInstTypes.PACKAGE(parent = _)), _)
       equation
-        dims = getParentDimensions(NFInstUtil.getComponentParent(c), inDimensionsAcc);
+  dims = getParentDimensions(NFInstUtil.getComponentParent(c), inDimensionsAcc);
       then
-        dims;
+  dims;
     case (SOME(c), _)
       equation
-        dims = NFInstUtil.getComponentTypeDimensions(c);
-        dims = listAppend(dims, inDimensionsAcc);
-        dims = getParentDimensions(NFInstUtil.getComponentParent(c), dims);
+  dims = NFInstUtil.getComponentTypeDimensions(c);
+  dims = listAppend(dims, inDimensionsAcc);
+  dims = getParentDimensions(NFInstUtil.getComponentParent(c), dims);
       then
-        dims;
+  dims;
     // for other...
     case (SOME(_), _) then inDimensionsAcc;
   end matchcontinue;
@@ -393,43 +393,43 @@ algorithm
     // Check if the Rhs matchs/can be converted to match the Lhs
     case (_, _, _, _, _, _)
       equation
-        (e, t) = Types.matchType(inExp2, inTy2, inTy1, true);
+  (e, t) = Types.matchType(inExp2, inTy2, inTy1, true);
       then
-        (inExp1, inTy1, e, t);
+  (inExp1, inTy1, e, t);
 
     // the other way arround just for equations!
     case (_, _, _, _, "equ", _)
       equation
-        (e, t) = Types.matchType(inExp1, inTy1, inTy2, true);
+  (e, t) = Types.matchType(inExp1, inTy1, inTy2, true);
       then
-        (e, t, inExp2, inTy2);
+  (e, t, inExp2, inTy2);
 
     // not really fine!
     case (_, _, _, _, "equ", _)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inTy1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inTy2);
-        s1 = stringAppendList({e1Str,"=",e2Str});
-        s2 = stringAppendList({t1Str,"=",t2Str});
-        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inTy1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inTy2);
+  s1 = stringAppendList({e1Str,"=",e2Str});
+  s2 = stringAppendList({t1Str,"=",t2Str});
+  Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
       then
-        fail();
+  fail();
 
     case (_, _, _, _, "alg", _)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inTy1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inTy2);
-        s1 = stringAppendList({e1Str,":=",e2Str});
-        s2 = stringAppendList({t1Str,":=",t2Str});
-        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inTy1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inTy2);
+  s1 = stringAppendList({e1Str,":=",e2Str});
+  s2 = stringAppendList({t1Str,":=",t2Str});
+  Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
       then
-        fail();
+  fail();
   end matchcontinue;
 end checkExpEquality;
 
@@ -468,54 +468,54 @@ algorithm
     // It says no for arrays of Integer/Real type.
     case(_,_,_,_,_)
       equation
-        true = Types.isBoolean(inType1);
-        true = Types.isBoolean(inType2);
+  true = Types.isBoolean(inType1);
+  true = Types.isBoolean(inType2);
 
-        // If they are arrays we need this to match dims.
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  // If they are arrays we need this to match dims.
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        newop = Expression.setOpType(inOp, ty);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.RELATION(exp1, newop, exp2, -1, NONE());
+  exp = DAE.RELATION(exp1, newop, exp2, -1, NONE());
       then
-        (exp,ty);
+  (exp,ty);
 
 
     // Check if we have relational logical operations involving non-boolean types.
     // Just for proper error messages.
     case(_,_,_,_,_)
       equation
-        isarr1 = Types.isBoolean(inType1);
-        isarr2 = Types.isBoolean(inType2);
+  isarr1 = Types.isBoolean(inType1);
+  isarr2 = Types.isBoolean(inType2);
 
-        // If one of them is not boolean.
-        false = isarr1 and isarr2;
+  // If one of them is not boolean.
+  false = isarr1 and isarr2;
 
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Logical operations involving non-boolean types are not valid in Modelica.";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Logical operations involving non-boolean types are not valid in Modelica.";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
 
     case(_,_,_,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkLogicalBinaryOperation;
@@ -546,55 +546,55 @@ algorithm
     // Check types match/can be converted to match.
     case(_,_,_,_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        typsrc = Types.getTypeSource(ty1);
-        ty = DAE.T_BOOL({},typsrc);
-        newop = Expression.setOpType(inOp, ty);
+  typsrc = Types.getTypeSource(ty1);
+  ty = DAE.T_BOOL({},typsrc);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.RELATION(exp1, newop, exp2, -1, NONE());
+  exp = DAE.RELATION(exp1, newop, exp2, -1, NONE());
       then
-        (exp,ty);
+  (exp,ty);
 
 
     // Check if we have relational operations involving array types.
     // Just for proper error messages.
     case(_,_,_,_,_)
       equation
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is an array.
-        true = isarr1 or isarr2;
+  // If one of them is an array.
+  true = isarr1 or isarr2;
 
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Relational operations involving array types are not valid in Modelica.";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Relational operations involving array types are not valid in Modelica.";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
 
     case(_,_,_,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkRelationOperation;
@@ -626,26 +626,26 @@ algorithm
     // All operators expect Numeric types except Addition.
     case(_,_,_,_,_)
       equation
-        false = checkValidNumericTypesForOp(inType1,inType1,inOp,true);
+  false = checkValidNumericTypesForOp(inType1,inType1,inOp,true);
       then
-        fail();
+  fail();
 
     // Check division operations.
     // They reslut in T_REAL regardless of the operand types.
     case(_,_,DAE.DIV(_),_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        typsrc = Types.getTypeSource(ty1);
-        ty = DAE.T_REAL({},typsrc);
-        newop = Expression.setOpType(inOp, ty);
+  typsrc = Types.getTypeSource(ty1);
+  ty = DAE.T_REAL({},typsrc);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.BINARY(exp1, newop, exp2);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
     // Check exponentiations.
     // They reslut in T_REAL regardless of the operand types.
@@ -653,93 +653,93 @@ algorithm
     // to fit with ANSI C ???.
     case(_,_,DAE.POW(_),_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        // Try converting both to REAL type.
-        (exp1,ty1) = Types.matchType(inExp1,inType1,DAE.T_REAL_DEFAULT,true);
-        (exp2,ty2) = Types.matchType(inExp2,inType2,DAE.T_REAL_DEFAULT,true);
+  // Try converting both to REAL type.
+  (exp1,ty1) = Types.matchType(inExp1,inType1,DAE.T_REAL_DEFAULT,true);
+  (exp2,ty2) = Types.matchType(inExp2,inType2,DAE.T_REAL_DEFAULT,true);
 
-        // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        typsrc = Types.getTypeSource(ty1);
-        ty = DAE.T_REAL({},typsrc);
-        newop = Expression.setOpType(inOp, ty);
+  typsrc = Types.getTypeSource(ty1);
+  ty = DAE.T_REAL({},typsrc);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.BINARY(exp1, newop, exp2);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
     // Addition operations on Scalars.
     // Check if the operands (match/can be converted to match) the other.
     case(_,_,DAE.ADD(_),_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
-        newop = Expression.setOpType(inOp, ty);
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.BINARY(exp1, newop, exp2);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
     // Subtraction operations on Scalars.
     // Check if the operands (match/can be converted to match) the other.
     case(_,_,DAE.SUB(_),_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
-        newop = Expression.setOpType(inOp, ty);
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.BINARY(exp1, newop, exp2);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
     // Multiplication operations on Scalars.
     // Check if the operands (match/can be converted to match) the other.
     // Requires Numeric Operands.
     case(_,_,DAE.MUL(_),_,_)
       equation
-        true = Types.isSimpleType(inType1);
-        true = Types.isSimpleType(inType2);
+  true = Types.isSimpleType(inType1);
+  true = Types.isSimpleType(inType2);
 
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
-        newop = Expression.setOpType(inOp, ty);
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  newop = Expression.setOpType(inOp, ty);
 
-        exp = DAE.BINARY(exp1, newop, exp2);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
 
     // Check if we have operations involving array types.
     case(_,_,_,_,_)
       equation
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is an array.
-        true = isarr1 or isarr2;
+  // If one of them is an array.
+  true = isarr1 or isarr2;
 
-        (exp,ty) = checkBinaryOperationArrays(inExp1,inType1,inOp,inExp2,inType2);
+  (exp,ty) = checkBinaryOperationArrays(inExp1,inType1,inOp,inExp2,inType2);
       then
-        (exp,ty);
+  (exp,ty);
 
 
     case(_,_,_,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkBinaryOperation;
@@ -774,150 +774,150 @@ algorithm
     // N.B. Allowed only if elemwise operation
     case(_,_,DAE.ADD(_) ,_,_)
       equation
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is a Scalar.
-        false = isarr1 and isarr2;
+  // If one of them is a Scalar.
+  false = isarr1 and isarr2;
 
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Addition operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.+'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Addition operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.+'";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
-        fail();
+  fail();
 
     // Adding Subtracting a scalar/array by array/scalar is not allowed.
     // N.B. Allowed only if elemwise operation
     case(_,_,DAE.SUB(_) ,_,_)
       equation
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is a Scalar.
-        false = isarr1 and isarr2;
+  // If one of them is a Scalar.
+  false = isarr1 and isarr2;
 
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Subtraction operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.-'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Subtraction operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.-'";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
-        fail();
+  fail();
 
     // Dividing array by scalar. {a,b,c} / s is OK
     // But the operation should be changed to elemwise. DAE.DIV -> DIV_ARRAY_SCALAR
     // And the return type and operator types are always REAL type.
     case(_,_,DAE.DIV(_),_,_)
       equation
-        true = Types.arrayType(inType1);
-        false = Types.arrayType(inType2);
+  true = Types.arrayType(inType1);
+  false = Types.arrayType(inType2);
 
-        DAE.T_ARRAY(_,dims,_) = inType1;
-        arrtp = Types.liftArrayListDims(inType2,dims);
+  DAE.T_ARRAY(_,dims,_) = inType1;
+  arrtp = Types.liftArrayListDims(inType2,dims);
 
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,arrtp);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,arrtp);
 
-        // Create a scalar Real Type and lift it to array.
-        // Necessary because even if both operands are of Integer type the result
-        // should be Real type with dimensions of the input array operand.
-        typsrc = Types.getTypeSource(ty1);
-        ty = DAE.T_REAL({},typsrc);
-        arrtp = Types.liftArrayListDims(ty,dims);
+  // Create a scalar Real Type and lift it to array.
+  // Necessary because even if both operands are of Integer type the result
+  // should be Real type with dimensions of the input array operand.
+  typsrc = Types.getTypeSource(ty1);
+  ty = DAE.T_REAL({},typsrc);
+  arrtp = Types.liftArrayListDims(ty,dims);
 
-        newop = Expression.setOpType(inOp, arrtp);
+  newop = Expression.setOpType(inOp, arrtp);
 
-        newop = DAE.DIV_ARRAY_SCALAR(arrtp);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  newop = DAE.DIV_ARRAY_SCALAR(arrtp);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,arrtp);
+  (exp,arrtp);
 
     // Dividing scalar or array by array. s / {a,b,c} or {a,b,c} / {a,b,c} is not allowed.
     // i.e. if the case above failed nothing else is allowed for DAE.DIV()
     case(_,_,DAE.DIV(_) ,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Dividing a sclar by array or array by array is not a valid operation in Modelica. Try using elementwise operator './'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Dividing a sclar by array or array by array is not a valid operation in Modelica. Try using elementwise operator './'";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
-        fail();
+  fail();
 
     // Exponentiation of array by scalar. A[:,:]^s is OK only if A is a square matrix and s is an integer type.
     // The operation should be changed to POW_ARRAY_SCALAR.
     case(_,_,DAE.POW(_),_,_)
       equation
 
-        DAE.T_INTEGER(_,_) = inType2;
+  DAE.T_INTEGER(_,_) = inType2;
 
-        2 = getArrayNumberOfDimensions(inType1);
-        M = Types.getDimensionNth(inType1, 1);
-        K = Types.getDimensionNth(inType1, 2);
-        // Check if dims are equal. i.e Square Matrix
-        true = isValidMatrixMultiplyDims(M, K);
+  2 = getArrayNumberOfDimensions(inType1);
+  M = Types.getDimensionNth(inType1, 1);
+  K = Types.getDimensionNth(inType1, 2);
+  // Check if dims are equal. i.e Square Matrix
+  true = isValidMatrixMultiplyDims(M, K);
 
-        newop = Expression.setOpType(inOp, inType1);
+  newop = Expression.setOpType(inOp, inType1);
 
-        newop = DAE.POW_ARRAY_SCALAR(inType1);
-        exp = DAE.BINARY(inExp1, newop, inExp2);
+  newop = DAE.POW_ARRAY_SCALAR(inType1);
+  exp = DAE.BINARY(inExp1, newop, inExp2);
 
       then
-        (exp,inType1);
+  (exp,inType1);
 
     // Exponentiation involving and array is invlaid.
     // s ^ {a,b,c}, {a,b,c} ^ s, {a,b,c} ^ {a,b,c} are all invalid.
     // N.B. Allowed only if elemwise operation
     case(_,_,DAE.POW(_) ,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        sugg = "\n: Exponentiation involving arrays is only valid for square matrices with integer exponents. Try using elementwise operator '.^'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  sugg = "\n: Exponentiation involving arrays is only valid for square matrices with integer exponents. Try using elementwise operator '.^'";
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
-        fail();
+  fail();
 
 
     // Multiplication involving an array and scalar is fine.
     case(_,_,DAE.MUL(_),_,_)
       equation
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is a Scalar.
-        false = isarr1 and isarr2;
+  // If one of them is a Scalar.
+  false = isarr1 and isarr2;
 
-        // Get the dims from the array operand
-        arrtp = Util.if_(isarr1,inType1,inType2);
-        DAE.T_ARRAY(_,dims,_) = arrtp;
+  // Get the dims from the array operand
+  arrtp = Util.if_(isarr1,inType1,inType2);
+  DAE.T_ARRAY(_,dims,_) = arrtp;
 
-        //match their scalar types
-        ty1 = Types.arrayElementType(inType1);
-        ty2 = Types.arrayElementType(inType2);
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+  //match their scalar types
+  ty1 = Types.arrayElementType(inType1);
+  ty2 = Types.arrayElementType(inType2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
 
-        // Create the resulting array and exptype
-        ty = Types.liftArrayListDims(ty1,dims);
-        newop = DAE.MUL_ARRAY_SCALAR(ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  // Create the resulting array and exptype
+  ty = Types.liftArrayListDims(ty1,dims);
+  newop = DAE.MUL_ARRAY_SCALAR(ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,ty);
+  (exp,ty);
 
 
     /********************************************************************/
@@ -929,76 +929,76 @@ algorithm
     case(_,_,DAE.MUL(_),_,_)
       equation
 
-        1 = getArrayNumberOfDimensions(inType1);
-        1 = getArrayNumberOfDimensions(inType1);
+  1 = getArrayNumberOfDimensions(inType1);
+  1 = getArrayNumberOfDimensions(inType1);
 
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        ty = Types.arrayElementType(ty1);
+  ty = Types.arrayElementType(ty1);
 
-        newop = DAE.MUL_SCALAR_PRODUCT(ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  newop = DAE.MUL_SCALAR_PRODUCT(ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,ty);
+  (exp,ty);
 
     // Multiplication of Matrix by vector. Matrix[M,N1] * Vector[N2] = Vector[M]
     // Resolves to Matrix multiplication. DAE.MUL_MATRIX_PRODUCT
     case(_,_,DAE.MUL(_),_,_)
       equation
 
-        2 = getArrayNumberOfDimensions(inType1);
-        1 = getArrayNumberOfDimensions(inType2);
+  2 = getArrayNumberOfDimensions(inType1);
+  1 = getArrayNumberOfDimensions(inType2);
 
-        // Check if dimensions are valid
-        M = Types.getDimensionNth(inType1, 1);
-        N1 = Types.getDimensionNth(inType1, 2);
-        N2 = Types.getDimensionNth(inType2, 1);
-        true = isValidMatrixMultiplyDims(N1, N2);
+  // Check if dimensions are valid
+  M = Types.getDimensionNth(inType1, 1);
+  N1 = Types.getDimensionNth(inType1, 2);
+  N2 = Types.getDimensionNth(inType2, 1);
+  true = isValidMatrixMultiplyDims(N1, N2);
 
-        ty1 = Types.arrayElementType(inType1);
-        ty2 = Types.arrayElementType(inType2);
+  ty1 = Types.arrayElementType(inType1);
+  ty2 = Types.arrayElementType(inType2);
 
-        // Is this OK? using the original exps with the element types of the arrays?
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+  // Is this OK? using the original exps with the element types of the arrays?
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
 
-        // Perpare the resulting Vector,. Vector[M]
-        ty = Types.liftArray(ty, M);
+  // Perpare the resulting Vector,. Vector[M]
+  ty = Types.liftArray(ty, M);
 
-        newop = DAE.MUL_MATRIX_PRODUCT(ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  newop = DAE.MUL_MATRIX_PRODUCT(ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,ty);
+  (exp,ty);
 
     // Multiplication of Vector by Matrix.  Vector[N1] * Matrix[N2,M] = Vector[M]
     // Resolves to Matrix multiplication.
     case(_,_,DAE.MUL(_),_,_)
       equation
 
-        1 = getArrayNumberOfDimensions(inType1);
-        2 = getArrayNumberOfDimensions(inType2);
+  1 = getArrayNumberOfDimensions(inType1);
+  2 = getArrayNumberOfDimensions(inType2);
 
-        // Check if dimensions are valid
-        N1 = Types.getDimensionNth(inType1, 1);
-        N2 = Types.getDimensionNth(inType2, 1);
-        M = Types.getDimensionNth(inType2, 2);
-        true = isValidMatrixMultiplyDims(N1, N2);
+  // Check if dimensions are valid
+  N1 = Types.getDimensionNth(inType1, 1);
+  N2 = Types.getDimensionNth(inType2, 1);
+  M = Types.getDimensionNth(inType2, 2);
+  true = isValidMatrixMultiplyDims(N1, N2);
 
-        ty1 = Types.arrayElementType(inType1);
-        ty2 = Types.arrayElementType(inType2);
+  ty1 = Types.arrayElementType(inType1);
+  ty2 = Types.arrayElementType(inType2);
 
-        // Is this OK? using the original exps with the element types of the arrays?
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+  // Is this OK? using the original exps with the element types of the arrays?
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
 
-        // Perpare the resulting Vector,. Vector[M]
-        ty = Types.liftArray(ty, M);
+  // Perpare the resulting Vector,. Vector[M]
+  ty = Types.liftArray(ty, M);
 
-        newop = DAE.MUL_MATRIX_PRODUCT(ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  newop = DAE.MUL_MATRIX_PRODUCT(ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,ty);
+  (exp,ty);
 
 
     // Multiplication of two Matrices. Matrix[M,N1] * Matrix[N2,K] = Matrix[M, K]
@@ -1006,34 +1006,34 @@ algorithm
     case(_,_,DAE.MUL(_),_,_)
       equation
 
-        2 = getArrayNumberOfDimensions(inType1);
-        2 = getArrayNumberOfDimensions(inType2);
+  2 = getArrayNumberOfDimensions(inType1);
+  2 = getArrayNumberOfDimensions(inType2);
 
-        // Check if dimensions are valid
-        M = Types.getDimensionNth(inType1, 1);
-        N1 = Types.getDimensionNth(inType1, 2);
-        N2 = Types.getDimensionNth(inType2, 1);
-        K = Types.getDimensionNth(inType2, 2);
-        true = isValidMatrixMultiplyDims(N1, N2);
+  // Check if dimensions are valid
+  M = Types.getDimensionNth(inType1, 1);
+  N1 = Types.getDimensionNth(inType1, 2);
+  N2 = Types.getDimensionNth(inType2, 1);
+  K = Types.getDimensionNth(inType2, 2);
+  true = isValidMatrixMultiplyDims(N1, N2);
 
-        // We can't use this here because the dimensions do not exactly match.
-        // do it manually here.
-        // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  // We can't use this here because the dimensions do not exactly match.
+  // do it manually here.
+  // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
-        ty1 = Types.arrayElementType(inType1);
-        ty2 = Types.arrayElementType(inType2);
+  ty1 = Types.arrayElementType(inType1);
+  ty2 = Types.arrayElementType(inType2);
 
-        // Is this OK? using the original exps with the element types of the arrays?
-        (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+  // Is this OK? using the original exps with the element types of the arrays?
+  (exp1,exp2,ty) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
 
-        // Perpare the resulting Matrix type,. Matrix[M, K]
-        ty = Types.liftArrayListDims(ty, {M, K});
+  // Perpare the resulting Matrix type,. Matrix[M, K]
+  ty = Types.liftArrayListDims(ty, {M, K});
 
-        newop = DAE.MUL_MATRIX_PRODUCT(ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  newop = DAE.MUL_MATRIX_PRODUCT(ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
 
       then
-        (exp,ty);
+  (exp,ty);
 
     // Handling of Matrix/Vector operations ends here.
     /********************************************************************/
@@ -1046,15 +1046,15 @@ algorithm
     // N.B. Allowed only if elementwise oepration
     case(_,_,DAE.MUL(_) ,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
       then
-        fail();
+  fail();
 
 
     /********************************************************************/
@@ -1069,54 +1069,54 @@ algorithm
     case(_,_,_,_,_)
       equation
 
-        isarr1 = Types.arrayType(inType1);
-        isarr2 = Types.arrayType(inType2);
+  isarr1 = Types.arrayType(inType1);
+  isarr2 = Types.arrayType(inType2);
 
-        // If one of them is a Scalar.
-        false = isarr1 and isarr2;
+  // If one of them is a Scalar.
+  false = isarr1 and isarr2;
 
-        // Get the dims from the array operand
-        arrtp = Util.if_(isarr1,inType1,inType2);
-        DAE.T_ARRAY(_,dims,_) = arrtp;
+  // Get the dims from the array operand
+  arrtp = Util.if_(isarr1,inType1,inType2);
+  DAE.T_ARRAY(_,dims,_) = arrtp;
 
-        //match their scalar types
-        ty1 = Types.arrayElementType(inType1);
-        ty2 = Types.arrayElementType(inType2);
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+  //match their scalar types
+  ty1 = Types.arrayElementType(inType1);
+  ty2 = Types.arrayElementType(inType2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
 
-        // Create the resulting array and exptype
-        ty = Types.liftArrayListDims(ty1,dims);
-        newop = Expression.setOpType(inOp, ty);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  // Create the resulting array and exptype
+  ty = Types.liftArrayListDims(ty1,dims);
+  newop = Expression.setOpType(inOp, ty);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty);
+  (exp,ty);
 
     // Both operands are arrays
     case(_,_,_,_,_)
       equation
 
-        // true = Types.arrayType(inType1);
-        // true = Types.arrayType(inType2);
+  // true = Types.arrayType(inType1);
+  // true = Types.arrayType(inType2);
 
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
-        newop = Expression.setOpType(inOp, ty1);
-        exp = DAE.BINARY(exp1, newop, exp2);
+  (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+  newop = Expression.setOpType(inOp, ty1);
+  exp = DAE.BINARY(exp1, newop, exp2);
       then
-        (exp,ty1);
+  (exp,ty1);
 
     // Failure
     case(_,_,_,_,_)
       equation
-        e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inType1);
-        e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(inExp1);
+  t1Str = Types.unparseType(inType1);
+  e2Str = ExpressionDump.printExpStr(inExp2);
+  t2Str = Types.unparseType(inType2);
+  s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
+  s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkBinaryOperationArrays;
@@ -1141,14 +1141,14 @@ algorithm
 
   case(_,_,_,_)
       equation
-        (exp,ty) = Types.matchType(inExp2,inType2,inType1,true);
+  (exp,ty) = Types.matchType(inExp2,inType2,inType1,true);
       then
-        (inExp1,exp,ty);
+  (inExp1,exp,ty);
   case(_,_,_,_)
       equation
-        (exp,ty) = Types.matchType(inExp1,inType1,inType2,true);
+  (exp,ty) = Types.matchType(inExp1,inType1,inType2,true);
       then
-        (exp,inExp2,ty);
+  (exp,inExp2,ty);
   end matchcontinue;
 
 end matchTypeBothWays;
@@ -1173,20 +1173,20 @@ algorithm
 
     case(_,_,_,_)
       equation
-        true = Types.isNumericType(inType1);
-        true = Types.isNumericType(inType2);
+  true = Types.isNumericType(inType1);
+  true = Types.isNumericType(inType2);
       then true;
 
     // If printing error messages. print and fail.
     case(_,_,_,true)
       equation
-        t1Str = Types.unparseType(inType1);
-        t2Str = Types.unparseType(inType2);
-        s2 = DAEDump.dumpOperatorString(inOp);
-        Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES, {s2,t1Str,t2Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  t1Str = Types.unparseType(inType1);
+  t2Str = Types.unparseType(inType2);
+  s2 = DAEDump.dumpOperatorString(inOp);
+  Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES, {s2,t1Str,t2Str}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        false;
+  false;
 
     // If no error messages wanted just return false.
     case(_,_,_,false) then false;
@@ -1207,9 +1207,9 @@ algorithm
       DAE.Dimensions dims;
     case (DAE.T_ARRAY(ty = t, dims = dims))
       equation
-        ns = getArrayNumberOfDimensions(t) + listLength(dims);
+  ns = getArrayNumberOfDimensions(t) + listLength(dims);
       then
-        ns;
+  ns;
     case (_) then 0;
   end match;
 end getArrayNumberOfDimensions;
@@ -1229,22 +1229,22 @@ algorithm
     // The dimensions are both known and equal.
     case (_, _)
       equation
-        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+  true = Expression.dimensionsKnownAndEqual(dim1, dim2);
       then
-        true;
+  true;
     // If checkModel is used we might get unknown dimensions. So use
     // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
     case (_, _)
       equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = Expression.dimensionsEqual(dim1, dim2);
+  true = Flags.getConfigBool(Flags.CHECK_MODEL);
+  true = Expression.dimensionsEqual(dim1, dim2);
       then
-        true;
+  true;
     case (_, _)
       equation
-        msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +&
-              ExpressionDump.dimensionString(dim1) +& "x" +& ExpressionDump.dimensionString(dim2);
-        Error.addSourceMessage(Error.COMPILER_ERROR, {msg}, Absyn.dummyInfo);
+  msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +&
+        ExpressionDump.dimensionString(dim1) +& "x" +& ExpressionDump.dimensionString(dim2);
+  Error.addSourceMessage(Error.COMPILER_ERROR, {msg}, Absyn.dummyInfo);
       then false;
   end matchcontinue;
 end isValidMatrixMultiplyDims;
@@ -1297,60 +1297,60 @@ algorithm
     // Then all is good.
     case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), {})
       equation
-        (e_1, {}) = matchCallArg(e,t1,t2,{});
+  (e_1, {}) = matchCallArg(e,t1,t2,{});
 
-        (fixedArgs, {}) = matchCallArgs(restargs, restinty, restexpcty, {});
+  (fixedArgs, {}) = matchCallArgs(restargs, restinty, restexpcty, {});
       then
-        (e_1::fixedArgs, {});
+  (e_1::fixedArgs, {});
 
     // No vectorization mode.
     // If argument failed to match not because of dim mismatch
     // but due to actuall type mismatch then it is an invalid call and we fail here.
     case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), {})
       equation
-        failure((_,_) = matchCallArg(e,t1,t2,{}));
+  failure((_,_) = matchCallArg(e,t1,t2,{}));
 
-        e1Str = ExpressionDump.printExpStr(e);
-        t1Str = Types.unparseType(t1);
-        t2Str = Types.unparseType(t2);
-        s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'";
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(e);
+  t1Str = Types.unparseType(t1);
+  t2Str = Types.unparseType(t2);
+  s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
+       "' to type '" +& t2Str +& "'";
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
 
     // No -> Yes vectorization mode.
     // If argument fails to match due to dim mistmatch. then we
     // have our vect. dim and we start from the begining.
     case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), {})
       equation
-        (e_1, dims1) = matchCallArg(e,t1,t2,{});
+  (e_1, dims1) = matchCallArg(e,t1,t2,{});
 
-        // This is just to be realllly sure. The cases above actually make sure of it.
-        false = Expression.dimsEqual(dims1, {});
+  // This is just to be realllly sure. The cases above actually make sure of it.
+  false = Expression.dimsEqual(dims1, {});
 
-        // Start from the first arg. This time with Vectorization.
-        (fixedArgs, dims2) = matchCallArgs(inArgs,inArgTypes,inExpectedTypes, dims1);
+  // Start from the first arg. This time with Vectorization.
+  (fixedArgs, dims2) = matchCallArgs(inArgs,inArgTypes,inExpectedTypes, dims1);
       then
-        (fixedArgs, dims2);
+  (fixedArgs, dims2);
 
     // Vectorization mode.
     case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), dims1)
       equation
-        false = Expression.dimsEqual(dims1, {});
-        (e_1, dims1) = matchCallArg(e,t1,t2,dims1);
-        (fixedArgs, dims1) = matchCallArgs(restargs, restinty, restexpcty, dims1);
+  false = Expression.dimsEqual(dims1, {});
+  (e_1, dims1) = matchCallArg(e,t1,t2,dims1);
+  (fixedArgs, dims1) = matchCallArgs(restargs, restinty, restexpcty, dims1);
       then
-        (e_1::fixedArgs, dims1);
+  (e_1::fixedArgs, dims1);
 
 
 
     case (e::_,(t1 :: _),(t2 :: _), _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed ");
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed ");
       then
-        fail();
+  fail();
   end matchcontinue;
 end matchCallArgs;
 
@@ -1386,15 +1386,15 @@ algorithm
     // Types match (i.e. dims match exactly). Then all is good
     case (e,e_type,expected_type, {})
       equation
-        // Of course matchtype will make sure of this
-        // but this is faster.
-        dims1 = Types.getDimensions(e_type);
-        dims2 = Types.getDimensions(expected_type);
-        true = Expression.dimsEqual(dims1, dims2);
+  // Of course matchtype will make sure of this
+  // but this is faster.
+  dims1 = Types.getDimensions(e_type);
+  dims2 = Types.getDimensions(expected_type);
+  true = Expression.dimsEqual(dims1, dims2);
 
-        (e_1,_) = Types.matchType(e, e_type, expected_type, true);
+  (e_1,_) = Types.matchType(e, e_type, expected_type, true);
       then
-        (e_1, {});
+  (e_1, {});
 
 
     // No vectorization mode.
@@ -1402,11 +1402,11 @@ algorithm
     // of actuall type mismatch then fail here.
     case (e,e_type,expected_type, {})
       equation
-        dims1 = Types.getDimensions(e_type);
-        dims2 = Types.getDimensions(expected_type);
-        true = Expression.dimsEqual(dims1, dims2);
+  dims1 = Types.getDimensions(e_type);
+  dims2 = Types.getDimensions(expected_type);
+  true = Expression.dimsEqual(dims1, dims2);
       then
-        fail();
+  fail();
 
     // No Vect. -> Vectorization mode.
     // We found a dim mistmatch. Try vectorizing. If vectorizing
@@ -1415,36 +1415,36 @@ algorithm
     // with the new vectorization dimension.
     case (e,e_type,expected_type, {})
       equation
-        dims1 = Types.getDimensions(e_type);
-        dims2 = Types.getDimensions(expected_type);
+  dims1 = Types.getDimensions(e_type);
+  dims2 = Types.getDimensions(expected_type);
 
-        false = Expression.dimsEqual(dims1, dims2);
+  false = Expression.dimsEqual(dims1, dims2);
 
-        foreachdim = findVectorizationDim(dims1,dims2);
+  foreachdim = findVectorizationDim(dims1,dims2);
 
       then
-        (e, foreachdim);
+  (e, foreachdim);
 
 
     // IN Vectorization mode!!!.
     case (e,e_type,expected_type, foreachdim)
       equation
-        e_1 = checkVectorization(e,e_type,expected_type,foreachdim);
+  e_1 = checkVectorization(e,e_type,expected_type,foreachdim);
       then
-        (e_1, foreachdim);
+  (e_1, foreachdim);
 
 
     case (e,e_type,expected_type, _)
       equation
-        e1Str = ExpressionDump.printExpStr(e);
-        t1Str = Types.unparseType(e_type);
-        t2Str = Types.unparseType(expected_type);
-        s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'";
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArg failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+  e1Str = ExpressionDump.printExpStr(e);
+  t1Str = Types.unparseType(e_type);
+  t2Str = Types.unparseType(expected_type);
+  s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
+       "' to type '" +& t2Str +& "'";
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArg failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
-        fail();
+  fail();
   end matchcontinue;
 end matchCallArg;
 
@@ -1484,18 +1484,18 @@ algorithm
     // the vect. dim to have a 'foreach' argument
     case(_,_,_,_)
       equation
-        // Of course matchtype will make sure of this
-        // but this is faster.
-        argDims = Types.getDimensions(inArgType);
-        expectedDims = Types.getDimensions(inExpectedType);
-        true = Expression.dimsEqual(argDims, expectedDims);
+  // Of course matchtype will make sure of this
+  // but this is faster.
+  argDims = Types.getDimensions(inArgType);
+  expectedDims = Types.getDimensions(inExpectedType);
+  true = Expression.dimsEqual(argDims, expectedDims);
 
-        (outExp,_) = Types.matchType(inArg, inArgType, inExpectedType, false);
+  (outExp,_) = Types.matchType(inArg, inArgType, inExpectedType, false);
 
-        // create the array from the given arg to match the vectorization
-        outExp = Expression.arrayFill(inForeachDim,outExp);
+  // create the array from the given arg to match the vectorization
+  outExp = Expression.arrayFill(inForeachDim,outExp);
       then
-        outExp;
+  outExp;
 
     // if dims don't match exactly. Then the given argument
     // must have the same dimension as our vecorization or 'foreach' dimension.
@@ -1504,39 +1504,39 @@ algorithm
     case(_,_,_,_)
       equation
 
-        argDims = Types.getDimensions(inArgType);
+  argDims = Types.getDimensions(inArgType);
 
-        // lift the expected type by 'foreach' dims
-        expcType = Types.liftArrayListDims(inExpectedType,inForeachDim);
+  // lift the expected type by 'foreach' dims
+  expcType = Types.liftArrayListDims(inExpectedType,inForeachDim);
 
-        // Now the given type and the expected type must have the
-        // same dimesions. Otherwise vectorization is not possible.
-        expectedDims = Types.getDimensions(expcType);
-        true = Expression.dimsEqual(argDims, expectedDims);
+  // Now the given type and the expected type must have the
+  // same dimesions. Otherwise vectorization is not possible.
+  expectedDims = Types.getDimensions(expcType);
+  true = Expression.dimsEqual(argDims, expectedDims);
 
-        (outExp,_) = Types.matchType(inArg, inArgType, expcType, false);
+  (outExp,_) = Types.matchType(inArg, inArgType, expcType, false);
       then
-        outExp;
+  outExp;
 
     case(_,_,_,_)
       equation
-        argDims = Types.getDimensions(inArgType);
-        expectedDims = Types.getDimensions(inExpectedType);
+  argDims = Types.getDimensions(inArgType);
+  expectedDims = Types.getDimensions(inExpectedType);
 
-        expectedDims = listAppend(inForeachDim,expectedDims);
+  expectedDims = listAppend(inForeachDim,expectedDims);
 
-        e1Str = ExpressionDump.printExpStr(inArg);
-        t1Str = Types.unparseType(inArgType);
-        t2Str = Types.unparseType(inExpectedType);
-        s1 = "Vectorization can not continue matching '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'. Expected dimensions [" +&
-             ExpressionDump.printListStr(expectedDims,ExpressionDump.dimensionString,",") +& "], found [" +&
-             ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") +& "]";
+  e1Str = ExpressionDump.printExpStr(inArg);
+  t1Str = Types.unparseType(inArgType);
+  t2Str = Types.unparseType(inExpectedType);
+  s1 = "Vectorization can not continue matching '" +& e1Str +& "' of type '" +& t1Str +&
+       "' to type '" +& t2Str +& "'. Expected dimensions [" +&
+       ExpressionDump.printListStr(expectedDims,ExpressionDump.dimensionString,",") +& "], found [" +&
+       ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") +& "]";
 
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkVectorization failed ");
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkVectorization failed ");
       then
-        fail();
+  fail();
 
    end matchcontinue;
 
@@ -1565,24 +1565,24 @@ algorithm
 
     case(_, _)
       equation
-        true = Expression.dimsEqual(inGivenDims, inExpectedDims);
+  true = Expression.dimsEqual(inGivenDims, inExpectedDims);
       then
-        {};
+  {};
 
     case(dim1::dims1, _)
       equation
-        true = listLength(inGivenDims) > listLength(inExpectedDims);
-        dims1 = findVectorizationDim(dims1,inExpectedDims);
+  true = listLength(inGivenDims) > listLength(inExpectedDims);
+  dims1 = findVectorizationDim(dims1,inExpectedDims);
       then
-        dim1::dims1;
+  dim1::dims1;
 
     case(dim1::dims1, _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
-         ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") +& "] vs [" +&
-         ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") +& "].");
+  Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
+   ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") +& "] vs [" +&
+   ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") +& "].");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 
@@ -1646,22 +1646,22 @@ algorithm
 
     case(_, _::_, _, _, _)
       equation
-        // Get the call list with args subscripted for each value in 'foreaach' dim.
-        callLst = vectorizeCall2(inFnName, inArgs, inAttrs, inForEachdim, {});
+  // Get the call list with args subscripted for each value in 'foreaach' dim.
+  callLst = vectorizeCall2(inFnName, inArgs, inAttrs, inForEachdim, {});
 
-        // Create the array of calls from the list
-        callArr = Expression.listToArray(callLst,inForEachdim);
+  // Create the array of calls from the list
+  callArr = Expression.listToArray(callLst,inForEachdim);
 
-        // lift the retType to 'forEachDim' dims
-        outtype = Types.liftArrayListDims(inRetType, inForEachdim);
+  // lift the retType to 'forEachDim' dims
+  outtype = Types.liftArrayListDims(inRetType, inForEachdim);
       then
-        (callArr, outtype);
+  (callArr, outtype);
 
     case(_, _, _, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"NFTypeCheck.vectorizeCall failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"NFTypeCheck.vectorizeCall failed."});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end vectorizeCall;
@@ -1697,14 +1697,14 @@ algorithm
 
     case (_, _, _, dim :: dims, _)
       equation
-        (idx, dim) = getNextIndex(dim);
+  (idx, dim) = getNextIndex(dim);
 
-        subedargs = List.map1(inArgs, Expression.subscriptExp, {DAE.INDEX(idx)});
+  subedargs = List.map1(inArgs, Expression.subscriptExp, {DAE.INDEX(idx)});
 
-        calls = vectorizeCall2(inFnName, subedargs, inAttrs, dims, inAccumCalls);
-        calls = vectorizeCall2(inFnName, inArgs, inAttrs, dim :: dims, calls);
+  calls = vectorizeCall2(inFnName, subedargs, inAttrs, dims, inAccumCalls);
+  calls = vectorizeCall2(inFnName, inArgs, inAttrs, dim :: dims, calls);
       then
-        calls;
+  calls;
 
     else inAccumCalls;
 
@@ -1730,17 +1730,17 @@ algorithm
 
     case DAE.DIM_INTEGER(integer = new_idx)
       equation
-        dim_size = new_idx - 1;
+  dim_size = new_idx - 1;
       then
-        (DAE.ICONST(new_idx), DAE.DIM_INTEGER(dim_size));
+  (DAE.ICONST(new_idx), DAE.DIM_INTEGER(dim_size));
 
     // Assumes that the enum has been reversed with reverseEnumType.
     case DAE.DIM_ENUM(p, l :: l_rest, new_idx)
       equation
-        ep = Absyn.joinPaths(p, Absyn.IDENT(l));
-        dim_size = new_idx - 1;
+  ep = Absyn.joinPaths(p, Absyn.IDENT(l));
+  dim_size = new_idx - 1;
       then
-        (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
+  (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
   end match;
 end getNextIndex;
 

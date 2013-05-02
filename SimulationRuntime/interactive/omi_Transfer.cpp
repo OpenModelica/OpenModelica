@@ -85,7 +85,7 @@ static string createResultMessageWithNames(long nStates, long nAlgebraic, long n
 {
   ostringstream formatter;
   formatter << "result#" << p_SimResDataForw_from_Transfer->forTimeStep
-            << "#";
+      << "#";
 
   //string values;
 
@@ -103,14 +103,14 @@ static string createResultMessageWithNames(long nStates, long nAlgebraic, long n
     {
       if (notFirstElement)
       {
-        formatter << ":";
+  formatter << ":";
       }
       else
       {
-        notFirstElement = true;
+  notFirstElement = true;
       }
       formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
-                << "=" << p_SimResDataForw_from_Transfer->states[i];
+          << "=" << p_SimResDataForw_from_Transfer->states[i];
     }
   }
 
@@ -126,14 +126,14 @@ static string createResultMessageWithNames(long nStates, long nAlgebraic, long n
     {
       if (notFirstElement)
       {
-        formatter << ":";
+  formatter << ":";
       }
       else
       {
-        notFirstElement = true;
+  notFirstElement = true;
       }
       formatter << p_simDataNamesFilterForTransfer->variablesNames[var]
-                << "=" << p_SimResDataForw_from_Transfer->algebraics[i];
+          << "=" << p_SimResDataForw_from_Transfer->algebraics[i];
     }
   }
   formatter << "#";
@@ -149,14 +149,14 @@ static string createResultMessageWithNames(long nStates, long nAlgebraic, long n
     {
       if (notFirstElement)
       {
-        formatter << ":";
+  formatter << ":";
       }
       else
       {
-        notFirstElement = true;
+  notFirstElement = true;
       }
       formatter << p_simDataNamesFilterForTransfer->parametersNames[i]
-                << "=" << p_SimResDataForw_from_Transfer->parameters[i];
+          << "=" << p_SimResDataForw_from_Transfer->parameters[i];
     }
   }
   formatter << "#end";
@@ -241,7 +241,7 @@ static void connectToTransferServer(void)
     {
       if (debugTransfer)
       {
-        cout << "Connect to server with user specific ip and port" << endl; fflush(stdout);
+  cout << "Connect to server with user specific ip and port" << endl; fflush(stdout);
       }
       // Connect to server with user specific ip and port
       transfer_client_socket.connect(transfer_client_ip, transfer_client_port);
@@ -250,7 +250,7 @@ static void connectToTransferServer(void)
     {
       if (debugTransfer)
       {
-        cout << "Connect to server with user specific ip and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
+  cout << "Connect to server with user specific ip and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
       }
       // Connect to server with user specific ip and default port
       transfer_client_socket.connect(transfer_client_ip, transfer_default_client_port);
@@ -262,7 +262,7 @@ static void connectToTransferServer(void)
     {
       if (debugTransfer)
       {
-        cout << "Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
+  cout << "Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
       }
       // Connect to server on default IP(localhost) but user specific port
       transfer_client_socket.connect(transfer_default_client_ip, transfer_client_port);
@@ -271,7 +271,7 @@ static void connectToTransferServer(void)
     {
       if (debugTransfer)
       {
-        cout << "Connect to server on default IP(localhost) and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
+  cout << "Connect to server on default IP(localhost) and default port (" << transfer_default_client_port << ")" << endl; fflush(stdout);
       }
       // Connect to server on default IP(localhost) and default port (10502)
       transfer_client_socket.connect(transfer_default_client_ip, transfer_default_client_port);

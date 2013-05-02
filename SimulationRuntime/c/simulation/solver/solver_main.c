@@ -450,7 +450,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     {
       /* save dassl stats before print */
       for(ui = 0; ui < numStatistics; ui++)
-        ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+  ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
 
       INFO1(LOG_STATS, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
       INFO1(LOG_STATS, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
@@ -681,61 +681,61 @@ static void writeOutputVars(char* names, DATA* data)
   {
     for(i = 0; i < data->modelData.nVariablesReal; i++)
       if(!strcmp(p, data->modelData.realVarsData[i].info.name))
-        fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
+  fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
     for(i = 0; i < data->modelData.nVariablesInteger; i++)
       if(!strcmp(p, data->modelData.integerVarsData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
+  fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
     for(i = 0; i < data->modelData.nVariablesBoolean; i++)
       if(!strcmp(p, data->modelData.booleanVarsData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
+  fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
     for(i = 0; i < data->modelData.nVariablesString; i++)
       if(!strcmp(p, data->modelData.stringVarsData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[i]);
+  fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[i]);
 
     for(i = 0; i < data->modelData.nAliasReal; i++)
       if(!strcmp(p, data->modelData.realAlias[i].info.name))
       {
        if(data->modelData.realAlias[i].negate)
-         fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+   fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
        else
-         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+   fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData.nAliasInteger; i++)
       if(!strcmp(p, data->modelData.integerAlias[i].info.name))
       {
-        if(data->modelData.integerAlias[i].negate)
-          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
-        else
-          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+  if(data->modelData.integerAlias[i].negate)
+    fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+  else
+    fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData.nAliasBoolean; i++)
       if(!strcmp(p, data->modelData.booleanAlias[i].info.name))
       {
-        if(data->modelData.booleanAlias[i].negate)
-          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
-        else
-          fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+  if(data->modelData.booleanAlias[i].negate)
+    fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+  else
+    fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData.nAliasString; i++)
       if(!strcmp(p, data->modelData.stringAlias[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
+  fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
 
     /* parameters */
     for(i = 0; i < data->modelData.nParametersReal; i++)
       if(!strcmp(p, data->modelData.realParameterData[i].info.name))
-        fprintf(stdout, ",%s=%.20g", p, data->simulationInfo.realParameter[i]);
+  fprintf(stdout, ",%s=%.20g", p, data->simulationInfo.realParameter[i]);
 
     for(i = 0; i < data->modelData.nParametersInteger; i++)
       if(!strcmp(p, data->modelData.integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->simulationInfo.integerParameter[i]);
+  fprintf(stdout, ",%s=%li", p, data->simulationInfo.integerParameter[i]);
 
     for(i = 0; i < data->modelData.nParametersBoolean; i++)
       if(!strcmp(p, data->modelData.booleanParameterData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, data->simulationInfo.booleanParameter[i]);
+  fprintf(stdout, ",%s=%i", p, data->simulationInfo.booleanParameter[i]);
 
     for(i = 0; i < data->modelData.nParametersString; i++)
       if(!strcmp(p, data->modelData.stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, data->simulationInfo.stringParameter[i]);
+  fprintf(stdout, ",%s=\"%s\"", p, data->simulationInfo.stringParameter[i]);
 
     /* move to next */
     p = strtok(NULL, ",");

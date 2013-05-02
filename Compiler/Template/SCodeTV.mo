@@ -310,7 +310,7 @@ package Absyn
     end TPATH;
 
     record TCOMPLEX
-      Path             path;
+      Path       path;
       list<TypeSpec>   typeSpecs;
       Option<ArrayDim> arrayDim;
     end TCOMPLEX;
@@ -350,7 +350,7 @@ package SCode
     record R_ENUMERATION end R_ENUMERATION;
 
     record R_PREDEFINED_INTEGER     end R_PREDEFINED_INTEGER;
-    record R_PREDEFINED_REAL        end R_PREDEFINED_REAL;
+    record R_PREDEFINED_REAL  end R_PREDEFINED_REAL;
     record R_PREDEFINED_STRING      end R_PREDEFINED_STRING;
     record R_PREDEFINED_BOOLEAN     end R_PREDEFINED_BOOLEAN;
     record R_PREDEFINED_ENUMERATION end R_PREDEFINED_ENUMERATION;
@@ -385,8 +385,8 @@ package SCode
     end MOD;
 
     record REDECL
-      Final         finalPrefix;
-      Each          eachPrefix;
+      Final   finalPrefix;
+      Each    eachPrefix;
       Element       element;
     end REDECL;
 

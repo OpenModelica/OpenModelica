@@ -1898,7 +1898,7 @@ void modelica_parser::element_list() {
 						  	   */
 							   RefMyAST(e_AST->getFirstChild())->setEndLine(s->getLine());
 							   RefMyAST(e_AST->getFirstChild())->setEndColumn(s->getColumn());
-						        }
+						  }
 						   }
 				
 						

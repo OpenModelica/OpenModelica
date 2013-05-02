@@ -4,10 +4,10 @@
 #include "KinsolSettings.h"
 
 KinsolSettings::KinsolSettings()
-: iNewt_max         (700)
-, dRtol           (1e-6)
-, dAtol           (1.0)
-, dDelta          (0.9)
+: iNewt_max   (700)
+, dRtol     (1e-6)
+, dAtol     (1.0)
+, dDelta    (0.9)
 {
 };
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/

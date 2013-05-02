@@ -30,10 +30,10 @@
  */
 
 encapsulated package BackendEquation
-" file:        BackendEquation.mo
+" file:  BackendEquation.mo
   package:     BackendEquation
   description: BackendEquation contains functions that do something with
-               BackendDAEEquation datatype.
+         BackendDAEEquation datatype.
 
   RCS: $Id$
 "
@@ -97,11 +97,11 @@ algorithm
     case ({},_,_,_) then (iSize,iOptArr);
     case (eq::rest,_,_,_)
       equation
-        size = equationSize(eq);
-        optArr = arrayUpdate(iOptArr,pos,SOME(eq));
-        (size,optArr) = listEquation1(rest,pos+1,size+iSize,optArr);
+  size = equationSize(eq);
+  optArr = arrayUpdate(iOptArr,pos,SOME(eq));
+  (size,optArr) = listEquation1(rest,pos+1,size+iSize,optArr);
       then
-        (size,optArr);
+  (size,optArr);
 end match;
 end listEquation1;
 
@@ -203,9 +203,9 @@ algorithm
       Integer when_index;
     case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))),when_index)
       equation
-        res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
+  res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
       then
-        res;
+  res;
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause;
 
@@ -226,15 +226,15 @@ algorithm
     case ({},_,_) then {};
     case ((BackendDAE.ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
       equation
-        count_1 = count + 1;
-        resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
+  count_1 = count + 1;
+  resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
       then
-        Util.if_(listMember(when_index, whenClauseList), count::resx, resx);
+  Util.if_(listMember(when_index, whenClauseList), count::resx, resx);
     else
       equation
-        print("- BackendEquation.getZeroCrossingIndicesFromWhenClause2 failed\n");
+  print("- BackendEquation.getZeroCrossingIndicesFromWhenClause2 failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause2;
 
@@ -302,9 +302,9 @@ algorithm
       BinaryTreeInt.BinTree bt;
     case ((exp,(vars,bt)))
       equation
-         ((_,(_,bt))) = Expression.traverseExpWithoutRelations(exp,checkEquationsVarsExp,(vars,bt));
+   ((_,(_,bt))) = Expression.traverseExpWithoutRelations(exp,checkEquationsVarsExp,(vars,bt));
        then
-        ((exp,(vars,bt)));
+  ((exp,(vars,bt)));
     case _ then inTpl;
   end matchcontinue;
 end checkEquationsVarsWithoutRelations;
@@ -411,15 +411,15 @@ algorithm
     // case for functionpointers
     case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,bt)))
       then
-        ((e, (vars,bt)));
+  ((e, (vars,bt)));
 
     // add it
     case ((e as DAE.CREF(componentRef = cr),(vars,bt)))
       equation
-         (_,ilst) = BackendVariable.getVar(cr, vars);
-         bt = BinaryTreeInt.treeAddList(bt,ilst);
+   (_,ilst) = BackendVariable.getVar(cr, vars);
+   bt = BinaryTreeInt.treeAddList(bt,ilst);
       then
-        ((e, (vars,bt)));
+  ((e, (vars,bt)));
 
     case _ then inTuple;
   end matchcontinue;
@@ -449,9 +449,9 @@ algorithm
       DAE.Exp e,e1;
     case((e,arg))
       equation
-        ((e1,arg1)) = Expression.traverseExp(e, traversingStateRefFinder, arg);
+  ((e1,arg1)) = Expression.traverseExp(e, traversingStateRefFinder, arg);
       then
-        ((e1,arg1));
+  ((e1,arg1));
   end match;
 end extractStatesFromExp;
 
@@ -469,10 +469,10 @@ algorithm
 
     case((e as DAE.CREF(componentRef=cr), (crefs,vars)))
       equation
-        true = BackendVariable.isState(cr,vars);
-        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+  true = BackendVariable.isState(cr,vars);
+  crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
       then
-        ((e, (crefs,vars) ));
+  ((e, (crefs,vars) ));
 
     case(inExp) then inExp;
 
@@ -551,9 +551,9 @@ algorithm
       tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable> tpl;
     case ((exp,tpl))
       equation
-         ((_,tpl)) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,tpl);
+   ((_,tpl)) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,tpl);
        then
-        ((exp,tpl));
+  ((exp,tpl));
     case inTpl then inTpl;
   end matchcontinue;
 end checkEquationsUnknownCrefs;
@@ -578,49 +578,49 @@ algorithm
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,knvars,ht)))
       equation
-        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        ((_,(vars,knvars,ht))) = Expression.traverseExpList(expl,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
+  expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+  ((_,(vars,knvars,ht))) = Expression.traverseExpList(expl,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     // Special Case for Arrays
     case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,knvars,ht)))
       equation
-        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
-        ((_,(vars,knvars,ht))) = Expression.traverseExp(e1,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
+  ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+  ((_,(vars,knvars,ht))) = Expression.traverseExp(e1,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     // case for functionpointers
     case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,knvars,ht)))
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     // already there
     case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
-         _ = BaseHashTable.get(cr,ht);
+   _ = BaseHashTable.get(cr,ht);
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     // known
     case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
-         (_,_) = BackendVariable.getVar(cr, vars);
+   (_,_) = BackendVariable.getVar(cr, vars);
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
     case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
-         (_,_) = BackendVariable.getVar(cr, knvars);
+   (_,_) = BackendVariable.getVar(cr, knvars);
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     // add it
     case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
-         ht = BaseHashTable.add((cr,0),ht);
+   ht = BaseHashTable.add((cr,0),ht);
       then
-        ((e, (vars,knvars,ht)));
+  ((e, (vars,knvars,ht)));
 
     case inTuple then inTuple;
   end matchcontinue;
@@ -667,10 +667,10 @@ algorithm
     case ({},_,_) then (true,inTypeA);
     case (eqn::eqns,_,_)
       equation
-        (b,arg) = traverseBackendDAEExpsEqnWithStop(eqn,func,inTypeA);
-        (b,arg) = Debug.bcallret3_2(b,traverseBackendDAEExpsEqnListWithStop,eqns,func,arg,b,arg);
+  (b,arg) = traverseBackendDAEExpsEqnWithStop(eqn,func,inTypeA);
+  (b,arg) = Debug.bcallret3_2(b,traverseBackendDAEExpsEqnListWithStop,eqns,func,arg,b,arg);
       then
-        (b,arg);
+  (b,arg);
   end match;
 end traverseBackendDAEExpsEqnListWithStop;
 
@@ -698,10 +698,10 @@ algorithm
     case ({},_,_) then (true,inTypeA);
     case (eqn::eqns,_,_)
       equation
-        (b,arg) = traverseBackendDAEExpsEqnListWithStop(eqn,func,inTypeA);
-        (b,arg) = Debug.bcallret3_2(b,traverseBackendDAEExpsEqnListListWithStop,eqns,func,arg,b,arg);
+  (b,arg) = traverseBackendDAEExpsEqnListWithStop(eqn,func,inTypeA);
+  (b,arg) = Debug.bcallret3_2(b,traverseBackendDAEExpsEqnListListWithStop,eqns,func,arg,b,arg);
       then
-        (b,arg);
+  (b,arg);
   end match;
 end traverseBackendDAEExpsEqnListListWithStop;
 
@@ -737,68 +737,68 @@ algorithm
       Boolean diffed;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((e_1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-        (BackendDAE.EQUATION(e_1,e_2,source,diffed),ext_arg_2);
+  (BackendDAE.EQUATION(e_1,e_2,source,diffed),ext_arg_2);
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((e_1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),ext_arg_2);
+  (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),ext_arg_2);
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated=diffed),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-        (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),ext_arg_2);
+  (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),ext_arg_2);
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
-        (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),ext_arg_1);
+  (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),ext_arg_1);
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
-        ((cond,ext_arg_2)) = func((cond,ext_arg_2));
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((cond,ext_arg_2)) = func((cond,ext_arg_2));
       then
        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),ext_arg_2);
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
-        ((cond,ext_arg_2)) = func((cond,ext_arg_2));
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((cond,ext_arg_2)) = func((cond,ext_arg_2));
+  (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
+  (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_,_)
       equation
-        (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
-        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
+  (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+  alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
       then
-        (BackendDAE.ALGORITHM(size,alg,source),ext_arg_1);
+  (BackendDAE.ALGORITHM(size,alg,source),ext_arg_1);
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((e_1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),ext_arg_2);
+  (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),ext_arg_2);
 
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_)
       equation
-        (expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
-        (eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
-        (eqns,ext_arg_2) = List.map1Fold(eqns,traverseBackendDAEExpsEqn,func,ext_arg_2);
+  (expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+  (eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
+  (eqns,ext_arg_2) = List.map1Fold(eqns,traverseBackendDAEExpsEqn,func,ext_arg_2);
       then
-        (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_2);
+  (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_2);
   end match;
 end traverseBackendDAEExpsEqn;
 
@@ -834,69 +834,69 @@ algorithm
       Boolean b1,b2,b3,b4;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),_,_)
       equation
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
       then
-        (b2,ext_arg_2);
+  (b2,ext_arg_2);
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2),_,_)
       equation
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
       then
-        (b2,ext_arg_2);
+  (b2,ext_arg_2);
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
       then
-        (b2,ext_arg_2);
+  (b2,ext_arg_2);
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1),_,_)
       equation
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
       then
-        (b1,ext_arg_1);
+  (b1,ext_arg_1);
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE())),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
-        ((_,b3,ext_arg_3)) = Debug.bcallret1(b2,func,(cond,ext_arg_2),(e2,b2,ext_arg_2));
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  ((_,b3,ext_arg_3)) = Debug.bcallret1(b2,func,(cond,ext_arg_2),(e2,b2,ext_arg_2));
       then
        (b3,ext_arg_3);
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
-        ((_,b3,ext_arg_3)) = Debug.bcallret1(b2,func,(cond,ext_arg_2),(e2,b2,ext_arg_2));
-        (b4,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnWithStop,BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2,b3,ext_arg_3);
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  ((_,b3,ext_arg_3)) = Debug.bcallret1(b2,func,(cond,ext_arg_2),(e2,b2,ext_arg_2));
+  (b4,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnWithStop,BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2,b3,ext_arg_3);
       then
-        (b4,ext_arg_3);
+  (b4,ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts)),_,_)
       equation
-        print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
+  print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
        // (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
-        fail();
-        //(true,inTypeA);
+  fail();
+  //(true,inTypeA);
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2),_,_)
       equation
-        ((_,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
+  ((_,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
       then
-        (b2,ext_arg_2);
+  (b2,ext_arg_2);
 
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns),_,_)
       equation
-        (b1,ext_arg_1) = traverseBackendDAEExpListWithStop(expl,func,inTypeA);
-        (b2,ext_arg_2) = Debug.bcallret3_2(b1,traverseBackendDAEExpsEqnListListWithStop,eqnslst,func,ext_arg_1,b1,ext_arg_1);
-        (b3,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnListWithStop,eqns,func,ext_arg_2,b2,ext_arg_2);
+  (b1,ext_arg_1) = traverseBackendDAEExpListWithStop(expl,func,inTypeA);
+  (b2,ext_arg_2) = Debug.bcallret3_2(b1,traverseBackendDAEExpsEqnListListWithStop,eqnslst,func,ext_arg_1,b1,ext_arg_1);
+  (b3,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnListWithStop,eqns,func,ext_arg_2,b2,ext_arg_2);
       then
-        (b3,ext_arg_3);
+  (b3,ext_arg_3);
   end match;
 end traverseBackendDAEExpsEqnWithStop;
 
@@ -994,79 +994,79 @@ algorithm
       Boolean diffed;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
+  ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  bres = Util.boolOrList({b1,b2});
       then
-        (BackendDAE.EQUATION(e_1,e_2,source,diffed),bres,ext_arg_2);
+  (BackendDAE.EQUATION(e_1,e_2,source,diffed),bres,ext_arg_2);
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
+  ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  bres = Util.boolOrList({b1,b2});
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),bres,ext_arg_2);
+  (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),bres,ext_arg_2);
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated=diffed),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  bres = Util.boolOrList({b1,b2});
       then
-        (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),bres,ext_arg_2);
+  (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),bres,ext_arg_2);
     case (eq as BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
-        (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),b1,ext_arg_1);
+  (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),b1,ext_arg_1);
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
-        bres = Util.boolOrList({b1,b2,b3});
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
+  bres = Util.boolOrList({b1,b2,b3});
       then
        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),bres,ext_arg_2);
     case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b4,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
-        bres = Util.boolOrList({b1,b2,b3,b4});
+  tp = Expression.typeof(e2);
+  e1 = Expression.makeCrefExp(cr,tp);
+  ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
+  (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b4,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
+  bres = Util.boolOrList({b1,b2,b3,b4});
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
+  (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source),_,_)
       then
-        (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);
+  (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
+  ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
+  ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+  bres = Util.boolOrList({b1,b2});
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),bres,ext_arg_2);
+  (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),bres,ext_arg_2);
 
     // special case for it initial() then ... else ... end if; only else branch needs to be checked
     /*
     case (BackendDAE.IF_EQUATION(conditions={e1 as DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={eqns},eqnsfalse=eqnsfalse,source=source),_,_)
       equation
-        (eqnsfalse,eqnsfalse1,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,{},func,inTypeA);
-        bres = List.isNotEmpty(eqnsfalse1);
-        eqnsfalse1 = Util.if_(bres,eqnsfalse1,eqnsfalse);
+  (eqnsfalse,eqnsfalse1,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,{},func,inTypeA);
+  bres = List.isNotEmpty(eqnsfalse1);
+  eqnsfalse1 = Util.if_(bres,eqnsfalse1,eqnsfalse);
       then
-        (BackendDAE.IF_EQUATION({e1},{eqns},eqnsfalse1,source),bres,ext_arg_2);
+  (BackendDAE.IF_EQUATION({e1},{eqns},eqnsfalse1,source),bres,ext_arg_2);
     */
     case (eq as BackendDAE.IF_EQUATION(conditions=_),_,_)
       equation
-        (eq,bres,ext_arg_1) = traverseBackendDAEExpsEqnOutEqnIfEqns( eq, func, inTypeA);
+  (eq,bres,ext_arg_1) = traverseBackendDAEExpsEqnOutEqnIfEqns( eq, func, inTypeA);
       then
-        (eq,bres,ext_arg_1);
+  (eq,bres,ext_arg_1);
 
   end match;
 end traverseBackendDAEExpsEqnOutEqn;
@@ -1098,25 +1098,25 @@ algorithm
       DAE.ElementSource source_;
     case (BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_),_,_)
       equation
-        (elseeqns,elseeqns1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(elseeqns,{},func,inTypeA);
-        bres = List.isNotEmpty(elseeqns1);
-        elseeqns = Util.if_(bres,elseeqns1,elseeqns);
+  (elseeqns,elseeqns1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(elseeqns,{},func,inTypeA);
+  bres = List.isNotEmpty(elseeqns1);
+  elseeqns = Util.if_(bres,elseeqns1,elseeqns);
       then
-        (BackendDAE.IF_EQUATION({},{},elseeqns,source_),bres,ext_arg_1);
+  (BackendDAE.IF_EQUATION({},{},elseeqns,source_),bres,ext_arg_1);
     case (BackendDAE.IF_EQUATION(conditions=condition::restconditions, eqnstrue=eqnstrue::resteqns, eqnsfalse=elseeqns, source=source_),_,_)
       equation
-        ((condition,bres,ext_arg_1)) = func((condition,inTypeA));
-        (eqnstrue,eqnstrue1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(eqnstrue,{},func,ext_arg_1);
-        bres1 = List.isNotEmpty(eqnstrue1);
-        eqnstrue = Util.if_(bres,eqnstrue1,eqnstrue);
-        ifeqn = BackendDAE.IF_EQUATION(restconditions, resteqns, elseeqns, source_);
-        (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsTrueLst, eqnsfalse=elseeqns, source=source_), bres2, ext_arg_1)
-                                                                    = traverseBackendDAEExpsEqnOutEqnIfEqns(ifeqn, func, ext_arg_1);
-        conditions = listAppend({condition},conditions);
-        eqnsTrueLst = listAppend({eqnstrue},eqnsTrueLst);
-        bres = Util.boolOrList({bres,bres1,bres2});
+  ((condition,bres,ext_arg_1)) = func((condition,inTypeA));
+  (eqnstrue,eqnstrue1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(eqnstrue,{},func,ext_arg_1);
+  bres1 = List.isNotEmpty(eqnstrue1);
+  eqnstrue = Util.if_(bres,eqnstrue1,eqnstrue);
+  ifeqn = BackendDAE.IF_EQUATION(restconditions, resteqns, elseeqns, source_);
+  (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsTrueLst, eqnsfalse=elseeqns, source=source_), bres2, ext_arg_1)
+                                                              = traverseBackendDAEExpsEqnOutEqnIfEqns(ifeqn, func, ext_arg_1);
+  conditions = listAppend({condition},conditions);
+  eqnsTrueLst = listAppend({eqnstrue},eqnsTrueLst);
+  bres = Util.boolOrList({bres,bres1,bres2});
       then
-        (BackendDAE.IF_EQUATION(conditions, eqnsTrueLst, elseeqns, source_), bres, ext_arg_1);
+  (BackendDAE.IF_EQUATION(conditions, eqnsTrueLst, elseeqns, source_), bres, ext_arg_1);
   end match;
 end traverseBackendDAEExpsEqnOutEqnIfEqns;
 
@@ -1201,10 +1201,10 @@ algorithm
     case({},_,_,_) then (listReverse(inAccEqns),inTypeA);
     case(eqn::rest,_,_,_)
       equation
-        ((eqn,ext_arg)) = func((eqn, inTypeA));
-        (rest,ext_arg) = traverseBackendDAEEqnsList(rest,func,ext_arg,eqn::inAccEqns);
+  ((eqn,ext_arg)) = func((eqn, inTypeA));
+  (rest,ext_arg) = traverseBackendDAEEqnsList(rest,func,ext_arg,eqn::inAccEqns);
       then
-        (rest,ext_arg);
+  (rest,ext_arg);
   end match;
 end traverseBackendDAEEqnsList;
 
@@ -1231,9 +1231,9 @@ algorithm
       then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEOptEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqns failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqns failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEEqns;
 
@@ -1257,14 +1257,14 @@ algorithm
     case (NONE(),_,_) then inTypeA;
     case (SOME(eqn),_,_)
       equation
-        ((_,ext_arg)) = func((eqn,inTypeA));
+  ((_,ext_arg)) = func((eqn,inTypeA));
       then
-        ext_arg;
+  ext_arg;
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqn failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqn failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEOptEqn;
 
@@ -1291,9 +1291,9 @@ algorithm
       then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithStop;
 
@@ -1319,14 +1319,14 @@ algorithm
     case (NONE(),_,_) then (true,inTypeA);
     case (SOME(eqn),_,_)
       equation
-        ((_,b,ext_arg)) = func((eqn,inTypeA));
+  ((_,b,ext_arg)) = func((eqn,inTypeA));
       then
-        (b,ext_arg);
+  (b,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithStop;
 
@@ -1354,13 +1354,13 @@ algorithm
       Type_a ext_arg;
     case ((BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr = equOptArr)),_,_)
       equation
-        (equOptArr,ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
+  (equOptArr,ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
       then (BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr),ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithUpdate;
 
@@ -1386,15 +1386,15 @@ algorithm
     case (oeqn as NONE(),_,_) then (oeqn,inTypeA);
     case (oeqn as SOME(eqn),_,_)
       equation
-        ((eqn1,ext_arg)) = func((eqn,inTypeA));
-        oeqn = Util.if_(referenceEq(eqn,eqn1),oeqn,SOME(eqn1));
+  ((eqn1,ext_arg)) = func((eqn,inTypeA));
+  oeqn = Util.if_(referenceEq(eqn,eqn1),oeqn,SOME(eqn1));
       then
-        (oeqn,ext_arg);
+  (oeqn,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithUpdate;
 
@@ -1411,51 +1411,51 @@ algorithm
       list<DAE.Exp> explst1,explst2;
     case (_,_)
       equation
-        true = referenceEq(e1,e2);
+  true = referenceEq(e1,e2);
       then
-        true;
+  true;
     case (BackendDAE.EQUATION(exp = e11,scalar = e12),
-          BackendDAE.EQUATION(exp = e21, scalar = e22))
+    BackendDAE.EQUATION(exp = e21, scalar = e22))
       equation
-        res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
+  res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
       then res;
 
     case (BackendDAE.ARRAY_EQUATION(left = e11,right = e12),
-          BackendDAE.ARRAY_EQUATION(left = e21,right = e22))
+    BackendDAE.ARRAY_EQUATION(left = e21,right = e22))
       equation
-        res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
+  res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
       then res;
 
     case (BackendDAE.COMPLEX_EQUATION(left = e11,right = e12),
-          BackendDAE.COMPLEX_EQUATION(left = e21,right = e22))
+    BackendDAE.COMPLEX_EQUATION(left = e21,right = e22))
       equation
-        res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
+  res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
       then res;
 
     case(BackendDAE.SOLVED_EQUATION(componentRef = cr1,exp = exp1),
-         BackendDAE.SOLVED_EQUATION(componentRef = cr2,exp = exp2))
+   BackendDAE.SOLVED_EQUATION(componentRef = cr2,exp = exp2))
       equation
-        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1,cr2),Expression.expEqual(exp1,exp2));
+  res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1,cr2),Expression.expEqual(exp1,exp2));
       then res;
 
     case(BackendDAE.RESIDUAL_EQUATION(exp = exp1),
-         BackendDAE.RESIDUAL_EQUATION(exp = exp2))
+   BackendDAE.RESIDUAL_EQUATION(exp = exp2))
       equation
-        res = Expression.expEqual(exp1,exp2);
+  res = Expression.expEqual(exp1,exp2);
       then res;
 
     case(BackendDAE.ALGORITHM(alg = alg1),
-         BackendDAE.ALGORITHM(alg = alg2))
+   BackendDAE.ALGORITHM(alg = alg2))
       equation
-        explst1 = Algorithm.getAllExps(alg1);
-        explst2 = Algorithm.getAllExps(alg2);
-        res = List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
+  explst1 = Algorithm.getAllExps(alg1);
+  explst2 = Algorithm.getAllExps(alg2);
+  res = List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
       then res;
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr1,right=exp1)),
-          BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr2,right=exp2)))
+    BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr2,right=exp2)))
       equation
-        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2),Expression.expEqual(exp1,exp2));
+  res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2),Expression.expEqual(exp1,exp2));
       then res;
 
     case(_,_) then false;
@@ -1502,32 +1502,32 @@ algorithm
       Real rsize,rexpandsize;
     case (e,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr))
       equation
-        (n < arrsize) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n_1, SOME(e));
-        size = equationSize(e) + size;
+  (n < arrsize) = true "Have space to add array elt." ;
+  n_1 = n + 1;
+  arr_1 = arrayUpdate(arr, n_1, SOME(e));
+  size = equationSize(e) + size;
       then
-        BackendDAE.EQUATION_ARRAY(size,n_1,arrsize,arr_1);
+  BackendDAE.EQUATION_ARRAY(size,n_1,arrsize,arr_1);
     case (e,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr)) /* Do NOT Have space to add array elt. Expand array 1.4 times */
       equation
-        (n < arrsize) = false;
-        rsize = intReal(arrsize);
-        rexpandsize = rsize *. 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + arrsize;
-        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n_1, SOME(e));
-        size = equationSize(e) + size;
+  (n < arrsize) = false;
+  rsize = intReal(arrsize);
+  rexpandsize = rsize *. 0.4;
+  expandsize = realInt(rexpandsize);
+  expandsize_1 = intMax(expandsize, 1);
+  newsize = expandsize_1 + arrsize;
+  arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
+  n_1 = n + 1;
+  arr_2 = arrayUpdate(arr_1, n_1, SOME(e));
+  size = equationSize(e) + size;
       then
-        BackendDAE.EQUATION_ARRAY(size,n_1,newsize,arr_2);
+  BackendDAE.EQUATION_ARRAY(size,n_1,newsize,arr_2);
     case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr))
       equation
-        print("- BackendEquation.equationAdd failed\nArraySize: " +& intString(arrsize) +&
-            "\nnumberOfElement " +& intString(n) +& "\nSize " +& intString(size) +& "\narraySize " +& intString(arrayLength(arr)));
+  print("- BackendEquation.equationAdd failed\nArraySize: " +& intString(arrsize) +&
+      "\nnumberOfElement " +& intString(n) +& "\nSize " +& intString(size) +& "\narraySize " +& intString(arrayLength(arr)));
       then
-        fail();
+  fail();
   end matchcontinue;
 end equationAdd;
 
@@ -1547,7 +1547,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets))
       equation
-        eqns1 = equationAdd(inEquation,eqns);
+  eqns1 = equationAdd(inEquation,eqns);
       then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),stateSets);
   end match;
 end equationAddDAE;
@@ -1568,7 +1568,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets))
       equation
-        eqns1 = List.fold(inEquations,equationAdd,eqns);
+  eqns1 = List.fold(inEquations,equationAdd,eqns);
       then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),stateSets);
   end match;
 end equationsAddDAE;
@@ -1598,7 +1598,7 @@ algorithm
     case ({},_) then shared;
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-        remeqns = List.fold(inEquations,equationAdd,remeqns);
+  remeqns = List.fold(inEquations,equationAdd,remeqns);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end requationsAddDAE;
@@ -1620,7 +1620,7 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (_,_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
-        eqns1 = equationSetnth(eqns,inInteger,inEquation);
+  eqns1 = equationSetnth(eqns,inInteger,inEquation);
       then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching,stateSets);
   end match;
 end equationSetnthDAE;
@@ -1639,11 +1639,11 @@ algorithm
       BackendDAE.Equation eqn;
     case (BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr),pos,eqn)
       equation
-        pos = pos+1;
-        size = size - equationOptSize(arr[pos]) + equationSize(eqn);
-        arr_1 = arrayUpdate(arr, pos, SOME(eqn));
+  pos = pos+1;
+  size = size - equationOptSize(arr[pos]) + equationSize(eqn);
+  arr_1 = arrayUpdate(arr, pos, SOME(eqn));
       then
-        BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
+  BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
   end match;
 end equationSetnth;
 
@@ -1681,17 +1681,17 @@ algorithm
 
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),_)
       equation
-        true = intLe(pos,n);
-        SOME(e) = arr[pos];
+  true = intLe(pos,n);
+  SOME(e) = arr[pos];
       then
-        e;
+  e;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),_)
       equation
-        str = "BackendDAEUtil.equationNth failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
-        print(str +& "\n");
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
+  str = "BackendDAEUtil.equationNth failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
+  print(str +& "\n");
+  Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
-        fail();
+  fail();
   end matchcontinue;
 end equationNth;
 
@@ -1709,18 +1709,18 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
     case (_,{})
       then
-        inEquationArray;
+  inEquationArray;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr),_)
       equation
-        equOptArr = List.fold1r(inIntLst,arrayUpdate,NONE(),equOptArr);
-        eqnlst = equationDelete1(arrSize,equOptArr,{});
+  equOptArr = List.fold1r(inIntLst,arrayUpdate,NONE(),equOptArr);
+  eqnlst = equationDelete1(arrSize,equOptArr,{});
       then
-        listEquation(eqnlst);
+  listEquation(eqnlst);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end equationDelete;
 
@@ -1739,12 +1739,12 @@ algorithm
     case(0,_,_) then iAcc;
     case(_,_,_)
       equation
-        SOME(eqn) = equOptArr[index];
+  SOME(eqn) = equOptArr[index];
       then
-        equationDelete1(index-1,equOptArr,eqn::iAcc);
+  equationDelete1(index-1,equOptArr,eqn::iAcc);
     case(_,_,_)
       then
-        equationDelete1(index-1,equOptArr,iAcc);
+  equationDelete1(index-1,equOptArr,iAcc);
   end matchcontinue;
 end equationDelete1;
 
@@ -1763,24 +1763,24 @@ algorithm
       BackendDAE.Equation eqn;
     case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr))
       equation
-        true = intLe(inPos,numberOfElement);
-        SOME(eqn) = equOptArr[inPos];
-        equOptArr = arrayUpdate(equOptArr,inPos,NONE());
-        eqnsize = equationSize(eqn);
-        size1 = size - eqnsize;
+  true = intLe(inPos,numberOfElement);
+  SOME(eqn) = equOptArr[inPos];
+  equOptArr = arrayUpdate(equOptArr,inPos,NONE());
+  eqnsize = equationSize(eqn);
+  size1 = size - eqnsize;
       then
-        BackendDAE.EQUATION_ARRAY(size1,numberOfElement,arrSize,equOptArr);
+  BackendDAE.EQUATION_ARRAY(size1,numberOfElement,arrSize,equOptArr);
     case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr))
       equation
-        true = intLe(inPos,numberOfElement);
-        NONE() = equOptArr[inPos];
+  true = intLe(inPos,numberOfElement);
+  NONE() = equOptArr[inPos];
       then
-        inEquationArray;
+  inEquationArray;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationRemove failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationRemove failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end equationRemove;
 
@@ -1797,14 +1797,14 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
     case BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,equOptArr=equOptArr)
       equation
-        outEquationArray = emptyEqnsSized(numberOfElement);
+  outEquationArray = emptyEqnsSized(numberOfElement);
       then
-        compressEquations1(1,numberOfElement,equOptArr,outEquationArray);
+  compressEquations1(1,numberOfElement,equOptArr,outEquationArray);
     else
       equation
-        print("BackendEquation.compressEquations failed\n");
+  print("BackendEquation.compressEquations failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end compressEquations;
 
@@ -1824,29 +1824,29 @@ algorithm
     // found element
     case(_,_,_,_)
       equation
-        true = intLe(index,nEqns);
-        SOME(eqn) = equOptArr[index];
-        eqns = equationAdd(eqn,iEqns);
+  true = intLe(index,nEqns);
+  SOME(eqn) = equOptArr[index];
+  eqns = equationAdd(eqn,iEqns);
       then
-        compressEquations1(index+1,nEqns,equOptArr,eqns);
+  compressEquations1(index+1,nEqns,equOptArr,eqns);
     // found non element
     case(_,_,_,_)
       equation
-        true = intLe(index,nEqns);
-        NONE() = equOptArr[index];
+  true = intLe(index,nEqns);
+  NONE() = equOptArr[index];
       then
-        compressEquations1(index+1,nEqns,equOptArr,iEqns);
+  compressEquations1(index+1,nEqns,equOptArr,iEqns);
     // at the end
     case(_,_,_,_)
       equation
-        false = intLe(index,nEqns);
+  false = intLe(index,nEqns);
       then
-        iEqns;
+  iEqns;
     else
       equation
-        print("BackendEquation.compressEquations1 failed for index " +& intString(index) +& " and Number of Equations " +& intString(nEqns) +& "\n");
+  print("BackendEquation.compressEquations1 failed for index " +& intString(index) +& " and Number of Equations " +& intString(nEqns) +& "\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end compressEquations1;
 
@@ -1912,7 +1912,7 @@ algorithm
 
     case (backendEq as BackendDAE.COMPLEX_EQUATION(source=source))  then {backendEq};
     case (backendEq as BackendDAE.RESIDUAL_EQUATION(source=source)) then {backendEq};
-    case (backendEq as BackendDAE.ALGORITHM(alg=_))                 then {backendEq};
+    case (backendEq as BackendDAE.ALGORITHM(alg=_))           then {backendEq};
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))    then {backendEq};
 
     case (backendEq) equation
@@ -1941,18 +1941,18 @@ algorithm
       // A scalar real
     case (DAE.CREF(ty=DAE.T_REAL(source=_)),_,_,(i,eqs))
       equation
-        eqs = BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT),inSource,false)::eqs;
+  eqs = BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT),inSource,false)::eqs;
       then ((i+1,eqs));
       // Create a sum for arrays...
     case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL(source=_))),_,_,(i,eqs))
       equation
-        e = Expression.makeBuiltinCall("sum",{DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT);
-        eqs = BackendDAE.RESIDUAL_EQUATION(e,inSource,false)::eqs;
+  e = Expression.makeBuiltinCall("sum",{DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT);
+  eqs = BackendDAE.RESIDUAL_EQUATION(e,inSource,false)::eqs;
       then ((i+1,eqs));
     case (_,_,_,(i,_))
       equation
-        str = "BackendEquation.equationTupleToScalarResidualForm failed: " +& intString(i) +& ": " +& ExpressionDump.printExpStr(cr);
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},DAEUtil.getElementSourceFileInfo(inSource));
+  str = "BackendEquation.equationTupleToScalarResidualForm failed: " +& intString(i) +& ": " +& ExpressionDump.printExpStr(cr);
+  Error.addSourceMessage(Error.INTERNAL_ERROR,{str},DAEUtil.getElementSourceFileInfo(inSource));
       then fail();
   end match;
 end equationTupleToScalarResidualForm;
@@ -1973,33 +1973,33 @@ algorithm
       Boolean diffed;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source, differentiated=diffed))
       equation
-        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
-        exp = Expression.expSub(e1,e2);
-        (e,_) = ExpressionSimplify.simplify(exp);
+  //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
+  exp = Expression.expSub(e1,e2);
+  (e,_) = ExpressionSimplify.simplify(exp);
       then
-        BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
+  BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source = source, differentiated=diffed))
       equation
-        e1 = Expression.crefExp(cr);
-        exp = Expression.expSub(e1,e2);
-        (e,_) = ExpressionSimplify.simplify(exp);
+  e1 = Expression.crefExp(cr);
+  exp = Expression.expSub(e1,e2);
+  (e,_) = ExpressionSimplify.simplify(exp);
       then
-        BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
+  BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
 
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2,source = source, differentiated=diffed))
       equation
-        exp = Expression.expSub(e1,e2);
-        (e,_) = ExpressionSimplify.simplify(exp);
+  exp = Expression.expSub(e1,e2);
+  (e,_) = ExpressionSimplify.simplify(exp);
       then
-        BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
+  BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
 
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2,source = source, differentiated=diffed))
       equation
-         exp = Expression.expSub(e1,e2);
-        (e,_) = ExpressionSimplify.simplify(exp);
+   exp = Expression.expSub(e1,e2);
+  (e,_) = ExpressionSimplify.simplify(exp);
       then
-        BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
+  BackendDAE.RESIDUAL_EQUATION(e,source,diffed);
 
     case (backendEq as BackendDAE.RESIDUAL_EQUATION(exp = _)) then backendEq;
 
@@ -2009,9 +2009,9 @@ algorithm
 
     case (backendEq)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToResidualForm failed");
+  Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToResidualForm failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end equationToResidualForm;
 
@@ -2060,9 +2060,9 @@ algorithm
     case BackendDAE.EQUATION(source=_) then 1;
     case BackendDAE.ARRAY_EQUATION(dimSize=ds)
       equation
-        size = List.fold(ds,intMul,1);
+  size = List.fold(ds,intMul,1);
       then
-        size;
+  size;
     case BackendDAE.SOLVED_EQUATION(source=_) then 1;
     case BackendDAE.RESIDUAL_EQUATION(source=_) then 1;
     case BackendDAE.WHEN_EQUATION(size=size) then size;
@@ -2070,13 +2070,13 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(size=size) then size;
     case BackendDAE.IF_EQUATION(eqnsfalse=eqnsfalse)
       equation
-        size = equationLstSize(eqnsfalse);
+  size = equationLstSize(eqnsfalse);
       then size;
     case (_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"BackendEquation.equationSize failed!"});
+  Error.addMessage(Error.INTERNAL_ERROR, {"BackendEquation.equationSize failed!"});
       then
-        fail();
+  fail();
   end match;
 end equationSize;
 
@@ -2110,7 +2110,7 @@ algorithm
     case({},_) then isize;
     case(eqn::rest,_)
       then
-        equationLstSize_impl(rest,isize+equationSize(eqn));
+  equationLstSize_impl(rest,isize+equationSize(eqn));
    end match;
 end equationLstSize_impl;
 
@@ -2135,33 +2135,33 @@ algorithm
     // complex types to complex equations
     case (_,_,_,_,_)
       equation
-        true = DAEUtil.expTypeComplex(ty);
-        size = Expression.sizeOf(ty);
+  true = DAEUtil.expTypeComplex(ty);
+  size = Expression.sizeOf(ty);
        then
-        BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source,differentiated);
+  BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source,differentiated);
     // array types to array equations
     case (_,_,_,_,_)
       equation
-        true = DAEUtil.expTypeArray(ty);
-        dims = Expression.arrayDimension(ty);
-        ds = Expression.dimensionsSizes(dims);
+  true = DAEUtil.expTypeArray(ty);
+  dims = Expression.arrayDimension(ty);
+  ds = Expression.dimensionsSizes(dims);
       then
-        BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source,differentiated);
+  BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source,differentiated);
     // other types
     case (_,_,_,_,_)
       equation
-        b1 = DAEUtil.expTypeComplex(ty);
-        b2 = DAEUtil.expTypeArray(ty);
-        false = b1 or b2;
+  b1 = DAEUtil.expTypeComplex(ty);
+  b2 = DAEUtil.expTypeArray(ty);
+  false = b1 or b2;
       then
-        BackendDAE.EQUATION(lhs,rhs,source,differentiated);
+  BackendDAE.EQUATION(lhs,rhs,source,differentiated);
     else
       equation
-        // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendEquation.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
+  // show only on failtrace!
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- BackendEquation.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end generateEquation;
 
@@ -2216,7 +2216,7 @@ algorithm
       then aliasEquation1(e1,e2,{});
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2))
       equation
-        e = Expression.crefExp(cr);
+  e = Expression.crefExp(cr);
       then aliasEquation1(e,e2,{});
     case (BackendDAE.RESIDUAL_EQUATION(exp=e1))
       then aliasExpression(e1,{});
@@ -2236,45 +2236,45 @@ protected function aliasEquation1
 algorithm
   outTpls := match (lhs,rhs,inTpls)
       local
-        DAE.ComponentRef cr1,cr2;
-        DAE.Exp e1,e2;
-        DAE.Type ty;
-        list<DAE.Exp> elst1,elst2;
-        list<list<DAE.Exp>> elstlst1,elstlst2;
-        list<DAE.Var> varLst1,varLst2;
-        Absyn.Path patha,patha1,pathb,pathb1;
+  DAE.ComponentRef cr1,cr2;
+  DAE.Exp e1,e2;
+  DAE.Type ty;
+  list<DAE.Exp> elst1,elst2;
+  list<list<DAE.Exp>> elstlst1,elstlst2;
+  list<DAE.Var> varLst1,varLst2;
+  Absyn.Path patha,patha1,pathb,pathb1;
       // a = b;
       case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_)
-        then (cr1,cr2,lhs,rhs,false)::inTpls;
+  then (cr1,cr2,lhs,rhs,false)::inTpls;
       // a = -b;
       case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true)::inTpls;
+  then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true)::inTpls;
       case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true)::inTpls;
+  then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true)::inTpls;
       // -a = b;
       case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
-        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true)::inTpls;
+  then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true)::inTpls;
       case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
-        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true)::inTpls;
+  then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true)::inTpls;
       // -a = -b;
       case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       // a = not b;
       case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true)::inTpls;
+  then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true)::inTpls;
       // not a = b;
       case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
-        then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true)::inTpls;
+  then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true)::inTpls;
       // not a = not b;
       case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       // {a1,a2,a3,..} = {b1,b2,b3,..};
       case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_)
-        then List.threadFold(elst1,elst2,aliasEquation1,inTpls);
+  then List.threadFold(elst1,elst2,aliasEquation1,inTpls);
       case (DAE.MATRIX(matrix = elstlst1),DAE.MATRIX(matrix = elstlst2),_)
-        then List.threadFold(elstlst1,elstlst2,aliasEquationLst,inTpls);
+  then List.threadFold(elstlst1,elstlst2,aliasEquationLst,inTpls);
       // a = {b1,b2,b3,..}
       //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2,dims=dims),_)
       //  then
@@ -2309,26 +2309,26 @@ algorithm
       //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
       // a = Record(b1,b2,b3,..)
       case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_)
-        equation
-          true = Absyn.pathEqual(pathb,pathb1);
-        then
-          aliasRecord(cr1,varLst2,elst2,inTpls);
+  equation
+    true = Absyn.pathEqual(pathb,pathb1);
+  then
+    aliasRecord(cr1,varLst2,elst2,inTpls);
       // Record(a1,a2,a3,..) = b
       case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_)
-        equation
-          true = Absyn.pathEqual(patha,patha1);
-        then
-          aliasRecord(cr2,varLst1,elst1,inTpls);
+  equation
+    true = Absyn.pathEqual(patha,patha1);
+  then
+    aliasRecord(cr2,varLst1,elst1,inTpls);
       // Record(a1,a2,a3,..) = Record(b1,b2,b3,..)
       case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
-            DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_)
-        equation
-          true = Absyn.pathEqual(patha,patha1);
-          true = Absyn.pathEqual(pathb,pathb1);
-        then List.threadFold(elst1,elst2,aliasEquation1,inTpls);
+      DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_)
+  equation
+    true = Absyn.pathEqual(patha,patha1);
+    true = Absyn.pathEqual(pathb,pathb1);
+  then List.threadFold(elst1,elst2,aliasEquation1,inTpls);
       // matchcontinue part
       else
-        then aliasEquation2(lhs,rhs,inTpls);
+  then aliasEquation2(lhs,rhs,inTpls);
   end match;
 end aliasEquation1;
 
@@ -2359,22 +2359,22 @@ algorithm
     // {a1+b1,a2+b2,a3+b3,..} = 0;
     case (DAE.ARRAY(array = elst1),_,_)
       equation
-        true = Expression.isZero(rhs);
+  true = Expression.isZero(rhs);
       then List.fold(elst1,aliasExpression,inTpls);
     // 0 = {a1+b1,a2+b2,a3+b3,..};
     case (_,DAE.ARRAY(array = elst2),_)
       equation
-        true = Expression.isZero(lhs);
+  true = Expression.isZero(lhs);
       then List.fold(elst2,aliasExpression,inTpls);
     // lhs = 0
     case (_,_,_)
       equation
-        true = Expression.isZero(rhs);
+  true = Expression.isZero(rhs);
        then aliasExpression(lhs,inTpls);
     // 0 = rhs
     case (_,_,_)
       equation
-        true = Expression.isZero(lhs);
+  true = Expression.isZero(lhs);
       then aliasExpression(rhs,inTpls);
   end matchcontinue;
 end aliasEquation2;
@@ -2401,7 +2401,7 @@ algorithm
     case (_,_,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
       equation
       then
-        aliasArray(cr,negate,elst,iTy,inTpls);
+  aliasArray(cr,negate,elst,iTy,inTpls);
     // a = -b
     // a = not b
   end match;
@@ -2429,30 +2429,30 @@ algorithm
     // a = b
     case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.CREF(componentRef = cr2))::elst,_)
       equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.CREF(cr1,ty);
+  cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+  e1 = DAE.CREF(cr1,ty);
       then
-        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,false)::inTpls);
+  aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,false)::inTpls);
     // a = -b
     case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
       equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(cr1,ty));
+  cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+  e1 = DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(cr1,ty));
       then
-        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+  aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
     case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
       equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(cr1,ty));
+  cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+  e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(cr1,ty));
       then
-        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+  aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
     // a = not b
     case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
       equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
+  cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+  e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
       then
-        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+  aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
     // a = {b1,b2,b3}
   end match;
 end aliasRecord;
@@ -2468,29 +2468,29 @@ protected function aliasExpression
 algorithm
   outTpls := match (exp,inTpls)
       local
-        DAE.ComponentRef cr1,cr2;
-        DAE.Exp e1,e2;
-        DAE.Type ty;
+  DAE.ComponentRef cr1,cr2;
+  DAE.Exp e1,e2;
+  DAE.Type ty;
       // a + b
       case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
+  then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
       case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
+  then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
       // a - b
       case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       // -a + b
       case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,e2,false)::inTpls;
+  then (cr1,cr2,e1,e2,false)::inTpls;
       // -a - b = 0
       case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
+  then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
       case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
+  then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
   end match;
 end aliasExpression;
 
@@ -2508,71 +2508,71 @@ public function derivativeEquation
 algorithm
   (cr,dcr,e,de,negate) := match (eqn)
       local
-        DAE.Exp ne;
+  DAE.Exp ne;
       // a = der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        then (cr,dcr,e,de,false);
+  then (cr,dcr,e,de,false);
       // der(a) = b;
       case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.CREF(componentRef = dcr)))
-        then (cr,dcr,e,de,false);
+  then (cr,dcr,e,de,false);
       // a = -der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
+  equation
+    ne = Expression.negate(e);
+  then (cr,dcr,ne,de,true);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
+  equation
+    ne = Expression.negate(e);
+  then (cr,dcr,ne,de,true);
       // -der(a) = b;
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
+  equation
+    ne = Expression.negate(e);
+  then (cr,dcr,ne,de,true);
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
+  equation
+    ne = Expression.negate(e);
+  then (cr,dcr,ne,de,true);
       // -a = der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
+  equation
+    ne = Expression.negate(de);
+  then (cr,dcr,e,ne,true);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
+  equation
+    ne = Expression.negate(de);
+  then (cr,dcr,e,ne,true);
       // der(a) = -b;
       case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
+  equation
+    ne = Expression.negate(de);
+  then (cr,dcr,e,ne,true);
       case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
+  equation
+    ne = Expression.negate(de);
+  then (cr,dcr,e,ne,true);
       // -a = -der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        equation
-          ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+  equation
+    ne = Expression.negate(e);
+    de = Expression.negate(de);
+  then (cr,dcr,ne,de,false);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        equation
-          ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+  equation
+    ne = Expression.negate(e);
+    de = Expression.negate(de);
+  then (cr,dcr,ne,de,false);
       // -der(a) = -b;
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+  equation
+    ne = Expression.negate(e);
+    de = Expression.negate(de);
+  then (cr,dcr,ne,de,false);
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+  equation
+    ne = Expression.negate(e);
+    de = Expression.negate(de);
+  then (cr,dcr,ne,de,false);
   end match;
 end derivativeEquation;
 
@@ -2596,39 +2596,39 @@ algorithm
       Boolean diffed;
     case (BackendDAE.EQUATION(e1,e2,source,diffed),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.EQUATION(e1,e2,source,diffed);
     case (BackendDAE.ARRAY_EQUATION(ds,e1,e2,source,diffed),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.ARRAY_EQUATION(ds,e1,e2,source,diffed);
     case (BackendDAE.SOLVED_EQUATION(cr1,e1,source,diffed),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.SOLVED_EQUATION(cr1,e1,source,diffed);
     case (BackendDAE.RESIDUAL_EQUATION(e1,source,diffed),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.RESIDUAL_EQUATION(e1,source,diffed);
     case (BackendDAE.ALGORITHM(size,alg,source),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.ALGORITHM(size,alg,source);
     case (BackendDAE.WHEN_EQUATION(size,whenEquation,source),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.WHEN_EQUATION(size,whenEquation,source);
     case (BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,diffed),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,diffed);
     case (BackendDAE.IF_EQUATION(conditions,eqnstrue,eqnsfalse,source),_)
       equation
-        source = DAEUtil.addSymbolicTransformation(source,op);
+  source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.IF_EQUATION(conditions,eqnstrue,eqnsfalse,source);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.addOperation failed"});
+  Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.addOperation failed"});
       then fail();
   end match;
 end addOperation;
@@ -2700,8 +2700,8 @@ algorithm
       then iEqn;
     case BackendDAE.IF_EQUATION(conditions=conditions,eqnstrue=eqnstrue,eqnsfalse=eqnsfalse,source=source)
       equation
-        eqnstrue = List.mapList(eqnstrue,markDifferentiated);
-        eqnsfalse = List.map(eqnsfalse,markDifferentiated);
+  eqnstrue = List.mapList(eqnstrue,markDifferentiated);
+  eqnsfalse = List.map(eqnsfalse,markDifferentiated);
       then BackendDAE.IF_EQUATION(conditions,eqnstrue,eqnsfalse,source);
   end match;
 end markDifferentiated;

@@ -337,8 +337,8 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
     {
       if(fgetc(fp1) != fgetc(fp2))
       {
-        res=-1;
-        break;
+  res=-1;
+  break;
       }
     }
   }
@@ -936,10 +936,10 @@ RML_BEGIN_LABEL(System__subDirectories)
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
       if (strcmp(FileData.cFileName,"..") != 0 &&
-        strcmp(FileData.cFileName,".") != 0 &&
-        (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+  strcmp(FileData.cFileName,".") != 0 &&
+  (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
       {
-          res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
       }
       more = FindNextFile(sh, &FileData);
     }
@@ -969,7 +969,7 @@ RML_BEGIN_LABEL(System__moFiles)
     while(more) {
       if (strcmp(FileData.cFileName,"package.mo") != 0)
       {
-          res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
       }
       more = FindNextFile(sh, &FileData);
     }
@@ -1023,17 +1023,17 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
       sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
       if(fileExistsLocal(tmpSearchString)==0){
-        if(strlen(FileData.cFileName)+current>mallocSize){
-          mallocSize *= 2;
-          retString = (char *)realloc(retString,mallocSize);
-        }
-        if(current==0){
-          sprintf(retString,"%s",FileData.cFileName);
-        }
-        else{
-          sprintf(retString,",%s",FileData.cFileName);
-        }
-        current +=strlen(FileData.cFileName)+1;
+  if(strlen(FileData.cFileName)+current>mallocSize){
+    mallocSize *= 2;
+    retString = (char *)realloc(retString,mallocSize);
+  }
+  if(current==0){
+    sprintf(retString,"%s",FileData.cFileName);
+  }
+  else{
+    sprintf(retString,",%s",FileData.cFileName);
+  }
+  current +=strlen(FileData.cFileName)+1;
       }
     }
   }
@@ -1041,17 +1041,17 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
       sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
       if(fileExistsLocal(tmpSearchString)==0){
-        if(strlen(FileData.cFileName)+current>mallocSize){
-          mallocSize *= 2;
-          retString = (char *)realloc(retString,mallocSize);
-        }
-        if(current==0){
-          sprintf(retString,"%s",FileData.cFileName);
-        }
-        else{
-          sprintf(retString,"%s,%s",retString,FileData.cFileName);
-        }
-        current +=strlen(FileData.cFileName)+1;
+  if(strlen(FileData.cFileName)+current>mallocSize){
+    mallocSize *= 2;
+    retString = (char *)realloc(retString,mallocSize);
+  }
+  if(current==0){
+    sprintf(retString,"%s",FileData.cFileName);
+  }
+  else{
+    sprintf(retString,"%s,%s",retString,FileData.cFileName);
+  }
+  current +=strlen(FileData.cFileName)+1;
       }
     }
   }
@@ -1106,9 +1106,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
-  struct _stat attrib;        // create a file attribute structure
-  double elapsedTime;             // the time elapsed as double
-  int result;            // the result of the function call
+  struct _stat attrib;  // create a file attribute structure
+  double elapsedTime;       // the time elapsed as double
+  int result;      // the result of the function call
 
   result = _stat( fileName, &attrib );
 
@@ -1173,8 +1173,8 @@ typedef int _file_select_func_type(const struct dirent *);
 typedef int _file_compar_func_type(const struct dirent **, const struct dirent **);
 
 void reallocdirents(struct dirent ***entries,
-        unsigned int oldsize,
-        unsigned int newsize) {
+  unsigned int oldsize,
+  unsigned int newsize) {
   struct dirent **newentries;
   if (newsize<=oldsize)
     return;
@@ -1275,26 +1275,26 @@ static char *getSymbolicLinkPath(char* path)
       //printf("okay succ %s, %d\n",path,ss.st_mode);
       if(S_ISLNK(ss.st_mode))
       {
-          //printf("*** is link *** %s\n",path);
-          buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
-          readChars = readlink (path, buffer, MAXPATHLEN);
-          if(readChars >0){
-            buffer[readChars]='\0';
-            buffer = mergePathWithLink(path,buffer);
-            free(path);
-            path = buffer;
-            //printf(" have %s from symolic link\n",path);
-            path = getSymbolicLinkPath(path);
-            //printf(" after recursive call, terminating; %s\n\n",path);
-          }
-          else if(readChars==-1){
-            free(buffer);
-          }
+    //printf("*** is link *** %s\n",path);
+    buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
+    readChars = readlink (path, buffer, MAXPATHLEN);
+    if(readChars >0){
+      buffer[readChars]='\0';
+      buffer = mergePathWithLink(path,buffer);
+      free(path);
+      path = buffer;
+      //printf(" have %s from symolic link\n",path);
+      path = getSymbolicLinkPath(path);
+      //printf(" after recursive call, terminating; %s\n\n",path);
+    }
+    else if(readChars==-1){
+      free(buffer);
+    }
       }
       return path;
     }
     else{
-        //printf(" no existing: %s\n",path);
+  //printf(" no existing: %s\n",path);
       return path;
     }
 }
@@ -1395,15 +1395,15 @@ static char* normalizePath(const char* src)
       /* found .. remove last part of the path in dest */
       p = strrchr(dest, '/');
       if (p == NULL) {
-        p = dest;
-        appendSlash = 0;
+  p = dest;
+  appendSlash = 0;
       }
       p[0] = '\0';
       targetPos = p;
       /* seek next / in src */
       srcPos = strchr(srcPos, '/');
       if (srcPos == NULL) {
-        break;
+  break;
       }
       srcPos = srcPos + 1; /* skip the found / */
       continue;
@@ -1588,23 +1588,23 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     // enter existing path to directory below
     DIR *dir = opendir(dir_path);
     while ((dp=readdir(dir)) != NULL) {
-            char *tmp;
-            tmp = path_cat(dir_path, dp->d_name, fileName);
-            if(strlen(tmp)>0){
-                if(strlen(dp->d_name)+current>mallocSize){
-                    mallocSize *= 2;
-                    retString = (char *)realloc(retString,mallocSize);
-                }
-                if(current==0){
-                    sprintf(retString,"%s",dp->d_name);
-                }
-                else{
-                    sprintf(retString,"%s,%s",retString,dp->d_name);
-                }
-                current +=strlen(dp->d_name)+1;
-            }
-            free(tmp);
-            tmp=NULL;
+      char *tmp;
+      tmp = path_cat(dir_path, dp->d_name, fileName);
+      if(strlen(tmp)>0){
+          if(strlen(dp->d_name)+current>mallocSize){
+              mallocSize *= 2;
+              retString = (char *)realloc(retString,mallocSize);
+          }
+          if(current==0){
+              sprintf(retString,"%s",dp->d_name);
+          }
+          else{
+              sprintf(retString,"%s,%s",retString,dp->d_name);
+          }
+          current +=strlen(dp->d_name)+1;
+      }
+      free(tmp);
+      tmp=NULL;
     }
     closedir(dir);
     //printf(" res string linux: %s\n" , retString);
@@ -1617,9 +1617,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
-  struct stat attrib;            // create a file attribute structure
-  double elapsedTime;                 // the time elapsed as double
-  int result;                // the result of the function call
+  struct stat attrib;      // create a file attribute structure
+  double elapsedTime;           // the time elapsed as double
+  int result;          // the result of the function call
 
   result =   stat(fileName, &attrib); // get the attributes of the file
 
@@ -2024,7 +2024,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getGCStatus)
 {
   long used = RML_SIZE_INT*((unsigned long)(rml_state_young_next - rml_young_region)
-             + (unsigned long)(rml_current_next - rml_current_region));
+       + (unsigned long)(rml_current_next - rml_current_region));
   long allocated = RML_SIZE_INT*(rml_older_size + rml_young_size);
   rmlA0 = mk_icon(used);
   rmlA1 = mk_icon(allocated);

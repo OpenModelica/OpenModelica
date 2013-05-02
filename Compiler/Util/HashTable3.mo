@@ -5,7 +5,7 @@ encapsulated package HashTable3 "
 
   All rights reserved.
 
-  file:        HashTable3.mo
+  file:  HashTable3.mo
   package:     HashTable3
   description: DAE.CR to list<DAE.CR>
 

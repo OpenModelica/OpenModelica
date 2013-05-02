@@ -30,7 +30,7 @@
  */
 
 encapsulated package VarTransform
-" file:        VarTransform.mo
+" file:  VarTransform.mo
   package:     VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.
 
@@ -133,7 +133,7 @@ algorithm
     list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
     case(DAE.DAE(elementLst=elts),repl,condExpFunc)
       equation
-        elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
+  elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
       then (DAE.DAE(elts));
   end matchcontinue;
 end applyReplacementsDAE;
@@ -207,179 +207,179 @@ algorithm
 
     case (DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp),dims,ct,source,attr,cmt,io)::dae,repl,condExpFunc)
       equation
-        (bindExp2,_) = replaceExp(bindExp, repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae, repl, condExpFunc);
-        attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
-        /* TODO: Add operation to source */
+  (bindExp2,_) = replaceExp(bindExp, repl, condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae, repl, condExpFunc);
+  attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
+  /* TODO: Add operation to source */
       then DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp2),dims,ct,source,attr,cmt,io)::dae2;
 
     case (DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io)::dae,repl,condExpFunc)
       equation
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
       then DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io)::dae2;
 
     case (DAE.DEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
-        (e2,_) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        /* TODO: Add operation to source */
+  (e2,_) = replaceExp(e, repl, condExpFunc);
+  (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  /* TODO: Add operation to source */
       then DAE.DEFINE(cr2,e2,source)::dae2;
 
     case (DAE.INITIALDEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
-        (e2,_) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        /* TODO: Add operation to source */
+  (e2,_) = replaceExp(e, repl, condExpFunc);
+  (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  /* TODO: Add operation to source */
       then DAE.INITIALDEFINE(cr2,e2,source)::dae2;
 
     case (DAE.EQUEQUATION(cr,cr1,source)::dae,repl,condExpFunc)
       equation
-        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        (DAE.CREF(cr1_2,_),_) = replaceExp(Expression.crefExp(cr1), repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        /* TODO: Add operation to source */
+  (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+  (DAE.CREF(cr1_2,_),_) = replaceExp(Expression.crefExp(cr1), repl, condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  /* TODO: Add operation to source */
       then DAE.EQUEQUATION(cr2,cr1_2,source)::dae2;
 
     case (DAE.EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.EQUATION(e11,e22,source)::dae2;
 
     case (DAE.ARRAY_EQUATION(idims,e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2;
 
     case (DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::dae2;
 
     case (DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        {elt2} = applyReplacementsDAEElts({elt},repl,condExpFunc);
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  {elt2} = applyReplacementsDAEElts({elt},repl,condExpFunc);
+  elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::dae2;
 
     case (DAE.WHEN_EQUATION(e1,elist,NONE(),source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.WHEN_EQUATION(e11,elist2,NONE(),source)::dae2;
 
     case (DAE.IF_EQUATION(conds,tbs,elist2,source)::dae,repl,condExpFunc)
       equation
-        (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
-        /* TODO: Add operation to source */
-        tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
-        elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
+  /* TODO: Add operation to source */
+  tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
+  elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2;
 
     case (DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source)::dae,repl,condExpFunc)
       equation
-        (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
-        /* TODO: Add operation to source */
-        tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
-        elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
+  /* TODO: Add operation to source */
+  tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
+  elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2;
 
     case (DAE.INITIALEQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALEQUATION(e11,e22,source)::dae2;
 
     case (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,repl,condExpFunc)
       equation
-        (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2;
 
     case (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,repl,condExpFunc)
       equation
-        (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2;
 
     case (DAE.COMP(id,elist,source,cmt)::dae,repl,condExpFunc)
       equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMP(id,elist,source,cmt)::dae2;
 
     case ((elt as DAE.EXTOBJECTCLASS(path,source))::dae,repl,condExpFunc)
       equation
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae2;
 
     case (DAE.ASSERT(e1,e2,e3,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        (e32,_) = replaceExp(e3, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  (e32,_) = replaceExp(e3, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ASSERT(e11,e22,e32,source)::dae2;
 
     case (DAE.TERMINATE(e1,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.TERMINATE(e11,source)::dae2;
 
     case (DAE.REINIT(cr,e1,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.REINIT(cr2,e11,source)::dae2;
 
     case (DAE.COMPLEX_EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMPLEX_EQUATION(e11,e22,source)::dae2;
 
     case (DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11,_) = replaceExp(e1, repl, condExpFunc);
-        (e22,_) = replaceExp(e2, repl, condExpFunc);
-        /* TODO: Add operation to source */
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  (e11,_) = replaceExp(e1, repl, condExpFunc);
+  (e22,_) = replaceExp(e2, repl, condExpFunc);
+  /* TODO: Add operation to source */
+  dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::dae2;
 
     // failtrace. adrpo: TODO! FIXME! this SHOULD NOT FAIL!
     case (elt::dae,repl,condExpFunc)
       equation
-        // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
-        dae = applyReplacementsDAEElts(dae,repl,condExpFunc);
+  // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
+  dae = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae;
   end matchcontinue;
 end applyReplacementsDAEElts;
@@ -409,17 +409,17 @@ algorithm
 
     case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
+  elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+  dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
+  DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
 
     case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,repl,condExpFunc)
       equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
+  elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+  dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
+  DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
   end matchcontinue;
 end applyReplacementsFunctions;
 
@@ -444,38 +444,38 @@ algorithm
 
     case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin)),repl,condExpFunc)
       equation
-        (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-        (unit) = replaceExpOpt(unit,repl,condExpFunc);
-        (displayUnit) = replaceExpOpt(displayUnit,repl,condExpFunc);
-        (min) = replaceExpOpt(min,repl,condExpFunc);
-        (max) = replaceExpOpt(max,repl,condExpFunc);
-        (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-        (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-        (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
-        //TODO: replace expressions also in uncertainty attributes (unc and dist)
+  (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+  (unit) = replaceExpOpt(unit,repl,condExpFunc);
+  (displayUnit) = replaceExpOpt(displayUnit,repl,condExpFunc);
+  (min) = replaceExpOpt(min,repl,condExpFunc);
+  (max) = replaceExpOpt(max,repl,condExpFunc);
+  (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+  (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+  (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
+  //TODO: replace expressions also in uncertainty attributes (unc and dist)
       then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin));
 
     case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin)),repl,condExpFunc)
       equation
-        (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-        (min) = replaceExpOpt(min,repl,condExpFunc);
-        (max) = replaceExpOpt(max,repl,condExpFunc);
-        (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-        (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+  (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+  (min) = replaceExpOpt(min,repl,condExpFunc);
+  (max) = replaceExpOpt(max,repl,condExpFunc);
+  (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+  (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
       then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin));
 
       case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin)),repl,condExpFunc)
-        equation
-          (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-          (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-          (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-        then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin));
+  equation
+    (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+    (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+    (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+  then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin));
 
       case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin)),repl,condExpFunc)
-        equation
-          (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-          (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin));
+  equation
+    (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+    (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+  then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin));
 
       case (NONE(),repl,_) then NONE();
   end matchcontinue;
@@ -498,10 +498,10 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation
-        (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
-        (DAE.CREF(cr2_1,_),_) = replaceExp(Expression.crefExp(cr2), repl,NONE());
+  (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
+  (DAE.CREF(cr2_1,_),_) = replaceExp(Expression.crefExp(cr2), repl,NONE());
       then
-        (cr1_1,cr2_1);
+  (cr1_1,cr2_1);
   end matchcontinue;
 end applyReplacements;
 
@@ -520,10 +520,10 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation
-        (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
-        ocrefs = applyReplacementList(repl,increfs);
+  (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
+  ocrefs = applyReplacementList(repl,increfs);
       then
-        cr1_1::ocrefs;
+  cr1_1::ocrefs;
   end matchcontinue;
 end applyReplacementList;
 
@@ -544,12 +544,12 @@ algorithm
       Boolean b1,b2;
     case (repl,e1,e2)
       equation
-        (e1,b1) = replaceExp(e1, repl, NONE());
-        (e2,b2) = replaceExp(e2, repl, NONE());
-        (e1,_) = ExpressionSimplify.simplify1(e1);
-        (e2,_) = ExpressionSimplify.simplify1(e2);
+  (e1,b1) = replaceExp(e1, repl, NONE());
+  (e2,b2) = replaceExp(e2, repl, NONE());
+  (e1,_) = ExpressionSimplify.simplify1(e1);
+  (e2,_) = ExpressionSimplify.simplify1(e2);
       then
-        (e1,e2);
+  (e1,e2);
   end matchcontinue;
 end applyReplacementsExp;
 
@@ -588,13 +588,13 @@ algorithm
   outVariableReplacements:=
   match ()
       local HashTable2.HashTable ht;
-        HashTable3.HashTable invHt;
+  HashTable3.HashTable invHt;
     case ()
       equation
-        ht = HashTable2.emptyHashTable();
-        invHt = HashTable3.emptyHashTable();
+  ht = HashTable2.emptyHashTable();
+  invHt = HashTable3.emptyHashTable();
       then
-        REPLACEMENTS(ht,invHt);
+  REPLACEMENTS(ht,invHt);
   end match;
 end emptyReplacements;
 
@@ -608,13 +608,13 @@ algorithm
   outVariableReplacements:=
   match (size)
       local HashTable2.HashTable ht;
-        HashTable3.HashTable invHt;
+  HashTable3.HashTable invHt;
     case _
       equation
-        ht = HashTable2.emptyHashTableSized(size);
-        invHt = HashTable3.emptyHashTableSized(size);
+  ht = HashTable2.emptyHashTableSized(size);
+  invHt = HashTable3.emptyHashTableSized(size);
       then
-        REPLACEMENTS(ht,invHt);
+  REPLACEMENTS(ht,invHt);
   end match;
 end emptyReplacementsSized;
 
@@ -656,117 +656,117 @@ algorithm
     case ({},_,_) then ({},false);
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,b1) = replaceExp(e, repl, condExpFunc);
+  (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,true);
+  (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,true);
     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (expl2,b2) = replaceExpList(expl1, repl, condExpFunc, {}, false);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,b1) = replaceExp(e, repl, condExpFunc);
+  (expl2,b2) = replaceExpList(expl1, repl, condExpFunc, {}, false);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1,true);
+  (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1,true);
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (e_2 as DAE.CREF(cr_1,_),b2) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,b1) = replaceExp(e, repl, condExpFunc);
+  (e_2 as DAE.CREF(cr_1,_),b2) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,true);
+  (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,true);
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        (e_1,true) = replaceExp(e, repl, condExpFunc);
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,true) = replaceExp(e, repl, condExpFunc);
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,true);
+  (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,true);
     case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el,source = source)) :: xs),repl,condExpFunc)
       equation
-        (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
-        (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        (e_1,b3) = replaceExp(e, repl, condExpFunc);
-        true = b1 or b2 or b3;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
+  (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  (e_1,b3) = replaceExp(e, repl, condExpFunc);
+  true = b1 or b2 or b3;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
+  (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
     case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
-        (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        (e_1,b2) = replaceExp(e, repl, condExpFunc);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  (e_1,b2) = replaceExp(e, repl, condExpFunc);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,true);
+  (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,true);
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
-        (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        (e_1,b2) = replaceExp(e, repl, condExpFunc);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  (e_1,b2) = replaceExp(e, repl, condExpFunc);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,true);
+  (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,true);
     case (((x as DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=ew,source=source))::xs),repl,condExpFunc)
       equation
-        (ew_1,b1) = replaceOptEquationsStmts(ew,repl,condExpFunc);
-        (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
-        (e_1,b3) = replaceExp(e, repl, condExpFunc);
-        true = b1 or b2 or b3;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (ew_1,b1) = replaceOptEquationsStmts(ew,repl,condExpFunc);
+  (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
+  (e_1,b3) = replaceExp(e, repl, condExpFunc);
+  true = b1 or b2 or b3;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,ew_1,source)::xs_1, true);
+  (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,ew_1,source)::xs_1, true);
     case (((x as DAE.STMT_ASSERT(cond=e,msg=e2,level=e3,source=source)) :: xs),repl,condExpFunc)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
-        (e_3,b3) = replaceExp(e3, repl, condExpFunc);
-        true = b1 or b2 or b3;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,b1) = replaceExp(e, repl, condExpFunc);
+  (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+  (e_3,b3) = replaceExp(e3, repl, condExpFunc);
+  true = b1 or b2 or b3;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1, true);
+  (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1, true);
     case (((x as DAE.STMT_TERMINATE(msg = e,source = source)) :: xs),repl,condExpFunc)
       equation
-        (e_1,true) = replaceExp(e, repl, condExpFunc);
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,true) = replaceExp(e, repl, condExpFunc);
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TERMINATE(e_1,source) :: xs_1, true);
+  (DAE.STMT_TERMINATE(e_1,source) :: xs_1, true);
 
     case (((x as DAE.STMT_REINIT(var = e,value=e2,source = source)) :: xs),repl,condExpFunc)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
-        true = b1 or b2;
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,b1) = replaceExp(e, repl, condExpFunc);
+  (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+  true = b1 or b2;
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1, true);
+  (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1, true);
 
     case ((x as DAE.STMT_NORETCALL(exp = e,source = source)) :: xs,repl,condExpFunc)
       equation
-        (e_1,true) = replaceExp(e, repl, condExpFunc);
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (e_1,true) = replaceExp(e, repl, condExpFunc);
+  /* TODO: Add operation to source; do simplify? */
+  (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_NORETCALL(e_1,source) :: xs_1, true);
+  (DAE.STMT_NORETCALL(e_1,source) :: xs_1, true);
 
     case ((x :: xs),repl,condExpFunc)
       equation
-        (xs_1, b1) = replaceEquationsStmts(xs, repl,condExpFunc);
+  (xs_1, b1) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (x :: xs_1, b1);
+  (x :: xs_1, b1);
   end matchcontinue;
 
 end replaceEquationsStmts;
@@ -791,14 +791,14 @@ algorithm
       Boolean b1,b2,b3;
     case(DAE.ELSEIF(e,st,el),repl,condExpFunc)
       equation
-        (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
-        (st_1,b2) = replaceEquationsStmts(st,repl,condExpFunc);
-        (e_1,b3) = replaceExp(e, repl, condExpFunc);
-        true = b1 or b2 or b3;
+  (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
+  (st_1,b2) = replaceEquationsStmts(st,repl,condExpFunc);
+  (e_1,b3) = replaceExp(e, repl, condExpFunc);
+  true = b1 or b2 or b3;
       then (DAE.ELSEIF(e_1,st_1,el_1),true);
     case(DAE.ELSE(st),repl,condExpFunc)
       equation
-        (st_1,true) = replaceEquationsStmts(st,repl,condExpFunc);
+  (st_1,true) = replaceEquationsStmts(st,repl,condExpFunc);
       then (DAE.ELSE(st_1),true);
     else (inElse,false);
   end matchcontinue;
@@ -821,7 +821,7 @@ algorithm
       DAE.Statement stmt,stmt2;
     case(SOME(stmt),inVariableReplacements,condExpFunc)
       equation
-        ({stmt2},true) = replaceEquationsStmts({stmt},inVariableReplacements,condExpFunc);
+  ({stmt2},true) = replaceEquationsStmts({stmt},inVariableReplacements,condExpFunc);
       then (SOME(stmt2),true);
     else (optStmt,false);
   end matchcontinue;
@@ -841,18 +841,18 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable= ht))
       equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("Replacements: (");
-        len = listLength(tplLst);
-        len_str = intString(len);
-        print(len_str);
-        print(")\n");
-        print("=============\n");
-        print(str);
-        print("\n");
+  (tplLst) = BaseHashTable.hashTableList(ht);
+  str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+  print("Replacements: (");
+  len = listLength(tplLst);
+  len_str = intString(len);
+  print(len_str);
+  print(")\n");
+  print("=============\n");
+  print(str);
+  print("\n");
       then
-        ();
+  ();
   end match;
 end dumpReplacements;
 
@@ -872,11 +872,11 @@ algorithm ostr := matchcontinue (inVariableReplacements)
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable = ht))
       equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
+  (tplLst) = BaseHashTable.hashTableList(ht);
+  str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+  s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
       then
-        s1;
+  s1;
   end matchcontinue;
 end dumpReplacementsStr;
 
@@ -893,11 +893,11 @@ algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable = ht))
       equation
-        tplLst = BaseHashTable.hashTableList(ht);
-        crefs = List.map(tplLst,Util.tuple21);
-        dsts = List.map(tplLst,Util.tuple22);
+  tplLst = BaseHashTable.hashTableList(ht);
+  crefs = List.map(tplLst,Util.tuple21);
+  dsts = List.map(tplLst,Util.tuple22);
       then
-        (crefs,dsts);
+  (crefs,dsts);
   end matchcontinue;
 end getAllReplacements;
 
@@ -920,7 +920,7 @@ algorithm
     HashTable2.HashTable ht;
     case (REPLACEMENTS(ht,_))
       equation
-          sources = BaseHashTable.hashTableKeyList(ht);
+    sources = BaseHashTable.hashTableKeyList(ht);
       then sources;
   end matchcontinue;
 end replacementSources;
@@ -937,10 +937,10 @@ algorithm
 
     case (REPLACEMENTS(ht,_))
       equation
-        targets = BaseHashTable.hashTableValueList(ht);
-        targets2 = List.flatten(List.map(targets,Expression.extractCrefsFromExp));
+  targets = BaseHashTable.hashTableValueList(ht);
+  targets2 = List.flatten(List.map(targets,Expression.extractCrefsFromExp));
       then
-        targets2;
+  targets2;
   end matchcontinue;
 end replacementTargets;
 
@@ -973,25 +973,25 @@ algorithm
 
     case ((REPLACEMENTS(ht,invHt)),src,dst)
       equation
-        (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
-        /*s1 = ComponentReference.printComponentRefStr(src);
-        s2 = ExpressionDump.printExpStr(dst);
-        s3 = ComponentReference.printComponentRefStr(src_1);
-        s4 = ExpressionDump.printExpStr(dst_1);
-        s = stringAppendList(
-          {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
-          ", ",s4,")\n"});
-          print(s);
-        Debug.fprint(Flags.ADD_REPL, s);*/
-        ht_1 = BaseHashTable.add((src_1, dst_1),ht);
-        invHt_1 = addReplacementInv(invHt, src_1, dst_1);
+  (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
+  /*s1 = ComponentReference.printComponentRefStr(src);
+  s2 = ExpressionDump.printExpStr(dst);
+  s3 = ComponentReference.printComponentRefStr(src_1);
+  s4 = ExpressionDump.printExpStr(dst_1);
+  s = stringAppendList(
+    {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
+    ", ",s4,")\n"});
+    print(s);
+  Debug.fprint(Flags.ADD_REPL, s);*/
+  ht_1 = BaseHashTable.add((src_1, dst_1),ht);
+  invHt_1 = addReplacementInv(invHt, src_1, dst_1);
       then
-        REPLACEMENTS(ht_1,invHt_1);
+  REPLACEMENTS(ht_1,invHt_1);
     case (_,_,_)
       equation
-        print("-add_replacement failed\n");
+  print("-add_replacement failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end addReplacement;
 
@@ -1020,20 +1020,20 @@ algorithm
       HashTable3.HashTable invHt,invHt_1;
     case ((REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
       equation
-        olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
+  olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
-        fail();
+  fail();
     case ((REPLACEMENTS(ht,invHt)),src,dst)
       equation
-        ht_1 = BaseHashTable.add((src, dst),ht);
-        invHt_1 = addReplacementInv(invHt, src, dst);
+  ht_1 = BaseHashTable.add((src, dst),ht);
+  invHt_1 = addReplacementInv(invHt, src, dst);
       then
-        REPLACEMENTS(ht_1,invHt_1);
+  REPLACEMENTS(ht_1,invHt_1);
     case (_,_,_)
       equation
-        print("-add_replacement failed\n");
+  print("-add_replacement failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end addReplacementNoTransitive;
 
@@ -1057,7 +1057,7 @@ algorithm
       dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
-        invHt_1;
+  invHt_1;
   end match;
 end addReplacementInv;
 
@@ -1082,17 +1082,17 @@ algorithm
       list<DAE.ComponentRef> srcs;
     case (_,_,_)
       equation
-        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
-        invHt_1 = BaseHashTable.add((dst, {src}),invHt);
+  failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
+  invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
-        invHt_1;
+  invHt_1;
     case (_,_,_)
       equation
-        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = List.union({},src::srcs);
-        invHt_1 = BaseHashTable.add((dst, srcs),invHt);
+  srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
+  srcs = List.union({},src::srcs);
+  invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
-        invHt_1;
+  invHt_1;
   end matchcontinue;
 end addReplacementInv2;
 
@@ -1115,7 +1115,7 @@ algorithm
       VariableReplacements repl_1;
     case (false,repl,src,dst) /* source dest */
       equation
-        repl_1 = addReplacement(repl,src,dst);
+  repl_1 = addReplacement(repl,src,dst);
       then repl_1;
     case (true,repl,src,dst)
       then repl;
@@ -1151,11 +1151,11 @@ algorithm
 
     case (_,_,_)
       equation
-        (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
-        (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
-        (dst_3,_) = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
+  (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
+  (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
+  (dst_3,_) = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
       then
-        (repl_2,src_2,dst_3);
+  (repl_2,src_2,dst_3);
   end match;
 end makeTransitive;
 
@@ -1181,11 +1181,11 @@ algorithm
       // is introduced
     case ((REPLACEMENTS(ht,invHt)),_,_)
       equation
-        lst = BaseHashTable.get(src, invHt);
-        singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
-        repl_1 = makeTransitive12(lst,repl,singleRepl);
+  lst = BaseHashTable.get(src, invHt);
+  singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
+  repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
-        (repl_1,src,dst);
+  (repl_1,src,dst);
     else (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
@@ -1208,10 +1208,10 @@ algorithm
     case({},_,_) then repl;
     case(cr::crs,REPLACEMENTS(hashTable=ht),_)
       equation
-        crDst = BaseHashTable.get(cr,ht);
-        (crDst,_) = replaceExp(crDst,singleRepl,NONE());
-        repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-        repl2 = makeTransitive12(crs,repl1,singleRepl);
+  crDst = BaseHashTable.get(cr,ht);
+  (crDst,_) = replaceExp(crDst,singleRepl,NONE());
+  repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
+  repl2 = makeTransitive12(crs,repl1,singleRepl);
       then repl2;
   end match;
 end makeTransitive12;
@@ -1234,10 +1234,10 @@ algorithm
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
     case (_,_,_)
       equation
-        (dst_1,_) = replaceExp(dst,repl,NONE());
+  (dst_1,_) = replaceExp(dst,repl,NONE());
       then
-        (repl,src,dst_1);
-        // replace Exp failed, keep old rule.
+  (repl,src,dst_1);
+  // replace Exp failed, keep old rule.
     case (_,_,_) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
@@ -1261,15 +1261,15 @@ algorithm
     case (repl,{},_) then repl;
     case (repl,(src :: srcs),dst)
       equation
-        repl_1 = addReplacement(repl, src, dst);
-        repl_2 = addReplacements(repl_1, srcs, dst);
+  repl_1 = addReplacement(repl, src, dst);
+  repl_2 = addReplacements(repl_1, srcs, dst);
       then
-        repl_2;
+  repl_2;
     case (_,_,_)
       equation
-        print("add_replacements failed\n");
+  print("add_replacements failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end addReplacements;
 
@@ -1290,9 +1290,9 @@ algorithm
       HashTable2.HashTable ht;
     case (REPLACEMENTS(hashTable=ht),src)
       equation
-        dst = BaseHashTable.get(src,ht);
+  dst = BaseHashTable.get(src,ht);
       then
-        dst;
+  dst;
   end match;
 end getReplacement;
 
@@ -1311,8 +1311,8 @@ algorithm
     case(NONE(),_,_) then NONE();
     case(SOME(e),repl,funcOpt)
       equation
-        /* TODO: Propagate this boolean? */
-        (e,_) = replaceExp(e,repl,funcOpt);
+  /* TODO: Propagate this boolean? */
+  (e,_) = replaceExp(e,repl,funcOpt);
       then SOME(e);
   end matchcontinue;
 end replaceExpOpt;
@@ -1376,8 +1376,8 @@ algorithm
     case(e,repl,func,maxIter,i,true) then e;
     case(e,repl,func,maxIter,i,false)
       equation
-        (e1,b) = replaceExp(e,repl,func);
-        res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
+  (e1,b) = replaceExp(e,repl,func);
+  res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
       then res;
   end matchcontinue;
 end replaceExpRepeated2;
@@ -1426,139 +1426,139 @@ algorithm
 
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        e1 = getReplacement(repl, cr);
-        e2 = avoidDoubleHashLookup(e1,t);
+  true = replaceExpCond(cond, e);
+  e1 = getReplacement(repl, cr);
+  e2 = avoidDoubleHashLookup(e1,t);
       then
-        (e2,true);
+  (e2,true);
     case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        true = c1 or c2;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  true = c1 or c2;
       then
-        (DAE.BINARY(e1_1,op,e2_1),true);
+  (DAE.BINARY(e1_1,op,e2_1),true);
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        true = c1 or c2;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  true = c1 or c2;
       then
-        (DAE.LBINARY(e1_1,op,e2_1),true);
+  (DAE.LBINARY(e1_1,op,e2_1),true);
     case ((e as DAE.UNARY(operator = op,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+  true = replaceExpCond(cond, e);
+  (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (DAE.UNARY(op,e1_1),true);
+  (DAE.UNARY(op,e1_1),true);
     case ((e as DAE.LUNARY(operator = op,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+  true = replaceExpCond(cond, e);
+  (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (DAE.LUNARY(op,e1_1),true);
+  (DAE.LUNARY(op,e1_1),true);
     case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),repl,cond)
       equation
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        true = c1 or c2;
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  true = c1 or c2;
       then
-        (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),true);
+  (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),true);
     case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        (e3_1,c3) = replaceExp(e3, repl, cond);
-        true = c1 or c2 or c3;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  (e3_1,c3) = replaceExp(e3, repl, cond);
+  true = c1 or c2 or c3;
       then
-        (DAE.IFEXP(e1_1,e2_1,e3_1),true);
+  (DAE.IFEXP(e1_1,e2_1,e3_1),true);
       /* Special case when a variable in pre() is an alias for unary minus of another */
     case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},attr=attr),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
+  true = replaceExpCond(cond, e);
+  (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
       then
-        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},attr)),true);
+  (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},attr)),true);
     case ((e as DAE.CALL(path = path,expLst = expl,attr=attr)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
+  true = replaceExpCond(cond, e);
+  (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (DAE.CALL(path,expl_1,attr),true);
+  (DAE.CALL(path,expl_1,attr),true);
     case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
+  true = replaceExpCond(cond, e);
+  (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (DAE.ARRAY(tp,c,expl_1),true);
+  (DAE.ARRAY(tp,c,expl_1),true);
     case ((e as DAE.MATRIX(ty = t,integer = b,matrix = bexpl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
+  true = replaceExpCond(cond, e);
+  (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
-        (DAE.MATRIX(t,b,bexpl_1),true);
+  (DAE.MATRIX(t,b,bexpl_1),true);
     case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        true = c1 or c2;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  true = c1 or c2;
       then
-        (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
+  (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
     case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        (e3_1,c3) = replaceExp(e3, repl, cond);
-        true = c1 or c2 or c3;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  (e3_1,c3) = replaceExp(e3, repl, cond);
+  true = c1 or c2 or c3;
       then
-        (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),true);
+  (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),true);
     case ((e as DAE.TUPLE(PR = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
+  true = replaceExpCond(cond, e);
+  (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (DAE.TUPLE(expl_1),true);
+  (DAE.TUPLE(expl_1),true);
     case ((e as DAE.CAST(ty = tp,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+  true = replaceExpCond(cond, e);
+  (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (DAE.CAST(tp,e1_1),true);
+  (DAE.CAST(tp,e1_1),true);
     case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+  true = replaceExpCond(cond, e);
+  (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (Expression.makeASUB(e1_1,expl),true);
+  (Expression.makeASUB(e1_1,expl),true);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+  true = replaceExpCond(cond, e);
+  (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (DAE.SIZE(e1_1,NONE()),true);
+  (DAE.SIZE(e1_1,NONE()),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (e2_1,c2) = replaceExp(e2, repl, cond);
-        true = c1 or c2;
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (e2_1,c2) = replaceExp(e2, repl, cond);
+  true = c1 or c2;
       then
-        (DAE.SIZE(e1_1,SOME(e2_1)),true);
+  (DAE.SIZE(e1_1,SOME(e2_1)),true);
     case (DAE.CODE(code = a,ty = tp),repl,cond)
       equation
-        print("replace_exp on CODE not impl.\n");
+  print("replace_exp on CODE not impl.\n");
       then
-        (DAE.CODE(a,tp),false);
+  (DAE.CODE(a,tp),false);
     case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
-        (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
+  true = replaceExpCond(cond, e);
+  (e1_1,c1) = replaceExp(e1, repl, cond);
+  (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
     case (e,repl,cond)
       then (e,false);
@@ -1589,8 +1589,8 @@ algorithm
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (exp::expl,_,_,acc1,acc2)
       equation
-        (exp,c) = replaceExp(exp,repl,cond);
-        (acc1,acc2) = replaceExpList(expl,repl,cond,exp::acc1,c or acc2);
+  (exp,c) = replaceExp(exp,repl,cond);
+  (acc1,acc2) = replaceExpList(expl,repl,cond,exp::acc1,c or acc2);
       then (acc1,acc2);
   end match;
 end replaceExpList;
@@ -1622,19 +1622,19 @@ algorithm
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_,_,acc1,_)
       equation
-        (exp,true) = replaceExp(exp, repl, cond);
-        (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
+  (exp,true) = replaceExp(exp, repl, cond);
+  (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
       then (iters,true);
     case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_,_,acc1,acc2)
       equation
-        (exp,b1) = replaceExp(exp, repl, cond);
-        (gexp,b2) = replaceExp(gexp, repl, cond);
-        true = b1 or b2;
-        (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1,true);
+  (exp,b1) = replaceExp(exp, repl, cond);
+  (gexp,b2) = replaceExp(gexp, repl, cond);
+  true = b1 or b2;
+  (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1,true);
       then (iters,true);
     case (iter::iters,_,_,acc1,acc2)
       equation
-        (iters,acc2) = replaceExpIters(iters,repl,cond,iter::acc1,acc2);
+  (iters,acc2) = replaceExpIters(iters,repl,cond,iter::acc1,acc2);
       then (iters,acc2);
   end matchcontinue;
 end replaceExpIters;
@@ -1660,9 +1660,9 @@ algorithm
       DAE.Exp e;
     case (SOME(cond),e) /* cond e */
       equation
-        res = cond(e);
+  res = cond(e);
       then
-        res;
+  res;
     case (NONE(),_) then true;
   end match;
 end replaceExpCond;
@@ -1695,10 +1695,10 @@ algorithm
     case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
-        (e_1,acc2) = replaceExpList(e, repl, cond, {}, acc2);
-        (acc1,acc2) = replaceExpMatrix(es, repl, cond, e_1::acc1, acc2);
+  (e_1,acc2) = replaceExpList(e, repl, cond, {}, acc2);
+  (acc1,acc2) = replaceExpMatrix(es, repl, cond, e_1::acc1, acc2);
       then
-        (acc1,acc2);
+  (acc1,acc2);
   end match;
 end replaceExpMatrix;
 
@@ -1716,9 +1716,9 @@ algorithm
       BinTree bt;
     case (bt)
       equation
-        (klst,vlst) = bintreeToExplist2(bt, {}, {});
+  (klst,vlst) = bintreeToExplist2(bt, {}, {});
       then
-        (klst,vlst);
+  (klst,vlst);
   end matchcontinue;
 end bintreeToExplist;
 
@@ -1741,18 +1741,18 @@ algorithm
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
       equation
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
-        crefExp = Expression.crefExp(key);
+  (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
+  (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
+  crefExp = Expression.crefExp(key);
       then
-        ((crefExp :: klst),(value :: vlst));
+  ((crefExp :: klst),(value :: vlst));
 
     case (TREENODE(value = NONE(),left = left,right = right),klst,vlst)
       equation
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
+  (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
+  (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
       then
-        (klst,vlst);
+  (klst,vlst);
   end matchcontinue;
 end bintreeToExplist2;
 
@@ -1772,9 +1772,9 @@ algorithm
     case (NONE(),klst,vlst) then (klst,vlst);
     case (SOME(bt),klst,vlst)
       equation
-        (klst,vlst) = bintreeToExplist2(bt, klst, vlst);
+  (klst,vlst) = bintreeToExplist2(bt, klst, vlst);
       then
-        (klst,vlst);
+  (klst,vlst);
   end matchcontinue;
 end bintreeToExplistOpt;
 
@@ -1798,29 +1798,29 @@ algorithm
       Integer cmpval;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval))),key)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  keystr = ComponentReference.printComponentRefStr(key);
+  0 = stringCompare(rkeystr, keystr);
       then
-        rval;
+  rval;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        res = treeGet(right, key);
+  keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  res = treeGet(right, key);
       then
-        res;
+  res;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        res = treeGet(left, key);
+  keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  res = treeGet(left, key);
       then
-        res;
+  res;
   end matchcontinue;
 end treeGet;
 
@@ -1847,52 +1847,52 @@ algorithm
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE(),NONE());
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,value)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+  rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+  keystr = ComponentReference.printComponentRefStr(key);
+  0 = stringCompare(rkeystr, keystr);
       then
-        TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
+  TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeAdd(t, key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  t_1 = treeAdd(t, key, value);
       then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
+  TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
+  TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeAdd(t, key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  t_1 = treeAdd(t, key, value);
       then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
+  TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
+  TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
     case (_,_,_)
       equation
-        print("tree_add failed\n");
+  print("tree_add failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end treeAdd;
 
@@ -1916,29 +1916,29 @@ algorithm
       Integer cmpval;
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval))),key)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  keystr = ComponentReference.printComponentRefStr(key);
+  0 = stringCompare(rkeystr, keystr);
       then
-        rval;
+  rval;
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),right = SOME(right)),key)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        res = treeGet2(right, key);
+  keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  res = treeGet2(right, key);
       then
-        res;
+  res;
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = SOME(left)),key)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        res = treeGet2(left, key);
+  keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  res = treeGet2(left, key);
       then
-        res;
+  res;
   end matchcontinue;
 end treeGet2;
 
@@ -1964,52 +1964,52 @@ algorithm
     case (TREENODE2(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE2(SOME(TREEVALUE2(key,value)),NONE(),NONE());
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = right),key,value)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+  rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+  keystr = ComponentReference.printComponentRefStr(key);
+  0 = stringCompare(rkeystr, keystr);
       then
-        TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right);
+  TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right);
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeAdd2(t, key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  t_1 = treeAdd2(t, key, value);
       then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
+  TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        right_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = true;
+  right_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
       then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right_1));
+  TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right_1));
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeAdd2(t, key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  t_1 = treeAdd2(t, key, value);
       then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
+  TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        left_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
+  keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
+  rkeystr = ComponentReference.printComponentRefStr(rkey);
+  cmpval = stringCompare(rkeystr, keystr);
+  (cmpval > 0) = false;
+  left_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
       then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left_1),right);
+  TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left_1),right);
     case (_,_,_)
       equation
-        print("tree_add2 failed\n");
+  print("tree_add2 failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end treeAdd2;
 

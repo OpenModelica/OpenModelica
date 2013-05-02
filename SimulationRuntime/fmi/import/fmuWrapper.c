@@ -86,29 +86,29 @@ void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
     exit(EXIT_FAILURE);
   }
   fmi->getModelTypesPlatform   = (fGetModelTypesPlatform)   getProAdr(fmi, mid, "fmiGetModelTypesPlatform");
-  fmi->getVersion              = (fGetVersion)              getProAdr(fmi, mid, "fmiGetVersion");
-  fmi->instantiateModel        = (fInstantiateModel)        getProAdr(fmi, mid, "fmiInstantiateModel");
+  fmi->getVersion        = (fGetVersion)              getProAdr(fmi, mid, "fmiGetVersion");
+  fmi->instantiateModel  = (fInstantiateModel)        getProAdr(fmi, mid, "fmiInstantiateModel");
   fmi->freeModelInstance       = (fFreeModelInstance)       getProAdr(fmi, mid, "fmiFreeModelInstance");
-  fmi->setDebugLogging         = (fSetDebugLogging)         getProAdr(fmi, mid, "fmiSetDebugLogging");
-  fmi->setTime                 = (fSetTime)                 getProAdr(fmi, mid, "fmiSetTime");
+  fmi->setDebugLogging   = (fSetDebugLogging)         getProAdr(fmi, mid, "fmiSetDebugLogging");
+  fmi->setTime           = (fSetTime)                 getProAdr(fmi, mid, "fmiSetTime");
   fmi->setContinuousStates     = (fSetContinuousStates)     getProAdr(fmi, mid, "fmiSetContinuousStates");
   fmi->completedIntegratorStep = (fCompletedIntegratorStep) getProAdr(fmi, mid, "fmiCompletedIntegratorStep");
-  fmi->setReal                 = (fSetReal)                 getProAdr(fmi, mid, "fmiSetReal");
-  fmi->setInteger              = (fSetInteger)              getProAdr(fmi, mid, "fmiSetInteger");
-  fmi->setBoolean              = (fSetBoolean)              getProAdr(fmi, mid, "fmiSetBoolean");
-  fmi->setString               = (fSetString)               getProAdr(fmi, mid, "fmiSetString");
-  fmi->initialize              = (fInitialize)              getProAdr(fmi, mid, "fmiInitialize");
-  fmi->getDerivatives          = (fGetDerivatives)          getProAdr(fmi, mid, "fmiGetDerivatives");
+  fmi->setReal           = (fSetReal)                 getProAdr(fmi, mid, "fmiSetReal");
+  fmi->setInteger        = (fSetInteger)              getProAdr(fmi, mid, "fmiSetInteger");
+  fmi->setBoolean        = (fSetBoolean)              getProAdr(fmi, mid, "fmiSetBoolean");
+  fmi->setString         = (fSetString)               getProAdr(fmi, mid, "fmiSetString");
+  fmi->initialize        = (fInitialize)              getProAdr(fmi, mid, "fmiInitialize");
+  fmi->getDerivatives    = (fGetDerivatives)          getProAdr(fmi, mid, "fmiGetDerivatives");
   fmi->getEventIndicators      = (fGetEventIndicators)      getProAdr(fmi, mid, "fmiGetEventIndicators");
-  fmi->getReal                 = (fGetReal)                 getProAdr(fmi, mid, "fmiGetReal");
-  fmi->getInteger              = (fGetInteger)              getProAdr(fmi, mid, "fmiGetInteger");
-  fmi->getBoolean              = (fGetBoolean)              getProAdr(fmi, mid, "fmiGetBoolean");
-  fmi->getString               = (fGetString)               getProAdr(fmi, mid, "fmiGetString");
-  fmi->eventUpdate             = (fEventUpdate)             getProAdr(fmi, mid, "fmiEventUpdate");
+  fmi->getReal           = (fGetReal)                 getProAdr(fmi, mid, "fmiGetReal");
+  fmi->getInteger        = (fGetInteger)              getProAdr(fmi, mid, "fmiGetInteger");
+  fmi->getBoolean        = (fGetBoolean)              getProAdr(fmi, mid, "fmiGetBoolean");
+  fmi->getString         = (fGetString)               getProAdr(fmi, mid, "fmiGetString");
+  fmi->eventUpdate       = (fEventUpdate)             getProAdr(fmi, mid, "fmiEventUpdate");
   fmi->getContinuousStates     = (fGetContinuousStates)     getProAdr(fmi, mid, "fmiGetContinuousStates");
   fmi->getNominalContinuousStates = (fGetNominalContinuousStates) getProAdr(fmi, mid, "fmiGetNominalContinuousStates");
   fmi->getStateValueReferences = (fGetStateValueReferences) getProAdr(fmi, mid, "fmiGetStateValueReferences");
-  fmi->terminate               = (fTerminate)               getProAdr(fmi, mid, "fmiTerminate");
+  fmi->terminate         = (fTerminate)               getProAdr(fmi, mid, "fmiTerminate");
 #ifdef _DEBUG_
   printf("\n\n#### Loading dll library in instantiateFMIFun succeeded!!!\n");
 #endif
@@ -622,8 +622,8 @@ void fmiInit(void* in_fmi, void* in_fmu, int tolCont, double rTol, void* in_evtI
       status = fmi->initialize(in_fmu,tolControl,rTol,eventInfo);
       fmi->flagInit = 1;
       if(status>fmiWarning){
-        printf("#### fmiInitialize(...) failed...\n");
-        exit(EXIT_FAILURE);
+  printf("#### fmiInitialize(...) failed...\n");
+  exit(EXIT_FAILURE);
       }
     }
   }
@@ -716,11 +716,11 @@ void fmiFreeModelInst(void* in_fmufun, void* in_fmu){
 //    void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);
 //  fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   getFunctionPointerFromDLL(dllHandle, "bouncingBall_fmiFreeModelInstance");
 //    if(freeModelInstance){
-//          freeModelInstance(in_fmu);
-//          if(!in_fmu){
-//            printf("#### fmiFreeModelInstance(...) failed...\n");
-//            exit(EXIT_FAILURE);
-//          }
+//    freeModelInstance(in_fmu);
+//    if(!in_fmu){
+//      printf("#### fmiFreeModelInstance(...) failed...\n");
+//      exit(EXIT_FAILURE);
+//    }
 //    }
 //  #ifdef _DEBUG_
 //  printf("\n#### fmiFreeModelInst has been called here ... \n\n");
@@ -923,16 +923,16 @@ int main(int argc, char *argv[])
       fmiEvtUpdate(fmi,c1,fmiFalse, eventInfo);
 
       if(eventInfo->terminateSimulation){
-        printf("#### Simulation of model(%s) terminated at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
-        break;
+  printf("#### Simulation of model(%s) terminated at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
+  break;
       }
 
       if(eventInfo->stateValuesChanged && loggingon){
-        printf("#### State values of model(%s) changed at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
+  printf("#### State values of model(%s) changed at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
       }
 
       if(eventInfo->stateValuesChanged && loggingon){
-        printf("#### State value references of model(%s) changed at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
+  printf("#### State value references of model(%s) changed at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
       }
 
     }/* if(timeEvent||stepEvent||stateEvent) */

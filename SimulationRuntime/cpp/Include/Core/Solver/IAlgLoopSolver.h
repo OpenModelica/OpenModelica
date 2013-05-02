@@ -23,9 +23,9 @@ public:
     /// Enumeration to denote the status of iteration
     enum ITERATIONSTATUS
     {
-        CONTINUE,
-        SOLVERERROR,
-        DONE,
+  CONTINUE,
+  SOLVERERROR,
+  DONE,
     };
 
     virtual ~IAlgLoopSolver()    {};

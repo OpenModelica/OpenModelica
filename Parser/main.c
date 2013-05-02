@@ -22,11 +22,11 @@ void Main_5finit(void)
 
 int parseFile(char* fileName)
 {
-  pANTLR3_UINT8               fName;
-  pANTLR3_INPUT_STREAM        input;
-  pModelica_3_Lexer           lxr;
+  pANTLR3_UINT8         fName;
+  pANTLR3_INPUT_STREAM  input;
+  pModelica_3_Lexer     lxr;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
-  pModelicaParser             psr;
+  pModelicaParser       psr;
   
   fprintf(stderr, "Parsing %s\n", fileName); fflush(stderr);
 
@@ -50,9 +50,9 @@ int parseFile(char* fileName)
 
   psr->stored_definition(psr);
 
-  psr->free(psr);         psr = NULL;
+  psr->free(psr);   psr = NULL;
   tstream->free(tstream); tstream = NULL;
-  lxr->free(lxr);         lxr = NULL;
+  lxr->free(lxr);   lxr = NULL;
   input->close(input);    input = NULL;
 
   return 0;
@@ -89,10 +89,10 @@ int parseMoFilesInDirectory(char* directory)
   HANDLE parseThreadHandle;
   DWORD parseThreadId;
   semaphore = CreateSemaphore( 
-        NULL, // default security attributes
-        5,   // initial count
-        5,   // maximum count
-        NULL);// unnamed semaphore
+  NULL, // default security attributes
+  5,   // initial count
+  5,   // maximum count
+  NULL);// unnamed semaphore
   */
   sprintf(pattern, "%s\\*.mo", directory);
 
@@ -131,20 +131,20 @@ int recurseDirectories(char* directory)
     while(more)
     {
       if (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && 
-        strcmp(FileData.cFileName,".") != 0 &&  
-        strcmp(FileData.cFileName,"..") != 0)
+  strcmp(FileData.cFileName,".") != 0 &&  
+  strcmp(FileData.cFileName,"..") != 0)
       {
-        sprintf(directoryName, "%s/%s", directory, FileData.cFileName);
-        if (hasMoFiles(directoryName))
-        {
-          fprintf(stderr, "Parsing %s\n",directoryName); fflush(stderr);
-          recurseDirectories(directoryName);
-          parseMoFilesInDirectory(directoryName);
-        }
-        else
-        {
-          recurseDirectories(directoryName);
-        }
+  sprintf(directoryName, "%s/%s", directory, FileData.cFileName);
+  if (hasMoFiles(directoryName))
+  {
+    fprintf(stderr, "Parsing %s\n",directoryName); fflush(stderr);
+    recurseDirectories(directoryName);
+    parseMoFilesInDirectory(directoryName);
+  }
+  else
+  {
+    recurseDirectories(directoryName);
+  }
       }
       more = FindNextFile(sh, &FileData);
     }

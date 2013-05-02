@@ -34,7 +34,7 @@ public :
     // -----------------------------------------------------------------------
     XStr(const char* const toTranscode)
     {
-        // Call the private transcoding method
+  // Call the private transcoding method
 		fUnicodeForm = XMLString::transcode(toTranscode);
     }
 
@@ -49,7 +49,7 @@ public :
     // -----------------------------------------------------------------------
 	const XMLCh* unicodeForm() const
     {
-        return fUnicodeForm;
+  return fUnicodeForm;
     }
 
 private :

@@ -106,7 +106,7 @@ typedef modelica_string_const modelica_string;
 
 /* BEFORE: #include "memory_pool.h" */
 typedef double      m_real;
-typedef long        m_integer;
+typedef long  m_integer;
 typedef const char* m_string;
 typedef signed char m_boolean;
 typedef m_integer   _index_t;

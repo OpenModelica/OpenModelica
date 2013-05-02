@@ -22,20 +22,20 @@ public:
 
     void setOutputs(map<unsigned int,string> var_outputs)
     {
-        _var_outputs=var_outputs;
+  _var_outputs=var_outputs;
 
 
     }
     virtual void getOutputNames(vector<string>& output_names)
     {
 
-        boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
+  boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
 
     }
 
     void getSimResults(const double time,ublas::vector<double>& v,ublas::vector<double>& dv)
     {
-        ResultsPolicy<dim_1,dim_2,dim_3>::read(time,v,dv);
+  ResultsPolicy<dim_1,dim_2,dim_3>::read(time,v,dv);
 
     }
 
@@ -43,54 +43,54 @@ public:
     void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR)
     {
 
-        ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR);
+  ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR);
 
     }
 
     void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re)
     {
 
-        ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR,Re);
+  ResultsPolicy<dim_1,dim_2,dim_3>::read(R,dR,Re);
 
     }
 
     virtual void getOutputResults(ublas::matrix<double>& Ro)
     {
-        vector<unsigned int> ids;
-        boost::copy(_var_outputs | boost::adaptors::map_keys, std::back_inserter(ids));
-        ResultsPolicy<dim_1,dim_2,dim_3>::read(Ro,ids);
+  vector<unsigned int> ids;
+  boost::copy(_var_outputs | boost::adaptors::map_keys, std::back_inserter(ids));
+  ResultsPolicy<dim_1,dim_2,dim_3>::read(Ro,ids);
     }
 
     unsigned long getSize()
     {
-        return  ResultsPolicy<dim_1,dim_2,dim_3>::size();
+  return  ResultsPolicy<dim_1,dim_2,dim_3>::size();
     }
 
 
     unsigned long getDimRe()
     {
-        return dim_3;
+  return dim_3;
     }
 
 
     unsigned long getDimdR()
     {
-        return  dim_2;
+  return  dim_2;
     }
 
 
 
     unsigned long getDimR()
     {
-        return  dim_1;
+  return  dim_1;
     }
 
 
     vector<double> getTimeEntries()
     {
-        vector<double> time;
-        ResultsPolicy<dim_1,dim_2,dim_3>::getTime(time);
-        return time;
+  vector<double> time;
+  ResultsPolicy<dim_1,dim_2,dim_3>::getTime(time);
+  return time;
     }
 
     void clear()

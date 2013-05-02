@@ -30,7 +30,7 @@
  */
 
 encapsulated package DAE
-" file:        DAE.mo
+" file:  DAE.mo
   package:     DAE
   description: DAE management and output
 
@@ -74,15 +74,15 @@ public uniontype ConnectorType
 end ConnectorType;
 
 public uniontype VarDirection
-  record INPUT  "input"                   end INPUT;
-  record OUTPUT "output"                  end OUTPUT;
+  record INPUT  "input"             end INPUT;
+  record OUTPUT "output"            end OUTPUT;
   record BIDIR  "neither input or output" end BIDIR;
 end VarDirection;
 
 public uniontype VarParallelism
   record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
   record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
-  record NON_PARALLEL  "Non parallel/Normal variables"            end NON_PARALLEL;
+  record NON_PARALLEL  "Non parallel/Normal variables"      end NON_PARALLEL;
 end VarParallelism;
 
 public uniontype VarVisibility
@@ -638,8 +638,8 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
 
   record STMT_WHEN
     Exp exp;
-    list<ComponentRef> conditions;        // list of boolean variables as conditions  (this is simcode stuff)
-    Boolean initialCall;                  // true, if top-level branch with initial() (this is simcode stuff)
+    list<ComponentRef> conditions;  // list of boolean variables as conditions  (this is simcode stuff)
+    Boolean initialCall;            // true, if top-level branch with initial() (this is simcode stuff)
     list<Statement> statementLst;
     Option<Statement> elseWhen;
     ElementSource source "the origin of the component/equation/algorithm" ;
@@ -785,18 +785,18 @@ public type TypeSource = list<Absyn.Path> "the class(es) where the type originat
 public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
 
 // default constants that can be used
-public constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
+public constant Type T_REAL_DEFAULT  = T_REAL({}, emptyTypeSource);
 public constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
 public constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
-public constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
+public constant Type T_BOOL_DEFAULT  = T_BOOL({}, emptyTypeSource);
 public constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
-public constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
+public constant Type T_REAL_BOXED    = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
 public constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
-public constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
-public constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
+public constant Type T_STRING_BOXED  = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
+public constant Type T_BOOL_BOXED    = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
 public constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT, emptyTypeSource);
 public constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT, emptyTypeSource);
-public constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
+public constant Type T_NONE_DEFAULT  = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
 public constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(), emptyTypeSource);
 public constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
 public constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
@@ -1040,9 +1040,9 @@ uniontype Dimension
 end Dimension;
 
 // adrpo: this is used to bind unknown dimensions to an expression
-//        and when we do subtyping we add constrains to this expression.
-//        this should be used for typechecking with unknown dimensions
-//        when running checkModel. the binding acts like a type variable.
+//  and when we do subtyping we add constrains to this expression.
+//  this should be used for typechecking with unknown dimensions
+//  when running checkModel. the binding acts like a type variable.
 public uniontype DimensionBinding
    record DIM_UNBOUND "dimension is not bound"
    end DIM_UNBOUND;
@@ -1096,13 +1096,13 @@ uniontype Properties "P.R 1.1 for multiple return arguments from functions,
   record PROP
     Type type_ "type" ;
     Const constFlag "constFlag; if the type is a tuple, each element
-                  have a const flag." ;
+            have a const flag." ;
   end PROP;
 
   record PROP_TUPLE
     Type type_;
     TupleConst tupleConst "tupleConst; The elements might be
-                  tuple themselfs." ;
+            tuple themselfs." ;
   end PROP_TUPLE;
 
 end Properties;
@@ -1275,7 +1275,7 @@ uniontype Exp "Expressions
 
   record TUPLE
     list<Exp> PR "PR. Tuples, used in func calls returning several
-                  arguments" ;
+            arguments" ;
   end TUPLE;
 
   record CAST "Cast operator"

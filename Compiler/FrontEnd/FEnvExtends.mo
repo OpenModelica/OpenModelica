@@ -30,7 +30,7 @@
  */
 
 encapsulated package FEnvExtends
-" file:        FEnvExtends.mo
+" file:  FEnvExtends.mo
   package:     FEnvExtends
   description: Utility functions for extends in the environment.
 
@@ -52,13 +52,13 @@ encapsulated package FEnvExtends
       package Icons end Icons;
 
       package A
-        extends Modelica.Icons.foo;
-        package B
-          extends Modelica.Icons.bar;
-          package C
-            ...
-          end C;
-        end B;
+  extends Modelica.Icons.foo;
+  package B
+    extends Modelica.Icons.bar;
+    package C
+      ...
+    end C;
+  end B;
       end A;
     end Modelica;
 
@@ -201,13 +201,13 @@ public function qualify
        package Icons end Icons;
 
        package A
-         extends Modelica.Icons.foo;
-         package B
-           extends Modelica.Icons.bar;
-           package C
-             ...
-           end C;
-        end B;
+   extends Modelica.Icons.foo;
+   package B
+     extends Modelica.Icons.bar;
+     package C
+       ...
+     end C;
+  end B;
       end A;
 
    To look a name up in C that references a name in the top scope we need to
@@ -227,17 +227,17 @@ algorithm
 
     case (_)
       equation
-        ext_count = System.tmpTickIndex(Env.extendsTickIndex);
-        ext_table = createExtendsTable(ext_count);
+  ext_count = System.tmpTickIndex(Env.extendsTickIndex);
+  ext_table = createExtendsTable(ext_count);
       then
-        qualify2(inEnv, Env.USERDEFINED(), ext_table);
+  qualify2(inEnv, Env.USERDEFINED(), ext_table);
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- FEnvExtends.qualify failed.");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- FEnvExtends.qualify failed.");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end qualify;
@@ -285,23 +285,23 @@ algorithm
     case (NONE(), _, _) then inTree;
 
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(
-        name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _, _)
+  name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _, _)
       equation
-        env = FEnv.enterFrame(cls_env, inEnv);
-        cls_env :: rest_env = qualify2(env, cls_ty, inExtendsTable);
-        left = qualify3(left, rest_env, inExtendsTable);
-        right = qualify3(right, rest_env, inExtendsTable);
-        item = Env.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(Env.AVLTREEVALUE(name, item));
+  env = FEnv.enterFrame(cls_env, inEnv);
+  cls_env :: rest_env = qualify2(env, cls_ty, inExtendsTable);
+  left = qualify3(left, rest_env, inExtendsTable);
+  right = qualify3(right, rest_env, inExtendsTable);
+  item = Env.CLASS(cls, {cls_env}, cls_ty);
+  value = SOME(Env.AVLTREEVALUE(name, item));
       then
-        SOME(Env.AVLTREENODE(value, h, left, right));
+  SOME(Env.AVLTREENODE(value, h, left, right));
 
      case (SOME(Env.AVLTREENODE(value, h, left, right)), _, _)
        equation
-         left = qualify3(left, inEnv, inExtendsTable);
-         right = qualify3(right, inEnv, inExtendsTable);
+   left = qualify3(left, inEnv, inExtendsTable);
+   right = qualify3(right, inEnv, inExtendsTable);
        then
-         SOME(Env.AVLTREENODE(value, h, left, right));
+   SOME(Env.AVLTREENODE(value, h, left, right));
 
   end match;
 end qualify3;
@@ -337,16 +337,16 @@ algorithm
     // compiler itself and shouldn't be qualified.
     case (ext :: extl, Env.CLASS_EXTENDS(), _, _)
       equation
-        extl = List.map2Reverse(extl, qualifyExtends, inEnv, inExtendsTable);
+  extl = List.map2Reverse(extl, qualifyExtends, inEnv, inExtendsTable);
       then
-        ext :: extl;
+  ext :: extl;
 
     // Otherwise, qualify all the extends.
     else
       equation
-        extl = List.map2Reverse(inExtends, qualifyExtends, inEnv, inExtendsTable);
+  extl = List.map2Reverse(inExtends, qualifyExtends, inEnv, inExtendsTable);
       then
-        extl;
+  extl;
 
   end match;
 end qualifyExtendsList;
@@ -367,23 +367,23 @@ algorithm
     // need to do anything.
     case (Env.EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
       equation
-        FLookup.isBuiltinType(id);
+  FLookup.isBuiltinType(id);
       then
-        inExtends;
+  inExtends;
 
     case (_, _, _)
       equation
-        SOME(ext) = qualifyExtends2(inExtends, inEnv, inExtendsTable);
+  SOME(ext) = qualifyExtends2(inExtends, inEnv, inExtendsTable);
       then
-        ext;
+  ext;
 
     case (Env.EXTENDS(baseClass = bc), _, _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- FEnvExtends.qualifyExtends failed on " +&
-          Absyn.pathString(bc) +& "\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- FEnvExtends.qualifyExtends failed on " +&
+    Absyn.pathString(bc) +& "\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end qualifyExtends;
@@ -408,17 +408,17 @@ algorithm
 
     case (Env.EXTENDS(bc, rl, index, info), _, _)
       equation
-        addUnqualifiedToTable(inExtends, index, inExtendsTable);
-        env = FEnv.removeExtendFromLocalScope(bc, inEnv);
-        bc = qualifyExtends3(bc, env, inExtendsTable, true, bc, info, NONE());
-        /*********************************************************************/
-        // TODO: Convert this check to the delayed error system.
-        /*********************************************************************/
-        List.map2_0(rl, FSCodeCheck.checkRedeclareModifier, bc, inEnv);
-        ext = Env.EXTENDS(bc, rl, index, info);
-        updateQualifiedInTable(ext, index, inExtendsTable);
+  addUnqualifiedToTable(inExtends, index, inExtendsTable);
+  env = FEnv.removeExtendFromLocalScope(bc, inEnv);
+  bc = qualifyExtends3(bc, env, inExtendsTable, true, bc, info, NONE());
+  /*********************************************************************/
+  // TODO: Convert this check to the delayed error system.
+  /*********************************************************************/
+  List.map2_0(rl, FSCodeCheck.checkRedeclareModifier, bc, inEnv);
+  ext = Env.EXTENDS(bc, rl, index, info);
+  updateQualifiedInTable(ext, index, inExtendsTable);
       then
-        SOME(ext);
+  SOME(ext);
 
   end matchcontinue;
 end qualifyExtends2;
@@ -445,25 +445,25 @@ algorithm
 
     case (Absyn.IDENT(name = name), _, _, _, _, _, _)
       equation
-        (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
-          inFullPath, inInfo);
+  (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
+    inFullPath, inInfo);
       then
-        makeExtendsPath(opath, NONE(), env, ep, inIsFirst);
+  makeExtendsPath(opath, NONE(), env, ep, inIsFirst);
 
     case (Absyn.QUALIFIED(name = name, path = rest_path), _, _, _, _, _, _)
       equation
-        (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
-          inFullPath, inInfo);
-        rest_path = qualifyExtends3(rest_path, env, inExtendsTable, false, inFullPath, inInfo, ep);
+  (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
+    inFullPath, inInfo);
+  rest_path = qualifyExtends3(rest_path, env, inExtendsTable, false, inFullPath, inInfo, ep);
       then
-        makeExtendsPath(opath, SOME(rest_path), env, ep, inIsFirst);
+  makeExtendsPath(opath, SOME(rest_path), env, ep, inIsFirst);
 
     case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _, _, _, _)
       equation
-        env = FEnv.getEnvTopScope(inEnv);
+  env = FEnv.getEnvTopScope(inEnv);
       then
-        qualifyExtends3(rest_path, env, inExtendsTable, inIsFirst, rest_path,
-          inInfo, NONE());
+  qualifyExtends3(rest_path, env, inExtendsTable, inIsFirst, rest_path,
+    inInfo, NONE());
 
   end match;
 end qualifyExtends3;
@@ -491,11 +491,11 @@ algorithm
     // get the whole path.
     case (_, _, _, _, true)
       equation
-        path = FEnv.getEnvPath(inEnv);
-        path = Absyn.joinPathsOptSuffix(path, inRestPath);
-        path = Absyn.makeFullyQualified(path);
+  path = FEnv.getEnvPath(inEnv);
+  path = Absyn.joinPathsOptSuffix(path, inRestPath);
+  path = Absyn.makeFullyQualified(path);
       then
-        path;
+  path;
 
     // Otherwise, just join them.
     case (SOME(path), _, _, _, _) then Absyn.joinPathsOptSuffix(path, inRestPath);
@@ -543,14 +543,14 @@ algorithm
 
     case (_, SOME(item), SOME(env), _, _, _, _)
       equation
-        ep = checkExtendsPart(inIsFirst, inFromExtends, inPartName, item,
-          inFullPath, env, inOriginEnv);
-        env = FEnv.mergeItemEnv(item, env);
+  ep = checkExtendsPart(inIsFirst, inFromExtends, inPartName, item,
+    inFullPath, env, inOriginEnv);
+  env = FEnv.mergeItemEnv(item, env);
       then
-        (env, ep);
+  (env, ep);
 
     else (Env.emptyEnv,
-          makeExtendsError(inFullPath, inPartName, BASECLASS_NOT_FOUND_ERROR));
+    makeExtendsError(inFullPath, inPartName, BASECLASS_NOT_FOUND_ERROR));
   end match;
 end qualifyExtendsPart2;
 
@@ -566,10 +566,10 @@ algorithm
 
     case (_, _, _)
       equation
-        path = Absyn.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
-        path = Absyn.QUALIFIED("$E", Absyn.QUALIFIED(inError, path));
+  path = Absyn.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
+  path = Absyn.QUALIFIED("$E", Absyn.QUALIFIED(inError, path));
       then
-        SOME(path);
+  SOME(path);
 
   end match;
 end makeExtendsError;
@@ -602,7 +602,7 @@ algorithm
 
     // Not inherited and not replaceable, ok!
     case (_, _, _, Env.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _, _)
+  replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _, _)
       then NONE();
 
     // If the parent class contains no elements it might be a short class
@@ -610,39 +610,39 @@ algorithm
     // might also be a long definition equivalent to a short definition, but
     // we'll allow that too since they're equivalent.
     case (_, _, _, Env.CLASS(cls = _), _,
-        Env.FRAME(clsAndVars = Env.AVLTREENODE(value = NONE(),
-          left = NONE(), right = NONE())) :: _, _)
+  Env.FRAME(clsAndVars = Env.AVLTREENODE(value = NONE(),
+    left = NONE(), right = NONE())) :: _, _)
       equation
-        // Also check that the parent class contains no extends. A short class
-        // definition should contain exactly one extends, but it's removed in
-        // the look up process.
-        {} = FEnv.getEnvExtendsFromTable(inOriginEnv);
+  // Also check that the parent class contains no extends. A short class
+  // definition should contain exactly one extends, but it's removed in
+  // the look up process.
+  {} = FEnv.getEnvExtendsFromTable(inOriginEnv);
       then
-        NONE();
+  NONE();
 
     // If we're using Modelica 2.x or earlier we don't care, since replaceable
     // base classes weren't explicitly forbidden in older versions.
     case (_, _, _, Env.CLASS(cls = _), _, _, _)
       equation
-        true = Config.languageStandardAtMost(Config.MODELICA_2_X());
+  true = Config.languageStandardAtMost(Config.MODELICA_2_X());
       then
-        NONE();
+  NONE();
 
     // A replaceable base class part in any other circumstance is not allowed.
     case (_, _, _, Env.CLASS(cls = SCode.CLASS(prefixes =
-        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _, _, _)
+  SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _, _, _)
       equation
-        part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
+  part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then
-        makeExtendsError(inBaseClass, part, BASECLASS_REPLACEABLE_ERROR);
+  makeExtendsError(inBaseClass, part, BASECLASS_REPLACEABLE_ERROR);
 
     // The base class part is actually not a class but a component, which is not
     // allowed either.
     case (_, _, _, Env.VAR(var = _), _, _, _)
       equation
-        part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
+  part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then
-        makeExtendsError(inBaseClass, part, BASECLASS_IS_VAR_ERROR);
+  makeExtendsError(inBaseClass, part, BASECLASS_IS_VAR_ERROR);
 
     // We shouldn't get here.
     else makeExtendsError(inBaseClass, inPartName, BASECLASS_UNKNOWN_ERROR);
@@ -664,9 +664,9 @@ algorithm
 
     case Absyn.QUALIFIED(part_str, part)
       equation
-        (bc, part) = splitExtendsErrorPath(part);
+  (bc, part) = splitExtendsErrorPath(part);
       then
-        (bc, Absyn.QUALIFIED(part_str, part));
+  (bc, Absyn.QUALIFIED(part_str, part));
 
   end match;
 end splitExtendsErrorPath;
@@ -683,21 +683,21 @@ algorithm
       Env env;
 
     case (Absyn.QUALIFIED(name = "$E",
-        path = Absyn.QUALIFIED(name = err_str, path = bc)), _, _)
+  path = Absyn.QUALIFIED(name = err_str, path = bc)), _, _)
       equation
-        (bc, part) = splitExtendsErrorPath(bc);
-        env = FEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
-        printExtendsError2(err_str, bc, part, env, inInfo);
+  (bc, part) = splitExtendsErrorPath(bc);
+  env = FEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
+  printExtendsError2(err_str, bc, part, env, inInfo);
       then
-        ();
+  ();
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- FEnvExtends.printExtendsError failed to print error " +&
-          Absyn.pathString(inErrorPath));
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- FEnvExtends.printExtendsError failed to print error " +&
+    Absyn.pathString(inErrorPath));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end printExtendsError;
@@ -719,53 +719,53 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
+  true = stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
 
-        bc_str = Absyn.pathString(inBaseClass);
-        env_str = FEnv.getEnvName(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
-          {bc_str, env_str}, inInfo);
+  bc_str = Absyn.pathString(inBaseClass);
+  env_str = FEnv.getEnvName(inEnv);
+  Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
+    {bc_str, env_str}, inInfo);
       then
-        ();
+  ();
 
     case (_, _, Absyn.IDENT(part), _, _)
       equation
-        true = stringEq(inError, BASECLASS_INHERITED_ERROR);
+  true = stringEq(inError, BASECLASS_INHERITED_ERROR);
 
-        bc_str = Absyn.pathString(inBaseClass);
-        Error.addSourceMessage(Error.INHERITED_EXTENDS, {bc_str}, inInfo);
-        exts = FEnv.getEnvExtendsFromTable(inEnv);
-        printInheritedExtendsError(part, exts, inEnv);
+  bc_str = Absyn.pathString(inBaseClass);
+  Error.addSourceMessage(Error.INHERITED_EXTENDS, {bc_str}, inInfo);
+  exts = FEnv.getEnvExtendsFromTable(inEnv);
+  printInheritedExtendsError(part, exts, inEnv);
       then
-        ();
+  ();
 
     case (_, _, _, _, _)
       equation
-        true = stringEq(inError, BASECLASS_REPLACEABLE_ERROR);
+  true = stringEq(inError, BASECLASS_REPLACEABLE_ERROR);
 
-        (Env.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
-          FLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = Absyn.pathString(inBaseClass);
-        msg = Util.if_(stringEq(bc_str, part),
-          Error.REPLACEABLE_BASE_CLASS_SIMPLE,
-          Error.REPLACEABLE_BASE_CLASS);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(msg, {part, bc_str}, info);
+  (Env.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
+    FLookup.lookupFullyQualified(inPartPath, inEnv);
+  bc_str = Absyn.pathString(inBaseClass);
+  msg = Util.if_(stringEq(bc_str, part),
+    Error.REPLACEABLE_BASE_CLASS_SIMPLE,
+    Error.REPLACEABLE_BASE_CLASS);
+  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+  Error.addSourceMessage(msg, {part, bc_str}, info);
       then
-        ();
+  ();
 
     case (_, _, _, _, _)
       equation
-        true = stringEq(inError, BASECLASS_IS_VAR_ERROR);
+  true = stringEq(inError, BASECLASS_IS_VAR_ERROR);
 
-        (Env.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
-          FLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = Absyn.pathString(inBaseClass);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info);
-        Error.addSourceMessage(Error.EXTEND_THROUGH_COMPONENT,
-          {part, bc_str}, inInfo);
+  (Env.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
+    FLookup.lookupFullyQualified(inPartPath, inEnv);
+  bc_str = Absyn.pathString(inBaseClass);
+  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info);
+  Error.addSourceMessage(Error.EXTEND_THROUGH_COMPONENT,
+    {part, bc_str}, inInfo);
       then
-        ();
+  ();
 
   end matchcontinue;
 end printExtendsError2;
@@ -786,24 +786,24 @@ algorithm
 
     case (_, (ext as Env.EXTENDS(baseClass = bc, info = info2)) :: rest_ext, _)
       equation
-        (SOME(item), _, _) = FLookup.lookupInBaseClasses3(inName, ext,
-          inEnv, inEnv, FLookup.IGNORE_REDECLARES(), {});
-        info1 = FEnv.getItemInfo(item);
-        Env.EXTENDS(baseClass = bc, info = info2) = ext;
-        bc = Absyn.makeNotFullyQualified(bc);
-        bc_str = Absyn.pathString(bc);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
-        Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
-          {inName, bc_str}, info2);
-        printInheritedExtendsError(inName, rest_ext, inEnv);
+  (SOME(item), _, _) = FLookup.lookupInBaseClasses3(inName, ext,
+    inEnv, inEnv, FLookup.IGNORE_REDECLARES(), {});
+  info1 = FEnv.getItemInfo(item);
+  Env.EXTENDS(baseClass = bc, info = info2) = ext;
+  bc = Absyn.makeNotFullyQualified(bc);
+  bc_str = Absyn.pathString(bc);
+  Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
+  Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
+    {inName, bc_str}, info2);
+  printInheritedExtendsError(inName, rest_ext, inEnv);
       then
-        ();
+  ();
 
     case (_, _ :: rest_ext, _)
       equation
-        printInheritedExtendsError(inName, rest_ext, inEnv);
+  printInheritedExtendsError(inName, rest_ext, inEnv);
       then
-        ();
+  ();
 
     case (_, {}, _) then ();
 
@@ -831,16 +831,16 @@ algorithm
 
     case (_, _, _)
       equation
-        (opt_item, opt_path, opt_env, fe) = lookupInLocalScope(inName, inEnv, inExtendsTable);
+  (opt_item, opt_path, opt_env, fe) = lookupInLocalScope(inName, inEnv, inExtendsTable);
       then
-        (opt_item, opt_path, opt_env, fe);
+  (opt_item, opt_path, opt_env, fe);
 
     case (_, Env.FRAME(frameType = frame_type) :: env, _)
       equation
-        FLookup.frameNotEncapsulated(frame_type);
-        (opt_item, opt_path, opt_env, _) = lookupSimpleName(inName, env, inExtendsTable);
+  FLookup.frameNotEncapsulated(frame_type);
+  (opt_item, opt_path, opt_env, _) = lookupSimpleName(inName, env, inExtendsTable);
       then
-        (opt_item, opt_path, opt_env, false);
+  (opt_item, opt_path, opt_env, false);
 
     else (NONE(), NONE(), NONE(), false);
 
@@ -869,32 +869,32 @@ algorithm
 
     case (_, _, _)
       equation
-        (item, env) = FLookup.lookupInClass(inName, inEnv);
+  (item, env) = FLookup.lookupInClass(inName, inEnv);
       then
-        (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env), false);
+  (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env), false);
 
     case (_, Env.FRAME(extendsTable = Env.EXTENDS_TABLE(
-        baseClasses = bcl as _ :: _)) :: _, _)
+  baseClasses = bcl as _ :: _)) :: _, _)
       equation
-        (oitem, oenv) = lookupInBaseClasses(inName, bcl, inEnv, inExtendsTable);
+  (oitem, oenv) = lookupInBaseClasses(inName, bcl, inEnv, inExtendsTable);
       then
-        (oitem, SOME(Absyn.IDENT(inName)), oenv, true);
+  (oitem, SOME(Absyn.IDENT(inName)), oenv, true);
 
     case (_, Env.FRAME(importTable =
-        Env.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
+  Env.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
       equation
-        (oitem, opath, oenv) =
-          lookupInQualifiedImports(inName, imps, inEnv, inExtendsTable);
+  (oitem, opath, oenv) =
+    lookupInQualifiedImports(inName, imps, inEnv, inExtendsTable);
       then
-        (oitem, opath, oenv, false);
+  (oitem, opath, oenv, false);
 
     case (_, Env.FRAME(importTable =
-        Env.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
+  Env.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
       equation
-        (oitem, opath, oenv) =
-          lookupInUnqualifiedImports(inName, imps, inEnv, inExtendsTable);
+  (oitem, opath, oenv) =
+    lookupInUnqualifiedImports(inName, imps, inEnv, inExtendsTable);
       then
-        (oitem, opath, oenv, false);
+  (oitem, opath, oenv, false);
 
   end matchcontinue;
 end lookupInLocalScope;
@@ -920,21 +920,21 @@ algorithm
 
     case (_, ext :: _, _, _)
       equation
-        // Unhide the imports, otherwise we might not be able to find the base
-        // classes.
-        env = FEnv.setImportTableHidden(inEnv, false);
-        opt_ext = qualifyExtends2(ext, env, inExtendsTable);
-        (opt_item, opt_env) =
-          lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable);
+  // Unhide the imports, otherwise we might not be able to find the base
+  // classes.
+  env = FEnv.setImportTableHidden(inEnv, false);
+  opt_ext = qualifyExtends2(ext, env, inExtendsTable);
+  (opt_item, opt_env) =
+    lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable);
       then
-        (opt_item, opt_env);
+  (opt_item, opt_env);
 
     case (_, _ :: rest_ext, _, _)
       equation
-        (opt_item, opt_env) =
-          lookupInBaseClasses(inName, rest_ext, inEnv, inExtendsTable);
+  (opt_item, opt_env) =
+    lookupInBaseClasses(inName, rest_ext, inEnv, inExtendsTable);
       then
-        (opt_item, opt_env);
+  (opt_item, opt_env);
 
   end matchcontinue;
 end lookupInBaseClasses;
@@ -959,14 +959,14 @@ algorithm
 
     case (_, SOME(Env.EXTENDS(baseClass = Absyn.FULLYQUALIFIED(bc))), _, _)
       equation
-        (item, env) = lookupFullyQualified(bc, inEnv, inExtendsTable);
-        env = FEnv.mergeItemEnv(item, env);
-        // Hide the imports to make sure we don't find any elements through
-        // them, since imports are not inherited.
-        env = FEnv.setImportTableHidden(env, true);
-        (opt_item, _, opt_env, _) = lookupInLocalScope(inName, env, inExtendsTable);
+  (item, env) = lookupFullyQualified(bc, inEnv, inExtendsTable);
+  env = FEnv.mergeItemEnv(item, env);
+  // Hide the imports to make sure we don't find any elements through
+  // them, since imports are not inherited.
+  env = FEnv.setImportTableHidden(env, true);
+  (opt_item, _, opt_env, _) = lookupInLocalScope(inName, env, inExtendsTable);
       then
-        (opt_item, opt_env);
+  (opt_item, opt_env);
 
   end match;
 end lookupInBaseClasses2;
@@ -993,26 +993,26 @@ algorithm
 
     case (_, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
       equation
-        false = stringEqual(inName, name);
-        (opt_item, opt_path, opt_env) =
-          lookupInQualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
+  false = stringEqual(inName, name);
+  (opt_item, opt_path, opt_env) =
+    lookupInQualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
       then
-        (opt_item, opt_path, opt_env);
+  (opt_item, opt_path, opt_env);
 
     case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
       equation
-        true = stringEqual(inName, name);
-        (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        path = FEnv.prefixIdentWithEnv(inName, env);
-        path = Absyn.makeFullyQualified(path);
+  true = stringEqual(inName, name);
+  (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
+  path = FEnv.prefixIdentWithEnv(inName, env);
+  path = Absyn.makeFullyQualified(path);
       then
-        (SOME(item), SOME(path), SOME(env));
+  (SOME(item), SOME(path), SOME(env));
 
     case (_, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
       equation
-        true = stringEqual(inName, name);
+  true = stringEqual(inName, name);
       then
-        (NONE(), NONE(), NONE());
+  (NONE(), NONE(), NONE());
 
   end matchcontinue;
 end lookupInQualifiedImports;
@@ -1038,20 +1038,20 @@ algorithm
 
     case (_, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
       equation
-        (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        env = FEnv.mergeItemEnv(item, env);
-        (item, env) = lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
-        path = FEnv.prefixIdentWithEnv(inName, env);
-        path = Absyn.makeFullyQualified(path);
+  (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
+  env = FEnv.mergeItemEnv(item, env);
+  (item, env) = lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
+  path = FEnv.prefixIdentWithEnv(inName, env);
+  path = Absyn.makeFullyQualified(path);
       then
-        (SOME(item), SOME(path), SOME(env));
+  (SOME(item), SOME(path), SOME(env));
 
     case (_, _ :: rest_imps, _, _)
       equation
-        (opt_item, opt_path, opt_env) =
-          lookupInUnqualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
+  (opt_item, opt_path, opt_env) =
+    lookupInUnqualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
       then
-        (opt_item, opt_path, opt_env);
+  (opt_item, opt_path, opt_env);
 
   end matchcontinue;
 end lookupInUnqualifiedImports;
@@ -1085,19 +1085,19 @@ algorithm
 
     case (Absyn.IDENT(name = name), _, _)
       equation
-        (SOME(item), _, SOME(env), _) =
-          lookupInLocalScope(name, inEnv, inExtendsTable);
+  (SOME(item), _, SOME(env), _) =
+    lookupInLocalScope(name, inEnv, inExtendsTable);
       then
-        (item, env);
+  (item, env);
 
     case (Absyn.QUALIFIED(name = name, path = rest_path), _, _)
       equation
-        (SOME(item), _, SOME(env), _) =
-          lookupInLocalScope(name, inEnv, inExtendsTable);
-        env = FEnv.mergeItemEnv(item, env);
-        (item, env) = lookupFullyQualified2(rest_path, env, inExtendsTable);
+  (SOME(item), _, SOME(env), _) =
+    lookupInLocalScope(name, inEnv, inExtendsTable);
+  env = FEnv.mergeItemEnv(item, env);
+  (item, env) = lookupFullyQualified2(rest_path, env, inExtendsTable);
       then
-        (item, env);
+  (item, env);
 
   end match;
 end lookupFullyQualified2;
@@ -1200,29 +1200,29 @@ algorithm
     case (NONE(), _) then inTree;
 
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(
-        name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _)
+  name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _)
       equation
-        // Enter the class' frame and update the class extends in it.
-        env = FEnv.enterFrame(cls_env, inEnv);
-        (cls, env) = updateClassExtends(cls, env, cls_ty);
-        // Call update2 on the class' environment to update the extends.
-        cls_env :: rest_env = update2(env);
-        // Recurse into left and right branch of the tree.
-        left = update3(left, rest_env);
-        right = update3(right, rest_env);
-        // Rebuild the class item with the updated information.
-        item = Env.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(Env.AVLTREEVALUE(name, item));
+  // Enter the class' frame and update the class extends in it.
+  env = FEnv.enterFrame(cls_env, inEnv);
+  (cls, env) = updateClassExtends(cls, env, cls_ty);
+  // Call update2 on the class' environment to update the extends.
+  cls_env :: rest_env = update2(env);
+  // Recurse into left and right branch of the tree.
+  left = update3(left, rest_env);
+  right = update3(right, rest_env);
+  // Rebuild the class item with the updated information.
+  item = Env.CLASS(cls, {cls_env}, cls_ty);
+  value = SOME(Env.AVLTREEVALUE(name, item));
       then
-        SOME(Env.AVLTREENODE(value, h, left, right));
+  SOME(Env.AVLTREENODE(value, h, left, right));
 
     case (SOME(Env.AVLTREENODE(value, h, left, right)), _)
       equation
-        // Recurse into left and right branch of the tree.
-        left = update3(left, inEnv);
-        right = update3(right, inEnv);
+  // Recurse into left and right branch of the tree.
+  left = update3(left, inEnv);
+  right = update3(right, inEnv);
       then
-        SOME(Env.AVLTREENODE(value, h, left, right));
+  SOME(Env.AVLTREENODE(value, h, left, right));
 
   end match;
 end update3;
@@ -1243,13 +1243,13 @@ algorithm
       SCode.Element cls, ext;
 
     case (_, Env.FRAME(name = SOME(name),
-        extendsTable = Env.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
-        Env.CLASS_EXTENDS())
+  extendsTable = Env.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
+  Env.CLASS_EXTENDS())
       equation
-        SCode.EXTENDS(modifications = mods, info = info) = ext;
-        (cls, env) = updateClassExtends2(inClass, name, mods, info, inEnv);
+  SCode.EXTENDS(modifications = mods, info = info) = ext;
+  (cls, env) = updateClassExtends2(inClass, name, mods, info, inEnv);
       then
-        (cls, env);
+  (cls, env);
 
     else (inClass, inEnv);
   end match;
@@ -1275,13 +1275,13 @@ algorithm
 
     case (_, _, _, _, cls_frame :: env)
       equation
-        (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
-        FSCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
-        ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
-        {cls_frame} = FEnv.extendEnvWithExtends(ext, {cls_frame});
-        cls = SCode.addElementToClass(ext, inClass);
+  (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
+  FSCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
+  ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
+  {cls_frame} = FEnv.extendEnvWithExtends(ext, {cls_frame});
+  cls = SCode.addElementToClass(ext, inClass);
       then
-        (cls, cls_frame :: env);
+  (cls, cls_frame :: env);
 
   end match;
 end updateClassExtends2;
@@ -1308,13 +1308,13 @@ algorithm
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
       equation
-        basename = inName +& Env.BASE_CLASS_SUFFIX;
-        (item, _) = FLookup.lookupInheritedName(basename, inEnv);
-        // Use a special $ce qualified so that we can find the correct class
-        // with FLookup.lookupBaseClassName.
-        path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
+  basename = inName +& Env.BASE_CLASS_SUFFIX;
+  (item, _) = FLookup.lookupInheritedName(basename, inEnv);
+  // Use a special $ce qualified so that we can find the correct class
+  // with FLookup.lookupBaseClassName.
+  path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
       then
-        (path, item);
+  (path, item);
 
     // The previous case will fail if we try to class extend a
     // non-replaceable class, because they don't have aliases. To get the
@@ -1322,18 +1322,18 @@ algorithm
     // instead and return that result if found.
     case (_, _, _)
       equation
-        (item, _) = FLookup.lookupInheritedName(inName, inEnv);
-        path = Absyn.IDENT(inName);
+  (item, _) = FLookup.lookupInheritedName(inName, inEnv);
+  path = Absyn.IDENT(inName);
       then
-        (path, item);
+  (path, item);
 
     // If the class doesn't even exist, show an error.
     else
       equation
-        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
-          {inName}, inInfo);
+  Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
+    {inName}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end lookupClassExtendsBaseClass;
@@ -1368,40 +1368,40 @@ algorithm
     // added to the class environment's extends table. The rest of the work is
     // done later in updateClassExtends when we have a complete environment.
     case (SCode.CLASS(
-        prefixes = prefixes,
-        encapsulatedPrefix = ep,
-        partialPrefix = pp,
-        restriction = res,
-        classDef = SCode.CLASS_EXTENDS(
-          baseClassName = bc,
-          modifications = mods,
-          composition = cdef),
-        cmt = cmt,
-        info = info), _)
+  prefixes = prefixes,
+  encapsulatedPrefix = ep,
+  partialPrefix = pp,
+  restriction = res,
+  classDef = SCode.CLASS_EXTENDS(
+    baseClassName = bc,
+    modifications = mods,
+    composition = cdef),
+  cmt = cmt,
+  info = info), _)
       equation
-        // Construct a new PARTS class with the data from the class extends.
-        cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, cmt, info);
+  // Construct a new PARTS class with the data from the class extends.
+  cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, cmt, info);
 
-        // Construct the class environment and add the new extends to it.
-        cls_env = FEnv.makeClassEnvironment(cls, false);
-        ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
-        cls_env = addClassExtendsInfoToEnv(ext, cls_env);
+  // Construct the class environment and add the new extends to it.
+  cls_env = FEnv.makeClassEnvironment(cls, false);
+  ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
+  cls_env = addClassExtendsInfoToEnv(ext, cls_env);
 
-        // Finally add the class to the environment.
-        env = FEnv.extendEnvWithItem(
-          FEnv.newClassItem(cls, cls_env, Env.CLASS_EXTENDS()), inEnv, bc);
+  // Finally add the class to the environment.
+  env = FEnv.extendEnvWithItem(
+    FEnv.newClassItem(cls, cls_env, Env.CLASS_EXTENDS()), inEnv, bc);
       then env;
 
     case (_, _)
       equation
-        info = SCode.elementInfo(inClassExtends);
-        el_str = SCodeDump.printElementStr(inClassExtends);
-        env_str = FEnv.getEnvName(inEnv);
-        err_msg = "FFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +&
-          el_str +& " in " +& env_str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
+  info = SCode.elementInfo(inClassExtends);
+  el_str = SCodeDump.printElementStr(inClassExtends);
+  env_str = FEnv.getEnvName(inEnv);
+  err_msg = "FFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +&
+    el_str +& " in " +& env_str;
+  Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
-        fail();
+  fail();
 
   end match;
 end extendEnvWithClassExtends;
@@ -1421,19 +1421,19 @@ algorithm
 
     case (_, _)
       equation
-        Env.EXTENDS_TABLE(bcl, re, NONE()) =
-          FEnv.getEnvExtendsTable(inEnv);
-        ext = Env.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
+  Env.EXTENDS_TABLE(bcl, re, NONE()) =
+    FEnv.getEnvExtendsTable(inEnv);
+  ext = Env.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
       then
-        FEnv.setEnvExtendsTable(ext, inEnv);
+  FEnv.setEnvExtendsTable(ext, inEnv);
 
     else
       equation
-        estr = "- FEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +&
-               "existing class extends information, this should not happen!.";
-        Error.addMessage(Error.INTERNAL_ERROR, {estr});
+  estr = "- FEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +&
+         "existing class extends information, this should not happen!.";
+  Error.addMessage(Error.INTERNAL_ERROR, {estr});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end addClassExtendsInfoToEnv;

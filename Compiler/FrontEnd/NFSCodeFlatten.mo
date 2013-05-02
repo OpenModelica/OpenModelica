@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeFlatten
-" file:        NFSCodeFlatten.mo
+" file:  NFSCodeFlatten.mo
   package:     NFSCodeFlatten
   description: SCode flattening
 
@@ -112,33 +112,33 @@ algorithm
 
     case (_, prog)
       equation
-        //System.startTimer();
-        System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
-        System.tmpTickResetIndex(1, NFSCodeEnv.extendsTickIndex);
-        // TODO: Enable this when NFSCodeEnv.tmpTickIndex is removed.
-        //System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
+  //System.startTimer();
+  System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
+  System.tmpTickResetIndex(1, NFSCodeEnv.extendsTickIndex);
+  // TODO: Enable this when NFSCodeEnv.tmpTickIndex is removed.
+  //System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
 
-        env = NFSCodeEnv.buildInitialEnv();
-        env = NFSCodeEnv.extendEnvWithClasses(prog, env);
-        env = NFEnvExtends.update(env);
+  env = NFSCodeEnv.buildInitialEnv();
+  env = NFSCodeEnv.extendEnvWithClasses(prog, env);
+  env = NFEnvExtends.update(env);
 
-        (prog, env) = NFSCodeDependency.analyse(inClassName, env, prog);
-        checkForCardinality(env);
-        (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+  (prog, env) = NFSCodeDependency.analyse(inClassName, env, prog);
+  checkForCardinality(env);
+  (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
 
-        //System.stopTimer();
-        //Debug.traceln("NFSCodeFlatten.flattenClassInProgram took " +&
-        //  realString(System.getTimerIntervalTime()) +& " seconds");
+  //System.stopTimer();
+  //Debug.traceln("NFSCodeFlatten.flattenClassInProgram took " +&
+  //  realString(System.getTimerIntervalTime()) +& " seconds");
 
       then
-        (prog, env);
+  (prog, env);
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenClassInProgram failed on " +&
-          Absyn.pathString(inClassName));
+  Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenClassInProgram failed on " +&
+    Absyn.pathString(inClassName));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end flattenClassInProgram;
@@ -151,17 +151,17 @@ algorithm
   _ := matchcontinue(inEnv)
     case _
       equation
-        (_, _, _) = NFSCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
-          inEnv, Absyn.dummyInfo);
-        System.setUsesCardinality(true);
+  (_, _, _) = NFSCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
+    inEnv, Absyn.dummyInfo);
+  System.setUsesCardinality(true);
       then
-        ();
+  ();
 
     else
       equation
-        System.setUsesCardinality(false);
+  System.setUsesCardinality(false);
       then
-        ();
+  ();
 
   end matchcontinue;
 end checkForCardinality;
@@ -177,18 +177,18 @@ algorithm
 
     case (prog)
       equation
-        env = NFSCodeEnv.buildInitialEnv();
-        env = NFSCodeEnv.extendEnvWithClasses(prog, env);
-        env = NFEnvExtends.update(env);
-        (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+  env = NFSCodeEnv.buildInitialEnv();
+  env = NFSCodeEnv.extendEnvWithClasses(prog, env);
+  env = NFEnvExtends.update(env);
+  (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
       then
-        prog;
+  prog;
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenCompleteProgram failed");
+  Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenCompleteProgram failed");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end flattenCompleteProgram;

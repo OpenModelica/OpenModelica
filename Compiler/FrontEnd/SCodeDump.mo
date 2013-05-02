@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCodeDump
-" file:        SCodeDump.mo
+" file:  SCodeDump.mo
   package:     SCodeDump
   description: SCodeDump intermediate form
 
@@ -150,9 +150,9 @@ algorithm
     case false then ();
     case true
       equation
-        Print.printBuf(" final ");
+  Print.printBuf(" final ");
       then
-        ();
+  ();
   end matchcontinue;
 end printFinal;
 
@@ -168,10 +168,10 @@ algorithm
     case ({}) then ();
     case ((x :: xs))
       equation
-        printElement(x);
-        printElementList(xs);
+  printElement(x);
+  printElementList(xs);
       then
-        ();
+  ();
   end matchcontinue;
 end printElementList;
 
@@ -208,37 +208,37 @@ algorithm
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
-        str = Absyn.pathString(path);
-        modStr = printModStr(mod);
-        res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
+  str = Absyn.pathString(path);
+  modStr = printModStr(mod);
+  res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
-        res;
+  res;
     case SCode.COMPONENT(name = n,
-                   prefixes = pref as SCode.PREFIXES(
-                     innerOuter=io,
-                     finalPrefix = finalPrefix,
-                     replaceablePrefix = repl,
-                     visibility = vis,
-                     redeclarePrefix = red),
-                     attributes = SCode.ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod)
+             prefixes = pref as SCode.PREFIXES(
+               innerOuter=io,
+               finalPrefix = finalPrefix,
+               replaceablePrefix = repl,
+               visibility = vis,
+               redeclarePrefix = red),
+               attributes = SCode.ATTR(variability = var),typeSpec = tySpec,
+             modifications = mod)
       equation
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(tySpec);
-        vs = variabilityString(var);
-        str2 = innerouterString(io);
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
+  mod_str = printModStr(mod);
+  s = Dump.unparseTypeSpec(tySpec);
+  vs = variabilityString(var);
+  str2 = innerouterString(io);
+  prefStr = prefixesStr(pref);
+  res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
       then
-        res;
+  res;
     case _
       equation
-        res = printClassStr(inElement);
+  res = printClassStr(inElement);
       then
-        res;
+  res;
     case (SCode.IMPORT(imp = imp))
       equation
-         str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
+   str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
       then str;
   end matchcontinue;
 end printElementStr;
@@ -273,51 +273,51 @@ algorithm
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
-        str = Absyn.pathString(path);
-        str = str +& printModStr(mod);
-        res = stringAppendList({"extends ",str,";"});
+  str = Absyn.pathString(path);
+  str = str +& printModStr(mod);
+  res = stringAppendList({"extends ",str,";"});
       then
-        res;
+  res;
 
     case SCode.COMPONENT(name = n)
       equation
-        res = unparseElementStr(inElement);
+  res = unparseElementStr(inElement);
       then
-        res;
+  res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
-                     classDef = SCode.DERIVED(typeSpec = _))
+               classDef = SCode.DERIVED(typeSpec = _))
       equation
-        res = unparseElementStr(inElement);
+  res = unparseElementStr(inElement);
       then
-        res;
+  res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
-                     classDef = SCode.CLASS_EXTENDS(baseClassName = str))
+               classDef = SCode.CLASS_EXTENDS(baseClassName = str))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
-        res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
+  ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+  res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
       then
-        res;
+  res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
-                     classDef = SCode.ENUMERATION(enumLst = _))
+               classDef = SCode.ENUMERATION(enumLst = _))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n," enumeration;"});
+  ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+  res = stringAppendList({ioStr, "class ",n," enumeration;"});
       then
-        res;
+  res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n,";"});
+  ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+  res = stringAppendList({ioStr, "class ",n,";"});
       then
-        res;
+  res;
 
     case (SCode.IMPORT(imp = imp))
       equation
-         str = "import "+& Absyn.printImportString(imp) +& ";";
+   str = "import "+& Absyn.printImportString(imp) +& ";";
       then str;
   end match;
 end shortElementStr;
@@ -343,14 +343,14 @@ algorithm
 
     case (SCode.CLASS(name = id,prefixes = pref as SCode.PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation
-        s = printClassdefStr(def);
-        re = restrString(rest);
-        strPartialPrefix = Util.if_(SCode.partialBool(p), "true", "false");
-        strEncapsulatedPrefix = Util.if_(SCode.encapsulatedBool(en), "true", "false");
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", prefixes: ",prefStr, ", ", re, ", ", s, ")\n"});
+  s = printClassdefStr(def);
+  re = restrString(rest);
+  strPartialPrefix = Util.if_(SCode.partialBool(p), "true", "false");
+  strEncapsulatedPrefix = Util.if_(SCode.encapsulatedBool(en), "true", "false");
+  prefStr = prefixesStr(pref);
+  res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", prefixes: ",prefStr, ", ", re, ", ", s, ")\n"});
       then
-        res;
+  res;
   end match;
 end printClassStr;
 
@@ -376,65 +376,65 @@ algorithm
       list<String> slst;
 
     case (SCode.PARTS(elementLst = elts,
-                normalEquationLst = eqns,
-                initialEquationLst = ieqns,
-                normalAlgorithmLst = alg,
-                initialAlgorithmLst = ial,
-                externalDecl = ext))
+          normalEquationLst = eqns,
+          initialEquationLst = ieqns,
+          normalAlgorithmLst = alg,
+          initialAlgorithmLst = ial,
+          externalDecl = ext))
       equation
-        elts_str = List.map(elts, printElementStr);
-        s1 = stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
+  elts_str = List.map(elts, printElementStr);
+  s1 = stringDelimitList(elts_str, ",\n");
+  res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
       then
-        res;
+  res;
     /* adrpo: handle also the case: model extends X end X; */
     case (SCode.CLASS_EXTENDS(
-              baseClassName = baseClassName,
-              modifications = mod,
-              composition = SCode.PARTS(
-              elementLst = elts,
-              normalEquationLst = eqns,
-              initialEquationLst = ieqns,
-              normalAlgorithmLst = alg,
-              initialAlgorithmLst = ial,
-              externalDecl = ext)))
+        baseClassName = baseClassName,
+        modifications = mod,
+        composition = SCode.PARTS(
+        elementLst = elts,
+        normalEquationLst = eqns,
+        initialEquationLst = ieqns,
+        normalAlgorithmLst = alg,
+        initialAlgorithmLst = ial,
+        externalDecl = ext)))
       equation
-        elts_str = List.map(elts, printElementStr);
-        s1 = stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
+  elts_str = List.map(elts, printElementStr);
+  s1 = stringDelimitList(elts_str, ",\n");
+  res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
       then
-        res;
+  res;
     case (SCode.DERIVED(typeSpec = typeSpec,modifications = mod))
       equation
-        s2 = Dump.unparseTypeSpec(typeSpec);
-        s3 = printModStr(mod);
-        res = stringAppendList({"DERIVED(",s2,",",s3,")"});
+  s2 = Dump.unparseTypeSpec(typeSpec);
+  s3 = printModStr(mod);
+  res = stringAppendList({"DERIVED(",s2,",",s3,")"});
       then
-        res;
+  res;
     case (SCode.ENUMERATION(enumLst))
       equation
-        s1 = stringDelimitList(List.map(enumLst, printEnumStr), ", ");
-        res = stringAppendList({"ENUMERATION(", s1, ")"});
+  s1 = stringDelimitList(List.map(enumLst, printEnumStr), ", ");
+  res = stringAppendList({"ENUMERATION(", s1, ")"});
       then
-        res;
+  res;
     case (SCode.OVERLOAD(plst))
       equation
-        s1 = stringDelimitList(List.map(plst, Absyn.pathString), ", ");
-        res = stringAppendList({"OVERLOAD(", s1, ")"});
+  s1 = stringDelimitList(List.map(plst, Absyn.pathString), ", ");
+  res = stringAppendList({"OVERLOAD(", s1, ")"});
       then
-        res;
+  res;
     case (SCode.PDER(path, slst))
       equation
-        s1 = Absyn.pathString(path);
-        s2 = stringDelimitList(slst, ", ");
-        res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
+  s1 = Absyn.pathString(path);
+  s2 = stringDelimitList(slst, ", ");
+  res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
       then
-        res;
+  res;
     case (_)
       equation
-        res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
+  res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
       then
-        res;
+  res;
   end matchcontinue;
 end printClassdefStr;
 
@@ -609,10 +609,10 @@ algorithm
       String path_str, mod_str;
 
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
-        constrainingClass = path, modifier = mod))))
+  constrainingClass = path, modifier = mod))))
       equation
-        path_str = Absyn.pathString(path);
-        mod_str = printModStr(mod);
+  path_str = Absyn.pathString(path);
+  mod_str = printModStr(mod);
       then ("replaceable ", path_str +& "(" +& mod_str +& ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
     case (SCode.NOT_REPLACEABLE()) then ("", "");
@@ -651,13 +651,13 @@ algorithm
 
     case(SCode.PREFIXES(v,rd,f,io,rpl))
       equation
-        s = visibilityStr(v) +&
-            redeclareStr(rd) +&
-            finalStr(f) +&
-            Absyn.innerOuterStr(io) +&
-            replaceablePrefixStr(rpl);
+  s = visibilityStr(v) +&
+      redeclareStr(rd) +&
+      finalStr(f) +&
+      Absyn.innerOuterStr(io) +&
+      replaceablePrefixStr(rpl);
       then
-        s;
+  s;
 
   end match;
 end prefixesStr;

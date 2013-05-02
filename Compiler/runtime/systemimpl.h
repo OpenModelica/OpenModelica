@@ -33,8 +33,8 @@
 #include "openmodelica.h"
 
 char* _replace(const char* source_str,
-               const char* search_str,
-               const char* replace_str);
+         const char* search_str,
+         const char* replace_str);
 
 typedef int (*function_t)(type_description*, type_description*);
 

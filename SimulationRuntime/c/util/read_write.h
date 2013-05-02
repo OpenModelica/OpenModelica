@@ -84,7 +84,7 @@ extern void write_modelica_record(type_description *desc, void *rec_desc_void, .
 extern void write_noretcall(type_description *desc);
 
 extern type_description *add_modelica_record_member(type_description *desc,
-                                             const char *name, size_t nlen);
+                                       const char *name, size_t nlen);
 
 extern type_description *add_tuple_member(type_description *desc);
 

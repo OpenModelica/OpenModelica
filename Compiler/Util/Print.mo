@@ -30,7 +30,7 @@
  */
 
 encapsulated package Print
-" file:        Print.mo
+" file:  Print.mo
   package:     Print
   description: Printing to buffers
 

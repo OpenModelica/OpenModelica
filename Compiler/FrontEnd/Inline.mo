@@ -31,7 +31,7 @@
 
 // stefan
 encapsulated package Inline
-" file:        Inline.mo
+" file:  Inline.mo
   package:     Inline
   description: inline functions
 
@@ -98,20 +98,20 @@ algorithm
       Env.Env env;
     case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
       equation
-        tpl = (SOME(functionTree),itlst);
-        eqs = List.map1(eqs,inlineEquationSystem,tpl);
-        (knownVars,_) = inlineVariables(knownVars,tpl);
-        (externalObjects,_) = inlineVariables(externalObjects,tpl);
-        (initialEqs,_) = inlineEquationArray(initialEqs,tpl);
-        (removedEqs,_) = inlineEquationArray(removedEqs,tpl);
-        eventInfo = inlineEventInfo(eventInfo,tpl);
+  tpl = (SOME(functionTree),itlst);
+  eqs = List.map1(eqs,inlineEquationSystem,tpl);
+  (knownVars,_) = inlineVariables(knownVars,tpl);
+  (externalObjects,_) = inlineVariables(externalObjects,tpl);
+  (initialEqs,_) = inlineEquationArray(initialEqs,tpl);
+  (removedEqs,_) = inlineEquationArray(removedEqs,tpl);
+  eventInfo = inlineEventInfo(eventInfo,tpl);
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs));
+  BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs));
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end inlineCalls;
 
@@ -130,11 +130,11 @@ algorithm
       BackendDAE.StateSets stateSets;
     case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets),_)
       equation
-        (orderedVars,b1) = inlineVariables(orderedVars,tpl);
-        (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);
-        syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets),syst);
+  (orderedVars,b1) = inlineVariables(orderedVars,tpl);
+  (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);
+  syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets),syst);
       then
-        syst;
+  syst;
   end match;
 end inlineEquationSystem;
 
@@ -153,14 +153,14 @@ algorithm
       array<Option<BackendDAE.Equation>> eqarr;
     case(BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),fns)
       equation
-        oInlined = inlineEquationOptArray(1,eqarr,i2,fns,false);
+  oInlined = inlineEquationOptArray(1,eqarr,i2,fns,false);
       then
-        (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
+  (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end inlineEquationArray;
 
@@ -180,17 +180,17 @@ algorithm
       Boolean b;
     case(_,_,_,_,_)
       equation
-        true = intLe(Index,arraysize);
-        eqn = inEqnArray[Index];
-        (eqn,b) = inlineEqOpt(eqn,fns);
-        updateArrayCond(b,inEqnArray,Index,eqn);
+  true = intLe(Index,arraysize);
+  eqn = inEqnArray[Index];
+  (eqn,b) = inlineEqOpt(eqn,fns);
+  updateArrayCond(b,inEqnArray,Index,eqn);
       then
-        inlineEquationOptArray(Index+1,inEqnArray,arraysize,fns,b or iInlined);
+  inlineEquationOptArray(Index+1,inEqnArray,arraysize,fns,b or iInlined);
     case(_,_,_,_,_)
       equation
-        false = intLe(Index,arraysize);
+  false = intLe(Index,arraysize);
       then
-        iInlined;
+  iInlined;
   end matchcontinue;
 end inlineEquationOptArray;
 
@@ -209,9 +209,9 @@ algorithm
     case(NONE(),_) then (NONE(),false);
     case(SOME(eqn),_)
       equation
-        (eqn,b) = inlineEq(eqn,inElementList);
+  (eqn,b) = inlineEq(eqn,inElementList);
       then
-        (SOME(eqn),b);
+  (SOME(eqn),b);
   end match;
 end inlineEqOpt;
 
@@ -240,64 +240,64 @@ algorithm
 
     case(BackendDAE.EQUATION(e1,e2,source,d),_)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  true = b1 or b2;
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,d),true);
 
     case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,d),_)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  true = b1 or b2;
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,d),true);
+  (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,d),true);
 
     case(BackendDAE.SOLVED_EQUATION(cref,e,source,d),_)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (BackendDAE.SOLVED_EQUATION(cref,e_1,source,d),true);
+  (BackendDAE.SOLVED_EQUATION(cref,e_1,source,d),true);
 
     case(BackendDAE.RESIDUAL_EQUATION(e,source,d),_)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (BackendDAE.RESIDUAL_EQUATION(e_1,source,d),true);
+  (BackendDAE.RESIDUAL_EQUATION(e_1,source,d),true);
 
     case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_)
       equation
-        (stmts1,true) = inlineStatements(stmts,fns,{},false);
-        alg = DAE.ALGORITHM_STMTS(stmts1);
+  (stmts1,true) = inlineStatements(stmts,fns,{},false);
+  alg = DAE.ALGORITHM_STMTS(stmts1);
       then
-        (BackendDAE.ALGORITHM(size,alg,source),true);
+  (BackendDAE.ALGORITHM(size,alg,source),true);
 
     case(BackendDAE.WHEN_EQUATION(size,weq,source),_)
       equation
-        (weq_1,source,true) = inlineWhenEq(weq,fns,source);
+  (weq_1,source,true) = inlineWhenEq(weq,fns,source);
       then
-        (BackendDAE.WHEN_EQUATION(size,weq_1,source),true);
+  (BackendDAE.WHEN_EQUATION(size,weq_1,source),true);
 
     case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,d),_)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  true = b1 or b2;
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);
+  (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);
 
     case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),_)
       equation
-        (explst,source,b1) = inlineExps(explst,fns,source);
-        (eqnslst,b2) = inlineEqsLst(eqnslst,fns,{},false);
-        (eqns,b3) = inlineEqs(eqns,fns,{},false);
-        true = b1 or b2 or b3;
+  (explst,source,b1) = inlineExps(explst,fns,source);
+  (eqnslst,b2) = inlineEqsLst(eqnslst,fns,{},false);
+  (eqns,b3) = inlineEqs(eqns,fns,{},false);
+  true = b1 or b2 or b3;
       then
-        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),true);
+  (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),true);
     else
       then
-        (inEquation,false);
+  (inEquation,false);
   end matchcontinue;
 end inlineEq;
 
@@ -317,10 +317,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (eqn::rest,_,_,_)
       equation
-        (eqn,inlined) = inlineEqs(eqn,inFunctions,{},false);
-        (acc,inlined) = inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
+  (eqn,inlined) = inlineEqs(eqn,inFunctions,{},false);
+  (acc,inlined) = inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
       then
-        (acc,inlined);
+  (acc,inlined);
   end match;
 end inlineEqsLst;
 
@@ -340,10 +340,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (eqn::rest,_,_,_)
       equation
-        (eqn,inlined) = inlineEq(eqn,inFunctions);
-        (acc,inlined) = inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
+  (eqn,inlined) = inlineEq(eqn,inFunctions);
+  (acc,inlined) = inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
       then
-        (acc,inlined);
+  (acc,inlined);
   end match;
 end inlineEqs;
 
@@ -367,22 +367,22 @@ algorithm
 
     case (BackendDAE.WHEN_EQ(cond,cref,e,NONE()),_,_)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,inSource);
-        (cond,source,b2) = inlineExp(cond,fns,source);
-        true = b1 or b2;
+  (e_1,source,b1) = inlineExp(e,fns,inSource);
+  (cond,source,b2) = inlineExp(cond,fns,source);
+  true = b1 or b2;
       then
-        (BackendDAE.WHEN_EQ(cond,cref,e_1,NONE()),source,true);
+  (BackendDAE.WHEN_EQ(cond,cref,e_1,NONE()),source,true);
     case (BackendDAE.WHEN_EQ(cond,cref,e,SOME(weq)),_,_)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,inSource);
-        (cond,source,b2) = inlineExp(cond,fns,source);
-        (weq_1,source,b3) = inlineWhenEq(weq,fns,source);
-        true = b1 or b2 or b3;
+  (e_1,source,b1) = inlineExp(e,fns,inSource);
+  (cond,source,b2) = inlineExp(cond,fns,source);
+  (weq_1,source,b3) = inlineWhenEq(weq,fns,source);
+  true = b1 or b2 or b3;
       then
-        (BackendDAE.WHEN_EQ(cond,cref,e_1,SOME(weq_1)),source,true);
+  (BackendDAE.WHEN_EQ(cond,cref,e_1,SOME(weq_1)),source,true);
     else
       then
-        (inWhenEquation,inSource,false);
+  (inWhenEquation,inSource,false);
   end matchcontinue;
 end inlineWhenEq;
 
@@ -402,14 +402,14 @@ algorithm
       array<Option<BackendDAE.Var>> vararr;
     case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
       equation
-        inlined = inlineVarOptArray(1,vararr,i4,fns,false);
+  inlined = inlineVarOptArray(1,vararr,i4,fns,false);
       then
-        (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),inlined);
+  (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),inlined);
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end inlineVariables;
 
@@ -424,9 +424,9 @@ algorithm
     case(false,_,_,_) then ();
     case(true,_,_,_)
       equation
-        _ = arrayUpdate(inArr,index,value);
+  _ = arrayUpdate(inArr,index,value);
       then
-        ();
+  ();
   end match;
 end updateArrayCond;
 
@@ -446,17 +446,17 @@ algorithm
       Boolean b;
     case(_,_,_,_,_)
       equation
-        true = intLe(Index,arraysize);
-        var = inVarArray[Index];
-        (var,b) = inlineVarOpt(var,fns);
-        updateArrayCond(b,inVarArray,Index,var);
+  true = intLe(Index,arraysize);
+  var = inVarArray[Index];
+  (var,b) = inlineVarOpt(var,fns);
+  updateArrayCond(b,inVarArray,Index,var);
       then
-        inlineVarOptArray(Index+1,inVarArray,arraysize,fns,b or iInlined);
+  inlineVarOptArray(Index+1,inVarArray,arraysize,fns,b or iInlined);
     case(_,_,_,_,_)
       equation
-        false = intLe(Index,arraysize);
+  false = intLe(Index,arraysize);
       then
-        iInlined;
+  iInlined;
   end matchcontinue;
 end inlineVarOptArray;
 
@@ -475,9 +475,9 @@ algorithm
     case(NONE(),_) then (NONE(),false);
     case(SOME(var),_)
       equation
-        (var,b) = inlineVar(var,fns);
+  (var,b) = inlineVar(var,fns);
       then
-        (SOME(var),b);
+  (SOME(var),b);
   end match;
 end inlineVarOpt;
 
@@ -509,10 +509,10 @@ algorithm
 
     case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
       equation
-        (bind,source,b1) = inlineExpOpt(bind,fns,source);
-        (values1,source,b2) = inlineStartAttribute(values,source,fns);
+  (bind,source,b1) = inlineExpOpt(bind,fns,source);
+  (values1,source,b2) = inlineStartAttribute(values,source,fns);
       then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,comment,ct),b1 or b2);
+  (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,comment,ct),b1 or b2);
     case(var,_) then (var,false);
   end match;
 end inlineVar;
@@ -538,34 +538,34 @@ algorithm
       Option<Boolean> isProtected,finalPrefix;
     case (NONE(),_,_) then (NONE(),isource,false);
     case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,initial_ = SOME(r),
-          fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
-          distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
-          startOrigin=so)),_,_)
+    fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
+    distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
+    startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);
+  (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,SOME(r),fixed,nominal,
-          stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
+    stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,initial_ = SOME(r),
-          fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
+    isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);
+  (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,initial_ = SOME(r),
-          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);
+  (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,initial_ = SOME(r),
-          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);
+  (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,start = SOME(r),
-          fixed=fixed,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    fixed=fixed,equationBound=equationBound,
+    isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);
+  (r,source,true) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (_,_,_) then (inVariableAttributesOption,isource,false);
   end matchcontinue;
@@ -588,18 +588,18 @@ algorithm
       BackendDAE.SampleLookup sampleLookup;
     case(BackendDAE.EVENT_INFO(sampleLookup,wclst,zclst,samples,relations,numberOfRelations,numberOfMathEvents),fns)
       equation
-        (wclst_1,b1) = inlineWhenClauses(wclst,fns,{},false);
-        (zclst_1,b2) = inlineZeroCrossings(zclst,fns,{},false);
-        (relations,b3) = inlineZeroCrossings(relations,fns,{},false);
-        (samples,b4) = inlineZeroCrossings(samples,fns,{},false);
-        ev = Util.if_(b1 or b2,BackendDAE.EVENT_INFO(sampleLookup,wclst_1,zclst_1,samples,relations,numberOfRelations,numberOfMathEvents),inEventInfo);
+  (wclst_1,b1) = inlineWhenClauses(wclst,fns,{},false);
+  (zclst_1,b2) = inlineZeroCrossings(zclst,fns,{},false);
+  (relations,b3) = inlineZeroCrossings(relations,fns,{},false);
+  (samples,b4) = inlineZeroCrossings(samples,fns,{},false);
+  ev = Util.if_(b1 or b2,BackendDAE.EVENT_INFO(sampleLookup,wclst_1,zclst_1,samples,relations,numberOfRelations,numberOfMathEvents),inEventInfo);
       then
-        ev;
+  ev;
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEventInfo failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEventInfo failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end inlineEventInfo;
 
@@ -622,10 +622,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (zc::rest,_,_,_)
       equation
-        (zc,b) = inlineZeroCrossing(zc,fns);
-        (stmts,b) = inlineZeroCrossings(rest,fns,zc::iAcc,b or iInlined);
+  (zc,b) = inlineZeroCrossing(zc,fns);
+  (stmts,b) = inlineZeroCrossings(rest,fns,zc::iAcc,b or iInlined);
       then
-        (stmts,b);
+  (stmts,b);
   end match;
 end inlineZeroCrossings;
 
@@ -644,12 +644,12 @@ algorithm
       list<Integer> ilst1,ilst2;
     case(BackendDAE.ZERO_CROSSING(e,ilst1,ilst2),fns)
       equation
-        (e_1,_,true) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
+  (e_1,_,true) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
       then
-        (BackendDAE.ZERO_CROSSING(e_1,ilst1,ilst2),true);
+  (BackendDAE.ZERO_CROSSING(e_1,ilst1,ilst2),true);
     case(_,_)
       then
-        (inZeroCrossing,false);
+  (inZeroCrossing,false);
   end matchcontinue;
 end inlineZeroCrossing;
 
@@ -672,10 +672,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (wc::rest,_,_,_)
       equation
-        (wc,b) = inlineWhenClause(wc,fns);
-        (stmts,b) = inlineWhenClauses(rest,fns,wc::iAcc,b or iInlined);
+  (wc,b) = inlineWhenClause(wc,fns);
+  (stmts,b) = inlineWhenClauses(rest,fns,wc::iAcc,b or iInlined);
       then
-        (stmts,b);
+  (stmts,b);
   end match;
 end inlineWhenClauses;
 
@@ -696,14 +696,14 @@ algorithm
       Boolean b1,b2;
     case(BackendDAE.WHEN_CLAUSE(e,rslst,io),fns)
       equation
-        (e_1,_,b1) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
-        (rslst_1,b2) = inlineReinitStmts(rslst,fns,{},false);
-        true = b1 or b2;
+  (e_1,_,b1) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
+  (rslst_1,b2) = inlineReinitStmts(rslst,fns,{},false);
+  true = b1 or b2;
       then
-        (BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io),true);
+  (BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io),true);
     case(_,_)
       then
-        (inWhenClause,false);
+  (inWhenClause,false);
   end matchcontinue;
 end inlineWhenClause;
 
@@ -726,10 +726,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (re::rest,_,_,_)
       equation
-        (re,b) = inlineReinitStmt(re,fns);
-        (stmts,b) = inlineReinitStmts(rest,fns,re::iAcc,b or iInlined);
+  (re,b) = inlineReinitStmt(re,fns);
+  (stmts,b) = inlineReinitStmts(rest,fns,re::iAcc,b or iInlined);
       then
-        (stmts,b);
+  (stmts,b);
   end match;
 end inlineReinitStmts;
 
@@ -751,9 +751,9 @@ algorithm
 
     case (BackendDAE.REINIT(cref,e,source),fns)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (BackendDAE.REINIT(cref,e_1,source),true);
+  (BackendDAE.REINIT(cref,e_1,source),true);
     case (rs,_) then (rs,false);
   end matchcontinue;
 end inlineReinitStmt;
@@ -784,24 +784,24 @@ algorithm
 
     case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
-        (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
+  (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
+  res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
       then
-        inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
+  inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
     // external functions
     case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
-        (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
+  (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
+  res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
       then
-        inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
+  inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
 
     case(el :: cdr,_,_)
       then
-        inlineCallsInFunctions(cdr,inFunctions,el::iAcc);
+  inlineCallsInFunctions(cdr,inFunctions,el::iAcc);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Inline.inlineCallsInFunctions failed"});
+  Error.addMessage(Error.INTERNAL_ERROR,{"Inline.inlineCallsInFunctions failed"});
       then fail();
   end matchcontinue;
 end inlineCallsInFunctions;
@@ -823,10 +823,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (elem::rest,_,_,_)
       equation
-        (elem,inlined) = inlineDAEElements(elem,inFunctions,{},false);
-        (acc,inlined) = inlineDAEElementsLst(rest,inFunctions,elem::iAcc,inlined or iInlined);
+  (elem,inlined) = inlineDAEElements(elem,inFunctions,{},false);
+  (acc,inlined) = inlineDAEElementsLst(rest,inFunctions,elem::iAcc,inlined or iInlined);
       then
-        (acc,inlined);
+  (acc,inlined);
   end match;
 end inlineDAEElementsLst;
 
@@ -846,10 +846,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (elem::rest,_,_,_)
       equation
-        (elem,inlined) = inlineDAEElement(elem,inFunctions);
-        (acc,inlined) = inlineDAEElements(rest,inFunctions,elem::iAcc,inlined or iInlined);
+  (elem,inlined) = inlineDAEElement(elem,inFunctions);
+  (acc,inlined) = inlineDAEElements(rest,inFunctions,elem::iAcc,inlined or iInlined);
       then
-        (acc,inlined);
+  (acc,inlined);
   end match;
 end inlineDAEElements;
 
@@ -888,155 +888,155 @@ algorithm
       Boolean b1,b2,b3;
 
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
-                 source,variableAttributesOption,absynCommentOption,innerOuter),fns)
+           source,variableAttributesOption,absynCommentOption,innerOuter),fns)
       equation
-        (binding_1,source,true) = inlineExp(binding,fns,source);
+  (binding_1,source,true) = inlineExp(binding,fns,source);
       then
-        (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,ct,
-                      source,variableAttributesOption,absynCommentOption,innerOuter),true);
+  (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,ct,
+                source,variableAttributesOption,absynCommentOption,innerOuter),true);
 
     case (DAE.DEFINE(componentRef,exp,source) ,fns)
       equation
-        (exp_1,source,true) = inlineExp(exp,fns,source);
+  (exp_1,source,true) = inlineExp(exp,fns,source);
       then
-        (DAE.DEFINE(componentRef,exp_1,source),true);
+  (DAE.DEFINE(componentRef,exp_1,source),true);
 
     case(DAE.INITIALDEFINE(componentRef,exp,source) ,fns)
       equation
-        (exp_1,source,true) = inlineExp(exp,fns,source);
+  (exp_1,source,true) = inlineExp(exp,fns,source);
       then
-        (DAE.INITIALDEFINE(componentRef,exp_1,source),true);
+  (DAE.INITIALDEFINE(componentRef,exp_1,source),true);
 
     case(DAE.EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.EQUATION(exp1_1,exp2_1,source),true);
+  (DAE.EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.ARRAY_EQUATION(dimension,exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
+  (DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
 
     case(DAE.INITIAL_ARRAY_EQUATION(dimension,exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
+  (DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
 
     case(DAE.COMPLEX_EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
+  (DAE.COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
+  (DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.WHEN_EQUATION(exp,elist,SOME(el),source),fns)
       equation
-        (exp_1,source,b1) = inlineExp(exp,fns,source);
-        (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
-        (el_1,b3) = inlineDAEElement(el,fns);
-        true = b1 or b2 or b3;
+  (exp_1,source,b1) = inlineExp(exp,fns,source);
+  (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
+  (el_1,b3) = inlineDAEElement(el,fns);
+  true = b1 or b2 or b3;
       then
-        (DAE.WHEN_EQUATION(exp_1,elist_1,SOME(el_1),source),true);
+  (DAE.WHEN_EQUATION(exp_1,elist_1,SOME(el_1),source),true);
 
     case(DAE.WHEN_EQUATION(exp,elist,NONE(),source),fns)
       equation
-        (exp_1,source,b1) = inlineExp(exp,fns,source);
-        (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
-        true = b1 or b2;
+  (exp_1,source,b1) = inlineExp(exp,fns,source);
+  (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
+  true = b1 or b2;
       then
-        (DAE.WHEN_EQUATION(exp_1,elist_1,NONE(),source),true);
+  (DAE.WHEN_EQUATION(exp_1,elist_1,NONE(),source),true);
 
     case(DAE.IF_EQUATION(explst,dlist,elist,source) ,fns)
       equation
-        (explst_1,source,b1) = inlineExps(explst,fns,source);
-        (dlist_1,b2) = inlineDAEElementsLst(dlist,fns,{},false);
-        (elist_1,b3) = inlineDAEElements(elist,fns,{},false);
-        true = b1 or b2 or b3;
+  (explst_1,source,b1) = inlineExps(explst,fns,source);
+  (dlist_1,b2) = inlineDAEElementsLst(dlist,fns,{},false);
+  (elist_1,b3) = inlineDAEElements(elist,fns,{},false);
+  true = b1 or b2 or b3;
       then
-        (DAE.IF_EQUATION(explst_1,dlist_1,elist_1,source),true);
+  (DAE.IF_EQUATION(explst_1,dlist_1,elist_1,source),true);
 
     case(DAE.INITIAL_IF_EQUATION(explst,dlist,elist,source) ,fns)
       equation
-        (explst_1,source,b1) = inlineExps(explst,fns,source);
-        (dlist_1,b2) = inlineDAEElementsLst(dlist,fns,{},false);
-        (elist_1,b3) = inlineDAEElements(elist,fns,{},false);
-        true = b1 or b2 or b3;
+  (explst_1,source,b1) = inlineExps(explst,fns,source);
+  (dlist_1,b2) = inlineDAEElementsLst(dlist,fns,{},false);
+  (elist_1,b3) = inlineDAEElements(elist,fns,{},false);
+  true = b1 or b2 or b3;
       then
-        (DAE.INITIAL_IF_EQUATION(explst_1,dlist_1,elist_1,source),true);
+  (DAE.INITIAL_IF_EQUATION(explst_1,dlist_1,elist_1,source),true);
 
     case(DAE.INITIALEQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
       then
-        (DAE.INITIALEQUATION(exp1_1,exp2_1,source),true);
+  (DAE.INITIALEQUATION(exp1_1,exp2_1,source),true);
 
     case((el as DAE.ALGORITHM(alg,source)),fns)
       equation
-        (alg_1,true) = inlineAlgorithm(alg,fns);
+  (alg_1,true) = inlineAlgorithm(alg,fns);
       then
-        (DAE.ALGORITHM(alg_1,source),true);
+  (DAE.ALGORITHM(alg_1,source),true);
 
     case((el as DAE.INITIALALGORITHM(alg,source)) ,fns)
       equation
-        (alg_1,true) = inlineAlgorithm(alg,fns);
+  (alg_1,true) = inlineAlgorithm(alg,fns);
       then
-        (DAE.INITIALALGORITHM(alg_1,source),true);
+  (DAE.INITIALALGORITHM(alg_1,source),true);
 
     case(DAE.COMP(i,elist,source,absynCommentOption),fns)
       equation
-        (elist_1,true) = inlineDAEElements(elist,fns,{},false);
+  (elist_1,true) = inlineDAEElements(elist,fns,{},false);
       then
-        (DAE.COMP(i,elist_1,source,absynCommentOption),true);
+  (DAE.COMP(i,elist_1,source,absynCommentOption),true);
 
     case(DAE.ASSERT(exp1,exp2,exp3,source) ,fns)
       equation
-        (exp1_1,source,b1) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        (exp3_1,source,b3) = inlineExp(exp3,fns,source);
-        true = b1 or b2 or b3;
+  (exp1_1,source,b1) = inlineExp(exp1,fns,source);
+  (exp2_1,source,b2) = inlineExp(exp2,fns,source);
+  (exp3_1,source,b3) = inlineExp(exp3,fns,source);
+  true = b1 or b2 or b3;
       then
-        (DAE.ASSERT(exp1_1,exp2_1,exp3_1,source),true);
+  (DAE.ASSERT(exp1_1,exp2_1,exp3_1,source),true);
 
     case(DAE.TERMINATE(exp,source),fns)
       equation
-        (exp_1,source,true) = inlineExp(exp,fns,source);
+  (exp_1,source,true) = inlineExp(exp,fns,source);
       then
-        (DAE.TERMINATE(exp_1,source),true);
+  (DAE.TERMINATE(exp_1,source),true);
 
     case(DAE.REINIT(componentRef,exp,source),fns)
       equation
-        (exp_1,source,true) = inlineExp(exp,fns,source);
+  (exp_1,source,true) = inlineExp(exp,fns,source);
       then
-        (DAE.REINIT(componentRef,exp_1,source),true);
+  (DAE.REINIT(componentRef,exp_1,source),true);
 
     case(DAE.NORETCALL(p,explst,source),fns)
       equation
-        (explst_1,source,true) = inlineExps(explst,fns,source);
+  (explst_1,source,true) = inlineExps(explst,fns,source);
       then
-        (DAE.NORETCALL(p,explst_1,source),true);
+  (DAE.NORETCALL(p,explst_1,source),true);
 
     case(el,fns)
       then
-        (el,false);
+  (el,false);
   end matchcontinue;
 end inlineDAEElement;
 
@@ -1054,14 +1054,14 @@ algorithm
       Functiontuple fns;
     case(DAE.ALGORITHM_STMTS(stmts),fns)
       equation
-        (stmts_1,inlined) = inlineStatements(stmts,fns,{},false);
+  (stmts_1,inlined) = inlineStatements(stmts,fns,{},false);
       then
-        (DAE.ALGORITHM_STMTS(stmts_1),inlined);
+  (DAE.ALGORITHM_STMTS(stmts_1),inlined);
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineAlgorithm failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.inlineAlgorithm failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end inlineAlgorithm;
 
@@ -1081,10 +1081,10 @@ algorithm
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (stmt::rest,_,_,_)
       equation
-        (stmt,inlined) = inlineStatement(stmt,inElementList);
-        (acc,inlined) = inlineStatements(rest,inElementList,stmt::iAcc,inlined or iInlined);
+  (stmt,inlined) = inlineStatement(stmt,inElementList);
+  (acc,inlined) = inlineStatements(rest,inElementList,stmt::iAcc,inlined or iInlined);
       then
-        (acc,inlined);
+  (acc,inlined);
   end match;
 end inlineStatements;
 
@@ -1114,100 +1114,100 @@ algorithm
       Boolean initialCall;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.STMT_ASSIGN(t,e1_1,e2_1,source),true);
+  (DAE.STMT_ASSIGN(t,e1_1,e2_1,source),true);
     case(DAE.STMT_TUPLE_ASSIGN(t,explst,e,source),fns)
       equation
-        (explst_1,source,b1) = inlineExps(explst,fns,source);
-        (e_1,source,b2) = inlineExp(e,fns,source);
-        true = b1 or b2;
+  (explst_1,source,b1) = inlineExps(explst,fns,source);
+  (e_1,source,b2) = inlineExp(e,fns,source);
+  true = b1 or b2;
       then
-        (DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1,source),true);
+  (DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1,source),true);
     case(DAE.STMT_ASSIGN_ARR(t,cref,e,source),fns)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (DAE.STMT_ASSIGN_ARR(t,cref,e_1,source),true);
+  (DAE.STMT_ASSIGN_ARR(t,cref,e_1,source),true);
     case(DAE.STMT_IF(e,stmts,a_else,source),fns)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        (a_else_1,source,b3) = inlineElse(a_else,fns,source);
-        true = b1 or b2 or b3;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  (a_else_1,source,b3) = inlineElse(a_else,fns,source);
+  true = b1 or b2 or b3;
       then
-        (DAE.STMT_IF(e_1,stmts_1,a_else_1,source),true);
+  (DAE.STMT_IF(e_1,stmts_1,a_else_1,source),true);
     case(DAE.STMT_FOR(t,b,i,ix,e,stmts,source),fns)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        true = b1 or b2;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  true = b1 or b2;
       then
-        (DAE.STMT_FOR(t,b,i,ix,e_1,stmts_1,source),true);
+  (DAE.STMT_FOR(t,b,i,ix,e_1,stmts_1,source),true);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        true = b1 or b2;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  true = b1 or b2;
       then
-        (DAE.STMT_WHILE(e_1,stmts_1,source),true);
+  (DAE.STMT_WHILE(e_1,stmts_1,source),true);
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source),fns)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        (stmt_1,b3) = inlineStatement(stmt,fns);
-        true = b1 or b2 or b3;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  (stmt_1,b3) = inlineStatement(stmt,fns);
+  true = b1 or b2 or b3;
       then
-        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source),true);
+  (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source),true);
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source),fns)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        true = b1 or b2;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  true = b1 or b2;
       then
-        (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source),true);
+  (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source),true);
     case(DAE.STMT_ASSERT(e1,e2,e3,source),fns)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        (e3_1,source,b3) = inlineExp(e3,fns,source);
-        true = b1 or b2 or b3;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  (e3_1,source,b3) = inlineExp(e3,fns,source);
+  true = b1 or b2 or b3;
       then
-        (DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source),true);
+  (DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source),true);
     case(DAE.STMT_TERMINATE(e,source),fns)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (DAE.STMT_TERMINATE(e_1,source),true);
+  (DAE.STMT_TERMINATE(e_1,source),true);
     case(DAE.STMT_REINIT(e1,e2,source),fns)
       equation
-        (e1_1,source,b1) = inlineExp(e1,fns,source);
-        (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+  (e1_1,source,b1) = inlineExp(e1,fns,source);
+  (e2_1,source,b2) = inlineExp(e2,fns,source);
+  true = b1 or b2;
       then
-        (DAE.STMT_REINIT(e1_1,e2_1,source),true);
+  (DAE.STMT_REINIT(e1_1,e2_1,source),true);
     case(DAE.STMT_NORETCALL(e,source),fns)
       equation
-        (e_1,source,true) = inlineExp(e,fns,source);
+  (e_1,source,true) = inlineExp(e,fns,source);
       then
-        (DAE.STMT_NORETCALL(e_1,source),true);
+  (DAE.STMT_NORETCALL(e_1,source),true);
     case(DAE.STMT_FAILURE(stmts,source),fns)
       equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
+  (stmts_1,true) = inlineStatements(stmts,fns,{},false);
       then
-        (DAE.STMT_FAILURE(stmts_1,source),true);
+  (DAE.STMT_FAILURE(stmts_1,source),true);
     case(DAE.STMT_TRY(stmts,source),fns)
       equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
+  (stmts_1,true) = inlineStatements(stmts,fns,{},false);
       then
-        (DAE.STMT_TRY(stmts_1,source),true);
+  (DAE.STMT_TRY(stmts_1,source),true);
     case(DAE.STMT_CATCH(stmts,source),fns)
       equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
+  (stmts_1,true) = inlineStatements(stmts,fns,{},false);
       then
-        (DAE.STMT_CATCH(stmts_1,source),true);
+  (DAE.STMT_CATCH(stmts_1,source),true);
     case(stmt,_) then (stmt,false);
   end matchcontinue;
 end inlineStatement;
@@ -1233,17 +1233,17 @@ algorithm
 
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       equation
-        (e_1,source,b1) = inlineExp(e,fns,source);
-        (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
-        (a_else_1,source,b3) = inlineElse(a_else,fns,source);
-        true = b1 or b2 or b3;
+  (e_1,source,b1) = inlineExp(e,fns,source);
+  (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
+  (a_else_1,source,b3) = inlineElse(a_else,fns,source);
+  true = b1 or b2 or b3;
       then
-        (DAE.ELSEIF(e_1,stmts_1,a_else_1),source,true);
+  (DAE.ELSEIF(e_1,stmts_1,a_else_1),source,true);
     case (DAE.ELSE(stmts),fns,source)
       equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
+  (stmts_1,true) = inlineStatements(stmts,fns,{},false);
       then
-        (DAE.ELSE(stmts_1),source,true);
+  (DAE.ELSE(stmts_1),source,true);
     case (a_else,fns,source) then (a_else,source,false);
   end matchcontinue;
 end inlineElse;
@@ -1267,9 +1267,9 @@ algorithm
     case(NONE(),_,_) then (NONE(),inSource,false);
     case(SOME(exp),_,_)
       equation
-        (exp,source,b) = inlineExp(exp,inElementList,inSource);
+  (exp,source,b) = inlineExp(exp,inElementList,inSource);
       then
-        (SOME(exp),source,b);
+  (SOME(exp),source,b);
   end match;
 end inlineExpOpt;
 
@@ -1291,11 +1291,11 @@ algorithm
 
     case (e,fns,source)
       equation
-        ((e_1,(fns,true))) = Expression.traverseExp(e,inlineCall,(fns,false));
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+  ((e_1,(fns,true))) = Expression.traverseExp(e,inlineCall,(fns,false));
+  source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+  (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
-        (e_2,source,true);
+  (e_2,source,true);
     else (inExp,inSource,false);
   end matchcontinue;
 end inlineExp;
@@ -1318,11 +1318,11 @@ algorithm
 
     case (e,fns,source)
       equation
-        ((e_1,(fns,true))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+  ((e_1,(fns,true))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
+  source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+  (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
-        (e_2,source,true);
+  (e_2,source,true);
     else (inExp,inSource,false);
   end matchcontinue;
 end forceInlineExp;
@@ -1362,10 +1362,10 @@ algorithm
     case ({},_,_,_,_) then (listReverse(iAcc),inSource,iInlined);
     case (e::exps,_,_,_,_)
       equation
-        (e,source,b) = inlineExp(e,fns,inSource);
-        (exps,source,b) = inlineExpsWork(exps,fns,source,e::iAcc,b or iInlined);
+  (e,source,b) = inlineExp(e,fns,inSource);
+  (exps,source,b) = inlineExpsWork(exps,fns,source,e::iAcc,b or iInlined);
       then
-        (exps,source,b);
+  (exps,source,b);
   end match;
 end inlineExpsWork;
 
@@ -1382,18 +1382,18 @@ algorithm
       Boolean b;
     case (_, _)
       equation
-        // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
-        true = Config.acceptMetaModelicaGrammar();
+  // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
+  true = Config.acceptMetaModelicaGrammar();
       then true;
     case (_, _)
       equation
-        false = Config.acceptMetaModelicaGrammar();
-        ty1 = Expression.typeof(inExp1);
-        ty2 = Expression.typeof(inExp2);
-        ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
-        b = Types.equivtypes(ty1,ty2);
+  false = Config.acceptMetaModelicaGrammar();
+  ty1 = Expression.typeof(inExp1);
+  ty2 = Expression.typeof(inExp2);
+  ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
+  b = Types.equivtypes(ty1,ty2);
       then
-        b;
+  b;
   end matchcontinue;
 end checkExpsTypeEquiv;
 
@@ -1422,51 +1422,51 @@ algorithm
 
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
-        true = Config.acceptMetaModelicaGrammar();
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
-        true = checkInlineType(inlineType,fns);
-        (fn,_) = getFunctionBody(p,fns);
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
-        argmap = List.threadTuple(crefs,args);
-        false = List.exist(fn,DAEUtil.isProtectedVar);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        newExp = getRhsExp(fn);
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        newExp = Expression.addNoEventToRelationsAndConds(newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
+  true = Config.acceptMetaModelicaGrammar();
+  true = DAEUtil.convertInlineTypeToBool(inlineType);
+  true = checkInlineType(inlineType,fns);
+  (fn,_) = getFunctionBody(p,fns);
+  crefs = List.map(fn,getInputCrefs);
+  crefs = List.select(crefs,removeWilds);
+  argmap = List.threadTuple(crefs,args);
+  false = List.exist(fn,DAEUtil.isProtectedVar);
+  (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+  newExp = getRhsExp(fn);
+  // compare types
+  true = checkExpsTypeEquiv(e1, newExp);
+  // add noEvent to avoid events as usually for functions
+  // MSL 3.2.1 need GenerateEvents to disable this
+  newExp = Expression.addNoEventToRelationsAndConds(newExp);
+  ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+  // for inlinecalls in functions
+  ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
-        ((newExp1,(fns,true)));
+  ((newExp1,(fns,true)));
 
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
-        true = checkInlineType(inlineType,fns);
-        (fn,comment) = getFunctionBody(p,fns);
-        // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line
-        repl = mergeFunctionBody(stmts,repl);
-        newExp = VarTransform.getReplacement(repl,cr);
-        argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
+  false = Config.acceptMetaModelicaGrammar();
+  true = DAEUtil.convertInlineTypeToBool(inlineType);
+  true = checkInlineType(inlineType,fns);
+  (fn,comment) = getFunctionBody(p,fns);
+  // get inputs, body and output
+  (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+  // merge statements to one line
+  repl = mergeFunctionBody(stmts,repl);
+  newExp = VarTransform.getReplacement(repl,cr);
+  argmap = List.threadTuple(crefs,args);
+  (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+  // compare types
+  true = checkExpsTypeEquiv(e1, newExp);
+  // add noEvent to avoid events as usually for functions
+  // MSL 3.2.1 need GenerateEvents to disable this
+  generateEvents = hasGenerateEventsAnnotation(comment);
+  newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+  ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+  // for inlinecalls in functions
+  ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
-        ((newExp1,(fns,true)));
+  ((newExp1,(fns,true)));
 
     else inTuple;
   end matchcontinue;
@@ -1482,7 +1482,7 @@ algorithm
       list<SCode.Annotation> annos;
     case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
       then
-        SCode.hasBooleanNamedAnnotation({anno},"GenerateEvents");
+  SCode.hasBooleanNamedAnnotation({anno},"GenerateEvents");
     else then false;
   end match;
 end hasGenerateEventsAnnotation;
@@ -1522,27 +1522,27 @@ algorithm
     
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = checkInlineType(inlineType,fns);
-        (fn,comment) = getFunctionBody(p,fns);
-        // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line
-        repl = mergeFunctionBody(stmts,repl);
-        newExp = VarTransform.getReplacement(repl,cr);
-        argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // for inlinecalls in functions
-        ((newExp1,(fns1,b))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
+  false = Config.acceptMetaModelicaGrammar();
+  true = checkInlineType(inlineType,fns);
+  (fn,comment) = getFunctionBody(p,fns);
+  // get inputs, body and output
+  (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+  // merge statements to one line
+  repl = mergeFunctionBody(stmts,repl);
+  newExp = VarTransform.getReplacement(repl,cr);
+  argmap = List.threadTuple(crefs,args);
+  (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+  // compare types
+  true = checkExpsTypeEquiv(e1, newExp);
+  // add noEvent to avoid events as usually for functions
+  // MSL 3.2.1 need GenerateEvents to disable this
+  generateEvents = hasGenerateEventsAnnotation(comment);
+  newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+  ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+  // for inlinecalls in functions
+  ((newExp1,(fns1,b))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
-        ((newExp1,(fns,b)));
+  ((newExp1,(fns,b)));
     
     else inTuple;
   end matchcontinue;
@@ -1563,22 +1563,22 @@ algorithm
     case ({},_) then iRepl;
     case (DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp)::stmts,_)
       equation
-        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
-        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+  (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+  repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
       then
-        mergeFunctionBody(stmts,repl);
+  mergeFunctionBody(stmts,repl);
     case (DAE.STMT_ASSIGN_ARR(componentRef = cr, exp = exp)::stmts,_)
       equation
-        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
-        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+  (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+  repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
       then
-        mergeFunctionBody(stmts,repl);
+  mergeFunctionBody(stmts,repl);
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp)::stmts,_)
       equation
-        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
-        repl = addTplAssignToRepl(explst,1,exp,iRepl);
+  (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+  repl = addTplAssignToRepl(explst,1,exp,iRepl);
       then
-        mergeFunctionBody(stmts,repl);
+  mergeFunctionBody(stmts,repl);
   end match;
 end mergeFunctionBody;
 
@@ -1599,10 +1599,10 @@ algorithm
     case ({},_,_,_) then iRepl;
     case (DAE.CREF(componentRef = cr,ty=tp)::rest,_,_,_)
       equation
-        exp = DAE.TSUB(iExp,indx,tp);
-        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+  exp = DAE.TSUB(iExp,indx,tp);
+  repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
       then
-        addTplAssignToRepl(rest,indx+1,iExp,repl);
+  addTplAssignToRepl(rest,indx+1,iExp,repl);
   end match;
 end addTplAssignToRepl;
 
@@ -1628,28 +1628,28 @@ algorithm
     case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
     case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
-         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
+   (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
       then
-        (oInputs,oOutput,oBody,repl);
+  (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_,_)
       equation
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
+  (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
       then
-        (oInputs,oOutput,oBody,repl);
+  (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
       equation
-        false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);
-        repl = addOptBindingReplacements(cr,binding,iRepl);
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
+  false = Expression.isArrayType(tp);
+  false = Expression.isRecordType(tp);
+  repl = addOptBindingReplacements(cr,binding,iRepl);
+  (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
       then
-        (oInputs,oOutput,oBody,repl);
+  (oInputs,oOutput,oBody,repl);
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_,_)
       equation
-        st = listAppend(iBody,st);
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
+  st = listAppend(iBody,st);
+  (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
       then
-        (oInputs,oOutput,oBody,repl);
+  (oInputs,oOutput,oBody,repl);
   end match;
 end getFunctionInputsOutputBody;
 
@@ -1678,8 +1678,8 @@ algorithm
       DAE.Type tp;
     case (DAE.CREF_IDENT(identType=tp),_,_)
       equation
-        false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);
+  false = Expression.isArrayType(tp);
+  false = Expression.isRecordType(tp);
       then VarTransform.addReplacement(iRepl, iCr, iExp);
   end match;
 end addReplacement;
@@ -1725,45 +1725,45 @@ algorithm
       /* All elements of the record have correct type already. No cast needed. */
     case((c,(DAE.CAST(exp=e,ty=DAE.T_COMPLEX(varLst=_))))::res,ht)
       equation
-        (new1,ht1) = extendCrefRecords((c,e)::res,ht);
+  (new1,ht1) = extendCrefRecords((c,e)::res,ht);
       then (new1,ht1);
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.T_COMPLEX(varLst=varLst))))::res,ht)
       equation
-        (res1,ht1) = extendCrefRecords(res,ht);
-        new = List.map2(varLst,extendCrefRecords1,c,cref);
-        (new1,ht2) = extendCrefRecords(new,ht1);
-        res2 = listAppend(new1,res1);
+  (res1,ht1) = extendCrefRecords(res,ht);
+  new = List.map2(varLst,extendCrefRecords1,c,cref);
+  (new1,ht2) = extendCrefRecords(new,ht1);
+  res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
     /* cause of an error somewhere the type of the expression CREF is not equal to the componentreference type
        this case is needed. */
     case((c,e as (DAE.CREF(componentRef = cref)))::res,ht)
       equation
-        DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
-        (res1,ht1) = extendCrefRecords(res,ht);
-        new = List.map2(varLst,extendCrefRecords1,c,cref);
-        (new1,ht2) = extendCrefRecords(new,ht1);
-        res2 = listAppend(new1,res1);
+  DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
+  (res1,ht1) = extendCrefRecords(res,ht);
+  new = List.map2(varLst,extendCrefRecords1,c,cref);
+  (new1,ht2) = extendCrefRecords(new,ht1);
+  res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
     case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst)))))::res,ht)
       equation
-        (res1,ht1) = extendCrefRecords(res,ht);
-        crlst = List.map1(varLst,extendCrefRecords2,c);
-        new = List.threadTuple(crlst,expl);
-        (new1,ht2) = extendCrefRecords(new,ht1);
-        res2 = listAppend(new1,res1);
+  (res1,ht1) = extendCrefRecords(res,ht);
+  crlst = List.map1(varLst,extendCrefRecords2,c);
+  new = List.threadTuple(crlst,expl);
+  (new1,ht2) = extendCrefRecords(new,ht1);
+  res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
     case((c,e)::res,ht)
       equation
-        DAE.T_COMPLEX(varLst=varLst) = Expression.typeof(e);
-        crlst = List.map1(varLst,extendCrefRecords2,c);
-        creftpllst = List.map1(crlst,Util.makeTuple,c);
-        ht1 = List.fold(creftpllst,BaseHashTable.add,ht);
-        ht2 = getCheckCref(crlst,ht1);
-        (res1,ht3) = extendCrefRecords(res,ht2);
+  DAE.T_COMPLEX(varLst=varLst) = Expression.typeof(e);
+  crlst = List.map1(varLst,extendCrefRecords2,c);
+  creftpllst = List.map1(crlst,Util.makeTuple,c);
+  ht1 = List.fold(creftpllst,BaseHashTable.add,ht);
+  ht2 = getCheckCref(crlst,ht1);
+  (res1,ht3) = extendCrefRecords(res,ht2);
       then ((c,e)::res1,ht3);
     case((c,e)::res,ht)
       equation
-        (res1,ht1) = extendCrefRecords(res,ht);
+  (res1,ht1) = extendCrefRecords(res,ht);
       then ((c,e)::res1,ht1);
   end matchcontinue;
 end extendCrefRecords;
@@ -1781,22 +1781,22 @@ algorithm
       list<DAE.Var> varLst;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
       case ({},ht)
-        then ht;
+  then ht;
     case (cr::rest,ht)
       equation
-        DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
-        crlst = List.map1(varLst,extendCrefRecords2,cr);
-        ht1 = getCheckCref(crlst,ht);
-        creftpllst = List.map1(crlst,Util.makeTuple,cr);
-        ht2 = List.fold(creftpllst,BaseHashTable.add,ht1);
-        ht3 = getCheckCref(rest,ht2);
+  DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
+  crlst = List.map1(varLst,extendCrefRecords2,cr);
+  ht1 = getCheckCref(crlst,ht);
+  creftpllst = List.map1(crlst,Util.makeTuple,cr);
+  ht2 = List.fold(creftpllst,BaseHashTable.add,ht1);
+  ht3 = getCheckCref(rest,ht2);
       then
-        ht3;
+  ht3;
     case (cr::rest,ht)
       equation
-        ht1 = getCheckCref(rest,ht);
+  ht1 = getCheckCref(rest,ht);
       then
-        ht1;
+  ht1;
    end matchcontinue;
 end getCheckCref;
 
@@ -1817,15 +1817,15 @@ algorithm
 
     case(DAE.TYPES_VAR(name=name,ty=tp),_,_)
       equation
-        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
-        e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
-        exp = Expression.makeCrefExp(e1,tp);
+  c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
+  e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
+  exp = Expression.makeCrefExp(e1,tp);
       then ((c1,exp));
     case(_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords1 failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords1 failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end extendCrefRecords1;
 
@@ -1844,13 +1844,13 @@ algorithm
 
     case(DAE.TYPES_VAR(name=name,ty=tp),_)
       equation
-        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
+  c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords2 failed");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords2 failed");
       then
-        fail();
+  fail();
   end matchcontinue;
 end extendCrefRecords2;
 
@@ -1869,15 +1869,15 @@ algorithm
       Option<SCode.Comment> comment;
     case(_,(SOME(ftree),_))
       equation
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAEUtil.avlTreeGet(ftree,p);
+  SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAEUtil.avlTreeGet(ftree,p);
       then (body,comment);
     case(_,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inline.getFunctionBody failed for function: " +& Absyn.pathString(p));
-        // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("Inline.getFunctionBody failed for function: " +& Absyn.pathString(p));
+  // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
-        fail();
+  fail();
   end matchcontinue;
 end getFunctionBody;
 
@@ -1893,17 +1893,17 @@ algorithm
       DAE.Exp res;
     case({})
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.getRhsExp failed - cannot inline such a function");
+  Debug.fprintln(Flags.FAILTRACE,"Inline.getRhsExp failed - cannot inline such a function");
       then
-        fail();
+  fail();
     case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _) then res;
     case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=res)})):: _) then res;
     case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=res)})) :: _) then res;
     case(_ :: cdr)
       equation
-        res = getRhsExp(cdr);
+  res = getRhsExp(cdr);
       then
-        res;
+  res;
   end matchcontinue;
 end getRhsExp;
 
@@ -1928,51 +1928,51 @@ algorithm
       Boolean replacedfailed;
     case ((DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
       equation
-        e = getExpFromArgMap(argmap,cref);
-        (e,_) = ExpressionSimplify.simplify(e);
+  e = getExpFromArgMap(argmap,cref);
+  (e,_) = ExpressionSimplify.simplify(e);
       then
-        ((e,(argmap,checkcr,true)));
+  ((e,(argmap,checkcr,true)));
     case ((e as DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
       equation
-        _ = BaseHashTable.get(cref,checkcr);
+  _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));
+  ((e,(argmap,checkcr,false)));
     case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
-        cref = ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
-        path = ComponentReference.crefToPath(cref);
-        expLst = List.map(expLst,Expression.unboxExp);
-        b = Expression.isBuiltinFunctionReference(e);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,inlineType,tc));
-        (e,_) = ExpressionSimplify.simplify(e);
+  cref = ComponentReference.pathToCref(path);
+  (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
+  path = ComponentReference.crefToPath(cref);
+  expLst = List.map(expLst,Expression.unboxExp);
+  b = Expression.isBuiltinFunctionReference(e);
+  e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,inlineType,tc));
+  (e,_) = ExpressionSimplify.simplify(e);
       then
-        ((e,(argmap,checkcr,true)));
+  ((e,(argmap,checkcr,true)));
     case ((e as DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,_,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
-        cref = ComponentReference.pathToCref(path);
-        _ = BaseHashTable.get(cref,checkcr);
+  cref = ComponentReference.pathToCref(path);
+  _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));
-        /* TODO: Use the inlineType of the function reference! */
+  ((e,(argmap,checkcr,false)));
+  /* TODO: Use the inlineType of the function reference! */
     case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
       equation
-        cref = ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
-        path = ComponentReference.crefToPath(cref);
-        expLst = List.map(expLst,Expression.unboxExp);
-        b = Expression.isBuiltinFunctionReference(e);
-        (ty2,inlineType) = functionReferenceType(ty);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,inlineType,tc));
-        e = boxIfUnboxedFunRef(e,ty);
-        (e,_) = ExpressionSimplify.simplify(e);
+  cref = ComponentReference.pathToCref(path);
+  (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
+  path = ComponentReference.crefToPath(cref);
+  expLst = List.map(expLst,Expression.unboxExp);
+  b = Expression.isBuiltinFunctionReference(e);
+  (ty2,inlineType) = functionReferenceType(ty);
+  e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,inlineType,tc));
+  e = boxIfUnboxedFunRef(e,ty);
+  (e,_) = ExpressionSimplify.simplify(e);
       then ((e,(argmap,checkcr,true)));
     case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,_,tc)),(argmap,checkcr,true)))
       equation
-        cref = ComponentReference.pathToCref(path);
-        _ = BaseHashTable.get(cref,checkcr);
+  cref = ComponentReference.pathToCref(path);
+  _ = BaseHashTable.get(cref,checkcr);
       then
-        ((e,(argmap,checkcr,false)));
+  ((e,(argmap,checkcr,false)));
     case((e,(argmap,checkcr,replacedfailed))) then ((e,(argmap,checkcr,replacedfailed)));
   end matchcontinue;
 end replaceArgs;
@@ -1993,7 +1993,7 @@ algorithm
       DAE.Exp exp;
     case (exp,DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(funcResultType=t)))
       equation
-        exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
+  exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
       then exp;
     else iexp;
   end match;
@@ -2031,22 +2031,22 @@ algorithm
       list<DAE.Subscript> subs;
     case({},_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
+  Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
       then
-        fail();
+  fail();
     case((cref,exp) :: cdr,key)
       equation
-        subs = ComponentReference.crefSubs(key);
-        key = ComponentReference.crefStripSubs(key);
-        true = ComponentReference.crefEqual(cref,key);
-        e = Expression.applyExpSubscripts(exp,subs);
+  subs = ComponentReference.crefSubs(key);
+  key = ComponentReference.crefStripSubs(key);
+  true = ComponentReference.crefEqual(cref,key);
+  e = Expression.applyExpSubscripts(exp,subs);
       then
-        e;
+  e;
     case(_ :: cdr,key)
       equation
-        exp = getExpFromArgMap(cdr,key);
+  exp = getExpFromArgMap(cdr,key);
       then
-        exp;
+  exp;
   end matchcontinue;
 end getExpFromArgMap;
 
@@ -2141,29 +2141,29 @@ algorithm
       Functiontuple fns;
     case (DAE.PARTIAL_EQUATION(e),_,fns,_)
       equation
-        ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
-        eq2 = DAE.PARTIAL_EQUATION(e_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
-        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+  ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
+  eq2 = DAE.PARTIAL_EQUATION(e_1);
+  source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+  (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case (DAE.RESIDUAL_EXP(e),_,fns,_)
       equation
-        ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
-        eq2 = DAE.RESIDUAL_EXP(e_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
-        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+  ((e_1,(fns,changed))) = Expression.traverseExp(e,fn,(fns,false));
+  eq2 = DAE.RESIDUAL_EXP(e_1);
+  source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+  (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case (DAE.EQUALITY_EXPS(e1,e2),_,fns,_)
       equation
-        ((e1_1,(fns,changed))) = Expression.traverseExp(e1,fn,(fns,false));
-        ((e2_1,(fns,changed))) = Expression.traverseExp(e2,fn,(fns,changed));
-        eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
-        (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
+  ((e1_1,(fns,changed))) = Expression.traverseExp(e1,fn,(fns,false));
+  ((e2_1,(fns,changed))) = Expression.traverseExp(e2,fn,(fns,changed));
+  eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
+  source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+  (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Inline.inlineEquationExp failed"});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Inline.inlineEquationExp failed"});
       then fail();
   end match;
 end inlineEquationExp;

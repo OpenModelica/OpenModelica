@@ -30,7 +30,7 @@
  */
 
 encapsulated package Graph
-" file:        Graph.mo
+" file:  Graph.mo
   package:     Graph
   description: Contains various graph algorithms.
 
@@ -130,26 +130,26 @@ algorithm
     // append the rest of the start nodes to the result.
     case ((node1, {}) :: rest_start, {}, _, _)
       equation
-        (result, _) = topologicalSort2(rest_start, {}, node1 :: inAccumNodes,
-            inEqualFunc);
+  (result, _) = topologicalSort2(rest_start, {}, node1 :: inAccumNodes,
+      inEqualFunc);
       then
-        (result, {});
+  (result, {});
 
     case ((node1, {}) :: rest_start, rest_rest, _, _)
       equation
-        // Remove the first start node from the graph.
-        rest_rest = List.map2(rest_rest, removeEdge, node1, inEqualFunc);
-        // Fetch any new nodes that has no dependencies.
-        (rest_rest, new_start) =
-          List.splitOnTrue(rest_rest, hasOutgoingEdges);
-        // Append those nodes to the list of start nodes.
-        rest_start = List.appendNoCopy(rest_start, new_start);
-        // Add the first node to the list of sorted nodes and continue with the
-        // rest of the nodes.
-        (result, rest_rest) = topologicalSort2(rest_start,  rest_rest,
-          node1 :: inAccumNodes, inEqualFunc);
+  // Remove the first start node from the graph.
+  rest_rest = List.map2(rest_rest, removeEdge, node1, inEqualFunc);
+  // Fetch any new nodes that has no dependencies.
+  (rest_rest, new_start) =
+    List.splitOnTrue(rest_rest, hasOutgoingEdges);
+  // Append those nodes to the list of start nodes.
+  rest_start = List.appendNoCopy(rest_start, new_start);
+  // Add the first node to the list of sorted nodes and continue with the
+  // rest of the nodes.
+  (result, rest_rest) = topologicalSort2(rest_start,  rest_rest,
+    node1 :: inAccumNodes, inEqualFunc);
       then
-        (result, rest_rest);
+  (result, rest_rest);
 
   end match;
 end topologicalSort2;
@@ -238,19 +238,19 @@ algorithm
     // Try and find a cycle for the first node.
     case (node :: rest_nodes, _, _)
       equation
-        SOME(cycle) = findCycleForNode(node, inGraph, {}, inEqualFunc);
-        rest_nodes = removeNodesFromGraph(cycle, rest_nodes, inEqualFunc);
-        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+  SOME(cycle) = findCycleForNode(node, inGraph, {}, inEqualFunc);
+  rest_nodes = removeNodesFromGraph(cycle, rest_nodes, inEqualFunc);
+  rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
       then
-        cycle :: rest_cycles;
+  cycle :: rest_cycles;
 
     // If previous case failed we couldn't find a cycle for that node, so
     // continue with the rest of the nodes.
     case (_ :: rest_nodes, _, _)
       equation
-        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+  rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
       then
-        rest_cycles;
+  rest_cycles;
 
   end matchcontinue;
 end findCycles2;
@@ -285,25 +285,25 @@ algorithm
 
     case ((node, _), _, _ :: _, _)
       equation
-        // Check if we have already visited this node.
-        true = List.isMemberOnTrue(node, inVisitedNodes, inEqualFunc);
-        // Check if the current node is the start node, in that case we're back
-        // where we started and we have a cycle. Otherwise we just encountered a
-        // cycle in the graph that the start node is not part of.
-        start_node = List.last(inVisitedNodes);
-        is_start_node = inEqualFunc(node, start_node);
-        opt_cycle = Util.if_(is_start_node, SOME(inVisitedNodes), NONE());
+  // Check if we have already visited this node.
+  true = List.isMemberOnTrue(node, inVisitedNodes, inEqualFunc);
+  // Check if the current node is the start node, in that case we're back
+  // where we started and we have a cycle. Otherwise we just encountered a
+  // cycle in the graph that the start node is not part of.
+  start_node = List.last(inVisitedNodes);
+  is_start_node = inEqualFunc(node, start_node);
+  opt_cycle = Util.if_(is_start_node, SOME(inVisitedNodes), NONE());
       then
-        opt_cycle;
+  opt_cycle;
 
     case ((node, edges), _, _, _)
       equation
-        // If we have not visited the current node yet we add it to the list of
-        // visited nodes, and then call findCycleForNode2 on the edges of the node.
-        visited_nodes = node :: inVisitedNodes;
-        cycle = findCycleForNode2(edges, inGraph, visited_nodes, inEqualFunc);
+  // If we have not visited the current node yet we add it to the list of
+  // visited nodes, and then call findCycleForNode2 on the edges of the node.
+  visited_nodes = node :: inVisitedNodes;
+  cycle = findCycleForNode2(edges, inGraph, visited_nodes, inEqualFunc);
       then
-        SOME(cycle);
+  SOME(cycle);
 
   end matchcontinue;
 end findCycleForNode;
@@ -333,19 +333,19 @@ algorithm
     // Try and find a cycle by following this edge.
     case (node :: _, _, _, _)
       equation
-        graph_node = findNodeInGraph(node, inGraph, inEqualFunc);
-        SOME(cycle) = findCycleForNode(graph_node, inGraph, inVisitedNodes,
-          inEqualFunc);
+  graph_node = findNodeInGraph(node, inGraph, inEqualFunc);
+  SOME(cycle) = findCycleForNode(graph_node, inGraph, inVisitedNodes,
+    inEqualFunc);
       then
-        cycle;
+  cycle;
 
     // No cycle found in previous case, check the rest of the edges.
     case (_ :: rest_nodes, _, _, _)
       equation
-        cycle = findCycleForNode2(rest_nodes, inGraph, inVisitedNodes,
-          inEqualFunc);
+  cycle = findCycleForNode2(rest_nodes, inGraph, inVisitedNodes,
+    inEqualFunc);
       then
-        cycle;
+  cycle;
 
   end matchcontinue;
 end findCycleForNode2;
@@ -373,9 +373,9 @@ algorithm
 
     case (_, (graph_node as (node, _)) :: _, _)
       equation
-        true = inEqualFunc(inNode, node);
+  true = inEqualFunc(inNode, node);
       then
-        graph_node;
+  graph_node;
 
     case (_, _ :: rest_graph, _)
       then findNodeInGraph(inNode, rest_graph, inEqualFunc);
@@ -407,9 +407,9 @@ algorithm
 
     case (_, (node, _) :: _, _, inIndex)
       equation
-        true = inEqualFunc(inNode, node);
+  true = inEqualFunc(inNode, node);
       then
-        inIndex;
+  inIndex;
 
     case (_, _ :: rest_graph, _, inIndex)
       then findIndexofNodeInGraph(inNode, rest_graph, inEqualFunc, inIndex+1);
@@ -444,16 +444,16 @@ algorithm
 
     case (_, (graph_node as (node, _)) :: rest_graph, _)
       equation
-        (rest_nodes, SOME(_)) = List.deleteMemberOnTrue(node, inNodes,
-          inEqualFunc);
+  (rest_nodes, SOME(_)) = List.deleteMemberOnTrue(node, inNodes,
+    inEqualFunc);
       then
-        removeNodesFromGraph(rest_nodes, rest_graph, inEqualFunc);
+  removeNodesFromGraph(rest_nodes, rest_graph, inEqualFunc);
 
     case (_, graph_node :: rest_graph, _)
       equation
-        rest_graph = removeNodesFromGraph(inNodes, rest_graph, inEqualFunc);
+  rest_graph = removeNodesFromGraph(inNodes, rest_graph, inEqualFunc);
       then
-        graph_node :: rest_graph;
+  graph_node :: rest_graph;
 
   end matchcontinue;
 end removeNodesFromGraph;
@@ -484,12 +484,12 @@ algorithm
     then intmpGraph;
     case(intmpGraph,(node,nodeList)::restGraph,inEqualFunc)
       equation
-        tmpGraph = List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
-        tmpGraph = transposeGraph(tmpGraph,restGraph,inEqualFunc);
+  tmpGraph = List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
+  tmpGraph = transposeGraph(tmpGraph,restGraph,inEqualFunc);
       then tmpGraph;
-        else
+  else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
       then fail();
   end matchcontinue;
 end transposeGraph;
@@ -559,25 +559,25 @@ algorithm
     then L;
     case((node::M,L),inGraph,inEqualFunc)
       equation
-        L = listAppend(L,{node});
-        //print(" List size 1 " +& intString(listLength(L)) +& "\n");
-        ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
-        //print(" List size 2 " +& intString(listLength(edges)) +& "\n");
-        edges = List.select1(edges, List.notMember, L);
-        //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
-        M = listAppend(M,edges);
-        //print("Start new round! \n");
-        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
+  L = listAppend(L,{node});
+  //print(" List size 1 " +& intString(listLength(L)) +& "\n");
+  ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
+  //print(" List size 2 " +& intString(listLength(edges)) +& "\n");
+  edges = List.select1(edges, List.notMember, L);
+  //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
+  M = listAppend(M,edges);
+  //print("Start new round! \n");
+  reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
     case((node::M,L),inGraph,inEqualFunc)
       equation
-        L = listAppend(L,{node});
-        failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
-        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
+  L = listAppend(L,{node});
+  failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
+  reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
-        else
+  else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
       then fail();
   end matchcontinue;
 end allReachableNodes;
@@ -627,16 +627,16 @@ algorithm
     case ({},_,_,_,_,inColored, _, _) then inColored;
     case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
       equation
-        index = arrayLength(inColored) - listLength(rest);
-        ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
-        forbiddenColor = addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
-        color = arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
-        colored = arrayUpdate(inColored, index, color);
-        colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
+  index = arrayLength(inColored) - listLength(rest);
+  ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
+  forbiddenColor = addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+  color = arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
+  colored = arrayUpdate(inColored, index, color);
+  colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
     then colored;
       else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."});
       then fail();
   end matchcontinue;
 end partialDistance2color;
@@ -678,16 +678,16 @@ algorithm
     case (inNode, {}, _, inForbiddenColor, _, _, _) then inForbiddenColor;
     case (inNode, node::rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc)
       equation
-        ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
-        indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
-        indexes = List.select1(indexes, arrayElemetGtZero, inColored);
-        indexesColor = List.map1(indexes, getArrayElem, inColored);
-        List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
-        forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+  ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
+  indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
+  indexes = List.select1(indexes, arrayElemetGtZero, inColored);
+  indexesColor = List.map1(indexes, getArrayElem, inColored);
+  List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
+  forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
       then fail();
   end matchcontinue;
 end addForbiddenColors;
@@ -729,7 +729,7 @@ algorithm
     then ();
       else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
       then fail();
   end matchcontinue;
 end arrayUpdateListAppend;
@@ -769,23 +769,23 @@ algorithm
     Integer index;
     case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
       equation
-        NONE() = arrayGet(inForbiddenColor, inIndex);
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+  NONE() = arrayGet(inForbiddenColor, inIndex);
+  //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
     case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
       equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
-        //inPrintFunc(nodes,"FobiddenColors:" );
-        failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+  SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+  //inPrintFunc(nodes,"FobiddenColors:" );
+  failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
+  //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
     case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
       equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
-        //inPrintFunc(nodes,"FobiddenColors:" );
-        _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
-        //print("Not found color on index : " +& intString(inIndex) +& "\n");
-        index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
+  SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+  //inPrintFunc(nodes,"FobiddenColors:" );
+  _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
+  //print("Not found color on index : " +& intString(inIndex) +& "\n");
+  index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
       then index;
   end matchcontinue;
 end arrayFindMinColorIndex;
@@ -840,12 +840,12 @@ algorithm
      case({}) then ();
      case((node,edges)::restGraph)
        equation
-         print("Node : " +& intString(node) +& " Edges: ");
-         strEdges = List.map(edges, intString);
-         strEdges = List.map1(strEdges, stringAppend, " ");
-         List.map_0(strEdges, print);
-         print("\n");
-         printGraphInt(restGraph);
+   print("Node : " +& intString(node) +& " Edges: ");
+   strEdges = List.map(edges, intString);
+   strEdges = List.map1(strEdges, stringAppend, " ");
+   List.map_0(strEdges, print);
+   print("\n");
+   printGraphInt(restGraph);
       then ();
   end match;
 end printGraphInt;
@@ -865,11 +865,11 @@ algorithm
        then ();
      case (inListNodes, inName)
        equation
-         print(inName +& " : ");
-         strNodes = List.map(inListNodes, intString);
-         strNodes = List.map1(strNodes, stringAppend, " ");
-         List.map_0(strNodes, print);
-         print("\n");
+   print(inName +& " : ");
+   strNodes = List.map(inListNodes, intString);
+   strNodes = List.map1(strNodes, stringAppend, " ");
+   List.map_0(strNodes, print);
+   print("\n");
       then ();
   end match;
 end printNodesInt;
@@ -893,22 +893,22 @@ algorithm
     then L;
     case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
       equation
-        L = List.union(L,{node});
-        false = intGe(node,inMaxGraphNode);
-        ((_,edges)) = arrayGet(inGraph, node);
-        edges = List.filter1OnTrue(edges, List.notMember, L);
-        M = List.union(M,edges);
-        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+  L = List.union(L,{node});
+  false = intGe(node,inMaxGraphNode);
+  ((_,edges)) = arrayGet(inGraph, node);
+  edges = List.filter1OnTrue(edges, List.notMember, L);
+  M = List.union(M,edges);
+  reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
     case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
       equation
-        L = List.union(L,{node});
-        true = intGe(node,inMaxGraphNode);
-        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+  L = List.union(L,{node});
+  true = intGe(node,inMaxGraphNode);
+  reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
-        else
+  else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
       then fail();
   end matchcontinue;
 end allReachableNodesInt;
@@ -942,14 +942,14 @@ algorithm
     case ({},_,_,_,_) then inColored;
     case (((node,nodes))::restGraph, _, _, _, _)
       equation
-        forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
-        color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
-        colored = arrayUpdate(inColored, node, color);
+  forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
+  color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
+  colored = arrayUpdate(inColored, node, color);
     then
       partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."});
       then fail();
   end matchcontinue;
 end partialDistance2colorInt;
@@ -970,18 +970,18 @@ algorithm
     case (_, {}, _,_, _) then inForbiddenColor;
     case (_, node::rest, _, _, _)
       equation
-        ((_,indexes)) = arrayGet(inGraph,node);
-        updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode);
+  ((_,indexes)) = arrayGet(inGraph,node);
+  updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode);
       then
-        addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
+  addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
 /*    case (_, node::rest, _, _, _)
       equation
-        print("node : " +& intString(node) +& "\n");
-        print("inGraph : " +& intString(arrayLength(inGraph)) +& "\n");
+  print("node : " +& intString(node) +& "\n");
+  print("inGraph : " +& intString(arrayLength(inGraph)) +& "\n");
       then fail();
 */    else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
       then fail();
   end matchcontinue;
 end addForbiddenColorsInt;
@@ -1013,8 +1013,8 @@ algorithm
     then ();
 /*    case (index::rest, _, _, _)
       equation
-        print("index : " +& intString(index) +& "\n");
-        print("inColored : " +& intString(arrayLength(inColored)) +& "\n");
+  print("index : " +& intString(index) +& "\n");
+  print("inColored : " +& intString(arrayLength(inColored)) +& "\n");
       then fail();
 */  end matchcontinue;
 end updateForbiddenColorArrayInt;
@@ -1030,24 +1030,24 @@ algorithm
     list<Integer> nodes;
     case (_, _, _)
       equation
-        NONE() = arrayGet(inForbiddenColor, inIndex);
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+  NONE() = arrayGet(inForbiddenColor, inIndex);
+  //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
     case (_, _, _)
       equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
-        //inPrintFunc(nodes,"FobiddenColors:" );
-        failure(_ = List.getMemberOnTrue(inNode, nodes, intEq));
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+  SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+  //inPrintFunc(nodes,"FobiddenColors:" );
+  failure(_ = List.getMemberOnTrue(inNode, nodes, intEq));
+  //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
     case (_, _, _)
       equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
-        //inPrintFunc(nodes,"FobiddenColors:" );
-        _ = List.getMemberOnTrue(inNode, nodes, intEq);
-        //print("Not found color on index : " +& intString(inIndex) +& "\n");
+  SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+  //inPrintFunc(nodes,"FobiddenColors:" );
+  _ = List.getMemberOnTrue(inNode, nodes, intEq);
+  //print("Not found color on index : " +& intString(inIndex) +& "\n");
       then
-        arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
+  arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
   end matchcontinue;
 end arrayFindMinColorIndexInt;
 
@@ -1085,15 +1085,15 @@ algorithm
 
     case ((node, _), _, _)
       equation
-        false = inCondFunc(node);
+  false = inCondFunc(node);
       then
-        inAccumGraph;
+  inAccumGraph;
 
     case ((node, edges), _, _)
       equation
-        edges = List.filterOnTrue(edges, inCondFunc);
+  edges = List.filterOnTrue(edges, inCondFunc);
       then
-        (node, edges) :: inAccumGraph;
+  (node, edges) :: inAccumGraph;
 
   end matchcontinue;
 end filterGraph2;

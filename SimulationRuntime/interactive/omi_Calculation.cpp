@@ -55,9 +55,9 @@ static int calculate(void)
   //TODO  20100217 pv catch correct stepSize value for calculation loop
   if (debugCalculation) {
     cout << "Calculation:\tFunct.: calculate\tData 1: start: " << start
-        << " stop: " << stop << " stepSize: " << stepSize
-        << " outputSteps: " << outputSteps << " method: " << method
-        << " outputFormat: " << outputFormat;
+  << " stop: " << stop << " stepSize: " << stepSize
+  << " outputSteps: " << outputSteps << " method: " << method
+  << " outputFormat: " << outputFormat;
     fflush( stdout);
   }
 
@@ -133,9 +133,9 @@ static void createSSDEntry(string method)
   {
     //printSSDCalculation(nStates, nAlgebraic, nParameters);
     cout
-        << "Calculation:\tFunct.: createSSDEntry\tData: p_SimStepData_from_Calculation->forTimeStep: "
-        << p_SimStepData_from_Calculation->forTimeStep
-        << " --------------------" << endl;
+  << "Calculation:\tFunct.: createSSDEntry\tData: p_SimStepData_from_Calculation->forTimeStep: "
+  << p_SimStepData_from_Calculation->forTimeStep
+  << " --------------------" << endl;
     fflush( stdout);
   }
 }
@@ -162,39 +162,39 @@ static void printSSDCalculation(long nStates, long nAlgebraic, long nParameters)
   for (int t = 0; t < nParameters; t++)
   {
     cout << t << ": "
-        << p_simDataNames_SimulationResult->parametersNames[t] << ": "
-        << p_SimStepData_from_Calculation->parameters[t] << endl;
+  << p_simDataNames_SimulationResult->parametersNames[t] << ": "
+  << p_SimStepData_from_Calculation->parameters[t] << endl;
     fflush(stdout);
   }
 
   if (nAlgebraic > 0) {
     cout
-        << "Calculation:\tFunct.: printSSDCalculation\tMessage: Algebraics---"
-        << endl;
+  << "Calculation:\tFunct.: printSSDCalculation\tMessage: Algebraics---"
+  << endl;
     fflush(stdout);
     for (int t = 0; t < nAlgebraic; t++) {
       cout << t << ": "
-          << p_simDataNames_SimulationResult->algebraicsNames[t]
-          << ": " << p_SimStepData_from_Calculation->algebraics[t]
-          << endl;
+    << p_simDataNames_SimulationResult->algebraicsNames[t]
+    << ": " << p_SimStepData_from_Calculation->algebraics[t]
+    << endl;
       fflush(stdout);
     }
   }
 
   if (nStates > 0) {
     cout << "Calculation:\tFunct.: printSSDCalculation\tMessage: States---"
-        << endl;
+  << endl;
     fflush(stdout);
     for (int t = 0; t < nStates; t++) {
       cout << t << ": "
-          << p_simDataNames_SimulationResult->statesNames[t] << ": "
-          << p_SimStepData_from_Calculation->states[t] << endl;
+    << p_simDataNames_SimulationResult->statesNames[t] << ": "
+    << p_SimStepData_from_Calculation->states[t] << endl;
       fflush(stdout);
       cout << t << ": "
-          << p_simDataNames_SimulationResult->stateDerivativesNames[t]
-          << ": "
-          << p_SimStepData_from_Calculation->statesDerivatives[t]
-          << endl;
+    << p_simDataNames_SimulationResult->stateDerivativesNames[t]
+    << ": "
+    << p_SimStepData_from_Calculation->statesDerivatives[t]
+    << endl;
       fflush(stdout);
     }
   }

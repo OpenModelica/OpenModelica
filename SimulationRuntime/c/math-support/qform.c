@@ -43,17 +43,17 @@
 /*     where */
 
 /*       m is a positive integer input variable set to the number */
-/*         of rows of a and the order of q. */
+/*   of rows of a and the order of q. */
 
 /*       n is a positive integer input variable set to the number */
-/*         of columns of a. */
+/*   of columns of a. */
 
 /*       q is an m by m array. on input the full lower trapezoid in */
-/*         the first min(m,n) columns of q contains the factored form. */
-/*         on output q has been accumulated into a square matrix. */
+/*   the first min(m,n) columns of q contains the factored form. */
+/*   on output q has been accumulated into a square matrix. */
 
 /*       ldq is a positive integer input variable not less than m */
-/*         which specifies the leading dimension of the array q. */
+/*   which specifies the leading dimension of the array q. */
 
 /*       wa is a work array of length m. */
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package ExpressionSolve
-" file:        ExpressionSolve.mo
+" file:  ExpressionSolve.mo
   package:     ExpressionSolve
   description: ExpressionSolve
 
@@ -101,70 +101,70 @@ algorithm
 /*
     case(_,_,_,_) // FOR DEBBUGING...
       equation
-        print("Try to solve: rhs: " +&
-          ExpressionDump.dumpExpStr(inExp1,0) +& " lhs: " +&
-          ExpressionDump.dumpExpStr(inExp2,0) +& " with respect to: " +&
-          ExpressionDump.printExpStr(inExp3) +& "\n");
+  print("Try to solve: rhs: " +&
+    ExpressionDump.dumpExpStr(inExp1,0) +& " lhs: " +&
+    ExpressionDump.dumpExpStr(inExp2,0) +& " with respect to: " +&
+    ExpressionDump.printExpStr(inExp3) +& "\n");
       then
-        fail();
+  fail();
 */
     // try simple cases
     case (_,_,_,_)
       equation
-        (res,asserts) = solveSimple(inExp1,inExp2,inExp3);
-        (res,_) = ExpressionSimplify.simplify1(res);
+  (res,asserts) = solveSimple(inExp1,inExp2,inExp3);
+  (res,_) = ExpressionSimplify.simplify1(res);
       then
-        (res,asserts);
+  (res,asserts);
 
     // solving linear equation system using newton iteration ( converges directly )
     case (_,_,DAE.CREF(componentRef = _),_)
       equation
-        (res,asserts) = solve2(inExp1, inExp2, inExp3, linearExps);
-        (res,_) = ExpressionSimplify.simplify1(res);
+  (res,asserts) = solve2(inExp1, inExp2, inExp3, linearExps);
+  (res,_) = ExpressionSimplify.simplify1(res);
       then
-        (res,asserts);
+  (res,asserts);
     case (_,_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_)
       equation
-        cr1 = ComponentReference.crefPrefixDer(cr);
-        crexp = Expression.crefExp(cr1);
-        ((lhs,_)) = Expression.replaceExp(inExp1, inExp3, crexp);
-        ((rhs,_)) = Expression.replaceExp(inExp2, inExp3, crexp);
-        (res,asserts) = solve2(lhs, rhs, crexp, linearExps);
-        (res,_) = ExpressionSimplify.simplify1(res);
+  cr1 = ComponentReference.crefPrefixDer(cr);
+  crexp = Expression.crefExp(cr1);
+  ((lhs,_)) = Expression.replaceExp(inExp1, inExp3, crexp);
+  ((rhs,_)) = Expression.replaceExp(inExp2, inExp3, crexp);
+  (res,asserts) = solve2(lhs, rhs, crexp, linearExps);
+  (res,_) = ExpressionSimplify.simplify1(res);
       then
-        (res,asserts);
+  (res,asserts);
 
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
-        (lhs,asserts) = solve_work(inExp1,e2,inExp3,linearExps);
-        (rhs,asserts1) = solve_work(inExp1,e3,inExp3,linearExps);
-        (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
-        asserts2 = listAppend(asserts,asserts1);
+  (lhs,asserts) = solve_work(inExp1,e2,inExp3,linearExps);
+  (rhs,asserts1) = solve_work(inExp1,e3,inExp3,linearExps);
+  (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
+  asserts2 = listAppend(asserts,asserts1);
       then
-        (res,asserts2);
+  (res,asserts2);
 
     case (DAE.IFEXP(e1,e2,e3),_,_,_)
       equation
-        (lhs,asserts) = solve_work(e2,inExp2,inExp3,linearExps);
-        (rhs,asserts1) = solve_work(e3,inExp2,inExp3,linearExps);
-        (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
-        asserts2 = listAppend(asserts,asserts1);
+  (lhs,asserts) = solve_work(e2,inExp2,inExp3,linearExps);
+  (rhs,asserts1) = solve_work(e3,inExp2,inExp3,linearExps);
+  (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
+  asserts2 = listAppend(asserts,asserts1);
       then
-        (res,asserts2);
+  (res,asserts2);
 /*
     case(_,_,_,_)
       equation
-        print("solve " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& " for " +& ExpressionDump.printExpStr(inExp3) +& " failed\n");
+  print("solve " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& " for " +& ExpressionDump.printExpStr(inExp3) +& " failed\n");
       then
-        fail();
+  fail();
 */
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
-        //print("solve ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
-        //print(" w.r.t ");print(ExpressionDump.printExpStr(inExp3));print(" failed\n");
+  Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
+  //print("solve ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
+  //print(" w.r.t ");print(ExpressionDump.printExpStr(inExp3));print(" failed\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end solve_work;
 
@@ -190,128 +190,128 @@ algorithm
     // special case for inital system when already solved, cr1 = $_start(...)
     case (DAE.CREF(componentRef = cr1),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
+  true = ComponentReference.crefEqual(cr, cr1);
       then
-        (inExp2,{});
+  (inExp2,{});
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
+  true = ComponentReference.crefEqual(cr, cr1);
       then
-        (inExp2,{});
+  (inExp2,{});
 
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasCrefNoPreorDer(inExp2, cr);
+  true = ComponentReference.crefEqual(cr, cr1);
+  false = Expression.expHasCrefNoPreorDer(inExp2, cr);
       then
-        (inExp2,{});
+  (inExp2,{});
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasDerCref(inExp2, cr);
+  true = ComponentReference.crefEqual(cr, cr1);
+  false = Expression.expHasDerCref(inExp2, cr);
       then
-        (inExp2,{});
+  (inExp2,{});
 
     // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
     case (_,DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasCrefNoPreorDer(inExp1, cr);
+  true = ComponentReference.crefEqual(cr, cr1);
+  false = Expression.expHasCrefNoPreorDer(inExp1, cr);
       then
-        (inExp1,{});
+  (inExp1,{});
     case (_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasDerCref(inExp2, cr);
+  true = ComponentReference.crefEqual(cr, cr1);
+  false = Expression.expHasDerCref(inExp2, cr);
       then
-        (inExp1,{});
+  (inExp1,{});
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});
+  (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});
+  (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp2,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasDerCref(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});
+  (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp2,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasDerCref(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});
+  (Expression.negate(inExp2),{});
 
     // exp = -cr
     case (_,DAE.LUNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp1,cr);
       then
-        (Expression.negate(inExp1),{});
+  (Expression.negate(inExp1),{});
     case (_,DAE.LUNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp1,cr);
       then
-        (Expression.negate(inExp1),{});
+  (Expression.negate(inExp1),{});
     case (_,DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp1,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasDerCref(inExp1,cr);
       then
-        (Expression.negate(inExp1),{});
+  (Expression.negate(inExp1),{});
     case (_,DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp1,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasDerCref(inExp1,cr);
       then
-        (Expression.negate(inExp1),{});
+  (Expression.negate(inExp1),{});
 
     // !cr = exp
     case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
-        (Expression.negate(inExp2),{});
+  (Expression.negate(inExp2),{});
     // exp = !cr
     case (_,DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
       equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
+  true = ComponentReference.crefEqual(cr1,cr);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp1,cr);
       then
-        (Expression.negate(inExp1),{});
+  (Expression.negate(inExp1),{});
 
     // Integer(enumcr) = ...
     case (DAE.CALL(path = Absyn.IDENT(name = "Integer"),expLst={DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr,ty=tp))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
-        asserts = generateAssertType(tp,cr,inExp3,{});
+  true = ComponentReference.crefEqual(cr, cr1);
+  // cr not in e2
+  false = Expression.expHasCrefNoPreorDer(inExp2,cr);
+  asserts = generateAssertType(tp,cr,inExp3,{});
       then
-        (DAE.CAST(tp,inExp2),asserts);
+  (DAE.CAST(tp,inExp2),asserts);
   end matchcontinue;
 end solveSimple;
 
@@ -339,124 +339,124 @@ algorithm
      // cr = (e1(0)-e2(0))/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        false = hasOnlyFactors(inExp1,inExp2);
-        e = Expression.makeDiff(inExp1,inExp2);
-        dere = Derive.differentiateExp(e, cr, linearExps, NONE());
-        (dere,_) = ExpressionSimplify.simplify(dere);
-        false = Expression.isZero(dere);
-        false = Expression.expHasCrefNoPreorDer(dere, cr);
-        tp = Expression.typeof(inExp3);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        ((zeroe,_)) = Expression.replaceExp(e, inExp3, z);
-        (zeroe,_) = ExpressionSimplify.simplify(zeroe);
-        rhs = Expression.negate(Expression.makeDiv(zeroe,dere));
+  false = hasOnlyFactors(inExp1,inExp2);
+  e = Expression.makeDiff(inExp1,inExp2);
+  dere = Derive.differentiateExp(e, cr, linearExps, NONE());
+  (dere,_) = ExpressionSimplify.simplify(dere);
+  false = Expression.isZero(dere);
+  false = Expression.expHasCrefNoPreorDer(dere, cr);
+  tp = Expression.typeof(inExp3);
+  (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+  ((zeroe,_)) = Expression.replaceExp(e, inExp3, z);
+  (zeroe,_) = ExpressionSimplify.simplify(zeroe);
+  rhs = Expression.negate(Expression.makeDiv(zeroe,dere));
       then
-        (rhs,{});
+  (rhs,{});
 
       // a*(1/b)*c*...*n = rhs
     case(_,_,DAE.CREF(componentRef = cr),_)
       equation
-        ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp1),isInverseCref,cr);
-        e = Expression.inverseFactors(inExp2);
-        rhs = Expression.makeProductLst(e::factors);
-        false = Expression.expHasCrefNoPreorDer(rhs, cr);
+  ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp1),isInverseCref,cr);
+  e = Expression.inverseFactors(inExp2);
+  rhs = Expression.makeProductLst(e::factors);
+  false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
 
       // lhs = a*(1/b)*c*...*n
     case(_,_,DAE.CREF(componentRef = cr),_)
       equation
-        ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp2),isInverseCref,cr);
-        e = Expression.inverseFactors(inExp1);
-        rhs = Expression.makeProductLst(e::factors);
-        false = Expression.expHasCrefNoPreorDer(rhs, cr);
+  ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp2),isInverseCref,cr);
+  e = Expression.inverseFactors(inExp1);
+  rhs = Expression.makeProductLst(e::factors);
+  false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
 
     // 0 = a*(b-c)  solve for b
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        true = Expression.isZero(inExp1);
-        (e,a) = solve3(inExp2,inExp3);
-        tp = Expression.typeof(e);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        (rhs,asserts) = solve(e,z,inExp3);
-        asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
+  true = Expression.isZero(inExp1);
+  (e,a) = solve3(inExp2,inExp3);
+  tp = Expression.typeof(e);
+  (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+  (rhs,asserts) = solve(e,z,inExp3);
+  asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
-        (rhs,asserts);
+  (rhs,asserts);
 
     // swapped args: a*(b-c) = 0  solve for b
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        true = Expression.isZero(inExp2);
-        (e,a) = solve3(inExp1,inExp3);
-        tp = Expression.typeof(e);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        (rhs,asserts) = solve(e,z,inExp3);
-        asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
+  true = Expression.isZero(inExp2);
+  (e,a) = solve3(inExp1,inExp3);
+  tp = Expression.typeof(e);
+  (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+  (rhs,asserts) = solve(e,z,inExp3);
+  asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
-        (rhs,asserts);
+  (rhs,asserts);
 
     // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
     // does not work because not all have pre in code generation
 /*    case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        e = Expression.makeDiff(inExp1,inExp2);
-        ((e,(_,false,SOME(a)))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
-        DAE.BINARY(operator=DAE.POW(ty=tp1),exp2 = a) = a;
-        // check if a is even number integer
-        r = Expression.expReal(a);
-        i = realInt(r);
-        true = realEq(intReal(i),r);
-        true = intEq(intMod(i,2),0);
-        tp = Expression.typeof(e);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        (rhs,asserts) = solve(e,z,inExp3);
-        a = Expression.expDiv(DAE.RCONST(1.0),a);
-        rhs = DAE.BINARY(rhs,DAE.POW(tp1),a);
-        tp = Expression.typeof(inExp3);
-        dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
-        dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
-        dere = DAE.IFEXP(DAE.RELATION(dere,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),dere);
-        rhs = Expression.expMul(dere,rhs);
+  e = Expression.makeDiff(inExp1,inExp2);
+  ((e,(_,false,SOME(a)))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
+  DAE.BINARY(operator=DAE.POW(ty=tp1),exp2 = a) = a;
+  // check if a is even number integer
+  r = Expression.expReal(a);
+  i = realInt(r);
+  true = realEq(intReal(i),r);
+  true = intEq(intMod(i,2),0);
+  tp = Expression.typeof(e);
+  (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+  (rhs,asserts) = solve(e,z,inExp3);
+  a = Expression.expDiv(DAE.RCONST(1.0),a);
+  rhs = DAE.BINARY(rhs,DAE.POW(tp1),a);
+  tp = Expression.typeof(inExp3);
+  dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
+  dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
+  dere = DAE.IFEXP(DAE.RELATION(dere,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),dere);
+  rhs = Expression.expMul(dere,rhs);
       then
-        (rhs,asserts);
+  (rhs,asserts);
 *//*
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        e = Expression.makeDiff(inExp1,inExp2);
-        dere = Derive.differentiateExp(e, cr, linExp, NONE());
-        (dere,_) = ExpressionSimplify.simplify(dere);
-        true = Expression.expContains(dere, inExp3);
-        print("solve2 failed: Not linear: ");
-        print(ExpressionDump.printExpStr(e1));
-        print(" = ");
-        print(ExpressionDump.printExpStr(e2));
-        print("\nsolving for: ");
-        print(ExpressionDump.printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(ExpressionDump.printExpStr(lhsder));
-        print("\n");
+  e = Expression.makeDiff(inExp1,inExp2);
+  dere = Derive.differentiateExp(e, cr, linExp, NONE());
+  (dere,_) = ExpressionSimplify.simplify(dere);
+  true = Expression.expContains(dere, inExp3);
+  print("solve2 failed: Not linear: ");
+  print(ExpressionDump.printExpStr(e1));
+  print(" = ");
+  print(ExpressionDump.printExpStr(e2));
+  print("\nsolving for: ");
+  print(ExpressionDump.printExpStr(crexp));
+  print("\n");
+  print("derivative: ");
+  print(ExpressionDump.printExpStr(lhsder));
+  print("\n");
       then
-        fail();
+  fail();
 */
     /*
     case (_,_,DAE.CREF(componentRef = cr), _)
       equation
-        e = Expression.makeDiff(inExp1,inExp2);
-        dere = Derive.differentiateExp(e, cr, linExp, NONE());
-        (dere,_) = ExpressionSimplify.simplify(dere);
-        print("solve2 failed: ");
-        print(ExpressionDump.printExpStr(e1));
-        print(" = ");
-        print(ExpressionDump.printExpStr(e2));
-        print("\nsolving for: ");
-        print(ExpressionDump.printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(ExpressionDump.printExpStr(lhsder_1));
-        print("\n");
+  e = Expression.makeDiff(inExp1,inExp2);
+  dere = Derive.differentiateExp(e, cr, linExp, NONE());
+  (dere,_) = ExpressionSimplify.simplify(dere);
+  print("solve2 failed: ");
+  print(ExpressionDump.printExpStr(e1));
+  print(" = ");
+  print(ExpressionDump.printExpStr(e2));
+  print("\nsolving for: ");
+  print(ExpressionDump.printExpStr(crexp));
+  print("\n");
+  print("derivative: ");
+  print(ExpressionDump.printExpStr(lhsder_1));
+  print("\n");
       then
-        fail();
+  fail();
      */
   end matchcontinue;
 end solve2;
@@ -476,22 +476,22 @@ algorithm
 
     case ((e as DAE.BINARY(exp1 = e1 as DAE.CREF(componentRef = cr1),operator = DAE.POW(_),exp2 = e2), (cr,false,NONE())))
       equation
-        true = ComponentReference.crefPrefixOf(cr1,cr);
-        false = Expression.expHasCrefNoPreorDer(e2, cr);
+  true = ComponentReference.crefPrefixOf(cr1,cr);
+  false = Expression.expHasCrefNoPreorDer(e2, cr);
       then
-        ((e1,false,(cr,false,SOME(e))));
+  ((e1,false,(cr,false,SOME(e))));
 
     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
       equation
-        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+  b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
-        ((e,not b,(cr,b,oe)));
+  ((e,not b,(cr,b,oe)));
 
     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
       equation
-        b = ComponentReference.crefPrefixOf(cr1,cr);
+  b = ComponentReference.crefPrefixOf(cr1,cr);
       then
-        ((e,not b,(cr,b,oe)));
+  ((e,not b,(cr,b,oe)));
 
     case (((e,(cr,b,oe)))) then ((e,not b,(cr,b,oe)));
 
@@ -513,20 +513,20 @@ algorithm
       String estr,se1,se2,sa;
     case (_,_,_,_,_)
       equation
-        // zero check already done
-        true = Expression.isConst(a);
+  // zero check already done
+  true = Expression.isConst(a);
       then
-        inAsserts;
+  inAsserts;
     else
       equation
-        tp = Expression.typeof(a);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        se1 = ExpressionDump.printExpStr(inExp2);
-        se2 = ExpressionDump.printExpStr(inExp1);
-        sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
+  tp = Expression.typeof(a);
+  (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+  se1 = ExpressionDump.printExpStr(inExp2);
+  se2 = ExpressionDump.printExpStr(inExp1);
+  sa = ExpressionDump.printExpStr(a);
+  estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
+  DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
   end matchcontinue;
 end generateAssertZero;
 
@@ -546,23 +546,23 @@ algorithm
       String s1,sn,se,estr,crstr;
     case (DAE.T_ENUMERATION(path=path,names=names),_,_,_)
       equation
-        p1 = Absyn.suffixPath(path,listGet(names,1));
-        e1 = DAE.ENUM_LITERAL(p1,1);
-        n = listLength(names);
-        pn = Absyn.suffixPath(path,listGet(names,n));
-        en = DAE.ENUM_LITERAL(p1,n);
-        s1 = Absyn.pathString(p1);
-        sn = Absyn.pathString(pn);
-        se = ExpressionDump.printExpStr(iExp);
-        crstr = ComponentReference.printComponentRefStr(cr);
-        estr = "Expression for " +& crstr +& " out of min(" +& s1 +& ")/max(" +& sn +& ") = ";
-        // iExp >= e1 and iExp <= en
-        e = DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
-                                     DAE.RELATION(iExp,DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),en,-1,NONE()));
-        es = Expression.makeBuiltinCall("String", {iExp,DAE.SCONST("d")}, DAE.T_STRING_DEFAULT);
-        es = DAE.BINARY(DAE.SCONST(estr),DAE.ADD(DAE.T_STRING_DEFAULT),es);
+  p1 = Absyn.suffixPath(path,listGet(names,1));
+  e1 = DAE.ENUM_LITERAL(p1,1);
+  n = listLength(names);
+  pn = Absyn.suffixPath(path,listGet(names,n));
+  en = DAE.ENUM_LITERAL(p1,n);
+  s1 = Absyn.pathString(p1);
+  sn = Absyn.pathString(pn);
+  se = ExpressionDump.printExpStr(iExp);
+  crstr = ComponentReference.printComponentRefStr(cr);
+  estr = "Expression for " +& crstr +& " out of min(" +& s1 +& ")/max(" +& sn +& ") = ";
+  // iExp >= e1 and iExp <= en
+  e = DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
+                               DAE.RELATION(iExp,DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),en,-1,NONE()));
+  es = Expression.makeBuiltinCall("String", {iExp,DAE.SCONST("d")}, DAE.T_STRING_DEFAULT);
+  es = DAE.BINARY(DAE.SCONST(estr),DAE.ADD(DAE.T_STRING_DEFAULT),es);
       then
-        DAE.STMT_ASSERT(e,es,DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
+  DAE.STMT_ASSERT(e,es,DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
     else then inAsserts;
   end match;
 end generateAssertType;
@@ -585,19 +585,19 @@ algorithm
 
     case (DAE.BINARY(e1,op,e2),DAE.CREF(componentRef = cr))
       equation
-        true = solve4(op);
-        false = Expression.isZero(e1);
-        false = Expression.expHasCrefNoPreorDer(e1, cr);
+  true = solve4(op);
+  false = Expression.isZero(e1);
+  false = Expression.expHasCrefNoPreorDer(e1, cr);
       then
-        (e2,e1);
+  (e2,e1);
     // swapped arguments
     case (DAE.BINARY(e1,op,e2),DAE.CREF(componentRef = cr))
       equation
-        true = solve4(op);
-        false = Expression.isZero(e2);
-        false = Expression.expHasCrefNoPreorDer(e2, cr);
+  true = solve4(op);
+  false = Expression.isZero(e2);
+  false = Expression.expHasCrefNoPreorDer(e2, cr);
       then
-        (e1,e2);
+  (e1,e2);
   end matchcontinue;
 end solve3;
 
@@ -627,22 +627,22 @@ algorithm
     // try normal
     case(_,_)
       equation
-        true = Expression.isZero(e1);
-        // More than two factors
-        _::_::_ = Expression.factors(e2);
-        //.. and more than two crefs
-        _::_::_ = Expression.extractCrefsFromExp(e2);
+  true = Expression.isZero(e1);
+  // More than two factors
+  _::_::_ = Expression.factors(e2);
+  //.. and more than two crefs
+  _::_::_ = Expression.extractCrefsFromExp(e2);
       then
-        true;
+  true;
 
     // swapped args
     case(_,_)
       equation
-        true = Expression.isZero(e1);
-        _::_::_ = Expression.factors(e2);
-        _::_::_ = Expression.extractCrefsFromExp(e2);
+  true = Expression.isZero(e1);
+  _::_::_ = Expression.factors(e2);
+  _::_::_ = Expression.extractCrefsFromExp(e2);
       then
-        true;
+  true;
 
     else then false;
 
@@ -659,24 +659,24 @@ algorithm
 
     case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),_)
       equation
-        true = Expression.isConstOne(e1);
-        true = ComponentReference.crefEqual(cr,cr2);
+  true = Expression.isConstOne(e1);
+  true = ComponentReference.crefEqual(cr,cr2);
       then
-        true;
+  true;
 
     case(DAE.BINARY(e1,DAE.DIV_ARR(_),DAE.CREF(componentRef = cr2)),_)
       equation
-        true = Expression.isConstOne(e1);
-        true = ComponentReference.crefEqual(cr,cr2);
+  true = Expression.isConstOne(e1);
+  true = ComponentReference.crefEqual(cr,cr2);
       then
-        true;
+  true;
 
     case(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),DAE.CREF(componentRef = cr2)),_)
       equation
-        true = Expression.isConstOne(e1);
-        true = ComponentReference.crefEqual(cr,cr2);
+  true = Expression.isConstOne(e1);
+  true = ComponentReference.crefEqual(cr,cr2);
       then
-        true;
+  true;
 
     else then false;
 

@@ -29,13 +29,13 @@
  */
 
 /*
- * file:        BackendDAEEXT.cpp
+ * file:  BackendDAEEXT.cpp
  * description: The BackendDAEEXT.cpp file is the external implementation of
- *              MetaModelica package: Compiler/BackendDAEEXT.mo.
- *              This is used for the BLT and index reduction algorithms in BackendDAE.
- *              The implementation mainly consists of several bitvectors implemented
- *              using std::vector<bool> since such functionality is not available in
- *              MetaModelica Compiler (MMC).
+ *        MetaModelica package: Compiler/BackendDAEEXT.mo.
+ *        This is used for the BLT and index reduction algorithms in BackendDAE.
+ *        The implementation mainly consists of several bitvectors implemented
+ *        using std::vector<bool> since such functionality is not available in
+ *        MetaModelica Compiler (MMC).
  *
  * RCS: $Id$
  *
@@ -273,7 +273,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__setIncidenceMatrix)
     while(RML_GETHDR(ie) == RML_CONSHDR) {
       i1 = RML_UNTAGFIXNUM(RML_CAR(ie));
       if (i1>0) {
-        col_ids[j++] = i1-1;
+  col_ids[j++] = i1-1;
       }
       ie = RML_CDR(ie);
     }
@@ -313,17 +313,17 @@ RML_BEGIN_LABEL(BackendDAEEXT__getAssignment)
   if (match != NULL) {
     for(i=0; i<n; ++i) {
       if (match[i] >= 0)
-        RML_STRUCTDATA(rmlA0)[i] = mk_icon(match[i]+1);
+  RML_STRUCTDATA(rmlA0)[i] = mk_icon(match[i]+1);
       else
-        RML_STRUCTDATA(rmlA0)[i] = mk_icon(-1);
+  RML_STRUCTDATA(rmlA0)[i] = mk_icon(-1);
     }
   }
   if (row_match != NULL) {
     for(i=0; i<m; ++i) {
       if (row_match[i] >= 0)
-        RML_STRUCTDATA(rmlA1)[i] = mk_icon(row_match[i]+1);
+  RML_STRUCTDATA(rmlA1)[i] = mk_icon(row_match[i]+1);
       else
-        RML_STRUCTDATA(rmlA1)[i] = mk_icon(-1);
+  RML_STRUCTDATA(rmlA1)[i] = mk_icon(-1);
     }
   }
   RML_TAILCALLK(rmlSC);

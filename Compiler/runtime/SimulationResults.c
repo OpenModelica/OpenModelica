@@ -136,10 +136,10 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
     fseek(simresglob->pltReader,0,SEEK_SET);
     do {
       if (NULL==fgets(line,255,simresglob->pltReader)) {
-        msg[1] = varname;
-        msg[0] = filename;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("%s not found in %s\n"), msg, 2);
-        return NAN;
+  msg[1] = varname;
+  msg[0] = filename;
+  c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("%s not found in %s\n"), msg, 2);
+  return NAN;
       }
     } while (strcmp(strToFind,line));
     while (fscanf(simresglob->pltReader,"%lg, %lg\n",&t,&v) == 2) {
@@ -223,8 +223,8 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
     if (variables) {
       variables++ /* Skip the first element: It's the malloc buffer. */;
       while (*variables) {
-        res = mk_cons(mk_scon(*variables),res);
-        variables++;
+  res = mk_cons(mk_scon(*variables),res);
+  variables++;
       }
       /* All strings are allocated in a single malloc for efficiency */
       free(*toFree);
@@ -265,19 +265,19 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       vars = RML_CDR(vars);
       mat_var = omc_matlab4_find_var(&simresglob->matReader,var);
       if (mat_var == NULL) {
-        msg[1] = var;
-        msg[0] = filename;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
-        return NULL;
+  msg[1] = var;
+  msg[0] = filename;
+  c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+  return NULL;
       } else if (mat_var->isParam) {
-        col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon((mat_var->index<0)?-simresglob->matReader.params[abs(mat_var->index)-1]:simresglob->matReader.params[abs(mat_var->index)-1]),col);
-        res = mk_cons(col,res);
+  col=mk_nil();
+  for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon((mat_var->index<0)?-simresglob->matReader.params[abs(mat_var->index)-1]:simresglob->matReader.params[abs(mat_var->index)-1]),col);
+  res = mk_cons(col,res);
       } else {
-        vals = omc_matlab4_read_vals(&simresglob->matReader,mat_var->index);
-        col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
-        res = mk_cons(col,res);
+  vals = omc_matlab4_read_vals(&simresglob->matReader,mat_var->index);
+  col=mk_nil();
+  for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
+  res = mk_cons(col,res);
       }
     }
     return res;
@@ -291,14 +291,14 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       vars = RML_CDR(vars);
       vals = read_csv_dataset(filename,var,dimsize);
       if (vals == NULL) {
-        msg[1] = var;
-        msg[0] = filename;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
-        return NULL;
+  msg[1] = var;
+  msg[0] = filename;
+  c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+  return NULL;
       } else {
-        col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
-        res = mk_cons(col,res);
+  col=mk_nil();
+  for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
+  res = mk_cons(col,res);
       }
     }
     return res;

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <System/IAlgLoop.h>                // Interface for algebraic loop
+#include <System/IAlgLoop.h>          // Interface for algebraic loop
 
 #include <Math/Functions.h>  // Include for use of abs
 
 
 
-#include <ostream>                                    // Use stream for output
+#include <ostream>                              // Use stream for output
 using std::ostream;
 
 /*****************************************************************************/
@@ -67,7 +67,7 @@ public:
     //---------------------------------------------------------------
 protected:
     int
-       _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+       _dimAEq;                  ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
 
 
   std::vector<double>
@@ -76,16 +76,16 @@ protected:
 
 
     std::vector<int>
-       _xi_init,            ///< Integer values before update of loop
+       _xi_init,      ///< Integer values before update of loop
     __xi;       ///< Integer values after update of loop
 
 
     std::vector<bool>
-        _xb_init,            ///< Boolean values before update of loop
+  _xb_init,            ///< Boolean values before update of loop
    __xb;       ///< Boolean values after update of loop
 
     IAlgLoop::CONSTRTYPE
-        _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
+  _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
     ostream
-        *_outputStream;                ///< Output stream for results
+  *_outputStream;                ///< Output stream for results
 };

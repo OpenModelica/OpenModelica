@@ -86,7 +86,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
     if (maxn) {
       outMatches[0] = mystrdup(err_buf);
       for (i=1; i<maxn; i++)
-        outMatches[i] = mystrdup("");
+  outMatches[i] = mystrdup("");
     }
 #if defined(_MSC_VER)
     free(matches);
@@ -100,9 +100,9 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
     dup = strdup(str);
     for (i=0; i<maxn; i++) {
       if (!res && matches[i].rm_so != -1) {
-        memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
-        dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
-        outMatches[nmatch++] = mystrdup(dup);
+  memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
+  dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
+  outMatches[nmatch++] = mystrdup(dup);
       }
     }
     for (i=nmatch; i<maxn; i++) {

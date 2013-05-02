@@ -30,7 +30,7 @@
  */
 
 encapsulated package Lapack
-" file:        Lapack.mo
+" file:  Lapack.mo
   package:     Lapack
   description: This file contains Lapack external functions.
 

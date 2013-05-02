@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInstTypesOld
-" file:        NFInstTypes.mo
+" file:  NFInstTypes.mo
   package:     NFInstTypes
   description: Types used by NFSCodeInst.
 

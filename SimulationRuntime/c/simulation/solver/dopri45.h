@@ -28,7 +28,7 @@
  *
  */
 
-/*********************       internal definitions; do not expose        ***********************/
+/*********************       internal definitions; do not expose  ***********************/
 
 #ifndef _DOPRI45_H
 #define _DOPRI45_H
@@ -43,10 +43,10 @@ typedef struct DOPRI_DATA{
 
 int
 stepsize_control(double start, double stop, double fixStep, int(*f)(),
-                 int reinit_step, int useInterpolation, double tolerance, int* reject);
+           int reinit_step, int useInterpolation, double tolerance, int* reject);
 
 int
 interpolation_control(const int dideventstep, double interpolationStep,
-                      double fixStep, double stop);
+                double fixStep, double stop);
 
 #endif

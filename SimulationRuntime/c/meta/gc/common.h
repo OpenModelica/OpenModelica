@@ -45,7 +45,7 @@ extern "C" {
 /***********************************************************************/
 
 /* roots settings */
-#define MMC_GC_ROOTS_SIZE_INITIAL        8*1024  /* initial size of roots, reallocate on full */
+#define MMC_GC_ROOTS_SIZE_INITIAL  8*1024  /* initial size of roots, reallocate on full */
 #define MMC_GC_ROOTS_MARKS_SIZE_INITIAL  8*1024  /* initial size of roots marks, reallocate on full */
 
 
@@ -53,12 +53,12 @@ extern "C" {
 #define MMC_GC_NUMBER_OF_MARK_THREADS  6
 #define MMC_GC_NUMBER_OF_SWEEP_THREADS 6
 
-#define MMC_GC_PAGE_SIZE           64*1024*1024  /* default page size 160MB chunks, can be changed */
-#define MMC_GC_NUMBER_OF_PAGES                1  /* default number of pages at start */
-#define MMC_GC_PAGES_SIZE_INITIAL          1024  /* default size for pages array at start, realloc on full */
+#define MMC_GC_PAGE_SIZE     64*1024*1024  /* default page size 160MB chunks, can be changed */
+#define MMC_GC_NUMBER_OF_PAGES          1  /* default number of pages at start */
+#define MMC_GC_PAGES_SIZE_INITIAL    1024  /* default size for pages array at start, realloc on full */
 
-#define MMC_GC_FREE_SIZES                  1024  /* small object with size until max 101 */
-#define MMC_GC_FREE_SLOTS_SIZE_INITIAL        1  /* for big objects */
+#define MMC_GC_FREE_SIZES            1024  /* small object with size until max 101 */
+#define MMC_GC_FREE_SLOTS_SIZE_INITIAL  1  /* for big objects */
 
 #define MMC_GC_MARK   1
 #define MMC_GC_UNMARK 0
@@ -67,7 +67,7 @@ extern "C" {
 #define MMC_EXIT_ON_FAILURE     0
 #define MMC_NO_EXIT_ON_FAILURE  1
 
-#define MMC_YOUNG_SIZE          (1024*1024*16)
+#define MMC_YOUNG_SIZE    (1024*1024*16)
 #define MMC_C_HEAP_REGION_SIZE  (1024*1024) /*  4 Mwords */
 
 #define MMC_SHARED_STRING_MAX 100   /* share only strings less than this */
@@ -90,7 +90,7 @@ struct mmc_GC_settings_type
   /* mark-and-sweep settings */
   size_t    number_of_pages;  /* the initial number of pages */
   size_t    pages_size;       /* the default pages array size */
-  size_t    page_size;        /* the default page size */
+  size_t    page_size;  /* the default page size */
   size_t    free_slots_size;  /* the default free slots array size */
   size_t    number_of_mark_threads;  /* the initial number of mark threads */
   size_t    number_of_sweep_threads; /* the initial number of sweep threads */
@@ -101,7 +101,7 @@ struct mmc_GC_settings_type
 
   char      trace_enabled;  /* tracing flag */
   char      string_sharing; /* string sharing flag */
-  char      debug;          /* flag for GC debugging */
+  char      debug;    /* flag for GC debugging */
 };
 typedef struct mmc_GC_settings_type mmc_GC_settings_type;
 
@@ -148,23 +148,23 @@ mmc_GC_stats_type stats_create(void);
 struct mmc_GC_free_slot_type
 {
   modelica_metatype start;
-  size_t            size;
+  size_t      size;
 };
 typedef struct mmc_GC_free_slot_type mmc_GC_free_slot_type;
 
 struct mmc_GC_free_slots_type
 {
   mmc_GC_free_slot_type*  start;
-  size_t                  current;
-  size_t                  limit;
+  size_t            current;
+  size_t            limit;
 };
 typedef struct mmc_GC_free_slots_type mmc_GC_free_slots_type;
 
 struct mmc_GC_free_slots_fixed_type
 {
   modelica_metatype*  start;
-  size_t              current;
-  size_t              limit;
+  size_t        current;
+  size_t        limit;
 };
 typedef struct mmc_GC_free_slots_fixed_type mmc_GC_free_slots_fixed_type;
 
@@ -191,7 +191,7 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 //struct mmc_GC_local_state_type // the structure of local GC state that is saved on stack
 //{
 //  const char* functionName; // the function name
-//  size_t rootsMark;         // the roots mark
+//  size_t rootsMark;   // the roots mark
 //  size_t rootsStackIndex;   // the index in the mark stack (basically the depth)
 //};
 //typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;
@@ -203,8 +203,8 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 struct mmc_stack_type
 {
   mmc_GC_local_state_type  *start; /* the stack array of marks */
-  size_t                   current; /* the current limit */
-  size_t                   limit;   /* the limit of roots */
+  size_t             current; /* the current limit */
+  size_t             limit;   /* the limit of roots */
 };
 typedef struct mmc_stack_type  mmc_stack_type;
 
@@ -233,19 +233,19 @@ mmc_stack_type* stack_clear(mmc_stack_type* stack);
 
 struct mmc_GC_page_type
 {
-  modelica_metatype       start;           /* the start of the page */
-  size_t                  size;            /* the size of the page in words */
-  mmc_GC_free_list_type  *free;            /* the free list in the page, classified */
-  size_t                  maxFree;         /* the max size of all free slots */
+  modelica_metatype       start;     /* the start of the page */
+  size_t            size;            /* the size of the page in words */
+  mmc_GC_free_list_type  *free;      /* the free list in the page, classified */
+  size_t            maxFree;         /* the max size of all free slots */
 };
 typedef struct mmc_GC_page_type mmc_GC_page_type;
 
 
 struct mmc_GC_pages_type
 {
-  mmc_GC_page_type*       start;           /* the start of the array of pages */
-  size_t                  current;         /* the current limit */
-  size_t                  limit;           /* the limit of pages */
+  mmc_GC_page_type*       start;     /* the start of the array of pages */
+  size_t            current;         /* the current limit */
+  size_t            limit;           /* the limit of pages */
 };
 typedef struct mmc_GC_pages_type mmc_GC_pages_type;
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package Prefix
-" file:        Prefix.mo
+" file:  Prefix.mo
   package:     Prefix
   description: Prefix management
 

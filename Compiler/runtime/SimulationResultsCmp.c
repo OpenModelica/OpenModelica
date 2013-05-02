@@ -106,8 +106,8 @@ static inline void fixCommaInName(char **str, size_t len)
       newvar[k] = (*str)[j];
       k +=1;
       if ((*str)[j] ==',' ) {
-        newvar[k] = ' ';
-        k +=1;
+  newvar[k] = ' ';
+  k +=1;
       }
     }
     newvar[k] = 0;
@@ -141,7 +141,7 @@ static char ** getVars(void *vars, unsigned int* nvars)
     // if var is empty, continue
     if (strcmp(var, "\"\"") == 0) {
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "skip Var: %s\n", var);
+  fprintf(stderr, "skip Var: %s\n", var);
 #endif
        vars = RML_CDR(vars);
        continue;
@@ -269,23 +269,23 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
 #endif
     while(tr < t){
       if (j +1< reftime->n) {
-        j += 1;
-        tr = reftime->data[j];
-        increased = 1;
-        if (tr == t) {
-          break;
-        }
+  j += 1;
+  tr = reftime->data[j];
+  increased = 1;
+  if (tr == t) {
+    break;
+  }
 #ifdef DEBUGOUTPUT
-         fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
+   fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
 #endif
       }
       else
-        break;
+  break;
     }
     if (increased==1) {
       if ( (absdouble((t-tr)/tr) > reltol) || (absdouble(t-tr) > absdouble(t-reftime->data[j-1]))) {
-        j = j- 1;
-        tr = reftime->data[j];
+  j = j- 1;
+  tr = reftime->data[j];
       }
     }
 #ifdef DEBUGOUTPUT
@@ -301,139 +301,139 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
       /* an event */
       if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
 #ifdef DEBUGOUTPUT
-         fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
+   fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
 #endif
-        /* left value */
-        d_left = d;
+  /* left value */
+  d_left = d;
 #ifdef DEBUGOUTPUT
-         fprintf(stderr, "left value: %.6g  %d %.6g\n",t,i,d_left);
+   fprintf(stderr, "left value: %.6g  %d %.6g\n",t,i,d_left);
 #endif
-        /* right value */
-        if (i+1<data->n) {
-          while (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
-            i +=1;
-            if (i+1>=data->n) break;
-          }
-        }
-        t = time->data[i];
-        d_right = data->data[i];
+  /* right value */
+  if (i+1<data->n) {
+    while (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+      i +=1;
+      if (i+1>=data->n) break;
+    }
+  }
+  t = time->data[i];
+  d_right = data->data[i];
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "right value: %.6g  %d %.6g\n",t,i,d_right);
+  fprintf(stderr, "right value: %.6g  %d %.6g\n",t,i,d_right);
 #endif
-        /* search event in reference forwards */
-        refevent = 0;
-        t_event = t + t*reltol*0.1;
-        /* do not exceed next time step */
-        if (i+1<=data->n) {
-          t_event = (t_event > time->data[i])?time->data[i]:t_event;
-        }else{
-          t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
-        }
-        j_event = j;
-        while(tr < t_event) {
-          if (j+1<reftime->n) {
-            if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
-              dr_left = refdata->data[j];
+  /* search event in reference forwards */
+  refevent = 0;
+  t_event = t + t*reltol*0.1;
+  /* do not exceed next time step */
+  if (i+1<=data->n) {
+    t_event = (t_event > time->data[i])?time->data[i]:t_event;
+  }else{
+    t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
+  }
+  j_event = j;
+  while(tr < t_event) {
+    if (j+1<reftime->n) {
+      if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
+        dr_left = refdata->data[j];
 #ifdef DEBUGOUTPUT
-              fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
+        fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
 #endif
-              refevent = 1;
+        refevent = 1;
 
-              do {
-                j +=1;
-                if (j+1>=reftime->n) break;
-              } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1]));
-            }
-          }
-          if (refevent == 0) {
-            j += 1;
-            if (j >= reftime->n)
-              break;
-            tr = reftime->data[j];
-          }
-          else {
-            tr = reftime->data[j];
-            break;
-          }
-        }
-        if (refevent==1) {
-          tr = reftime->data[j];
+        do {
+          j +=1;
+          if (j+1>=reftime->n) break;
+        } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1]));
+      }
+    }
+    if (refevent == 0) {
+      j += 1;
+      if (j >= reftime->n)
+        break;
+      tr = reftime->data[j];
+    }
+    else {
+      tr = reftime->data[j];
+      break;
+    }
+  }
+  if (refevent==1) {
+    tr = reftime->data[j];
+    dr_right = refdata->data[j];
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
+#endif
+
+    err = absdouble(d_left-dr_left);
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
+#endif
+    if ( err < average){
+      err = absdouble(d_right-dr_right);
+#ifdef DEBUGOUTPUT
+       fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
+#endif
+      if ( err < average){
+        continue;
+      }
+    }
+  }
+  else {
+    /* search event in reference backwards */
+    j = j_event;
+    tr = reftime->data[j];
+    refevent = 0;
+    t_event = t - t*reltol*0.1;
+    while(tr > t_event) {
+      if (j-1>0) {
+        if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
           dr_right = refdata->data[j];
 #ifdef DEBUGOUTPUT
-           fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
+          fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
 #endif
+          refevent = 1;
 
-          err = absdouble(d_left-dr_left);
-#ifdef DEBUGOUTPUT
-           fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
-#endif
-          if ( err < average){
-            err = absdouble(d_right-dr_right);
-#ifdef DEBUGOUTPUT
-             fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
-#endif
-            if ( err < average){
-              continue;
-            }
-          }
+          do {
+            j -=1;
+            if (j-1<=0) break;
+          } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1]));
         }
-        else {
-          /* search event in reference backwards */
+      }
+      if (refevent == 0) {
+        j -= 1;
+        if (j == 0)
+          break;
+        tr = reftime->data[j];
+      }
+      else {
+        tr = reftime->data[j];
+        break;
+      }
+    }
+    if (refevent==1) {
+      tr = reftime->data[j];
+      dr_left = refdata->data[j];
+#ifdef DEBUGOUTPUT
+      fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
+#endif
+      err = absdouble(d_left-dr_left);
+#ifdef DEBUGOUTPUT
+      fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
+#endif
+      if ( err < average){
+        err = absdouble(d_right-dr_right);
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
+#endif
+        if ( err < average){
           j = j_event;
           tr = reftime->data[j];
-          refevent = 0;
-          t_event = t - t*reltol*0.1;
-          while(tr > t_event) {
-            if (j-1>0) {
-              if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
-                dr_right = refdata->data[j];
-#ifdef DEBUGOUTPUT
-                fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
-#endif
-                refevent = 1;
-
-                do {
-                  j -=1;
-                  if (j-1<=0) break;
-                } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1]));
-              }
-            }
-            if (refevent == 0) {
-              j -= 1;
-              if (j == 0)
-                break;
-              tr = reftime->data[j];
-            }
-            else {
-              tr = reftime->data[j];
-              break;
-            }
-          }
-          if (refevent==1) {
-            tr = reftime->data[j];
-            dr_left = refdata->data[j];
-#ifdef DEBUGOUTPUT
-            fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
-#endif
-            err = absdouble(d_left-dr_left);
-#ifdef DEBUGOUTPUT
-            fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
-#endif
-            if ( err < average){
-              err = absdouble(d_right-dr_right);
-#ifdef DEBUGOUTPUT
-              fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
-#endif
-              if ( err < average){
-                j = j_event;
-                tr = reftime->data[j];
-                continue;
-              }
-            }
-          }
-          j = j_event;
-          tr = reftime->data[j];
+          continue;
         }
+      }
+    }
+    j = j_event;
+    tr = reftime->data[j];
+  }
       }
     }
 
@@ -453,47 +453,47 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
       unsigned int jj = j;
       /* look for interpolation partner */
       if (tr > t) {
-        if (j-1 > 0) {
-          jj = j-1;
-          increased = 0;
-          if (reftime->data[jj] == tr){
-            increased = 1;
-            do {
-              jj -= 1;
-              if (jj<=0) break;
-            } while (reftime->data[jj] == tr);
-          }
-        }
+  if (j-1 > 0) {
+    jj = j-1;
+    increased = 0;
+    if (reftime->data[jj] == tr){
+      increased = 1;
+      do {
+        jj -= 1;
+        if (jj<=0) break;
+      } while (reftime->data[jj] == tr);
+    }
+  }
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],refdata->data[jj]);
+  fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],refdata->data[jj]);
 #endif
-        if (reftime->data[jj] != tr){
-          dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
-        }
+  if (reftime->data[jj] != tr){
+    dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
+  }
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "-> dr:%.6g\n",dr);
+  fprintf(stderr, "-> dr:%.6g\n",dr);
 #endif
       }
       else {
-        if (j+1<reftime->n) {
-          jj = j+1;
-          increased = 0;
-          if (reftime->data[jj] == tr){
-            increased = 1;
-            do {
-              jj += 1;
-              if (jj>=reftime->n) break;
-            } while (reftime->data[jj] == tr);
-          }
-        }
+  if (j+1<reftime->n) {
+    jj = j+1;
+    increased = 0;
+    if (reftime->data[jj] == tr){
+      increased = 1;
+      do {
+        jj += 1;
+        if (jj>=reftime->n) break;
+      } while (reftime->data[jj] == tr);
+    }
+  }
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+  fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
 #endif
-        if (reftime->data[jj] != tr){
-          dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*(t-tr);
-        }
+  if (reftime->data[jj] != tr){
+    dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*(t-tr);
+  }
 #ifdef DEBUGOUTPUT
-        fprintf(stderr, "-> dr:%.6g\n",dr);
+  fprintf(stderr, "-> dr:%.6g\n",dr);
 #endif
       }
     }
@@ -506,22 +506,22 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
 #endif
     if ( err > average){
       if (j+1<reftime->n) {
-        if (reftime->data[j+1] == tr) {
-          dr = refdata->data[j+1];
-          err = absdouble(d-dr);
-        }
+  if (reftime->data[j+1] == tr) {
+    dr = refdata->data[j+1];
+    err = absdouble(d-dr);
+  }
       }
 
       if (err < average){
-        continue;
+  continue;
       }
 
       isdifferent = 1;
       if (ddf->n >= ddf->n_max) {
-        DiffData *diffdatafild;
-        ddf->n_max = ddf->n_max ? ddf->n_max*2 : 1024;
-        ddf->data = (DiffData*) realloc(ddf->data, sizeof(DiffData)*(ddf->n_max));
-        /* TODO: Check for errors? */
+  DiffData *diffdatafild;
+  ddf->n_max = ddf->n_max ? ddf->n_max*2 : 1024;
+  ddf->data = (DiffData*) realloc(ddf->data, sizeof(DiffData)*(ddf->n_max));
+  /* TODO: Check for errors? */
       }
       ddf->data[ddf->n].name = varname;
       ddf->data[ddf->n].data = d;
@@ -680,8 +680,8 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
     k = 0;
     for (j=0;j<len;j++) {
       if (var[j] !='\"' ) {
-        var1[k] = var[j];
-        k +=1;
+  var1[k] = var[j];
+  k +=1;
       }
     }
     var1[k] = 0;
@@ -696,14 +696,14 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       fixCommaInName(&var2,len);
       dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
       if (dataref.n==0) {
-        char buf[WARNINGBUFFSIZE];
-        msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
-        msg[1] = var;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
-        ngetfailedvars++;
-        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
-        res = mk_cons(mk_scon(buf),res);
-        continue;
+  char buf[WARNINGBUFFSIZE];
+  msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
+  msg[1] = var;
+  c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+  ngetfailedvars++;
+  snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
+  res = mk_cons(mk_scon(buf),res);
+  continue;
       }
     }
     /*  check if in file */
@@ -713,15 +713,15 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       fixCommaInName(&var1,len);
       data = getData(var1,filename,size,&simresglob_c);
       if (data.n==0)  {
-        char buf[WARNINGBUFFSIZE];
-        if (data.data) free(data.data);
-        msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
-        msg[1] = var;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
-        ngetfailedvars++;
-        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
-        res = mk_cons(mk_scon(buf),res);
-        continue;
+  char buf[WARNINGBUFFSIZE];
+  if (data.data) free(data.data);
+  msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
+  msg[1] = var;
+  c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+  ngetfailedvars++;
+  snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
+  res = mk_cons(mk_scon(buf),res);
+  continue;
       }
     }
     /* compare */

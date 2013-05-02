@@ -30,7 +30,7 @@
  */
 
 encapsulated package Config
-" file:        Config.mo
+" file:  Config.mo
   package:     Config
   description: Functions for configurating the compiler.
 
@@ -472,17 +472,17 @@ algorithm
 
     case _
       equation
-        "Modelica" :: version :: _ = System.strtok(inLibraryName, " ");
-        new_std = versionStringToStd(version);
-        current_std = getLanguageStandard();
-        false = valueEq(new_std, current_std);
-        setLanguageStandard(new_std);
-        show_warning = hasLanguageStandardChanged(current_std);
-        new_std_str = languageStandardString(new_std);
-        Debug.bcall2(show_warning, Error.addMessage, Error.CHANGED_STD_VERSION,
-          {new_std_str, version});
+  "Modelica" :: version :: _ = System.strtok(inLibraryName, " ");
+  new_std = versionStringToStd(version);
+  current_std = getLanguageStandard();
+  false = valueEq(new_std, current_std);
+  setLanguageStandard(new_std);
+  show_warning = hasLanguageStandardChanged(current_std);
+  new_std_str = languageStandardString(new_std);
+  Debug.bcall2(show_warning, Error.addMessage, Error.CHANGED_STD_VERSION,
+    {new_std_str, version});
       then
-        ();
+  ();
 
     else ();
   end matchcontinue;

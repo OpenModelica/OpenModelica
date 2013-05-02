@@ -21,11 +21,11 @@ public:
     /// Enumeration with modelica data types
     enum CONSTRTYPE
     {
-        UNDEF    =    0x00000000,
-        REAL    =    0x00000001,
-        INTEGER    =    0x00000002,
-        BOOLEAN    =    0x00000004,
-        ALL        =    0x00000007,
+  UNDEF    =    0x00000000,
+  REAL    =    0x00000001,
+  INTEGER    =    0x00000002,
+  BOOLEAN    =    0x00000004,
+  ALL        =    0x00000007,
     };
 
 

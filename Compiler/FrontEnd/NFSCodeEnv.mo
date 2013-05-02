@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFSCodeEnv
-" file:        NFSCodeEnv.mo
+" file:  NFSCodeEnv.mo
   package:     NFSCodeEnv
   description: SCode flattening
 
@@ -199,20 +199,20 @@ algorithm
 
     case (_, _)
       equation
-        /*********************************************************************/
-        // TODO: Should we use the environment returned by lookupInClass?
-        /*********************************************************************/
-        (item, _) = NFSCodeLookup.lookupInClass(inName, inEnv);
-        {cls_env} = getItemEnv(item);
-        outEnv = enterFrame(cls_env, inEnv);
+  /*********************************************************************/
+  // TODO: Should we use the environment returned by lookupInClass?
+  /*********************************************************************/
+  (item, _) = NFSCodeLookup.lookupInClass(inName, inEnv);
+  {cls_env} = getItemEnv(item);
+  outEnv = enterFrame(cls_env, inEnv);
       then
-        outEnv;
+  outEnv;
 
     case (_, _)
       equation
-        print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
+  print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end enterScope;
 
@@ -229,18 +229,18 @@ algorithm
 
     case (_, Absyn.QUALIFIED(name = name, path = path))
       equation
-        env = enterScope(inEnv, name);
+  env = enterScope(inEnv, name);
       then
-        enterScopePath(env, path);
+  enterScopePath(env, path);
 
     case (_, Absyn.IDENT(name = name))
       then enterScope(inEnv, name);
 
     case (_, Absyn.FULLYQUALIFIED(path = path))
       equation
-        env = getEnvTopScope(inEnv);
+  env = getEnvTopScope(inEnv);
       then
-        enterScopePath(env, path);
+  enterScopePath(env, path);
 
   end match;
 end enterScopePath;
@@ -320,10 +320,10 @@ algorithm
 
     case SCode.CLASS(name = _)
       equation
-        class_env = makeClassEnvironment(inElement, true);
-        item = newClassItem(inElement, class_env, USERDEFINED());
+  class_env = makeClassEnvironment(inElement, true);
+  item = newClassItem(inElement, class_env, USERDEFINED());
       then
-        item;
+  item;
 
     case SCode.COMPONENT(name = _) then newVarItem(inElement, false);
 
@@ -378,7 +378,7 @@ algorithm
   outType := match(inClassDef)
     // A builtin class.
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-        lang = SOME("builtin")))))
+  lang = SOME("builtin")))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
@@ -541,9 +541,9 @@ algorithm
 
     case (CLASS(cls = cls, env = env, classType = cls_ty), _)
       equation
-        env = setImportTableHidden(env, inHidden);
+  env = setImportTableHidden(env, inHidden);
       then
-        CLASS(cls, env, cls_ty);
+  CLASS(cls, env, cls_ty);
 
     else inItem;
   end match;
@@ -597,15 +597,15 @@ algorithm
       then VAR(elem, is_used);
 
     case (CLASS(env = {FRAME(isUsed = is_used)}),
-        CLASS(cls = elem, classType = cls_ty, env =
-          {FRAME(name, ft, cv, exts, imps, _)}))
+  CLASS(cls = elem, classType = cls_ty, env =
+    {FRAME(name, ft, cv, exts, imps, _)}))
       then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
 
     case (_, REDECLARED_ITEM(item, env))
       equation
-        item = linkItemUsage(inSrcItem, item);
+  item = linkItemUsage(inSrcItem, item);
       then
-        REDECLARED_ITEM(item, env);
+  REDECLARED_ITEM(item, env);
 
     else inDestItem;
   end match;
@@ -670,31 +670,31 @@ algorithm
     // A class extends.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
       then
-        NFEnvExtends.extendEnvWithClassExtends(inClassDefElement, inEnv);
+  NFEnvExtends.extendEnvWithClassExtends(inClassDefElement, inEnv);
 
     case (SCode.CLASS(name = cls_name, classDef = cdef, prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.REPLACEABLE(_)), info = info), _)
+  replaceablePrefix = SCode.REPLACEABLE(_)), info = info), _)
       equation
-        class_env = makeClassEnvironment(inClassDefElement, false);
-        cls_type = getClassType(cdef);
-        alias_name = cls_name +& BASE_CLASS_SUFFIX;
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
-          inEnv, alias_name);
-        env = extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
+  class_env = makeClassEnvironment(inClassDefElement, false);
+  cls_type = getClassType(cdef);
+  alias_name = cls_name +& BASE_CLASS_SUFFIX;
+  env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
+    inEnv, alias_name);
+  env = extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
       then
-        env;
+  env;
 
     // A normal class.
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
       equation
-        // Create a new environment and add the class's components to it.
-        class_env = makeClassEnvironment(inClassDefElement, false);
-        cls_type = getClassType(cdef);
-        // Add the class with it's environment to the environment.
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
-          inEnv, cls_name);
+  // Create a new environment and add the class's components to it.
+  class_env = makeClassEnvironment(inClassDefElement, false);
+  cls_type = getClassType(cdef);
+  // Add the class with it's environment to the environment.
+  env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
+    inEnv, cls_name);
       then
-        env;
+  env;
   end match;
 end extendEnvWithClassDef;
 
@@ -794,24 +794,24 @@ algorithm
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
-        FRAME(name, ty, tree, exts,
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
+  FRAME(name, ty, tree, exts,
+    IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
-        unqual_imps = imp :: unqual_imps;
+  unqual_imps = imp :: unqual_imps;
       then
-        FRAME(name, ty, tree, exts,
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
+  FRAME(name, ty, tree, exts,
+    IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
 
     // Qualified imports
     case (SCode.IMPORT(imp = imp, info = info), FRAME(name, ty, tree, exts,
-        IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
+  IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
-        imp = translateQualifiedImportToNamed(imp);
-        checkUniqueQualifiedImport(imp, qual_imps, info);
-        qual_imps = imp :: qual_imps;
+  imp = translateQualifiedImportToNamed(imp);
+  checkUniqueQualifiedImport(imp, qual_imps, info);
+  qual_imps = imp :: qual_imps;
       then
-        FRAME(name, ty, tree, exts,
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
+  FRAME(name, ty, tree, exts,
+    IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
   end match;
 end extendEnvWithImport;
 
@@ -831,9 +831,9 @@ algorithm
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
       equation
-        name = Absyn.pathLastIdent(path);
+  name = Absyn.pathLastIdent(path);
       then
-        Absyn.NAMED_IMPORT(name, path);
+  Absyn.NAMED_IMPORT(name, path);
   end match;
 end translateQualifiedImportToNamed;
 
@@ -906,26 +906,26 @@ algorithm
 
     case (_, SCode.PARTS(elementLst = el), _, _, _)
       equation
-        env = List.fold(el, extendEnvWithElement, inEnv);
+  env = List.fold(el, extendEnvWithElement, inEnv);
       then
-        env;
+  env;
 
     case (_, SCode.DERIVED(typeSpec = ty as Absyn.TPATH(path = path),
-        modifications = mods), _, _, _)
+  modifications = mods), _, _, _)
       equation
-        NFSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
-          inEnclosingScope, inInfo);
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
-          NONE(), inInfo), inEnv);
+  NFSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
+    inEnclosingScope, inInfo);
+  env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
+    NONE(), inInfo), inEnv);
       then
-        env;
+  env;
 
     case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
       equation
-        path = Absyn.IDENT(inClassName);
-        env = extendEnvWithEnumLiterals(enums, path, 1, inEnv);
+  path = Absyn.IDENT(inClassName);
+  env = extendEnvWithEnumLiterals(enums, path, 1, inEnv);
       then
-        env;
+  env;
 
     else inEnv;
   end match;
@@ -945,44 +945,44 @@ algorithm
     // redeclare-as-element component
     case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
-        env = extendEnvWithVar(inElement, env);
+  env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
+  env = extendEnvWithVar(inElement, env);
       then
-        env;
+  env;
 
     // normal component
     case (SCode.COMPONENT(name = _), _)
       equation
-        env = extendEnvWithVar(inElement, inEnv);
+  env = extendEnvWithVar(inElement, inEnv);
       then
-        env;
+  env;
 
     // redeclare-as-element class
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
-        env = extendEnvWithClassDef(inElement, env);
+  env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
+  env = extendEnvWithClassDef(inElement, env);
       then
-        env;
+  env;
 
     // normal class
     case (SCode.CLASS(name = _), _)
       equation
-        env = extendEnvWithClassDef(inElement, inEnv);
+  env = extendEnvWithClassDef(inElement, inEnv);
       then
-        env;
+  env;
 
     case (SCode.EXTENDS(baseClassPath = _), _)
       equation
-        env = extendEnvWithExtends(inElement, inEnv);
+  env = extendEnvWithExtends(inElement, inEnv);
       then
-        env;
+  env;
 
     case (SCode.IMPORT(imp = _), _)
       equation
-        env = extendEnvWithImport(inElement, inEnv);
+  env = extendEnvWithImport(inElement, inEnv);
       then
-        env;
+  env;
 
     case (SCode.DEFINEUNIT(name = _), _)
       then inEnv;
@@ -1003,17 +1003,17 @@ algorithm
 
     case (_, _, _)
       equation
-        false = List.isMemberOnTrue(inImport, inImports,
-          compareQualifiedImportNames);
+  false = List.isMemberOnTrue(inImport, inImports,
+    compareQualifiedImportNames);
       then
-        ();
+  ();
 
     case (Absyn.NAMED_IMPORT(name = name), _, _)
       equation
-        Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
-          {name}, inInfo);
+  Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
+    {name}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end checkUniqueQualifiedImport;
@@ -1031,9 +1031,9 @@ algorithm
 
     case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
       equation
-        true = stringEqual(name1, name2);
+  true = stringEqual(name1, name2);
       then
-        true;
+  true;
 
     else then false;
   end matchcontinue;
@@ -1054,9 +1054,9 @@ algorithm
 
     case (lit :: rest_lits, _, _, _)
       equation
-        env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv);
+  env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv);
       then
-        extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
+  extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
 
     case ({}, _, _, _) then inEnv;
 
@@ -1147,11 +1147,11 @@ algorithm
 
     case (Absyn.ELEMENTITEM(element = element), _)
       equation
-        // Translate the element item to a SCode element.
-        el = SCodeUtil.translateElement(element, SCode.PROTECTED());
-        env = List.fold(el, extendEnvWithElement, inEnv);
+  // Translate the element item to a SCode element.
+  el = SCodeUtil.translateElement(element, SCode.PROTECTED());
+  env = List.fold(el, extendEnvWithElement, inEnv);
       then
-        env;
+  env;
 
     else then inEnv;
   end match;
@@ -1168,9 +1168,9 @@ algorithm
 
     case _
       equation
-        str = Absyn.pathString(getEnvPath(inEnv));
+  str = Absyn.pathString(getEnvPath(inEnv));
       then
-        str;
+  str;
 
     else then "";
   end matchcontinue;
@@ -1199,10 +1199,10 @@ algorithm
 
     case (FRAME(name = SOME(name)) :: rest)
       equation
-        path = getEnvPath(rest);
-        path = Absyn.joinPaths(path, Absyn.IDENT(name));
+  path = getEnvPath(rest);
+  path = Absyn.joinPaths(path, Absyn.IDENT(name));
       then
-        path;
+  path;
   end match;
 end getEnvPath;
 
@@ -1248,9 +1248,9 @@ algorithm
 
     case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2)
       equation
-        true = stringEqual(n1, n2);
+  true = stringEqual(n1, n2);
       then
-        envPrefixOf2(rest1, rest2);
+  envPrefixOf2(rest1, rest2);
 
     else false;
   end matchcontinue;
@@ -1276,9 +1276,9 @@ algorithm
 
     case (FRAME(name = SOME(name)) :: rest_env, _)
       equation
-        names = envScopeNames2(rest_env, name :: inAccumNames);
+  names = envScopeNames2(rest_env, name :: inAccumNames);
       then
-        names;
+  names;
 
     case (FRAME(name = NONE()) :: rest_env, _)
       then envScopeNames2(rest_env, inAccumNames);
@@ -1309,12 +1309,12 @@ algorithm
       Frame frame;
 
     case ((frame as FRAME(name = SOME(name1))) :: rest_env1,
-          FRAME(name = SOME(name2)) :: rest_env2, _)
+    FRAME(name = SOME(name2)) :: rest_env2, _)
       equation
-        true = stringEq(name1, name2);
-        env = envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
+  true = stringEq(name1, name2);
+  env = envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
       then
-        env;
+  env;
 
     case (FRAME(name = NONE()) :: rest_env1, FRAME(name = NONE()) :: rest_env2, _)
       then envEqualPrefix2(rest_env1, rest_env2, inAccumEnv);
@@ -1359,16 +1359,16 @@ algorithm
       then SCodeDump.unparseElementStr(el);
     case ALIAS(name = name, path = SOME(path))
       equation
-        alias_str = Absyn.pathString(path);
+  alias_str = Absyn.pathString(path);
       then
-        "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
+  "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
     case ALIAS(name = name, path = NONE())
       then "alias " +& name +& " -> ()";
     case REDECLARED_ITEM(item = item)
       equation
-        name = itemStr(item);
+  name = itemStr(item);
       then
-        "redeclared " +& name;
+  "redeclared " +& name;
 
     else "UNHANDLED ITEM";
 
@@ -1425,11 +1425,11 @@ algorithm
     case REDECLARED_ITEM(item = item) then getItemEnvNoFail(item);
     else
       equation
-        str = "NO ENV FOR ITEM: " +& getItemName(inItem);
-        f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
-        env = {f};
+  str = "NO ENV FOR ITEM: " +& getItemName(inItem);
+  f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
+  env = {f};
       then
-        env;
+  env;
 
   end matchcontinue;
 end getItemEnvNoFail;
@@ -1536,20 +1536,20 @@ algorithm
     // only one extends!
     case (_, Absyn.TPATH(path, _), _)
       equation
-        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
-          getEnvExtendsFromTable(inEnv);
-        true = Absyn.pathSuffixOf(path, bc);
+  {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
+    getEnvExtendsFromTable(inEnv);
+  true = Absyn.pathSuffixOf(path, bc);
       then
-        rm;
+  rm;
 
     case (_, Absyn.TPATH(path, _), _)
       equation
-        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
-          getEnvExtendsFromTable(inEnv);
-        false = Absyn.pathSuffixOf(path, bc);
-        print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
+  {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
+    getEnvExtendsFromTable(inEnv);
+  false = Absyn.pathSuffixOf(path, bc);
+  print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
       then
-        rm;
+  rm;
 
     // else nothing
     else then {};
@@ -1603,10 +1603,10 @@ algorithm
     // Try to merge the last identifier in the path with the environment path.
     case (_, _)
       equation
-        env_path = getEnvPath(inEnv);
-        id = Absyn.pathLastIdent(inPath);
+  env_path = getEnvPath(inEnv);
+  id = Absyn.pathLastIdent(inPath);
       then
-        Absyn.joinPaths(env_path, Absyn.IDENT(id));
+  Absyn.joinPaths(env_path, Absyn.IDENT(id));
 
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
@@ -1629,10 +1629,10 @@ algorithm
     // Try to merge the last identifier in the path with the environment path.
     case (Absyn.TPATH(path, ad), _)
       equation
-        id = Absyn.pathLastIdent(path);
-        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
+  id = Absyn.pathLastIdent(path);
+  path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
       then
-        Absyn.TPATH(path, ad);
+  Absyn.TPATH(path, ad);
 
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
@@ -1653,10 +1653,10 @@ algorithm
     case (_, {FRAME(name = NONE())}) then Absyn.IDENT(inIdent);
     else
       equation
-        path = getEnvPath(inEnv);
-        path = Absyn.suffixPath(path, inIdent);
+  path = getEnvPath(inEnv);
+  path = Absyn.suffixPath(path, inIdent);
       then
-        path;
+  path;
 
   end match;
 end prefixIdentWithEnv;
@@ -1694,10 +1694,10 @@ algorithm
 
     else
       equation
-        el = getRedeclarationElement(inRedeclare);
-        (name, info) = SCode.elementNameInfo(el);
+  el = getRedeclarationElement(inRedeclare);
+  (name, info) = SCode.elementNameInfo(el);
       then
-        (name, info);
+  (name, info);
 
   end match;
 end getRedeclarationNameInfo;
@@ -1792,18 +1792,18 @@ algorithm
 
     case (FRAME(name, ty, tree, exts, imps, _))
       equation
-        name_str = printFrameNameStr(name);
-        ty_str = printFrameTypeStr(ty);
-        tree_str = printAvlTreeStr(SOME(tree));
-        ext_str = printExtendsTableStr(exts);
-        imp_str = printImportTableStr(imps);
-        name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
-        out = name_str +&
-              "\tImports:\n" +& imp_str +&
-              "\n\tExtends:\n" +& ext_str +&
-              "\n\tComponents:\n" +& tree_str +& "\n";
+  name_str = printFrameNameStr(name);
+  ty_str = printFrameTypeStr(ty);
+  tree_str = printAvlTreeStr(SOME(tree));
+  ext_str = printExtendsTableStr(exts);
+  imp_str = printImportTableStr(imps);
+  name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
+  out = name_str +&
+        "\tImports:\n" +& imp_str +&
+        "\n\tExtends:\n" +& ext_str +&
+        "\n\tComponents:\n" +& tree_str +& "\n";
       then
-        out;
+  out;
   end match;
 end printFrameStr;
 
@@ -1846,12 +1846,12 @@ algorithm
     case (SOME(AVLTREENODE(value = NONE()))) then "";
     case (SOME(AVLTREENODE(value = SOME(value), height = height, left = left, right = right)))
       equation
-        left_str = printAvlTreeStr(left);
-        right_str = printAvlTreeStr(right);
-        value_str = printAvlValueStr(value);
-        value_str = value_str +& left_str +& right_str;
+  left_str = printAvlTreeStr(left);
+  right_str = printAvlTreeStr(right);
+  value_str = printAvlValueStr(value);
+  value_str = value_str +& left_str +& right_str;
       then
-        value_str;
+  value_str;
   end match;
 end printAvlTreeStr;
 
@@ -1873,9 +1873,9 @@ algorithm
 
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name, path = SOME(path))))
       equation
-        alias_str = Absyn.pathString(path) +& "." +& name;
+  alias_str = Absyn.pathString(path) +& "." +& name;
       then
-        "\t\tAlias " +& key_str +& " -> " +& alias_str +& "\n";
+  "\t\tAlias " +& key_str +& " -> " +& alias_str +& "\n";
 
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name)))
       then "\t\tAlias " +& key_str +& " -> " +& name +& "\n";
@@ -1967,7 +1967,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
       then fail();
 
   end match;
@@ -1994,29 +1994,29 @@ algorithm
     // Don't allow replacing of nodes.
     case (_, 0, key, _)
       equation
-        info = getItemInfo(inValue);
-        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
-          {inKey}, info);
+  info = getItemInfo(inValue);
+  Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
+    {inKey}, info);
       then
-        fail();
+  fail();
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        1, key, value)
+  1, key, value)
       equation
-        t = createEmptyAvlIfNone(right);
-        t = avlTreeAdd(t, key, value);
+  t = createEmptyAvlIfNone(right);
+  t = avlTreeAdd(t, key, value);
       then
-        AVLTREENODE(oval, h, left, SOME(t));
+  AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        -1, key, value)
+  -1, key, value)
       equation
-        t = createEmptyAvlIfNone(left);
-        t = avlTreeAdd(t, key, value);
+  t = createEmptyAvlIfNone(left);
+  t = avlTreeAdd(t, key, value);
       then
-        AVLTREENODE(oval, h, SOME(t), right);
+  AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeAdd2;
 
@@ -2076,7 +2076,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
+  Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
       then fail();
 
   end match;
@@ -2101,26 +2101,26 @@ algorithm
 
     // Replace this node.
     case (AVLTREENODE(value = SOME(_), height = h, left = left, right = right),
-        0, key, value)
+  0, key, value)
       then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        1, key, value)
+  1, key, value)
       equation
-        t = createEmptyAvlIfNone(right);
-        t = avlTreeReplace(t, key, value);
+  t = createEmptyAvlIfNone(right);
+  t = avlTreeReplace(t, key, value);
       then
-        AVLTREENODE(oval, h, left, SOME(t));
+  AVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        -1, key, value)
+  -1, key, value)
       equation
-        t = createEmptyAvlIfNone(left);
-        t = avlTreeReplace(t, key, value);
+  t = createEmptyAvlIfNone(left);
+  t = avlTreeReplace(t, key, value);
       then
-        AVLTREENODE(oval, h, SOME(t), right);
+  AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeReplace2;
 
@@ -2171,13 +2171,13 @@ algorithm
     local AvlTree bt;
     case(true,bt)
       equation
-        bt = doBalance3(bt);
-        bt = rotateLeft(bt);
+  bt = doBalance3(bt);
+  bt = rotateLeft(bt);
       then bt;
     case(false,bt)
       equation
-        bt = doBalance4(bt);
-        bt = rotateRight(bt);
+  bt = doBalance4(bt);
+  bt = rotateRight(bt);
       then bt;
   end match;
 end doBalance2;
@@ -2191,9 +2191,9 @@ algorithm
       AvlTree rr,bt;
     case(bt)
       equation
-        true = differenceInHeight(Util.getOption(rightNode(bt))) > 0;
-        rr = rotateRight(Util.getOption(rightNode(bt)));
-        bt = setRight(bt,SOME(rr));
+  true = differenceInHeight(Util.getOption(rightNode(bt))) > 0;
+  rr = rotateRight(Util.getOption(rightNode(bt)));
+  bt = setRight(bt,SOME(rr));
       then bt;
     else inBt;
   end matchcontinue;
@@ -2208,9 +2208,9 @@ algorithm
       AvlTree rl,bt;
     case (bt)
       equation
-        true = differenceInHeight(Util.getOption(leftNode(bt))) < 0;
-        rl = rotateLeft(Util.getOption(leftNode(bt)));
-        bt = setLeft(bt,SOME(rl));
+  true = differenceInHeight(Util.getOption(leftNode(bt))) < 0;
+  rl = rotateLeft(Util.getOption(leftNode(bt)));
+  bt = setLeft(bt,SOME(rl));
       then bt;
     else inBt;
   end matchcontinue;
@@ -2367,21 +2367,21 @@ algorithm
 
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+  indent = inIndent +& "  ";
+  s1 = printAvlTreeStrPP2(l, indent);
+  s2 = printAvlTreeStrPP2(r, indent);
+  res = "\n" +& inIndent +& rkey +& s1 +& s2;
       then
-        res;
+  res;
 
     case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
+  indent = inIndent +& "  ";
+  s1 = printAvlTreeStrPP2(l, indent);
+  s2 = printAvlTreeStrPP2(r, indent);
+  res = "\n" +& s1 +& s2;
       then
-        res;
+  res;
   end match;
 end printAvlTreeStrPP2;
 

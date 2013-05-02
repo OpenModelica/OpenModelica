@@ -193,7 +193,7 @@ extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
  *
  *  \param [ref] [data]
  *  \param [in] [evalZeroCross] flag for evaluating Relation with hysteresis
- *                              function or without
+ *                        function or without
  */
 extern int function_updateRelations(DATA *data, int evalZeroCross);
 

@@ -73,10 +73,10 @@ static void* noRecoverFromMismatchedSet(pANTLR3_BASE_RECOGNIZER recognizer, pANT
 
 static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, ANTLR3_UINT32 ttype, pANTLR3_BITSET_LIST follow)
 {
-  pANTLR3_PARSER        parser;
-  pANTLR3_TREE_PARSER        tparser;
-  pANTLR3_INT_STREAM        is;
-  void          * matchedSymbol;
+  pANTLR3_PARSER  parser;
+  pANTLR3_TREE_PARSER  tparser;
+  pANTLR3_INT_STREAM  is;
+  void    * matchedSymbol;
 
   // Invoke the debugger event if there is a debugger listening to us
   //
@@ -266,9 +266,9 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
 static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTestsuite)
 {
-  pANTLR3_LEXER               pLexer;
+  pANTLR3_LEXER         pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
-  pModelicaParser             psr;
+  pModelicaParser       psr;
   void* lxr = 0;
   void* res = NULL;
   char* oldfilename;
@@ -354,12 +354,12 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
 
 static void* parseString(const char* data, const char* interactiveFilename, int flags, int langStd, int runningTestsuite)
 {
-  bool debug         = false; //check_debug_flag("parsedebug");
+  bool debug   = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
   bool parseonly     = false; //check_debug_flag("parseonly");
 
-  pANTLR3_UINT8               fName;
-  pANTLR3_INPUT_STREAM        input;
+  pANTLR3_UINT8         fName;
+  pANTLR3_INPUT_STREAM  input;
 
   ModelicaParser_encoding = "UTF-8";
   ModelicaParser_filename_C = interactiveFilename;
@@ -381,12 +381,12 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 
 static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite)
 {
-  bool debug         = false; //check_debug_flag("parsedebug");
+  bool debug   = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
   bool parseonly     = false; //check_debug_flag("parseonly");
 
-  pANTLR3_UINT8               fName;
-  pANTLR3_INPUT_STREAM        input;
+  pANTLR3_UINT8         fName;
+  pANTLR3_INPUT_STREAM  input;
   int len = 0;
 
   ModelicaParser_encoding = encoding;

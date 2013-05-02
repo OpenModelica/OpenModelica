@@ -5,7 +5,7 @@ encapsulated package HashTableCrILst "
 
   All rights reserved.
 
-  file:        HashTableCrILst.mo
+  file:  HashTableCrILst.mo
   package:     HashTableCrILst
   description: DAE.CR to list<Integer>
 

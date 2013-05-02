@@ -13,27 +13,27 @@ algorithm
       Text ts;
     case (ts,
       TplAbsyn.TEMPL_PACKAGE(
-         name = __name,
-         extendsList = __extendsList,
-         imports = __imports,
-         templateDefs = __templateDefs) )
+   name = __name,
+   extendsList = __extendsList,
+   imports = __imports,
+   templateDefs = __templateDefs) )
       local
-        Integer ind, ap;
-        PathIdent __name;
-        list<String> __extendsList;
-        list<PathIdent> __imports;
-        list<TemplateDef> __templateDefs;
+  Integer ind, ap;
+  PathIdent __name;
+  list<String> __extendsList;
+  list<PathIdent> __imports;
+  list<TemplateDef> __templateDefs;
       equation
-        ts = Tpl.write(ts, "package ");
-        ts = __pathIdend(ts, __name);
-        ts = Tpl.nl(ts);
-        ts = Tpl.nl(ts);
-        ts = Tpl.listMap(ts, __extendsList, s0_templPackage, "\n");
-        //ts = s0_templPackage(ts, __extendsList, Tpl.nl);
-        ts = Tpl.nl(ts);
-        //ts = s1_templPackage(ts, __imports);
-        ts = Tpl.nl(ts);
-        //ts = s2_templPackage(ts, __templateDefs);
+  ts = Tpl.write(ts, "package ");
+  ts = __pathIdend(ts, __name);
+  ts = Tpl.nl(ts);
+  ts = Tpl.nl(ts);
+  ts = Tpl.listMap(ts, __extendsList, s0_templPackage, "\n");
+  //ts = s0_templPackage(ts, __extendsList, Tpl.nl);
+  ts = Tpl.nl(ts);
+  //ts = s1_templPackage(ts, __imports);
+  ts = Tpl.nl(ts);
+  //ts = s2_templPackage(ts, __templateDefs);
       then ts;
   end matchcontinue;
 end __templPackage;
@@ -47,11 +47,11 @@ algorithm
   outText := matchcontinue (inText, in__it)
     case (ts, __it)
       local
-        Text ts;
-        String __it;
+  Text ts;
+  String __it;
       equation
-        ts = Tpl.write(ts, "extends \"");
-        ts = Tpl.writeParseNL(ts, __it);
+  ts = Tpl.write(ts, "extends \"");
+  ts = Tpl.writeParseNL(ts, __it);
     then ts;
   end matchcontinue;
 end s0__templPackage;

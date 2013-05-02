@@ -305,7 +305,7 @@ package Absyn
     end TPATH;
 
     record TCOMPLEX
-      Path             path;
+      Path       path;
       list<TypeSpec>   typeSpecs;
       Option<ArrayDim> arrayDim;
     end TCOMPLEX;

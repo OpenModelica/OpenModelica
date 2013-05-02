@@ -30,7 +30,7 @@
  */
 
 encapsulated package GraphML
-" file:         GraphML
+" file:   GraphML
   package:     GraphML
   description: GraphML contains functions to generate a gaphML file for yED
 
@@ -258,15 +258,15 @@ algorithm
       list<Edge> edges;
      case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),_,_)
        equation
-         sd = Util.if_(directed,"directed","undirected");
-         t = appendString(inStringDelemiter);
-         s = stringAppendList({inString,inStringDelemiter,"<graph edgedefault=\"", sd , "\" id=\"" , id , "\">\n"});
-         s = List.fold1(nodes,dumpNode,t,s);
-         s = List.fold1(edges,dumpEdge,t,s);
-         s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});
-         s = stringAppendList({s,inStringDelemiter , "</graph>\n"});
+   sd = Util.if_(directed,"directed","undirected");
+   t = appendString(inStringDelemiter);
+   s = stringAppendList({inString,inStringDelemiter,"<graph edgedefault=\"", sd , "\" id=\"" , id , "\">\n"});
+   s = List.fold1(nodes,dumpNode,t,s);
+   s = List.fold1(edges,dumpEdge,t,s);
+   s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});
+   s = stringAppendList({s,inStringDelemiter , "</graph>\n"});
        then
-        s;
+  s;
    end match;
 end dumpGraph_Internal;
 
@@ -282,23 +282,23 @@ algorithm
     ShapeType st;
      case(NODE(id=id,text=text,color=color,shapeType=st) ,_,_)
        equation
-        t = appendString(inString);
-        st_str = getShapeTypeString(st);
-        s = stringAppendList({iAcc,
-           inString , "<node id=\"" , id , "\">\n",
-           t , "<data key=\"d5\"/>\n",
-           t , "<data key=\"d6\">\n",
-           "        <y:ShapeNode>\n",
-           "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
-           "          <y:Fill color=\"#" , color , "\" transparent=\"false\"/>\n",
-           "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
-           "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">" , text ,"</y:NodeLabel>\n",
-           "          <y:Shape type=\"" , st_str , "\"/>\n",
-           "        </y:ShapeNode>\n",
-           t , "</data>\n",
-           inString ,"</node>\n"});
+  t = appendString(inString);
+  st_str = getShapeTypeString(st);
+  s = stringAppendList({iAcc,
+     inString , "<node id=\"" , id , "\">\n",
+     t , "<data key=\"d5\"/>\n",
+     t , "<data key=\"d6\">\n",
+     "        <y:ShapeNode>\n",
+     "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
+     "          <y:Fill color=\"#" , color , "\" transparent=\"false\"/>\n",
+     "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
+     "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">" , text ,"</y:NodeLabel>\n",
+     "          <y:Shape type=\"" , st_str , "\"/>\n",
+     "        </y:ShapeNode>\n",
+     t , "</data>\n",
+     inString ,"</node>\n"});
        then
-        s;
+  s;
    end match;
 end dumpNode;
 
@@ -340,19 +340,19 @@ algorithm
        sa_str = getArrowTypeString(sarrow);
        ta_str = getArrowTypeString(tarrow);
        s = stringAppendList({iAcc,
-           inString , "<edge id=\"" , id , "\" source=\"" , source , "\" target=\"" , target , "\">\n",
-           t , "<data key=\"d8\"/>\n",
-           t , "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
-           t , "<data key=\"d10\">\n",
-           "        <y:PolyLineEdge>\n",
-           "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
-           "          <y:LineStyle color=\"#" , color , "\" type=\"" , lt_str , "\" width=\"2.0\"/>\n",
-           sl_str,
-           "          <y:Arrows source=\"" , sa_str , "\" target=\"" , ta_str , "\"/>\n",
-           "          <y:BendStyle smoothed=\"false\"/>\n",
-           "        </y:PolyLineEdge>\n",
-           t , "</data>\n",
-           inString , "</edge>\n"});
+     inString , "<edge id=\"" , id , "\" source=\"" , source , "\" target=\"" , target , "\">\n",
+     t , "<data key=\"d8\"/>\n",
+     t , "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
+     t , "<data key=\"d10\">\n",
+     "        <y:PolyLineEdge>\n",
+     "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
+     "          <y:LineStyle color=\"#" , color , "\" type=\"" , lt_str , "\" width=\"2.0\"/>\n",
+     sl_str,
+     "          <y:Arrows source=\"" , sa_str , "\" target=\"" , ta_str , "\"/>\n",
+     "          <y:BendStyle smoothed=\"false\"/>\n",
+     "        </y:PolyLineEdge>\n",
+     t , "</data>\n",
+     inString , "</edge>\n"});
      then
       s;
    end match;
@@ -368,7 +368,7 @@ algorithm
     case (NONE()) then "";
     case (SOME(EDGELABEL(text=text,color=color)))
       then
-        stringAppendList({"          <y:EdgeLabel alignment=\"center\" distance=\"2.0\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"28.501953125\" modelName=\"six_pos\" modelPosition=\"tail\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"",color,"\" visible=\"true\" width=\"15.123046875\" x=\"47.36937571050203\" y=\"17.675232529529524\">",text,"</y:EdgeLabel>\n"});
+  stringAppendList({"          <y:EdgeLabel alignment=\"center\" distance=\"2.0\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"28.501953125\" modelName=\"six_pos\" modelPosition=\"tail\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"",color,"\" visible=\"true\" width=\"15.123046875\" x=\"47.36937571050203\" y=\"17.675232529529524\">",text,"</y:EdgeLabel>\n"});
   end match;
 end getEdgeLabelString;
 

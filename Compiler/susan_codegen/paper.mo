@@ -16,26 +16,26 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       local
-        list<Example.Statement> rest;
-        Example.Statement i_it;
+  list<Example.Statement> rest;
+  Example.Statement i_it;
       equation
-        txt = statement(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_1(txt, rest);
+  txt = statement(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_1(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       local
-        list<Example.Statement> rest;
+  list<Example.Statement> rest;
       equation
-        txt = lm_1(txt, rest);
+  txt = lm_1(txt, rest);
       then txt;
   end matchcontinue;
 end lm_1;
@@ -52,37 +52,37 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           Example.ASSIGN(lhs = i_lhs, rhs = i_rhs) )
+     Example.ASSIGN(lhs = i_lhs, rhs = i_rhs) )
       local
-        Example.Exp i_rhs;
-        Example.Exp i_lhs;
+  Example.Exp i_rhs;
+  Example.Exp i_lhs;
       equation
-        txt = exp(txt, i_lhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = exp(txt, i_rhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = exp(txt, i_lhs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = exp(txt, i_rhs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           Example.WHILE(condition = i_condition, statements = i_statements) )
+     Example.WHILE(condition = i_condition, statements = i_statements) )
       local
-        list<Example.Statement> i_statements;
-        Example.Exp i_condition;
+  list<Example.Statement> i_statements;
+  Example.Exp i_condition;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("while("));
-        txt = exp(txt, i_condition);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_1(txt, i_statements);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("while("));
+  txt = exp(txt, i_condition);
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_1(txt, i_statements);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end statement;
@@ -99,39 +99,39 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           Example.ICONST(value = i_value) )
+     Example.ICONST(value = i_value) )
       local
-        Integer i_value;
+  Integer i_value;
       equation
-        txt = Tpl.writeStr(txt, intString(i_value));
+  txt = Tpl.writeStr(txt, intString(i_value));
       then txt;
 
     case ( txt,
-           Example.VARIABLE(name = i_name) )
+     Example.VARIABLE(name = i_name) )
       local
-        String i_name;
+  String i_name;
       equation
-        txt = Tpl.writeStr(txt, i_name);
+  txt = Tpl.writeStr(txt, i_name);
       then txt;
 
     case ( txt,
-           Example.BINARY(lhs = i_lhs, op = i_op, rhs = i_rhs) )
+     Example.BINARY(lhs = i_lhs, op = i_op, rhs = i_rhs) )
       local
-        Example.Exp i_rhs;
-        Example.Operator i_op;
-        Example.Exp i_lhs;
+  Example.Exp i_rhs;
+  Example.Operator i_op;
+  Example.Exp i_lhs;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = exp(txt, i_lhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = oper(txt, i_op);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = exp(txt, i_rhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = exp(txt, i_lhs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = oper(txt, i_op);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = exp(txt, i_rhs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end exp;
@@ -148,25 +148,25 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           Example.PLUS() )
+     Example.PLUS() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("+"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("+"));
       then txt;
 
     case ( txt,
-           Example.TIMES() )
+     Example.TIMES() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("*"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("*"));
       then txt;
 
     case ( txt,
-           Example.LESS() )
+     Example.LESS() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("<"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end oper;
@@ -183,15 +183,15 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           SOME(i_val) )
+     SOME(i_val) )
       local
-        Integer i_val;
+  Integer i_val;
       equation
-        txt = Tpl.writeStr(txt, intString(i_val));
+  txt = Tpl.writeStr(txt, intString(i_val));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end fun_5;
@@ -208,15 +208,15 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           SOME(i_val) )
+     SOME(i_val) )
       local
-        Option<Integer> i_val;
+  Option<Integer> i_val;
       equation
-        txt = fun_5(txt, i_val);
+  txt = fun_5(txt, i_val);
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end opt;
@@ -233,30 +233,30 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       local
-        list<String> rest;
-        String i_it;
-        Integer i_i0;
+  list<String> rest;
+  String i_it;
+  Integer i_i0;
       equation
-        i_i0 = Tpl.getIteri_i0(txt);
-        txt = Tpl.writeStr(txt, i_it);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, intString(i_i0));
-        txt = Tpl.nextIter(txt);
-        txt = lm_7(txt, rest);
+  i_i0 = Tpl.getIteri_i0(txt);
+  txt = Tpl.writeStr(txt, i_it);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, intString(i_i0));
+  txt = Tpl.nextIter(txt);
+  txt = lm_7(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       local
-        list<String> rest;
+  list<String> rest;
       equation
-        txt = lm_7(txt, rest);
+  txt = lm_7(txt, rest);
       then txt;
   end matchcontinue;
 end lm_7;
@@ -287,27 +287,27 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           "a" :: rest )
+     "a" :: rest )
       local
-        list<String> rest;
-        Integer i_i0;
+  list<String> rest;
+  Integer i_i0;
       equation
-        i_i0 = Tpl.getIteri_i0(txt);
-        txt = Tpl.writeStr(txt, intString(i_i0));
-        txt = Tpl.nextIter(txt);
-        txt = lm_9(txt, rest);
+  i_i0 = Tpl.getIteri_i0(txt);
+  txt = Tpl.writeStr(txt, intString(i_i0));
+  txt = Tpl.nextIter(txt);
+  txt = lm_9(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       local
-        list<String> rest;
+  list<String> rest;
       equation
-        txt = lm_9(txt, rest);
+  txt = lm_9(txt, rest);
       then txt;
   end matchcontinue;
 end lm_9;
@@ -342,26 +342,26 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           Example.ICONST(value = i_value) :: rest )
+     Example.ICONST(value = i_value) :: rest )
       local
-        list<Example.Exp> rest;
-        Integer i_value;
+  list<Example.Exp> rest;
+  Integer i_value;
       equation
-        txt = Tpl.writeStr(txt, intString(i_value));
-        txt = Tpl.nextIter(txt);
-        txt = lm_11(txt, rest);
+  txt = Tpl.writeStr(txt, intString(i_value));
+  txt = Tpl.nextIter(txt);
+  txt = lm_11(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       local
-        list<Example.Exp> rest;
+  list<Example.Exp> rest;
       equation
-        txt = lm_11(txt, rest);
+  txt = lm_11(txt, rest);
       then txt;
   end matchcontinue;
 end lm_11;
@@ -408,13 +408,13 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           (i_i, i_s) )
+     (i_i, i_s) )
       local
-        String i_s;
-        Integer i_i;
+  String i_s;
+  Integer i_i;
       equation
-        txt = Tpl.writeStr(txt, intString(i_i));
-        txt = Tpl.writeStr(txt, i_s);
+  txt = Tpl.writeStr(txt, intString(i_i));
+  txt = Tpl.writeStr(txt, i_s);
       then txt;
   end matchcontinue;
 end smf_15;
@@ -440,11 +440,11 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           (i_s, _) )
+     (i_s, _) )
       local
-        String i_s;
+  String i_s;
       equation
-        txt = Tpl.writeStr(txt, i_s);
+  txt = Tpl.writeStr(txt, i_s);
       then txt;
   end matchcontinue;
 end smf_17;
@@ -461,28 +461,28 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (it as (i_s, i_i)) :: rest )
+     (it as (i_s, i_i)) :: rest )
       local
-        list<tuple<String, Integer>> rest;
-        Integer i_i;
-        String i_s;
-        tuple<String, Integer> it;
+  list<tuple<String, Integer>> rest;
+  Integer i_i;
+  String i_s;
+  tuple<String, Integer> it;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("o"));
-        txt = smf_17(txt, it);
-        txt = lm_18(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("o"));
+  txt = smf_17(txt, it);
+  txt = lm_18(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       local
-        list<tuple<String, Integer>> rest;
+  list<tuple<String, Integer>> rest;
       equation
-        txt = lm_18(txt, rest);
+  txt = lm_18(txt, rest);
       then txt;
   end matchcontinue;
 end lm_18;
@@ -506,9 +506,9 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("hej you!"));
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
-                                       "\n",
-                                       "  juchi"
-                                   }, false));
+                                 "\n",
+                                 "  juchi"
+                             }, false));
   out_txt := Tpl.popBlock(out_txt);
 end pok8;
 

@@ -5,7 +5,7 @@
 //   adrpo@ida.liu.se
 //   2004-11-01
 //   updates: 2006-12-15 added walking for Linux.
-//                       this one is generic!
+//                 this one is generic!
 #include "dirwalk.h"
 
 // windows part!
@@ -26,9 +26,9 @@
 int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 //------------------------------------------------
 {
-	char            DirName[PATH_MAX];
+	char      DirName[PATH_MAX];
 	static char     CurrDirName[PATH_MAX];
-	HANDLE          Hnd;
+	HANDLE    Hnd;
 	WIN32_FIND_DATA WFD;
 
 	if (!_dlevel)
@@ -112,8 +112,8 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
 //-------------------------------------------------------------------------
 {
-	char            CurrDirName[PATH_MAX];
-	HANDLE          Hnd;
+	char      CurrDirName[PATH_MAX];
+	HANDLE    Hnd;
 	WIN32_FIND_DATA WFD;
 	int fileNo = 0;
 

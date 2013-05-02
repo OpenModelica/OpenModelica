@@ -30,7 +30,7 @@
  */
 
 encapsulated package FFlatten
-" file:        FFlatten.mo
+" file:  FFlatten.mo
   package:     FFlatten
   description: SCode flattening
 
@@ -114,31 +114,31 @@ algorithm
 
     case (_, prog)
       equation
-        //System.startTimer();
-        System.tmpTickResetIndex(0, Env.tmpTickIndex);
-        System.tmpTickResetIndex(1, Env.extendsTickIndex);
+  //System.startTimer();
+  System.tmpTickResetIndex(0, Env.tmpTickIndex);
+  System.tmpTickResetIndex(1, Env.extendsTickIndex);
 
-        (_, env) = Builtin.initialEnv(Env.emptyCache());
-        env = FEnv.extendEnvWithClasses(prog, env);
-        env = FEnvExtends.update(env);
+  (_, env) = Builtin.initialEnv(Env.emptyCache());
+  env = FEnv.extendEnvWithClasses(prog, env);
+  env = FEnvExtends.update(env);
 
-        (prog, env) = FDependency.analyse(inClassName, env, prog);
-        checkForCardinality(env);
-        (prog, env) = FFlattenImports.flattenProgram(prog, env);
+  (prog, env) = FDependency.analyse(inClassName, env, prog);
+  checkForCardinality(env);
+  (prog, env) = FFlattenImports.flattenProgram(prog, env);
 
-        //System.stopTimer();
-        //Debug.traceln("FFlatten.flattenClassInProgram took " +&
-        //  realString(System.getTimerIntervalTime()) +& " seconds");
+  //System.stopTimer();
+  //Debug.traceln("FFlatten.flattenClassInProgram took " +&
+  //  realString(System.getTimerIntervalTime()) +& " seconds");
 
       then
-        (prog, env);
+  (prog, env);
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "FFlatten.flattenClassInProgram failed on " +&
-          Absyn.pathString(inClassName));
+  Debug.fprintln(Flags.FAILTRACE, "FFlatten.flattenClassInProgram failed on " +&
+    Absyn.pathString(inClassName));
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end flattenClassInProgram;
@@ -151,17 +151,17 @@ algorithm
   _ := matchcontinue(inEnv)
     case _
       equation
-        (_, _, _, _) = FLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
-          inEnv, Absyn.dummyInfo);
-        System.setUsesCardinality(true);
+  (_, _, _, _) = FLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
+    inEnv, Absyn.dummyInfo);
+  System.setUsesCardinality(true);
       then
-        ();
+  ();
 
     else
       equation
-        System.setUsesCardinality(false);
+  System.setUsesCardinality(false);
       then
-        ();
+  ();
 
   end matchcontinue;
 end checkForCardinality;
@@ -177,18 +177,18 @@ algorithm
 
     case (prog)
       equation
-        (_, env) = Builtin.initialEnv(Env.emptyCache());
-        env = FEnv.extendEnvWithClasses(prog, env);
-        env = FEnvExtends.update(env);
-        (prog, env) = FFlattenImports.flattenProgram(prog, env);
+  (_, env) = Builtin.initialEnv(Env.emptyCache());
+  env = FEnv.extendEnvWithClasses(prog, env);
+  env = FEnvExtends.update(env);
+  (prog, env) = FFlattenImports.flattenProgram(prog, env);
       then
-        prog;
+  prog;
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "FFlatten.flattenCompleteProgram failed");
+  Debug.fprintln(Flags.FAILTRACE, "FFlatten.flattenCompleteProgram failed");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end flattenCompleteProgram;

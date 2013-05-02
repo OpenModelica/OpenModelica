@@ -46,29 +46,29 @@ private:
     *_kinsolSettings;     ///< Settings for the solver
 
   IAlgLoop
-    *_algLoop;          ///< Algebraic loop to be solved
+    *_algLoop;    ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
   long int
-    _dimSys;          ///< Temp   - Number of unknowns (=dimension of system of equations)
+    _dimSys;    ///< Temp   - Number of unknowns (=dimension of system of equations)
 
   bool
-    _firstCall;         ///< Temp   - Denotes the first call to the solver, init() is called
+    _firstCall;   ///< Temp   - Denotes the first call to the solver, init() is called
 
   double
-    *_y,            ///< Temp   - Unknowns
-    *_f,            ///< Temp   - Residuals
-    *_yHelp,          ///< Temp   - Auxillary variables
-    *_fHelp,          ///< Temp   - Auxillary variables
-    *_jac;            ///< Temp   - Jacobian
+    *_y,      ///< Temp   - Unknowns
+    *_f,      ///< Temp   - Residuals
+    *_yHelp,    ///< Temp   - Auxillary variables
+    *_fHelp,    ///< Temp   - Auxillary variables
+    *_jac;      ///< Temp   - Jacobian
 
   N_Vector
-    _Kin_y,           ///< Temp     - Initial values in the Sundials Format
+    _Kin_y,     ///< Temp     - Initial values in the Sundials Format
     _Kin_yScale,
     _Kin_fScale;
   void
-    *_kinMem,         ///< Temp     - Memory for the solver
-    *_data;           ///< Temp     - User data. Contains pointer to Kinsol
+    *_kinMem,   ///< Temp     - Memory for the solver
+    *_data;     ///< Temp     - User data. Contains pointer to Kinsol
 };

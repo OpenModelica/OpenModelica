@@ -63,9 +63,9 @@ const char *enuNames[SIZEOF_ENU] = {
 #define XMLBUFSIZE 1024
 char text[XMLBUFSIZE];       /* XML file is parsed in chunks of length XMLBUFZIZE */
 XML_Parser parser = NULL;    /* non-NULL during parsing */
-Stack* stack = NULL;         /* the parser stack */
-char* data = NULL;           /* buffer that holds element content, see handleData */
-int skipData=0;              /* 1 to ignore element content, 0 when recordig content */
+Stack* stack = NULL;   /* the parser stack */
+char* data = NULL;     /* buffer that holds element content, see handleData */
+int skipData=0;        /* 1 to ignore element content, 0 when recordig content */
 
 /* #define DEBUG_PARSER 1 */
 
@@ -77,7 +77,7 @@ const char* getString(void* element, Att a){
     const char** attr = e->attributes;
     int i;
     for (i=0; i<e->n; i+=2)
-        if (attr[i]==attNames[a]) return attr[i+1];
+  if (attr[i]==attNames[a]) return attr[i+1];
     return NULL;
 }
 
@@ -129,14 +129,14 @@ Enu getEnumValue(void* element, Att a, ValueStatus* vs) {
     const char* value = getString(element, a);
     *vs = valueDefined;
     if (!value) {
-        *vs = valueMissing;
-        switch (a) {
-            case att_variableNamingConvention: return enu_flat;
-            case att_variability: return enu_continuous;
-            case att_causality: return enu_internal;
-            case att_alias: return enu_noAlias;
-            default: return -1;
-        }
+  *vs = valueMissing;
+  switch (a) {
+      case att_variableNamingConvention: return enu_flat;
+      case att_variability: return enu_continuous;
+      case att_causality: return enu_internal;
+      case att_alias: return enu_noAlias;
+      default: return -1;
+  }
     }
     id = checkEnumValue(value);
     if (id==-1) *vs = valueIllegal;
@@ -226,8 +226,8 @@ ScalarVariable* getVariableByName(ModelDescription* md, const char* name) {
     int i;
     if (md->modelVariables)
     for (i=0; md->modelVariables[i]; i++){
-        ScalarVariable* sv = (ScalarVariable*)md->modelVariables[i];
-        if (!strcmp(getName(sv), name)) return sv;
+  ScalarVariable* sv = (ScalarVariable*)md->modelVariables[i];
+  if (!strcmp(getName(sv), name)) return sv;
     }
     return NULL;
 }
@@ -237,8 +237,8 @@ ScalarVariable* getVariableByName(ModelDescription* md, const char* name) {
  */
 int sameBaseType(Elm t1, Elm t2){
     return (t1==t2) ||
-           (t1==elm_Enumeration && t2==elm_Integer) ||
-           (t2==elm_Enumeration && t1==elm_Integer);
+     (t1==elm_Enumeration && t2==elm_Integer) ||
+     (t2==elm_Enumeration && t1==elm_Integer);
 }
 
 /* returns NULL if variable not found or vr==fmiUndefinedValueReference */
@@ -246,9 +246,9 @@ ScalarVariable* getVariable(ModelDescription* md, fmiValueReference vr, Elm type
     int i;
     if (md->modelVariables && vr!=fmiUndefinedValueReference)
     for (i=0; md->modelVariables[i]; i++){
-        ScalarVariable* sv = (ScalarVariable*)md->modelVariables[i];
-        if (sameBaseType(type, sv->typeSpec->type) && getValueReference(sv) == vr)
-            return sv;
+  ScalarVariable* sv = (ScalarVariable*)md->modelVariables[i];
+  if (sameBaseType(type, sv->typeSpec->type) && getValueReference(sv) == vr)
+      return sv;
     }
     return NULL;
 }
@@ -257,8 +257,8 @@ Type* getDeclaredType(ModelDescription* md, const char* declaredType){
     int i;
     if (declaredType && md->typeDefinitions)
     for (i=0; md->typeDefinitions[i]; i++){
-        Type* tp = (Type*)md->typeDefinitions[i];
-        if (!strcmp(declaredType, getName(tp))) return tp;
+  Type* tp = (Type*)md->typeDefinitions[i];
+  if (!strcmp(declaredType, getName(tp))) return tp;
     }
     return NULL;
 }
@@ -286,7 +286,7 @@ const char * getDescription(ModelDescription* md, ScalarVariable* sv) {
  * incl. default value provided by declared type, if any.
  */
 const char * getVariableAttributeString(ModelDescription* md,
-        fmiValueReference vr, Elm type, Att a){
+  fmiValueReference vr, Elm type, Att a){
     const char* value;
     Type* tp;
     ScalarVariable* sv = getVariable(md, vr, type);
@@ -302,7 +302,7 @@ const char * getVariableAttributeString(ModelDescription* md,
  * incl. default value provided by declared type, if any.
  */
 double getVariableAttributeDouble(ModelDescription* md,
-        fmiValueReference vr, Elm type, Att a, ValueStatus* vs){
+  fmiValueReference vr, Elm type, Att a, ValueStatus* vs){
     double d = 0;
     const char* value = getVariableAttributeString(md, vr, type, a);
     if (!value) { *vs = valueMissing; return d; }
@@ -326,9 +326,9 @@ double getNominal(ModelDescription* md, fmiValueReference vr){
 /* Returns 0 to indicate error */
 static int checkPointer(const void* ptr){
     if (! ptr) {
-        ERRORPRINT; fprintf(stderr," Out of memory%s\n","");
-        if (parser) XML_StopParser(parser, XML_FALSE);
-        return 0; /* error */
+  ERRORPRINT; fprintf(stderr," Out of memory%s\n","");
+  if (parser) XML_StopParser(parser, XML_FALSE);
+  return 0; /* error */
     }
     return 1; /* success */
 }
@@ -336,7 +336,7 @@ static int checkPointer(const void* ptr){
 static int checkName(const char* name, const char* kind, const char* array[], int n){
     int i;
     for (i=0; i<n; i++) {
-        if (!strcmp(name, array[i])) return i;
+  if (!strcmp(name, array[i])) return i;
     }
     ERRORPRINT; fprintf(stderr," Illegal %s %s\n", kind, name);
     XML_StopParser(parser, XML_FALSE);
@@ -360,7 +360,7 @@ static int checkEnumValue(const char* enu){
 
 static void logFatalTypeError(const char* expected, Elm found) {
     ERRORPRINT; fprintf(stderr," Wrong element type, expected %s, found %s\n",
-            expected, elmNames[found]);
+      expected, elmNames[found]);
     XML_StopParser(parser, XML_FALSE);
 }
 
@@ -385,9 +385,9 @@ static int checkElementType(void* element, Elm e) {
  */
 static int checkPeek(Elm e) {
     if (stackIsEmpty(stack)){
-        ERRORPRINT; fprintf(stderr," Illegal document structure, expected %s\n", elmNames[e]);
-        XML_StopParser(parser, XML_FALSE);
-        return 0; /* error */
+  ERRORPRINT; fprintf(stderr," Illegal document structure, expected %s\n", elmNames[e]);
+  XML_StopParser(parser, XML_FALSE);
+  return 0; /* error */
     }
     return e==ANY_TYPE ? 1 : checkElementType(stackPeek(stack), e);
 }
@@ -406,11 +406,11 @@ static void* checkPop(Elm e){
 AstNodeType getAstNodeType(Elm e){
     switch (e) {
     case elm_fmiModelDescription:
-        return astModelDescription;
+  return astModelDescription;
     case elm_Type:
-        return astType;
+  return astType;
     case elm_ScalarVariable:
-        return astScalarVariable;
+  return astScalarVariable;
   case elm_ArrayVariable:
     case elm_BaseUnit:
     case elm_EnumerationType:
@@ -420,9 +420,9 @@ AstNodeType getAstNodeType(Elm e){
     case elm_VendorAnnotations:
     case elm_ModelVariables:
     case elm_DirectDependency:
-        return astListElement;
+  return astListElement;
     default:
-        return astElement;
+  return astElement;
     }
 }
 
@@ -436,16 +436,16 @@ int addAttributes(Element* el, const char** attr) {
     const char** att = NULL;
     for (n=0; attr[n]; n+=2);
     if (n>0) {
-        att = calloc(n, sizeof(char*));
-        if (!checkPointer(att)) return 0;
+  att = calloc(n, sizeof(char*));
+  if (!checkPointer(att)) return 0;
     }
     for (n=0; attr[n]; n+=2) {
-        char* value = strdup(attr[n+1]);
-        if (!checkPointer(value)) return 0;
-        a = checkAttribute(attr[n]);
-        if (a == -1) return 0;  /* illegal attribute error */
-        att[n  ] = attNames[a]; /* no heap memory */
-        att[n+1] = value;       /* heap memory */
+  char* value = strdup(attr[n+1]);
+  if (!checkPointer(value)) return 0;
+  a = checkAttribute(attr[n]);
+  if (a == -1) return 0;  /* illegal attribute error */
+  att[n  ] = attNames[a]; /* no heap memory */
+  att[n+1] = value;       /* heap memory */
     }
     el->attributes = att; /* NULL if n=0 */
     el->n = n;
@@ -481,13 +481,13 @@ static void XMLCALL startElement(void *context, const char *elm, const char **at
     if (el==-1) return; /* error */
     skipData = (el != elm_Name); /* skip element content for all elements but Name */
     switch(getAstNodeType(el)){
-        case astElement:          size = sizeof(Element); break;
-        case astListElement:      size = sizeof(ListElement); break;
-        case astType:             size = sizeof(Type); break;
+  case astElement:          size = sizeof(Element); break;
+  case astListElement:      size = sizeof(ListElement); break;
+  case astType:             size = sizeof(Type); break;
     /* case astModelVariables:   size = sizeof(ModelVariables); break; */
     /* case astArrayVariable:   size = sizeof(ArrayVariable); break;  */
-        case astScalarVariable:   size = sizeof(ScalarVariable); break;
-        case astModelDescription: size = sizeof(ModelDescription); break;
+  case astScalarVariable:   size = sizeof(ScalarVariable); break;
+  case astModelDescription: size = sizeof(ModelDescription); break;
     default: assert(0);
     }
     e = newElement(el, size, attr);
@@ -504,8 +504,8 @@ static void popList(Elm e) {
     Element** array;
     Element* elm = stackPop(stack);
     while (elm->type == e) {
-        elm = stackPop(stack);
-        n++;
+  elm = stackPop(stack);
+  n++;
     }
     stackPush(stack, elm); /* push ListElement back to stack */
     array = (Element**)stackLastPopedAsArray0(stack, n); /* NULL terminated list */
@@ -526,156 +526,156 @@ static void XMLCALL endElement(void *context, const char *elm) {
   #endif
 
     switch(el) {
-        case elm_fmiModelDescription:
-            {
-                 ModelDescription* md;
-                 ListElement** ud = NULL;     /* NULL or list of BaseUnits */
-                 Type**        td = NULL;     /* NULL or list of Types */
-                 Element*      de = NULL;     /* NULL or DefaultExperiment */
-                 ListElement** va = NULL;     /* NULL or list of Tools */
-                 ScalarVariable** mv = NULL;  /* NULL or list of ScalarVariable */
-                 ListElement* child;
+  case elm_fmiModelDescription:
+      {
+           ModelDescription* md;
+           ListElement** ud = NULL;     /* NULL or list of BaseUnits */
+           Type**        td = NULL;     /* NULL or list of Types */
+           Element*      de = NULL;     /* NULL or DefaultExperiment */
+           ListElement** va = NULL;     /* NULL or list of Tools */
+           ScalarVariable** mv = NULL;  /* NULL or list of ScalarVariable */
+           ListElement* child;
 
-                 child = checkPop(ANY_TYPE);
-                 if (child->type == elm_ModelVariables){
-                     mv = (ScalarVariable**)child->list;
-                     free(child);
-                     child = checkPop(ANY_TYPE);
-                     if (!child) return;
-                 }
-                 if (child->type == elm_VendorAnnotations){
-                     va = (ListElement**)child->list;
-                     free(child);
-                     child = checkPop(ANY_TYPE);
-                     if (!child) return;
-                 }
-                 if (child->type == elm_DefaultExperiment){
-                     de = (Element*)child;
-                     child = checkPop(ANY_TYPE);
-                     if (!child) return;
-                 }
-                 if (child->type == elm_TypeDefinitions){
-                     td = (Type**)child->list;
-                     free(child);
-                     child = checkPop(ANY_TYPE);
-                     if (!child) return;
-                 }
-                 if (child->type == elm_UnitDefinitions){
-                     ud = (ListElement**)child->list;
-                     free(child);
-                     child = checkPop(ANY_TYPE);
-                     if (!child) return;
-                 }
-                 if (!checkElementType(child, elm_fmiModelDescription)) return;
-                 md = (ModelDescription*)child;
-                 md->modelVariables = mv;
-                 md->vendorAnnotations = va;
-                 md->defaultExperiment = de;
-                 md->typeDefinitions = td;
-                 md->unitDefinitions = ud;
-                 stackPush(stack, md);
-                 break;
-            }
-        case elm_Type:
-            {
-                Type* tp;
-                Element* ts = checkPop(ANY_TYPE);
-                if (!ts) return;
-                if (!checkPeek(elm_Type)) return;
-                tp = (Type*)stackPeek(stack);
-                switch (ts->type) {
-                    case elm_RealType:
-                    case elm_IntegerType:
-                    case elm_BooleanType:
-                    case elm_StringType:
-                    case elm_EnumerationType:
-                        break;
-                    default:
-                         logFatalTypeError("RealType or similar", ts->type);
-                         return;
-                }
-                tp->typeSpec = ts;
-                break;
-            }
+           child = checkPop(ANY_TYPE);
+           if (child->type == elm_ModelVariables){
+               mv = (ScalarVariable**)child->list;
+               free(child);
+               child = checkPop(ANY_TYPE);
+               if (!child) return;
+           }
+           if (child->type == elm_VendorAnnotations){
+               va = (ListElement**)child->list;
+               free(child);
+               child = checkPop(ANY_TYPE);
+               if (!child) return;
+           }
+           if (child->type == elm_DefaultExperiment){
+               de = (Element*)child;
+               child = checkPop(ANY_TYPE);
+               if (!child) return;
+           }
+           if (child->type == elm_TypeDefinitions){
+               td = (Type**)child->list;
+               free(child);
+               child = checkPop(ANY_TYPE);
+               if (!child) return;
+           }
+           if (child->type == elm_UnitDefinitions){
+               ud = (ListElement**)child->list;
+               free(child);
+               child = checkPop(ANY_TYPE);
+               if (!child) return;
+           }
+           if (!checkElementType(child, elm_fmiModelDescription)) return;
+           md = (ModelDescription*)child;
+           md->modelVariables = mv;
+           md->vendorAnnotations = va;
+           md->defaultExperiment = de;
+           md->typeDefinitions = td;
+           md->unitDefinitions = ud;
+           stackPush(stack, md);
+           break;
+      }
+  case elm_Type:
+      {
+          Type* tp;
+          Element* ts = checkPop(ANY_TYPE);
+          if (!ts) return;
+          if (!checkPeek(elm_Type)) return;
+          tp = (Type*)stackPeek(stack);
+          switch (ts->type) {
+              case elm_RealType:
+              case elm_IntegerType:
+              case elm_BooleanType:
+              case elm_StringType:
+              case elm_EnumerationType:
+                  break;
+              default:
+                   logFatalTypeError("RealType or similar", ts->type);
+                   return;
+          }
+          tp->typeSpec = ts;
+          break;
+      }
     /* case elm_ModelVariables:
       // {
-        // ModelVariables* mvs;
-        // ArrayVariable** av = NULL;
-        // ScalarVariable ** sv = NULL;
-        // ListElement* child = checkPop(ANY_TYPE);
-        // if(!child) return;
-        // if(child->type == elm_ScalarVariable){
-          // sv = (ScalarVariable**)child->list;
-                    // free(child);
-                    // child = checkPop(ANY_TYPE);
-                    // if (!child) return;
-        // }
+  // ModelVariables* mvs;
+  // ArrayVariable** av = NULL;
+  // ScalarVariable ** sv = NULL;
+  // ListElement* child = checkPop(ANY_TYPE);
+  // if(!child) return;
+  // if(child->type == elm_ScalarVariable){
+    // sv = (ScalarVariable**)child->list;
+              // free(child);
+              // child = checkPop(ANY_TYPE);
+              // if (!child) return;
+  // }
 
-        // if(child->type == elm_ArrayVariable){
-        // }
+  // if(child->type == elm_ArrayVariable){
+  // }
 
-        // if(!checkPeek(elm_ModelVariables)) return;
-        // mvs = (ModelVariables*)stackPeek(stack);
-        // mvs->scalarVariables = sv;
-        // mvs->arrayVariables = av;
-        // break;
+  // if(!checkPeek(elm_ModelVariables)) return;
+  // mvs = (ModelVariables*)stackPeek(stack);
+  // mvs->scalarVariables = sv;
+  // mvs->arrayVariables = av;
+  // break;
       // } */
-        case elm_ScalarVariable:
-            {
-                ScalarVariable* sv;
-                Element** list = NULL;
-                Element* child = checkPop(ANY_TYPE);
-                if (!child) return;
-                if (child->type==elm_DirectDependency){
-                    list = ((ListElement*)child)->list;
-                    free(child);
-                    child = checkPop(ANY_TYPE);
-                    if (!child) return;
-                }
-                if (!checkPeek(elm_ScalarVariable)) return;
-                sv = (ScalarVariable*)stackPeek(stack);
-                switch (child->type) {
-                    case elm_Real:
-                    case elm_Integer:
-                    case elm_Boolean:
-                    case elm_String:
-                    case elm_Enumeration:
-                        break;
-                    default:
-                         logFatalTypeError("Real or similar", child->type);
-                         return;
-                }
-                sv->directDependencies = list;
-                sv->typeSpec = child;
-                break;
-            }
+  case elm_ScalarVariable:
+      {
+          ScalarVariable* sv;
+          Element** list = NULL;
+          Element* child = checkPop(ANY_TYPE);
+          if (!child) return;
+          if (child->type==elm_DirectDependency){
+              list = ((ListElement*)child)->list;
+              free(child);
+              child = checkPop(ANY_TYPE);
+              if (!child) return;
+          }
+          if (!checkPeek(elm_ScalarVariable)) return;
+          sv = (ScalarVariable*)stackPeek(stack);
+          switch (child->type) {
+              case elm_Real:
+              case elm_Integer:
+              case elm_Boolean:
+              case elm_String:
+              case elm_Enumeration:
+                  break;
+              default:
+                   logFatalTypeError("Real or similar", child->type);
+                   return;
+          }
+          sv->directDependencies = list;
+          sv->typeSpec = child;
+          break;
+      }
     case elm_ModelVariables:    popList(elm_ScalarVariable); break;
-        case elm_VendorAnnotations: popList(elm_Tool);break;
-        case elm_Tool:              popList(elm_Annotation); break;
-        case elm_TypeDefinitions:   popList(elm_Type); break;
-        case elm_EnumerationType:   popList(elm_Item); break;
-        case elm_UnitDefinitions:   popList(elm_BaseUnit); break;
-        case elm_BaseUnit:          popList(elm_DisplayUnitDefinition); break;
-        case elm_DirectDependency:  popList(elm_Name); break;
-        case elm_Name:
-            {
-                 /* Exception: the name value is represented as element content.
-                  * All other values of the XML file are represented using attributes.
-                  */
-                 Element* name = checkPop(elm_Name);
-                 if (!name) return;
-                 name->n = 2;
-                 name->attributes = malloc(2*sizeof(char*));
-                 name->attributes[0] = attNames[att_input];
-                 name->attributes[1] = data;
-                 data = NULL;
-                 skipData = 1; /* stop recording element content */
-                 stackPush(stack, name);
-                 break;
-            }
-        default: /* must be a leaf Element */
-                 assert(getAstNodeType(el)==astElement);
-                 break;
+  case elm_VendorAnnotations: popList(elm_Tool);break;
+  case elm_Tool:              popList(elm_Annotation); break;
+  case elm_TypeDefinitions:   popList(elm_Type); break;
+  case elm_EnumerationType:   popList(elm_Item); break;
+  case elm_UnitDefinitions:   popList(elm_BaseUnit); break;
+  case elm_BaseUnit:          popList(elm_DisplayUnitDefinition); break;
+  case elm_DirectDependency:  popList(elm_Name); break;
+  case elm_Name:
+      {
+           /* Exception: the name value is represented as element content.
+            * All other values of the XML file are represented using attributes.
+            */
+           Element* name = checkPop(elm_Name);
+           if (!name) return;
+           name->n = 2;
+           name->attributes = malloc(2*sizeof(char*));
+           name->attributes[0] = attNames[att_input];
+           name->attributes[1] = data;
+           data = NULL;
+           skipData = 1; /* stop recording element content */
+           stackPush(stack, name);
+           break;
+      }
+  default: /* must be a leaf Element */
+           assert(getAstNodeType(el)==astElement);
+           break;
     }
     /* All children of el removed from the stack.
      * The top element must be of type el now. */
@@ -693,21 +693,21 @@ void XMLCALL handleData(void *context, const XML_Char *s, int len) {
     int n;
     if (skipData) return;
     if (!data) {
-        /* start a new data string */
-        if (len == 1 && s[0] == '\n') {
-            data = strdup("");
-        } else {
-            data = malloc(len + 1);
-            strncpy(data, s, len);
-            data[len] = '\0';
-        }
+  /* start a new data string */
+  if (len == 1 && s[0] == '\n') {
+      data = strdup("");
+  } else {
+      data = malloc(len + 1);
+      strncpy(data, s, len);
+      data[len] = '\0';
+  }
     }
     else {
-        /* continue existing string */
-        n = strlen(data) + len;
-        data = realloc(data, n+1);
-        strncat(data, s, len);
-        data[n] = '\0';
+  /* continue existing string */
+  n = strlen(data) + len;
+  data = realloc(data, n+1);
+  strncat(data, s, len);
+  data[n] = '\0';
     }
     return;
 }
@@ -726,29 +726,29 @@ void printElement(int indent, void* element){
     for (i=0; i<indent; i++) printf(" ");
     printf("%s", elmNames[e->type]);
     for (i=0; i<e->n; i+=2)
-        printf(" %s=%s", e->attributes[i], e->attributes[i+1]);
+  printf(" %s=%s", e->attributes[i], e->attributes[i+1]);
     printf("\n");
     /* print child nodes */
     indent += 2;
     switch (getAstNodeType(e->type)) {
-        case astListElement:
-            printList(indent, (void** )((ListElement*)e)->list);
-            break;
-        case astScalarVariable:
-            printElement(indent, ((Type*)e)->typeSpec);
-            printList(indent, (void** )((ScalarVariable*)e)->directDependencies);
-            break;
-        case astType:
-            printElement(indent, ((Type*)e)->typeSpec);
-            break;
-        case astModelDescription:
-            md = (ModelDescription*)e;
-            printList(indent, (void** )md->unitDefinitions);
-            printList(indent, (void** )md->typeDefinitions);
-            printElement(indent, md->defaultExperiment);
-            printList(indent, (void** )md->vendorAnnotations);
-            printList(indent, (void** )md->modelVariables);
-            break;
+  case astListElement:
+      printList(indent, (void** )((ListElement*)e)->list);
+      break;
+  case astScalarVariable:
+      printElement(indent, ((Type*)e)->typeSpec);
+      printList(indent, (void** )((ScalarVariable*)e)->directDependencies);
+      break;
+  case astType:
+      printElement(indent, ((Type*)e)->typeSpec);
+      break;
+  case astModelDescription:
+      md = (ModelDescription*)e;
+      printList(indent, (void** )md->unitDefinitions);
+      printList(indent, (void** )md->typeDefinitions);
+      printElement(indent, md->defaultExperiment);
+      printList(indent, (void** )md->vendorAnnotations);
+      printList(indent, (void** )md->modelVariables);
+      break;
     default:
       /* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
       exit(EXIT_FAILURE);
@@ -775,31 +775,31 @@ void freeElement(void* element){
     if (!e) return;
     /* free attributes */
     for (i=0; i<e->n; i+=2)
-        free((void*)e->attributes[i+1]);
+  free((void*)e->attributes[i+1]);
     free(e->attributes);
     /* free child nodes */
     switch (getAstNodeType(e->type)) {
-        case astListElement:
-          freeList((void **)((ListElement*)e)->list);
-          break;
-        case astScalarVariable:
-          freeList((void **)((ScalarVariable*)e)->directDependencies);
-          break;
-        case astType:
-          freeElement(((Type*)e)->typeSpec);
-          break;
-        case astModelDescription:
-          md = (ModelDescription*)e;
-          freeList((void **)md->unitDefinitions);
-          freeList((void **)md->typeDefinitions);
-          freeElement((void *)md->defaultExperiment);
-          freeList((void **)md->vendorAnnotations);
-          freeList((void **)md->modelVariables);
-          break;
-        default:
-          //ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
-          //exit(EXIT_FAILURE);
-          break;
+  case astListElement:
+    freeList((void **)((ListElement*)e)->list);
+    break;
+  case astScalarVariable:
+    freeList((void **)((ScalarVariable*)e)->directDependencies);
+    break;
+  case astType:
+    freeElement(((Type*)e)->typeSpec);
+    break;
+  case astModelDescription:
+    md = (ModelDescription*)e;
+    freeList((void **)md->unitDefinitions);
+    freeList((void **)md->typeDefinitions);
+    freeElement((void *)md->defaultExperiment);
+    freeList((void **)md->vendorAnnotations);
+    freeList((void **)md->modelVariables);
+    break;
+  default:
+    //ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
+    //exit(EXIT_FAILURE);
+    break;
     }
     /* free the struct */
     free(e);
@@ -809,7 +809,7 @@ static void freeList(void** list){
     int i;
     if (!list) return;
     for (i=0; list[i]; i++)
-        freeElement(list[i]);
+  freeElement(list[i]);
     free(list);
 }
 
@@ -841,23 +841,23 @@ ModelDescription* parse(const char* xmlPath) {
     XML_SetCharacterDataHandler(parser, handleData);
     file = fopen(xmlPath, "rb");
   if (file == NULL) {
-        ERRORPRINT; fprintf(stderr," Cannot open file '%s'\n", xmlPath);
+  ERRORPRINT; fprintf(stderr," Cannot open file '%s'\n", xmlPath);
       XML_ParserFree(parser);
-        return NULL; /* failure */
+  return NULL; /* failure */
     }
     while (!done) {
-        int n = fread(text, sizeof(char), XMLBUFSIZE, file);
+  int n = fread(text, sizeof(char), XMLBUFSIZE, file);
       if (n != XMLBUFSIZE) done = 1;
-        if (!XML_Parse(parser, text, n, done)){
-             ERRORPRINT; fprintf(stderr," Parse error in file %s at line %lu:\n%s\n",
-                     xmlPath,
-                   XML_GetCurrentLineNumber(parser),
-                   XML_ErrorString(XML_GetErrorCode(parser)));
-             while (! stackIsEmpty(stack)) md = stackPop(stack);
-             if (md) freeElement(md);
-             cleanup(file);
-             return NULL; /* failure */
-        }
+  if (!XML_Parse(parser, text, n, done)){
+       ERRORPRINT; fprintf(stderr," Parse error in file %s at line %lu:\n%s\n",
+               xmlPath,
+             XML_GetCurrentLineNumber(parser),
+             XML_ErrorString(XML_GetErrorCode(parser)));
+       while (! stackIsEmpty(stack)) md = stackPop(stack);
+       if (md) freeElement(md);
+       cleanup(file);
+       return NULL; /* failure */
+  }
     }
     md = stackPop(stack);
     assert(stackIsEmpty(stack));

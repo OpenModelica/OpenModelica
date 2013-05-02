@@ -65,7 +65,7 @@ extern void free_boolean_array_data(boolean_array_t* a);
 
 /* Clones data*/
 static inline void clone_boolean_array_spec(const boolean_array_t* src,
-                                            boolean_array_t* dst)
+                                      boolean_array_t* dst)
 { clone_base_array_spec(src, dst); }
 
 /* Copy boolean data*/
@@ -92,14 +92,14 @@ extern char print_boolean(m_boolean value);
 
 */
 extern void indexed_assign_boolean_array(const boolean_array_t* source,
-                                  boolean_array_t* dest,
-                                  const index_spec_t* dest_spec);
+                            boolean_array_t* dest,
+                            const index_spec_t* dest_spec);
 extern void simple_indexed_assign_boolean_array1(const boolean_array_t* source,
-                                          int i1,
-                                          boolean_array_t* dest);
+                                    int i1,
+                                    boolean_array_t* dest);
 extern void simple_indexed_assign_boolean_array2(const boolean_array_t* source,
-                                          int i1, int i2,
-                                          boolean_array_t* dest);
+                                    int i1, int i2,
+                                    boolean_array_t* dest);
 
 /*
 
@@ -107,31 +107,31 @@ extern void simple_indexed_assign_boolean_array2(const boolean_array_t* source,
 
 */
 extern void index_boolean_array(const boolean_array_t* source,
+                   const index_spec_t* source_spec,
+                   boolean_array_t* dest);
+extern void index_alloc_boolean_array(const boolean_array_t* source,
                          const index_spec_t* source_spec,
                          boolean_array_t* dest);
-extern void index_alloc_boolean_array(const boolean_array_t* source,
-                               const index_spec_t* source_spec,
-                               boolean_array_t* dest);
 
 extern void simple_index_alloc_boolean_array1(const boolean_array_t* source, int i1,
-                                       boolean_array_t* dest);
+                                 boolean_array_t* dest);
 
 extern void simple_index_boolean_array1(const boolean_array_t* source,
-                                 int i1,
-                                 boolean_array_t* dest);
+                           int i1,
+                           boolean_array_t* dest);
 extern void simple_index_boolean_array2(const boolean_array_t* source,
-                                 int i1, int i2,
-                                 boolean_array_t* dest);
+                           int i1, int i2,
+                           boolean_array_t* dest);
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_boolean_array(boolean_array_t* dest,int n,
-                         boolean_array_t* first,...);
+                   boolean_array_t* first,...);
 extern void array_alloc_boolean_array(boolean_array_t* dest,int n,
-                               boolean_array_t* first,...);
+                         boolean_array_t* first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_boolean_array(boolean_array_t* dest,int n,
-                                m_boolean first,...);
+                          m_boolean first,...);
 extern void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,...);
 
 extern m_boolean* boolean_array_element_addr(const boolean_array_t* source,int ndims,...);
@@ -139,15 +139,15 @@ extern m_boolean* boolean_array_element_addr1(const boolean_array_t* source,int 
 extern m_boolean* boolean_array_element_addr2(const boolean_array_t* source,int ndims,int dim1,int dim2);
 
 extern void cat_boolean_array(int k,boolean_array_t* dest, int n,
-                       boolean_array_t* first,...);
+                 boolean_array_t* first,...);
 extern void cat_alloc_boolean_array(int k,boolean_array_t* dest, int n,
-                             boolean_array_t* first,...);
+                       boolean_array_t* first,...);
 
 extern void promote_boolean_array(const boolean_array_t* a, int n,boolean_array_t* dest);
 extern void promote_scalar_boolean_array(modelica_boolean s,int n,
-                                  boolean_array_t* dest);
+                            boolean_array_t* dest);
 extern void promote_alloc_boolean_array(const boolean_array_t* a, int n,
-                                 boolean_array_t* dest);
+                           boolean_array_t* dest);
 
 static inline int ndims_boolean_array(const boolean_array_t* a)
 { return ndims_base_array(a); }
@@ -171,12 +171,12 @@ static inline size_t boolean_array_nr_of_elements(const boolean_array_t*a)
 { return base_array_nr_of_elements(a); }
 
 static inline void clone_reverse_boolean_array_spec(const boolean_array_t*source,
-                                                    boolean_array_t *dest)
+                                              boolean_array_t *dest)
 { clone_reverse_base_array_spec(source, dest); }
 extern void convert_alloc_boolean_array_to_f77(const boolean_array_t* a,
-                                        boolean_array_t* dest);
+                                  boolean_array_t* dest);
 extern void convert_alloc_boolean_array_from_f77(const boolean_array_t* a,
-                                          boolean_array_t* dest);
+                                    boolean_array_t* dest);
 extern void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int ndims, ...);
 
 #endif

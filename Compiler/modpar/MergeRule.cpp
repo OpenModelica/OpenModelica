@@ -2,10 +2,10 @@
 #include "TaskGraph.hpp"
 
 MergeRule::MergeRule(TaskGraph *tg, TaskGraph *orig_tg,
-         ContainSetMap *cmap, VertexID invar,
-         VertexID outvar, double l, double B,
-         int nproc,
-         map<VertexID,bool>*removed)
+   ContainSetMap *cmap, VertexID invar,
+   VertexID outvar, double l, double B,
+   int nproc,
+   map<VertexID,bool>*removed)
   : m_latency(l), m_bandwidth(B),m_nproc(nproc),
     m_taskgraph(tg), m_orig_taskgraph(orig_tg),
     m_containTasks(cmap), m_invartask(invar),
@@ -41,12 +41,12 @@ double MergeRule::getExecCost(VertexID v)
     ContainSet::iterator i;
     for(i=cset->begin(); i != cset->end() ; i++) {
       cost+= ::getExecCost(find_task(*i,(TaskGraph*)m_orig_taskgraph),
-         m_orig_taskgraph);
+   m_orig_taskgraph);
     }
     return cost;
   }
   return ::getExecCost(find_task(getTaskID(v,m_taskgraph),m_orig_taskgraph),
-           m_orig_taskgraph);
+     m_orig_taskgraph);
 }
 
 VertexID MergeRule::find_task(int taskID, TaskGraph *tg)

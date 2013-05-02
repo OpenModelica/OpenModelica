@@ -60,7 +60,7 @@ void ocl_real_arr_arr_arr(const char* kernel_name, modelica_real* src_1, modelic
     cl_int err;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -84,12 +84,12 @@ void ocl_real_arr_arr_arr(const char* kernel_name, modelica_real* src_1, modelic
     size_t WorkSize[1] = {size_}; // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
-        WorkSize, NULL, 0, NULL, NULL);
+  WorkSize, NULL, 0, NULL, NULL);
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(device_array_output, dest, size_);
 
@@ -115,7 +115,7 @@ void ocl_real_arr_arr_sca(const char* kernel_name, modelica_real* src_1, modelic
     size_t localWorkSize[1] = {32};    // one dimensional Range
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
 
     //This can be moved out. left here hoping that similar ops will be called
@@ -141,12 +141,12 @@ void ocl_real_arr_arr_sca(const char* kernel_name, modelica_real* src_1, modelic
 
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
-        WorkSize, localWorkSize, 0, NULL, NULL);
+  WorkSize, localWorkSize, 0, NULL, NULL);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
     clFinish(device_comm_queue);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(result, dest, 1);
 
@@ -168,7 +168,7 @@ void ocl_real_arr_sca_arr(const char* kernel_name, modelica_real* src_1, modelic
 
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -191,12 +191,12 @@ void ocl_real_arr_sca_arr(const char* kernel_name, modelica_real* src_1, modelic
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
-        WorkSize, NULL, 0, NULL, NULL);
+  WorkSize, NULL, 0, NULL, NULL);
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(device_array_output, dest, size_);
 
@@ -217,7 +217,7 @@ void ocl_real_arr_arr(const char* kernel_name, modelica_real* src_1, modelica_re
 
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -240,12 +240,12 @@ void ocl_real_arr_arr(const char* kernel_name, modelica_real* src_1, modelica_re
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
-        WorkSize, NULL, 0, NULL, NULL);
+  WorkSize, NULL, 0, NULL, NULL);
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(device_array_output, dest, size_);
 
@@ -265,7 +265,7 @@ void ocl_real_arr_sca(const char* kernel_name, modelica_real* src_1, modelica_re
     cl_int err;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -290,11 +290,11 @@ void ocl_real_arr_sca(const char* kernel_name, modelica_real* src_1, modelica_re
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
-        WorkSize, NULL, 0, NULL, NULL);
+  WorkSize, NULL, 0, NULL, NULL);
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(result, dest, 1);
 
@@ -318,7 +318,7 @@ void ocl_real_matrix_matrix_matrix(const char* kernel_name, modelica_real* src_1
 
     if (!device_comm_queue){
     printf("------------------------------Initizlizing---------------------\n");
-        ocl_initialize();
+  ocl_initialize();
     }
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -341,12 +341,12 @@ void ocl_real_matrix_matrix_matrix(const char* kernel_name, modelica_real* src_1
 
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 2, NULL,
-        WorkSize, localWorkSize, 0, NULL, NULL);
+  WorkSize, localWorkSize, 0, NULL, NULL);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
     clFinish(device_comm_queue);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(result, dest, M*N);
 
@@ -367,7 +367,7 @@ void ocl_real_matrix_matrix_matrix2(const char* kernel_name, modelica_real* src_
     cl_int err;
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     size_t WorkSize[2] = {M/4, N/4};
     size_t localWorkSize[2] = {16,16};
@@ -393,12 +393,12 @@ void ocl_real_matrix_matrix_matrix2(const char* kernel_name, modelica_real* src_
 
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 2, NULL,
-        WorkSize, localWorkSize, 0, NULL, NULL);
+  WorkSize, localWorkSize, 0, NULL, NULL);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
     clFinish(device_comm_queue);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(result, dest, M*N);
 
@@ -423,7 +423,7 @@ void ocl_real_matrix_matrix(const char* kernel_name, modelica_real* src_1, int M
     size_t localWorkSize[2] = {block_size,block_size};
 
     if (!device_comm_queue)
-        ocl_initialize();
+  ocl_initialize();
 
     //This can be moved out. left here hoping that similar ops will be called
     //sequentialy. If we kept them in one .cl file we dont have to build again
@@ -446,12 +446,12 @@ void ocl_real_matrix_matrix(const char* kernel_name, modelica_real* src_1, int M
 
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 2, NULL,
-        WorkSize, localWorkSize, 0, NULL, NULL);
+  WorkSize, localWorkSize, 0, NULL, NULL);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
     clFinish(device_comm_queue);
 
     c1 = clock();
-    printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
+    printf ("\telapsed CPU CLOCKS:  %f sec\n", (float) (c1-c0)/1000);
 
     ocl_copy_back_to_host_real(result, dest, M*N);
 

@@ -31,7 +31,7 @@
 
 
 encapsulated package IOStreamExt
-"file:        IOStreamExt.mo
+"file:  IOStreamExt.mo
  package:     IOStreamExt
  description: External Stream Utilities
  @author:     Adrian Pop [adrpo@ida.liu.se]

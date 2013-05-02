@@ -23,11 +23,11 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
        double start,
        double stop,
        double step, void (*f)(double*,// x
-             double*,// xd
-             double*,// y
-             double*,// p
-             int,int,int, //nx,ny,np
-             double*) // time
+       double*,// xd
+       double*,// y
+       double*,// p
+       int,int,int, //nx,ny,np
+       double*) // time
        )
 {
 

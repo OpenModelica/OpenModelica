@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFLookup
-" file:        NFEnv.mo
+" file:  NFEnv.mo
   package:     NFEnv
   description: Lookup functions for NFEnv
 
@@ -84,16 +84,16 @@ algorithm
 
     case (Absyn.IDENT(name = name), _, _)
       equation
-        (entry, env) = lookupBuiltinType(name, inEnv);
+  (entry, env) = lookupBuiltinType(name, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
     else
       equation
-        (entry, env) = lookupName(inName, inEnv, inInfo, SOME(Error.LOOKUP_ERROR));
-        checkEntryIsClass(entry, inInfo);
+  (entry, env) = lookupName(inName, inEnv, inInfo, SOME(Error.LOOKUP_ERROR));
+  checkEntryIsClass(entry, inInfo);
       then
-        (entry, env);
+  (entry, env);
 
   end matchcontinue;
 end lookupClassName;
@@ -111,10 +111,10 @@ algorithm
 
     case (NFEnv.ENTRY(element = SCode.COMPONENT(name = name, info = info)), _)
       equation
-        Error.addMultiSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP,
-          {name}, {info, inInfo});
+  Error.addMultiSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP,
+    {name}, {info, inInfo});
       then
-        fail();
+  fail();
 
   end match;
 end checkEntryIsClass;
@@ -135,10 +135,10 @@ algorithm
     // Normal baseclass.
     case (_, _, _)
       equation
-        (entry, env) = lookupName(inName, inEnv, inInfo,
-          SOME(Error.LOOKUP_BASECLASS_ERROR));
+  (entry, env) = lookupName(inName, inEnv, inInfo,
+    SOME(Error.LOOKUP_BASECLASS_ERROR));
       then
-        (entry, env);
+  (entry, env);
 
   end match;
 end lookupBaseClassName;
@@ -168,10 +168,10 @@ algorithm
 
     case (NFEnv.ENTRY(element = SCode.CLASS(name = name, info = info)), _)
       equation
-        Error.addMultiSourceMessage(Error.LOOKUP_COMP_FOUND_TYPE,
-          {name}, {info, inInfo});
+  Error.addMultiSourceMessage(Error.LOOKUP_COMP_FOUND_TYPE,
+    {name}, {info, inInfo});
       then
-        fail();
+  fail();
 
   end match;
 end checkEntryIsVar;
@@ -203,18 +203,18 @@ algorithm
 
     case (_, _, _)
       equation
-        (entry, env) = lookupFullyQualified(inPath, inEnv);
+  (entry, env) = lookupFullyQualified(inPath, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
     else
       equation
-        path_str = Absyn.pathString(inPath);
-        env_str = NFEnv.printEnvPathStr(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_IMPORT_ERROR,
-          {path_str, env_str}, inInfo);
+  path_str = Absyn.pathString(inPath);
+  env_str = NFEnv.printEnvPathStr(inEnv);
+  Error.addSourceMessage(Error.LOOKUP_IMPORT_ERROR,
+    {path_str, env_str}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end lookupImportPath;
@@ -239,17 +239,17 @@ algorithm
     // A normal type.
     case (Absyn.TPATH(path = path), _, _)
       equation
-        (entry, env) = lookupClassName(path, inEnv, inInfo);
+  (entry, env) = lookupClassName(path, inEnv, inInfo);
       then
-        (entry, env);
+  (entry, env);
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
       equation
-        cls = makeDummyMetaType(name);
-        entry = NFEnv.makeEntry(cls, NFEnv.emptyEnv);
+  cls = makeDummyMetaType(name);
+  entry = NFEnv.makeEntry(cls, NFEnv.emptyEnv);
       then
-        (entry, NFEnv.emptyEnv);
+  (entry, NFEnv.emptyEnv);
 
   end match;
 end lookupTypeSpec;
@@ -279,17 +279,17 @@ algorithm
 
     case (_, _)
       equation
-        entry = NFEnv.lookupEntry(inName, inEnv);
+  entry = NFEnv.lookupEntry(inName, inEnv);
       then
-        entry;
+  entry;
 
     else
       equation
-        true = NFEnv.isScopeEncapsulated(inEnv);
-        env = NFEnv.builtinScope(inEnv);
-        entry = lookupUnresolvedSimpleName(inName, env);
+  true = NFEnv.isScopeEncapsulated(inEnv);
+  env = NFEnv.builtinScope(inEnv);
+  entry = lookupUnresolvedSimpleName(inName, env);
       then
-        entry;
+  entry;
 
   end matchcontinue;
 end lookupUnresolvedSimpleName;
@@ -335,30 +335,30 @@ algorithm
 
     case (Absyn.IDENT(name = name), _, _, _)
       equation
-        (entry, env) = lookupSimpleName(name, inEnv);
+  (entry, env) = lookupSimpleName(name, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
     case (Absyn.QUALIFIED(name = name, path = path), _, _, _)
       equation
-        (entry, env) = lookupSimpleName(name, inEnv);
-        (entry, env) = lookupNameInEntry(path, entry, env);
+  (entry, env) = lookupSimpleName(name, inEnv);
+  (entry, env) = lookupNameInEntry(path, entry, env);
       then
-        (entry, env);
+  (entry, env);
 
     case (Absyn.FULLYQUALIFIED(path = path), _, _, _)
       equation
-        (entry, env) = lookupFullyQualified(path, inEnv);
+  (entry, env) = lookupFullyQualified(path, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
     case (_, _, _, SOME(error_id))
       equation
-        name_str = Absyn.pathString(inName);
-        env_str = NFEnv.printEnvPathStr(inEnv);
-        Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
+  name_str = Absyn.pathString(inName);
+  env_str = NFEnv.printEnvPathStr(inEnv);
+  Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end lookupName;
@@ -376,19 +376,19 @@ algorithm
 
     case (_, _)
       equation
-        entry = NFEnv.lookupEntry(inName, inEnv);
-        (entry, env) = NFEnv.resolveEntry(entry, inEnv);
-        env = NFEnv.entryEnv(entry, env);
+  entry = NFEnv.lookupEntry(inName, inEnv);
+  (entry, env) = NFEnv.resolveEntry(entry, inEnv);
+  env = NFEnv.entryEnv(entry, env);
       then
-        (entry, env);
+  (entry, env);
 
     else
       equation
-        true = NFEnv.isScopeEncapsulated(inEnv);
-        env = NFEnv.builtinScope(inEnv);
-        (entry, env) = lookupSimpleName(inName, inEnv);
+  true = NFEnv.isScopeEncapsulated(inEnv);
+  env = NFEnv.builtinScope(inEnv);
+  (entry, env) = lookupSimpleName(inName, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
   end matchcontinue;
 end lookupSimpleName;
@@ -435,16 +435,16 @@ algorithm
 
     case (Absyn.IDENT(name = name), _)
       equation
-        (entry, env) = lookupInLocalScope(name, inEnv);
+  (entry, env) = lookupInLocalScope(name, inEnv);
       then
-        (entry, env);
+  (entry, env);
 
     case (Absyn.QUALIFIED(name = name, path = path), _)
       equation
-        (entry, env) = lookupInLocalScope(name, inEnv);
-        (entry, env) = lookupNameInEntry(path, entry, env);
+  (entry, env) = lookupInLocalScope(name, inEnv);
+  (entry, env) = lookupNameInEntry(path, entry, env);
       then
-        (entry, env);
+  (entry, env);
 
   end match;
 end lookupNameInPackage;
@@ -463,10 +463,10 @@ algorithm
 
     case (_, _, _)
       equation
-        env = NFEnv.enterEntryScope(inEntry, inEnv);
-        (entry, env) = lookupNameInPackage(inName, env);
+  env = NFEnv.enterEntryScope(inEntry, inEnv);
+  (entry, env) = lookupNameInPackage(inName, env);
       then
-        (entry, env);
+  (entry, env);
 
   end match;
 end lookupNameInEntry;

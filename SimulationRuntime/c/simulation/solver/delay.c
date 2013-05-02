@@ -135,7 +135,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
 
   /*
    * Returns: expr(time?delayTime) for time>time.start + delayTime and
-   *          expr(time.start) for time <= time.start + delayTime.
+   *    expr(time.start) for time <= time.start + delayTime.
    * The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
    * DelayMax needs to be additionally a parameter expression.
    * The following relation shall hold: 0 <= delayTime <= delayMax,
@@ -180,7 +180,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
       /* was it the last value? */
       if(i+1 == length)
       {
-        return value0;
+  return value0;
       }
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
       value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;

@@ -30,15 +30,15 @@
  */
 
 encapsulated package Tearing
-" file:        Tearing.mo
+" file:  Tearing.mo
   package:     Tearing
   description: Tearing contains functions used for tear strong connected components.
-               Implemented Methods are:
-               - omc tearing developed by TU Dresden: Frenkel,Schubert
-               - Cellier tearing
-               - Carpanzano 2 tearing
-               - Ollero-Amselem tearing
-               - Steward tearing
+         Implemented Methods are:
+         - omc tearing developed by TU Dresden: Frenkel,Schubert
+         - Cellier tearing
+         - Carpanzano 2 tearing
+         - Ollero-Amselem tearing
+         - Steward tearing
 
   RCS: $Id: Tearing.mo 13560 2012-10-22 23:00:33Z jfrenkel $"
 
@@ -91,22 +91,22 @@ public function tearingSystem "function tearingSystem
 algorithm
   outDAE := matchcontinue(inDAE)
     local
-        String methodString;
-        tearingMethodFunction method;
+  String methodString;
+  tearingMethodFunction method;
       // if noTearing selected, do nothing.
       case(_)
-        equation
-          methodString = Config.getTearingMethod();
-          true = stringEqual(methodString,"noTearing");
-        then
-          inDAE;
+  equation
+    methodString = Config.getTearingMethod();
+    true = stringEqual(methodString,"noTearing");
+  then
+    inDAE;
       // get method function and traveres systems
       case(_)
-        equation
-          method = getTearingMethod();
-          (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemWork,method);
-        then
-          outDAE;
+  equation
+    method = getTearingMethod();
+    (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemWork,method);
+  then
+    outDAE;
   end matchcontinue;
 end tearingSystem;
 
@@ -162,43 +162,43 @@ algorithm
     // as linear system while the runtime
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_,_,_,_)
       equation
-        equality(jacType = BackendDAE.JAC_TIME_VARYING());
-        true = Flags.isSet(Flags.LINEAR_TEARING);
-        (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
+  equality(jacType = BackendDAE.JAC_TIME_VARYING());
+  true = Flags.isSet(Flags.LINEAR_TEARING);
+  (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
+  (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
       then
-        (acc,b1);
+  (acc,b1);
     // tearing of non-linear systems
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_,_,_,_)
       equation
-        failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
-        (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
+  failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
+  (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
+  (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
       then
-        (acc,b1);
+  (acc,b1);
     // only continues part of a mixed system
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
       equation
-        false = Flags.isSet(Flags.MIXED_TEARING);
-        (comp1::{},true) = traverseComponents({comp1},isyst,ishared,method,{},false);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc,true);
+  false = Flags.isSet(Flags.MIXED_TEARING);
+  (comp1::{},true) = traverseComponents({comp1},isyst,ishared,method,{},false);
+  (acc,b1) = traverseComponents(comps,isyst,ishared,method,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc,true);
       then
-        (acc,b1);
+  (acc,b1);
     // mixed and continues part
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
       equation
-        true = Flags.isSet(Flags.MIXED_TEARING);
-        (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        (comp1,true) = method(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
+  true = Flags.isSet(Flags.MIXED_TEARING);
+  (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+  (comp1,true) = method(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+  (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
       then
-        (acc,b1);
+  (acc,b1);
     // no component for tearing
     case (comp::comps,_,_,_,_,_)
       equation
-        (acc,b) = traverseComponents(comps,isyst,ishared,method,comp::iAcc,iRunMatching);
+  (acc,b) = traverseComponents(comps,isyst,ishared,method,comp::iAcc,iRunMatching);
       then
-        (acc,b);
+  (acc,b);
   end matchcontinue;
 end traverseComponents;
 
@@ -228,14 +228,14 @@ algorithm
       list<tuple<tearingMethodFunction,String>> rest;
     case ((func,name)::rest,_)
       equation
-        true = stringEqual(name,method);
+  true = stringEqual(name,method);
       then
-        func;
+  func;
     case ((func,name)::rest,_)
       equation
-        false = stringEqual(name,method);
+  false = stringEqual(name,method);
       then
-        selectTearingMethods(rest,method);
+  selectTearingMethods(rest,method);
   end matchcontinue;
 end selectTearingMethods;
 
@@ -391,19 +391,19 @@ algorithm
     case ((i,BackendDAE.SOLVABILITY_CONST())) then i;
     case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=_)))
       equation
-        i = Util.if_(intLt(i,0),i,-i);
+  i = Util.if_(intLt(i,0),i,-i);
       then i;
     case ((i,BackendDAE.SOLVABILITY_TIMEVARYING(b=_)))
       equation
-        i = Util.if_(intLt(i,0),i,-i);
+  i = Util.if_(intLt(i,0),i,-i);
       then i;
     case ((i,BackendDAE.SOLVABILITY_NONLINEAR()))
       equation
-        i = Util.if_(intLt(i,0),i,-i);
+  i = Util.if_(intLt(i,0),i,-i);
        then i;
     case ((i,BackendDAE.SOLVABILITY_UNSOLVABLE()))
       equation
-        i = Util.if_(intLt(i,0),i,-i);
+  i = Util.if_(intLt(i,0),i,-i);
       then i;
   end match;
 end incidenceMatrixElementElementfromEnhanced;
@@ -424,10 +424,10 @@ algorithm
       Boolean b;
     case(_,_,_,_)
       equation
-        true = intLe(index,size);
-        elem = meT[index];
-        b = unsolvable(elem);
-        acc = List.consOnTrue(b, index, iAcc);
+  true = intLe(index,size);
+  elem = meT[index];
+  b = unsolvable(elem);
+  acc = List.consOnTrue(b, index, iAcc);
       then
        getUnsolvableVars(index+1,size,meT,acc);
     case(_,_,_,_)
@@ -450,43 +450,43 @@ algorithm
     case ({}) then true;
     case ((e,BackendDAE.SOLVABILITY_SOLVED())::rest)
       equation
-        b1 = intLe(e,0);
-        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+  b1 = intLe(e,0);
+  b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
-        b1;
+  b1;
     case ((e,BackendDAE.SOLVABILITY_CONSTONE())::rest)
       equation
-        b1 = intLe(e,0);
-        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+  b1 = intLe(e,0);
+  b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
-        b1;
+  b1;
     case ((e,BackendDAE.SOLVABILITY_CONST())::rest)
       equation
-        b1 = intLe(e,0);
-        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+  b1 = intLe(e,0);
+  b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
-        b1;
+  b1;
     case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
       then
-        unsolvable(rest);
+  unsolvable(rest);
     case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true))::rest)
       equation
-        b1 = intLe(e,0);
-        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+  b1 = intLe(e,0);
+  b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
-        b1;
+  b1;
     case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=false))::rest)
       then
-        unsolvable(rest);
+  unsolvable(rest);
     case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=true))::rest)
       then
-        unsolvable(rest);
+  unsolvable(rest);
     case ((e,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
       then
-        unsolvable(rest);
+  unsolvable(rest);
     case ((e,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
       then
-        unsolvable(rest);
+  unsolvable(rest);
   end match;
 end unsolvable;
 
@@ -545,22 +545,22 @@ algorithm
       list<Integer> row;
     case (_,_,_,_,_,_)
       equation
-        true = intGt(index,size);
+  true = intGt(index,size);
       then
-        mnew;
+  mnew;
     case (_,_,_,_,_,_)
       equation
-        true = intGt(skip[index],0);
-        row = List.select(m[index], Util.intPositive);
-        row = List.select1r(row,isAssigned,rowskip);
-        _ = arrayUpdate(mnew,index,row);
+  true = intGt(skip[index],0);
+  row = List.select(m[index], Util.intPositive);
+  row = List.select1r(row,isAssigned,rowskip);
+  _ = arrayUpdate(mnew,index,row);
       then
-        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
+  getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
     case (_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(mnew,index,{});
+  _ = arrayUpdate(mnew,index,{});
       then
-        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
+  getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
   end matchcontinue;
 end getOtherEqSysIncidenceMatrix;
 
@@ -578,9 +578,9 @@ algorithm
       list<Integer> rest;
     case(indx::rest,_,_)
       equation
-        _= arrayUpdate(arr,indx,value);
+  _= arrayUpdate(arr,indx,value);
       then
-        setIntArray(rest,arr,value);
+  setIntArray(rest,arr,value);
     case({},_,_) then arr;
   end match;
 end setIntArray;
@@ -666,10 +666,10 @@ algorithm
     case ({},_,_,_,_,_) then iAcc;
     case (v::vars,_,_,_,_,_)
       equation
-        true = intLt(ass1[v],0);
-        tvars = uniqueIntLst(v,iMark,visited,iAcc);
+  true = intLt(ass1[v],0);
+  tvars = uniqueIntLst(v,iMark,visited,iAcc);
       then
-        tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
+  tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
     case (v::vars,_,_,_,_,_) equation
       tvars = List.fold2(mT[v],uniqueIntLst,iMark,visited,iAcc);
     then tVarsofEqn(vars, ass1, mT, visited, iMark, tvars);
@@ -686,13 +686,13 @@ algorithm
   oAcc := matchcontinue(c,mark,markarray,iAcc)
     case(_,_,_,_)
       equation
-        false = intEq(mark,markarray[c]);
-        _ = arrayUpdate(markarray,c,mark);
+  false = intEq(mark,markarray[c]);
+  _ = arrayUpdate(markarray,c,mark);
       then
-        c::iAcc;
+  c::iAcc;
     else
       then
-        iAcc;
+  iAcc;
   end matchcontinue;
 end uniqueIntLst;
 
@@ -751,9 +751,9 @@ oVarGlobalLocal :=
     case ({},_,_) then iVarGlobalLocal;
     case (i::tvars,_,_)
       equation
-        _= arrayUpdate(iVarGlobalLocal,i,index);
+  _= arrayUpdate(iVarGlobalLocal,i,index);
       then
-        getGlobalLocal(tvars,index+1,iVarGlobalLocal);
+  getGlobalLocal(tvars,index+1,iVarGlobalLocal);
   end match;
 end getGlobalLocal;
 
@@ -776,13 +776,13 @@ algorithm
     case ({},_,_,_,_,_,_,_) then (iMark,listReverse(iAcc));
     case (e::eqns,_,_,_,_,_,_,_)
       equation
-        vars = List.select(m[e], Util.intPositive);
-        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
-        // change indices to local
-        tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
-        (oMark,oAcc) = tVarsofResidualEqns(eqns,m,ass1,mT,varGlobalLocal,visited,iMark+1,tvars::iAcc);
+  vars = List.select(m[e], Util.intPositive);
+  tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
+  // change indices to local
+  tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
+  (oMark,oAcc) = tVarsofResidualEqns(eqns,m,ass1,mT,varGlobalLocal,visited,iMark+1,tvars::iAcc);
       then
-        (oMark,oAcc);
+  (oMark,oAcc);
   end match;
 end tVarsofResidualEqns;
 
@@ -799,10 +799,10 @@ algorithm
     case (0,_,_,_) then iAcc;
     case (_,_,_,_)
       equation
-        e = v1[index];
-        e = eqnLocalGlobal[e];
+  e = v1[index];
+  e = eqnLocalGlobal[e];
       then
-        getTVarResiduals(index-1,v1,eqnLocalGlobal,e::iAcc);
+  getTVarResiduals(index-1,v1,eqnLocalGlobal,e::iAcc);
   end match;
 end getTVarResiduals;
 
@@ -831,58 +831,58 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // select tearing var
-        tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt);
-        //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
-        // mark tearing var
-        _ = arrayUpdate(ass1,tvar,size*2);
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
-        //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
-        //markEqns(vareqns,columark,mark);
-        // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+  // select tearing var
+  tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt);
+  //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
+  // mark tearing var
+  _ = arrayUpdate(ass1,tvar,size*2);
+  vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+  //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
+  //markEqns(vareqns,columark,mark);
+  // cheap matching
+  tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
 
-        /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
-          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
-          vars1 = BackendVariable.listVar1(vlst);
-          eqns1 = BackendEquation.listEquation(elst);
-          subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-          IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
-        */
+  /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
+    elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
+    vars1 = BackendVariable.listVar1(vlst);
+    eqns1 = BackendEquation.listEquation(elst);
+    subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+    IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
+  */
 
-        // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+  // check for unassigned vars, if there some rerun
+  unassigned = Matching.getUnassigned(size,ass1,{});
+  (outTVars,oMark) = omcTearing3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
-        (outTVars,oMark);
+  (outTVars,oMark);
     case (tvar::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
-        // mark tearing var
-        _ = arrayUpdate(ass1,tvar,size*2);
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
-        //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
-        //markEqns(vareqns,columark,mark);
-        // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+  //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
+  // mark tearing var
+  _ = arrayUpdate(ass1,tvar,size*2);
+  vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+  //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
+  //markEqns(vareqns,columark,mark);
+  // cheap matching
+  tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
 
-        /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
-          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
-          vars1 = BackendVariable.listVar1(vlst);
-          eqns1 = BackendEquation.listEquation(elst);
-          subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-          IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
-        */
-        // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+  /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
+    elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
+    vars1 = BackendVariable.listVar1(vlst);
+    eqns1 = BackendEquation.listEquation(elst);
+    subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+    IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
+  */
+  // check for unassigned vars, if there some rerun
+  unassigned = Matching.getUnassigned(size,ass1,{});
+  (outTVars,oMark) = omcTearing3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
-        (outTVars,oMark);
+  (outTVars,oMark);
     else
       equation
-        print("BackendDAEOptimize.omcTearing2 failed!");
+  print("BackendDAEOptimize.omcTearing2 failed!");
       then
-        fail();
+  fail();
   end matchcontinue;
 end omcTearing2;
 
@@ -909,48 +909,48 @@ algorithm
     // if states there use them as tearing variables
     case(_,_,_,_)
       equation
-        (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
-        states = List.removeOnTrue(ass1, isAssigned, states);
-        true = intGt(listLength(states),0);
-        tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
+  (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
+  states = List.removeOnTrue(ass1, isAssigned, states);
+  true = intGt(listLength(states),0);
+  tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
       then
-        tvar;
+  tvar;
 */
     /* if there is a variable unsolvable select it */
     case(_,_,_,_,_)
       equation
-        tvar = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2);
+  tvar = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2);
       then
-        tvar;
+  tvar;
 
     case(_,_,_,_,_)
       equation
-        varsize = BackendVariable.varsSize(vars);
-        states = Matching.getUnassigned(varsize,ass1,{});
-        Debug.fcall(Flags.TEARING_DUMP,  print,"omcTearingSelectTearingVar Candidates:\n");
-        Debug.fcall(Flags.TEARING_DUMP,  BackendDump.debuglst,(states,intString,", ","\n"));
-        size = listLength(states);
-        true = intGt(size,0);
-        points = arrayCreate(varsize,0);
-        points = List.fold2(states, calcVarWights,mt,ass2,points);
-        eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
-        points = List.fold2(eqns,addEqnWights,m,ass1,points);
-        points = List.fold1(states,discriminateDiscrete,vars,points);
-        //points = List.fold2(states,addOneEdgeEqnWights,(m,mt),ass1,points);
-         Debug.fcall(Flags.TEARING_DUMP,  BackendDump.dumpMatching,points);
-        tvar = selectVarWithMostPoints(states,points,-1,-1);
+  varsize = BackendVariable.varsSize(vars);
+  states = Matching.getUnassigned(varsize,ass1,{});
+  Debug.fcall(Flags.TEARING_DUMP,  print,"omcTearingSelectTearingVar Candidates:\n");
+  Debug.fcall(Flags.TEARING_DUMP,  BackendDump.debuglst,(states,intString,", ","\n"));
+  size = listLength(states);
+  true = intGt(size,0);
+  points = arrayCreate(varsize,0);
+  points = List.fold2(states, calcVarWights,mt,ass2,points);
+  eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
+  points = List.fold2(eqns,addEqnWights,m,ass1,points);
+  points = List.fold1(states,discriminateDiscrete,vars,points);
+  //points = List.fold2(states,addOneEdgeEqnWights,(m,mt),ass1,points);
+   Debug.fcall(Flags.TEARING_DUMP,  BackendDump.dumpMatching,points);
+  tvar = selectVarWithMostPoints(states,points,-1,-1);
 
-        //states = selectVarsWithMostEqns(states,ass2,mt,{},-1);
-        //  print("VarsWithMostEqns:\n");
-        //  BackendDump.debuglst((states,intString,", ","\n"));
-        //tvar = selectVarWithMostEqnsOneEdge(states,ass1,m,mt,-1,-1);
+  //states = selectVarsWithMostEqns(states,ass2,mt,{},-1);
+  //  print("VarsWithMostEqns:\n");
+  //  BackendDump.debuglst((states,intString,", ","\n"));
+  //tvar = selectVarWithMostEqnsOneEdge(states,ass1,m,mt,-1,-1);
       then
-        tvar;
+  tvar;
       else
     equation
-        print("omcTearingSelectTearingVar failed because no unmatched var!\n");
+  print("omcTearingSelectTearingVar failed because no unmatched var!\n");
       then
-        fail();
+  fail();
   end matchcontinue;
 end omcTearingSelectTearingVar;
 
@@ -969,18 +969,18 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced elem;
     case(_,_,_,_,_)
       equation
-        true = intLe(index,size);
-        /* unmatched var */
-        true = intLt(ass1[index],0);
-        elem = meT[index];
-        /* consider only unmatched eqns */
-        elem = removeMatched(elem,ass2,{});
-        true = unsolvable(elem);
+  true = intLe(index,size);
+  /* unmatched var */
+  true = intLt(ass1[index],0);
+  elem = meT[index];
+  /* consider only unmatched eqns */
+  elem = removeMatched(elem,ass2,{});
+  true = unsolvable(elem);
       then
        index;
     case(_,_,_,_,_)
       equation
-        true = intLe(index,size);
+  true = intLe(index,size);
       then
        getUnsolvableVarsConsiderMatching(index+1,size,meT,ass1,ass2);
   end matchcontinue;
@@ -1002,12 +1002,12 @@ algorithm
     case ({},_,_) then iAcc;
     case ((e,s)::rest,_,_)
       equation
-        true = intLt(ass2[e],0);
+  true = intLt(ass2[e],0);
       then
-        removeMatched(rest,ass2,(e,s)::iAcc);
+  removeMatched(rest,ass2,(e,s)::iAcc);
     case ((e,s)::rest,_,_)
       then
-        removeMatched(rest,ass2,iAcc);
+  removeMatched(rest,ass2,iAcc);
   end matchcontinue;
 end removeMatched;
 
@@ -1045,11 +1045,11 @@ algorithm
       Integer v,w;
     case((v,s),_,_)
       equation
-        true = intGt(v,0);
-        false = intGt(ass[v], 0);
-        w = solvabilityWights(s);
+  true = intGt(v,0);
+  false = intGt(ass[v], 0);
+  w = solvabilityWights(s);
       then
-        intAdd(w,iW);
+  intAdd(w,iW);
     else then iW;
   end matchcontinue;
 end solvabilityWightsnoStates;
@@ -1087,11 +1087,11 @@ algorithm
        array<Integer> points;
      case (_,_,_,_)
        equation
-         ((v1,_)::(v2,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
-          points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
-          points = arrayUpdate(iPoints,v2,points[v2]+5);
+   ((v1,_)::(v2,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
+    points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
+    points = arrayUpdate(iPoints,v2,points[v2]+5);
        then
-         points;
+   points;
      else
        iPoints;
  end matchcontinue;
@@ -1109,9 +1109,9 @@ algorithm
       Integer i;
     case (_,(i,_))
       equation
-        true = intGt(i,0);
+  true = intGt(i,0);
       then
-        intGt(ass[i],0);
+  intGt(ass[i],0);
     else
       true;
   end matchcontinue;
@@ -1151,16 +1151,16 @@ algorithm
     case ({},_,_,_) then iVar;
     case (v::rest,_,_,_)
       equation
-        //  print("Var " +& intString(v));
-        p = points[v];
-        //  print(" has " +& intString(p) +& " Points\n");
-        true = intGt(p,defp);
-        //  print("max is  " +& intString(defp) +& "\n");
+  //  print("Var " +& intString(v));
+  p = points[v];
+  //  print(" has " +& intString(p) +& " Points\n");
+  true = intGt(p,defp);
+  //  print("max is  " +& intString(defp) +& "\n");
       then
-        selectVarWithMostPoints(rest,points,v,p);
+  selectVarWithMostPoints(rest,points,v,p);
     case (_::rest,_,_,_)
       then
-        selectVarWithMostPoints(rest,points,iVar,defp);
+  selectVarWithMostPoints(rest,points,iVar,defp);
   end matchcontinue;
 end selectVarWithMostPoints;
 
@@ -1185,25 +1185,25 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,{}) then ();
     case ({},_,_,_,_,_,_,_,_,_,_)
       equation
-        newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQeue);
-        newqueue = sortEqnsSolvabel(newqueue,m);
-        //  print("NextQeue:\n" +& stringDelimitList(List.map(List.map(newqueue,Util.tuple21),intString),", ") +& "\n");
-        tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+  newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQeue);
+  newqueue = sortEqnsSolvabel(newqueue,m);
+  //  print("NextQeue:\n" +& stringDelimitList(List.map(List.map(newqueue,Util.tuple21),intString),", ") +& "\n");
+  tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
       then
-        ();
+  ();
     case((c,_)::rest,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("Process Eqn " +& intString(c) +& "\n");
-        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
-        //_ = arrayUpdate(columark,c,mark);
-        cnonscalar = mapIncRowEqn[c];
-        eqnsize = listLength(mapEqnIncRow[cnonscalar]);
-        //  print("Eqn Size " +& intString(eqnsize) +& "\n");
-        //  print("Rows: " +& stringDelimitList(List.map(List.map(rows,Util.tuple21),intString),", ") +& "\n");
-        newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,columark,mark,nextQeue);
-        tearingBFS(rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,newqueue);
+  //  print("Process Eqn " +& intString(c) +& "\n");
+  rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
+  //_ = arrayUpdate(columark,c,mark);
+  cnonscalar = mapIncRowEqn[c];
+  eqnsize = listLength(mapEqnIncRow[cnonscalar]);
+  //  print("Eqn Size " +& intString(eqnsize) +& "\n");
+  //  print("Rows: " +& stringDelimitList(List.map(List.map(rows,Util.tuple21),intString),", ") +& "\n");
+  newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,columark,mark,nextQeue);
+  tearingBFS(rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,newqueue);
       then
-        ();
+  ();
   end match;
 end tearingBFS;
 
@@ -1244,10 +1244,10 @@ algorithm
     case ( {}) then false;
     case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::_)
       then
-        true;
+  true;
     case (_::rest)
       then
-        hasnonlinearVars1(rest);
+  hasnonlinearVars1(rest);
   end match;
 end hasnonlinearVars1;
 
@@ -1268,18 +1268,18 @@ algorithm
     local
     case (_,_,_,_,_,_,_,_,_)
       equation
-        true = intEq(listLength(rows),size);
-        true = solvableLst(rows);
-        //  print("Assign Eqns: " +& stringDelimitList(List.map(c,intString),", ") +& "\n");
+  true = intEq(listLength(rows),size);
+  true = solvableLst(rows);
+  //  print("Assign Eqns: " +& stringDelimitList(List.map(c,intString),", ") +& "\n");
       then
-        tearingBFS2(rows,c,mt,ass1,ass2,columark,mark,inNextQeue);
+  tearingBFS2(rows,c,mt,ass1,ass2,columark,mark,inNextQeue);
     case (_,_,_,_,_,_,_,_,_)
       equation
-        true = intEq(listLength(rows),size);
-        false = solvableLst(rows);
-        //  print("cannot Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
+  true = intEq(listLength(rows),size);
+  false = solvableLst(rows);
+  //  print("cannot Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
       then
-        inNextQeue;
+  inNextQeue;
     else then inNextQeue;
   end matchcontinue;
 end tearingBFS1;
@@ -1296,9 +1296,9 @@ algorithm
     case ((r,s)::{}) then solvable(s);
     case ((r,s)::rest)
       equation
-        true = solvable(s);
+  true = solvable(s);
       then
-        solvableLst(rest);
+  solvableLst(rest);
   end match;
 end solvableLst;
 
@@ -1338,16 +1338,16 @@ algorithm
     case ({},_,_,_,_,_,_,_) then inNextQeue;
     case ((r,s)::rest,c::ilst,_,_,_,_,_,_)
       equation
-        //  print("Assign Var " +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
-        // assigen
-        _ = arrayUpdate(ass1,r,c);
-        _ = arrayUpdate(ass2,c,r);
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
-        //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
-        //markEqns(vareqns,columark,mark);
-        newqueue = listAppend(inNextQeue,vareqns);
+  //  print("Assign Var " +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
+  // assigen
+  _ = arrayUpdate(ass1,r,c);
+  _ = arrayUpdate(ass2,c,r);
+  vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
+  //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
+  //markEqns(vareqns,columark,mark);
+  newqueue = listAppend(inNextQeue,vareqns);
       then
-        tearingBFS2(rest,ilst,mt,ass1,ass2,columark,mark,newqueue);
+  tearingBFS2(rest,ilst,mt,ass1,ass2,columark,mark,newqueue);
   end match;
 end tearingBFS2;
 
@@ -1367,11 +1367,11 @@ algorithm
        array<Integer> points;
      case (_,(m,mt),_,_)
        equation
-         elst = List.fold2(mt[v],eqnsWithOneUnassignedVar,m,ass1,{});
-          e = listLength(elst);
-          points = arrayUpdate(iPoints,v,iPoints[v]+e);
+   elst = List.fold2(mt[v],eqnsWithOneUnassignedVar,m,ass1,{});
+    e = listLength(elst);
+    points = arrayUpdate(iPoints,v,iPoints[v]+e);
        then
-         points;
+   points;
      else
        iPoints;
  end matchcontinue;
@@ -1395,15 +1395,15 @@ algorithm
     case ({},_,_,_,_,_) then defaultVar;
     case (v::rest,_,_,_,_,_)
       equation
-        elst = List.fold2(mt[v],eqnsWithOneUnassignedVar,m,ass1,{});
-        e = listLength(elst);
-        //  print("Var " +& intString(v) +& " has " +& intString(e) +& " one eqns\n");
-        true = intGt(e,eqns);
+  elst = List.fold2(mt[v],eqnsWithOneUnassignedVar,m,ass1,{});
+  e = listLength(elst);
+  //  print("Var " +& intString(v) +& " has " +& intString(e) +& " one eqns\n");
+  true = intGt(e,eqns);
       then
-        selectVarWithMostEqnsOneEdge(rest,ass1,m,mt,v,e);
+  selectVarWithMostEqnsOneEdge(rest,ass1,m,mt,v,e);
     case (_::rest,_,_,_,_,_)
       then
-        selectVarWithMostEqnsOneEdge(rest,ass1,m,mt,defaultVar,eqns);
+  selectVarWithMostEqnsOneEdge(rest,ass1,m,mt,defaultVar,eqns);
   end matchcontinue;
 end selectVarWithMostEqnsOneEdge;
 
@@ -1422,12 +1422,12 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced vars;
     case((e,s),_,_,_)
       equation
-        true = intGt(e,0);
-        vars = List.removeOnTrue(ass, isAssignedSaveEnhanced, m[e]);
-        //  print("Eqn " +& intString(e) +& " has " +& intString(listLength(vars)) +& " vars\n");
-        true = intEq(listLength(vars), 2);
+  true = intGt(e,0);
+  vars = List.removeOnTrue(ass, isAssignedSaveEnhanced, m[e]);
+  //  print("Eqn " +& intString(e) +& " has " +& intString(listLength(vars)) +& " vars\n");
+  true = intEq(listLength(vars), 2);
       then
-        e::iLst;
+  e::iLst;
     else then iLst;
   end matchcontinue;
 end eqnsWithOneUnassignedVar;
@@ -1448,18 +1448,18 @@ algorithm
     case ({},_,_,_,_) then iVars;
     case (v::rest,_,_,_,_)
       equation
-        e = calcSolvabilityWight(mt[v],ass2);
-        //  print("Var " +& intString(v) +& "has w= " +& intString(e) +& "\n");
-        true = intGe(e,eqns);
-        vlst = List.consOnTrue(intEq(e,eqns),v,iVars);
-        ((vlst,e)) = Util.if_(intGt(e,eqns),({v},e),(vlst,eqns));
-        //  print("max is  " +& intString(eqns) +& "\n");
-        //  BackendDump.debuglst((vlst,intString,", ","\n"));
+  e = calcSolvabilityWight(mt[v],ass2);
+  //  print("Var " +& intString(v) +& "has w= " +& intString(e) +& "\n");
+  true = intGe(e,eqns);
+  vlst = List.consOnTrue(intEq(e,eqns),v,iVars);
+  ((vlst,e)) = Util.if_(intGt(e,eqns),({v},e),(vlst,eqns));
+  //  print("max is  " +& intString(eqns) +& "\n");
+  //  BackendDump.debuglst((vlst,intString,", ","\n"));
       then
-        selectVarsWithMostEqns(rest,ass2,mt,vlst,e);
+  selectVarsWithMostEqns(rest,ass2,mt,vlst,e);
     case (_::rest,_,_,_,_)
       then
-        selectVarsWithMostEqns(rest,ass2,mt,iVars,eqns);
+  selectVarsWithMostEqns(rest,ass2,mt,iVars,eqns);
   end matchcontinue;
 end selectVarsWithMostEqns;
 
@@ -1476,10 +1476,10 @@ algorithm
     case({},_,_) then ();
     case(e::rest,_,_)
       equation
-        _ = arrayUpdate(columark,e,mark);
-        markEqns(rest,columark,mark);
+  _ = arrayUpdate(columark,e,mark);
+  markEqns(rest,columark,mark);
       then
-        ();
+  ();
   end match;
 end markEqns;
 
@@ -1505,16 +1505,16 @@ algorithm
       Type_a a;
     case (_,_,_,_,_,_,_)
       equation
-        true = intLe(indx,size);
-        true = intLt(ass[indx],1);
-        a = func(inTypeAArray,indx+off);
+  true = intLe(indx,size);
+  true = intLt(ass[indx],1);
+  a = func(inTypeAArray,indx+off);
       then
-        getUnnassignedFromArray(indx+1,size,ass,inTypeAArray,func,off,a::iALst);
+  getUnnassignedFromArray(indx+1,size,ass,inTypeAArray,func,off,a::iALst);
     case (_,_,_,_,_,_,_)
       equation
-        true = intLe(indx,size);
+  true = intLe(indx,size);
       then
-        getUnnassignedFromArray(indx+1,size,ass,inTypeAArray,func,off,iALst);
+  getUnnassignedFromArray(indx+1,size,ass,inTypeAArray,func,off,iALst);
     else
       listReverse(iALst);
   end matchcontinue;
@@ -1544,9 +1544,9 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
     else
       equation
-        (outTVars,oMark) = omcTearing2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+  (outTVars,oMark) = omcTearing2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
       then
-        (outTVars,oMark);
+  (outTVars,oMark);
   end match;
 end omcTearing3;
 
@@ -1579,21 +1579,21 @@ algorithm
       Boolean linear;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
-        // map indexes back
-        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
-        residual1 = List.fold2(residual1,uniqueIntLst,mark,columark,{});
-        eindxarr = listArray(eindex);
-        ores = List.map1r(residual1,arrayGet,eindxarr);
-        varindxarr = listArray(vindx);
-        ovars = List.map1r(tvars,arrayGet,varindxarr);
-        eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
-        linear = getLinearfromJacType(jacType);
+  Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
+  // map indexes back
+  residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
+  residual1 = List.fold2(residual1,uniqueIntLst,mark,columark,{});
+  eindxarr = listArray(eindex);
+  ores = List.map1r(residual1,arrayGet,eindxarr);
+  varindxarr = listArray(vindx);
+  ovars = List.map1r(tvars,arrayGet,varindxarr);
+  eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
+  linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear),true);
+  (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM({}, {}, {}, false),false);
+  (BackendDAE.TORNSYSTEM({}, {}, {}, false),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1618,22 +1618,22 @@ algorithm
     case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
     case ({c}::rest,_,_,_,_,_,_,_)
       equation
-        e = mapIncRowEqn[c];
-        e = eindxarr[e];
-        v = ass2[c];
-        v = varindxarr[v];
+  e = mapIncRowEqn[c];
+  e = eindxarr[e];
+  v = ass2[c];
+  v = varindxarr[v];
       then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,{v})::iAcc);
+  omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,{v})::iAcc);
     case (clst::rest,_,_,_,_,_,_,_)
       equation
-        elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
-        {e} = elst;
-        e = eindxarr[e];
-        vlst = List.map1r(clst,arrayGet,ass2);
-        vlst = List.map1r(vlst,arrayGet,varindxarr);
+  elst = List.map1r(clst,arrayGet,mapIncRowEqn);
+  elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
+  {e} = elst;
+  e = eindxarr[e];
+  vlst = List.map1r(clst,arrayGet,ass2);
+  vlst = List.map1r(vlst,arrayGet,varindxarr);
       then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,vlst)::iAcc);
+  omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,vlst)::iAcc);
   end match;
 end omcTearing4_1;
 
@@ -1823,12 +1823,12 @@ algorithm
       //BackendDump.dumpIncidenceMatrix(lt);
       (parentIn,childIn) = tearingSteward(l,lt,parentLst,childLst);
     then
-        (parentIn,childIn);
+  (parentIn,childIn);
   case(_,_,_,_)
     equation
       true = arrayLength(lIn) == 0;
       then
-        (parentIn,childIn);
+  (parentIn,childIn);
   end matchcontinue;
 end tearingSteward;
 
@@ -1845,16 +1845,16 @@ algorithm
       Integer size;
     case(_,_,_,_)
       equation
-        row = arrayGet(ltIn,parent);
-        true = List.isMemberOnTrue(child,row,intEq);
-        broken = listGetPositions(row,child);
-        size = arrayLength(lIn);
-        loops = listSeries(size);
-        (broken,leftovers,_) = List.intersection1OnTrue(loops,broken,intEq);
-        l = Util.arraySelect(lIn,leftovers);
-        lt = arrayDeleteColumns(ltIn,broken);
+  row = arrayGet(ltIn,parent);
+  true = List.isMemberOnTrue(child,row,intEq);
+  broken = listGetPositions(row,child);
+  size = arrayLength(lIn);
+  loops = listSeries(size);
+  (broken,leftovers,_) = List.intersection1OnTrue(loops,broken,intEq);
+  l = Util.arraySelect(lIn,leftovers);
+  lt = arrayDeleteColumns(ltIn,broken);
       then
-          (l,lt);
+    (l,lt);
   end matchcontinue;
 end updateLoopOccurenceMatrix;
 
@@ -1887,7 +1887,7 @@ algorithm
     Arr = Util.arrayReplaceAtWithFill(indx,row,{},inArr);
     outArr = arrayDeleteColumns2(Arr,indxs,indx+1);
       then
-        outArr;
+  outArr;
   case(_,_,_)
     equation
       true = indx > arrayLength(inArr);
@@ -1924,17 +1924,17 @@ algorithm
       Integer entry;
     case(_,_)
       equation
-        true = listLength(lstIn) <= n-1;
-        entry = n-listLength(lstIn);
-        lst = entry::lstIn;
-        lst = listSeries2(n,lst);
+  true = listLength(lstIn) <= n-1;
+  entry = n-listLength(lstIn);
+  lst = entry::lstIn;
+  lst = listSeries2(n,lst);
       then
-        lst;
+  lst;
       case(_,_)
-        equation
-          true = listLength(lstIn) > n-1;
-        then
-          lstIn;
+  equation
+    true = listLength(lstIn) > n-1;
+  then
+    lstIn;
    end matchcontinue;
 end listSeries2;
 
@@ -1962,18 +1962,18 @@ algorithm
     Integer pos;
     case(_,_,_,_,_)
       equation
-        true = indx <= num;
-        pos = List.position(value,lstIn)+1+indx-1;
-        lst = List.deleteMember(lstIn,value);
-        positions = pos::posIn;
-        posOut = listGetPositions2(lst,value,num,indx+1,positions);
+  true = indx <= num;
+  pos = List.position(value,lstIn)+1+indx-1;
+  lst = List.deleteMember(lstIn,value);
+  positions = pos::posIn;
+  posOut = listGetPositions2(lst,value,num,indx+1,positions);
       then
-        posOut;
+  posOut;
     case(_,_,_,_,_)
       equation
-        true = indx > num;
+  true = indx > num;
       then
-        posIn;
+  posIn;
   end matchcontinue;
 end listGetPositions2;
 
@@ -2027,17 +2027,17 @@ algorithm
     case(_,{},_,_,_) then ({0},{0});
     case(_,_,_,_,_)
       equation
-        true = indx <= listLength(set);
-        value = listGet(set,indx);
-        number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
-        (val,num) = countMultiples3(lstIn,set,indx+1,value::valIn,number::numIn);
+  true = indx <= listLength(set);
+  value = listGet(set,indx);
+  number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
+  (val,num) = countMultiples3(lstIn,set,indx+1,value::valIn,number::numIn);
       then
-        (val,num);
+  (val,num);
     case(_,_,_,_,_)
       equation
-        true = indx > listLength(set);
+  true = indx > listLength(set);
       then
-        (valIn,numIn);
+  (valIn,numIn);
   end matchcontinue;
 end countMultiples3;
 
@@ -2084,20 +2084,20 @@ algorithm
       lt = Util.arrayReplaceAtWithFill(parent,row,{},ltIn);
       (lOut,ltOut) = getLoopOccurenceMatrix2(loops,l,lt,indxLoop,indxVert+1);
       then
-        (lOut,ltOut);
+  (lOut,ltOut);
     case(_,_,_,_,_)
       equation
-         true = indxLoop <= listLength(loops);
-         currLoop = listGet(loops,indxLoop);
-         true = indxVert > listLength(currLoop);
-        (lOut,ltOut) = getLoopOccurenceMatrix2(loops,lIn,ltIn,indxLoop+1,1);
+   true = indxLoop <= listLength(loops);
+   currLoop = listGet(loops,indxLoop);
+   true = indxVert > listLength(currLoop);
+  (lOut,ltOut) = getLoopOccurenceMatrix2(loops,lIn,ltIn,indxLoop+1,1);
       then
-        (lOut,ltOut);
+  (lOut,ltOut);
     case(_,_,_,_,_)
       equation
-        true = indxLoop > listLength(loops);
+  true = indxLoop > listLength(loops);
       then
-        (lIn,ltIn);
+  (lIn,ltIn);
   end matchcontinue;
 end getLoopOccurenceMatrix2;
 
@@ -2112,17 +2112,17 @@ algorithm
       Integer parentIndx,childIndx;
     case(_,_)
       equation
-        parentIndx = List.position(parent,loopIn)+1;
-        true = parentIndx == 1;
-        child = List.last(loopIn);
+  parentIndx = List.position(parent,loopIn)+1;
+  true = parentIndx == 1;
+  child = List.last(loopIn);
       then
-        child;
+  child;
     else
       equation
-        parentIndx = List.position(parent,loopIn)+1;
-        child = listGet(loopIn,parentIndx-1);
+  parentIndx = List.position(parent,loopIn)+1;
+  child = listGet(loopIn,parentIndx-1);
       then
-        child;
+  child;
   end matchcontinue;
 end chooseChildInLoop;
 
@@ -2152,46 +2152,46 @@ algorithm
       Boolean empty;
     case(_,_,_,_,_,0,_)
       equation
-        print("loopfinding ready\n");
-        print("found Loop "+&stringDelimitList(List.map(List.flatten(finLoops),intString),",")+&"\n");
+  print("loopfinding ready\n");
+  print("found Loop "+&stringDelimitList(List.map(List.flatten(finLoops),intString),",")+&"\n");
       then finLoops;
     case(_,_,_,_,_,_,_)
       equation
-        parent = indxRow;
-        openLoop = List.deleteMember(currLoop,parent);
-        true = List.isMemberOnTrue(parent,openLoop,intEq);
-        position = List.position(parent,openLoop)+2;
-        (currLoop,_) = List.split(currLoop,position);
-        print("found Loop "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
-        currLoop = listDelete(currLoop,0);
-        finLoops = currLoop::finLoops;
-        currLoop = List.flatten(List.firstOrEmpty(unfinLoops));
-        indxRow = firstOrEmpty(currLoop,0);
-        indxCol = 1;
-        unfinLoops = deleteOrEmpty(unfinLoops,0);
-        loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,indxRow,indxCol);
+  parent = indxRow;
+  openLoop = List.deleteMember(currLoop,parent);
+  true = List.isMemberOnTrue(parent,openLoop,intEq);
+  position = List.position(parent,openLoop)+2;
+  (currLoop,_) = List.split(currLoop,position);
+  print("found Loop "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
+  currLoop = listDelete(currLoop,0);
+  finLoops = currLoop::finLoops;
+  currLoop = List.flatten(List.firstOrEmpty(unfinLoops));
+  indxRow = firstOrEmpty(currLoop,0);
+  indxCol = 1;
+  unfinLoops = deleteOrEmpty(unfinLoops,0);
+  loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,indxRow,indxCol);
       then loopsOut;
     case(_,_,_,_,_,_,_)
       equation
-        true = listLength(currLoop) > 0;
-        true = indxCol == listLength(arrayGet(aIn,indxRow));
-        parent = indxRow;
-        child = listGet(arrayGet(aIn,indxRow),indxCol);
-        currLoop = child::currLoop;
-        print("append loop and jump to next vertex "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
-        loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
+  true = listLength(currLoop) > 0;
+  true = indxCol == listLength(arrayGet(aIn,indxRow));
+  parent = indxRow;
+  child = listGet(arrayGet(aIn,indxRow),indxCol);
+  currLoop = child::currLoop;
+  print("append loop and jump to next vertex "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
+  loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
       then loopsOut;
     case(_,_,_,_,_,_,_)
       equation
-        true = indxCol < listLength(arrayGet(aIn,indxRow));
-        print("now we have more loops\n");
-        parent = indxRow;
-        row = arrayGet(aIn,indxRow);
-        unfinLoops = traceMooreLoops(unfinLoops,currLoop,row,2);
-        child = listGet(arrayGet(aIn,indxRow),indxCol);
-        currLoop = child::currLoop;
-        print("unfinished"+&stringDelimitList(List.map(List.flatten(unfinLoops),intString),",")+&"\n");
-        loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
+  true = indxCol < listLength(arrayGet(aIn,indxRow));
+  print("now we have more loops\n");
+  parent = indxRow;
+  row = arrayGet(aIn,indxRow);
+  unfinLoops = traceMooreLoops(unfinLoops,currLoop,row,2);
+  child = listGet(arrayGet(aIn,indxRow),indxCol);
+  currLoop = child::currLoop;
+  print("unfinished"+&stringDelimitList(List.map(List.flatten(unfinLoops),intString),",")+&"\n");
+  loopsOut = findLoops2(aIn,atIn,finLoops,unfinLoops,currLoop,child,1);
       then loopsOut;
    end matchcontinue;
 end findLoops2;
@@ -2207,8 +2207,8 @@ author: Waurich TUD 2013-01"
        then {};
      else
        equation
-         lstOut = listDelete(lstIn,indx);
-         then lstOut;
+   lstOut = listDelete(lstIn,indx);
+   then lstOut;
    end matchcontinue;
  end deleteOrEmpty;
 
@@ -2221,12 +2221,12 @@ author: Waurich TUD 2013-01"
     valOut := matchcontinue(lstIn,valIn)
     local
       case({},_)
-        equation
-          then valIn;
+  equation
+    then valIn;
       else
-        equation
-          valOut = listGet(lstIn,1);
-          then valOut;
+  equation
+    valOut = listGet(lstIn,1);
+    then valOut;
    end matchcontinue;
  end firstOrEmpty;
 
@@ -2250,13 +2250,13 @@ algorithm
       newLoop = child::currLoop;
       unfinished = newLoop::unfinLoopsIn;
       //print("next unfinished"+&stringDelimitList(List.map(newLoop,intString),",")+&"\n");
-        unfinLoopsOut = traceMooreLoops(unfinished,currLoop,row,indx+1);
-        then unfinLoopsOut;
+  unfinLoopsOut = traceMooreLoops(unfinished,currLoop,row,indx+1);
+  then unfinLoopsOut;
     case(_,_,_,_)
       equation
-        true = listLength(row) < indx;
-        then
-          unfinLoopsIn;
+  true = listLength(row) < indx;
+  then
+    unfinLoopsIn;
    end matchcontinue;
  end traceMooreLoops;
 
@@ -2302,22 +2302,22 @@ author:Waurich TUD 2012-11"
      list<Integer> vertices,lst;
      case(_,_,_,_,_)
        equation
-         true = indx > listLength(essSet);
-           vars = List.unique(vars);
-         then
-           vars;
+   true = indx > listLength(essSet);
+     vars = List.unique(vars);
+   then
+     vars;
      case(_,_,_,_,_)
        equation
-         true = indx <= listLength(essSet);
-         edge = listGet(essSet,indx);
-         (_,lst) = getNumberOfEntries(a);
-         vertex = List.getMemberOnTrue(edge,lst,intLe);
-         vertex = List.position(vertex,lst)+1;
-         var = listGet(ass1,vertex);
-         vars = var::vars;
-         vars = convertToTearingSet(essSet,ass1,vars,a,indx+1);
-         then
-           vars;
+   true = indx <= listLength(essSet);
+   edge = listGet(essSet,indx);
+   (_,lst) = getNumberOfEntries(a);
+   vertex = List.getMemberOnTrue(edge,lst,intLe);
+   vertex = List.position(vertex,lst)+1;
+   var = listGet(ass1,vertex);
+   vars = var::vars;
+   vars = convertToTearingSet(essSet,ass1,vars,a,indx+1);
+   then
+     vars;
    end matchcontinue;
  end convertToTearingSet;
 
@@ -2345,67 +2345,67 @@ algorithm
     array<list<Integer>> s,st;
     case(_,_,_,_,_,_)
       equation
-        true = listLength(probed) == arrayLength(sIn);
-        //print("graph is empty \n");
-        then
-          set;
+  true = listLength(probed) == arrayLength(sIn);
+  //print("graph is empty \n");
+  then
+    set;
     case(_,_,_,_,_,_)
       equation
-        true = indxVert > arrayLength(sIn);
-        //print("start with vertex 1 and raise es to  "+&intString(es+1)+&"\n");
-        essSet = getEssentialSet2(sIn,stIn,set,probed,es+1,1);
-        then essSet;
+  true = indxVert > arrayLength(sIn);
+  //print("start with vertex 1 and raise es to  "+&intString(es+1)+&"\n");
+  essSet = getEssentialSet2(sIn,stIn,set,probed,es+1,1);
+  then essSet;
     case(_,_,_,_,_,_)
       equation
-        false = List.isMemberOnTrue(indxVert,probed,intEq);
-        do = listLength(arrayGet(sIn,indxVert));
-        di = listLength(arrayGet(stIn,indxVert));
-        true = do == 0 or di == 0;
-        //print("delete vertex "+&intString(indxVert)+&"\n");
-        parentLst = arrayGet(stIn,indxVert);
-        childLst = arrayGet(sIn,indxVert);
-        (s,st) = deleteInStreamAdjacency(sIn,stIn,parentLst,childLst,indxVert,1);
-        probed = indxVert::probed;
-        essSet = getEssentialSet2(s,st,set,probed,1,indxVert+1);
-        then
-          essSet;
+  false = List.isMemberOnTrue(indxVert,probed,intEq);
+  do = listLength(arrayGet(sIn,indxVert));
+  di = listLength(arrayGet(stIn,indxVert));
+  true = do == 0 or di == 0;
+  //print("delete vertex "+&intString(indxVert)+&"\n");
+  parentLst = arrayGet(stIn,indxVert);
+  childLst = arrayGet(sIn,indxVert);
+  (s,st) = deleteInStreamAdjacency(sIn,stIn,parentLst,childLst,indxVert,1);
+  probed = indxVert::probed;
+  essSet = getEssentialSet2(s,st,set,probed,1,indxVert+1);
+  then
+    essSet;
     case(_,_,_,_,_,_)
       equation
-        selfLoops = checkSelfLoop(sIn);
-        true = listLength(selfLoops)<> 0;
-        vertex = listGet(selfLoops,1);
-        //print("selfloop vertex "+&intString(vertex)+&"\n");
-        set = vertex::set;
-        parentLst = arrayGet(stIn,vertex);
-        childLst = arrayGet(sIn,vertex);
-        (s,st) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,vertex,1,1);
-        probed = vertex::probed;
-        //print("s\n");
-        //BackendDump.dumpIncidenceMatrix(s);
-        essSet = getEssentialSet2(sIn,stIn,set,probed,1,indxVert);
+  selfLoops = checkSelfLoop(sIn);
+  true = listLength(selfLoops)<> 0;
+  vertex = listGet(selfLoops,1);
+  //print("selfloop vertex "+&intString(vertex)+&"\n");
+  set = vertex::set;
+  parentLst = arrayGet(stIn,vertex);
+  childLst = arrayGet(sIn,vertex);
+  (s,st) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,vertex,1,1);
+  probed = vertex::probed;
+  //print("s\n");
+  //BackendDump.dumpIncidenceMatrix(s);
+  essSet = getEssentialSet2(sIn,stIn,set,probed,1,indxVert);
       then
-        essSet;
+  essSet;
     case(_,_,_,_,_,_)
       equation
-        do = listLength(arrayGet(sIn,indxVert));
-        di = listLength(arrayGet(stIn,indxVert));
-        true = do == es or di == es;
-        //print("contract vertex "+&intString(indxVert)+&"\n");
-        parentLst = arrayGet(stIn,indxVert);
-        childLst = arrayGet(sIn,indxVert);
-        (s,st) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,indxVert,1,1);
-        probed = indxVert::probed;
-        //print("s\n");
-        //BackendDump.dumpIncidenceMatrix(s);
-        essSet = getEssentialSet2(s,st,set,probed,es,indxVert+1);
-        then
-          essSet;
+  do = listLength(arrayGet(sIn,indxVert));
+  di = listLength(arrayGet(stIn,indxVert));
+  true = do == es or di == es;
+  //print("contract vertex "+&intString(indxVert)+&"\n");
+  parentLst = arrayGet(stIn,indxVert);
+  childLst = arrayGet(sIn,indxVert);
+  (s,st) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,indxVert,1,1);
+  probed = indxVert::probed;
+  //print("s\n");
+  //BackendDump.dumpIncidenceMatrix(s);
+  essSet = getEssentialSet2(s,st,set,probed,es,indxVert+1);
+  then
+    essSet;
       else
-        equation
-        //print("go to next vertex "+&intString(indxVert+1)+&"\n");
-        essSet = getEssentialSet2(sIn,stIn,set,probed,es,indxVert+1);
-        then
-          essSet;
+  equation
+  //print("go to next vertex "+&intString(indxVert+1)+&"\n");
+  essSet = getEssentialSet2(sIn,stIn,set,probed,es,indxVert+1);
+  then
+    essSet;
     end matchcontinue;
   end getEssentialSet2;
 
@@ -2429,16 +2429,16 @@ author: Waurich TUD 2012-11"
        list<Integer> lst;
      case(_,((indx,lst)))
        equation
-         true = List.isMemberOnTrue(indx,row,intEq);
-         value = List.getMember(indx,row);
-         lst = value::lst;
-         then
-           ((indx+1,lst));
+   true = List.isMemberOnTrue(indx,row,intEq);
+   value = List.getMember(indx,row);
+   lst = value::lst;
+   then
+     ((indx+1,lst));
      case(_,((indx,lst)))
        equation
-         false = List.isMemberOnTrue(indx,row,intEq);
-         then
-           ((indx+1,lst));
+   false = List.isMemberOnTrue(indx,row,intEq);
+   then
+     ((indx+1,lst));
      end matchcontinue;
    end checkSelfLoop2;
 
@@ -2455,37 +2455,37 @@ author: Waurich TUD 2012-11"
       list<Integer> row;
     case(_,_,_,_,_,_,_)
       equation
-        true = indxParent <= listLength(parentLst);
-        true = indxChild <= listLength(childLst);
-        child = listGet(childLst,indxChild);
-        parent = listGet(parentLst,indxParent);
-        row = arrayGet(sIn,parent);
-        row = child::row;
-        row = List.deleteMember(row,vertex);
-        row = List.unique(row);
-        sOut = Util.arrayReplaceAtWithFill(parent,row,{},sIn);
-        row = arrayGet(stIn,child);
-        row = parent::row;
-        row = List.deleteMember(row,vertex);
-        row = List.unique(row);
-        stOut = Util.arrayReplaceAtWithFill(child,row,{},stIn);
-        sOut = Util.arrayReplaceAtWithFill(vertex,{},{},sOut);
-        stOut = Util.arrayReplaceAtWithFill(vertex,{},{},stOut);
-        (sOut,stOut) = contractInStreamAdjacency(sOut,stOut,parentLst,childLst,vertex,indxParent,indxChild+1);
-        then
-          (sOut,stOut);
+  true = indxParent <= listLength(parentLst);
+  true = indxChild <= listLength(childLst);
+  child = listGet(childLst,indxChild);
+  parent = listGet(parentLst,indxParent);
+  row = arrayGet(sIn,parent);
+  row = child::row;
+  row = List.deleteMember(row,vertex);
+  row = List.unique(row);
+  sOut = Util.arrayReplaceAtWithFill(parent,row,{},sIn);
+  row = arrayGet(stIn,child);
+  row = parent::row;
+  row = List.deleteMember(row,vertex);
+  row = List.unique(row);
+  stOut = Util.arrayReplaceAtWithFill(child,row,{},stIn);
+  sOut = Util.arrayReplaceAtWithFill(vertex,{},{},sOut);
+  stOut = Util.arrayReplaceAtWithFill(vertex,{},{},stOut);
+  (sOut,stOut) = contractInStreamAdjacency(sOut,stOut,parentLst,childLst,vertex,indxParent,indxChild+1);
+  then
+    (sOut,stOut);
     case(_,_,_,_,_,_,_)
       equation
-        true = indxParent <= listLength(parentLst);
-        true = indxChild > listLength(childLst);
-        (sOut,stOut) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,vertex,indxParent+1,1);
-        then
-          (sOut,stOut);
+  true = indxParent <= listLength(parentLst);
+  true = indxChild > listLength(childLst);
+  (sOut,stOut) = contractInStreamAdjacency(sIn,stIn,parentLst,childLst,vertex,indxParent+1,1);
+  then
+    (sOut,stOut);
     case(_,_,_,_,_,_,_)
       equation
-        true = indxParent > listLength(parentLst);
-        then
-          (sIn,stIn);
+  true = indxParent > listLength(parentLst);
+  then
+    (sIn,stIn);
     end matchcontinue;
   end contractInStreamAdjacency;
 
@@ -2503,40 +2503,40 @@ author: Waurich TUD 2012-11"
      list<Integer> row;
      case(_,_,_,_,_,_)
        equation
-         true = listLength(parentLst) == 0;
-         true = indx <= listLength(childLst);
-         child = listGet(childLst,indx);
-         sOut = Util.arrayReplaceAtWithFill(vertex,{},{},sIn);
-         row = arrayGet(stIn,child);
-         row = List.deleteMember(row,vertex);
-         stOut = Util.arrayReplaceAtWithFill(child,row,{},stIn);
-         (sOut,stOut) = deleteInStreamAdjacency(stOut,stOut,parentLst,childLst,vertex,indx+1);
-         then
-           (sOut,stOut);
+   true = listLength(parentLst) == 0;
+   true = indx <= listLength(childLst);
+   child = listGet(childLst,indx);
+   sOut = Util.arrayReplaceAtWithFill(vertex,{},{},sIn);
+   row = arrayGet(stIn,child);
+   row = List.deleteMember(row,vertex);
+   stOut = Util.arrayReplaceAtWithFill(child,row,{},stIn);
+   (sOut,stOut) = deleteInStreamAdjacency(stOut,stOut,parentLst,childLst,vertex,indx+1);
+   then
+     (sOut,stOut);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(parentLst) == 0;
-         true = indx > listLength(childLst);
-         then
-           (sIn,stIn);
+   true = listLength(parentLst) == 0;
+   true = indx > listLength(childLst);
+   then
+     (sIn,stIn);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(childLst) == 0;
-         true = indx <= listLength(parentLst);
-         parent = listGet(parentLst,indx);
-         stOut = Util.arrayReplaceAtWithFill(vertex,{},{},stIn);
-         row = arrayGet(sIn,parent);
-         row = List.deleteMember(row,vertex);
-         sOut = Util.arrayReplaceAtWithFill(parent,row,{},sIn);
-         (sOut,stOut) = deleteInStreamAdjacency(stOut,stOut,parentLst,childLst,vertex,indx+1);
-         then
-           (sOut,stOut);
+   true = listLength(childLst) == 0;
+   true = indx <= listLength(parentLst);
+   parent = listGet(parentLst,indx);
+   stOut = Util.arrayReplaceAtWithFill(vertex,{},{},stIn);
+   row = arrayGet(sIn,parent);
+   row = List.deleteMember(row,vertex);
+   sOut = Util.arrayReplaceAtWithFill(parent,row,{},sIn);
+   (sOut,stOut) = deleteInStreamAdjacency(stOut,stOut,parentLst,childLst,vertex,indx+1);
+   then
+     (sOut,stOut);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(childLst) == 0;
-         true = indx > listLength(parentLst);
-         then
-           (sIn,stIn);
+   true = listLength(childLst) == 0;
+   true = indx > listLength(parentLst);
+   then
+     (sIn,stIn);
      end matchcontinue;
    end deleteInStreamAdjacency;
 
@@ -2552,54 +2552,54 @@ algorithm
   (ass1Out,ass2Out) :=
     matchcontinue(m,mt,ass1In,ass2In,indxVar)
       local
-        Integer Var,Eq;
-        list<Integer> ass1,ass2,possibleEq;
+  Integer Var,Eq;
+  list<Integer> ass1,ass2,possibleEq;
       case(_,_,_,_,_)
-        equation
-        true = indxVar > listLength(ass1In);
-        //print("assignment done\n");
-        then
-          (ass1In,ass2In);
+  equation
+  true = indxVar > listLength(ass1In);
+  //print("assignment done\n");
+  then
+    (ass1In,ass2In);
       case(_,_,_,_,_)
-        equation
-          true = indxVar <= listLength(ass1In);
-          Var = indxVar;
-          possibleEq = arrayGet(mt,Var);
-          (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
-          true = listLength(possibleEq)>0;
-          Eq = listGet(possibleEq,1);
-          //print("assign \n");
-          //print("Var"+&intString(Var)+&" Eq"+&intString(Eq)+&"\n");
-          ass1 = List.set(ass1In,Eq,Var);
-          ass2 = List.set(ass2In,Var,Eq);
-          indxVar = getNextVarSteward(ass2);
-          //print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
-          //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
-          (ass1,ass2) = AssignmentSteward(m,mt,ass1,ass2,indxVar);
-          then
-           (ass1,ass2);
+  equation
+    true = indxVar <= listLength(ass1In);
+    Var = indxVar;
+    possibleEq = arrayGet(mt,Var);
+    (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
+    true = listLength(possibleEq)>0;
+    Eq = listGet(possibleEq,1);
+    //print("assign \n");
+    //print("Var"+&intString(Var)+&" Eq"+&intString(Eq)+&"\n");
+    ass1 = List.set(ass1In,Eq,Var);
+    ass2 = List.set(ass2In,Var,Eq);
+    indxVar = getNextVarSteward(ass2);
+    //print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
+    //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
+    (ass1,ass2) = AssignmentSteward(m,mt,ass1,ass2,indxVar);
+    then
+     (ass1,ass2);
       case(_,_,_,_,_)
-        equation
-          true = indxVar <= listLength(ass1In);
-          Var = indxVar;
-          possibleEq = arrayGet(mt,Var);
-          (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
-          true = listLength(possibleEq)==0;
-          //print("reassign \n");
-          Eq = listGet(arrayGet(mt,Var),1);
-          //print("1\n");
-          indxVar = List.position(Eq,ass2In);
-                    print("2\n");
-          ass1 = List.set(ass1In,Eq,Var);
-                    print("3\n");
-          ass2 = List.set(ass2In,Var,Eq);
-                    print("4\n");
-          ass2 = List.set(ass2In,indxVar,-1);
-          //print("Var"+&intString(Var)+&" Eq"+&intString(Eq)+&" ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
-          //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
-          (ass1,ass2) = AssignmentSteward(m,mt,ass1,ass2,indxVar);
-          then
-           (ass1,ass2);
+  equation
+    true = indxVar <= listLength(ass1In);
+    Var = indxVar;
+    possibleEq = arrayGet(mt,Var);
+    (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
+    true = listLength(possibleEq)==0;
+    //print("reassign \n");
+    Eq = listGet(arrayGet(mt,Var),1);
+    //print("1\n");
+    indxVar = List.position(Eq,ass2In);
+              print("2\n");
+    ass1 = List.set(ass1In,Eq,Var);
+              print("3\n");
+    ass2 = List.set(ass2In,Var,Eq);
+              print("4\n");
+    ass2 = List.set(ass2In,indxVar,-1);
+    //print("Var"+&intString(Var)+&" Eq"+&intString(Eq)+&" ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
+    //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
+    (ass1,ass2) = AssignmentSteward(m,mt,ass1,ass2,indxVar);
+    then
+     (ass1,ass2);
       end matchcontinue;
     end AssignmentSteward;
 
@@ -2613,13 +2613,13 @@ algorithm
       true = List.isMemberOnTrue(-1,ass2,intEq);
       indxVar = List.position(-1,ass2)+1;
       then
-        indxVar;
+  indxVar;
   case(_)
     equation
       false = List.isMemberOnTrue(-1,ass2,intEq);
       indxVar = listLength(ass2)+1;
       then
-        indxVar;
+  indxVar;
   end matchcontinue;
 end getNextVarSteward;
 
@@ -2688,19 +2688,19 @@ algorithm
   case(_,_,_,_)
     equation
       true = listLength(indexes) >= indx;
-        rowIndx = listGet(indexes,indx);
-        row = arrayGet(InArr,rowIndx);
-        row = entry::row;
-        row = List.sort(row,intGt);
-        arr = Util.arrayReplaceAtWithFill(rowIndx,row,{},InArr);
-        arr = addColumnEntries(arr,indexes,entry,indx+1);
+  rowIndx = listGet(indexes,indx);
+  row = arrayGet(InArr,rowIndx);
+  row = entry::row;
+  row = List.sort(row,intGt);
+  arr = Util.arrayReplaceAtWithFill(rowIndx,row,{},InArr);
+  arr = addColumnEntries(arr,indexes,entry,indx+1);
       then
-        arr;
+  arr;
   case(_,_,_,_)
     equation
       true = listLength(indexes) < indx;
       then
-        InArr;
+  InArr;
   end matchcontinue;
 end addColumnEntries;
 
@@ -2735,7 +2735,7 @@ algorithm
     equation
       true = indxParent > arrayLength(a);
       then
-        (sIn,stIn);
+  (sIn,stIn);
   case(_,_,_,_,_,_,_,_)
     equation
       //true = indxChild1 <= (listGet(sumLst,indxParent+1)-listGet(sumLst,indxParent));
@@ -2759,7 +2759,7 @@ algorithm
       stOut = Util.arrayReplaceAtWithFill(numCol,row,{},stIn);
       (sOut,stOut) = getStreamAdjacencyMatrix2(a,at,sIn,stIn,sumLst,indxParent,indxChild1,indxChild2+1);
       then
-        (sOut,stOut);
+  (sOut,stOut);
   case(_,_,_,_,_,_,_,_)
     equation
       true = indxChild1 <= listLength(arrayGet(a,indxParent));
@@ -2767,14 +2767,14 @@ algorithm
       //print("raise child1indx\n");
       (sOut,stOut) = getStreamAdjacencyMatrix2(a,at,sIn,stIn,sumLst,indxParent,indxChild1+1,1);
       then
-        (sOut,stOut);
+  (sOut,stOut);
   case(_,_,_,_,_,_,_,_)
     equation
       true = indxChild1 > listLength(arrayGet(a,indxParent));
       //print("raise parentindx\n");
       (sOut,stOut) = getStreamAdjacencyMatrix2(a,at,sIn,stIn,sumLst,indxParent+1,1,1);
       then
-        (sOut,stOut);
+  (sOut,stOut);
   end matchcontinue;
 end getStreamAdjacencyMatrix2;
 
@@ -2841,10 +2841,10 @@ algorithm
       print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
       print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
       print("order "+&stringDelimitList(List.map(List.flatten(order),intString),",")+&"\n");
-        ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
-        ((_,unassigned)) = List.fold(ass1,getUnassigned,(1,{}));
-        tvars = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,order);
-        then tvars;
+  ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
+  ((_,unassigned)) = List.fold(ass1,getUnassigned,(1,{}));
+  tvars = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,order);
+  then tvars;
     end matchcontinue;
   end TearingSystemCellier;
 
@@ -2963,13 +2963,13 @@ algorithm
     list<Integer> Vars;
     case({},_,_)
       equation
-        then
-          {1};
+  then
+    {1};
     case(_,_,_)
       equation
-        ((_,Vars,_,_)) = Util.arrayFold(mt,selectCausalVars2,(selEqs,{},0,1));
-        then
-          Vars;
+  ((_,Vars,_,_)) = Util.arrayFold(mt,selectCausalVars2,(selEqs,{},0,1));
+  then
+    Vars;
     end matchcontinue;
   end selectCausalVars;
 
@@ -2986,24 +2986,24 @@ author: Waurich TUD 2012-11"
     Integer size,num,indx;
     case(row,(selEqs,cVars,num,indx))
       equation
-        Eqs = row;
-        interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
-        size = listLength(interEqs);
-        true = size < num;
+  Eqs = row;
+  interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
+  size = listLength(interEqs);
+  true = size < num;
       then ((selEqs,cVars,num,indx+1));
     case(row,(selEqs,cVars,num,indx))
       equation
-        Eqs = row;
-        interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
-        size = listLength(interEqs);
-        true = size == num;
+  Eqs = row;
+  interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
+  size = listLength(interEqs);
+  true = size == num;
       then ((selEqs,indx::cVars,num,indx+1));
     case(row,(selEqs,cVars,num,indx))
       equation
-        Eqs = row;
-        interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
-        size = listLength(interEqs);
-        true = size > num;
+  Eqs = row;
+  interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
+  size = listLength(interEqs);
+  true = size > num;
       then ((selEqs,{indx},size,indx+1));
     end matchcontinue;
   end selectCausalVars2;
@@ -3041,7 +3041,7 @@ algorithm
       equation
       print("selecting tearing variable failed");
       then
-        fail();
+  fail();
    end matchcontinue;
  end selectTearingVar;
 
@@ -3096,21 +3096,21 @@ algorithm
   outValue :=
     matchcontinue(value,inValue)
       local
-        Integer indx;
-        Real maxValue;
-        list<Integer> ilst;
+  Integer indx;
+  Real maxValue;
+  list<Integer> ilst;
       case(_,(indx,maxValue,ilst))
-        equation
-          true = value <. maxValue;
-          then ((indx+1,maxValue,ilst));
+  equation
+    true = value <. maxValue;
+    then ((indx+1,maxValue,ilst));
       case(_,(indx,maxValue,ilst))
-        equation
-          true = realEq(value,maxValue);
-          then ((indx+1,maxValue,indx::ilst));
+  equation
+    true = realEq(value,maxValue);
+    then ((indx+1,maxValue,indx::ilst));
       case(_,(indx,maxValue,ilst))
-        equation
-          true = realGt(value,maxValue);
-          then ((indx+1,value,{indx}));
+  equation
+    true = realGt(value,maxValue);
+    then ((indx+1,value,{indx}));
     end matchcontinue;
   end maxListRealhelp;
 
@@ -3132,21 +3132,21 @@ algorithm
   outValue :=
     matchcontinue(value,inValue)
       local
-        Integer indx;
-        Integer maxValue;
-        list<Integer> ilst;
+  Integer indx;
+  Integer maxValue;
+  list<Integer> ilst;
       case(_,(indx,maxValue,ilst))
-        equation
-          true = value < maxValue;
-          then ((indx+1,maxValue,ilst));
+  equation
+    true = value < maxValue;
+    then ((indx+1,maxValue,ilst));
       case(_,(indx,maxValue,ilst))
-        equation
-          true = intEq(value,maxValue);
-          then ((indx+1,maxValue,indx::ilst));
+  equation
+    true = intEq(value,maxValue);
+    then ((indx+1,maxValue,indx::ilst));
       case(_,(indx,maxValue,ilst))
-        equation
-          true = intGt(value,maxValue);
-          then ((indx+1,value,{indx}));
+  equation
+    true = intGt(value,maxValue);
+    then ((indx+1,value,{indx}));
     end matchcontinue;
   end maxListInthelp;
 
@@ -3172,7 +3172,7 @@ author: Waurich TUD 2012-10"
       weight;
     else
       then
-        0.0;
+  0.0;
     end matchcontinue;
   end Carpanzano2help;
 
@@ -3207,12 +3207,12 @@ algorithm
       Integer actual,length,num;
     case(_,_,_,_)
       equation
-        length = listLength(selList);
-        num = listGet(selList,indx);
-        actual = listGet(inList,num);
-        true = indx <= length;
+  length = listLength(selList);
+  num = listGet(selList,indx);
+  actual = listGet(inList,num);
+  true = indx <= length;
       then
-        selectFromList_help(indx+1,inList,selList,actual::lst);
+  selectFromList_help(indx+1,inList,selList,actual::lst);
     else then lst;
   end matchcontinue;
 end selectFromList_help;
@@ -3233,24 +3233,24 @@ algorithm
     list<Integer> order;
     case(_,_,_,_,_)
       equation
-        true = listLength(assEq) > 0;
-        print("assign from m\n");
-        eq = listGet(assEq,1);
-        var = listGet(arrayGet(m,eq),1);
-        order = listGet(orderIn,1);
-        order = eq::order;
-        orderOut = List.replaceAt(order,0,orderIn);
+  true = listLength(assEq) > 0;
+  print("assign from m\n");
+  eq = listGet(assEq,1);
+  var = listGet(arrayGet(m,eq),1);
+  order = listGet(orderIn,1);
+  order = eq::order;
+  orderOut = List.replaceAt(order,0,orderIn);
       then (eq,var,orderOut,true);
     case(_,_,_,_,_)
       equation
-        true = listLength(assEq) == 0;
-        true = listLength(assVar) > 0;
-        print("assign from mt\n");
-        var = listGet(assVar,1);
-        eq = listGet(arrayGet(mt,var),1);
-        order = listGet(orderIn,2);
-        order = eq::order;
-        orderOut = List.replaceAt(order,1,orderIn);
+  true = listLength(assEq) == 0;
+  true = listLength(assVar) > 0;
+  print("assign from mt\n");
+  var = listGet(assVar,1);
+  eq = listGet(arrayGet(mt,var),1);
+  order = listGet(orderIn,2);
+  order = eq::order;
+  orderOut = List.replaceAt(order,1,orderIn);
       then (eq,var,orderOut,true);
     else
       then (0,0,orderIn,false);
@@ -3328,7 +3328,7 @@ algorithm
        (ass1,ass2,m,mt,order,ass) = TarjanAssignment(mIn,mtIn,ass1In,ass2In,tvarsIn,orderIn);
        //print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
        //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
-         (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,ass1,ass2,tvarsIn,order,ass);
+   (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,ass1,ass2,tvarsIn,order,ass);
        then (ass1Out,ass2Out,mOut,mtOut,orderOut,causal);
      end matchcontinue;
    end Tarjan;
@@ -3348,10 +3348,10 @@ algorithm
     case (_, 0, e :: rest) then inElement :: rest;
     case (_, _, e :: rest)
       equation
-        (inPosition >= 1) = true;
-        rest = replaceAt(inElement, inPosition - 1, rest);
+  (inPosition >= 1) = true;
+  rest = replaceAt(inElement, inPosition - 1, rest);
       then
-        e :: rest;
+  e :: rest;
   end match;
 end replaceAt;
 
@@ -3542,16 +3542,16 @@ algorithm
       list<list<Integer>> ilst;
     case(_,(length,ilst))
       equation
-        length1 = listLength(row);
-        true = length1 > length;
+  length1 = listLength(row);
+  true = length1 > length;
       then
-        ((length1,{row}));
+  ((length1,{row}));
     case(_,(length,ilst))
       equation
-        length1 = listLength(row);
-        true = intEq(length1,length);
+  length1 = listLength(row);
+  true = intEq(length1,length);
       then
-        ((length1,row::ilst));
+  ((length1,row::ilst));
     else then inValue;
   end matchcontinue;
 end findMostEntries;
@@ -3570,22 +3570,22 @@ algorithm
       list<Integer> ilst;
     case(_,(length,indx,ilst))
       equation
-        length1 = listLength(row);
-        true = length1 > length;
+  length1 = listLength(row);
+  true = length1 > length;
       then
-        ((length1,indx+1,{indx}));
+  ((length1,indx+1,{indx}));
     case(_,(length,indx,ilst))
       equation
-        length1 = listLength(row);
-        true = intEq(length1,length);
+  length1 = listLength(row);
+  true = intEq(length1,length);
       then
-        ((length,indx+1,indx::ilst));
+  ((length,indx+1,indx::ilst));
     case(_,(length,indx,ilst))
       equation
-        length1 = listLength(row);
-        true = length1 < length;
+  length1 = listLength(row);
+  true = length1 < length;
       then
-        ((length,indx+1,ilst));
+  ((length,indx+1,ilst));
   end matchcontinue;
 end findMostEntries2;
 

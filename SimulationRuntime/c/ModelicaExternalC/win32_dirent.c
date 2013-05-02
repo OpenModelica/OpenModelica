@@ -82,7 +82,7 @@ opendir (const char *szPath)
   /* Allocate enough space to store DIR structure and the complete
    * directory path given. */
   nd = (DIR *) malloc (sizeof (DIR) + strlen (szPath) + strlen (SLASH) +
-             strlen (SUFFIX));
+       strlen (SUFFIX));
 
   if (!nd)
     {

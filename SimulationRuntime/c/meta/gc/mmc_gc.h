@@ -79,7 +79,7 @@ typedef struct mmc_GC_state_type mmc_GC_state_type;
 extern mmc_GC_state_type* mmc_GC_state;
 
 /* tag the free reqion as a free object with 250 ctor*/
-#define MMC_FREE_OBJECT_CTOR           200
+#define MMC_FREE_OBJECT_CTOR     200
 #define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz, MMC_FREE_OBJECT_CTOR))
 
 /* checks if the pointer is in range */

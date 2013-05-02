@@ -59,7 +59,7 @@ void* getGlobalData(void)
 }
 
 /*****************************************************************
- * Communication direction from OMI --> OM              *
+ * Communication direction from OMI --> OM        *
  *****************************************************************/
 
 //************ Global Data Value Request and Manipulation ************
@@ -500,7 +500,7 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
     p_simDataNames->statesNames[i] = globalData->modelData.realVarsData[i].info.name;
     p_simDataNamesFilter->variablesNames[variablesNamesPos] = "";
     p_simDataNames->stateDerivativesNames[i]
-        = globalData->modelData.realVarsData[nStates + i].info.name;
+  = globalData->modelData.realVarsData[nStates + i].info.name;
     variablesNamesPos++;
   }
   for (int i = 0; i < nAlgebraic; i++)
@@ -635,7 +635,7 @@ bool allow_work_on_GD(void)
 }
 
 /*****************************************************************
- * Communication direction from OM --> OMI              *
+ * Communication direction from OM --> OMI        *
  *****************************************************************/
 
 /**
@@ -684,7 +684,7 @@ void setIPandPortOfTransferClient(string ip, int port)
 //************ END Network Configuration Settings ************
 
 /*****************************************************************
- * Used from both subsystems              *
+ * Used from both subsystems        *
  *****************************************************************/
 
 

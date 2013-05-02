@@ -58,7 +58,7 @@ extern void free_string_array_data(string_array_t* a);
 
 /* Clones data*/
 static inline void clone_string_array_spec(const string_array_t * src,
-                                           string_array_t* dst)
+                                     string_array_t* dst)
 { clone_base_array_spec(src, dst); }
 
 /* Copy string data*/
@@ -72,11 +72,11 @@ extern void copy_string_array(const string_array_t * source, string_array_t* des
 
 extern modelica_string_t* calc_string_index(int ndims, const _index_t* idx_vec, const string_array_t * arr);
 extern modelica_string_t* calc_string_index_va(const string_array_t * source,int ndims,
-                                               va_list ap);
+                                         va_list ap);
 
 extern void put_string_element(modelica_string_t value,int i1,string_array_t* dest);
 extern void put_string_matrix_element(modelica_string_t value, int r, int c,
-                                      string_array_t* dest);
+                                string_array_t* dest);
 
 extern void print_string_matrix(const string_array_t * source);
 extern void print_string_array(const string_array_t * source);
@@ -86,14 +86,14 @@ extern void print_string_array(const string_array_t * source);
 
 */
 extern void indexed_assign_string_array(const string_array_t * source,
-                                        string_array_t* dest,
-                                        const index_spec_t* dest_spec);
+                                  string_array_t* dest,
+                                  const index_spec_t* dest_spec);
 extern void simple_indexed_assign_string_array1(const string_array_t * source,
-                                                int i1,
-                                                string_array_t* dest);
+                                          int i1,
+                                          string_array_t* dest);
 extern void simple_indexed_assign_string_array2(const string_array_t * source,
-                                                int i1, int i2,
-                                                string_array_t* dest);
+                                          int i1, int i2,
+                                          string_array_t* dest);
 
 /*
 
@@ -101,51 +101,51 @@ extern void simple_indexed_assign_string_array2(const string_array_t * source,
 
 */
 extern void index_string_array(const string_array_t * source,
+                         const index_spec_t* source_spec,
+                         string_array_t* dest);
+extern void index_alloc_string_array(const string_array_t * source,
                                const index_spec_t* source_spec,
                                string_array_t* dest);
-extern void index_alloc_string_array(const string_array_t * source,
-                                     const index_spec_t* source_spec,
-                                     string_array_t* dest);
 
 extern void simple_index_alloc_string_array1(const string_array_t * source, int i1,
-                                      string_array_t* dest);
+                                string_array_t* dest);
 
 extern void simple_index_string_array1(const string_array_t * source,
-                                       int i1,
-                                       string_array_t* dest);
+                                 int i1,
+                                 string_array_t* dest);
 extern void simple_index_string_array2(const string_array_t * source,
-                                       int i1, int i2,
-                                       string_array_t* dest);
+                                 int i1, int i2,
+                                 string_array_t* dest);
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_string_array(string_array_t* dest,int n,
-                               string_array_t* first,...);
+                         string_array_t* first,...);
 extern void array_alloc_string_array(string_array_t* dest,int n,
-                                     string_array_t* first,...);
+                               string_array_t* first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_string_array(string_array_t* dest,int n,
-                                      modelica_string_t first,...);
+                                modelica_string_t first,...);
 extern void array_alloc_scalar_string_array(string_array_t* dest,int n,
-                                            modelica_string_t first,...);
+                                      modelica_string_t first,...);
 
 extern modelica_string_t* string_array_element_addr(const string_array_t * source,int ndims,
-                                                    ...);
+                                              ...);
 extern modelica_string_t* string_array_element_addr1(const string_array_t * source,int ndims,
-                                                     int dim1);
+                                               int dim1);
 extern modelica_string_t* string_array_element_addr2(const string_array_t * source,int ndims,
-                                                     int dim1,int dim2);
+                                               int dim1,int dim2);
 
 extern void cat_string_array(int k,string_array_t* dest, int n,
-                             string_array_t* first,...);
+                       string_array_t* first,...);
 extern void cat_alloc_string_array(int k,string_array_t* dest, int n,
-                                   string_array_t* first,...);
+                             string_array_t* first,...);
 
 extern void promote_string_array(const string_array_t * a, int n,string_array_t* dest);
 extern void promote_scalar_string_array(modelica_string_t s,int n,
-                                        string_array_t* dest);
+                                  string_array_t* dest);
 extern void promote_alloc_string_array(const string_array_t * a, int n,
-                                       string_array_t* dest);
+                                 string_array_t* dest);
 
 static inline int ndims_string_array(const string_array_t * a)
 { return ndims_base_array(a); }
@@ -169,12 +169,12 @@ static inline size_t string_array_nr_of_elements(const string_array_t *a)
 { return base_array_nr_of_elements(a); }
 
 static inline void clone_reverse_string_array_spec(const string_array_t *source,
-                                                   string_array_t *dest)
+                                             string_array_t *dest)
 { clone_reverse_base_array_spec(source, dest); }
 extern void convert_alloc_string_array_to_f77(const string_array_t * a,
-                                              string_array_t* dest);
+                                        string_array_t* dest);
 extern void convert_alloc_string_array_from_f77(const string_array_t * a,
-                                                string_array_t* dest);
+                                          string_array_t* dest);
 
 extern void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...);
 

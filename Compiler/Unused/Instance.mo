@@ -30,7 +30,7 @@
  */
 
 encapsulated package Instance
-" file:        Instance.mo
+" file:  Instance.mo
   package:     Instance
   description: Instance is an instance of an Element.
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendDAE
-" file:        BackendDAE.mo
+" file:  BackendDAE.mo
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.
 
@@ -148,7 +148,7 @@ uniontype Equation "- Equation"
   end ALGORITHM;
 
   record WHEN_EQUATION
-    Integer size              "size of equation";
+    Integer size        "size of equation";
     WhenEquation whenEquation "whenEquation" ;
     .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;
@@ -173,9 +173,9 @@ end Equation;
 public
 uniontype WhenEquation "- When Equation"
   record WHEN_EQ
-    .DAE.Exp condition                "the when-condition" ;
-    .DAE.ComponentRef left            "left hand side of equation" ;
-    .DAE.Exp right                    "right hand side of equation" ;
+    .DAE.Exp condition          "the when-condition" ;
+    .DAE.ComponentRef left      "left hand side of equation" ;
+    .DAE.Exp right              "right hand side of equation" ;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
 end WhenEquation;
@@ -184,7 +184,7 @@ public
 uniontype WhenOperator "- Reinit Statement"
   record REINIT
     .DAE.ComponentRef stateVar "State variable to reinit" ;
-    .DAE.Exp value             "Value after reinit" ;
+    .DAE.Exp value       "Value after reinit" ;
     .DAE.ElementSource source "origin of equation";
   end REINIT;
 
@@ -213,9 +213,9 @@ end WhenOperator;
 public
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
-    .DAE.Exp condition                  "the when-condition" ;
+    .DAE.Exp condition            "the when-condition" ;
     list<WhenOperator> reinitStmtLst    "list of reinit statements associated to the when clause." ;
-    Option<Integer> elseClause          "index of elsewhen clause" ;
+    Option<Integer> elseClause    "index of elsewhen clause" ;
 
     // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
     // what is HL?
@@ -228,7 +228,7 @@ end WhenClause;
 public
 uniontype ZeroCrossing "- Zero Crossing"
   record ZERO_CROSSING
-    .DAE.Exp relation_         "function" ;
+    .DAE.Exp relation_   "function" ;
     list<Integer> occurEquLst  "list of equations where the function occurs" ;
     list<Integer> occurWhenLst "list of when clauses where the function occurs" ;
   end ZERO_CROSSING;
@@ -237,7 +237,7 @@ end ZeroCrossing;
 public
 uniontype SampleLookup
   record SAMPLE_LOOKUP
-    Integer nSamples                                "total number of different sample calls" ;
+    Integer nSamples                          "total number of different sample calls" ;
     list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
   end SAMPLE_LOOKUP;
 end SampleLookup;
@@ -245,14 +245,14 @@ end SampleLookup;
 public
 uniontype EventInfo "- EventInfo"
   record EVENT_INFO
-    SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
+    SampleLookup sampleLookup    "stores all information regarding sample-calls" ;
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
     // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
-    Integer relationsNumber            "stores the number of relation in all zero-crossings";
-    Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    Integer relationsNumber      "stores the number of relation in all zero-crossings";
+    Integer numberMathEvents     "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;
 
@@ -272,26 +272,26 @@ end BackendDAE;
 
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars                     "knownVars ; Known variables, i.e. constants and parameters" ;
-    Variables externalObjects               "External object variables";
-    Variables aliasVars                     "Data originating from removed simple equations needed to build
-                                             variables' lookup table (in C output).
+    Variables knownVars               "knownVars ; Known variables, i.e. constants and parameters" ;
+    Variables externalObjects         "External object variables";
+    Variables aliasVars               "Data originating from removed simple equations needed to build
+                                       variables' lookup table (in C output).
 
-                                             In that way, double buffering of variables in pre()-buffer, extrapolation
-                                             buffer and results caching, etc., is avoided, but in C-code output all the
-                                             data about variables' names, comments, units, etc. is preserved as well as
-                                             pinter to their values (trajectories).";
-    EquationArray initialEqs                "initialEqs ; Initial equations" ;
-    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+                                       In that way, double buffering of variables in pre()-buffer, extrapolation
+                                       buffer and results caching, etc., is avoided, but in C-code output all the
+                                       data about variables' names, comments, units, etc. is preserved as well as
+                                       pinter to their values (trajectories).";
+    EquationArray initialEqs          "initialEqs ; Initial equations" ;
+    EquationArray removedEqs          "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array< .DAE.Constraint> constraints     "constraints (Optimica extension)";
     array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
     Env.Cache cache;
     Env.Env env;
-    .DAE.FunctionTree functionTree          "functions for Backend";
-    EventInfo eventInfo                     "eventInfo" ;
+    .DAE.FunctionTree functionTree    "functions for Backend";
+    EventInfo eventInfo               "eventInfo" ;
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
-    BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
-    SymbolicJacobians symjacs               "Symbolic Jacobians";
+    BackendDAEType backendDAEType     "indicate for what the BackendDAE is used";
+    SymbolicJacobians symjacs         "Symbolic Jacobians";
   end SHARED;
 end Shared;
 
@@ -385,7 +385,7 @@ end Assignments;
 
 public
 uniontype IndexType
-  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
+  record ABSOLUTE "produce incidence matrix with absolute indexes"    end ABSOLUTE;
   record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
   record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
   record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
@@ -420,7 +420,7 @@ uniontype Solvability
   end SOLVABILITY_TIMEVARYING;
   record SOLVABILITY_NONLINEAR "The variable occurse nonlinear in the equation." end SOLVABILITY_NONLINEAR;
   record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve
-                     the equation for it." end SOLVABILITY_UNSOLVABLE;
+               the equation for it." end SOLVABILITY_UNSOLVABLE;
 end Solvability;
 
 public
@@ -438,14 +438,14 @@ type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
 public
 uniontype JacobianType "- Jacobian Type"
   record JAC_CONSTANT "If jacobian has only constant values, for system
-               of equations this means that it can be solved statically." end JAC_CONSTANT;
+         of equations this means that it can be solved statically." end JAC_CONSTANT;
 
   record JAC_TIME_VARYING "If jacobian has time varying parts, like parameters or
-                  algebraic variables" end JAC_TIME_VARYING;
+            algebraic variables" end JAC_TIME_VARYING;
 
   record JAC_NONLINEAR "If jacobian contains variables that are solved for,
-              means that a nonlinear system of equations needs to be
-              solved" end JAC_NONLINEAR;
+        means that a nonlinear system of equations needs to be
+        solved" end JAC_NONLINEAR;
 
   record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
 end JacobianType;
@@ -460,11 +460,11 @@ end IndexReduction;
 public
 uniontype EquationConstraints "- Equation Constraints"
   record ALLOW_UNDERCONSTRAINED "for e.g. initial eqns.
-                  where not all variables
-                  have a solution" end ALLOW_UNDERCONSTRAINED;
+            where not all variables
+            have a solution" end ALLOW_UNDERCONSTRAINED;
 
   record EXACT "exact as many equations
-                   as variables" end EXACT;
+             as variables" end EXACT;
 end EquationConstraints;
 
 public
@@ -563,17 +563,17 @@ public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
 
 public
-type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
-                              String,                   // Matrix name
-                              list<Var>,                // diff vars
-                              list<Var>,                // result diffed equation
-                              list<Var>                 // all diffed equation
-                              >;
+type SymbolicJacobian = tuple<BackendDAE,         // symbolic equation system
+                        String,                   // Matrix name
+                        list<Var>,                // diff vars
+                        list<Var>,                // result diffed equation
+                        list<Var>                 // all diffed equation
+                        >;
 
 public
 type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>, // column-wise sparse pattern
-                           tuple<list< .DAE.ComponentRef>,                            // diff vars
-                                 list< .DAE.ComponentRef>>>;                          // diffed vars
+                     tuple<list< .DAE.ComponentRef>,                            // diff vars
+                           list< .DAE.ComponentRef>>>;                          // diffed vars
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring

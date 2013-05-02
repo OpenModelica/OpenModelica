@@ -60,19 +60,19 @@ extern "C" {
   } else{ \
     if(data->simulationInfo.initial){\
       if(data->simulationInfo.solveContinuous){ \
-        res = data->simulationInfo.relationsPre[index]; \
-        data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
+  res = data->simulationInfo.relationsPre[index]; \
+  data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
       } else { \
-        res = ((op_w)((exp1),(exp2))); \
-        data->simulationInfo.relations[index] = res; \
+  res = ((op_w)((exp1),(exp2))); \
+  data->simulationInfo.relations[index] = res; \
       }\
     } else { \
       if(data->simulationInfo.solveContinuous){ \
-        res = data->simulationInfo.relationsPre[index]; \
-        data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+  res = data->simulationInfo.relationsPre[index]; \
+  data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
       } else { \
-        res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
-        data->simulationInfo.relations[index] = res; \
+  res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+  data->simulationInfo.relations[index] = res; \
       }\
     }\
   }\

@@ -20,5 +20,5 @@
 
 #endif
 
-#pragma warning(  disable : 4297 )        // Issue warning 4297
+#pragma warning(  disable : 4297 )  // Issue warning 4297
 

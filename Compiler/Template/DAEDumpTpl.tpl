@@ -73,8 +73,8 @@ template dumpFunction(DAE.Function function)
     case RECORD_CONSTRUCTOR(__)  then
       <<
       function <%AbsynDumpTpl.dumpPathNoQual(path)%> "Automatically generated record constructor for <%AbsynDumpTpl.dumpPathNoQual(path)%>"
-        <%dumpRecordInputVarStr(type_)%>
-        output <%dumpPathLastIndent(path)%> res;
+  <%dumpRecordInputVarStr(type_)%>
+  output <%dumpPathLastIndent(path)%> res;
       end <%AbsynDumpTpl.dumpPathNoQual(path)%>;
       >>
 end dumpFunction;
@@ -228,9 +228,9 @@ end dumpVar;
 template dumpFinalPrefix(DAE.VariableAttributes varAttr)
 ::=
   match varAttr
-   case VAR_ATTR_REAL(finalPrefix=SOME(true))        then ' final'
-   case VAR_ATTR_INT(finalPrefix=SOME(true))         then ' final'
-   case VAR_ATTR_BOOL(finalPrefix=SOME(true))        then ' final'
+   case VAR_ATTR_REAL(finalPrefix=SOME(true))  then ' final'
+   case VAR_ATTR_INT(finalPrefix=SOME(true))   then ' final'
+   case VAR_ATTR_BOOL(finalPrefix=SOME(true))  then ' final'
    case VAR_ATTR_STRING(finalPrefix=SOME(true))      then ' final'
    case VAR_ATTR_ENUMERATION(finalPrefix=SOME(true)) then ' final'
 end dumpFinalPrefix;
@@ -271,11 +271,11 @@ template dumpVarType(Type ty)
     case T_STRING(varLst = {})  then  'String'
     case T_BOOL(varLst = {})    then  'Boolean'
     case T_ENUMERATION(__)      then  'enumeration(<%dumpEnumVars(literalVarLst)%>)'
-    case T_INTEGER(__)          then  'Integer(<%dumpVarAttributes(varLst)%>)'
-    case T_REAL(__)             then  'Real(<%dumpVarAttributes(varLst)%>)'
-    case T_STRING(__)           then  'String(<%dumpVarAttributes(varLst)%>)'
-    case T_BOOL(__)             then  'Bool(<%dumpVarAttributes(varLst)%>)'
-    case T_ARRAY(__)            then  '<%dumpVarType(ty)%><%dumpDimensions(dims)%>'
+    case T_INTEGER(__)    then  'Integer(<%dumpVarAttributes(varLst)%>)'
+    case T_REAL(__)       then  'Real(<%dumpVarAttributes(varLst)%>)'
+    case T_STRING(__)     then  'String(<%dumpVarAttributes(varLst)%>)'
+    case T_BOOL(__)       then  'Bool(<%dumpVarAttributes(varLst)%>)'
+    case T_ARRAY(__)      then  '<%dumpVarType(ty)%><%dumpDimensions(dims)%>'
     case T_COMPLEX(complexClassType=RECORD(path=rname))     then  '<%AbsynDumpTpl.dumpPathNoQual(rname)%>'
     else 'variable type not yet implemented'
 end dumpVarType;
@@ -534,7 +534,7 @@ template dumpInitialIfEquation(DAE.Element lst)
 ::=
 match lst
   case INITIAL_IF_EQUATION(condition1 = if_cond :: elseif_conds,
-             equations2 = if_branch :: elseif_branches) then
+       equations2 = if_branch :: elseif_branches) then
     let if_cond_str = dumpExp(if_cond)
     let if_branch_str = (if_branch |> e => dumpEquation(e) ;separator="\n")
     let elseif_str = dumpElseIfEquation(elseif_conds, elseif_branches)
@@ -656,7 +656,7 @@ template dumpIfEquation(DAE.Element lst)
 ::=
 match lst
   case IF_EQUATION(condition1 = if_cond :: elseif_conds,
-             equations2 = if_branch :: elseif_branches) then
+       equations2 = if_branch :: elseif_branches) then
     let if_cond_str = dumpExp(if_cond)
     let if_branch_str = (if_branch |> e => dumpEquation(e) ;separator="\n")
     let elseif_str = dumpElseIfEquation(elseif_conds, elseif_branches)
@@ -681,14 +681,14 @@ match condition1
   case cond :: rest_conds then
     match equations
       case branch :: rest_branches then
-        let cond_str = dumpExp(cond)
-        let branch_str = (branch |> e => dumpEquation(e) ;separator="\n")
-        let rest_str = dumpElseIfEquation(rest_conds, rest_branches)
-        <<
-        elseif <%cond_str%> then
-        <%branch_str%>
-        <%rest_str%>
-        >>
+  let cond_str = dumpExp(cond)
+  let branch_str = (branch |> e => dumpEquation(e) ;separator="\n")
+  let rest_str = dumpElseIfEquation(rest_conds, rest_branches)
+  <<
+  elseif <%cond_str%> then
+  <%branch_str%>
+  <%rest_str%>
+  >>
 end dumpElseIfEquation;
 
 /************************************************************************************************************

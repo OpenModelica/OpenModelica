@@ -24,11 +24,11 @@ algorithm
     Tpl.Text txt;
     //TA.MMPackage v_it;
   case (txt,
-          TplAbsyn.MM_PACKAGE(
-            name = v_it_name,
-            mmDeclarations = v_it_mmDeclarations
-          )
-         )
+    TplAbsyn.MM_PACKAGE(
+      name = v_it_name,
+      mmDeclarations = v_it_mmDeclarations
+    )
+   )
     local
       TplAbsyn.PathIdent v_it_name;
       list<TplAbsyn.MMDeclaration> v_it_mmDeclarations;
@@ -37,13 +37,13 @@ algorithm
       txt = f_pathIdent(txt, v_it_name);
       txt = Tpl.softNewLine(txt);
       txt = Tpl.writeTok(txt,
-        Tpl.ST_STRING_LIST({
-          "\n",
-          "protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});\n",
-          "\n",
-          "public import Tpl;\n",
-          "\n"
-        }, true) );
+  Tpl.ST_STRING_LIST({
+    "\n",
+    "protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});\n",
+    "\n",
+    "public import Tpl;\n",
+    "\n"
+  }, true) );
       txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE() ));
       txt = f_mmPackage_lm0(txt, v_it_mmDeclarations); //<mmDeclarations : mmDeclaration()\n>
       txt = Tpl.popIter(txt);
@@ -93,24 +93,24 @@ algorithm
   local
     Tpl.Text txt;
   case (txt,
-        TplAbsyn.MM_IMPORT(
-            packageName = TplAbsyn.IDENT("Tpl")
-        )
+  TplAbsyn.MM_IMPORT(
+      packageName = TplAbsyn.IDENT("Tpl")
+  )
        )
     then txt;
 
   case (txt,
-        TplAbsyn.MM_IMPORT(
-            packageName = TplAbsyn.IDENT("builtin")
-        )
+  TplAbsyn.MM_IMPORT(
+      packageName = TplAbsyn.IDENT("builtin")
+  )
        )
     then txt;
 
   case (txt,
-        TplAbsyn.MM_IMPORT(
-            isPublic = v_it_isPublic,
-            packageName = v_it_packageName
-        )
+  TplAbsyn.MM_IMPORT(
+      isPublic = v_it_isPublic,
+      packageName = v_it_packageName
+  )
        )
     local
       Boolean v_it_isPublic;
@@ -124,11 +124,11 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.MM_STR_TOKEN_DECL(
-            isPublic = v_isPublic,
-            name = v_it_name,
-            value = v_it_value
-        )
+  TplAbsyn.MM_STR_TOKEN_DECL(
+      isPublic = v_isPublic,
+      name = v_it_name,
+      value = v_it_value
+  )
        )
     local
       Boolean v_isPublic;
@@ -146,12 +146,12 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.MM_LITERAL_DECL(
-            isPublic = v_it_isPublic,
-            name = v_it_name,
-            value = v_it_value,
-            litType = v_litType
-        )
+  TplAbsyn.MM_LITERAL_DECL(
+      isPublic = v_it_isPublic,
+      name = v_it_name,
+      value = v_it_value,
+      litType = v_litType
+  )
        )
     local
       Boolean v_it_isPublic;
@@ -172,14 +172,14 @@ algorithm
     then txt;
 
   case (txt,
-        v_mf as TplAbsyn.MM_FUN(
-            isPublic = v_it_isPublic,
-            name = v_it_templName,
-            inArgs = v_it_inArgs,
-            outArgs = v_it_outArgs,
-            locals = v_it_locals,
-            statements = v_it_statements
-        )
+  v_mf as TplAbsyn.MM_FUN(
+      isPublic = v_it_isPublic,
+      name = v_it_templName,
+      inArgs = v_it_inArgs,
+      outArgs = v_it_outArgs,
+      locals = v_it_locals,
+      statements = v_it_statements
+  )
        )
     local
       TplAbsyn.MMDeclaration v_mf;
@@ -225,9 +225,9 @@ algorithm
     TplAbsyn.TypedIdents v_mf_locals;
 
   case (txt,
-        { v_c as TplAbsyn.MM_MATCH( matchCases = v_c_matchCases ) },
-        v_mf_inArgs, v_mf_outArgs, v_mf_locals
-        )
+  { v_c as TplAbsyn.MM_MATCH( matchCases = v_c_matchCases ) },
+  v_mf_inArgs, v_mf_outArgs, v_mf_locals
+  )
     local
       TplAbsyn.MMExp v_c;
       list<TplAbsyn.MMMatchCase> v_c_matchCases;
@@ -313,8 +313,8 @@ algorithm
   outtxt := f_mmMatchFunBody_lm0(outtxt, in_mf_outArgs); //<outArgs of (_,nm): "out_<nm>" ', '>
   outtxt := Tpl.popIter(outtxt);
   outtxt := Tpl.writeTok(outtxt, Tpl.ST_STRING_LIST({
-                ") := \n",
-                "matchcontinue(" }, false));
+          ") := \n",
+          "matchcontinue(" }, false));
   outtxt := Tpl.pushIter(outtxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE() ));
   outtxt := f_mmMatchFunBody_lm1(outtxt, in_mf_inArgs); //<inArgs of (_,nm) : "in_<nm>" ', '>
   outtxt := Tpl.popIter(outtxt);
@@ -724,9 +724,9 @@ algorithm
   local
     Tpl.Text txt;
   case (txt,
-        TplAbsyn.LIST_TYPE(
-            ofType = v_it_ofType
-        )
+  TplAbsyn.LIST_TYPE(
+      ofType = v_it_ofType
+  )
        )
     local
       TplAbsyn.TypeSignature v_it_ofType;
@@ -736,9 +736,9 @@ algorithm
       txt = Tpl.writeStr(txt, ">");
     then txt;
   case (txt,
-        TplAbsyn.ARRAY_TYPE(
-            ofType = v_it_ofType
-        )
+  TplAbsyn.ARRAY_TYPE(
+      ofType = v_it_ofType
+  )
        )
     local
       TplAbsyn.TypeSignature v_it_ofType;
@@ -747,9 +747,9 @@ algorithm
       txt = Tpl.writeStr(txt, "[:]");
     then txt;
   case (txt,
-        TplAbsyn.OPTION_TYPE(
-            ofType = v_it_ofType
-        )
+  TplAbsyn.OPTION_TYPE(
+      ofType = v_it_ofType
+  )
        )
     local
       TplAbsyn.TypeSignature v_it_ofType;
@@ -759,9 +759,9 @@ algorithm
       txt = Tpl.writeStr(txt, ">");
     then txt;
   case (txt,
-        TplAbsyn.TUPLE_TYPE(
-            ofTypes = v_it_ofTypes
-        )
+  TplAbsyn.TUPLE_TYPE(
+      ofTypes = v_it_ofTypes
+  )
        )
     local
       list<TplAbsyn.TypeSignature> v_it_ofTypes;
@@ -773,9 +773,9 @@ algorithm
       txt = Tpl.writeStr(txt, ">");
     then txt;
   case (txt,
-        TplAbsyn.NAMED_TYPE(
-            name = v_it_name
-        )
+  TplAbsyn.NAMED_TYPE(
+      name = v_it_name
+  )
        )
     local
       TplAbsyn.PathIdent v_it_name;
@@ -814,9 +814,9 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.UNRESOLVED_TYPE(
-            reason = v_reason
-        )
+  TplAbsyn.UNRESOLVED_TYPE(
+      reason = v_reason
+  )
        )
     local
       String v_reason;
@@ -1085,13 +1085,13 @@ algorithm
       txt = Tpl.writeStr(txt, "\\\\");
     then txt;
   case (txt,
-        "\'",_
+  "\'",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\\'");
     then txt;
   case (txt,
-        "\"",_
+  "\"",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\\"");
@@ -1099,32 +1099,32 @@ algorithm
   /*
   //TODO: Error in the .srz
   case (txt,
-        "\a",_
+  "\a",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\a");
     then txt;
   case (txt,
-        "\b",_
+  "\b",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\b");
     then txt;
   case (txt,
-        "\f",_
+  "\f",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\f");
     then txt;
   case (txt,
-        "\v",_
+  "\v",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\v");
     then txt;
  */
   case (txt,
-        "\n",v_escapeNewLine
+  "\n",v_escapeNewLine
        )
     local
       Boolean v_escapeNewLine;
@@ -1136,21 +1136,21 @@ algorithm
   /*
   //TODO: Error - should be \r
   case (txt,
-        "\r",_
+  "\r",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\r");
     then txt;
   */
   case (txt,
-        "\t",_
+  "\t",_
        )
     equation
       txt = Tpl.writeStr(txt, "\\t");
     then txt;
 
   case (txt,
-        v_it,_
+  v_it,_
        )
     local
       String v_it;
@@ -1175,11 +1175,11 @@ algorithm
     String v_assignStr;
 
   case (txt,
-        TplAbsyn.MM_ASSIGN(
-            lhsArgs = v_it_lhsArgs,
-            rhs = v_it_rhs
-        ),
-        v_assignStr
+  TplAbsyn.MM_ASSIGN(
+      lhsArgs = v_it_lhsArgs,
+      rhs = v_it_rhs
+  ),
+  v_assignStr
        )
     local
       list<String> v_it_lhsArgs;
@@ -1198,11 +1198,11 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.MM_FN_CALL(
-            fnName = v_it_fnName,
-            args = v_it_args
-        ),
-        v_assignStr
+  TplAbsyn.MM_FN_CALL(
+      fnName = v_it_fnName,
+      args = v_it_args
+  ),
+  v_assignStr
        )
     local
       TplAbsyn.PathIdent v_it_fnName;
@@ -1218,9 +1218,9 @@ algorithm
 
 
   case (txt,
-        TplAbsyn.MM_IDENT(
-            ident = v_it_ident
-        ), _
+  TplAbsyn.MM_IDENT(
+      ident = v_it_ident
+  ), _
        )
     local
       TplAbsyn.PathIdent v_it_ident;
@@ -1229,9 +1229,9 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.MM_STR_TOKEN(
-            value = v_value
-        ), _
+  TplAbsyn.MM_STR_TOKEN(
+      value = v_value
+  ), _
        )
     local
       Tpl.StringToken v_value;
@@ -1241,9 +1241,9 @@ algorithm
 
 
   case (txt,
-        TplAbsyn.MM_STRING(
-            value = v_value
-        ), _
+  TplAbsyn.MM_STRING(
+      value = v_value
+  ), _
        )
     local
       String v_value;
@@ -1256,9 +1256,9 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.MM_LITERAL(
-            value = v_value
-        ), _
+  TplAbsyn.MM_LITERAL(
+      value = v_value
+  ), _
        )
     local
       String v_value;
@@ -1344,10 +1344,10 @@ algorithm
     Tpl.Text txt;
 
   case (txt,
-        TplAbsyn.BIND_AS_MATCH(
-            bindIdent = v_bindIdent,
-            matchingExp = v_matchingExp
-        )
+  TplAbsyn.BIND_AS_MATCH(
+      bindIdent = v_bindIdent,
+      matchingExp = v_matchingExp
+  )
        )
     local
       String v_bindIdent;
@@ -1359,9 +1359,9 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.BIND_MATCH(
-            bindIdent = v_it_bindIdent
-        )
+  TplAbsyn.BIND_MATCH(
+      bindIdent = v_it_bindIdent
+  )
        )
     local
       String v_it_bindIdent;
@@ -1370,10 +1370,10 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.RECORD_MATCH(
-            tagName = v_it_tagName,
-            fieldMatchings = v_it_fieldMatchings
-        )
+  TplAbsyn.RECORD_MATCH(
+      tagName = v_it_tagName,
+      fieldMatchings = v_it_fieldMatchings
+  )
        )
     local
       Option<TplAbsyn.Ident> v_it_bindIdent;
@@ -1398,16 +1398,16 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.NONE_MATCH()
+  TplAbsyn.NONE_MATCH()
        )
     equation
       txt = Tpl.writeStr(txt, "NONE");
     then txt;
 
   case (txt,
-        TplAbsyn.TUPLE_MATCH(
-            tupleArgs = v_it_tupleArgs
-        )
+  TplAbsyn.TUPLE_MATCH(
+      tupleArgs = v_it_tupleArgs
+  )
        )
     local
       list<TplAbsyn.MatchingExp> v_it_tupleArgs;
@@ -1420,7 +1420,7 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.LIST_MATCH( listElts = v_listElts  ) )
+  TplAbsyn.LIST_MATCH( listElts = v_listElts  ) )
     local
       list<TplAbsyn.MatchingExp> v_listElts;
     equation
@@ -1432,7 +1432,7 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.LIST_CONS_MATCH( head = v_head, rest = v_rest  ) )
+  TplAbsyn.LIST_CONS_MATCH( head = v_head, rest = v_rest  ) )
     local
       TplAbsyn.MatchingExp v_head;
       TplAbsyn.MatchingExp v_rest;
@@ -1443,7 +1443,7 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.STRING_MATCH( value = v_value )
+  TplAbsyn.STRING_MATCH( value = v_value )
        )
     local
       String v_value;
@@ -1454,7 +1454,7 @@ algorithm
     then txt;
 
   case (txt,
-        TplAbsyn.LITERAL_MATCH( value = v_it_value )
+  TplAbsyn.LITERAL_MATCH( value = v_it_value )
        )
     local
       String v_it_value;

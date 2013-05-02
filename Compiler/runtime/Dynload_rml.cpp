@@ -121,8 +121,8 @@ static const char* path_to_name(void* path, char del)
     case Absyn__IDENT_3dBOX1: {
       sprintres = sprintf(buf, "%s", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET]));
       if (sprintres < 0) {
-        free(buf);
-        return "path_to_name: sprintf failed";
+  free(buf);
+  return "path_to_name: sprintf failed";
       }
       buf += sprintres;
       tmpPath = NULL;
@@ -131,8 +131,8 @@ static const char* path_to_name(void* path, char del)
     case Absyn__QUALIFIED_3dBOX2: {
       sprintres = sprintf(buf, "%s%c", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET]), del);
       if (sprintres < 0) {
-        free(buf);
-        return "path_to_name: sprintf failed";
+  free(buf);
+  return "path_to_name: sprintf failed";
       }
       buf += sprintres;
       tmpPath = RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET+1];

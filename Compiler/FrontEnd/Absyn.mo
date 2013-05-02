@@ -31,7 +31,7 @@
 
 encapsulated package Absyn
 "
-  file:        Absyn.mo
+  file:  Absyn.mo
   package:     Absyn
   description: Abstract syntax
 
@@ -158,8 +158,8 @@ uniontype Class
     Restriction restriction  "Restriction" ;
     ClassDef    body;
     Info       info    "Information: FileName is the class is defined in +
-               isReadOnly bool + start line no + start column no +
-               end line no + end column no";
+         isReadOnly bool + start line no + start column no +
+         end line no + end column no";
   end CLASS;
 
 end Class;
@@ -183,14 +183,14 @@ uniontype ClassDef
   end PARTS;
 
   record DERIVED
-    TypeSpec          typeSpec "typeSpec specification includes array dimensions" ;
+    TypeSpec    typeSpec "typeSpec specification includes array dimensions" ;
     ElementAttributes attributes;
     list<ElementArg>  arguments;
     Option<Comment>   comment;
   end DERIVED;
 
   record ENUMERATION
-    EnumDef         enumLiterals;
+    EnumDef   enumLiterals;
     Option<Comment> comment;
   end ENUMERATION;
 
@@ -200,15 +200,15 @@ uniontype ClassDef
   end OVERLOAD;
 
   record CLASS_EXTENDS
-    Ident              baseClassName  "name of class to extend" ;
+    Ident        baseClassName  "name of class to extend" ;
     list<ElementArg>   modifications  "modifications to be applied to the base class";
-    Option<String>     comment        "comment";
-    list<ClassPart>    parts          "class parts";
+    Option<String>     comment  "comment";
+    list<ClassPart>    parts    "class parts";
     list<Annotation> ann;
   end CLASS_EXTENDS;
 
   record PDER
-    Path         functionName;
+    Path   functionName;
     list<Ident>  vars "derived variables" ;
     Option<Comment> comment "comment";
   end PDER;
@@ -222,7 +222,7 @@ uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
   end TPATH;
 
   record TCOMPLEX
-    Path             path;
+    Path       path;
     list<TypeSpec>   typeSpecs;
     Option<ArrayDim> arrayDim;
   end TCOMPLEX;
@@ -245,7 +245,7 @@ public
 uniontype EnumLiteral "EnumLiteral, which is a name in an enumeration and an optional
    Comment."
   record ENUMLITERAL
-    Ident           literal;
+    Ident     literal;
     Option<Comment> comment;
   end ENUMLITERAL;
 
@@ -308,11 +308,11 @@ public
 uniontype Element "Elements
   The basic element type in Modelica"
   record ELEMENT
-    Boolean                   finalPrefix;
+    Boolean             finalPrefix;
     Option<RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
-    InnerOuter                innerOuter "inner/outer" ;
-    ElementSpec               specification "Actual element specification" ;
-    Info                      info  "File name the class is defined in + line no + column no" ;
+    InnerOuter          innerOuter "inner/outer" ;
+    ElementSpec         specification "Actual element specification" ;
+    Info                info  "File name the class is defined in + line no + column no" ;
     Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
   end ELEMENT;
 
@@ -323,7 +323,7 @@ uniontype Element "Elements
 
   record TEXT
     Option<Ident> optName "optName : optional name of text, e.g. model with syntax error.
-                                       We need the name to be able to browse it..." ;
+                                 We need the name to be able to browse it..." ;
     String string;
     Info info;
   end TEXT;
@@ -379,8 +379,8 @@ public
 uniontype InnerOuter
   "One of the keyword inner and outer CAN be given to reference an
    inner or outer element. Thus there are three disjoint possibilities."
-  record INNER           "an inner prefix"       end INNER;
-  record OUTER           "an outer prefix"       end OUTER;
+  record INNER     "an inner prefix"       end INNER;
+  record OUTER     "an outer prefix"       end OUTER;
   record INNER_OUTER     "an inner outer prefix" end INNER_OUTER;
   record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;
 end InnerOuter;
@@ -665,9 +665,9 @@ end ElementAttributes;
 
 public
 uniontype Parallelism "Parallelism"
-  record PARGLOBAL  "Global variables for CUDA and OpenCL"            end PARGLOBAL;
-  record PARLOCAL "Shared for CUDA and local for OpenCL"              end PARLOCAL;
-  record NON_PARALLEL  "Non parallel/Normal variables"                 end NON_PARALLEL;
+  record PARGLOBAL  "Global variables for CUDA and OpenCL"      end PARGLOBAL;
+  record PARLOCAL "Shared for CUDA and local for OpenCL"        end PARLOCAL;
+  record NON_PARALLEL  "Non parallel/Normal variables"           end NON_PARALLEL;
 end Parallelism;
 
 public
@@ -691,8 +691,8 @@ end Variability;
 
 public
 uniontype Direction "Direction"
-  record INPUT  "direction is input"                                   end INPUT;
-  record OUTPUT "direction is output"                                  end OUTPUT;
+  record INPUT  "direction is input"                             end INPUT;
+  record OUTPUT "direction is output"                            end OUTPUT;
   record BIDIR  "direction is not specified, neither input nor output" end BIDIR;
 end Direction;
 
@@ -814,10 +814,10 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end CONS;
 
   record MATCHEXP "matchcontinue expression"
-    MatchType matchTy            " match or matchcontinue      ";
-    Exp inputExp                 " match expression of         ";
-    list<ElementItem> localDecls " local declarations          ";
-    list<Case> cases             " case list + else in the end ";
+    MatchType matchTy      " match or matchcontinue      ";
+    Exp inputExp           " match expression of         ";
+    list<ElementItem> localDecls " local declarations    ";
+    list<Case> cases       " case list + else in the end ";
     Option<String> comment       " match expr comment_optional ";
   end MATCHEXP;
 
@@ -924,32 +924,32 @@ end NamedArg;
 
 uniontype Operator "Expression operators"
   /* arithmetic operators */
-  record ADD       "addition"                    end ADD;
-  record SUB       "subtraction"                 end SUB;
-  record MUL       "multiplication"              end MUL;
-  record DIV       "division"                    end DIV;
-  record POW       "power"                       end POW;
-  record UPLUS     "unary plus"                  end UPLUS;
-  record UMINUS    "unary minus"                 end UMINUS;
+  record ADD       "addition"              end ADD;
+  record SUB       "subtraction"           end SUB;
+  record MUL       "multiplication"        end MUL;
+  record DIV       "division"              end DIV;
+  record POW       "power"                 end POW;
+  record UPLUS     "unary plus"            end UPLUS;
+  record UMINUS    "unary minus"           end UMINUS;
   /* element-wise arithmetic operators */
   record ADD_EW    "element-wise addition"       end ADD_EW;
   record SUB_EW    "element-wise subtraction"    end SUB_EW;
   record MUL_EW    "element-wise multiplication" end MUL_EW;
   record DIV_EW    "element-wise division"       end DIV_EW;
-  record POW_EW    "element-wise power"          end POW_EW;
+  record POW_EW    "element-wise power"    end POW_EW;
   record UPLUS_EW  "element-wise unary minus"    end UPLUS_EW;
   record UMINUS_EW "element-wise unary plus"     end UMINUS_EW;
   /* logical operators */
-  record AND       "logical and"                 end AND;
-  record OR        "logical or"                  end OR;
-  record NOT       "logical not"                 end NOT;
+  record AND       "logical and"           end AND;
+  record OR  "logical or"                  end OR;
+  record NOT       "logical not"           end NOT;
   /* relational operators */
-  record LESS      "less than"                   end LESS;
-  record LESSEQ    "less than or equal"          end LESSEQ;
-  record GREATER   "greater than"                end GREATER;
+  record LESS      "less than"             end LESS;
+  record LESSEQ    "less than or equal"    end LESSEQ;
+  record GREATER   "greater than"          end GREATER;
   record GREATEREQ "greater than or equal"       end GREATEREQ;
-  record EQUAL     "relational equal"            end EQUAL;
-  record NEQUAL    "relational not equal"        end NEQUAL;
+  record EQUAL     "relational equal"      end EQUAL;
+  record NEQUAL    "relational not equal"  end NEQUAL;
 end Operator;
 
 
@@ -1097,10 +1097,10 @@ public
 uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
 
   record EXTERNALDECL
-    Option<Ident>        funcName "The name of the external function" ;
+    Option<Ident>  funcName "The name of the external function" ;
     Option<String>       lang     "Language of the external function" ;
     Option<ComponentRef> output_  "output parameter as return value" ;
-    list<Exp>            args     "only positional arguments, i.e. expression list" ;
+    list<Exp>      args     "only positional arguments, i.e. expression list" ;
     Option<Annotation>   annotation_;
   end EXTERNALDECL;
 
@@ -1180,36 +1180,36 @@ algorithm
       EquationItem ei,ei_1;
     case(eq as EQ_IF(e,eqilst1,eeqitlst,eqilst2),rel,arg)
       equation
-        ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
-        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
-        ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
-        ((EQ_IF(e_1,_,_,_),arg_4)) = rel((eq,arg_3));
+  ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
+  ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
+  ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
+  ((EQ_IF(e_1,_,_,_),arg_4)) = rel((eq,arg_3));
       then
-        ((EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
+  ((EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
     case(eq as EQ_FOR(fis,eqilst),rel,arg)
       equation
-        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
-        ((EQ_FOR(fis_1,_),arg_2)) = rel((eq,arg_1));
+  ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
+  ((EQ_FOR(fis_1,_),arg_2)) = rel((eq,arg_1));
       then
-        ((EQ_FOR(fis_1,eqilst_1),arg_2));
+  ((EQ_FOR(fis_1,eqilst_1),arg_2));
     case(eq as EQ_WHEN_E(e,eqilst,eeqitlst),rel,arg)
       equation
-        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
-        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
-        ((EQ_WHEN_E(e_1,_,_),arg_3)) = rel((eq,arg_2));
+  ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
+  ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
+  ((EQ_WHEN_E(e_1,_,_),arg_3)) = rel((eq,arg_2));
       then
-        ((EQ_WHEN_E(e_1,eqilst_1,eeqitlst_1),arg_3));
+  ((EQ_WHEN_E(e_1,eqilst_1,eeqitlst_1),arg_3));
     case(eq as EQ_FAILURE(ei),rel,arg)
       equation
-        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
-        ((EQ_FAILURE(_),arg_2)) = rel((eq,arg_1));
+  ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
+  ((EQ_FAILURE(_),arg_2)) = rel((eq,arg_1));
       then
-        ((EQ_FAILURE(ei_1),arg_2));
+  ((EQ_FAILURE(ei_1),arg_2));
     case(eq,rel,arg)
       equation
-        ((eq_1,arg_1)) = rel((eq,arg));
+  ((eq_1,arg_1)) = rel((eq,arg));
       then
-        ((eq_1,arg_1));
+  ((eq_1,arg_1));
   end matchcontinue;
 end traverseEquation;
 
@@ -1238,9 +1238,9 @@ algorithm
       Info info;
     case(EQUATIONITEM(eq,oc,info),rel,arg)
       equation
-        ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
+  ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
       then
-        ((EQUATIONITEM(eq_1,oc,info),arg_1));
+  ((EQUATIONITEM(eq_1,oc,info),arg_1));
     case(ei,rel,arg) then ((ei,arg));
   end matchcontinue;
 end traverseEquationItem;
@@ -1269,10 +1269,10 @@ algorithm
     case({},_,arg) then (({},arg));
     case(ei :: cdr,rel,arg)
       equation
-        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
-        ((cdr_1,arg_2)) = traverseEquationItemList(cdr,rel,arg_1);
+  ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
+  ((cdr_1,arg_2)) = traverseEquationItemList(cdr,rel,arg_1);
       then
-        ((ei_1 :: cdr_1,arg_2));
+  ((ei_1 :: cdr_1,arg_2));
   end matchcontinue;
 end traverseEquationItemList;
 
@@ -1302,10 +1302,10 @@ algorithm
     case({},rel,arg) then (({},arg));
     case((e,eilst) :: cdr,rel,arg)
       equation
-        ((eilst_1,arg_1)) = traverseEquationItemList(eilst,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpEqItemTupleList(cdr,rel,arg_1);
+  ((eilst_1,arg_1)) = traverseEquationItemList(eilst,rel,arg);
+  ((cdr_1,arg_2)) = traverseExpEqItemTupleList(cdr,rel,arg_1);
       then
-        (((e,eilst_1) :: cdr_1,arg_2));
+  (((e,eilst_1) :: cdr_1,arg_2));
   end matchcontinue;
 end traverseExpEqItemTupleList;
 
@@ -1337,54 +1337,54 @@ algorithm
       ForIterators fis,fis_1;
     case(alg as ALG_IF(e,ailst1,eaitlst,ailst2),rel,arg)
       equation
-        ((ailst1_1,arg1_1)) = traverseAlgorithmItemList(ailst1,rel,arg);
-        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
-        ((ailst2_1,arg3_1)) = traverseAlgorithmItemList(ailst2,rel,arg2_1);
-        ((ALG_IF(e_1,_,_,_),arg_1)) = rel((alg,arg3_1));
+  ((ailst1_1,arg1_1)) = traverseAlgorithmItemList(ailst1,rel,arg);
+  ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
+  ((ailst2_1,arg3_1)) = traverseAlgorithmItemList(ailst2,rel,arg2_1);
+  ((ALG_IF(e_1,_,_,_),arg_1)) = rel((alg,arg3_1));
       then
-        ((ALG_IF(e_1,ailst1_1,eaitlst_1,ailst2_1),arg_1));
+  ((ALG_IF(e_1,ailst1_1,eaitlst_1,ailst2_1),arg_1));
     case(alg as ALG_FOR(fis,ailst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
       then
-        ((ALG_FOR(fis_1,ailst_1),arg_1));
+  ((ALG_FOR(fis_1,ailst_1),arg_1));
     case(alg as ALG_PARFOR(fis,ailst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_PARFOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((ALG_PARFOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
       then
-        ((ALG_PARFOR(fis_1,ailst_1),arg_1));
+  ((ALG_PARFOR(fis_1,ailst_1),arg_1));
     case(alg as ALG_WHILE(e,ailst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_WHILE(e_1,_),arg_1)) = rel((alg,arg1_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((ALG_WHILE(e_1,_),arg_1)) = rel((alg,arg1_1));
       then
-        ((ALG_WHILE(e_1,ailst_1),arg_1));
+  ((ALG_WHILE(e_1,ailst_1),arg_1));
     case(alg as ALG_WHEN_A(e,ailst,eaitlst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
-        ((ALG_WHEN_A(e_1,_,_),arg_1)) = rel((alg,arg2_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
+  ((ALG_WHEN_A(e_1,_,_),arg_1)) = rel((alg,arg2_1));
       then
-        ((ALG_WHEN_A(e_1,ailst_1,eaitlst_1),arg_1));
+  ((ALG_WHEN_A(e_1,ailst_1,eaitlst_1),arg_1));
     case(alg as ALG_TRY(ailst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_TRY(_),arg_1)) = rel((alg,arg1_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((ALG_TRY(_),arg_1)) = rel((alg,arg1_1));
       then
-        ((ALG_TRY(ailst_1),arg_1));
+  ((ALG_TRY(ailst_1),arg_1));
     case(alg as ALG_CATCH(ailst),rel,arg)
       equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_CATCH(_),arg_1)) = rel((alg,arg1_1));
+  ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((ALG_CATCH(_),arg_1)) = rel((alg,arg1_1));
       then
-        ((ALG_CATCH(ailst_1),arg_1));
+  ((ALG_CATCH(ailst_1),arg_1));
     case(alg,rel,arg)
       equation
-        ((alg_1,arg_1)) = rel((alg,arg));
+  ((alg_1,arg_1)) = rel((alg,arg));
       then
-        ((alg_1,arg_1));
+  ((alg_1,arg_1));
   end matchcontinue;
 end traverseAlgorithm;
 
@@ -1414,9 +1414,9 @@ algorithm
       Info info;
     case(ALGORITHMITEM(alg,oc,info),rel,arg)
       equation
-        ((alg_1,arg_1)) = traverseAlgorithm(alg,rel,arg);
+  ((alg_1,arg_1)) = traverseAlgorithm(alg,rel,arg);
       then
-        ((ALGORITHMITEM(alg_1,oc,info),arg_1));
+  ((ALGORITHMITEM(alg_1,oc,info),arg_1));
     case(ai,_,arg) then ((ai,arg));
   end matchcontinue;
 end traverseAlgorithmItem;
@@ -1445,10 +1445,10 @@ algorithm
     case({},_,arg) then (({},arg));
     case(ai :: cdr,rel,arg)
       equation
-        ((ai_1,arg_1)) = traverseAlgorithmItem(ai,rel,arg);
-        ((cdr_1,arg_2)) = traverseAlgorithmItemList(cdr,rel,arg_1);
+  ((ai_1,arg_1)) = traverseAlgorithmItem(ai,rel,arg);
+  ((cdr_1,arg_2)) = traverseAlgorithmItemList(cdr,rel,arg_1);
       then
-        ((ai_1 :: cdr_1,arg_2));
+  ((ai_1 :: cdr_1,arg_2));
   end matchcontinue;
 end traverseAlgorithmItemList;
 
@@ -1478,10 +1478,10 @@ algorithm
     case({},rel,arg) then (({},arg));
     case((e,ailst) :: cdr,rel,arg)
       equation
-        ((ailst_1,arg_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpAlgItemTupleList(cdr,rel,arg_1);
+  ((ailst_1,arg_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+  ((cdr_1,arg_2)) = traverseExpAlgItemTupleList(cdr,rel,arg_1);
       then
-        (((e,ailst_1) :: cdr_1,arg_2));
+  (((e,ailst_1) :: cdr_1,arg_2));
   end matchcontinue;
 end traverseExpAlgItemTupleList;
 
@@ -1514,108 +1514,108 @@ algorithm
       list<list<Exp>> mexpl,mexpl1;
     case ((e as UNARY(op,e1)),rel,ext_arg) /* unary */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((UNARY(op_1,e1_1),ext_arg_2));
+  ((UNARY(op_1,e1_1),ext_arg_2));
     case ((e as BINARY(e1,op,e2)),rel,ext_arg) /* binary */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((BINARY(e1_1,op_1,e2_1),ext_arg_3));
+  ((BINARY(e1_1,op_1,e2_1),ext_arg_3));
     case ((e as LUNARY(op,e1)),rel,ext_arg) /* logic unary */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((LUNARY(op_1,e1_1),ext_arg_2));
+  ((LUNARY(op_1,e1_1),ext_arg_2));
     case ((e as LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((LBINARY(e1_1,op_1,e2_1),ext_arg_3));
+  ((LBINARY(e1_1,op_1,e2_1),ext_arg_3));
     case ((e as RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((RELATION(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((RELATION(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((RELATION(e1_1,op_1,e2_1),ext_arg_3));
+  ((RELATION(e1_1,op_1,e2_1),ext_arg_3));
 
     case ((e as IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
-        ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
+  ((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
+  ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
       then
-        ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
+  ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
 
     case ((e as CALL(cfn,fargs)),rel,ext_arg)
       equation
-        ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
-        e_temp = CALL(cfn,fargs1);
-        ((CALL(cfn_1,fargs2),ext_arg_2)) = rel((e_temp,ext_arg_1));
+  ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
+  e_temp = CALL(cfn,fargs1);
+  ((CALL(cfn_1,fargs2),ext_arg_2)) = rel((e_temp,ext_arg_1));
       then
-        ((CALL(cfn_1,fargs2),ext_arg_2));
+  ((CALL(cfn_1,fargs2),ext_arg_2));
 
     //stefan
     case ((e as PARTEVALFUNCTION(cfn,fargs)),rel,ext_arg)
       equation
-        ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs,rel,ext_arg);
-        ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+  ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs,rel,ext_arg);
+  ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((PARTEVALFUNCTION(cfn_1,fargs1),ext_arg_2));
+  ((PARTEVALFUNCTION(cfn_1,fargs1),ext_arg_2));
 
     case ((e as ARRAY(expl)),rel,ext_arg)
       equation
-        // Also traverse expressions within the array. Daniel Hedberg 2010-10.
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
+  // Also traverse expressions within the array. Daniel Hedberg 2010-10.
+  ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
+  ((ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((ARRAY(expl_1),ext_arg_2));
+  ((ARRAY(expl_1),ext_arg_2));
 
     case ((e as MATRIX(mexpl)),rel,ext_arg)
       equation
-        // Also traverse expressions within the matrix. Daniel Hedberg 2010-10.
-        ((mexpl1,ext_arg_1)) = traverseExpListList(mexpl, rel, ext_arg);
-        ((MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
+  // Also traverse expressions within the matrix. Daniel Hedberg 2010-10.
+  ((mexpl1,ext_arg_1)) = traverseExpListList(mexpl, rel, ext_arg);
+  ((MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((MATRIX(mexpl1),ext_arg_2));
+  ((MATRIX(mexpl1),ext_arg_2));
 
     case ((e as RANGE(e1,NONE(),e2)),rel,ext_arg)
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((RANGE(e1_1,NONE(),e2_1),ext_arg_3));
+  ((RANGE(e1_1,NONE(),e2_1),ext_arg_3));
     case ((e as RANGE(e1,SOME(e2),e3)),rel,ext_arg)
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
+  ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+  ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+  ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
+  ((RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
       then
-        ((RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
+  ((RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
 
     case ((e as TUPLE(expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = List.mapFoldTuple(expl, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+  (expl_1,ext_arg_1) = List.mapFoldTuple(expl, rel, ext_arg);
+  ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((TUPLE(expl_1),ext_arg_2));
+  ((TUPLE(expl_1),ext_arg_2));
 
     case (e,rel,ext_arg)
       equation
-        ((e_1,ext_arg_1)) = rel((e,ext_arg));
+  ((e_1,ext_arg_1)) = rel((e,ext_arg));
       then
-        ((e_1,ext_arg_1));
+  ((e_1,ext_arg_1));
   end matchcontinue;
 end traverseExp;
 
@@ -1643,10 +1643,10 @@ algorithm
     case({},_,arg) then (({},arg));
     case(e :: cdr,rel,arg)
       equation
-        ((e_1,arg_1)) = traverseExpList(e,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpListList(cdr,rel,arg_1);
+  ((e_1,arg_1)) = traverseExpList(e,rel,arg);
+  ((cdr_1,arg_2)) = traverseExpListList(cdr,rel,arg_1);
       then
-        ((e_1 :: cdr_1,arg_2));
+  ((e_1 :: cdr_1,arg_2));
   end match;
 end traverseExpListList;
 
@@ -1674,10 +1674,10 @@ algorithm
     case({},_,arg) then (({},arg));
     case(e :: cdr,rel,arg)
       equation
-        ((e_1,arg_1)) = traverseExp(e,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpList(cdr,rel,arg_1);
+  ((e_1,arg_1)) = traverseExp(e,rel,arg);
+  ((cdr_1,arg_2)) = traverseExpList(cdr,rel,arg_1);
       then
-        ((e_1 :: cdr_1,arg_2));
+  ((e_1 :: cdr_1,arg_2));
   end match;
 end traverseExpList;
 
@@ -1729,14 +1729,14 @@ algorithm
       Type_a ext_arg;
     case(FUNCTIONARGS(expl,nargs),_,ext_arg)
       equation
-        ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
-        ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+  ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
+  ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then ((FUNCTIONARGS(expl_1,nargs),ext_arg));
 
     case(FOR_ITER_FARG(exp = forExp,iterators=iterators),_,ext_arg)
       equation
-        ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
-        /* adrpo: TODO! travese iterators! */
+  ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
+  /* adrpo: TODO! travese iterators! */
       then((FOR_ITER_FARG(e1,iterators),ext_arg));
   end match;
 end traverseExpFunctionArgs;
@@ -1762,8 +1762,8 @@ algorithm
     case({},_,ext_arg) then (({},ext_arg));
     case(NAMEDARG(id,e1)::nargs,_,ext_arg)
       equation
-        ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-        ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+  ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+  ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then((NAMEDARG(id,e11)::nargs,ext_arg));
   end match;
 end traverseExpNamedArgs;
@@ -1788,8 +1788,8 @@ algorithm
     case({},_,ext_arg) then (({},ext_arg));
     case(e1::pargs,_,ext_arg)
       equation
-        ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-        ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
+  ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+  ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
       then((e11::pargs,ext_arg));
   end match;
 end traverseExpPosArgs;
@@ -1870,9 +1870,9 @@ algorithm
 
     case (SOME(e), tup)
       equation
-        (e, tup) = traverseExpBidir(e, tup);
+  (e, tup) = traverseExpBidir(e, tup);
       then
-        (SOME(e), tup);
+  (SOME(e), tup);
 
     case (NONE(), _) then (inExp, inTuple);
   end match;
@@ -1918,133 +1918,133 @@ algorithm
 
     case (CREF(componentRef = cref), tup)
       equation
-        (cref, tup) = traverseExpBidirCref(cref, tup);
+  (cref, tup) = traverseExpBidirCref(cref, tup);
       then
-        (CREF(cref), tup);
+  (CREF(cref), tup);
 
     case (BINARY(exp1 = e1, op = op, exp2 = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (BINARY(e1, op, e2), tup);
+  (BINARY(e1, op, e2), tup);
 
     case (UNARY(op = op, exp = e1), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
       then
-        (UNARY(op, e1), tup);
+  (UNARY(op, e1), tup);
 
     case (LBINARY(exp1 = e1, op = op, exp2 = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (LBINARY(e1, op, e2), tup);
+  (LBINARY(e1, op, e2), tup);
 
     case (LUNARY(op = op, exp = e1), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
       then
-        (LUNARY(op, e1), tup);
+  (LUNARY(op, e1), tup);
 
     case (RELATION(exp1 = e1, op = op, exp2 = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (RELATION(e1, op, e2), tup);
+  (RELATION(e1, op, e2), tup);
 
     case (IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3,
-        elseIfBranch = else_ifs), tup)
+  elseIfBranch = else_ifs), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
-        (e3, tup) = traverseExpBidir(e3, tup);
-        (else_ifs, tup) = List.mapFold(else_ifs,
-          traverseExpBidirElseIf, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
+  (e3, tup) = traverseExpBidir(e3, tup);
+  (else_ifs, tup) = List.mapFold(else_ifs,
+    traverseExpBidirElseIf, tup);
       then
-        (IFEXP(e1, e2, e3, else_ifs), tup);
+  (IFEXP(e1, e2, e3, else_ifs), tup);
 
     case (CALL(function_ = cref, functionArgs = fargs), tup)
       equation
-        (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
+  (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
       then
-        (CALL(cref, fargs), tup);
+  (CALL(cref, fargs), tup);
 
     case (PARTEVALFUNCTION(function_ = cref, functionArgs = fargs), tup)
       equation
-        (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
+  (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
       then
-        (PARTEVALFUNCTION(cref, fargs), tup);
+  (PARTEVALFUNCTION(cref, fargs), tup);
 
     case (ARRAY(arrayExp = expl), tup)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+  (expl, tup) = traverseExpListBidir(expl, tup);
       then
-        (ARRAY(expl), tup);
+  (ARRAY(expl), tup);
 
     case (MATRIX(matrix = mat_expl), tup)
       equation
-        (mat_expl, tup) = List.mapFold(mat_expl,
-          traverseExpListBidir, tup);
+  (mat_expl, tup) = List.mapFold(mat_expl,
+    traverseExpListBidir, tup);
       then
-        (MATRIX(mat_expl), tup);
+  (MATRIX(mat_expl), tup);
 
     case (RANGE(start = e1, step = oe1, stop = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (oe1, tup) = traverseExpOptBidir(oe1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (oe1, tup) = traverseExpOptBidir(oe1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (RANGE(e1, oe1, e2), tup);
+  (RANGE(e1, oe1, e2), tup);
 
     case (END(), _) then (inExp, inTuple);
 
     case (TUPLE(expressions = expl), tup)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+  (expl, tup) = traverseExpListBidir(expl, tup);
       then
-        (TUPLE(expl), tup);
+  (TUPLE(expl), tup);
 
     case (AS(id = id, exp = e1), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
       then
-        (AS(id, e1), tup);
+  (AS(id, e1), tup);
 
     case (CONS(head = e1, rest = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (CONS(e1, e2), tup);
+  (CONS(e1, e2), tup);
 
     case (MATCHEXP(matchTy = match_ty, inputExp = e1, localDecls = match_decls,
-        cases = match_cases, comment = cmt), tup)
+  cases = match_cases, comment = cmt), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (match_cases, tup) = List.mapFold(match_cases,
-          traverseMatchCase, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (match_cases, tup) = List.mapFold(match_cases,
+    traverseMatchCase, tup);
       then
-        (MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), tup);
+  (MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), tup);
 
     case (LIST(exps = expl), tup)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+  (expl, tup) = traverseExpListBidir(expl, tup);
       then
-        (LIST(expl), tup);
+  (LIST(expl), tup);
 
     case (CODE(code = _), tup)
       then (inExp, tup);
 
     else
       equation
-        error_msg = "in Absyn.traverseExpBidirSubExps - Unknown expression: ";
-        error_msg = error_msg +& Dump.printExpStr(inExp);
-        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+  error_msg = "in Absyn.traverseExpBidirSubExps - Unknown expression: ";
+  error_msg = error_msg +& Dump.printExpStr(inExp);
+  Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();
+  fail();
 
   end match;
 end traverseExpBidirSubExps;
@@ -2073,22 +2073,22 @@ algorithm
 
     case (CREF_FULLYQUALIFIED(componentRef = cr), _)
       equation
-        (cr, tup) = traverseExpBidirCref(cr, inTuple);
+  (cr, tup) = traverseExpBidirCref(cr, inTuple);
       then
-        (CREF_FULLYQUALIFIED(cr), tup);
+  (CREF_FULLYQUALIFIED(cr), tup);
 
     case (CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
-        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
-        (cr, tup) = traverseExpBidirCref(cr, tup);
+  (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
+  (cr, tup) = traverseExpBidirCref(cr, tup);
       then
-        (CREF_QUAL(name, subs, cr), tup);
+  (CREF_QUAL(name, subs, cr), tup);
 
     case (CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
+  (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
       then
-        (CREF_IDENT(name, subs), tup);
+  (CREF_IDENT(name, subs), tup);
 
     case (ALLWILD(), _) then (inCref, inTuple);
     case (WILD(), _) then (inCref, inTuple);
@@ -2118,9 +2118,9 @@ algorithm
 
     case (SUBSCRIPT(subscript = sub_exp), tup)
       equation
-        (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
+  (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
       then
-        (SUBSCRIPT(sub_exp), tup);
+  (SUBSCRIPT(sub_exp), tup);
 
     case (NOSUB(), _) then (inSubscript, inTuple);
   end match;
@@ -2176,19 +2176,19 @@ algorithm
 
     case (FUNCTIONARGS(args = expl, argNames = named_args), tup)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
-        (named_args, tup) = List.mapFold(named_args,
-          traverseExpBidirNamedArg, tup);
+  (expl, tup) = traverseExpListBidir(expl, tup);
+  (named_args, tup) = List.mapFold(named_args,
+    traverseExpBidirNamedArg, tup);
       then
-        (FUNCTIONARGS(expl, named_args), tup);
+  (FUNCTIONARGS(expl, named_args), tup);
 
     case (FOR_ITER_FARG(exp = e, iterators = iters), tup)
       equation
-        (e, tup) = traverseExpBidir(e, tup);
-        (iters, tup) = List.mapFold(iters,
-          traverseExpBidirIterator, tup);
+  (e, tup) = traverseExpBidir(e, tup);
+  (iters, tup) = List.mapFold(iters,
+    traverseExpBidirIterator, tup);
       then
-        (FOR_ITER_FARG(e, iters), tup);
+  (FOR_ITER_FARG(e, iters), tup);
   end match;
 end traverseExpBidirFunctionArgs;
 
@@ -2266,20 +2266,20 @@ algorithm
 
     case (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup)
       equation
-        (pattern, tup) = traverseExpBidir(pattern, tup);
-        (patternGuard, tup) = traverseExpOptBidir(patternGuard, tup);
-        (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
-        (result, tup) = traverseExpBidir(result, tup);
+  (pattern, tup) = traverseExpBidir(pattern, tup);
+  (patternGuard, tup) = traverseExpOptBidir(patternGuard, tup);
+  (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
+  (result, tup) = traverseExpBidir(result, tup);
       then
-        (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
+  (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
 
     case (ELSE(localDecls = ldecls, equations = eql, result = result, resultInfo = resultInfo,
-        comment = cmt, info = info), tup)
+  comment = cmt, info = info), tup)
       equation
-        (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
-        (result, tup) = traverseExpBidir(result, tup);
+  (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
+  (result, tup) = traverseExpBidir(result, tup);
       then
-        (ELSE(ldecls, eql, result, resultInfo, cmt, info), tup);
+  (ELSE(ldecls, eql, result, resultInfo, cmt, info), tup);
 
   end match;
 end traverseMatchCase;
@@ -2323,9 +2323,9 @@ algorithm
 
     case (EQUATIONITEM(equation_ = eq, comment = cmt, info = info), tup)
       equation
-        (eq, tup) = traverseEquationBidir(eq, tup);
+  (eq, tup) = traverseEquationBidir(eq, tup);
       then
-        (EQUATIONITEM(eq, cmt, info), tup);
+  (EQUATIONITEM(eq, cmt, info), tup);
 
   end match;
 end traverseEquationItemBidir;
@@ -2355,60 +2355,60 @@ algorithm
       EquationItem eq;
 
     case (EQ_IF(ifExp = e1, equationTrueItems = eqil1,
-        elseIfBranches = else_branch, equationElseItems = eqil2), tup)
+  elseIfBranches = else_branch, equationElseItems = eqil2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
-        (else_branch, tup) = List.mapFold(else_branch,
-          traverseEquationBidirElse, tup);
-        (eqil2, tup) = traverseEquationItemListBidir(eqil2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+  (else_branch, tup) = List.mapFold(else_branch,
+    traverseEquationBidirElse, tup);
+  (eqil2, tup) = traverseEquationItemListBidir(eqil2, tup);
       then
-        (EQ_IF(e1, eqil1, else_branch, eqil2), tup);
+  (EQ_IF(e1, eqil1, else_branch, eqil2), tup);
 
     case (EQ_EQUALS(leftSide = e1, rightSide = e2), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (e2, tup) = traverseExpBidir(e2, tup);
       then
-        (EQ_EQUALS(e1, e2), tup);
+  (EQ_EQUALS(e1, e2), tup);
 
     case (EQ_CONNECT(connector1 = cref1, connector2 = cref2), tup)
       equation
-        (cref1, tup) = traverseExpBidirCref(cref1, tup);
-        (cref2, tup) = traverseExpBidirCref(cref2, tup);
+  (cref1, tup) = traverseExpBidirCref(cref1, tup);
+  (cref2, tup) = traverseExpBidirCref(cref2, tup);
       then
-        (EQ_CONNECT(cref1, cref2), tup);
+  (EQ_CONNECT(cref1, cref2), tup);
 
     case (EQ_FOR(iterators = iters, forEquations = eqil1), tup)
       equation
-        (iters, tup) = List.mapFold(iters,
-          traverseExpBidirIterator, tup);
-        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+  (iters, tup) = List.mapFold(iters,
+    traverseExpBidirIterator, tup);
+  (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
       then
-        (EQ_FOR(iters, eqil1), tup);
+  (EQ_FOR(iters, eqil1), tup);
 
     case (EQ_WHEN_E(whenExp = e1, whenEquations = eqil1,
-        elseWhenEquations = else_branch), tup)
+  elseWhenEquations = else_branch), tup)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
-        (else_branch, tup) = List.mapFold(else_branch,
-          traverseEquationBidirElse, tup);
+  (e1, tup) = traverseExpBidir(e1, tup);
+  (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+  (else_branch, tup) = List.mapFold(else_branch,
+    traverseEquationBidirElse, tup);
       then
-        (EQ_WHEN_E(e1, eqil1, else_branch), tup);
+  (EQ_WHEN_E(e1, eqil1, else_branch), tup);
 
     case (EQ_NORETCALL(functionName = cref1, functionArgs = func_args), tup)
       equation
-        (cref1, tup) = traverseExpBidirCref(cref1, tup);
-        (func_args, tup) = traverseExpBidirFunctionArgs(func_args, tup);
+  (cref1, tup) = traverseExpBidirCref(cref1, tup);
+  (func_args, tup) = traverseExpBidirFunctionArgs(func_args, tup);
       then
-        (EQ_NORETCALL(cref1, func_args), tup);
+  (EQ_NORETCALL(cref1, func_args), tup);
 
     case (EQ_FAILURE(equ = eq), tup)
       equation
-        (eq, tup) = traverseEquationItemBidir(eq, tup);
+  (eq, tup) = traverseEquationItemBidir(eq, tup);
       then
-        (EQ_FAILURE(eq), tup);
+  (EQ_FAILURE(eq), tup);
 
   end match;
 end traverseEquationBidir;
@@ -2512,9 +2512,9 @@ algorithm
     case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n;
     case EXTENDS(path = _)
       equation
-        print("#- Absyn.elementSpecName EXTENDS\n");
+  print("#- Absyn.elementSpecName EXTENDS\n");
       then
-        fail();
+  fail();
   end match;
 end elementSpecName;
 
@@ -2584,13 +2584,13 @@ algorithm
     case(CREF_IDENT(s1,_)) then s1;
     case(CREF_QUAL(s1,_,child))
       equation
-        s2 = printComponentRefStr(child);
-        s1 = s1 +& "." +& s2;
+  s2 = printComponentRefStr(child);
+  s1 = s1 +& "." +& s2;
       then s1;
     case(CREF_FULLYQUALIFIED(child))
       equation
-        s2 = printComponentRefStr(child);
-        s1 = "." +& s2;
+  s2 = printComponentRefStr(child);
+  s1 = "." +& s2;
       then s1;
     case (ALLWILD()) then "__";
     case (WILD()) then "_";
@@ -2620,7 +2620,7 @@ algorithm
     // qual ident vs. qual ident
     case (QUALIFIED(id1, path1),QUALIFIED(id2, path2))
       equation
-        res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
+  res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
       then res;
     // other return false
     else false;
@@ -2644,8 +2644,8 @@ algorithm
     // first try full equality
     case(TPATH(p1,oad1), TPATH(p2,oad2))
       equation
-        true = pathEqual(p1,p2);
-        true = optArrayDimEqual(oad1,oad2);
+  true = pathEqual(p1,p2);
+  true = optArrayDimEqual(oad1,oad2);
       then true;
 
     // if that didn't work try for different last ident due to +d=scodeInstShortcut
@@ -2653,27 +2653,27 @@ algorithm
     // second element is: .Modelica.Fluid.Interfaces.FluidPort_a__OMC__88 port_a;
     case(TPATH(p1,oad1), TPATH(p2,oad2))
       equation
-        i1 = pathLastIdent(p1);
-        i2 = pathLastIdent(p2);
-        pos1 = System.stringFind(i1, "__OMC__");
-        true = intNe(pos1, -1);
-        pos2 = System.stringFind(i2, "__OMC__");
-        true = intNe(pos2, -1);
-        true = intEq(pos1, pos2);
-        0 = System.strncmp(i1, i2, pos1);
-        p1 = stripLast(p1);
-        p2 = stripLast(p2);
-        true = pathEqual(p1,p2);
-        true = optArrayDimEqual(oad1,oad2);
+  i1 = pathLastIdent(p1);
+  i2 = pathLastIdent(p2);
+  pos1 = System.stringFind(i1, "__OMC__");
+  true = intNe(pos1, -1);
+  pos2 = System.stringFind(i2, "__OMC__");
+  true = intNe(pos2, -1);
+  true = intEq(pos1, pos2);
+  0 = System.strncmp(i1, i2, pos1);
+  p1 = stripLast(p1);
+  p2 = stripLast(p2);
+  true = pathEqual(p1,p2);
+  true = optArrayDimEqual(oad1,oad2);
       then true;
 
     case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
       equation
-        true = pathEqual(p1,p2);
-        true = List.isEqualOnTrue(lst1,lst2,typeSpecEqual);
-        true = optArrayDimEqual(oad1,oad2);
+  true = pathEqual(p1,p2);
+  true = List.isEqualOnTrue(lst1,lst2,typeSpecEqual);
+  true = optArrayDimEqual(oad1,oad2);
       then
-        true;
+  true;
     case(_,_) then false;
   end matchcontinue;
 end typeSpecEqual;
@@ -2773,9 +2773,9 @@ algorithm
     case (NONE()) then "";
     case (SOME(p))
       equation
-        str = pathString(p);
+  str = pathString(p);
       then
-        str;
+  str;
   end match;
 end optPathString;
 
@@ -2793,14 +2793,14 @@ algorithm
     case (IDENT(name = s),_) then s;
     case (QUALIFIED(name = s,path = n),str)
       equation
-        ns = pathString2(n, str);
-        s1 = stringAppend(s, str);
-        ss = stringAppend(s1, ns);
+  ns = pathString2(n, str);
+  s1 = stringAppend(s, str);
+  ss = stringAppend(s1, ns);
       then
-        ss;
+  ss;
     case(FULLYQUALIFIED(path=n),str)
       equation
-        ss = "." +& pathString2(n,str);
+  ss = "." +& pathString2(n,str);
       then ss;
   end match;
 end pathString2;
@@ -2818,20 +2818,20 @@ algorithm
       Path n;
     case (IDENT(name = s),str)
       equation
-        dstr = stringAppend(str, str);
-        safe_s = System.stringReplace(s, str, dstr);
+  dstr = stringAppend(str, str);
+  safe_s = System.stringReplace(s, str, dstr);
       then
-        safe_s;
+  safe_s;
     case(FULLYQUALIFIED(n),str) then pathStringReplaceDot(n,str);
     case (QUALIFIED(name = s,path = n),str)
       equation
-        ns = pathStringReplaceDot(n, str);
-        dstr = stringAppend(str, str);
-        safe_s = System.stringReplace(s, str, dstr);
-        s1 = stringAppend(safe_s, str);
-        ss = stringAppend(s1, ns);
+  ns = pathStringReplaceDot(n, str);
+  dstr = stringAppend(str, str);
+  safe_s = System.stringReplace(s, str, dstr);
+  s1 = stringAppend(safe_s, str);
+  ss = stringAppend(s1, ns);
       then
-        ss;
+  ss;
   end match;
 end pathStringReplaceDot;
 
@@ -2861,9 +2861,9 @@ algorithm
     case (str :: {}) then IDENT(str);
     case (str :: rest_str)
       equation
-        p = stringListPath(rest_str);
+  p = stringListPath(rest_str);
       then
-        QUALIFIED(str, p);
+  QUALIFIED(str, p);
   end matchcontinue;
 end stringListPath;
 
@@ -2897,9 +2897,9 @@ algorithm
 
     case (id :: rest_str, _)
       equation
-        path = QUALIFIED(id, inAccumPath);
+  path = QUALIFIED(id, inAccumPath);
       then
-        stringListPathReversed2(rest_str, path);
+  stringListPathReversed2(rest_str, path);
 
   end match;
 end stringListPathReversed2;
@@ -2964,9 +2964,9 @@ algorithm
     case (QUALIFIED(name = n, path = IDENT(name = _))) then IDENT(n);
     case (QUALIFIED(name = n, path = p))
       equation
-        p = pathPrefix(p);
+  p = pathPrefix(p);
       then
-        QUALIFIED(n, p);
+  QUALIFIED(n, p);
   end matchcontinue;
 end pathPrefix;
 
@@ -3011,15 +3011,15 @@ algorithm
 
     case (QUALIFIED(name, path), _)
       equation
-        path = suffixPath(path, inSuffix);
+  path = suffixPath(path, inSuffix);
       then
-        QUALIFIED(name, path);
+  QUALIFIED(name, path);
 
     case (FULLYQUALIFIED(path), _)
       equation
-        path = suffixPath(path, inSuffix);
+  path = suffixPath(path, inSuffix);
       then
-        FULLYQUALIFIED(path);
+  FULLYQUALIFIED(path);
 
   end match;
 end suffixPath;
@@ -3064,7 +3064,7 @@ algorithm outPaths := match(path)
     case (FULLYQUALIFIED(path = p)) then pathToStringList(p);
     case (QUALIFIED(name = n,path = p))
       equation
-        strings = pathToStringList(p);
+  strings = pathToStringList(p);
       then n::strings;
 end match;
 end pathToStringList;
@@ -3100,19 +3100,19 @@ algorithm
       ComponentRef cr;
     case (CREF_IDENT(id,subs),_)
       equation
-        subs = listAppend(subs,i);
+  subs = listAppend(subs,i);
       then
-        CREF_IDENT(id,subs);
+  CREF_IDENT(id,subs);
     case (CREF_QUAL(id,subs,cr),_)
       equation
-        cr = addSubscriptsLast(cr,i);
+  cr = addSubscriptsLast(cr,i);
       then
-        CREF_QUAL(id,subs,cr);
+  CREF_QUAL(id,subs,cr);
     case (CREF_FULLYQUALIFIED(cr),_)
       equation
-        cr = addSubscriptsLast(cr,i);
+  cr = addSubscriptsLast(cr,i);
       then
-        CREF_FULLYQUALIFIED(cr);
+  CREF_FULLYQUALIFIED(cr);
   end match;
 end addSubscriptsLast;
 
@@ -3131,17 +3131,17 @@ algorithm
       ComponentRef cr,cref;
     case (CREF_FULLYQUALIFIED(componentRef = cr),_)
       equation
-        cr = crefReplaceFirstIdent(cr,replPath);
+  cr = crefReplaceFirstIdent(cr,replPath);
       then CREF_FULLYQUALIFIED(cr);
     case (CREF_QUAL(componentRef = cr, subscripts = subs),_)
       equation
-        cref = pathToCref(replPath);
-        cref = addSubscriptsLast(cref,subs);
+  cref = pathToCref(replPath);
+  cref = addSubscriptsLast(cref,subs);
       then joinCrefs(cref,cr);
     case (CREF_IDENT(subscripts = subs),_)
       equation
-        cref = pathToCref(replPath);
-        cref = addSubscriptsLast(cref,subs);
+  cref = pathToCref(replPath);
+  cref = addSubscriptsLast(cref,subs);
       then cref;
   end match;
 end crefReplaceFirstIdent;
@@ -3162,10 +3162,10 @@ algorithm
     case (IDENT(id), QUALIFIED(name = id2)) then stringEq(id, id2);
     case (QUALIFIED(id, p), QUALIFIED(id2, p2))
       equation
-        true = stringEq(id, id2);
-        true = pathPrefixOf(p, p2);
+  true = stringEq(id, id2);
+  true = pathPrefixOf(p, p2);
       then
-        true;
+  true;
     case (_, _) then false;
   end matchcontinue;
 end pathPrefixOf;
@@ -3184,7 +3184,7 @@ algorithm
   out := matchcontinue(prefixCr, cr)
     case(prefixCr, cr)
       equation
-        true = crefEqualNoSubs(prefixCr, cr);
+  true = crefEqualNoSubs(prefixCr, cr);
       then true;
     case(prefixCr, cr)
       then crefPrefixOf(prefixCr, crefStripLast(cr));
@@ -3204,13 +3204,13 @@ algorithm
     // qual
     case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2))
       equation
-        true = stringEq(id1, id2);
+  true = stringEq(id1, id2);
       then
-        removePrefix(p,p2);
+  removePrefix(p,p2);
     // ids
     case(IDENT(id1),QUALIFIED(name=id2,path=p2))
       equation
-        true = stringEq(id1, id2);
+  true = stringEq(id1, id2);
       then p2;
   end match;
 end removePrefix;
@@ -3231,21 +3231,21 @@ algorithm
 
     case (_, _)
       equation
-        p = removePrefix(inPrefix, inPath);
+  p = removePrefix(inPrefix, inPath);
       then
-        p;
+  p;
 
     case (QUALIFIED(path = p), _)
       equation
-        p = removePrefix(p, inPath);
+  p = removePrefix(p, inPath);
       then
-        p;
+  p;
 
     case (FULLYQUALIFIED(path = p), _)
       equation
-        p = removePartialPrefix(p, inPath);
+  p = removePartialPrefix(p, inPath);
       then
-        p;
+  p;
 
     else inPath;
   end matchcontinue;
@@ -3271,22 +3271,22 @@ algorithm
     // fqual
     case(CREF_FULLYQUALIFIED(componentRef = prefixRestCr), CREF_FULLYQUALIFIED(componentRef = restCr))
       then
-        crefRemovePrefix(prefixRestCr, restCr);
+  crefRemovePrefix(prefixRestCr, restCr);
     // qual
     case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr))
       equation
-        true = stringEq(prefixIdent, ident);
+  true = stringEq(prefixIdent, ident);
       then
-        crefRemovePrefix(prefixRestCr, restCr);
+  crefRemovePrefix(prefixRestCr, restCr);
     // id vs. qual
     case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr))
       equation
-        true = stringEq(prefixIdent, ident);
+  true = stringEq(prefixIdent, ident);
       then restCr;
     // id vs. id
     case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident))
       equation
-        true = stringEq(prefixIdent, ident);
+  true = stringEq(prefixIdent, ident);
       then CREF_IDENT("", {});
   end matchcontinue;
 end crefRemovePrefix;
@@ -3308,11 +3308,11 @@ algorithm
 
     case(QUALIFIED(str1,qp),IDENT(str2))
       equation
-        b1 = stringEq(str1,str2);
-        b2 = pathContains(qp,pathId);
-        b1 = boolOr(b1,b2);
+  b1 = stringEq(str1,str2);
+  b2 = pathContains(qp,pathId);
+  b1 = boolOr(b1,b2);
       then
-        b1;
+  b1;
 
     case(FULLYQUALIFIED(qp),_) then pathContains(qp,pathId);
   end match;
@@ -3333,16 +3333,16 @@ algorithm
 
     case(IDENT(str1),searchStr)
       equation
-        b1 = System.stringFind(str1,searchStr) <> -1;
+  b1 = System.stringFind(str1,searchStr) <> -1;
       then b1;
 
     case(QUALIFIED(str1,qp),searchStr)
       equation
-        b1 = System.stringFind(str1, searchStr) <> -1;
-        b2 = pathContainsString(qp, searchStr);
-        b3 = boolOr(b1, b2);
+  b1 = System.stringFind(str1, searchStr) <> -1;
+  b2 = pathContainsString(qp, searchStr);
+  b3 = boolOr(b1, b2);
       then
-        b3;
+  b3;
 
     case(FULLYQUALIFIED(qp), searchStr)
     then pathContainsString(qp, searchStr);
@@ -3367,22 +3367,22 @@ algorithm
     // A suffix, e.g. C.D in A.B.C.D
     case (subPath,path)
       equation
-        true=pathSuffixOf(subPath,path);
+  true=pathSuffixOf(subPath,path);
       then path;
      // strip last ident of path and recursively check if suffix.
     case (subPath,path)
       equation
-        ident = pathLastIdent(path);
-        newPath = stripLast(path);
-        newPath=pathContainedIn(subPath,newPath);
+  ident = pathLastIdent(path);
+  newPath = stripLast(path);
+  newPath=pathContainedIn(subPath,newPath);
       then joinPaths(newPath,IDENT(ident));
 
-        // strip last ident of subpath and recursively check if suffix.
+  // strip last ident of subpath and recursively check if suffix.
     case (subPath,path)
       equation
-        ident = pathLastIdent(subPath);
-        newSubPath = stripLast(subPath);
-        newSubPath=pathContainedIn(newSubPath,path);
+  ident = pathLastIdent(subPath);
+  newSubPath = stripLast(subPath);
+  newSubPath=pathContainedIn(newSubPath,path);
       then joinPaths(newSubPath,IDENT(ident));
   end matchcontinue;
 end pathContainedIn;
@@ -3402,12 +3402,12 @@ algorithm crefs := match(isubs)
     case(NOSUB()::subs) then getCrefsFromSubs(subs);
     case(SUBSCRIPT(exp)::subs)
       equation
-        crefs1 = getCrefsFromSubs(subs);
-        crefs = getCrefFromExp(exp,true);
-        crefs = listAppend(crefs,crefs1);
-        //crefs = List.unionOnTrue(crefs,crefs1,crefEqual);
-        then
-          crefs;
+  crefs1 = getCrefsFromSubs(subs);
+  crefs = getCrefFromExp(exp,true);
+  crefs = listAppend(crefs,crefs1);
+  //crefs = List.unionOnTrue(crefs,crefs1,crefEqual);
+  then
+    crefs;
 end match;
 end getCrefsFromSubs;
 
@@ -3443,119 +3443,119 @@ algorithm
 
     case (CREF(componentRef = (cr)),true)
       equation
-        subs = getSubsFromCref(cr);
-        l1 = getCrefsFromSubs(subs);
+  subs = getSubsFromCref(cr);
+  l1 = getCrefsFromSubs(subs);
       then cr::l1;
 
     case (BINARY(exp1 = e1,op = op,exp2 = e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
     case (UNARY(op = op,exp = e1),_)
       equation
-        res = getCrefFromExp(e1,checkSubs);
+  res = getCrefFromExp(e1,checkSubs);
       then
-        res;
+  res;
     case (LBINARY(exp1 = e1,op = op,exp2 = e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
     case (LUNARY(op = op,exp = e1),_)
       equation
-        res = getCrefFromExp(e1,checkSubs);
+  res = getCrefFromExp(e1,checkSubs);
       then
-        res;
+  res;
     case (RELATION(exp1 = e1,op = op,exp2 = e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
     case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        l1 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,checkSubs);
-        res = listAppend(l1, l2) "TODO elseif\'s e4" ;
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  l1 = listAppend(l1, l2);
+  l2 = getCrefFromExp(e3,checkSubs);
+  res = listAppend(l1, l2) "TODO elseif\'s e4" ;
       then
-        res;
+  res;
     case (CALL(functionArgs = farg),_)
       equation
-        res = getCrefFromFarg(farg,checkSubs) "res = List.map(expl,get_cref_from_exp)" ;
+  res = getCrefFromFarg(farg,checkSubs) "res = List.map(expl,get_cref_from_exp)" ;
       then
-        res;
+  res;
     case (PARTEVALFUNCTION(functionArgs = farg),_)
       equation
-        res = getCrefFromFarg(farg,checkSubs);
+  res = getCrefFromFarg(farg,checkSubs);
       then
-        res;
+  res;
     case (ARRAY(arrayExp = expl),_)
       equation
-        lstres1 = List.map1(expl, getCrefFromExp, checkSubs);
-        res = List.flatten(lstres1);
+  lstres1 = List.map1(expl, getCrefFromExp, checkSubs);
+  res = List.flatten(lstres1);
       then
-        res;
+  res;
     case (MATRIX(matrix = expll),_)
       equation
-        res = List.flatten(List.flatten(List.map1List(expll, getCrefFromExp,checkSubs)));
+  res = List.flatten(List.flatten(List.map1List(expll, getCrefFromExp,checkSubs)));
       then
-        res;
+  res;
     case (RANGE(start = e1,step = SOME(e3),stop = e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        l2 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  l2 = listAppend(l1, l2);
+  l2 = getCrefFromExp(e3,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
     case (RANGE(start = e1,step = NONE(),stop = e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
     case (END(),_) then {};
 
     case (TUPLE(expressions = expl),_)
       equation
-        crefll = List.map1(expl,getCrefFromExp,checkSubs);
-        res = List.flatten(crefll);
+  crefll = List.map1(expl,getCrefFromExp,checkSubs);
+  res = List.flatten(crefll);
       then
-        res;
+  res;
 
     case (CODE(_),_) then {};
 
     case (AS(exp = e1),_) then getCrefFromExp(e1,checkSubs);
     case (CONS(e1,e2),_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
-        res = listAppend(l1, l2);
+  l1 = getCrefFromExp(e1,checkSubs);
+  l2 = getCrefFromExp(e2,checkSubs);
+  res = listAppend(l1, l2);
       then
-        res;
+  res;
 
     case (LIST(expl),_)
       equation
-        crefll = List.map1(expl,getCrefFromExp,checkSubs);
-        res = List.flatten(crefll);
+  crefll = List.map1(expl,getCrefFromExp,checkSubs);
+  res = List.flatten(crefll);
       then
-        res;
+  res;
 
     case (MATCHEXP(matchTy = _),_) then fail();
 
     case (e1,_)
       equation
-        print("Internal error: Absyn.getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
+  print("Internal error: Absyn.getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
       then fail();
   end matchcontinue;
 end getCrefFromExp;
@@ -3576,23 +3576,23 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
       Exp exp;
     case (FUNCTIONARGS(args = expl,argNames = nargl),_)
       equation
-        l1 = List.map1(expl, getCrefFromExp,checkSubs);
-        fl1 = List.flatten(l1);
-        l2 = List.map1(nargl, getCrefFromNarg,checkSubs);
-        fl2 = List.flatten(l2);
-        res = listAppend(fl1, fl2);
+  l1 = List.map1(expl, getCrefFromExp,checkSubs);
+  fl1 = List.flatten(l1);
+  l2 = List.map1(nargl, getCrefFromNarg,checkSubs);
+  fl2 = List.flatten(l2);
+  res = listAppend(fl1, fl2);
       then
-        res;
+  res;
     case (FOR_ITER_FARG(exp,iterators),_)
       equation
-        l1 = List.map1Option(List.map(iterators,iteratorRange),getCrefFromExp,checkSubs);
-        l2 = List.map1Option(List.map(iterators,iteratorGuard),getCrefFromExp,checkSubs);
-        fl1 = List.flatten(l1);
-        fl2 = List.flatten(l2);
-        fl3 = getCrefFromExp(exp,checkSubs);
-        res = listAppend(fl1,listAppend(fl2, fl3));
+  l1 = List.map1Option(List.map(iterators,iteratorRange),getCrefFromExp,checkSubs);
+  l2 = List.map1Option(List.map(iterators,iteratorGuard),getCrefFromExp,checkSubs);
+  fl1 = List.flatten(l1);
+  fl2 = List.flatten(l2);
+  fl3 = getCrefFromExp(exp,checkSubs);
+  res = listAppend(fl1,listAppend(fl2, fl3));
       then
-        res;
+  res;
 
   end match;
 end getCrefFromFarg;
@@ -3637,9 +3637,9 @@ algorithm
     case ({})  then ({},{});
     case (NAMEDARG(argName=s,argValue=e) :: cdr)
       equation
-        (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
+  (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
       then
-        (s :: slst, e :: elst);
+  (s :: slst, e :: elst);
   end match;
 end getNamedFuncArgNamesAndValues;
 
@@ -3655,9 +3655,9 @@ algorithm outComponentRefLst := match (inNamedArg,checkSubs)
       ComponentCondition exp;
     case (NAMEDARG(argValue = exp),_)
       equation
-        res = getCrefFromExp(exp,checkSubs);
+  res = getCrefFromExp(exp,checkSubs);
       then
-        res;
+  res;
   end match;
 end getCrefFromNarg;
 
@@ -3674,9 +3674,9 @@ algorithm
     case (IDENT(name = str),p2) then QUALIFIED(str,p2);
     case (QUALIFIED(name = str,path = p),p2)
       equation
-        p_1 = joinPaths(p, p2);
+  p_1 = joinPaths(p, p2);
       then
-        QUALIFIED(str,p_1);
+  QUALIFIED(str,p_1);
     case(FULLYQUALIFIED(p),p2) then joinPaths(p,p2);
     case(p,FULLYQUALIFIED(p2)) then joinPaths(p,p2);
   end match;
@@ -3739,10 +3739,10 @@ algorithm
     case ((path :: {})) then path;
     case ((first :: rest))
       equation
-        path = pathAppendList(rest);
-        res_path = joinPaths(first, path);
+  path = pathAppendList(rest);
+  res_path = joinPaths(first, path);
       then
-        res_path;
+  res_path;
   end match;
 end pathAppendList;
 
@@ -3760,9 +3760,9 @@ algorithm
     case (QUALIFIED(name = str,path = IDENT(name = _))) then IDENT(str);
     case (QUALIFIED(name = str,path = p))
       equation
-        p_1 = stripLast(p);
+  p_1 = stripLast(p);
       then
-        QUALIFIED(str,p_1);
+  QUALIFIED(str,p_1);
     case (FULLYQUALIFIED(p)) equation
       p_1 = stripLast(p);
     then FULLYQUALIFIED(p_1);
@@ -3785,14 +3785,14 @@ algorithm
     case (CREF_QUAL(name = str,subscripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
     case (CREF_QUAL(name = str,subscripts = subs,componentRef = c))
       equation
-        c_1 = crefStripLast(c);
+  c_1 = crefStripLast(c);
       then
-        CREF_QUAL(str,subs,c_1);
+  CREF_QUAL(str,subs,c_1);
     case (CREF_FULLYQUALIFIED(componentRef = c))
       equation
-        c_1 = crefStripLast(c);
+  c_1 = crefStripLast(c);
       then
-        CREF_FULLYQUALIFIED(c_1);
+  CREF_FULLYQUALIFIED(c_1);
   end match;
 end crefStripLast;
 
@@ -3856,14 +3856,14 @@ algorithm
     case CREF_IDENT(name = i,subscripts = {}) then IDENT(i);
     case CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
-        p = crefToPath(c);
+  p = crefToPath(c);
       then
-        QUALIFIED(i,p);
+  QUALIFIED(i,p);
     case CREF_FULLYQUALIFIED(componentRef = c)
       equation
-        p = crefToPath(c);
+  p = crefToPath(c);
       then
-        FULLYQUALIFIED(p);
+  FULLYQUALIFIED(p);
   end match;
 end crefToPath;
 
@@ -3882,15 +3882,15 @@ algorithm
 
     case CREF_QUAL(name = i, componentRef = c)
       equation
-        p = crefToPathIgnoreSubs(c);
+  p = crefToPathIgnoreSubs(c);
       then
-        QUALIFIED(i, p);
+  QUALIFIED(i, p);
 
     case CREF_FULLYQUALIFIED(componentRef = c)
       equation
-        p = crefToPathIgnoreSubs(c);
+  p = crefToPathIgnoreSubs(c);
       then
-        FULLYQUALIFIED(p);
+  FULLYQUALIFIED(p);
   end match;
 end crefToPathIgnoreSubs;
 
@@ -3908,12 +3908,12 @@ algorithm
     case IDENT(name = i) then CREF_IDENT(i,{});
     case QUALIFIED(name = i,path = p)
       equation
-        c = pathToCref(p);
+  c = pathToCref(p);
       then
-        CREF_QUAL(i,{},c);
+  CREF_QUAL(i,{},c);
     case(FULLYQUALIFIED(p))
       equation
-        c = pathToCref(p);
+  c = pathToCref(p);
       then CREF_FULLYQUALIFIED(c);
   end match;
 end pathToCref;
@@ -3935,15 +3935,15 @@ algorithm
 
     case (QUALIFIED(name = i, path = p), _)
       equation
-        c = pathToCrefWithSubs(p, inSubs);
+  c = pathToCrefWithSubs(p, inSubs);
       then
-        CREF_QUAL(i, {}, c);
+  CREF_QUAL(i, {}, c);
 
     case (FULLYQUALIFIED(p), _)
       equation
-        c = pathToCrefWithSubs(p, inSubs);
+  c = pathToCrefWithSubs(p, inSubs);
       then
-        CREF_FULLYQUALIFIED(c);
+  CREF_FULLYQUALIFIED(c);
   end match;
 end pathToCrefWithSubs;
 
@@ -4014,14 +4014,14 @@ algorithm
     case (CREF_IDENT(name = id,subscripts= subs)) then subs;
     case (CREF_QUAL(componentRef = cr))
       equation
-        res = crefLastSubs(cr);
+  res = crefLastSubs(cr);
       then
-        res;
+  res;
     case (CREF_FULLYQUALIFIED(componentRef = cr))
       equation
-        res = crefLastSubs(cr);
+  res = crefLastSubs(cr);
       then
-        res;
+  res;
   end match;
 end crefLastSubs;
 
@@ -4040,15 +4040,15 @@ algorithm
 
     case CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
-        b = crefHasSubscripts(c);
+  b = crefHasSubscripts(c);
       then
-        b;
+  b;
 
     case CREF_FULLYQUALIFIED(componentRef = c)
       equation
-        b = crefHasSubscripts(c);
+  b = crefHasSubscripts(c);
       then
-        b;
+  b;
   end match;
 end crefHasSubscripts;
 
@@ -4093,14 +4093,14 @@ algorithm
     case(CREF_IDENT(id,subs)) then CREF_IDENT(id,subs);
     case(CREF_QUAL(id,subs,cref))
       equation
-        cref_1 = crefGetLastIdent(cref);
+  cref_1 = crefGetLastIdent(cref);
       then
-        cref_1;
+  cref_1;
     case(CREF_FULLYQUALIFIED(cref))
       equation
-        cref_1 = crefGetLastIdent(cref);
+  cref_1 = crefGetLastIdent(cref);
       then
-        cref_1;
+  cref_1;
   end match;
 end crefGetLastIdent;
 
@@ -4118,14 +4118,14 @@ algorithm
     case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{});
     case (CREF_QUAL(name= id,subscripts= s,componentRef = cr))
       equation
-        cr_1 = crefStripLastSubs(cr);
+  cr_1 = crefStripLastSubs(cr);
       then
-        CREF_QUAL(id,s,cr_1);
+  CREF_QUAL(id,s,cr_1);
     case (CREF_FULLYQUALIFIED(componentRef = cr))
       equation
-        cr_1 = crefStripLastSubs(cr);
+  cr_1 = crefStripLastSubs(cr);
       then
-        CREF_FULLYQUALIFIED(cr_1);
+  CREF_FULLYQUALIFIED(cr_1);
   end match;
 end crefStripLastSubs;
 
@@ -4143,18 +4143,18 @@ algorithm
       ComponentRef cr2,cr_1,cr;
     case (CREF_IDENT(name = id,subscripts = sub),cr2)
       equation
-        failure(CREF_FULLYQUALIFIED(_) = cr2);
+  failure(CREF_FULLYQUALIFIED(_) = cr2);
       then CREF_QUAL(id,sub,cr2);
     case (CREF_QUAL(name = id,subscripts = sub,componentRef = cr),cr2)
       equation
-        cr_1 = joinCrefs(cr, cr2);
+  cr_1 = joinCrefs(cr, cr2);
       then
-        CREF_QUAL(id,sub,cr_1);
+  CREF_QUAL(id,sub,cr_1);
     case (CREF_FULLYQUALIFIED(componentRef = cr),cr2)
       equation
-        cr_1 = joinCrefs(cr, cr2);
+  cr_1 = joinCrefs(cr, cr2);
       then
-        CREF_FULLYQUALIFIED(cr_1);
+  CREF_FULLYQUALIFIED(cr_1);
   end match;
 end joinCrefs;
 
@@ -4250,9 +4250,9 @@ algorithm
       list<Class> lst;
     case (PROGRAM(classes = lst))
       equation
-        CLASS(id,_,_,_,_,_,_) = List.last(lst);
+  CLASS(id,_,_,_,_,_,_) = List.last(lst);
       then
-        IDENT(id);
+  IDENT(id);
   end match;
 end lastClassname;
 
@@ -4334,20 +4334,20 @@ algorithm
 
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
       equation
-        true = stringEq(id, id2);
-        true = subscriptsEqual(ss1,ss2);
+  true = stringEq(id, id2);
+  true = subscriptsEqual(ss1,ss2);
       then
-        true;
+  true;
     case (CREF_QUAL(name = id,subscripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subscripts = ss2, componentRef = cr2))
       equation
-        true = stringEq(id, id2);
-        true = subscriptsEqual(ss1,ss2);
-        true = crefEqual(cr1, cr2);
+  true = stringEq(id, id2);
+  true = subscriptsEqual(ss1,ss2);
+  true = crefEqual(cr1, cr2);
       then
-        true;
+  true;
     case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
       then
-        crefEqual(cr1, cr2);
+  crefEqual(cr1, cr2);
     case (_,_) then false;
   end matchcontinue;
 end crefEqual;
@@ -4397,15 +4397,15 @@ algorithm
       Ident id,id2;
     case (CREF_IDENT(name = id),CREF_IDENT(name = id2))
       equation
-        true = stringEq(id, id2);
+  true = stringEq(id, id2);
       then
-        true;
+  true;
     case (CREF_QUAL(name = id,componentRef = cr1),CREF_QUAL(name = id2,componentRef = cr2))
       equation
-        true = stringEq(id, id2);
-        true = crefEqualNoSubs(cr1, cr2);
+  true = stringEq(id, id2);
+  true = crefEqualNoSubs(cr1, cr2);
       then
-        true;
+  true;
     case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
       then crefEqualNoSubs(cr1, cr2);
     case (_,_) then false;
@@ -4461,18 +4461,18 @@ algorithm
     // real vs. integer
     case (INTEGER(i), REAL(r))
       equation
-        true = realEq(intReal(i), r);
+  true = realEq(intReal(i), r);
       then
-        true;
+  true;
 
     case (REAL(r), INTEGER(i))
       equation
-        true = realEq(intReal(i), r);
+  true = realEq(intReal(i), r);
       then
-        true;
+  true;
 
     // anything else, exact match!
-    case (x, y) equation equality(x = y);          then true;
+    case (x, y) equation equality(x = y);    then true;
     case (x, y) equation failure(equality(x = y)); then false;
   end matchcontinue;
 end expEqual;
@@ -4502,10 +4502,10 @@ algorithm
       list<Boolean> blst;
     case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
       equation
-        // fails if not all are true
-        List.threadMapAllValue(expl1,expl2,expEqual,true);
+  // fails if not all are true
+  List.threadMapAllValue(expl1,expl2,expEqual,true);
       then
-        true;
+  true;
     case(_,_) then false;
   end matchcontinue;
 end functionArgsEqual;
@@ -4615,12 +4615,12 @@ algorithm
       Exp e_1,e_2;
       case (id,{}) then {};
       case (id,(e_1,e_2)::rest)
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst_3=findIteratorInElseIfExpBranch(id,rest);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExp(id,e_2);
+    lst_3=findIteratorInElseIfExpBranch(id,rest);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
   end match;
 end findIteratorInElseIfExpBranch;
 
@@ -4639,30 +4639,30 @@ algorithm
       list<ForIterator> forIterators;
       Boolean bool;
       case (id,FUNCTIONARGS(expLst,namedArgs))
-        equation
-          lst_1=findIteratorInExpLst(id,expLst);
-          lst_2=findIteratorInNamedArgs(id,namedArgs);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExpLst(id,expLst);
+    lst_2=findIteratorInNamedArgs(id,namedArgs);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
 /*      case (id, FOR_ITER_FARG(exp,forIterators))
-        equation
-          true=iteratorPresentAmongIterators(id,forIterators);
-          lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;
+  equation
+    true=iteratorPresentAmongIterators(id,forIterators);
+    lst=findIteratorInForIteratorsBounds(id,forIterators);
+  then lst;
       case (id, FOR_ITER_FARG(exp,forIterators))
-        equation
-          false=iteratorPresentAmongIterators(id,forIterators);
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
-          lst=listAppend(lst_1,lst_2);
-        then lst;    */
+  equation
+    false=iteratorPresentAmongIterators(id,forIterators);
+    lst_1=findIteratorInExp(id,exp);
+    lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+    lst=listAppend(lst_1,lst_2);
+  then lst;    */
       case (id, FOR_ITER_FARG(exp,forIterators))
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,exp);
+    (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
+    lst_1=Util.if_(bool, {}, lst_1);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
   end match;
 end findIteratorInFunctionArgs;
 
@@ -4678,14 +4678,14 @@ algorithm
       list<ForIterator> rest;
       case (id,{}) then false;
       case (id,(id1,_)::rest)
-        equation
-          true = stringEq(id, id1);
-        then true;
+  equation
+    true = stringEq(id, id1);
+  then true;
       case (id,(id1,_)::rest)
-        equation
-          failure(equality(id=id1));
-          bool=iteratorPresentAmongIterators(id,rest);
-        then bool;
+  equation
+    failure(equality(id=id1));
+    bool=iteratorPresentAmongIterators(id,rest);
+  then bool;
   end matchcontinue;
 end iteratorPresentAmongIterators;      */
 
@@ -4703,9 +4703,9 @@ algorithm
     case (id,{}) then {};
     case (id,exp::rest)
       equation
-        lst_1=findIteratorInExp(id,exp);
-        lst_2=findIteratorInExpLst(id,rest);
-        lst=listAppend(lst_1,lst_2);
+  lst_1=findIteratorInExp(id,exp);
+  lst_2=findIteratorInExpLst(id,rest);
+  lst=listAppend(lst_1,lst_2);
       then lst;
   end match;
 end findIteratorInExpLst;
@@ -4724,9 +4724,9 @@ algorithm
     case (id,{}) then {};
     case (id,expLst::rest)
       equation
-        lst_1=findIteratorInExpLst(id,expLst);
-        lst_2=findIteratorInExpLstLst(id,rest);
-        lst=listAppend(lst_1,lst_2);
+  lst_1=findIteratorInExpLst(id,expLst);
+  lst_2=findIteratorInExpLstLst(id,rest);
+  lst=listAppend(lst_1,lst_2);
       then lst;
   end match;
 end findIteratorInExpLstLst;
@@ -4745,9 +4745,9 @@ algorithm
     case (id,{}) then {};
     case (id,NAMEDARG(_,exp)::rest)
       equation
-        lst_1=findIteratorInExp(id,exp);
-        lst_2=findIteratorInNamedArgs(id,rest);
-        lst=listAppend(lst_1,lst_2);
+  lst_1=findIteratorInExp(id,exp);
+  lst_2=findIteratorInNamedArgs(id,rest);
+  lst=listAppend(lst_1,lst_2);
       then lst;
   end match;
 end findIteratorInNamedArgs;
@@ -4766,15 +4766,15 @@ algorithm
       Exp exp;
       case (id,{}) then {};
       case (id,(_,NONE())::rest)
-        equation
-          lst=findIteratorInForIteratorsBounds(id,rest);
-        then lst;
+  equation
+    lst=findIteratorInForIteratorsBounds(id,rest);
+  then lst;
       case (id,(_,SOME(exp))::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInForIteratorsBounds(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,exp);
+    lst_2=findIteratorInForIteratorsBounds(id,rest);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
   end matchcontinue;
 end findIteratorInForIteratorsBounds; */
 
@@ -4796,18 +4796,18 @@ algorithm
     case (_,{}) then (false,{});
     case (id,ITERATOR(name=id_1)::_)
       equation
-        true = stringEq(id, id_1);
+  true = stringEq(id, id_1);
       then
-        (true,{});
+  (true,{});
     case (id,ITERATOR(range=NONE())::rest)
       equation
-        (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
+  (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
       then (bool,lst);
     case (id,ITERATOR(range=SOME(exp))::rest)
       equation
-        lst_1=findIteratorInExp(id,exp);
-        (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
-        lst=listAppend(lst_1,lst_2);
+  lst_1=findIteratorInExp(id,exp);
+  (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
+  lst=listAppend(lst_1,lst_2);
       then (bool,lst);
   end matchcontinue;
 end findIteratorInForIteratorsBounds2;
@@ -4819,86 +4819,86 @@ public function findIteratorInExp
 algorithm
     outLst := matchcontinue(inString,inExp)
       local
-        list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
-        String id;
-        Exp e_1,e_2,e_3;
-        list<Exp> expLst;
-        list<list<Exp>> expLstLst;
-        ComponentRef cref;
-        list<tuple<Exp, Exp>> elseIfBranch;
-        FunctionArgs funcArgs;
-        Option<Exp> expOpt;
+  list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+  String id;
+  Exp e_1,e_2,e_3;
+  list<Exp> expLst;
+  list<list<Exp>> expLstLst;
+  ComponentRef cref;
+  list<tuple<Exp, Exp>> elseIfBranch;
+  FunctionArgs funcArgs;
+  Option<Exp> expOpt;
 
       case(id, CREF(cref))
-        equation
-          lst=findIteratorInCRef(id,cref);
-        then lst;
+  equation
+    lst=findIteratorInCRef(id,cref);
+  then lst;
       case(id, BINARY(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case(id, UNARY(_,e_1))
-        equation
-          lst=findIteratorInExp(id,e_1);
-        then lst;
+  equation
+    lst=findIteratorInExp(id,e_1);
+  then lst;
       case(id, LBINARY(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case(id, LUNARY(_,e_1))
-        equation
-          lst=findIteratorInExp(id,e_1);
-        then lst;
+  equation
+    lst=findIteratorInExp(id,e_1);
+  then lst;
       case(id, RELATION(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExp(id,e_2);
+    lst=listAppend(lst_1,lst_2);
+  then lst;
       case(id, IFEXP(e_1,e_2,e_3,elseIfBranch))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst_3=findIteratorInExp(id,e_3);
-          lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
-          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExp(id,e_2);
+    lst_3=findIteratorInExp(id,e_3);
+    lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
+    lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
+  then lst;
       case (id,CALL(_,funcArgs))
-        equation
-          lst=findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
+  equation
+    lst=findIteratorInFunctionArgs(id,funcArgs);
+  then lst;
       // stefan
       case (id, PARTEVALFUNCTION(_,funcArgs))
-        equation
-          lst=findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
+  equation
+    lst=findIteratorInFunctionArgs(id,funcArgs);
+  then lst;
       case (id, ARRAY(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
+  equation
+    lst=findIteratorInExpLst(id,expLst);
+  then lst;
       case (id, MATRIX(expLstLst))
-        equation
-          lst=findIteratorInExpLstLst(id,expLstLst);
-        then lst;
+  equation
+    lst=findIteratorInExpLstLst(id,expLstLst);
+  then lst;
       case(id, RANGE(e_1,expOpt,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExpOpt(id,expOpt);
-          lst_3=findIteratorInExp(id,e_2);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
+  equation
+    lst_1=findIteratorInExp(id,e_1);
+    lst_2=findIteratorInExpOpt(id,expOpt);
+    lst_3=findIteratorInExp(id,e_2);
+    lst=List.flatten({lst_1,lst_2,lst_3});
+  then lst;
       case (id, TUPLE(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
+  equation
+    lst=findIteratorInExpLst(id,expLst);
+  then lst;
       case (id, LIST(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
+  equation
+    lst=findIteratorInExpLst(id,expLst);
+  then lst;
       case(_,_) then {};
   end matchcontinue;
 end findIteratorInExp;
@@ -4915,9 +4915,9 @@ algorithm
       Exp exp;
       case (id,NONE()) then {};
       case (id,SOME(exp))
-        equation
-          lst=findIteratorInExp(id,exp);
-        then lst;
+  equation
+    lst=findIteratorInExp(id,exp);
+  then lst;
   end match;
 end findIteratorInExpOpt;
 
@@ -4936,18 +4936,18 @@ algorithm
       ComponentRef cref;
       list<Integer> intLst;
       case(id, CREF_IDENT(name,subLst))
-        equation
-        intLst=findIteratorInSubscripts(id,subLst,1);
-        lst=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
-        then lst;
+  equation
+  intLst=findIteratorInSubscripts(id,subLst,1);
+  lst=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
+  then lst;
       case(id, CREF_QUAL(name,subLst,cref))
-        equation
-        intLst=findIteratorInSubscripts(id,subLst,1);
-        lst_1=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
-        lst_2=findIteratorInCRef(id,cref);
-        lst_3=qualifyCRefIntLst(name,subLst,lst_2);
-        lst=listAppend(lst_1,lst_3);
-        then lst;
+  equation
+  intLst=findIteratorInSubscripts(id,subLst,1);
+  lst_1=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
+  lst_2=findIteratorInCRef(id,cref);
+  lst_3=qualifyCRefIntLst(name,subLst,lst_2);
+  lst=listAppend(lst_1,lst_3);
+  then lst;
       case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
       case (_,ALLWILD()) then {};
       case (_,WILD()) then {};
@@ -4970,14 +4970,14 @@ algorithm
     case (_,{},_) then {};
     case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
       equation
-        true = stringEq(id, name);
-        n_1=n+1;
-        lst=findIteratorInSubscripts(id,rest,n_1);
+  true = stringEq(id, name);
+  n_1=n+1;
+  lst=findIteratorInSubscripts(id,rest,n_1);
       then n::lst;
     case (id,_::rest,n)
       equation
-        n_1=n+1;
-        lst=findIteratorInSubscripts(id,rest,n_1);
+  n_1=n+1;
+  lst=findIteratorInSubscripts(id,rest,n_1);
       then lst;
   end matchcontinue;
 end findIteratorInSubscripts;
@@ -4996,7 +4996,7 @@ algorithm
     case (_,{}) then {};
     case (cref,i::rest)
       equation
-        lst=combineCRefAndIntLst(cref,rest);
+  lst=combineCRefAndIntLst(cref,rest);
       then (cref,i)::lst;
   end match;
 end combineCRefAndIntLst;
@@ -5017,7 +5017,7 @@ algorithm
     case (_,_,{}) then {};
     case (name,subLst,(cref,i)::rest)
       equation
-        lst=qualifyCRefIntLst(name,subLst,rest);
+  lst=qualifyCRefIntLst(name,subLst,rest);
       then (CREF_QUAL(name,subLst,cref),i)::lst;
   end match;
 end qualifyCRefIntLst;
@@ -5051,7 +5051,7 @@ algorithm
       Real lastBuildTime "Last Build Time";
       Real lastEditTime "Last Edit Time";
     case (_, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
-                          lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
+                    lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
     then
       (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
   end match;
@@ -5186,20 +5186,20 @@ algorithm
       Path p1,p2;
     case (NAMED_IMPORT(name = id,path=p1),NAMED_IMPORT(name = id2,path=p2))
       equation
-        true = stringEq(id, id2);
-        true = pathEqual(p1,p2);
+  true = stringEq(id, id2);
+  true = pathEqual(p1,p2);
       then
-        true;
+  true;
     case (QUAL_IMPORT(path=p1),QUAL_IMPORT(path=p2))
       equation
-        true = pathEqual(p1,p2);
+  true = pathEqual(p1,p2);
       then
-        true;
+  true;
     case (UNQUAL_IMPORT(path=p1),UNQUAL_IMPORT(path=p2))
       equation
-        true = pathEqual(p1,p2);
+  true = pathEqual(p1,p2);
       then
-        true;
+  true;
     case (_,_) then false;
   end matchcontinue;
 end importEqual;
@@ -5216,7 +5216,7 @@ algorithm
     case IFEXP(elseIfBranch={}) then inExp;
     case IFEXP(ifExp=cond,trueBranch=tb,elseBranch=eb,elseIfBranch=(ei_cond,ei_tb)::eib)
       equation
-        e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));
+  e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));
       then IFEXP(cond,tb,e,{});
   end match;
 end canonIfExp;
@@ -5238,26 +5238,26 @@ algorithm
     // skip "interaction" annotation!
     case (MODIFICATION(path = IDENT(name = "interaction")) :: rest)
       equation
-        b = onlyLiteralsInAnnotationMod(rest);
+  b = onlyLiteralsInAnnotationMod(rest);
       then
-        b;
+  b;
 
 
     // search inside, some(exp)
     case (MODIFICATION(modification = SOME(CLASSMOD(dive, eqMod))) :: rest)
       equation
-        b1 = onlyLiteralsInEqMod(eqMod);
-        b2 = onlyLiteralsInAnnotationMod(dive);
-        b3 = onlyLiteralsInAnnotationMod(rest);
-        b = boolAnd(b1, boolAnd(b2, b3));
+  b1 = onlyLiteralsInEqMod(eqMod);
+  b2 = onlyLiteralsInAnnotationMod(dive);
+  b3 = onlyLiteralsInAnnotationMod(rest);
+  b = boolAnd(b1, boolAnd(b2, b3));
       then
-        b;
+  b;
 
     case (_ :: rest)
       equation
-        b = onlyLiteralsInAnnotationMod(rest);
+  b = onlyLiteralsInAnnotationMod(rest);
       then
-        b;
+  b;
 
     // failed above, return false
     case (_) then false;
@@ -5285,13 +5285,13 @@ algorithm
     // search inside, some(exp)
     case (EQMOD(exp=exp))
       equation
-         ((_, lst)) = traverseExp(exp, onlyLiteralsInExp, {});
-         // if list is empty (no crefs were added)
-         b = List.isEmpty(lst);
-         // debugging:
-         // print("Crefs in annotations: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
+   ((_, lst)) = traverseExp(exp, onlyLiteralsInExp, {});
+   // if list is empty (no crefs were added)
+   b = List.isEmpty(lst);
+   // debugging:
+   // print("Crefs in annotations: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
-        b;
+  b;
   end match;
 end onlyLiteralsInEqMod;
 
@@ -5313,26 +5313,26 @@ algorithm
     // first handle DynamicSelect
     case ((e as CALL(function_ = CREF_IDENT(name = "DynamicSelect"), functionArgs = fargs), lst))
       equation
-        ((_, lstArgs)) = traverseExpFunctionArgs(fargs, onlyLiteralsInExp, {});
-        // if the lst is the same as the one got from args, return nothing
-        equality(lst = lstArgs);
+  ((_, lstArgs)) = traverseExpFunctionArgs(fargs, onlyLiteralsInExp, {});
+  // if the lst is the same as the one got from args, return nothing
+  equality(lst = lstArgs);
       then
-        ((e, {}));
+  ((e, {}));
 
     // first handle all graphic enumerations!
     // FillPattern.*, Smooth.*, TextAlignment.*, etc!
     case ((e as CREF(cr as CREF_QUAL(name=name)), lst))
       equation
-        true = listMember(name,{
-                          "LinePattern",
-                          "Arrow",
-                          "FillPattern",
-                          "BorderPattern",
-                          "TextStyle",
-                          "Smooth",
-                          "TextAlignment"});
+  true = listMember(name,{
+                    "LinePattern",
+                    "Arrow",
+                    "FillPattern",
+                    "BorderPattern",
+                    "TextStyle",
+                    "Smooth",
+                    "TextAlignment"});
       then
-        ((e, lst));
+  ((e, lst));
 
     // crefs, add to list
     case ((e as CREF(cr), lst)) then ((e,e::lst));
@@ -5449,9 +5449,9 @@ algorithm
     local
       Exp e;
       case SUBSCRIPT(subscript = e)
-        then SOME(e);
+  then SOME(e);
       case NOSUB()
-        then NONE();
+  then NONE();
   end match;
 end subscriptExpOpt;
 
@@ -5466,9 +5466,9 @@ algorithm
     Exp e;
     case ((CREF(componentRef=cref),subs))
       equation
-        cref2 = crefInsertSubscriptLstLst2(cref,subs);
+  cref2 = crefInsertSubscriptLstLst2(cref,subs);
       then
-         ((CREF(cref2),subs));
+   ((CREF(cref2),subs));
     case ((e,subs)) then ((e,subs));
   end matchcontinue;
 end crefInsertSubscriptLstLst;
@@ -5486,24 +5486,24 @@ algorithm
       list<list<Subscript>> subs;
       list<Subscript> s;
       case (cref,{})
-        then cref;
+  then cref;
       case (CREF_IDENT(name = n), {s})
-        then CREF_IDENT(n,s);
+  then CREF_IDENT(n,s);
       case (CREF_QUAL(name = n, componentRef = cref), s::subs)
-        equation
-          cref2 = crefInsertSubscriptLstLst2(cref, subs);
-        then
-          CREF_QUAL(n,s,cref2);
+  equation
+    cref2 = crefInsertSubscriptLstLst2(cref, subs);
+  then
+    CREF_QUAL(n,s,cref2);
       case (CREF_FULLYQUALIFIED(componentRef = cref), subs)
-        equation
-          cref2 = crefInsertSubscriptLstLst2(cref, subs);
-        then
-          CREF_FULLYQUALIFIED(cref2);
+  equation
+    cref2 = crefInsertSubscriptLstLst2(cref, subs);
+  then
+    CREF_FULLYQUALIFIED(cref2);
       case (CREF_INVALID(componentRef = cref), subs)
-        equation
-          cref2 = crefInsertSubscriptLstLst2(cref, subs);
-        then
-          CREF_INVALID(cref2);
+  equation
+    cref2 = crefInsertSubscriptLstLst2(cref, subs);
+  then
+    CREF_INVALID(cref2);
   end matchcontinue;
 end crefInsertSubscriptLstLst2;
 
@@ -5567,16 +5567,16 @@ algorithm
     // handle SUBSCRIPT
     case (SUBSCRIPT(e)::rest, acc)
       equation
-        (b, exps) = getExpsFromArrayDim_tail(rest, e::acc);
+  (b, exps) = getExpsFromArrayDim_tail(rest, e::acc);
        then
-         (b, exps);
+   (b, exps);
 
     // handle NOSUB
     case (NOSUB()::rest, acc)
       equation
-        (b, exps) = getExpsFromArrayDim_tail(rest, acc);
+  (b, exps) = getExpsFromArrayDim_tail(rest, acc);
        then
-         (true, exps);
+   (true, exps);
   end match;
 end getExpsFromArrayDim_tail;
 
@@ -5647,7 +5647,7 @@ algorithm
     case CLASS(body=CLASS_EXTENDS(comment=_)) then fail();
     case CLASS(name,pa,fi,en,re,body,info)
       equation
-        body = stripClassDefComment(body);
+  body = stripClassDefComment(body);
       then CLASS(name,pa,fi,en,re,body,info);
   end match;
 end getShortClass;
@@ -5697,7 +5697,7 @@ algorithm
       list<NamedArg> classAttr;
     case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,classParts,_,_),info)
       equation
-        (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
+  (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
       then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,PUBLIC(elts)::{},{},NONE()),info);
   end match;
 end getFunctionInterface;
@@ -5712,7 +5712,7 @@ algorithm
       list<ElementItem> elts1,elts2;
     case (PUBLIC(elts1),elts2)
       equation
-        elts1 = List.filter(elts1,filterAnnotationItem);
+  elts1 = List.filter(elts1,filterAnnotationItem);
       then listAppend(elts1,elts2);
     case (_,_) then elts;
   end match;
@@ -5808,15 +5808,15 @@ algorithm
 
     case (QUALIFIED(n, p), _)
       equation
-        p = pathSetLastIdent(p, inLastIdent);
+  p = pathSetLastIdent(p, inLastIdent);
       then
-        QUALIFIED(n, p);
+  QUALIFIED(n, p);
 
     case (FULLYQUALIFIED(p), _)
       equation
-        p = pathSetLastIdent(p, inLastIdent);
+  p = pathSetLastIdent(p, inLastIdent);
       then
-        FULLYQUALIFIED(p);
+  FULLYQUALIFIED(p);
 
   end match;
 end pathSetLastIdent;
@@ -5831,9 +5831,9 @@ algorithm
     local Boolean b;
     case (_)
       equation
-        ((_, b)) = traverseExp(inExp, isInitialTraverseHelper, false);
+  ((_, b)) = traverseExp(inExp, isInitialTraverseHelper, false);
       then
-        b;
+  b;
     else then false;
   end matchcontinue;
 end expContainsInitial;
@@ -5852,7 +5852,7 @@ algorithm
     // we have initial
     case ((e , b))
       equation
-        b = isInitial(e);
+  b = isInitial(e);
       then ((e, b));
     else inExpBooleanTpl;
   end match;
@@ -5927,14 +5927,14 @@ algorithm
       Path p;
     case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
       equation
-        failure(_ = removeModificationInElementargs(eltargs, p));
-        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
+  failure(_ = removeModificationInElementargs(eltargs, p));
+  ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
       then
-        ANNOTATION((mod :: neweltargs));
+  ANNOTATION((mod :: neweltargs));
     case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
       equation
-        eltargs_1 = removeModificationInElementargs(eltargs, p);
-        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
+  eltargs_1 = removeModificationInElementargs(eltargs, p);
+  ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
       then ANNOTATION(neweltargs);
     case (ANNOTATION(elementArgs = {}),a) then a;
   end matchcontinue;
@@ -5958,34 +5958,34 @@ algorithm
 
     case ({MODIFICATION(path = IDENT(name = id1))},IDENT(name = id2))
       equation
-        true = stringEq(id1, id2);
+  true = stringEq(id1, id2);
       then {};
 
     case ({(m as MODIFICATION(path = IDENT(name = id1)))},IDENT(name = id2))
       equation
-        false = stringEq(id1, id2);
+  false = stringEq(id1, id2);
       then
-        fail();
+  fail();
 
     case ((MODIFICATION(path = IDENT(name = id1)) :: xs),IDENT(name = id2))
       equation
-        true = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
+  true = stringEq(id1, id2);
+  res = removeModificationInElementargs(xs, inPath);
       then
-        res;
+  res;
 
     case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
       equation
-        false = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
+  false = stringEq(id1, id2);
+  res = removeModificationInElementargs(xs, inPath);
       then
-        (m :: res);
+  (m :: res);
 
     case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
       equation
-        res = removeModificationInElementargs(xs, inPath);
+  res = removeModificationInElementargs(xs, inPath);
       then
-        (m :: res);
+  (m :: res);
   end matchcontinue;
 end removeModificationInElementargs;
 

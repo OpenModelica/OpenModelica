@@ -80,121 +80,121 @@ static logical c_false = FALSE_;
 /*     the subroutine statement is */
 
 /*       subroutine hybrj(fcn,n,x,fvec,fjac,ldfjac,xtol,maxfev,diag, */
-/*                        mode,factor,nprint,info,nfev,njev,r,lr,qtf, */
-/*                        wa1,wa2,wa3,wa4) */
+/*                  mode,factor,nprint,info,nfev,njev,r,lr,qtf, */
+/*                  wa1,wa2,wa3,wa4) */
 
 /*     where */
 
 /*       fcn is the name of the user-supplied subroutine which */
-/*         calculates the functions and the jacobian. fcn must */
-/*         be declared in an external statement in the user */
-/*         calling program, and should be written as follows. */
+/*   calculates the functions and the jacobian. fcn must */
+/*   be declared in an external statement in the user */
+/*   calling program, and should be written as follows. */
 
-/*         subroutine fcn(n,x,fvec,fjac,ldfjac,iflag) */
-/*         integer n,ldfjac,iflag */
-/*         double precision x(n),fvec(n),fjac(ldfjac,n) */
-/*         ---------- */
-/*         if iflag = 1 calculate the functions at x and */
-/*         return this vector in fvec. do not alter fjac. */
-/*         if iflag = 2 calculate the jacobian at x and */
-/*         return this matrix in fjac. do not alter fvec. */
-/*         --------- */
-/*         return */
-/*         end */
+/*   subroutine fcn(n,x,fvec,fjac,ldfjac,iflag) */
+/*   integer n,ldfjac,iflag */
+/*   double precision x(n),fvec(n),fjac(ldfjac,n) */
+/*   ---------- */
+/*   if iflag = 1 calculate the functions at x and */
+/*   return this vector in fvec. do not alter fjac. */
+/*   if iflag = 2 calculate the jacobian at x and */
+/*   return this matrix in fjac. do not alter fvec. */
+/*   --------- */
+/*   return */
+/*   end */
 
-/*         the value of iflag should not be changed by fcn unless */
-/*         the user wants to terminate execution of hybrj. */
-/*         in this case set iflag to a negative integer. */
+/*   the value of iflag should not be changed by fcn unless */
+/*   the user wants to terminate execution of hybrj. */
+/*   in this case set iflag to a negative integer. */
 
 /*       n is a positive integer input variable set to the number */
-/*         of functions and variables. */
+/*   of functions and variables. */
 
 /*       x is an array of length n. on input x must contain */
-/*         an initial estimate of the solution vector. on output x */
-/*         contains the final estimate of the solution vector. */
+/*   an initial estimate of the solution vector. on output x */
+/*   contains the final estimate of the solution vector. */
 
 /*       fvec is an output array of length n which contains */
-/*         the functions evaluated at the output x. */
+/*   the functions evaluated at the output x. */
 
 /*       fjac is an output n by n array which contains the */
-/*         orthogonal matrix q produced by the qr factorization */
-/*         of the final approximate jacobian. */
+/*   orthogonal matrix q produced by the qr factorization */
+/*   of the final approximate jacobian. */
 
 /*       ldfjac is a positive integer input variable not less than n */
-/*         which specifies the leading dimension of the array fjac. */
+/*   which specifies the leading dimension of the array fjac. */
 
 /*       xtol is a nonnegative input variable. termination */
-/*         occurs when the relative error between two consecutive */
-/*         iterates is at most xtol. */
+/*   occurs when the relative error between two consecutive */
+/*   iterates is at most xtol. */
 
 /*       maxfev is a positive integer input variable. termination */
-/*         occurs when the number of calls to fcn with iflag = 1 */
-/*         has reached maxfev. */
+/*   occurs when the number of calls to fcn with iflag = 1 */
+/*   has reached maxfev. */
 
 /*       diag is an array of length n. if mode = 1 (see */
-/*         below), diag is internally set. if mode = 2, diag */
-/*         must contain positive entries that serve as */
-/*         multiplicative scale factors for the variables. */
+/*   below), diag is internally set. if mode = 2, diag */
+/*   must contain positive entries that serve as */
+/*   multiplicative scale factors for the variables. */
 
 /*       mode is an integer input variable. if mode = 1, the */
-/*         variables will be scaled internally. if mode = 2, */
-/*         the scaling is specified by the input diag. other */
-/*         values of mode are equivalent to mode = 1. */
+/*   variables will be scaled internally. if mode = 2, */
+/*   the scaling is specified by the input diag. other */
+/*   values of mode are equivalent to mode = 1. */
 
 /*       factor is a positive input variable used in determining the */
-/*         initial step bound. this bound is set to the product of */
-/*         factor and the euclidean norm of diag*x if nonzero, or else */
-/*         to factor itself. in most cases factor should lie in the */
-/*         interval (.1,100.). 100. is a generally recommended value. */
+/*   initial step bound. this bound is set to the product of */
+/*   factor and the euclidean norm of diag*x if nonzero, or else */
+/*   to factor itself. in most cases factor should lie in the */
+/*   interval (.1,100.). 100. is a generally recommended value. */
 
 /*       nprint is an integer input variable that enables controlled */
-/*         printing of iterates if it is positive. in this case, */
-/*         fcn is called with iflag = 0 at the beginning of the first */
-/*         iteration and every nprint iterations thereafter and */
-/*         immediately prior to return, with x and fvec available */
-/*         for printing. fvec and fjac should not be altered. */
-/*         if nprint is not positive, no special calls of fcn */
-/*         with iflag = 0 are made. */
+/*   printing of iterates if it is positive. in this case, */
+/*   fcn is called with iflag = 0 at the beginning of the first */
+/*   iteration and every nprint iterations thereafter and */
+/*   immediately prior to return, with x and fvec available */
+/*   for printing. fvec and fjac should not be altered. */
+/*   if nprint is not positive, no special calls of fcn */
+/*   with iflag = 0 are made. */
 
 /*       info is an integer output variable. if the user has */
-/*         terminated execution, info is set to the (negative) */
-/*         value of iflag. see description of fcn. otherwise, */
-/*         info is set as follows. */
+/*   terminated execution, info is set to the (negative) */
+/*   value of iflag. see description of fcn. otherwise, */
+/*   info is set as follows. */
 
-/*         info = 0   improper input parameters. */
+/*   info = 0   improper input parameters. */
 
-/*         info = 1   relative error between two consecutive iterates */
-/*                    is at most xtol. */
+/*   info = 1   relative error between two consecutive iterates */
+/*              is at most xtol. */
 
-/*         info = 2   number of calls to fcn with iflag = 1 has */
-/*                    reached maxfev. */
+/*   info = 2   number of calls to fcn with iflag = 1 has */
+/*              reached maxfev. */
 
-/*         info = 3   xtol is too small. no further improvement in */
-/*                    the approximate solution x is possible. */
+/*   info = 3   xtol is too small. no further improvement in */
+/*              the approximate solution x is possible. */
 
-/*         info = 4   iteration is not making good progress, as */
-/*                    measured by the improvement from the last */
-/*                    five jacobian evaluations. */
+/*   info = 4   iteration is not making good progress, as */
+/*              measured by the improvement from the last */
+/*              five jacobian evaluations. */
 
-/*         info = 5   iteration is not making good progress, as */
-/*                    measured by the improvement from the last */
-/*                    ten iterations. */
+/*   info = 5   iteration is not making good progress, as */
+/*              measured by the improvement from the last */
+/*              ten iterations. */
 
 /*       nfev is an integer output variable set to the number of */
-/*         calls to fcn with iflag = 1. */
+/*   calls to fcn with iflag = 1. */
 
 /*       njev is an integer output variable set to the number of */
-/*         calls to fcn with iflag = 2. */
+/*   calls to fcn with iflag = 2. */
 
 /*       r is an output array of length lr which contains the */
-/*         upper triangular matrix produced by the qr factorization */
-/*         of the final approximate jacobian, stored rowwise. */
+/*   upper triangular matrix produced by the qr factorization */
+/*   of the final approximate jacobian, stored rowwise. */
 
 /*       lr is a positive integer input variable not less than */
-/*         (n*(n+1))/2. */
+/*   (n*(n+1))/2. */
 
 /*       qtf is an output array of length n which contains */
-/*         the vector (q transpose)*fvec. */
+/*   the vector (q transpose)*fvec. */
 
 /*       wa1, wa2, wa3, and wa4 are work arrays of length n. */
 
@@ -203,7 +203,7 @@ static logical c_false = FALSE_;
 /*       user-supplied ...... fcn */
 
 /*       minpack-supplied ... dogleg,dpmpar,enorm, */
-/*                            qform,qrfac,r1mpyq,r1updt */
+/*                      qform,qrfac,r1mpyq,r1updt */
 
 /*       fortran-supplied ... dabs,dmax1,dmin1,mod */
 
@@ -278,7 +278,7 @@ L20:
 L30:
     jeval = TRUE_;
 
-/*        calculate the jacobian matrix. */
+/*  calculate the jacobian matrix. */
 
     iflag = 2;
     (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
@@ -287,13 +287,13 @@ L30:
   goto L300;
     }
 
-/*        compute the qr factorization of the jacobian. */
+/*  compute the qr factorization of the jacobian. */
 
     qrfac_(n, n, &fjac[fjac_offset], ldfjac, &c_false, iwa, &c__1, &wa1[1], &
       wa2[1], &wa3[1]);
 
-/*        on the first iteration and if mode is 1, scale according */
-/*        to the norms of the columns of the initial jacobian. */
+/*  on the first iteration and if mode is 1, scale according */
+/*  to the norms of the columns of the initial jacobian. */
 
     if(iter != 1) {
   goto L70;
@@ -311,8 +311,8 @@ L30:
     }
 L50:
 
-/*        on the first iteration, calculate the norm of the scaled x */
-/*        and initialize the step bound delta. */
+/*  on the first iteration, calculate the norm of the scaled x */
+/*  and initialize the step bound delta. */
 
     i__1 = *n;
     for(j = 1; j <= i__1; ++j) {
@@ -326,7 +326,7 @@ L50:
     }
 L70:
 
-/*        form (q transpose)*fvec and store in qtf. */
+/*  form (q transpose)*fvec and store in qtf. */
 
     i__1 = *n;
     for(i__ = 1; i__ <= i__1; ++i__) {
@@ -355,7 +355,7 @@ L110:
   ;
     }
 
-/*        copy the triangular factor of the qr factorization into r. */
+/*  copy the triangular factor of the qr factorization into r. */
 
     sing = FALSE_;
     i__1 = *n;
@@ -379,11 +379,11 @@ L140:
 /* L150: */
     }
 
-/*        accumulate the orthogonal factor in fjac. */
+/*  accumulate the orthogonal factor in fjac. */
 
     qform_(n, n, &fjac[fjac_offset], ldfjac, &wa1[1]);
 
-/*        rescale if necessary. */
+/*  rescale if necessary. */
 
     if(*mode == 2) {
   goto L170;
@@ -397,11 +397,11 @@ L140:
     }
 L170:
 
-/*        beginning of the inner loop. */
+/*  beginning of the inner loop. */
 
 L180:
 
-/*           if requested, call fcn to enable printing of iterates. */
+/*     if requested, call fcn to enable printing of iterates. */
 
     if(*nprint <= 0) {
   goto L190;
@@ -415,12 +415,12 @@ L180:
     }
 L190:
 
-/*           determine the direction p. */
+/*     determine the direction p. */
 
     dogleg_(n, &r__[1], lr, &diag[1], &qtf[1], &delta, &wa1[1], &wa2[1], &wa3[
       1]);
 
-/*           store the direction p and x + p. calculate the norm of p. */
+/*     store the direction p and x + p. calculate the norm of p. */
 
     i__1 = *n;
     for(j = 1; j <= i__1; ++j) {
@@ -431,13 +431,13 @@ L190:
     }
     pnorm = enorm_(n, &wa3[1]);
 
-/*           on the first iteration, adjust the initial step bound. */
+/*     on the first iteration, adjust the initial step bound. */
 
     if(iter == 1) {
   delta = min(delta,pnorm);
     }
 
-/*           evaluate the function at x + p and calculate its norm. */
+/*     evaluate the function at x + p and calculate its norm. */
 
     iflag = 1;
     (*fcn)(n, &wa2[1], &wa4[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
@@ -447,7 +447,7 @@ L190:
     }
     fnorm1 = enorm_(n, &wa4[1]);
 
-/*           compute the scaled actual reduction. */
+/*     compute the scaled actual reduction. */
 
     actred = -one;
     if(fnorm1 < fnorm) {
@@ -456,7 +456,7 @@ L190:
   actred = one - d__1 * d__1;
     }
 
-/*           compute the scaled predicted reduction. */
+/*     compute the scaled predicted reduction. */
 
     l = 1;
     i__1 = *n;
@@ -479,15 +479,15 @@ L190:
   prered = one - d__1 * d__1;
     }
 
-/*           compute the ratio of the actual to the predicted */
-/*           reduction. */
+/*     compute the ratio of the actual to the predicted */
+/*     reduction. */
 
     ratio = zero;
     if(prered > zero) {
   ratio = actred / prered;
     }
 
-/*           update the step bound. */
+/*     update the step bound. */
 
     if(ratio >= p1) {
   goto L230;
@@ -509,13 +509,13 @@ L230:
     }
 L240:
 
-/*           test for successful iteration. */
+/*     test for successful iteration. */
 
     if(ratio < p0001) {
   goto L260;
     }
 
-/*           successful iteration. update x, fvec, and their norms. */
+/*     successful iteration. update x, fvec, and their norms. */
 
     i__1 = *n;
     for(j = 1; j <= i__1; ++j) {
@@ -529,7 +529,7 @@ L240:
     ++iter;
 L260:
 
-/*           determine the progress of the iteration. */
+/*     determine the progress of the iteration. */
 
     ++nslow1;
     if(actred >= p001) {
@@ -542,7 +542,7 @@ L260:
   nslow2 = 0;
     }
 
-/*           test for convergence. */
+/*     test for convergence. */
 
     if(delta <= *xtol * xnorm || fnorm == zero) {
   *info = 1;
@@ -551,7 +551,7 @@ L260:
   goto L300;
     }
 
-/*           tests for termination and stringent tolerances. */
+/*     tests for termination and stringent tolerances. */
 
     if(*nfev >= *maxfev) {
   *info = 2;
@@ -571,14 +571,14 @@ L260:
   goto L300;
     }
 
-/*           criterion for recalculating jacobian. */
+/*     criterion for recalculating jacobian. */
 
     if(ncfail == 2) {
   goto L290;
     }
 
-/*           calculate the rank one modification to the jacobian */
-/*           and update qtf if necessary. */
+/*     calculate the rank one modification to the jacobian */
+/*     and update qtf if necessary. */
 
     i__1 = *n;
     for(j = 1; j <= i__1; ++j) {
@@ -596,19 +596,19 @@ L260:
 /* L280: */
     }
 
-/*           compute the qr factorization of the updated jacobian. */
+/*     compute the qr factorization of the updated jacobian. */
 
     r1updt_(n, n, &r__[1], lr, &wa1[1], &wa2[1], &wa3[1], &sing);
     r1mpyq_(n, n, &fjac[fjac_offset], ldfjac, &wa2[1], &wa3[1]);
     r1mpyq_(&c__1, n, &qtf[1], &c__1, &wa2[1], &wa3[1]);
 
-/*           end of the inner loop. */
+/*     end of the inner loop. */
 
     jeval = FALSE_;
     goto L180;
 L290:
 
-/*        end of the outer loop. */
+/*  end of the outer loop. */
 
     goto L30;
 L300:

@@ -1,6 +1,6 @@
 #pragma once
-#include <System/IMixedSystem.h>                // System interface
-#include <System/IEvent.h>                // System interface
+#include <System/IMixedSystem.h>          // System interface
+#include <System/IEvent.h>          // System interface
 
 /**
 Auxiliary  class to handle system events

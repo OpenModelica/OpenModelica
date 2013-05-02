@@ -33,9 +33,9 @@ public:
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
       if ( line != 0 )
-         return line;
+   return line;
       if( getFirstChild() )
-         return ( RefMyAST(getFirstChild())->getLine() );
+   return ( RefMyAST(getFirstChild())->getLine() );
       return 0;
    }
 
@@ -52,9 +52,9 @@ public:
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
       if ( column != 0 )
-         return column;
+   return column;
       if( getFirstChild() )
-         return ( RefMyAST(getFirstChild())->getColumn() );
+   return ( RefMyAST(getFirstChild())->getColumn() );
       return 0;
    }
 

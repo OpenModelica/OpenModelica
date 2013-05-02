@@ -45,8 +45,8 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
 
     if (varLst->variable_ == NULL)
     {
-        SETERROR("The input variables structure is NULL");
-        return WRAPPER_EXECUTION_ERROR;
+  SETERROR("The input variables structure is NULL");
+  return WRAPPER_EXECUTION_ERROR;
     }
 
     // make it empty!
@@ -61,12 +61,12 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
       /* filter the output variables */
       if (variableType == 0)
       {
-        variableValue = inPoint->data_[idx];
-        /* construct the override string */
-        tmpStr = strdup(systemCommand);
-        sprintf(systemCommand, "%s%s=%.20g,",tmpStr,variableName,variableValue);
-        free(tmpStr);
-        idx++;
+  variableValue = inPoint->data_[idx];
+  /* construct the override string */
+  tmpStr = strdup(systemCommand);
+  sprintf(systemCommand, "%s%s=%.20g,",tmpStr,variableName,variableValue);
+  free(tmpStr);
+  idx++;
       }
       /* move to next */
       varLst = varLst->next_;
@@ -97,10 +97,10 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
       /* filter the output variables */
       if (variableType == 1)
       {
-        tmpStr = strdup(systemCommand);
-        sprintf(systemCommand, "%s%s,", tmpStr, variableName);
-        free(tmpStr);
-        idx++;
+  tmpStr = strdup(systemCommand);
+  sprintf(systemCommand, "%s%s,", tmpStr, variableName);
+  free(tmpStr);
+  idx++;
       }
       /* move to next */
       varLst = varLst->next_;
@@ -127,7 +127,7 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
     /* remove newline */
     if (buf[strlen(buf)-1] == '\n')
     {
-        buf[strlen(buf)-1] = '\0';
+  buf[strlen(buf)-1] = '\0';
     }
 
     if (pclose(resultOutput) != 0)
@@ -156,9 +156,9 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
       L = inPoint->data_[2];
       I = inPoint->data_[3];
       y = (F*L*L*L)/(3.0*E*I);
-      fprintf(stderr, "%s\n\t -> %s\n\t ->          %.20g !=\n\t ->          %.20g\n", systemCommand, buf, outPoint->data_[0], y); fflush(NULL);
+      fprintf(stderr, "%s\n\t -> %s\n\t ->    %.20g !=\n\t ->          %.20g\n", systemCommand, buf, outPoint->data_[0], y); fflush(NULL);
       */
-      fprintf(stderr, "%s\n\t -> %s\n\t ->          %.20g\n", systemCommand, buf, outPoint->data_[0]); fflush(NULL);
+      fprintf(stderr, "%s\n\t -> %s\n\t ->    %.20g\n", systemCommand, buf, outPoint->data_[0]); fflush(NULL);
     }
 
     free ( currentWorkingDirectory );
@@ -175,9 +175,9 @@ WRAPPER_BEGIN
 
 /*
 *********************************************************************************
-*                                                                               *
-*                             myWrapper function                                *
-*                                                                               *
+*                                                                         *
+*                       myWrapper function                                *
+*                                                                         *
 *********************************************************************************
 */
 
@@ -270,8 +270,8 @@ WRAPPER_BEGIN
       long rc = callOpenModelicaModel(p_state, inPoint, outPoint, p_exchangedData, p_error);
       if (rc)
       {
-        PRINT( "Error in calling the OpenModelica simulation code" );
-        return WRAPPER_EXECUTION_ERROR;
+  PRINT( "Error in calling the OpenModelica simulation code" );
+  return WRAPPER_EXECUTION_ERROR;
       }
     } )
 

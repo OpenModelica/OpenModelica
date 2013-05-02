@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFInstSymbolTable
-" file:        NFInstSymbolTable.mo
+" file:  NFInstSymbolTable.mo
   package:     NFInstSymbolTable
   description: Symboltable for NFInst.
 
@@ -165,17 +165,17 @@ algorithm
 
     case (_)
       equation
-        // Set the bucket size to the nearest prime of the number of components
-        // multiplied with 4/3, to get ~75% occupancy. +1 to make space for time.
-        comp_size = NFInstUtil.countElementsInClass(inClass);
-        bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
-        st = createSized(bucket_size);
-        st = addClass(inClass, st);
-        st = addAliases(inClass, st);
-        // Add the special variable time to the symboltable.
-        st = addUniqueComponent(Absyn.IDENT("time"), BUILTIN_TIME_COMP, st);
+  // Set the bucket size to the nearest prime of the number of components
+  // multiplied with 4/3, to get ~75% occupancy. +1 to make space for time.
+  comp_size = NFInstUtil.countElementsInClass(inClass);
+  bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
+  st = createSized(bucket_size);
+  st = addClass(inClass, st);
+  st = addAliases(inClass, st);
+  // Add the special variable time to the symboltable.
+  st = addUniqueComponent(Absyn.IDENT("time"), BUILTIN_TIME_COMP, st);
       then
-        st;
+  st;
 
   end match;
 end build;
@@ -296,12 +296,12 @@ algorithm
 
     case (NFInstTypes.ELEMENT(comp, cls), st)
       equation
-        // Add the component.
-        st = addComponent(comp, st);
-        // Add the component's class.
-        st = addClass(cls, st);
+  // Add the component.
+  st = addComponent(comp, st);
+  // Add the component's class.
+  st = addClass(cls, st);
       then
-        st;
+  st;
 
     case (NFInstTypes.CONDITIONAL_ELEMENT(comp), st)
       then addComponent(comp, st);
@@ -325,9 +325,9 @@ algorithm
     case (cls, st, false) then st;
     case (cls, st, true)
       equation
-        st = addClass(cls, st);
+  st = addClass(cls, st);
       then
-        st;
+  st;
 
   end match;
 end addClassOnTrue;
@@ -352,17 +352,17 @@ algorithm
     // For any other type of component, try to add it.
     case (_, st)
       equation
-        name = NFInstUtil.getComponentName(inComponent);
-        st = addNoUpdCheck(name, inComponent, st);
+  name = NFInstUtil.getComponentName(inComponent);
+  st = addNoUpdCheck(name, inComponent, st);
       then
-        st;
+  st;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInstSymbolTable.addComponent failed!");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("NFInstSymbolTable.addComponent failed!");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end addComponent;
@@ -390,12 +390,12 @@ algorithm
     // If the previous case failed, add a new scope and add the component to it.
     else
       equation
-        ht = BaseHashTable.emptyHashTableWork(11,
-          (hashFunc, Absyn.pathEqual, Absyn.pathString, NFInstDump.componentStr));
-        st = ht :: inSymbolTable;
-        st = add(inName, inComponent, st);
+  ht = BaseHashTable.emptyHashTableWork(11,
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, NFInstDump.componentStr));
+  st = ht :: inSymbolTable;
+  st = add(inName, inComponent, st);
       then
-        st;
+  st;
 
   end matchcontinue;
 end addIterator;
@@ -415,10 +415,10 @@ algorithm
 
     case (dest_ht :: rest_st, src_ht :: _)
       equation
-        entries = BaseHashTable.hashTableList(src_ht);
-        dest_ht = List.fold(entries, BaseHashTable.add, dest_ht);
+  entries = BaseHashTable.hashTableList(src_ht);
+  dest_ht = List.fold(entries, BaseHashTable.add, dest_ht);
       then
-        dest_ht :: rest_st;
+  dest_ht :: rest_st;
 
   end match;
 end merge;
@@ -433,7 +433,7 @@ protected function addAliases
 
      package P
        model M
-         Real x[n]; // n will be instantiated as P.n.
+   Real x[n]; // n will be instantiated as P.n.
        end M;
 
        constant Integer n = 3; // n will be instantiated as n.
@@ -450,8 +450,8 @@ protected function addAliases
    non-qualified name, and look up that component instead.
 
    TODO: Check what kind of restrictions actually apply in this case. We might
-         only need to introduce aliases if the class is a package, but the
-         specification is a bit vague on what can be accessed from where."
+   only need to introduce aliases if the class is a package, but the
+   specification is a bit vague on what can be accessed from where."
   input Class inClass;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
@@ -464,18 +464,18 @@ algorithm
 
     case (NFInstTypes.COMPLEX_CLASS(name = class_path, components = el), st)
       equation
-        st = List.fold1(el, addAlias, class_path, st);
+  st = List.fold1(el, addAlias, class_path, st);
       then
-        st;
+  st;
 
     case (NFInstTypes.BASIC_TYPE(name = _), _) then inSymbolTable;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInstSymbolTable.addAlises failed.\n");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- NFInstSymbolTable.addAlises failed.\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end addAliases;
@@ -542,17 +542,17 @@ algorithm
 
     case (_, st)
       equation
-        name = NFInstUtil.getComponentName(inComponent);
-        st = add(name, inComponent, st);
+  name = NFInstUtil.getComponentName(inComponent);
+  st = add(name, inComponent, st);
       then
-        st;
+  st;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInstSymbolTable.updateComponent failed.");
+  true = Flags.isSet(Flags.FAILTRACE);
+  Debug.traceln("- NFInstSymbolTable.updateComponent failed.");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end updateComponent;
@@ -577,15 +577,15 @@ algorithm
 
     case (NFInstTypes.ELEMENT(comp, cls), st)
       equation
-        // Look up the component in the symboltable.
-        name = NFInstUtil.getComponentName(comp);
-        opt_comp = lookupNameOpt(name, st);
-        // Try to add the component to the symboltable.
-        (st, added) = addInstCondComponent(name, comp, opt_comp, st);
-        // Add the element's class if the component was added.
-        st = addClassOnTrue(cls, st, added);
+  // Look up the component in the symboltable.
+  name = NFInstUtil.getComponentName(comp);
+  opt_comp = lookupNameOpt(name, st);
+  // Try to add the component to the symboltable.
+  (st, added) = addInstCondComponent(name, comp, opt_comp, st);
+  // Add the element's class if the component was added.
+  st = addClassOnTrue(cls, st, added);
       then
-        (st, added);
+  (st, added);
 
   end match;
 end addInstCondElement;
@@ -612,9 +612,9 @@ algorithm
     // component.
     case (_, _, SOME(NFInstTypes.CONDITIONAL_COMPONENT(name = _)), st)
       equation
-        st = addNoUpdCheck(inName, inNewComponent, st);
+  st = addNoUpdCheck(inName, inNewComponent, st);
       then
-        (st, true);
+  (st, true);
 
     // The component already exists in the symboltable, but not as a conditional
     // component. This means that it's already been updated due to a duplicate
@@ -623,20 +623,20 @@ algorithm
     // unchanged.
     case (_, _, SOME(comp), st)
       equation
-        /*********************************************************************/
-        // TODO: Check if this is still needed, since we check duplicate
-        // elements in NFInst.instClassItem now.
-        /*********************************************************************/
-        //checkEqualComponents
+  /*********************************************************************/
+  // TODO: Check if this is still needed, since we check duplicate
+  // elements in NFInst.instClassItem now.
+  /*********************************************************************/
+  //checkEqualComponents
       then
-        (st, false);
+  (st, false);
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"NFInstSymbolTable.addInstCondElement couldn't find existing conditional component!\n"});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"NFInstSymbolTable.addInstCondElement couldn't find existing conditional component!\n"});
       then
-        fail();
+  fail();
   end match;
 end addInstCondComponent;
 
@@ -691,17 +691,17 @@ algorithm
     // Try to find the cref as a normal component.
     case (_, st)
       equation
-        comp = lookupCref(inCref, st);
+  comp = lookupCref(inCref, st);
       then
-        (comp, st);
+  (comp, st);
 
     // Previous case failed, try to look it up as an outer reference.
     else
       equation
-        (cref, st) = NFInstUtil.replaceCrefOuterPrefix(inCref, inSymbolTable);
-        comp = lookupCref(cref, st);
+  (cref, st) = NFInstUtil.replaceCrefOuterPrefix(inCref, inSymbolTable);
+  comp = lookupCref(cref, st);
       then
-        (comp, st);
+  (comp, st);
 
   end matchcontinue;
 end lookupCrefResolveOuter;
@@ -728,9 +728,9 @@ algorithm
 
     case (_, _)
       equation
-        comp = get(inName, inSymbolTable);
+  comp = get(inName, inSymbolTable);
       then
-        SOME(comp);
+  SOME(comp);
 
     else NONE();
   end matchcontinue;
@@ -774,11 +774,11 @@ algorithm
     // No inner reference set, find the inner component and set the reference.
     case (NFInstTypes.OUTER_COMPONENT(name = outer_name, innerName = NONE()), st)
       equation
-        (inner_name, inner_comp) = findInnerComponent(outer_name, st);
-        outer_comp = NFInstTypes.OUTER_COMPONENT(outer_name, SOME(inner_name));
-        st = add(outer_name, outer_comp, st);
+  (inner_name, inner_comp) = findInnerComponent(outer_name, st);
+  outer_comp = NFInstTypes.OUTER_COMPONENT(outer_name, SOME(inner_name));
+  st = add(outer_name, outer_comp, st);
       then
-        (inner_name, SOME(inner_comp), st);
+  (inner_name, SOME(inner_comp), st);
 
     // Reference already set, just return the name of it.
     case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(inner_name)), st)
@@ -805,32 +805,32 @@ algorithm
     // Try to find the inner component in the symboltable.
     case (_, _)
       equation
-        // Split the name into a list of strings.
-        pathl = Absyn.pathToStringList(inOuterName);
-        // Reverse the list. The first element is now the component's name, the
-        // rest is the enclosing scopes in the instance hierarchy. We ignore the
-        // first scope, since otherwise we'll just find the outer component again.
-        comp_name :: _ :: pathl = listReverse(pathl);
-        (inner_name, comp) = findInnerComponent2(comp_name, pathl, inSymbolTable);
+  // Split the name into a list of strings.
+  pathl = Absyn.pathToStringList(inOuterName);
+  // Reverse the list. The first element is now the component's name, the
+  // rest is the enclosing scopes in the instance hierarchy. We ignore the
+  // first scope, since otherwise we'll just find the outer component again.
+  comp_name :: _ :: pathl = listReverse(pathl);
+  (inner_name, comp) = findInnerComponent2(comp_name, pathl, inSymbolTable);
       then
-        (inner_name, comp);
+  (inner_name, comp);
 
     // A non-qualified name means that the outer component is at the top level,
     // so no inner component can exist. When checking a model we should somehow
     // add dummy inner components, otherwise this is an error.
     case (Absyn.IDENT(name = _), _)
       equation
-        print("Outer component at top level\n");
+  print("Outer component at top level\n");
       then
-        fail();
+  fail();
 
     // Couldn't find the inner component, print an error.
     else
       equation
-        print("Couldn't find corresponding inner component for " +&
-            Absyn.pathString(inOuterName) +& "\n");
+  print("Couldn't find corresponding inner component for " +&
+      Absyn.pathString(inOuterName) +& "\n");
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end findInnerComponent;
@@ -857,32 +857,32 @@ algorithm
     // Empty prefix, see if there's an inner component with a non-qualified name.
     case (_, {}, _)
       equation
-        path = Absyn.IDENT(inComponentName);
-        comp = get(path, inSymbolTable);
-        true = NFInstUtil.isInnerComponent(comp);
+  path = Absyn.IDENT(inComponentName);
+  comp = get(path, inSymbolTable);
+  true = NFInstUtil.isInnerComponent(comp);
       then
-        (path, comp);
+  (path, comp);
 
     // Some prefix, join the prefix with the component name and see if it
     // corresponds to an inner component.
     case (_, _ :: _, _)
       equation
-        pathl = inComponentName :: inPrefix;
-        path = Absyn.stringListPathReversed(pathl);
-        comp = get(path, inSymbolTable);
-        // TODO: If we find a component with this name that's not inner, is that
-        // an error?
-        true = NFInstUtil.isInnerComponent(comp);
+  pathl = inComponentName :: inPrefix;
+  path = Absyn.stringListPathReversed(pathl);
+  comp = get(path, inSymbolTable);
+  // TODO: If we find a component with this name that's not inner, is that
+  // an error?
+  true = NFInstUtil.isInnerComponent(comp);
       then
-        (path, comp);
+  (path, comp);
 
     // Previous case failed, but we have some prefix. Remove the first part of
     // the prefix and try again.
     case (_, _ :: pathl, _)
       equation
-        (path, comp) = findInnerComponent2(inComponentName, pathl, inSymbolTable);
+  (path, comp) = findInnerComponent2(inComponentName, pathl, inSymbolTable);
       then
-        (path, comp);
+  (path, comp);
 
   end matchcontinue;
 end findInnerComponent2;
@@ -899,22 +899,22 @@ algorithm
 
     case (_)
       equation
-        deps = findCyclicDependencies(inSymbolTable);
-        dep_str =
-          stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
-        dep_str = "{" +& dep_str +& "}";
-        // TODO: The "in scope" part of this error message should be removed, since
-        // we check for global cycles and not scope-local cycles like the old Inst.
-        Error.addMessage(Error.CIRCULAR_COMPONENTS, {"", dep_str});
+  deps = findCyclicDependencies(inSymbolTable);
+  dep_str =
+    stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
+  dep_str = "{" +& dep_str +& "}";
+  // TODO: The "in scope" part of this error message should be removed, since
+  // we check for global cycles and not scope-local cycles like the old Inst.
+  Error.addMessage(Error.CIRCULAR_COMPONENTS, {"", dep_str});
       then
-        ();
+  ();
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Found cyclic dependencies, but failed to show error."});
+  Error.addMessage(Error.INTERNAL_ERROR,
+    {"Found cyclic dependencies, but failed to show error."});
       then
-        fail();
+  fail();
 
   end matchcontinue;
 end showCyclicDepError;
@@ -955,14 +955,14 @@ algorithm
     case ({}, _) then inAccumGraph;
 
     case ((name, NFInstTypes.UNTYPED_COMPONENT(binding = binding, dimensions = dims)) ::
-        rest_comps, accum)
+  rest_comps, accum)
       equation
-        accum = addBindingDependency(binding, name, accum);
-        dimsl = arrayList(dims);
-        //accum = List.fold(dimsl, addDimensionDependency, accum);
-        accum = buildDependencyGraph(rest_comps, accum);
+  accum = addBindingDependency(binding, name, accum);
+  dimsl = arrayList(dims);
+  //accum = List.fold(dimsl, addDimensionDependency, accum);
+  accum = buildDependencyGraph(rest_comps, accum);
       then
-        accum;
+  accum;
 
     case (_ :: rest_comps, accum)
       then buildDependencyGraph(rest_comps, accum);
@@ -986,11 +986,11 @@ algorithm
 
     case (NFInstTypes.UNTYPED_BINDING(bindingExp = bind_exp, isProcessing = true), _, _)
       equation
-        deps = getDependenciesFromExp(bind_exp);
-        cref = ComponentReference.pathToCref(inComponentName);
-        dep = (DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT), deps);
+  deps = getDependenciesFromExp(bind_exp);
+  cref = ComponentReference.pathToCref(inComponentName);
+  dep = (DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT), deps);
       then
-        dep :: inAccumGraph;
+  dep :: inAccumGraph;
 
     else inAccumGraph;
   end match;
@@ -1053,11 +1053,11 @@ algorithm
 
     case (ht :: rest_st)
       equation
-        keys = BaseHashTable.hashTableKeyList(ht);
-        print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
-        dumpSymbolTableKeys(rest_st);
+  keys = BaseHashTable.hashTableKeyList(ht);
+  print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
+  dumpSymbolTableKeys(rest_st);
       then
-        ();
+  ();
 
     else ();
   end matchcontinue;
@@ -1074,11 +1074,11 @@ algorithm
 
     case (ht :: rest_st)
       equation
-        print("SymbolTable: ");
-        BaseHashTable.dumpHashTable(ht);
-        dumpSymbolTable(rest_st);
+  print("SymbolTable: ");
+  BaseHashTable.dumpHashTable(ht);
+  dumpSymbolTable(rest_st);
       then
-        ();
+  ();
 
     else ();
   end match;

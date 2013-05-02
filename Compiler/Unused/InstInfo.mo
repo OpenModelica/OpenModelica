@@ -30,7 +30,7 @@
  */
 
 encapsulated package InstInfo
-" file:        InstInfo.mo
+" file:  InstInfo.mo
   package:     InstInfo
   description: InstInfo contains the structure that is send to all instantiation functions.
 
@@ -39,13 +39,13 @@ encapsulated package InstInfo
   The InstInfo contains the structure that is send to all instantiation functions."
 
 type InstantiationScope = Integer "integer pointing into Scopes";
-type TypeScope          = Integer "integer pointing into Scopes";
+type TypeScope    = Integer "integer pointing into Scopes";
 type ComponentScope     = Integer "integer pointing into Scopes";
 
 uniontype Context
   record C
     InstantiationScope is;
-    TypeScope          ts;
+    TypeScope    ts;
     ComponentScope     cs;
   end C;
 end Context;

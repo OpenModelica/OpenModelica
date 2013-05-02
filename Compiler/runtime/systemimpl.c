@@ -186,16 +186,16 @@ static int filterString(char* buf,char* bufRes)
     cc = buf[i];
     if((stringContains(filterChars,buf[i]))) {
       if(buf[i]=='.') {
-        if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ) {
-          if(isNumeric == 0) {isNumeric=1; numericEncounter++;}
-          //printf("skipping_1: '%c'\n",buf[i]);
-        } else {
-          bufRes[bufPointer++] = buf[i];
-          isNumeric=0;
-        }
+  if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ) {
+    if(isNumeric == 0) {isNumeric=1; numericEncounter++;}
+    //printf("skipping_1: '%c'\n",buf[i]);
+  } else {
+    bufRes[bufPointer++] = buf[i];
+    isNumeric=0;
+  }
       } else {
-        if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-        //printf("skipping_2: '%c'\n",buf[i]);
+  if(isNumeric == 0){isNumeric=1;numericEncounter++;}
+  //printf("skipping_2: '%c'\n",buf[i]);
       }
     } else {
       bufRes[bufPointer++] = buf[i];
@@ -306,11 +306,11 @@ extern int SystemImpl__regularFileExists(const char* str)
     {
       const char *c_tokens[1]={str};
       c_add_message(85, /* error opening file */
-        ErrorType_scripting,
-        ErrorLevel_error,
-        gettext("Error opening file: %s."),
-        c_tokens,
-        1);
+  ErrorType_scripting,
+  ErrorLevel_error,
+  gettext("Error opening file: %s."),
+  c_tokens,
+  1);
     }
     return 0;
   }
@@ -474,7 +474,7 @@ static int str_contain_char( const char* chars, const char chr)
   for(i = 0; i < length_of_chars; i++)
     {
       if(chr == chars[i])
-        return 1;
+  return 1;
     }
   return 0;
 }
@@ -1079,8 +1079,8 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
       *returnValue = nowValue;
     } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
       valueFound       = 1;
-      timedif          = nowTime - preTime;
-      valuedif         = nowValue - preValue;
+      timedif    = nowTime - preTime;
+      valuedif   = nowValue - preValue;
       valueSlope       = valuedif / timedif;
       timeDifTimeStamp = timeStamp - preTime;
       *returnValue     = preValue + (valueSlope*timeDifTimeStamp);
@@ -1117,7 +1117,7 @@ extern int SystemImpl__unescapedStringLength(const char* str)
       case 'r':
       case 't':
       case 'v':
-        str++; break;
+  str++; break;
       }
     }
     i++;
@@ -1140,27 +1140,27 @@ extern char* SystemImpl__unescapedString(const char* str)
     if (str[0] == '\\') {
       switch (str[1]) {
       case '\'':
-        str++; res[i]='\''; break;
+  str++; res[i]='\''; break;
       case '"':
-        str++; res[i]='\"'; break;
+  str++; res[i]='\"'; break;
       case '?':
-        str++; res[i]='\?'; break;
+  str++; res[i]='\?'; break;
       case '\\':
-        str++; res[i]='\\'; break;
+  str++; res[i]='\\'; break;
       case 'a':
-        str++; res[i]='\a'; break;
+  str++; res[i]='\a'; break;
       case 'b':
-        str++; res[i]='\b'; break;
+  str++; res[i]='\b'; break;
       case 'f':
-        str++; res[i]='\f'; break;
+  str++; res[i]='\f'; break;
       case 'n':
-        str++; res[i]='\n'; break;
+  str++; res[i]='\n'; break;
       case 'r':
-        str++; res[i]='\r'; break;
+  str++; res[i]='\r'; break;
       case 't':
-        str++; res[i]='\t'; break;
+  str++; res[i]='\t'; break;
       case 'v':
-        str++; res[i]='\v'; break;
+  str++; res[i]='\v'; break;
       }
     }
     i++;
@@ -1242,12 +1242,12 @@ static void decodeUri2(const char *src, char *dest, int breakCh)
       errno = 0;
       i = strtol(buf,NULL,16);
       if (errno) {
-        *(tmp++) = *src;
-        errno = 0;
+  *(tmp++) = *src;
+  errno = 0;
       } else {
-        *(tmp++) = i;
-        *tmp = 0;
-        src += 2;
+  *(tmp++) = i;
+  *tmp = 0;
+  src += 2;
       }
     } else if (*src == breakCh) {
       break;
@@ -1464,22 +1464,22 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
-        int entlen,mightbedir;
+  int entlen,mightbedir;
 #ifdef DT_DIR
-        mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
+  mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
-        mightbedir = 1;
+  mightbedir = 1;
 #endif
-        if (mightbedir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
-          /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
-          (*numMatches)++;
-          continue;
-        }
-        entlen = strlen(ent->d_name);
-        if (entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
-          /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
-          (*numMatches)++;
-        }
+  if (mightbedir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+    /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
+    (*numMatches)++;
+    continue;
+  }
+  entlen = strlen(ent->d_name);
+  if (entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+    /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
+    (*numMatches)++;
+  }
       }
     }
     closedir(dir);
@@ -1496,35 +1496,35 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
-        int entlen,ok=0,maybeDir;
+  int entlen,ok=0,maybeDir;
 #ifdef DT_DIR
-        maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
+  maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
-        maybeDir = 1;
+  maybeDir = 1;
 #endif
-        if (maybeDir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
-          ok=1;
-          res[i].fileIsDir=1;
-          /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
-        }
-        entlen = strlen(ent->d_name);
-        if (!ok && entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
-          /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
-          res[i].fileIsDir=0;
-          ok=1;
-        }
-        if (!ok)
-          continue;
-        res[i].dir = mp;
-        res[i].file = strdup(ent->d_name);
-        if (res[i].file[nlen] == ' ') {
-          splitVersion(res[i].file+nlen+1, res[i].version, &res[i].versionExtra);
-        } else {
-          memset(res[i].version,0,sizeof(long)*MODELICAPATH_LEVELS);
-          res[i].versionExtra = strdup("");
-        }
-        assert(i<*numMatches);
-        i++;
+  if (maybeDir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+    ok=1;
+    res[i].fileIsDir=1;
+    /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
+  }
+  entlen = strlen(ent->d_name);
+  if (!ok && entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+    /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
+    res[i].fileIsDir=0;
+    ok=1;
+  }
+  if (!ok)
+    continue;
+  res[i].dir = mp;
+  res[i].file = strdup(ent->d_name);
+  if (res[i].file[nlen] == ' ') {
+    splitVersion(res[i].file+nlen+1, res[i].version, &res[i].versionExtra);
+  } else {
+    memset(res[i].version,0,sizeof(long)*MODELICAPATH_LEVELS);
+    res[i].versionExtra = strdup("");
+  }
+  assert(i<*numMatches);
+  i++;
       }
     }
     closedir(dir);
@@ -1575,22 +1575,22 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
      */
     for (j=MODELICAPATH_LEVELS; j>0; j--) {
       for (i=0; i<numEntries; i++) {
-        /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
-         fprintf(stderr, "expected %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
+  /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
+   fprintf(stderr, "expected %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
 
-        if (modelicaPathEntryVersionEqual(entries[i].version,version,j) && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,j+1)) && entries[i].versionExtra[0] == '\0') {
-          if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS)) {
-            memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
-            foundIndex = i;
-          }
-        }
+  if (modelicaPathEntryVersionEqual(entries[i].version,version,j) && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,j+1)) && entries[i].versionExtra[0] == '\0') {
+    if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS)) {
+      memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
+      foundIndex = i;
+    }
+  }
       }
       if (foundIndex >= 0) {
-        *outDir = entries[foundIndex].dir;
-        *outName = entries[foundIndex].file;
-        *isDir = entries[foundIndex].fileIsDir;
-        free(versionExtra);
-        return 0;
+  *outDir = entries[foundIndex].dir;
+  *outName = entries[foundIndex].file;
+  *isDir = entries[foundIndex].fileIsDir;
+  free(versionExtra);
+  return 0;
       }
     }
   }
@@ -1600,11 +1600,11 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
       /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
       fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
       if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
-        *outDir = entries[i].dir;
-        *outName = entries[i].file;
-        *isDir = entries[i].fileIsDir;
-        free(versionExtra);
-        return 0;
+  *outDir = entries[i].dir;
+  *outName = entries[i].file;
+  *isDir = entries[i].fileIsDir;
+  free(versionExtra);
+  return 0;
       }
     }
   }
@@ -1629,9 +1629,9 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
   if (foundIndex == -1) {
     for (i=0; i<numEntries; i++) {
       if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS) || (entries[i].version == foundVersion && strcmp(entries[i].versionExtra,foundExtra) > 0)) {
-        memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
-        foundExtra = entries[i].versionExtra;
-        foundIndex = i;
+  memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
+  foundExtra = entries[i].versionExtra;
+  foundIndex = i;
       }
     }
   }
@@ -1653,13 +1653,13 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
     const char *prio = RML_STRINGDATA(RML_CAR(prios));
     if (0==strcmp("default",prio)) {
       if (!getLoadModelPathFromDefaultTarget(name,entries,numEntries,outDir,outName,isDir)) {
-        res = 0;
-        break;
+  res = 0;
+  break;
       }
     } else {
       if (!getLoadModelPathFromSingleTarget(prio,entries,numEntries,outDir,outName,isDir)) {
-        res = 0;
-        break;
+  res = 0;
+  break;
       }
     }
     prios = RML_CDR(prios);
@@ -1902,11 +1902,11 @@ void SystemImpl__gettextInit(const char *locale)
   else if (old_ctype_is_utf8)
     setlocale(LC_CTYPE, old_ctype);
   else if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") ||
-             strstr(clocale, "utf-8") || strstr(clocale, "utf8")) &&
-            !(setlocale(LC_CTYPE, "C.UTF-8") ||
-              setlocale(LC_CTYPE, "en_US.UTF-8") ||
-              setlocale(LC_CTYPE, "en_GB.UTF-8") ||
-              setlocale(LC_CTYPE, "UTF-8"))) {
+       strstr(clocale, "utf-8") || strstr(clocale, "utf8")) &&
+      !(setlocale(LC_CTYPE, "C.UTF-8") ||
+        setlocale(LC_CTYPE, "en_US.UTF-8") ||
+        setlocale(LC_CTYPE, "en_GB.UTF-8") ||
+        setlocale(LC_CTYPE, "UTF-8"))) {
     fprintf(stderr, gettext("Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you might have some issues.\n"));
   }
   free(old_ctype);
@@ -1991,90 +1991,90 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
       //GetFullPathNameA() returns a size larger than buffer if buffer is too small
       if (size > PATH_MAX)
       {
-        if (return_path != resolved_path) //Malloc'd buffer - Unstandard extension retry
-        {
-          size_t new_size;
+  if (return_path != resolved_path) //Malloc'd buffer - Unstandard extension retry
+  {
+    size_t new_size;
 
-          free(return_path);
-          return_path = (char*)malloc(size);
+    free(return_path);
+    return_path = (char*)malloc(size);
 
-          if (return_path)
-          {
-            new_size = GetFullPathNameA(path, size, return_path, 0); //Try again
+    if (return_path)
+    {
+      new_size = GetFullPathNameA(path, size, return_path, 0); //Try again
 
-            if (new_size > size) //If it's still too large, we have a problem, don't try again
-            {
-              free(return_path);
-              return_path = 0;
-              errno = ENAMETOOLONG;
-            }
-            else
-            {
-              size = new_size;
-            }
-          }
-          else
-          {
-            //I wasn't sure what to return here, but the standard does say to return EINVAL
-            //if resolved_path is null, and in this case we couldn't malloc large enough buffer
-            errno = EINVAL;
-          }
-        }
-        else //resolved_path buffer isn't big enough
-        {
-          return_path = 0;
-          errno = ENAMETOOLONG;
-        }
+      if (new_size > size) //If it's still too large, we have a problem, don't try again
+      {
+        free(return_path);
+        return_path = 0;
+        errno = ENAMETOOLONG;
+      }
+      else
+      {
+        size = new_size;
+      }
+    }
+    else
+    {
+      //I wasn't sure what to return here, but the standard does say to return EINVAL
+      //if resolved_path is null, and in this case we couldn't malloc large enough buffer
+      errno = EINVAL;
+    }
+  }
+  else //resolved_path buffer isn't big enough
+  {
+    return_path = 0;
+    errno = ENAMETOOLONG;
+  }
       }
 
       //GetFullPathNameA() returns 0 if some path resolve problem occured
       if (!size)
       {
-        if (return_path != resolved_path) //Malloc'd buffer
-        {
-          free(return_path);
-        }
+  if (return_path != resolved_path) //Malloc'd buffer
+  {
+    free(return_path);
+  }
 
-        return_path = 0;
+  return_path = 0;
 
-        //Convert MS errors into standard errors
-        switch (GetLastError())
-        {
-          case ERROR_FILE_NOT_FOUND:
-            errno = ENOENT;
-            break;
+  //Convert MS errors into standard errors
+  switch (GetLastError())
+  {
+    case ERROR_FILE_NOT_FOUND:
+      errno = ENOENT;
+      break;
 
-          case ERROR_PATH_NOT_FOUND: case ERROR_INVALID_DRIVE:
-            errno = ENOTDIR;
-            break;
+    case ERROR_PATH_NOT_FOUND: case ERROR_INVALID_DRIVE:
+      errno = ENOTDIR;
+      break;
 
-          case ERROR_ACCESS_DENIED:
-            errno = EACCES;
-            break;
+    case ERROR_ACCESS_DENIED:
+      errno = EACCES;
+      break;
 
-          default: //Unknown Error
-            errno = EIO;
-            break;
-        }
+    default: //Unknown Error
+      errno = EIO;
+      break;
+  }
       }
 
       //If we get to here with a valid return_path, we're still doing good
       if (return_path)
       {
-        struct stat stat_buffer;
+  struct stat stat_buffer;
 
-        //Make sure path exists, stat() returns 0 on success
-        if (stat(return_path, &stat_buffer))
-        {
-          if (return_path != resolved_path)
-          {
-            free(return_path);
-          }
+  //Make sure path exists, stat() returns 0 on success
+  if (stat(return_path, &stat_buffer))
+  {
+    if (return_path != resolved_path)
+    {
+      free(return_path);
+    }
 
-          return_path = 0;
-          //stat() will set the correct errno for us
-        }
-        //else we succeeded!
+    return_path = 0;
+    //stat() will set the correct errno for us
+  }
+  //else we succeeded!
       }
     }
     else

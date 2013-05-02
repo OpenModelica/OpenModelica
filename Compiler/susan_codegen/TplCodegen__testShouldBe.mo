@@ -18,21 +18,21 @@ algorithm
       TplAbsyn.MMDeclaration i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmDeclaration(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_3(txt, rest);
+  txt = mmDeclaration(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_3(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_3(txt, rest);
+  txt = lm_3(txt, rest);
       then txt;
   end matchcontinue;
 end lm_3;
@@ -51,30 +51,30 @@ algorithm
       TplAbsyn.PathIdent i_name;
 
     case ( txt,
-           TplAbsyn.MM_PACKAGE(name = i_name, mmDeclarations = i_mmDeclarations) )
+     TplAbsyn.MM_PACKAGE(name = i_name, mmDeclarations = i_mmDeclarations) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("package "));
-        txt = pathIdent(txt, i_name);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\n",
-                                    "public import Tpl;\n",
-                                    "\n"
-                                }, true));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_3(txt, i_mmDeclarations);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\n",
-                                    "end "
-                                }, false));
-        txt = pathIdent(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("package "));
+  txt = pathIdent(txt, i_name);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                              "\n",
+                              "public import Tpl;\n",
+                              "\n"
+                          }, true));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_3(txt, i_mmDeclarations);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                              "\n",
+                              "end "
+                          }, false));
+  txt = pathIdent(txt, i_name);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end mmPackage;
@@ -92,16 +92,16 @@ algorithm
       TplAbsyn.TypedIdents i_mf_locals;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_mf_locals )
+     i_mf_locals )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("protected\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = typedIdents(txt, i_mf_locals);
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE("protected\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = typedIdents(txt, i_mf_locals);
+  txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
 end fun_5;
@@ -120,22 +120,22 @@ algorithm
       TplAbsyn.MMExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmExp(txt, i_it, ":=");
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.nextIter(txt);
-        txt = lm_6(txt, rest);
+  txt = mmExp(txt, i_it, ":=");
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.nextIter(txt);
+  txt = lm_6(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_6(txt, rest);
+  txt = lm_6(txt, rest);
       then txt;
   end matchcontinue;
 end lm_6;
@@ -160,35 +160,35 @@ algorithm
       list<TplAbsyn.MMMatchCase> i_c_matchCases;
 
     case ( txt,
-           {TplAbsyn.MM_MATCH(matchCases = i_c_matchCases)},
-           a_mf_locals,
-           a_mf_outArgs,
-           a_mf_inArgs )
+     {TplAbsyn.MM_MATCH(matchCases = i_c_matchCases)},
+     a_mf_locals,
+     a_mf_outArgs,
+     a_mf_inArgs )
       equation
-        txt = mmMatchFunBody(txt, a_mf_inArgs, a_mf_outArgs, a_mf_locals, i_c_matchCases);
+  txt = mmMatchFunBody(txt, a_mf_inArgs, a_mf_outArgs, a_mf_locals, i_c_matchCases);
       then txt;
 
     case ( txt,
-           i_sts,
-           a_mf_locals,
-           a_mf_outArgs,
-           a_mf_inArgs )
+     i_sts,
+     a_mf_locals,
+     a_mf_outArgs,
+     a_mf_inArgs )
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = typedIdentsEx(txt, a_mf_inArgs, "input", "");
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = typedIdentsEx(txt, a_mf_outArgs, "output", "out_");
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = fun_5(txt, a_mf_locals);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("algorithm\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_6(txt, i_sts);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = typedIdentsEx(txt, a_mf_inArgs, "input", "");
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = typedIdentsEx(txt, a_mf_outArgs, "output", "out_");
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = fun_5(txt, a_mf_locals);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE("algorithm\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_6(txt, i_sts);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
 end fun_7;
@@ -215,65 +215,65 @@ algorithm
       Boolean i_isPublic;
 
     case ( txt,
-           TplAbsyn.MM_IMPORT(packageName = TplAbsyn.IDENT(ident = "Tpl")) )
+     TplAbsyn.MM_IMPORT(packageName = TplAbsyn.IDENT(ident = "Tpl")) )
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_IMPORT(packageName = TplAbsyn.IDENT(ident = "builtin")) )
+     TplAbsyn.MM_IMPORT(packageName = TplAbsyn.IDENT(ident = "builtin")) )
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_IMPORT(isPublic = i_isPublic, packageName = i_packageName) )
+     TplAbsyn.MM_IMPORT(isPublic = i_isPublic, packageName = i_packageName) )
       equation
-        txt = mmPublic(txt, i_isPublic);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" import "));
-        txt = pathIdent(txt, i_packageName);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = mmPublic(txt, i_isPublic);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" import "));
+  txt = pathIdent(txt, i_packageName);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_STR_TOKEN_DECL(isPublic = i_isPublic, name = i_name, value = i_value) )
+     TplAbsyn.MM_STR_TOKEN_DECL(isPublic = i_isPublic, name = i_name, value = i_value) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = mmPublic(txt, i_isPublic);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" constant Tpl.StringToken "));
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = mmStringTokenConstant(txt, i_value);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = mmPublic(txt, i_isPublic);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" constant Tpl.StringToken "));
+  txt = Tpl.writeStr(txt, i_name);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = mmStringTokenConstant(txt, i_value);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_LITERAL_DECL(isPublic = i_isPublic, litType = i_litType, name = i_name, value = i_value_1) )
+     TplAbsyn.MM_LITERAL_DECL(isPublic = i_isPublic, litType = i_litType, name = i_name, value = i_value_1) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = mmPublic(txt, i_isPublic);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" constant "));
-        txt = typeSig(txt, i_litType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = Tpl.writeStr(txt, i_value_1);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = mmPublic(txt, i_isPublic);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" constant "));
+  txt = typeSig(txt, i_litType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_name);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = Tpl.writeStr(txt, i_value_1);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_FUN(isPublic = i_isPublic, name = i_name, statements = i_statements, inArgs = i_mf_inArgs, outArgs = i_mf_outArgs, locals = i_mf_locals) )
+     TplAbsyn.MM_FUN(isPublic = i_isPublic, name = i_name, statements = i_statements, inArgs = i_mf_inArgs, outArgs = i_mf_outArgs, locals = i_mf_locals) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = mmPublic(txt, i_isPublic);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" function "));
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.softNewLine(txt);
-        txt = fun_7(txt, i_statements, i_mf_locals, i_mf_outArgs, i_mf_inArgs);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = mmPublic(txt, i_isPublic);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" function "));
+  txt = Tpl.writeStr(txt, i_name);
+  txt = Tpl.softNewLine(txt);
+  txt = fun_7(txt, i_statements, i_mf_locals, i_mf_outArgs, i_mf_inArgs);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+  txt = Tpl.writeStr(txt, i_name);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end mmDeclaration;
@@ -292,22 +292,22 @@ algorithm
       TplAbsyn.Ident i_nm;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_nm, _) :: rest )
+     (i_nm, _) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("out_"));
-        txt = Tpl.writeStr(txt, i_nm);
-        txt = Tpl.nextIter(txt);
-        txt = lm_9(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("out_"));
+  txt = Tpl.writeStr(txt, i_nm);
+  txt = Tpl.nextIter(txt);
+  txt = lm_9(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_9(txt, rest);
+  txt = lm_9(txt, rest);
       then txt;
   end matchcontinue;
 end lm_9;
@@ -326,20 +326,20 @@ algorithm
       TplAbsyn.Ident i_nm;
 
     case ( txt,
-           {(i_nm, _)} )
+     {(i_nm, _)} )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("out_"));
-        txt = Tpl.writeStr(txt, i_nm);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("out_"));
+  txt = Tpl.writeStr(txt, i_nm);
       then txt;
 
     case ( txt,
-           i_outArgs )
+     i_outArgs )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_9(txt, i_outArgs);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_9(txt, i_outArgs);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
   end matchcontinue;
 end fun_10;
@@ -358,22 +358,22 @@ algorithm
       TplAbsyn.Ident i_nm;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_nm, _) :: rest )
+     (i_nm, _) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("in_"));
-        txt = Tpl.writeStr(txt, i_nm);
-        txt = Tpl.nextIter(txt);
-        txt = lm_11(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("in_"));
+  txt = Tpl.writeStr(txt, i_nm);
+  txt = Tpl.nextIter(txt);
+  txt = lm_11(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_11(txt, rest);
+  txt = lm_11(txt, rest);
       then txt;
   end matchcontinue;
 end lm_11;
@@ -392,21 +392,21 @@ algorithm
       TplAbsyn.MatchingExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmMatchingExp(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_12(txt, rest);
+  txt = mmMatchingExp(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_12(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_12(txt, rest);
+  txt = lm_12(txt, rest);
       then txt;
   end matchcontinue;
 end lm_12;
@@ -425,22 +425,22 @@ algorithm
       TplAbsyn.MMExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmExp(txt, i_it, "=");
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.nextIter(txt);
-        txt = lm_13(txt, rest);
+  txt = mmExp(txt, i_it, "=");
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.nextIter(txt);
+  txt = lm_13(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_13(txt, rest);
+  txt = lm_13(txt, rest);
       then txt;
   end matchcontinue;
 end lm_13;
@@ -458,18 +458,18 @@ algorithm
       list<TplAbsyn.MMExp> i_statements;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_statements )
+     i_statements )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("equation\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_13(txt, i_statements);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE("equation\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_13(txt, i_statements);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
 end fun_14;
@@ -488,21 +488,21 @@ algorithm
       TplAbsyn.Ident i_nm;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_nm, _) :: rest )
+     (i_nm, _) :: rest )
       equation
-        txt = Tpl.writeStr(txt, i_nm);
-        txt = Tpl.nextIter(txt);
-        txt = lm_15(txt, rest);
+  txt = Tpl.writeStr(txt, i_nm);
+  txt = Tpl.nextIter(txt);
+  txt = lm_15(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_15(txt, rest);
+  txt = lm_15(txt, rest);
       then txt;
   end matchcontinue;
 end lm_15;
@@ -521,19 +521,19 @@ algorithm
       TplAbsyn.Ident i_nm;
 
     case ( txt,
-           {(i_nm, _)} )
+     {(i_nm, _)} )
       equation
-        txt = Tpl.writeStr(txt, i_nm);
+  txt = Tpl.writeStr(txt, i_nm);
       then txt;
 
     case ( txt,
-           i_oas )
+     i_oas )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_15(txt, i_oas);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_15(txt, i_oas);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
   end matchcontinue;
 end fun_16;
@@ -555,40 +555,40 @@ algorithm
       list<TplAbsyn.MatchingExp> i_mexps;
 
     case ( txt,
-           {},
-           _ )
+     {},
+     _ )
       then txt;
 
     case ( txt,
-           (i_mexps, i_statements) :: rest,
-           a_outArgs )
+     (i_mexps, i_statements) :: rest,
+     a_outArgs )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("case ( "));
-        txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_12(txt, i_mexps);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(" )\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = fun_14(txt, i_statements);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("then "));
-        txt = fun_16(txt, a_outArgs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.nextIter(txt);
-        txt = lm_17(txt, rest, a_outArgs);
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("case ( "));
+  txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_12(txt, i_mexps);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE(" )\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = fun_14(txt, i_statements);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("then "));
+  txt = fun_16(txt, a_outArgs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.nextIter(txt);
+  txt = lm_17(txt, rest, a_outArgs);
       then txt;
 
     case ( txt,
-           _ :: rest,
-           a_outArgs )
+     _ :: rest,
+     a_outArgs )
       equation
-        txt = lm_17(txt, rest, a_outArgs);
+  txt = lm_17(txt, rest, a_outArgs);
       then txt;
   end matchcontinue;
 end lm_17;
@@ -613,16 +613,16 @@ algorithm
   out_txt := Tpl.pushBlock(out_txt, Tpl.BT_INDENT(2));
   out_txt := fun_10(out_txt, a_outArgs);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
-                                       " :=\n",
-                                       "matchcontinue("
-                                   }, false));
+                                 " :=\n",
+                                 "matchcontinue("
+                             }, false));
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_11(out_txt, a_inArgs);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
-                                       ")\n",
-                                       "  local\n"
-                                   }, true));
+                                 ")\n",
+                                 "  local\n"
+                             }, true));
   out_txt := Tpl.pushBlock(out_txt, Tpl.BT_INDENT(4));
   out_txt := typedIdents(out_txt, a_locals);
   out_txt := Tpl.softNewLine(out_txt);
@@ -649,21 +649,21 @@ algorithm
       TplAbsyn.Ident i_ident;
 
     case ( txt,
-           TplAbsyn.IDENT(ident = i_ident) )
+     TplAbsyn.IDENT(ident = i_ident) )
       equation
-        txt = Tpl.writeStr(txt, i_ident);
+  txt = Tpl.writeStr(txt, i_ident);
       then txt;
 
     case ( txt,
-           TplAbsyn.PATH_IDENT(ident = i_ident, path = i_path) )
+     TplAbsyn.PATH_IDENT(ident = i_ident, path = i_path) )
       equation
-        txt = Tpl.writeStr(txt, i_ident);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
-        txt = pathIdent(txt, i_path);
+  txt = Tpl.writeStr(txt, i_ident);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
+  txt = pathIdent(txt, i_path);
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end pathIdent;
@@ -680,15 +680,15 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           true )
+     true )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("public"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("public"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("protected"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("protected"));
       then txt;
   end matchcontinue;
 end mmPublic;
@@ -708,24 +708,24 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_id, i_ts) :: rest )
+     (i_id, i_ts) :: rest )
       equation
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.nextIter(txt);
-        txt = lm_21(txt, rest);
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.nextIter(txt);
+  txt = lm_21(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_21(txt, rest);
+  txt = lm_21(txt, rest);
       then txt;
   end matchcontinue;
 end lm_21;
@@ -760,33 +760,33 @@ algorithm
       TplAbsyn.TypeSignature i_ty;
 
     case ( txt,
-           {},
-           _,
-           _ )
+     {},
+     _,
+     _ )
       then txt;
 
     case ( txt,
-           (i_id, i_ty) :: rest,
-           a_idPrfx,
-           a_typePrfx )
+     (i_id, i_ty) :: rest,
+     a_idPrfx,
+     a_typePrfx )
       equation
-        txt = Tpl.writeStr(txt, a_typePrfx);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = typeSig(txt, i_ty);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, a_idPrfx);
-        txt = Tpl.writeStr(txt, i_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.nextIter(txt);
-        txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
+  txt = Tpl.writeStr(txt, a_typePrfx);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = typeSig(txt, i_ty);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, a_idPrfx);
+  txt = Tpl.writeStr(txt, i_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.nextIter(txt);
+  txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
       then txt;
 
     case ( txt,
-           _ :: rest,
-           a_idPrfx,
-           a_typePrfx )
+     _ :: rest,
+     a_idPrfx,
+     a_typePrfx )
       equation
-        txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
+  txt = lm_23(txt, rest, a_idPrfx, a_typePrfx);
       then txt;
   end matchcontinue;
 end lm_23;
@@ -818,21 +818,21 @@ algorithm
       TplAbsyn.TypeSignature i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = typeSig(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_25(txt, rest);
+  txt = typeSig(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_25(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_25(txt, rest);
+  txt = lm_25(txt, rest);
       then txt;
   end matchcontinue;
 end lm_25;
@@ -853,90 +853,90 @@ algorithm
       TplAbsyn.TypeSignature i_ofType;
 
     case ( txt,
-           TplAbsyn.LIST_TYPE(ofType = i_ofType) )
+     TplAbsyn.LIST_TYPE(ofType = i_ofType) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("list<"));
-        txt = typeSig(txt, i_ofType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("list<"));
+  txt = typeSig(txt, i_ofType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
       then txt;
 
     case ( txt,
-           TplAbsyn.ARRAY_TYPE(ofType = i_ofType) )
+     TplAbsyn.ARRAY_TYPE(ofType = i_ofType) )
       equation
-        txt = typeSig(txt, i_ofType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("[:]"));
+  txt = typeSig(txt, i_ofType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("[:]"));
       then txt;
 
     case ( txt,
-           TplAbsyn.OPTION_TYPE(ofType = i_ofType) )
+     TplAbsyn.OPTION_TYPE(ofType = i_ofType) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Option<"));
-        txt = typeSig(txt, i_ofType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Option<"));
+  txt = typeSig(txt, i_ofType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TUPLE_TYPE(ofTypes = i_ofTypes) )
+     TplAbsyn.TUPLE_TYPE(ofTypes = i_ofTypes) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("tuple<"));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_25(txt, i_ofTypes);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("tuple<"));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_25(txt, i_ofTypes);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
       then txt;
 
     case ( txt,
-           TplAbsyn.NAMED_TYPE(name = i_name) )
+     TplAbsyn.NAMED_TYPE(name = i_name) )
       equation
-        txt = pathIdent(txt, i_name);
+  txt = pathIdent(txt, i_name);
       then txt;
 
     case ( txt,
-           TplAbsyn.STRING_TYPE() )
+     TplAbsyn.STRING_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("String"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("String"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TEXT_TYPE() )
+     TplAbsyn.TEXT_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.Text"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.Text"));
       then txt;
 
     case ( txt,
-           TplAbsyn.STRING_TOKEN_TYPE() )
+     TplAbsyn.STRING_TOKEN_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.StringToken"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.StringToken"));
       then txt;
 
     case ( txt,
-           TplAbsyn.INTEGER_TYPE() )
+     TplAbsyn.INTEGER_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Integer"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Integer"));
       then txt;
 
     case ( txt,
-           TplAbsyn.REAL_TYPE() )
+     TplAbsyn.REAL_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Real"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Real"));
       then txt;
 
     case ( txt,
-           TplAbsyn.BOOLEAN_TYPE() )
+     TplAbsyn.BOOLEAN_TYPE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Boolean"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Boolean"));
       then txt;
 
     case ( txt,
-           TplAbsyn.UNRESOLVED_TYPE(reason = i_reason) )
+     TplAbsyn.UNRESOLVED_TYPE(reason = i_reason) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("#type? "));
-        txt = Tpl.writeStr(txt, i_reason);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" ?#"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("#type? "));
+  txt = Tpl.writeStr(txt, i_reason);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" ?#"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end typeSig;
@@ -955,23 +955,23 @@ algorithm
       String i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = mmEscapeStringConst(txt, i_it, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.nextIter(txt);
-        txt = lm_27(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = mmEscapeStringConst(txt, i_it, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.nextIter(txt);
+  txt = lm_27(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_27(txt, rest);
+  txt = lm_27(txt, rest);
       then txt;
   end matchcontinue;
 end lm_27;
@@ -992,46 +992,46 @@ algorithm
       String i_value;
 
     case ( txt,
-           Tpl.ST_NEW_LINE() )
+     Tpl.ST_NEW_LINE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_NEW_LINE()"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_NEW_LINE()"));
       then txt;
 
     case ( txt,
-           Tpl.ST_STRING(value = i_value) )
+     Tpl.ST_STRING(value = i_value) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_STRING(\""));
-        txt = mmEscapeStringConst(txt, i_value, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_STRING(\""));
+  txt = mmEscapeStringConst(txt, i_value, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
       then txt;
 
     case ( txt,
-           Tpl.ST_LINE(line = i_line) )
+     Tpl.ST_LINE(line = i_line) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_LINE(\""));
-        txt = mmEscapeStringConst(txt, i_line, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_LINE(\""));
+  txt = mmEscapeStringConst(txt, i_line, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
       then txt;
 
     case ( txt,
-           Tpl.ST_STRING_LIST(strList = i_strList, lastHasNewLine = i_lastHasNewLine) )
+     Tpl.ST_STRING_LIST(strList = i_strList, lastHasNewLine = i_lastHasNewLine) )
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("Tpl.ST_STRING_LIST({\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_27(txt, i_strList);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("}, "));
-        txt = Tpl.writeStr(txt, Tpl.booleanString(i_lastHasNewLine));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
+  txt = Tpl.writeTok(txt, Tpl.ST_LINE("Tpl.ST_STRING_LIST({\n"));
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_27(txt, i_strList);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("}, "));
+  txt = Tpl.writeStr(txt, Tpl.booleanString(i_lastHasNewLine));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end mmStringTokenConstant;
@@ -1048,15 +1048,15 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           false )
+     false )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
       then txt;
   end matchcontinue;
 end fun_29;
@@ -1076,45 +1076,45 @@ algorithm
       String i_c;
 
     case ( txt,
-           "\\",
-           _ )
+     "\\",
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\\"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\\"));
       then txt;
 
     case ( txt,
-           "\'",
-           _ )
+     "\'",
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\'"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\'"));
       then txt;
 
     case ( txt,
-           "\"",
-           _ )
+     "\"",
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\""));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\\""));
       then txt;
 
     case ( txt,
-           "\n",
-           a_escapeNewLine )
+     "\n",
+     a_escapeNewLine )
       equation
-        txt = fun_29(txt, a_escapeNewLine);
+  txt = fun_29(txt, a_escapeNewLine);
       then txt;
 
     case ( txt,
-           "\t",
-           _ )
+     "\t",
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\t"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\t"));
       then txt;
 
     case ( txt,
-           i_c,
-           _ )
+     i_c,
+     _ )
       equation
-        txt = Tpl.writeStr(txt, i_c);
+  txt = Tpl.writeStr(txt, i_c);
       then txt;
   end matchcontinue;
 end fun_30;
@@ -1135,23 +1135,23 @@ algorithm
       String i_it;
 
     case ( txt,
-           {},
-           _ )
+     {},
+     _ )
       then txt;
 
     case ( txt,
-           i_it :: rest,
-           a_escapeNewLine )
+     i_it :: rest,
+     a_escapeNewLine )
       equation
-        txt = fun_30(txt, i_it, a_escapeNewLine);
-        txt = lm_31(txt, rest, a_escapeNewLine);
+  txt = fun_30(txt, i_it, a_escapeNewLine);
+  txt = lm_31(txt, rest, a_escapeNewLine);
       then txt;
 
     case ( txt,
-           _ :: rest,
-           a_escapeNewLine )
+     _ :: rest,
+     a_escapeNewLine )
       equation
-        txt = lm_31(txt, rest, a_escapeNewLine);
+  txt = lm_31(txt, rest, a_escapeNewLine);
       then txt;
   end matchcontinue;
 end lm_31;
@@ -1183,21 +1183,21 @@ algorithm
       TplAbsyn.Ident i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = Tpl.writeStr(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_33(txt, rest);
+  txt = Tpl.writeStr(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_33(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_33(txt, rest);
+  txt = lm_33(txt, rest);
       then txt;
   end matchcontinue;
 end lm_33;
@@ -1216,19 +1216,19 @@ algorithm
       TplAbsyn.Ident i_id;
 
     case ( txt,
-           {i_id} )
+     {i_id} )
       equation
-        txt = Tpl.writeStr(txt, i_id);
+  txt = Tpl.writeStr(txt, i_id);
       then txt;
 
     case ( txt,
-           i_args )
+     i_args )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_33(txt, i_args);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_33(txt, i_args);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
   end matchcontinue;
 end fun_34;
@@ -1249,24 +1249,24 @@ algorithm
       TplAbsyn.MMExp i_it;
 
     case ( txt,
-           {},
-           _ )
+     {},
+     _ )
       then txt;
 
     case ( txt,
-           i_it :: rest,
-           a_assignStr )
+     i_it :: rest,
+     a_assignStr )
       equation
-        txt = mmExp(txt, i_it, a_assignStr);
-        txt = Tpl.nextIter(txt);
-        txt = lm_35(txt, rest, a_assignStr);
+  txt = mmExp(txt, i_it, a_assignStr);
+  txt = Tpl.nextIter(txt);
+  txt = lm_35(txt, rest, a_assignStr);
       then txt;
 
     case ( txt,
-           _ :: rest,
-           a_assignStr )
+     _ :: rest,
+     a_assignStr )
       equation
-        txt = lm_35(txt, rest, a_assignStr);
+  txt = lm_35(txt, rest, a_assignStr);
       then txt;
   end matchcontinue;
 end lm_35;
@@ -1292,63 +1292,63 @@ algorithm
       list<TplAbsyn.Ident> i_lhsArgs;
 
     case ( txt,
-           TplAbsyn.MM_ASSIGN(lhsArgs = i_lhsArgs, rhs = i_rhs),
-           a_assignStr )
+     TplAbsyn.MM_ASSIGN(lhsArgs = i_lhsArgs, rhs = i_rhs),
+     a_assignStr )
       equation
-        txt = fun_34(txt, i_lhsArgs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, a_assignStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = mmExp(txt, i_rhs, a_assignStr);
+  txt = fun_34(txt, i_lhsArgs);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, a_assignStr);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = mmExp(txt, i_rhs, a_assignStr);
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_FN_CALL(fnName = i_fnName, args = i_args),
-           a_assignStr )
+     TplAbsyn.MM_FN_CALL(fnName = i_fnName, args = i_args),
+     a_assignStr )
       equation
-        txt = pathIdent(txt, i_fnName);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_35(txt, i_args, a_assignStr);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = pathIdent(txt, i_fnName);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_35(txt, i_args, a_assignStr);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_IDENT(ident = i_ident),
-           _ )
+     TplAbsyn.MM_IDENT(ident = i_ident),
+     _ )
       equation
-        txt = pathIdent(txt, i_ident);
+  txt = pathIdent(txt, i_ident);
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_STR_TOKEN(value = i_value),
-           _ )
+     TplAbsyn.MM_STR_TOKEN(value = i_value),
+     _ )
       equation
-        txt = mmStringTokenConstant(txt, i_value);
+  txt = mmStringTokenConstant(txt, i_value);
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_STRING(value = i_value_1),
-           _ )
+     TplAbsyn.MM_STRING(value = i_value_1),
+     _ )
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = mmEscapeStringConst(txt, i_value_1, false);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = mmEscapeStringConst(txt, i_value_1, false);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
-           TplAbsyn.MM_LITERAL(value = i_value_1),
-           _ )
+     TplAbsyn.MM_LITERAL(value = i_value_1),
+     _ )
       equation
-        txt = Tpl.writeStr(txt, i_value_1);
+  txt = Tpl.writeStr(txt, i_value_1);
       then txt;
 
     case ( txt,
-           _,
-           _ )
+     _,
+     _ )
       then txt;
   end matchcontinue;
 end mmExp;
@@ -1368,23 +1368,23 @@ algorithm
       TplAbsyn.Ident i_field;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_field, i_mexp) :: rest )
+     (i_field, i_mexp) :: rest )
       equation
-        txt = Tpl.writeStr(txt, i_field);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = mmMatchingExp(txt, i_mexp);
-        txt = Tpl.nextIter(txt);
-        txt = lm_37(txt, rest);
+  txt = Tpl.writeStr(txt, i_field);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = mmMatchingExp(txt, i_mexp);
+  txt = Tpl.nextIter(txt);
+  txt = lm_37(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_37(txt, rest);
+  txt = lm_37(txt, rest);
       then txt;
   end matchcontinue;
 end lm_37;
@@ -1403,21 +1403,21 @@ algorithm
       TplAbsyn.MatchingExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmMatchingExp(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_38(txt, rest);
+  txt = mmMatchingExp(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_38(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_38(txt, rest);
+  txt = lm_38(txt, rest);
       then txt;
   end matchcontinue;
 end lm_38;
@@ -1436,21 +1436,21 @@ algorithm
       TplAbsyn.MatchingExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmMatchingExp(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_39(txt, rest);
+  txt = mmMatchingExp(txt, i_it);
+  txt = Tpl.nextIter(txt);
+  txt = lm_39(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_39(txt, rest);
+  txt = lm_39(txt, rest);
       then txt;
   end matchcontinue;
 end lm_39;
@@ -1477,96 +1477,96 @@ algorithm
       TplAbsyn.Ident i_bindIdent;
 
     case ( txt,
-           TplAbsyn.BIND_AS_MATCH(bindIdent = i_bindIdent, matchingExp = i_matchingExp) )
+     TplAbsyn.BIND_AS_MATCH(bindIdent = i_bindIdent, matchingExp = i_matchingExp) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.writeStr(txt, i_bindIdent);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" as "));
-        txt = mmMatchingExp(txt, i_matchingExp);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.writeStr(txt, i_bindIdent);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" as "));
+  txt = mmMatchingExp(txt, i_matchingExp);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           TplAbsyn.BIND_MATCH(bindIdent = i_bindIdent) )
+     TplAbsyn.BIND_MATCH(bindIdent = i_bindIdent) )
       equation
-        txt = Tpl.writeStr(txt, i_bindIdent);
+  txt = Tpl.writeStr(txt, i_bindIdent);
       then txt;
 
     case ( txt,
-           TplAbsyn.RECORD_MATCH(tagName = i_tagName, fieldMatchings = i_fieldMatchings) )
+     TplAbsyn.RECORD_MATCH(tagName = i_tagName, fieldMatchings = i_fieldMatchings) )
       equation
-        txt = pathIdent(txt, i_tagName);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_37(txt, i_fieldMatchings);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = pathIdent(txt, i_tagName);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_37(txt, i_fieldMatchings);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           TplAbsyn.SOME_MATCH(value = i_value) )
+     TplAbsyn.SOME_MATCH(value = i_value) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SOME("));
-        txt = mmMatchingExp(txt, i_value);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("SOME("));
+  txt = mmMatchingExp(txt, i_value);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           TplAbsyn.NONE_MATCH() )
+     TplAbsyn.NONE_MATCH() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("NONE()"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("NONE()"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TUPLE_MATCH(tupleArgs = i_tupleArgs) )
+     TplAbsyn.TUPLE_MATCH(tupleArgs = i_tupleArgs) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_38(txt, i_tupleArgs);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_38(txt, i_tupleArgs);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     case ( txt,
-           TplAbsyn.LIST_MATCH(listElts = i_listElts) )
+     TplAbsyn.LIST_MATCH(listElts = i_listElts) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_39(txt, i_listElts);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_39(txt, i_listElts);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
       then txt;
 
     case ( txt,
-           TplAbsyn.LIST_CONS_MATCH(head = i_head, rest = i_rest) )
+     TplAbsyn.LIST_CONS_MATCH(head = i_head, rest = i_rest) )
       equation
-        txt = mmMatchingExp(txt, i_head);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" :: "));
-        txt = mmMatchingExp(txt, i_rest);
+  txt = mmMatchingExp(txt, i_head);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" :: "));
+  txt = mmMatchingExp(txt, i_rest);
       then txt;
 
     case ( txt,
-           TplAbsyn.STRING_MATCH(value = i_value_1) )
+     TplAbsyn.STRING_MATCH(value = i_value_1) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = mmEscapeStringConst(txt, i_value_1, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = mmEscapeStringConst(txt, i_value_1, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
     case ( txt,
-           TplAbsyn.LITERAL_MATCH(value = i_value_1) )
+     TplAbsyn.LITERAL_MATCH(value = i_value_1) )
       equation
-        txt = Tpl.writeStr(txt, i_value_1);
+  txt = Tpl.writeStr(txt, i_value_1);
       then txt;
 
     case ( txt,
-           TplAbsyn.REST_MATCH() )
+     TplAbsyn.REST_MATCH() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end mmMatchingExp;
@@ -1585,22 +1585,22 @@ algorithm
       TplAbsyn.MMExp i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmExp(txt, i_it, "=");
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.nextIter(txt);
-        txt = lm_41(txt, rest);
+  txt = mmExp(txt, i_it, "=");
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.nextIter(txt);
+  txt = lm_41(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_41(txt, rest);
+  txt = lm_41(txt, rest);
       then txt;
   end matchcontinue;
 end lm_41;
@@ -1628,13 +1628,13 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           false )
+     false )
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("default "));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("default "));
       then txt;
   end matchcontinue;
 end fun_43;
@@ -1654,21 +1654,21 @@ algorithm
       TplAbsyn.Ident i_id;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_id, i_tinfo) :: rest )
+     (i_id, i_tinfo) :: rest )
       equation
-        txt = sASTDefType(txt, i_id, i_tinfo);
-        txt = Tpl.nextIter(txt);
-        txt = lm_44(txt, rest);
+  txt = sASTDefType(txt, i_id, i_tinfo);
+  txt = Tpl.nextIter(txt);
+  txt = lm_44(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_44(txt, rest);
+  txt = lm_44(txt, rest);
       then txt;
   end matchcontinue;
 end lm_44;
@@ -1689,37 +1689,37 @@ algorithm
       Boolean i_isDefault;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           TplAbsyn.AST_DEF(isDefault = i_isDefault, importPackage = i_importPackage, types = i_types) :: rest )
+     TplAbsyn.AST_DEF(isDefault = i_isDefault, importPackage = i_importPackage, types = i_types) :: rest )
       equation
-        txt = fun_43(txt, i_isDefault);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("absyn "));
-        txt = pathIdent(txt, i_importPackage);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING_LIST({
-                                                                     "\n",
-                                                                     "\n"
-                                                                 }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_44(txt, i_types);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
-        txt = pathIdent(txt, i_importPackage);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = Tpl.nextIter(txt);
-        txt = lm_45(txt, rest);
+  txt = fun_43(txt, i_isDefault);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("absyn "));
+  txt = pathIdent(txt, i_importPackage);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING_LIST({
+                                                               "\n",
+                                                               "\n"
+                                                           }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_44(txt, i_types);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+  txt = pathIdent(txt, i_importPackage);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = Tpl.nextIter(txt);
+  txt = lm_45(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_45(txt, rest);
+  txt = lm_45(txt, rest);
       then txt;
   end matchcontinue;
 end lm_45;
@@ -1739,21 +1739,21 @@ algorithm
       TplAbsyn.TemplateDef i_def;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_id, i_def) :: rest )
+     (i_id, i_def) :: rest )
       equation
-        txt = sTemplateDef(txt, i_def, i_id);
-        txt = Tpl.nextIter(txt);
-        txt = lm_46(txt, rest);
+  txt = sTemplateDef(txt, i_def, i_id);
+  txt = Tpl.nextIter(txt);
+  txt = lm_46(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_46(txt, rest);
+  txt = lm_46(txt, rest);
       then txt;
   end matchcontinue;
 end lm_46;
@@ -1773,32 +1773,32 @@ algorithm
       TplAbsyn.PathIdent i_name;
 
     case ( txt,
-           TplAbsyn.TEMPL_PACKAGE(name = i_name, astDefs = i_astDefs, templateDefs = i_templateDefs) )
+     TplAbsyn.TEMPL_PACKAGE(name = i_name, astDefs = i_astDefs, templateDefs = i_templateDefs) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("spackage "));
-        txt = pathIdent(txt, i_name);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_45(txt, i_astDefs);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING_LIST({
-                                                                     "\n",
-                                                                     "\n"
-                                                                 }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_46(txt, i_templateDefs);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
-        txt = pathIdent(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("spackage "));
+  txt = pathIdent(txt, i_name);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_45(txt, i_astDefs);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING_LIST({
+                                                               "\n",
+                                                               "\n"
+                                                           }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_46(txt, i_templateDefs);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+  txt = pathIdent(txt, i_name);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end sTemplPackage;
@@ -1818,21 +1818,21 @@ algorithm
       TplAbsyn.Ident i_rid;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_rid, i_tids) :: rest )
+     (i_rid, i_tids) :: rest )
       equation
-        txt = sRecordTypeDef(txt, i_rid, i_tids);
-        txt = Tpl.nextIter(txt);
-        txt = lm_48(txt, rest);
+  txt = sRecordTypeDef(txt, i_rid, i_tids);
+  txt = Tpl.nextIter(txt);
+  txt = lm_48(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_48(txt, rest);
+  txt = lm_48(txt, rest);
       then txt;
   end matchcontinue;
 end lm_48;
@@ -1852,25 +1852,25 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_aid, i_ts) :: rest )
+     (i_aid, i_ts) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("input "));
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_aid);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = lm_49(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("input "));
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_aid);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = lm_49(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_49(txt, rest);
+  txt = lm_49(txt, rest);
       then txt;
   end matchcontinue;
 end lm_49;
@@ -1890,25 +1890,25 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_aid, i_ts) :: rest )
+     (i_aid, i_ts) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("output "));
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_aid);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = lm_50(txt, rest);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("output "));
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_aid);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = lm_50(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_50(txt, rest);
+  txt = lm_50(txt, rest);
       then txt;
   end matchcontinue;
 end lm_50;
@@ -1933,73 +1933,73 @@ algorithm
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> i_recTags;
 
     case ( txt,
-           TplAbsyn.TI_UNION_TYPE(recTags = i_recTags),
-           a_id )
+     TplAbsyn.TI_UNION_TYPE(recTags = i_recTags),
+     a_id )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("uniontype "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_48(txt, i_recTags);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("uniontype "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt = lm_48(txt, i_recTags);
+  txt = Tpl.popIter(txt);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TI_RECORD_TYPE(fields = i_fields),
-           a_id )
+     TplAbsyn.TI_RECORD_TYPE(fields = i_fields),
+     a_id )
       equation
-        txt = sRecordTypeDef(txt, a_id, i_fields);
+  txt = sRecordTypeDef(txt, a_id, i_fields);
       then txt;
 
     case ( txt,
-           TplAbsyn.TI_ALIAS_TYPE(aliasType = i_aliasType),
-           a_id )
+     TplAbsyn.TI_ALIAS_TYPE(aliasType = i_aliasType),
+     a_id )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("type "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = typeSig(txt, i_aliasType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("type "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = typeSig(txt, i_aliasType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TI_FUN_TYPE(inArgs = i_inArgs, outArgs = i_outArgs),
-           a_id )
+     TplAbsyn.TI_FUN_TYPE(inArgs = i_inArgs, outArgs = i_outArgs),
+     a_id )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("function "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = lm_49(txt, i_inArgs);
-        txt = Tpl.softNewLine(txt);
-        txt = lm_50(txt, i_outArgs);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("function "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = lm_49(txt, i_inArgs);
+  txt = Tpl.softNewLine(txt);
+  txt = lm_50(txt, i_outArgs);
+  txt = Tpl.softNewLine(txt);
+  txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           TplAbsyn.TI_CONST_TYPE(constType = i_constType),
-           a_id )
+     TplAbsyn.TI_CONST_TYPE(constType = i_constType),
+     a_id )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("constant "));
-        txt = typeSig(txt, i_constType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, a_id);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("constant "));
+  txt = typeSig(txt, i_constType);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, a_id);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
-           _,
-           _ )
+     _,
+     _ )
       then txt;
   end matchcontinue;
 end fun_51;
@@ -2029,24 +2029,24 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_fid, i_ts) :: rest )
+     (i_fid, i_ts) :: rest )
       equation
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_fid);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = lm_53(txt, rest);
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_fid);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = lm_53(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_53(txt, rest);
+  txt = lm_53(txt, rest);
       then txt;
   end matchcontinue;
 end lm_53;
@@ -2064,16 +2064,16 @@ algorithm
       TplAbsyn.TypedIdents i_fields;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_fields )
+     i_fields )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = lm_53(txt, i_fields);
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+  txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+  txt = lm_53(txt, i_fields);
+  txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
 end fun_54;
@@ -2109,17 +2109,17 @@ algorithm
       TplAbsyn.StringToken i_value;
 
     case ( txt,
-           TplAbsyn.STR_TOKEN_DEF(value = i_value),
-           a_templId )
+     TplAbsyn.STR_TOKEN_DEF(value = i_value),
+     a_templId )
       equation
-        txt = Tpl.writeStr(txt, a_templId);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = sConstStringToken(txt, i_value);
+  txt = Tpl.writeStr(txt, a_templId);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+  txt = sConstStringToken(txt, i_value);
       then txt;
 
     case ( txt,
-           _,
-           _ )
+     _,
+     _ )
       then txt;
   end matchcontinue;
 end sTemplateDef;
@@ -2138,20 +2138,20 @@ algorithm
       String i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmEscapeStringConst(txt, i_it, false);
-        txt = lm_57(txt, rest);
+  txt = mmEscapeStringConst(txt, i_it, false);
+  txt = lm_57(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_57(txt, rest);
+  txt = lm_57(txt, rest);
       then txt;
   end matchcontinue;
 end lm_57;
@@ -2170,20 +2170,20 @@ algorithm
       String i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmEscapeStringConst(txt, i_it, true);
-        txt = lm_58(txt, rest);
+  txt = mmEscapeStringConst(txt, i_it, true);
+  txt = lm_58(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_58(txt, rest);
+  txt = lm_58(txt, rest);
       then txt;
   end matchcontinue;
 end lm_58;
@@ -2202,20 +2202,20 @@ algorithm
       String i_it;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           i_it :: rest )
+     i_it :: rest )
       equation
-        txt = mmEscapeStringConst(txt, i_it, true);
-        txt = lm_59(txt, rest);
+  txt = mmEscapeStringConst(txt, i_it, true);
+  txt = lm_59(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_59(txt, rest);
+  txt = lm_59(txt, rest);
       then txt;
   end matchcontinue;
 end lm_59;
@@ -2234,19 +2234,19 @@ algorithm
       list<String> a_sl;
 
     case ( txt,
-           false,
-           a_sl )
+     false,
+     a_sl )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = lm_58(txt, a_sl);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = lm_58(txt, a_sl);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
     case ( txt,
-           _,
-           a_sl )
+     _,
+     a_sl )
       equation
-        txt = lm_59(txt, a_sl);
+  txt = lm_59(txt, a_sl);
       then txt;
   end matchcontinue;
 end fun_60;
@@ -2266,22 +2266,22 @@ algorithm
       Boolean ret_0;
 
     case ( txt,
-           false,
-           a_sl )
+     false,
+     a_sl )
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = lm_57(txt, a_sl);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.popBlock(txt);
+  txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = lm_57(txt, a_sl);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
-           _,
-           a_sl )
+     _,
+     a_sl )
       equation
-        ret_0 = TplAbsyn.canBeEscapedUnquoted(a_sl);
-        txt = fun_60(txt, ret_0, a_sl);
+  ret_0 = TplAbsyn.canBeEscapedUnquoted(a_sl);
+  txt = fun_60(txt, ret_0, a_sl);
       then txt;
   end matchcontinue;
 end fun_61;
@@ -2302,36 +2302,36 @@ algorithm
       Boolean ret_0;
 
     case ( txt,
-           Tpl.ST_NEW_LINE() )
+     Tpl.ST_NEW_LINE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
       then txt;
 
     case ( txt,
-           Tpl.ST_STRING(value = i_value) )
+     Tpl.ST_STRING(value = i_value) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = mmEscapeStringConst(txt, i_value, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = mmEscapeStringConst(txt, i_value, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
     case ( txt,
-           Tpl.ST_LINE(line = i_line) )
+     Tpl.ST_LINE(line = i_line) )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = mmEscapeStringConst(txt, i_line, true);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+  txt = mmEscapeStringConst(txt, i_line, true);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
     case ( txt,
-           Tpl.ST_STRING_LIST(strList = i_sl) )
+     Tpl.ST_STRING_LIST(strList = i_sl) )
       equation
-        ret_0 = TplAbsyn.canBeOnOneLine(i_sl);
-        txt = fun_61(txt, ret_0, i_sl);
+  ret_0 = TplAbsyn.canBeOnOneLine(i_sl);
+  txt = fun_61(txt, ret_0, i_sl);
       then txt;
 
     case ( txt,
-           _ )
+     _ )
       then txt;
   end matchcontinue;
 end sConstStringToken;
@@ -2351,23 +2351,23 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_fid, i_ts) :: rest )
+     (i_fid, i_ts) :: rest )
       equation
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeStr(txt, i_fid);
-        txt = Tpl.nextIter(txt);
-        txt = lm_63(txt, rest);
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = Tpl.writeStr(txt, i_fid);
+  txt = Tpl.nextIter(txt);
+  txt = lm_63(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_63(txt, rest);
+  txt = lm_63(txt, rest);
       then txt;
   end matchcontinue;
 end lm_63;
@@ -2414,23 +2414,23 @@ algorithm
       TplAbsyn.TypeSignature i_ts;
 
     case ( txt,
-           {} )
+     {} )
       then txt;
 
     case ( txt,
-           (i_mexp, i_ts) :: rest )
+     (i_mexp, i_ts) :: rest )
       equation
-        txt = typeSig(txt, i_ts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = mmExp(txt, i_mexp, "=");
-        txt = Tpl.nextIter(txt);
-        txt = lm_66(txt, rest);
+  txt = typeSig(txt, i_ts);
+  txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+  txt = mmExp(txt, i_mexp, "=");
+  txt = Tpl.nextIter(txt);
+  txt = lm_66(txt, rest);
       then txt;
 
     case ( txt,
-           _ :: rest )
+     _ :: rest )
       equation
-        txt = lm_66(txt, rest);
+  txt = lm_66(txt, rest);
       then txt;
   end matchcontinue;
 end lm_66;

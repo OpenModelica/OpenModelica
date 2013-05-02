@@ -30,7 +30,7 @@
  */
 
 encapsulated package System
-" file:         System.mo
+" file:   System.mo
   package:     System
   description: This file contains runtime system specific function, which are implemented in C.
 
@@ -777,9 +777,9 @@ function getTimerStackIndex
      index 0
     (start1, index 1
        (start2, index 2
-          (start3, index 3
-           stop3), index 2
-        stop2) index 1
+    (start3, index 3
+     stop3), index 2
+  stop2) index 1
      stop1) index 0"
   output Integer stackIndex;
   external "C" stackIndex=System_getTimerStackIndex() annotation(Library = "omcruntime");

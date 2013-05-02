@@ -14,7 +14,7 @@
 ********************************/
 
 extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot,
-                      double *b, long int *ldb, long int *idid);
+                double *b, long int *ldb, long int *idid);
 
 
 
@@ -34,9 +34,9 @@ extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, do
 *
 *  1. If FACT = 'E', real scaling factors are computed to equilibrate
 *     the system:
-*        TRANS = 'N':  diag(R)*A*diag(C)     *inv(diag(C))*X = diag(R)*B
-*        TRANS = 'T': (diag(R)*A*diag(C))**T *inv(diag(R))*X = diag(C)*B
-*        TRANS = 'C': (diag(R)*A*diag(C))**H *inv(diag(R))*X = diag(C)*B
+*  TRANS = 'N':  diag(R)*A*diag(C)     *inv(diag(C))*X = diag(R)*B
+*  TRANS = 'T': (diag(R)*A*diag(C))**T *inv(diag(R))*X = diag(C)*B
+*  TRANS = 'C': (diag(R)*A*diag(C))**H *inv(diag(R))*X = diag(C)*B
 *     Whether or not the system will be equilibrated depends on the
 *     scaling of the matrix A, but if equilibration is used, A is
 *     overwritten by diag(R)*A*diag(C) and B by diag(R)*B (if TRANS='N')
@@ -44,7 +44,7 @@ extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, do
 *
 *  2. If FACT = 'N' or 'E', the LU decomposition is used to factor the
 *     matrix A (after equilibration if FACT = 'E') as
-*        A = P * L * U,
+*  A = P * L * U,
 *     where P is a permutation matrix, L is a unit lower triangular
 *     matrix, and U is upper triangular.
 *
@@ -68,11 +68,11 @@ extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, do
 
 ********************************/
 extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs,
-                       double *J, long int *ldj, double *Jscal, long int *ldjscal,
-                       double *pivot, char *equilibriate, double *r, double *c,
-                       double *b, long int *ldb, double *x, long int *ldx,
-                       double* rcond, double *forwerr, double *backerr,
-                       double* work, long int *iwork, long int *idid);
+                 double *J, long int *ldj, double *Jscal, long int *ldjscal,
+                 double *pivot, char *equilibriate, double *r, double *c,
+                 double *b, long int *ldb, double *x, long int *ldx,
+                 double* rcond, double *forwerr, double *backerr,
+                 double* work, long int *iwork, long int *idid);
 
 
 
@@ -94,8 +94,8 @@ extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs,
 ********************************/
 
 extern "C" void DGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA,
-            double *S, double *U, long int *LDU, double *VT, long int *LDVT,
-            double *WORK, long int *LWORK, long int *INFO);
+      double *S, double *U, long int *LDU, double *VT, long int *LDVT,
+      double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -109,8 +109,8 @@ using the singular value decomposition (SVD) of A. A is an M-by-N
 matrix which may be rank-deficient.
 ********************************/
 extern "C" void DGELSS(long int *M, long int *N, long int *NRHS, double *A, long int *LDA,
-            double *B, long int *LDB, double *S, double *RCOND, long int *RANK,
-            double *WORK, long int *LWORK, long int *INFO);
+      double *B, long int *LDB, double *S, double *RCOND, long int *RANK,
+      double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -131,8 +131,8 @@ The computed eigenvectors are normalized to have Euclidean norm
 equal to 1 and largest component real.
 ********************************/
 extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int *LDA,
-           double *WR, double *WI, double *VL, long int *LDVL, double *VR, long int *LDVR,
-           double *WORK, long int *LWORK, long int *INFO);
+     double *WR, double *WI, double *VL, long int *LDVL, double *VR, long int *LDVR,
+     double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -155,8 +155,8 @@ extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int
 *  Note that the routine returns V**T, not V.
 ********************************/
 extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA,
-            double *S, double *U, long int *LDU, double *VT, long int *LDVT,
-            double *WORK, long int *LWORK, long int *INFO);
+      double *S, double *U, long int *LDU, double *VT, long int *LDVT,
+      double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -174,12 +174,12 @@ extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, doubl
 *  The right eigenvector v(j) corresponding to the eigenvalue lambda(j)
 *  of (A,B) satisfies
 *
-*                   A * v(j) = lambda(j) * B * v(j).
+*             A * v(j) = lambda(j) * B * v(j).
 *
 *  The left eigenvector u(j) corresponding to the eigenvalue lambda(j)
 *  of (A,B) satisfies
 *
-*                   u(j)**H * A  = lambda(j) * u(j)**H * B .
+*             u(j)**H * A  = lambda(j) * u(j)**H * B .
 *
 *  where u(j)**H is the conjugate-transpose of u(j).
 ********************************/

@@ -124,7 +124,7 @@ match exp
     let case_str = (cases |> c => dumpMatchCase(c) ;separator="\n")
     <<
     <%match_ty%> (<%inputs_str%>)
-        <%case_str%>
+  <%case_str%>
       end <%match_ty%>
     >>
   case BOX(__) then
@@ -218,9 +218,9 @@ template dumpOperand(DAE.Exp operand, DAE.Exp operation, Boolean lhs)
       '(<%op_str%>)'
     else
       if intLt(Expression.priority(operation, lhs), Expression.priority(operand, lhs)) then
-        '(<%op_str%>)'
+  '(<%op_str%>)'
       else
-        op_str
+  op_str
 end dumpOperand;
 
 template dumpBinOp(DAE.Operator op)
@@ -403,9 +403,9 @@ match mcase
     <<
     case (<%pat_str%>)
       algorithm
-        <%body_str%>
+  <%body_str%>
       then
-        <%res_str%>;
+  <%res_str%>;
     >>
   case CASE(__) then
     let pat_str = dumpPatterns(patterns)
@@ -414,9 +414,9 @@ match mcase
     <<
     case (<%pat_str%>)
       algorithm
-        <%body_str%>
+  <%body_str%>
       then
-        fail();
+  fail();
     >>
 end dumpMatchCase;
 
@@ -564,7 +564,7 @@ match exp
     let case_str = (cases |> c => dumpMatchCase(c) ;separator="\n")
     <<
     <%match_ty%> (<%inputs_str%>)
-        <%case_str%>
+  <%case_str%>
       end <%match_ty%>
     >>
   case BOX(__) then

@@ -456,7 +456,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i] + nlp->dt*derx[i]) -
-             (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
+       (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
 
     flow[i] = xlow[i] - x1[i] + nlp->min[i];
     fup[i] = xup[i] - x1[i] +  nlp->max[i];
@@ -466,7 +466,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0, k=nlp->nStates; i<nlp->nStates; i++, k++)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
-                (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
+          (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
 
     flow[k] = xlow[k] - x2[i] + nlp->min[i];
     fup[k] = xup[k] -  x2[i] + nlp->max[i];
@@ -476,7 +476,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<nlp->nStates;i++,k++)
   {
     feq[k] =  (nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i] + nlp->dt*derx[i]) -
-                 (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
+           (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
 
     flow[k] = xlow[k] - x3[i] + nlp->min[i];
     fup[k] = xup[k] - x3[i] + nlp->max[i];
@@ -513,7 +513,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->dt*derx[i]) -
-             (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
+       (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
     flow[i] = xlow[i] - x1[i] + nlp->min[i];
     fup[i] = xup[i] - x1[i] +  nlp->max[i];
   }
@@ -522,7 +522,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   for(i = 0, k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
-                (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i]);
+          (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i]);
     flow[k] = xlow[k] - x2[i] + nlp->min[i];
     fup[k] = xup[k] -  x2[i] + nlp->max[i];
   }
@@ -698,11 +698,11 @@ int kinsolOde(void* ode)
   KINODE *kinOde = (KINODE*) ode;
   KDATAODE *kData = kinOde->kData;
   initKinsol(kinOde);
-  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
-                                kData->x,              /* initial guess on input; solution vector */
-                                kData->glstr,          /* global stragegy choice */
-                                kData->sVars,          /* scaling vector, for the variable cc */
-                                kData->sEqns );
+  kData->error_code = KINSol( kData->kmem,     /* KINSol memory block */
+                          kData->x,              /* initial guess on input; solution vector */
+                          kData->glstr,          /* global stragegy choice */
+                          kData->sVars,          /* scaling vector, for the variable cc */
+                          kData->sEqns );
 
   return kData->error_code;
 }

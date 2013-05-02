@@ -159,9 +159,9 @@ mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p
       slot->start = (modelica_metatype*)realloc(slot->start, (slot->limit + 1024) * sizeof(modelica_metatype));
       if (!slot->start)
       {
-        fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(modelica_metatype)*(slot->limit + 1024));
-        fflush(NULL);
-        assert(slot->start != 0);
+  fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(modelica_metatype)*(slot->limit + 1024));
+  fflush(NULL);
+  assert(slot->start != 0);
       }
       slot->limit += 1024;
     }
@@ -180,9 +180,9 @@ mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p
       slot->start = (mmc_GC_free_slot_type*)realloc(slot->start, (slot->limit + 1024) * sizeof(mmc_GC_free_slot_type));
       if (!slot->start)
       {
-        fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_free_slot_type)*(slot->limit + 1024));
-        fflush(NULL);
-        assert(slot->start != 0);
+  fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_free_slot_type)*(slot->limit + 1024));
+  fflush(NULL);
+  assert(slot->start != 0);
       }
       slot->limit += 1024;
     }
@@ -256,14 +256,14 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
       slot = &free->szSmall[i];
       if (slot->current > 0)
       {
-        slot->current--;
-        p = slot->start[slot->current];
-        if (i > size)
-        {
-          size_t sz = i - size;
-          free = list_add(free, (char*)p + sz*MMC_SIZE_META, sz);
-        }
-        return p;
+  slot->current--;
+  p = slot->start[slot->current];
+  if (i > size)
+  {
+    size_t sz = i - size;
+    free = list_add(free, (char*)p + sz*MMC_SIZE_META, sz);
+  }
+  return p;
       }
     }
     */
@@ -277,21 +277,21 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
     {
       if (slot->start[i].size >= size)
       {
-        p = slot->start[i].start;
-        if (slot->start[i].size > size) /* something to return to the list */
-        {
-          slot->start[i].start = (void*)(((char*)slot->start[i].start) + MMC_WORDS_TO_BYTES(size));
-          slot->start[i].size = slot->start[i].size - size;
+  p = slot->start[i].start;
+  if (slot->start[i].size > size) /* something to return to the list */
+  {
+    slot->start[i].start = (void*)(((char*)slot->start[i].start) + MMC_WORDS_TO_BYTES(size));
+    slot->start[i].size = slot->start[i].size - size;
 
-          MMC_TAG_AS_FREE_OBJECT(slot->start[i].start, slot->start[i].size - 1);
-        }
-        else /* equal, remove slot! */
-        {
-          slot->current--;
-          /* move the last one in its place */
-          slot->start[i] = slot->start[slot->current];
-        }
-        break;
+    MMC_TAG_AS_FREE_OBJECT(slot->start[i].start, slot->start[i].size - 1);
+  }
+  else /* equal, remove slot! */
+  {
+    slot->current--;
+    /* move the last one in its place */
+    slot->start[i] = slot->start[slot->current];
+  }
+  break;
       }
     }
   }
@@ -414,7 +414,7 @@ mmc_GC_pages_type pages_create(size_t default_pages_size, size_t default_page_si
   if (!pages.start)
   {
     fprintf(stderr, "not enough memory (%lu) to allocate the pages!\n",
-        (long unsigned int)sz);
+  (long unsigned int)sz);
     fflush(NULL);
     assert(pages.start != 0);
   }
@@ -440,7 +440,7 @@ mmc_GC_page_type page_create(size_t default_page_size, size_t default_free_slots
   if (!page.start)
   {
     fprintf(stderr, "not enough memory (%lu) to allocate the pages!\n",
-        (long unsigned int)default_page_size);
+  (long unsigned int)default_page_size);
     fflush(NULL);
     assert(page.start != 0);
   }
@@ -483,7 +483,7 @@ mmc_GC_pages_type pages_increase(mmc_GC_pages_type pages, size_t default_pages_s
   if (!pages.start)
   {
     fprintf(stderr, "not enough memory (%lu) to re-allocate the pages array!\n",
-        (long unsigned int)sz);
+  (long unsigned int)sz);
     fflush(NULL);
     assert(pages.start != 0);
   }
@@ -525,7 +525,7 @@ mmc_GC_pages_type pages_decrease(mmc_GC_pages_type pages, size_t default_pages_s
   if (!pages.start)
   {
     fprintf(stderr, "not enough memory (%lu) to re-allocate the pages array!\n",
-        (long unsigned int)(sz * sizeof(void*)));
+  (long unsigned int)(sz * sizeof(void*)));
     fflush(NULL);
     assert(pages.start != 0);
   }
@@ -607,10 +607,10 @@ int is_in_free(modelica_metatype p)
     {
       for (j = 0; j < page.free->szSmall[i].current; j++)
       {
-        if (is_in_range(p, page.free->szSmall[i].start[j], sizeof(modelica_metatype)*i))
-        {
-          return 1;
-        }
+  if (is_in_range(p, page.free->szSmall[i].start[j], sizeof(modelica_metatype)*i))
+  {
+    return 1;
+  }
       }
     }
 
@@ -619,7 +619,7 @@ int is_in_free(modelica_metatype p)
     {
       if (is_in_range(p, page.free->szLarge.start[i].start, page.free->szLarge.start[i].size * sizeof(modelica_metatype)))
       {
-        return 1;
+  return 1;
       }
     }
   }

@@ -30,7 +30,7 @@
  */
 
 encapsulated package SimCodeMain
-" file:        SimCodeMain.mo
+" file:  SimCodeMain.mo
   package:     SimCodeMain
   description: Code generation using Susan templates
 
@@ -224,36 +224,36 @@ algorithm
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
     case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
-        /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
-        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        funcs = Env.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
-        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
-          resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
+  /* calculate stuff that we need to create SimCode data structure */
+  System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
+  //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
+  (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+  timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
+  System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+  funcs = Env.getFunctionTree(cache);
+  dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+  dlow = BackendDAECreate.lower(dae,cache,env);
+  dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
+  Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
+  (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
+    generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+  resultValues =
+  {("timeTemplates",Values.REAL(timeTemplates)),
+    ("timeSimCode",  Values.REAL(timeSimCode)),
+    ("timeBackend",  Values.REAL(timeBackend)),
+    ("timeFrontend", Values.REAL(timeFrontend))
+    };
+    resstr = Absyn.pathStringNoQual(className);
+  resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
-        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+  (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_, _)
       equation
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+  resstr = Absyn.pathStringNoQual(className);
+  resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
+  Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
-        fail();
+  fail();
   end matchcontinue;
 end translateModelFMU;
 
@@ -293,36 +293,36 @@ algorithm
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
     case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
-        /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
-        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        funcs = Env.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
-        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
-          generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
-          resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to XML"});
+  /* calculate stuff that we need to create SimCode data structure */
+  System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
+  //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
+  (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+  timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
+  System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+  funcs = Env.getFunctionTree(cache);
+  dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+  dlow = BackendDAECreate.lower(dae,cache,env);
+  dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
+  Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
+  (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
+    generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+  resultValues =
+  {("timeTemplates",Values.REAL(timeTemplates)),
+    ("timeSimCode",  Values.REAL(timeSimCode)),
+    ("timeBackend",  Values.REAL(timeBackend)),
+    ("timeFrontend", Values.REAL(timeFrontend))
+    };
+    resstr = Absyn.pathStringNoQual(className);
+  resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to XML"});
       then
-        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+  (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_, _)
       equation
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+  resstr = Absyn.pathStringNoQual(className);
+  resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
+  Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
-        fail();
+  fail();
   end matchcontinue;
 end translateModelXML;
 
@@ -393,49 +393,49 @@ algorithm
 
     case (_,_,"CSharp")
       equation
-        Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
+  Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
       then ();
    case (_,_,"Cpp")
       equation
-        Tpl.tplNoret(CodegenCpp.translateModel, simCode);
+  Tpl.tplNoret(CodegenCpp.translateModel, simCode);
       then ();
    case (_,_,"Adevs")
       equation
-        Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
+  Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
       then ();
     case (_,outIndexedBackendDAE,"QSS")
 /* as BackendDAE.DAE(eqs={ BackendDAE.EQSYSTEM( m=SOME(incidenceMatrix) ,mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents)*/
       equation
-        Debug.trace("Generating code for QSS solver\n");
-        (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE,simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
-        Tpl.tplNoret2(CodegenQSS.translateModel, sc,qssInfo);
+  Debug.trace("Generating code for QSS solver\n");
+  (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE,simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
+  Tpl.tplNoret2(CodegenQSS.translateModel, sc,qssInfo);
       then ();
     case (_,_,"C")
       equation
-        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
-        Tpl.tplNoret(CodegenC.translateModel, simCode);
+  Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
+  Tpl.tplNoret(CodegenC.translateModel, simCode);
       then ();
     case (_,_,"Dump")
       equation
-        // Yes, do this better later on...
-        str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);
-        0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
-        print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
+  // Yes, do this better later on...
+  str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);
+  0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
+  print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
       then ();
     case (_,_,"XML")
       equation
-        Tpl.tplNoret(CodegenXML.translateModel, simCode);
+  Tpl.tplNoret(CodegenXML.translateModel, simCode);
       then ();
     case (_,_,"Java")
       equation
-        Tpl.tplNoret(CodegenJava.translateModel, simCode);
+  Tpl.tplNoret(CodegenJava.translateModel, simCode);
       then ();
     case (_,_,"None")
       then ();
     case (_,_,_)
       equation
-        str = "Unknown template target: " +& target;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "Unknown template target: " +& target;
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
 end callTargetTemplates;
@@ -451,17 +451,17 @@ algorithm
 
     case (_,"C")
       equation
-        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
-        Tpl.tplNoret(CodegenFMU.translateModel, simCode);
+  Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
+  Tpl.tplNoret(CodegenFMU.translateModel, simCode);
       then ();
     case (_,"Cpp")
       equation
-        Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
+  Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
       then ();
     case (_,_)
       equation
-        str = "Unknown template target: " +& target;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+  str = "Unknown template target: " +& target;
+  Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
 end callTargetTemplatesFMU;
@@ -510,30 +510,30 @@ algorithm
 
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
       equation
-        // calculate stuff that we need to create SimCode data structure
-        System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
-        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
-          generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
+  // calculate stuff that we need to create SimCode data structure
+  System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
+  (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+  timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
+  System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+  dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+  dlow = BackendDAECreate.lower(dae,cache,env);
+  dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
+  (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
+    generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
+  resultValues =
+  {("timeTemplates",Values.REAL(timeTemplates)),
+    ("timeSimCode",  Values.REAL(timeSimCode)),
+    ("timeBackend",  Values.REAL(timeBackend)),
+    ("timeFrontend", Values.REAL(timeFrontend))
+    };
       then
-        (cache,st,indexed_dlow_1,libs,file_dir, resultValues);
+  (cache,st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_,_,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+  true = Flags.isSet(Flags.FAILTRACE);
+  resstr = Absyn.pathStringNoQual(className);
+  resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
+  Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then fail();
   end matchcontinue;
 end translateModel;
@@ -563,27 +563,27 @@ algorithm
 
     case (_, _, SOME(daeMainFunction), daeElements, _, includes)
       equation
-        // Create SimCode.FunctionCode
-        (daeElements,literals) = SimCodeUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        SimCodeUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
-        fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
-        // Generate code
-        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
+  // Create SimCode.FunctionCode
+  (daeElements,literals) = SimCodeUtil.findLiterals(daeMainFunction::daeElements);
+  (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+  SimCodeUtil.checkValidMainFunction(name, mainFunction);
+  makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
+  fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
+  // Generate code
+  _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
       then
-        ();
+  ();
     case (_, _, NONE(), daeElements, _, includes)
       equation
-        // Create SimCode.FunctionCode
-        (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
-        fnCode = SimCode.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
-        // Generate code
-        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
+  // Create SimCode.FunctionCode
+  (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
+  (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+  makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
+  fnCode = SimCode.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
+  // Generate code
+  _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
       then
-        ();
+  ();
   end match;
 end translateFunctions;
 

@@ -385,7 +385,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #endif
       fclose(plotCommands);
       if(0 != system(buf)) {
-        WARNING1(LOG_UTIL, "Plot command failed: %s\n", buf);
+  WARNING1(LOG_UTIL, "Plot command failed: %s\n", buf);
       }
     }
 #else

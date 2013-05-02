@@ -48,15 +48,15 @@ static integer c__3 = 3;
 /*     and an n-vector v, the problem is to determine an */
 /*     orthogonal matrix q such that */
 
-/*                   t */
-/*           (s + u*v )*q */
+/*             t */
+/*     (s + u*v )*q */
 
 /*     is again lower trapezoidal. */
 
 /*     this subroutine determines q as the product of 2*(n - 1) */
 /*     transformations */
 
-/*           gv(n-1)*...*gv(1)*gw(1)*...*gw(n-1) */
+/*     gv(n-1)*...*gv(1)*gw(1)*...*gw(n-1) */
 
 /*     where gv(i), gw(i) are givens rotations in the (i,n) plane */
 /*     which eliminate elements in the i-th and n-th planes, */
@@ -70,32 +70,32 @@ static integer c__3 = 3;
 /*     where */
 
 /*       m is a positive integer input variable set to the number */
-/*         of rows of s. */
+/*   of rows of s. */
 
 /*       n is a positive integer input variable set to the number */
-/*         of columns of s. n must not exceed m. */
+/*   of columns of s. n must not exceed m. */
 
 /*       s is an array of length ls. on input s must contain the lower */
-/*         trapezoidal matrix s stored by columns. on output s contains */
-/*         the lower trapezoidal matrix produced as described above. */
+/*   trapezoidal matrix s stored by columns. on output s contains */
+/*   the lower trapezoidal matrix produced as described above. */
 
 /*       ls is a positive integer input variable not less than */
-/*         (n*(2*m-n+1))/2. */
+/*   (n*(2*m-n+1))/2. */
 
 /*       u is an input array of length m which must contain the */
-/*         vector u. */
+/*   vector u. */
 
 /*       v is an array of length n. on input v must contain the vector */
-/*         v. on output v(i) contains the information necessary to */
-/*         recover the givens rotation gv(i) described above. */
+/*   v. on output v(i) contains the information necessary to */
+/*   recover the givens rotation gv(i) described above. */
 
 /*       w is an output array of length m. w(i) contains information */
-/*         necessary to recover the givens rotation gw(i) described */
-/*         above. */
+/*   necessary to recover the givens rotation gw(i) described */
+/*   above. */
 
 /*       sing is a logical output variable. sing is set true if any */
-/*         of the diagonal elements of the output s are zero. otherwise */
-/*         sing is set false. */
+/*   of the diagonal elements of the output s are zero. otherwise */
+/*   sing is set false. */
 
 /*     subprograms called */
 
@@ -150,8 +150,8 @@ static integer c__3 = 3;
       goto L50;
   }
 
-/*        determine a givens rotation which eliminates the */
-/*        j-th element of v. */
+/*  determine a givens rotation which eliminates the */
+/*  j-th element of v. */
 
   if((d__1 = v[*n], abs(d__1)) >= (d__2 = v[j], abs(d__2))) {
       goto L20;
@@ -175,13 +175,13 @@ L20:
   tau = sin__;
 L30:
 
-/*        apply the transformation to v and store the information */
-/*        necessary to recover the givens rotation. */
+/*  apply the transformation to v and store the information */
+/*  necessary to recover the givens rotation. */
 
   v[*n] = sin__ * v[j] + cos__ * v[*n];
   v[j] = tau;
 
-/*        apply the transformation to s and extend the spike in w. */
+/*  apply the transformation to s and extend the spike in w. */
 
   l = jj;
   i__2 = *m;
@@ -218,8 +218,8 @@ L70:
       goto L120;
   }
 
-/*        determine a givens rotation which eliminates the */
-/*        j-th element of the spike. */
+/*  determine a givens rotation which eliminates the */
+/*  j-th element of the spike. */
 
   if((d__1 = s[jj], abs(d__1)) >= (d__2 = w[j], abs(d__2))) {
       goto L90;
@@ -243,7 +243,7 @@ L90:
   tau = sin__;
 L100:
 
-/*        apply the transformation to s and reduce the spike in w. */
+/*  apply the transformation to s and reduce the spike in w. */
 
   l = jj;
   i__2 = *m;
@@ -255,13 +255,13 @@ L100:
 /* L110: */
   }
 
-/*        store the information necessary to recover the */
-/*        givens rotation. */
+/*  store the information necessary to recover the */
+/*  givens rotation. */
 
   w[j] = tau;
 L120:
 
-/*        test for zero diagonal elements in the output s. */
+/*  test for zero diagonal elements in the output s. */
 
   if(s[jj] == zero) {
       *sing = TRUE_;

@@ -110,7 +110,7 @@ int freelinearSystem(DATA *data)
 /*! \fn solve non-linear systems
  *
  *  \param  [in]  [data]
- *                [sysNumber] index of corresponding non-linear System
+ *          [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */

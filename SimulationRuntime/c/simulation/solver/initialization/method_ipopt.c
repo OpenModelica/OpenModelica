@@ -152,31 +152,31 @@
     for(color=0; color<maxColor; color++)
     {
       for(i=0; i<numSeedVars; i++)
-        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-          data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
+  if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
 
       functionJacG_column(data);
 
       for(seedVar=0; seedVar<numSeedVars; seedVar++)
       {
-        if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
-        {
-          if(seedVar == 0)
-            i = 0;
-          else
-            i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
+  if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
+  {
+    if(seedVar == 0)
+      i = 0;
+    else
+      i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
 
-          for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
-          {
-            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
-            jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          }
-        }
+    for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
+    {
+      l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
+      jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+    }
+  }
       }
 
       for(i=0; i<numSeedVars; i++)
-        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-          data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
+  if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
 
     }
     return 0;
@@ -198,7 +198,7 @@
    *  \author lochel
    */
   static Bool ipopt_jac_g(int n, double *x, Bool new_x, int m, int nele_jac,
-                          int *iRow, int *jCol, double *values, void *user_data)
+                    int *iRow, int *jCol, double *values, void *user_data)
   {
     IPOPT_DATA *ipopt_data = (IPOPT_DATA*)user_data;
 
@@ -209,65 +209,65 @@
 
       if(ipopt_data->useSymbolic == 1)
       {
-        /*
-         * SPARSE
-         *
-         */
-        INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
-        if(ACTIVE_STREAM(LOG_INIT))
+  /*
+   * SPARSE
+   *
+   */
+  INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
+  if(ACTIVE_STREAM(LOG_INIT))
+  {
+    INFO(LOG_INIT, "sparsity pattern");
+    for(i=0; i<n; ++i)
+    {
+      printf("        | | column %3d: [ ", i+1);
+      for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+      {
+        if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
         {
-          INFO(LOG_INIT, "sparsity pattern");
-          for(i=0; i<n; ++i)
-          {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-            {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
-              {
-                idx++;
-                printf("*");
-              }
-              else
-                printf("0");
-            }
-            for(; j<m; ++j)
-              printf("0");
-            printf("]\n");
-          }
-          printf("\n");
+          idx++;
+          printf("*");
         }
+        else
+          printf("0");
+      }
+      for(; j<m; ++j)
+        printf("0");
+      printf("]\n");
+    }
+    printf("\n");
+  }
 
-        idx = 0;
-        for(i=0; i<n; ++i)
-        {
-          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-          {
-            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
-            {
-              jCol[idx] = i;
-              iRow[idx] = j;
-              idx++;
-            }
-          }
-        }
+  idx = 0;
+  for(i=0; i<n; ++i)
+  {
+    for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+    {
+      if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+      {
+        jCol[idx] = i;
+        iRow[idx] = j;
+        idx++;
+      }
+    }
+  }
       }
       else
       {
-        /*
-         * DENSE
-         *
-         */
-        INFO(LOG_INIT, "ipopt using numeric dense jacobian G");
-        idx = 0;
-        for(i=0; i<n; ++i)
-        {
-          for(j=0; j<m; ++j)
-          {
-            jCol[idx] = i;
-            iRow[idx] = j;
-            idx++;
-          }
-        }
+  /*
+   * DENSE
+   *
+   */
+  INFO(LOG_INIT, "ipopt using numeric dense jacobian G");
+  idx = 0;
+  for(i=0; i<n; ++i)
+  {
+    for(j=0; j<m; ++j)
+    {
+      jCol[idx] = i;
+      iRow[idx] = j;
+      idx++;
+    }
+  }
       }
 
       assert(idx == nele_jac);
@@ -279,72 +279,72 @@
 
       if(ipopt_data->useSymbolic == 1)
       {
-        functionJacG_sparse(ipopt_data->initData->simData, values);
+  functionJacG_sparse(ipopt_data->initData->simData, values);
 
-        if(ACTIVE_STREAM(LOG_DEBUG))
+  if(ACTIVE_STREAM(LOG_DEBUG))
+  {
+    int i, j;
+    int idx = 0;
+    for(i=0; i<n; ++i)
+    {
+      printf("        | | column %3d: [ ", i+1);
+      for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+      {
+        if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
         {
-          int i, j;
-          int idx = 0;
-          for(i=0; i<n; ++i)
-          {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-            {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
-              {
-                printf("%10.5g ", values[idx]);
-                idx++;
-              }
-              else
-                printf("%10.5g ", 0.0);
-            }
-            for(; j<m; ++j)
-              printf("%10.5g ", 0.0);
-            printf("]\n");
-          }
+          printf("%10.5g ", values[idx]);
+          idx++;
         }
+        else
+          printf("%10.5g ", 0.0);
+      }
+      for(; j<m; ++j)
+        printf("%10.5g ", 0.0);
+      printf("]\n");
+    }
+  }
 
       }
       else
       {
-        int i, j;
-        int idx = 0;
-        double h = 1e-6;
-        double hh;
+  int i, j;
+  int idx = 0;
+  double h = 1e-6;
+  double hh;
 
-        double *gp = (double*)malloc(m * sizeof(double));
-        double *gn = (double*)malloc(m * sizeof(double));
+  double *gp = (double*)malloc(m * sizeof(double));
+  double *gn = (double*)malloc(m * sizeof(double));
 
-        for(i=0; i<n; ++i)
-        {
-          hh = (abs(x[i]) > 1e-3) ? h*abs(x[i]) : h;
-          x[i] += hh;
-          ipopt_g(n, x, new_x, m, gp, user_data);
-          x[i] -= 2.0*hh;
-          ipopt_g(n, x, new_x, m, gn, user_data);
-          x[i] += hh;
+  for(i=0; i<n; ++i)
+  {
+    hh = (abs(x[i]) > 1e-3) ? h*abs(x[i]) : h;
+    x[i] += hh;
+    ipopt_g(n, x, new_x, m, gp, user_data);
+    x[i] -= 2.0*hh;
+    ipopt_g(n, x, new_x, m, gn, user_data);
+    x[i] += hh;
 
-          for(j=0; j<m; ++j)
-          {
-            values[idx] = (gp[j]-gn[j])/(2.0*hh);
-            idx++;
-          }
-        }
+    for(j=0; j<m; ++j)
+    {
+      values[idx] = (gp[j]-gn[j])/(2.0*hh);
+      idx++;
+    }
+  }
 
-        free(gp);
-        free(gn);
+  free(gp);
+  free(gn);
 
-        if(ACTIVE_STREAM(LOG_DEBUG))
-        {
-          int i, j;
-          for(i=0; i<n; ++i)
-          {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; j<m; ++j)
-              printf("%10.5g ", values[j*n+i]);
-            printf("]\n");
-          }
-        }
+  if(ACTIVE_STREAM(LOG_DEBUG))
+  {
+    int i, j;
+    for(i=0; i<n; ++i)
+    {
+      printf("        | | column %3d: [ ", i+1);
+      for(j=0; j<m; ++j)
+        printf("%10.5g ", values[j*n+i]);
+      printf("]\n");
+    }
+  }
       }
     }
     return TRUE;
@@ -368,7 +368,7 @@
    *  \author lochel
    */
   static Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
-                      int nele_hess, int *iRow, int *jCol, double *values, void *user_data)
+                int nele_hess, int *iRow, int *jCol, double *values, void *user_data)
   {
     assert(0);
     return TRUE;
@@ -385,24 +385,24 @@
    */
   int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
-    int n = initData->nVars;             /* number of variables */
+    int n = initData->nVars;       /* number of variables */
     int m = (initData->nInitResiduals > initData->nVars) ? 0 : initData->nInitResiduals;    /* number of constraints */
-    double* x_L = NULL;                  /* lower bounds on x */
-    double* x_U = NULL;                  /* upper bounds on x */
-    double* g_L = NULL;                  /* lower bounds on g */
-    double* g_U = NULL;                  /* upper bounds on g */
+    double* x_L = NULL;            /* lower bounds on x */
+    double* x_U = NULL;            /* upper bounds on x */
+    double* g_L = NULL;            /* lower bounds on g */
+    double* g_U = NULL;            /* upper bounds on g */
 
-    double* x = NULL;                    /* starting point and solution vector */
-    double* mult_g = NULL;               /* constraint multipliers at the solution */
-    double* mult_x_L = NULL;             /* lower bound multipliers at the solution */
-    double* mult_x_U = NULL;             /* upper bound multipliers at the solution */
-    double obj;                          /* objective value */
-    int i;                               /* generic counter */
+    double* x = NULL;              /* starting point and solution vector */
+    double* mult_g = NULL;         /* constraint multipliers at the solution */
+    double* mult_x_L = NULL;       /* lower bound multipliers at the solution */
+    double* mult_x_U = NULL;       /* upper bound multipliers at the solution */
+    double obj;                    /* objective value */
+    int i;                         /* generic counter */
 
-    int nele_jac = n*m;                  /* number of nonzeros in the Jacobian of the constraints */
-    int nele_hess = 0;                   /* number of nonzeros in the Hessian of the Lagrangian (lower or upper triangual part only) */
+    int nele_jac = n*m;            /* number of nonzeros in the Jacobian of the constraints */
+    int nele_hess = 0;             /* number of nonzeros in the Hessian of the Lagrangian (lower or upper triangual part only) */
 
-    IpoptProblem nlp = NULL;             /* ipopt-problem */
+    IpoptProblem nlp = NULL;       /* ipopt-problem */
     enum ApplicationReturnStatus status; /* solve return code */
 
     IPOPT_DATA ipopt_data;
@@ -447,20 +447,20 @@
 
     /* create the IpoptProblem */
     nlp = CreateIpoptProblem(
-        n,              /* Number of optimization variables */
-        x_L,            /* Lower bounds on variables */
-        x_U,            /* Upper bounds on variables */
-        m,              /* Number of constraints */
-        g_L,            /* Lower bounds on constraints */
-        g_U,            /* Upper bounds on constraints */
-        nele_jac,       /* Number of non-zero elements in constraint Jacobian */
-        nele_hess,      /* Number of non-zero elements in Hessian of Lagrangian */
-        0,              /* indexing style for iRow & jCol; 0 for C style, 1 for Fortran style */
-        &ipopt_f,       /* Callback function for evaluating objective function */
-        &ipopt_g,       /* Callback function for evaluating constraint functions */
-        &ipopt_grad_f,  /* Callback function for evaluating gradient of objective function */
-        &ipopt_jac_g,   /* Callback function for evaluating Jacobian of constraint functions */
-        &ipopt_h);      /* Callback function for evaluating Hessian of Lagrangian function */
+  n,              /* Number of optimization variables */
+  x_L,            /* Lower bounds on variables */
+  x_U,            /* Upper bounds on variables */
+  m,              /* Number of constraints */
+  g_L,            /* Lower bounds on constraints */
+  g_U,            /* Upper bounds on constraints */
+  nele_jac,       /* Number of non-zero elements in constraint Jacobian */
+  nele_hess,      /* Number of non-zero elements in Hessian of Lagrangian */
+  0,              /* indexing style for iRow & jCol; 0 for C style, 1 for Fortran style */
+  &ipopt_f,       /* Callback function for evaluating objective function */
+  &ipopt_g,       /* Callback function for evaluating constraint functions */
+  &ipopt_grad_f,  /* Callback function for evaluating gradient of objective function */
+  &ipopt_jac_g,   /* Callback function for evaluating Jacobian of constraint functions */
+  &ipopt_h);      /* Callback function for evaluating Hessian of Lagrangian function */
 
     ASSERT(nlp, "creating of ipopt problem has failed");
 
@@ -488,14 +488,14 @@
 
     /* solve the problem */
     status = IpoptSolve(
-        nlp,            /* Problem that is to be optimized */
-        x,              /* Input: Starting point; Output: Optimal solution */
-        NULL,           /* Values of constraint at final point */
-        &obj,           /* Final value of objective function */
-        mult_g,         /* Final multipliers for constraints */
-        mult_x_L,       /* Final multipliers for lower variable bounds */
-        mult_x_U,       /* Final multipliers for upper variable bounds */
-        &ipopt_data);   /* Pointer to user data */
+  nlp,            /* Problem that is to be optimized */
+  x,              /* Input: Starting point; Output: Optimal solution */
+  NULL,           /* Values of constraint at final point */
+  &obj,           /* Final value of objective function */
+  mult_g,         /* Final multipliers for constraints */
+  mult_x_L,       /* Final multipliers for lower variable bounds */
+  mult_x_U,       /* Final multipliers for upper variable bounds */
+  &ipopt_data);   /* Pointer to user data */
 
     setZ(initData, x);
 

@@ -37,11 +37,11 @@ static int callback(void *result, int argc, char **argv, char **azColName){
   {
     /* the result is a list of string tuples (name, value)*/
     *res = mk_cons(
-             mk_box2(
-               0,
-               mk_scon(azColName[i]),
-               mk_scon(argv[i] ? argv[i] : "NULL")),
-             *res);
+       mk_box2(
+         0,
+         mk_scon(azColName[i]),
+         mk_scon(argv[i] ? argv[i] : "NULL")),
+       *res);
   }
   return 0;
 }

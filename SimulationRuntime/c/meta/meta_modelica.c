@@ -139,7 +139,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
       lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
       if (0 == valueEq(lhs_data,rhs_data))
-        return 0;
+  return 0;
     }
     return 1;
   }
@@ -150,7 +150,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
       tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
       trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
       if (0 == valueEq(tlhs,trhs)) {
-        return 0;
+  return 0;
       }
     }
     return 1;
@@ -167,7 +167,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     while (!MMC_NILTEST(lhs) && !MMC_NILTEST(rhs)) {
       if (!valueEq(MMC_CAR(lhs),MMC_CAR(rhs)))
-        return 0;
+  return 0;
       lhs = MMC_CDR(lhs);
       rhs = MMC_CDR(rhs);
     }
@@ -275,8 +275,8 @@ inline static int anyStringWork(void* any, int ix)
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       ix = anyStringWork(data, ix);
       if (i!=numslots) {
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
+  checkAnyStringBufSize(ix,3);
+  ix += sprintf(anyStringBuf+ix, ", ");
       }
     }
     checkAnyStringBufSize(ix,2);
@@ -293,8 +293,8 @@ inline static int anyStringWork(void* any, int ix)
       ix += sprintf(anyStringBuf+ix, "%s = ", desc->fieldNames[i-2]);
       ix = anyStringWork(data,ix);
       if (i!=numslots) {
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
+  checkAnyStringBufSize(ix,3);
+  ix += sprintf(anyStringBuf+ix, ", ");
       }
     }
     checkAnyStringBufSize(ix,2);
@@ -308,8 +308,8 @@ inline static int anyStringWork(void* any, int ix)
     for (i=0; i<numslots; i++) {
       ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)),ix);
       if (i!=numslots-1) {
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
+  checkAnyStringBufSize(ix,3);
+  ix += sprintf(anyStringBuf+ix, ", ");
       }
     }
     checkAnyStringBufSize(ix,2);
@@ -568,7 +568,7 @@ void printTypeOfAny(void* any) /* for debugging */
       fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
       printTypeOfAny(data);
       if (i!=numslots)
-        fprintf(stderr, ", ");
+  fprintf(stderr, ", ");
     }
     fprintf(stderr, ")");
     return;
@@ -678,8 +678,8 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     for (i=0; i<numslots; i++) {
       ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
       if (i!=numslots-1) {
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
+  checkAnyStringBufSize(ix,3);
+  ix += sprintf(anyStringBuf+ix, ", ");
       }
     }
     checkAnyStringBufSize(ix,2);
@@ -699,8 +699,8 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     for (i=0; i<numslots; i++) {
       ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
       if (i!=numslots-1) {
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
+  checkAnyStringBufSize(ix,3);
+  ix += sprintf(anyStringBuf+ix, ", ");
       }
     }
     checkAnyStringBufSize(ix,2);

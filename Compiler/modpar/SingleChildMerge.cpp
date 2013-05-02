@@ -1,9 +1,9 @@
 #include "SingleChildMerge.hpp"
 
 SingleChildMerge::SingleChildMerge(TaskGraph *tg,TaskGraph * orig_tg,
-           ContainSetMap *cmap,
-           VertexID inv, VertexID outb,
-           double l, double B,int nproc,map<VertexID,bool> *removed)
+     ContainSetMap *cmap,
+     VertexID inv, VertexID outb,
+     double l, double B,int nproc,map<VertexID,bool> *removed)
   : MergeRule(tg,orig_tg,cmap,inv,outb,l,B,nproc,removed)
 {
 

@@ -124,15 +124,15 @@
     do /* Try it first with KIN_NONE. If that fails, try it with KIN_LINESEARCH. */
     {
       if(mset == 1 && glstr == KIN_NONE)
-        INFO(LOG_INIT, "using exact Newton");
+  INFO(LOG_INIT, "using exact Newton");
       else if(mset == 1)
-        INFO(LOG_INIT, "using exact Newton with line search");
+  INFO(LOG_INIT, "using exact Newton with line search");
       else if(glstr == KIN_NONE)
-        INFO(LOG_INIT, "using modified Newton");
+  INFO(LOG_INIT, "using modified Newton");
       else
-        INFO(LOG_INIT, "using modified Newton with line search");
+  INFO(LOG_INIT, "using modified Newton with line search");
 
-      INFO1(LOG_INIT, "| mset               = %10ld", mset);
+      INFO1(LOG_INIT, "| mset         = %10ld", mset);
       INFO1(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
       INFO1(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
 
@@ -151,27 +151,27 @@
       /* initial guess */
       for(i=0; i<initData->nVars; ++i)
       {
-        NV_Ith_S(z, i) = initData->start[i];
-        NV_Ith_S(z, initData->nInitResiduals+2*i+0) = NV_Ith_S(z, i) - initData->min[i];
-        NV_Ith_S(z, initData->nInitResiduals+2*i+1) = NV_Ith_S(z, i) - initData->max[i];
+  NV_Ith_S(z, i) = initData->start[i];
+  NV_Ith_S(z, initData->nInitResiduals+2*i+0) = NV_Ith_S(z, i) - initData->min[i];
+  NV_Ith_S(z, initData->nInitResiduals+2*i+1) = NV_Ith_S(z, i) - initData->max[i];
       }
 
       for(i=0; i<initData->nVars; ++i)
       {
-        NV_Ith_S(sVars, i) = initData->nominal ? 1.0 / initData->nominal[i] : 1.0;
-        NV_Ith_S(sVars, initData->nInitResiduals+2*i+0) = NV_Ith_S(sVars, i);
-        NV_Ith_S(sVars, initData->nInitResiduals+2*i+1) = NV_Ith_S(sVars, i);
+  NV_Ith_S(sVars, i) = initData->nominal ? 1.0 / initData->nominal[i] : 1.0;
+  NV_Ith_S(sVars, initData->nInitResiduals+2*i+0) = NV_Ith_S(sVars, i);
+  NV_Ith_S(sVars, initData->nInitResiduals+2*i+1) = NV_Ith_S(sVars, i);
 
-        NV_Ith_S(sEqns, i) = initData->residualScalingCoefficients ? 1.0 / initData->residualScalingCoefficients[i] : 1.0;
-        NV_Ith_S(sEqns, initData->nInitResiduals+2*i+0) = NV_Ith_S(sEqns, i);
-        NV_Ith_S(sEqns, initData->nInitResiduals+2*i+1) = NV_Ith_S(sEqns, i);
+  NV_Ith_S(sEqns, i) = initData->residualScalingCoefficients ? 1.0 / initData->residualScalingCoefficients[i] : 1.0;
+  NV_Ith_S(sEqns, initData->nInitResiduals+2*i+0) = NV_Ith_S(sEqns, i);
+  NV_Ith_S(sEqns, initData->nInitResiduals+2*i+1) = NV_Ith_S(sEqns, i);
       }
 
       for(i=0; i<initData->nVars; ++i)
       {
-        NV_Ith_S(c, i) =  0.0;        /* no constraint on z[i] */
-        NV_Ith_S(c, initData->nInitResiduals+2*i+0) = 1.0;
-        NV_Ith_S(c, initData->nInitResiduals+2*i+1) = -1.0;
+  NV_Ith_S(c, i) =  0.0;        /* no constraint on z[i] */
+  NV_Ith_S(c, initData->nInitResiduals+2*i+0) = 1.0;
+  NV_Ith_S(c, initData->nInitResiduals+2*i+1) = -1.0;
       }
 
       kmem = KINCreate();
@@ -190,11 +190,11 @@
       KINSetMaxSetupCalls(kmem, mset);
       /*KINSetNumMaxIters(kmem, 2000);*/
 
-      error_code = KINSol(kmem,           /* KINSol memory block */
-                          z,              /* initial guess on input; solution vector */
-                          glstr,          /* global stragegy choice */
-                          sVars,          /* scaling vector, for the variable cc */
-                          sEqns);         /* scaling vector for function values fval */
+      error_code = KINSol(kmem,     /* KINSol memory block */
+                    z,              /* initial guess on input; solution vector */
+                    glstr,          /* global stragegy choice */
+                    sVars,          /* scaling vector, for the variable cc */
+                    sEqns);         /* scaling vector for function values fval */
 
       KINGetNumNonlinSolvIters(kmem, &nni);
       KINGetNumFuncEvals(kmem, &nfe);
@@ -203,7 +203,7 @@
 
       /* solution */
       for(i=0; i<initData->nVars; ++i)
-        initData->vars[i] = NV_Ith_S(z, i);
+  initData->vars[i] = NV_Ith_S(z, i);
 
       INFO(LOG_INIT, "final kinsol statistics");
       INFO1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
@@ -219,7 +219,7 @@
       KINFree(&kmem);
 
       if(error_code < 0)
-        glstr++;  /* try next globalization strategy */
+  glstr++;  /* try next globalization strategy */
     }while(error_code < 0 && glstr <= KIN_LINESEARCH);
 
     if(error_code < 0)

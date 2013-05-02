@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCodeSimplify
-" file:        SCodeSimplify.mo
+" file:  SCodeSimplify.mo
   package:     SCodeSimplify
   description: SCodeSimplify is used to further simplify SCode
 
@@ -60,10 +60,10 @@ algorithm
     // handle something
     case (el::rest)
       equation
-        c = simplifyClass(el);
-        acc = simplifyProgram(rest);
+  c = simplifyClass(el);
+  acc = simplifyProgram(rest);
       then
-        c::acc;
+  c::acc;
 
   end match;
 end simplifyProgram;
@@ -86,9 +86,9 @@ algorithm
 
     case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, cmt, info))
       equation
-        ncDef = simplifyClassDef(cDef);
+  ncDef = simplifyClassDef(cDef);
       then
-        SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, cmt, info);
+  SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, cmt, info);
 
   end match;
 end simplifyClass;
@@ -120,36 +120,36 @@ algorithm
     // handle parts
     case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed))
       equation
-        els = simplifyElements(els);
+  els = simplifyElements(els);
       then
-        SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed);
+  SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed);
 
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
       equation
-        cDef = simplifyClassDef(cDef);
+  cDef = simplifyClassDef(cDef);
       then
-        SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
+  SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
 
     // handle derived!
     case (SCode.DERIVED(typeSpec, mod, attr))
       then
-        inClassDef;
+  inClassDef;
 
     // handle enumeration, just return the same
     case (SCode.ENUMERATION(enumLst = _))
       then
-        inClassDef;
+  inClassDef;
 
     // handle overload
     case (SCode.OVERLOAD(pathLst = _))
       then
-        inClassDef;
+  inClassDef;
 
     // handle pder
     case (SCode.PDER(functionPath = _))
       then
-        inClassDef;
+  inClassDef;
 
   end match;
 end simplifyClassDef;
@@ -171,10 +171,10 @@ algorithm
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
       equation
-        true = Absyn.pathContains(bcp, Absyn.IDENT("Icons"));
-        els = simplifyElements(rest);
+  true = Absyn.pathContains(bcp, Absyn.IDENT("Icons"));
+  els = simplifyElements(rest);
       then
-        els;
+  els;
 
     // remove Modelica.Icons -> not working yet because of Modelica.Mechanics.MultiBody.Types uses it !/
     //case (SCode.CLASS(name = "Icons", restriction = SCode.R_PACKAGE())::rest)
@@ -186,17 +186,17 @@ algorithm
     // handle classes
     case ((el as SCode.CLASS(name = _))::rest)
       equation
-        el = simplifyClass(el);
-        els = simplifyElements(rest);
+  el = simplifyClass(el);
+  els = simplifyElements(rest);
       then
-        el::els;
+  el::els;
 
     // handle rest
     case (el::rest)
       equation
-        els = simplifyElements(rest);
+  els = simplifyElements(rest);
       then
-        el::els;
+  el::els;
   end matchcontinue;
 end simplifyElements;
 

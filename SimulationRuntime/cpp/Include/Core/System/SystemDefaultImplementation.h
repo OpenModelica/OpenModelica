@@ -1,12 +1,12 @@
 #pragma once
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
-#include <System/IMixedSystem.h>                // System interface
-#include <System/IContinuous.h>                // System interface
-#include <System/IEvent.h>                    // System interface
-#include <System/ISystemProperties.h>                // System Properties interface
-#include <System/ISystemInitialization.h>                // System Initialization interface
+#include <System/IMixedSystem.h>          // System interface
+#include <System/IContinuous.h>          // System interface
+#include <System/IEvent.h>              // System interface
+#include <System/ISystemProperties.h>          // System Properties interface
+#include <System/ISystemInitialization.h>          // System Initialization interface
 #include <SimulationSettings/IGlobalSettings.h>
-#include <Math/Functions.h>        // Include for use of abs
+#include <Math/Functions.h>  // Include for use of abs
 #include <System/EventHandling.h>
 
 
@@ -72,32 +72,32 @@ protected:
     template<class T>
     T getStartValue(T variable,string key)
     {
-        try
-        {
-            return boost::any_cast<T>(_start_values[key]);
-        }
-        catch(const boost::bad_any_cast & ex)
-        {
-            std::runtime_error("No such start value");
-        }
+  try
+  {
+      return boost::any_cast<T>(_start_values[key]);
+  }
+  catch(const boost::bad_any_cast & ex)
+  {
+      std::runtime_error("No such start value");
+  }
     };
     double
-        time;                ///< current simulation time (given by the solver)
+  time;                ///< current simulation time (given by the solver)
 
     double
-        *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
-        *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+  *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
+  *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
     bool
-        * _conditions;        ///< External conditions changed by the solver
+  * _conditions;        ///< External conditions changed by the solver
     int
-        _dimFunc,                        ///< Dimension der rechten Seite
-        _dimVars,                        ///< Dimesion des Zustandsvektors
-        _dimZeroFunc,                    ///< Dimension (=Anzahl) Nullstellenfunktion
-        _dimTimeEvent,                    ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
-       _dimAE;                ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+  _dimFunc,                        ///< Dimension der rechten Seite
+  _dimVars,                        ///< Dimesion des Zustandsvektors
+  _dimZeroFunc,                    ///< Dimension (=Anzahl) Nullstellenfunktion
+  _dimTimeEvent,                    ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+       _dimAE;          ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
     ostream
-        *_outputStream;        ///< Output stream for results
+  *_outputStream;        ///< Output stream for results
 
 
 
@@ -107,7 +107,7 @@ protected:
     EventHandling _event_handling;
 private:
     int
-        _dimODE;            ///< Total number (dimension) of all order ordinary differential equations (first and second order)
+  _dimODE;            ///< Total number (dimension) of all order ordinary differential equations (first and second order)
 
 };
 

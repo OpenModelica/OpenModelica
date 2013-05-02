@@ -17,7 +17,7 @@
  *
  * Martin Otter, 2001/01/06:
  *    Removed:   #ifndef __STRICT_ANSI__
- *               #include <_mingw.h>
+ *         #include <_mingw.h>
  *    since not needed in Modelica
  */
 
@@ -32,10 +32,10 @@ extern "C" {
 
 struct dirent
 {
- long  d_ino;          /* Always zero. */
+ long  d_ino;    /* Always zero. */
  unsigned short d_reclen;   /* Always zero. */
  unsigned short d_namlen;   /* Length of name in d_name. */
- char*  d_name;          /* File name. */
+ char*  d_name;    /* File name. */
  /* NOTE: The name in the dirent structure points to the name in the
   *       finddata_t structure in the DIR. */
 };
@@ -58,7 +58,7 @@ typedef struct
  long   dd_handle;
 
  /*
-         * Status of search:
+   * Status of search:
   *   0 = not started yet (next entry to read is first entry)
   *  -1 = off the end
   *   positive = 0 based index of next entry
