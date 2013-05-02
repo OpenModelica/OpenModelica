@@ -71,19 +71,19 @@ void EvalThread::exceptionInEval(exception &e)
       delegate_->closeConnection();
       if( delegate_->startDelegate() )
       {
-        // 2006-03-14 AF, wait before trying to reconnect,
-        // give OMC time to start up
-        msleep(1000);
-        try
-        {
-          delegate_->reconnect();
-          run();
-        }
-        catch( exception &e )
-        {
-          e.what();
-          QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctlly with OMC.</B>") );
-        }
+  // 2006-03-14 AF, wait before trying to reconnect,
+  // give OMC time to start up
+  msleep(1000);
+  try
+  {
+    delegate_->reconnect();
+    run();
+  }
+  catch( exception &e )
+  {
+    e.what();
+    QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctlly with OMC.</B>") );
+  }
       }
     }
   }

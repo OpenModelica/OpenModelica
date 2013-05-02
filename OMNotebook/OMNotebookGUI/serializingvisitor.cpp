@@ -275,24 +275,24 @@ namespace IAEX
 
       foreach (PlotCurve *pPlotCurve, node->mpPlotWindow->getPlot()->getPlotCurvesList())
       {
-        QDomElement omcPlotCurve = domdoc_.createElement( XML_GRAPHCELL_CURVE );
-        // set the curve attributes
-        omcPlotCurve.setAttribute(XML_GRAPHCELL_TITLE, pPlotCurve->title().text());
-        omcPlotCurve.setAttribute(XML_GRAPHCELL_VISIBLE, pPlotCurve->isVisible() ? "true" : "false");
-        omcPlotCurve.setAttribute(XML_GRAPHCELL_COLOR, pPlotCurve->pen().color().rgba());
-        // set the curve data
-        QByteArray xByteArray, yByteArray;
-        QDataStream xOutStream(&xByteArray,QIODevice::WriteOnly);
-        QVector<double> xAxisData = pPlotCurve->getXAxisData();
-        foreach (double d, xAxisData)
-          xOutStream << d;
-        QDataStream yOutStream(&yByteArray,QIODevice::WriteOnly);
-        QVector<double> yAxisData = pPlotCurve->getYAxisData();
-        foreach (double d, yAxisData)
-          yOutStream << d;
-        omcPlotCurve.setAttribute(XML_GRAPHCELL_XDATA, QString(xByteArray.toBase64()));
-        omcPlotCurve.setAttribute(XML_GRAPHCELL_YDATA, QString(yByteArray.toBase64()));
-        omcPlotElement.appendChild(omcPlotCurve);
+  QDomElement omcPlotCurve = domdoc_.createElement( XML_GRAPHCELL_CURVE );
+  // set the curve attributes
+  omcPlotCurve.setAttribute(XML_GRAPHCELL_TITLE, pPlotCurve->title().text());
+  omcPlotCurve.setAttribute(XML_GRAPHCELL_VISIBLE, pPlotCurve->isVisible() ? "true" : "false");
+  omcPlotCurve.setAttribute(XML_GRAPHCELL_COLOR, pPlotCurve->pen().color().rgba());
+  // set the curve data
+  QByteArray xByteArray, yByteArray;
+  QDataStream xOutStream(&xByteArray,QIODevice::WriteOnly);
+  QVector<double> xAxisData = pPlotCurve->getXAxisData();
+  foreach (double d, xAxisData)
+    xOutStream << d;
+  QDataStream yOutStream(&yByteArray,QIODevice::WriteOnly);
+  QVector<double> yAxisData = pPlotCurve->getYAxisData();
+  foreach (double d, yAxisData)
+    yOutStream << d;
+  omcPlotCurve.setAttribute(XML_GRAPHCELL_XDATA, QString(xByteArray.toBase64()));
+  omcPlotCurve.setAttribute(XML_GRAPHCELL_YDATA, QString(yByteArray.toBase64()));
+  omcPlotElement.appendChild(omcPlotCurve);
       }
       graphcell.appendChild(omcPlotElement);
     }
@@ -374,49 +374,49 @@ namespace IAEX
       int start = text.indexOf( "<img src=", pos, Qt::CaseInsensitive );
       if( 0 <= start )
       {
-        // found an image
-        start += 10; // pos of first letter in imagename
-        int end = text.indexOf( "\"", start );
+  // found an image
+  start += 10; // pos of first letter in imagename
+  int end = text.indexOf( "\"", start );
 
-        // get the image name
-        QString imagename = text.mid( start, end - start );
+  // get the image name
+  QString imagename = text.mid( start, end - start );
 
-        CellDocument *doc = dynamic_cast<CellDocument*>(doc_);
-        QImage *image = doc->getImage( imagename );
+  CellDocument *doc = dynamic_cast<CellDocument*>(doc_);
+  QImage *image = doc->getImage( imagename );
 
-        // 2005-12-12 AF, Added support of pasting images from clipboard
-        if( image->isNull() )
-        {
-          // found image that isn't part of the document,
-          // probably images that have been pasted into the text or
-          // from copied cell
-          QString tmpImagename = imagename;
-          tmpImagename.remove( "file:///" );
-          image = new QImage( tmpImagename );
-        }
+  // 2005-12-12 AF, Added support of pasting images from clipboard
+  if( image->isNull() )
+  {
+    // found image that isn't part of the document,
+    // probably images that have been pasted into the text or
+    // from copied cell
+    QString tmpImagename = imagename;
+    tmpImagename.remove( "file:///" );
+    image = new QImage( tmpImagename );
+  }
 
-        if( !image->isNull() )
-        {
-          // create element and save the image to file
-          QDomElement imageelement = domdoc_.createElement( XML_IMAGE );
-          imageelement.setAttribute( XML_NAME, imagename );
+  if( !image->isNull() )
+  {
+    // create element and save the image to file
+    QDomElement imageelement = domdoc_.createElement( XML_IMAGE );
+    imageelement.setAttribute( XML_NAME, imagename );
 
-          QBuffer buffer;
-          buffer.open( QBuffer::WriteOnly );
-          QDataStream out( &buffer );
-          out << *image;
-          buffer.close();
+    QBuffer buffer;
+    buffer.open( QBuffer::WriteOnly );
+    QDataStream out( &buffer );
+    out << *image;
+    buffer.close();
 
-          QDomText imagedata = domdoc_.createTextNode( buffer.buffer().toBase64() );
-          imageelement.appendChild( imagedata );
+    QDomText imagedata = domdoc_.createTextNode( buffer.buffer().toBase64() );
+    imageelement.appendChild( imagedata );
 
-          current.appendChild( imageelement );
-        }
+    current.appendChild( imageelement );
+  }
 
-        pos = end + 1;
+  pos = end + 1;
       }
       else
-        break;
+  break;
     }
   }
 }

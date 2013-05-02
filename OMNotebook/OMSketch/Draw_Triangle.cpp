@@ -206,21 +206,21 @@ bool Draw_Triangle::isMouseClickedOnHandle(QPointF pnt)
 
     bool found;
 
-        for(int i=0;i<handles.size();i++)
-        {
-            if(handles[i]->isUnderMouse())
-            {
-         qDebug()<<"entered the state condition \n";
-                 draw_state=1;
-                 found=true;
-                 handle_index=i;
-                 handles[i]->setCursor(Qt::CrossCursor);
-                 break;
-            }
-            else
-                found=false;
-        }
-        return found;
+  for(int i=0;i<handles.size();i++)
+  {
+      if(handles[i]->isUnderMouse())
+      {
+   qDebug()<<"entered the state condition \n";
+           draw_state=1;
+           found=true;
+           handle_index=i;
+           handles[i]->setCursor(Qt::CrossCursor);
+           break;
+      }
+      else
+          found=false;
+  }
+  return found;
 
 }
 
@@ -232,23 +232,23 @@ bool Draw_Triangle::isMouseClickedOnRotateHandle(const QPointF pnt)
 
     if(Rot_Rect->isUnderMouse())
     {
-        draw_state=5;
-        QPointF pnt1;
-        pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
-        pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
-        item->setTransformOriginPoint(pnt1);
+  draw_state=5;
+  QPointF pnt1;
+  pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
+  pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
+  item->setTransformOriginPoint(pnt1);
     for(int i=0;i<handles.size();i++)
       handles[i]->setTransformOriginPoint(pnt1);
 
-        //Strt_Rect->setTransformOriginPoint(pnt1);
-        //End_Rect->setTransformOriginPoint(pnt1);
-        //Height_Rect->setTransformOriginPoint(pnt1);
-        Rot_Rect->setTransformOriginPoint(pnt1);
-        Bounding_Rect->setTransformOriginPoint(pnt1);
-        return true;
+  //Strt_Rect->setTransformOriginPoint(pnt1);
+  //End_Rect->setTransformOriginPoint(pnt1);
+  //Height_Rect->setTransformOriginPoint(pnt1);
+  Rot_Rect->setTransformOriginPoint(pnt1);
+  Bounding_Rect->setTransformOriginPoint(pnt1);
+  return true;
     }
     else
-        return false;
+  return false;
 }
 
 bool Draw_Triangle::isMouseClickedOnShape(const QPointF pnt)
@@ -257,12 +257,12 @@ bool Draw_Triangle::isMouseClickedOnShape(const QPointF pnt)
     if(item->isUnderMouse())
     {
     qDebug()<<"enter state"<<"\n";
-        draw_state=4;
-        //item->setCursor(Qt::SizeAllCursor);
-        return true;
+  draw_state=4;
+  //item->setCursor(Qt::SizeAllCursor);
+  return true;
     }
     else
-        return false;
+  return false;
 }
 
 
@@ -404,13 +404,13 @@ QPainterPath Draw_Triangle::getTriangle()
 
     if(draw_mode)
     {
-        triangle_pnts[0]=StrtPnt;
-        triangle_pnts[1]=EndPnt;
-        triangle_pnts[2]=HeightPnt;
-        triangle_pnts[3]=StrtPnt;
+  triangle_pnts[0]=StrtPnt;
+  triangle_pnts[1]=EndPnt;
+  triangle_pnts[2]=HeightPnt;
+  triangle_pnts[3]=StrtPnt;
 
-        triangle.moveTo(StrtPnt.x(),StrtPnt.y());
-        triangle.addPolygon(QPolygonF(triangle_pnts));
+  triangle.moveTo(StrtPnt.x(),StrtPnt.y());
+  triangle.addPolygon(QPolygonF(triangle_pnts));
 
     qDebug()<<"entered draw mode\n";
 
@@ -457,7 +457,7 @@ void Draw_Triangle::drawImage(QPainter *painter, QString &text,QPointF point)
 
     for(int j=0;j<this->triangle_pnts.size()-1;j++)
     {
-         text+=" "+str_x.setNum((this->triangle_pnts[j].x()))+" "+str_y.setNum((this->triangle_pnts[j].y()))+" ";
+   text+=" "+str_x.setNum((this->triangle_pnts[j].x()))+" "+str_y.setNum((this->triangle_pnts[j].y()))+" ";
     }
 
     text+="PenColor";
@@ -491,27 +491,27 @@ void Draw_Triangle::setPenStyle(const int style)
     switch(style)
     {
       case 1:
-          this->pen.setStyle(Qt::SolidLine);
-          item->setPen(pen);
-         break;
+    this->pen.setStyle(Qt::SolidLine);
+    item->setPen(pen);
+   break;
       case 2:
-          this->pen.setStyle(Qt::DashLine);
-          item->setPen(pen);
-          break;
+    this->pen.setStyle(Qt::DashLine);
+    item->setPen(pen);
+    break;
       case 3:
-          this->pen.setStyle(Qt::DashLine);
-          item->setPen(pen);
-          break;
+    this->pen.setStyle(Qt::DashLine);
+    item->setPen(pen);
+    break;
       case 4:
-          this->pen.setStyle(Qt::DashDotLine);
-          item->setPen(pen);
-          break;
+    this->pen.setStyle(Qt::DashDotLine);
+    item->setPen(pen);
+    break;
       case 5:
-          this->pen.setStyle(Qt::DashDotDotLine);
-          item->setPen(pen);
-          break;
+    this->pen.setStyle(Qt::DashDotDotLine);
+    item->setPen(pen);
+    break;
     default:
-          break;
+    break;
     }
 
 }
@@ -544,93 +544,93 @@ void Draw_Triangle::setBrushStyle(const int style)
     switch(style)
     {
       case 0:
-         this->brush=item->brush();
-         this->brush.setStyle(Qt::NoBrush);
-         item->setBrush(brush);
-         break;
+   this->brush=item->brush();
+   this->brush.setStyle(Qt::NoBrush);
+   item->setBrush(brush);
+   break;
       case 1:
-         brush.setStyle(Qt::SolidPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::SolidPattern);
+   item->setBrush(brush);
+   break;
       case 2:
-         brush.setStyle(Qt::Dense1Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense1Pattern);
+   item->setBrush(brush);
+   break;
       case 3:
-         brush.setStyle(Qt::Dense2Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense2Pattern);
+   item->setBrush(brush);
+   break;
       case 4:
-         brush.setStyle(Qt::Dense3Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense3Pattern);
+   item->setBrush(brush);
+   break;
       case 5:
-         brush.setStyle(Qt::Dense4Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense4Pattern);
+   item->setBrush(brush);
+   break;
       case 6:
-         brush.setStyle(Qt::Dense5Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense5Pattern);
+   item->setBrush(brush);
+   break;
       case 7:
-         brush.setStyle(Qt::Dense6Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense6Pattern);
+   item->setBrush(brush);
+   break;
       case 8:
-         brush.setStyle(Qt::Dense7Pattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::Dense7Pattern);
+   item->setBrush(brush);
+   break;
       case 9:
-         brush.setStyle(Qt::HorPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::HorPattern);
+   item->setBrush(brush);
+   break;
       case 10:
-         brush.setStyle(Qt::VerPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::VerPattern);
+   item->setBrush(brush);
+   break;
       case 11:
-         brush.setStyle(Qt::CrossPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::CrossPattern);
+   item->setBrush(brush);
+   break;
       case 12:
-         brush.setStyle(Qt::BDiagPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::BDiagPattern);
+   item->setBrush(brush);
+   break;
       case 13:
-         brush.setStyle(Qt::FDiagPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::FDiagPattern);
+   item->setBrush(brush);
+   break;
       case 14:
-         brush.setStyle(Qt::DiagCrossPattern);
-         item->setBrush(brush);
-         break;
+   brush.setStyle(Qt::DiagCrossPattern);
+   item->setBrush(brush);
+   break;
       /*case 15:
-         lgradient.setColorAt(0, QColor::fromRgbF(item->brush().color().redF(),item->brush().color().greenF(),item->brush().color().blueF(),1.0));
-         lgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-         this->brush=QBrush(lgradient);
-         item->setBrush(brush);
-         break;
+   lgradient.setColorAt(0, QColor::fromRgbF(item->brush().color().redF(),item->brush().color().greenF(),item->brush().color().blueF(),1.0));
+   lgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+   this->brush=QBrush(lgradient);
+   item->setBrush(brush);
+   break;
       case 16:
-         rgradient.setColorAt(0, item->brush().color());
-         rgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-         this->brush=QBrush(rgradient);
-         item->setBrush(brush);
-         break;
+   rgradient.setColorAt(0, item->brush().color());
+   rgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+   this->brush=QBrush(rgradient);
+   item->setBrush(brush);
+   break;
       case 17:
-         cgradient.setColorAt(0, item->brush().color());
-         cgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-         this->brush=QBrush(cgradient);
-         item->setBrush(brush);
-         break;*/
+   cgradient.setColorAt(0, item->brush().color());
+   cgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+   this->brush=QBrush(cgradient);
+   item->setBrush(brush);
+   break;*/
       default:
-         break;
+   break;
     }
 
 }
 
 QBrush Draw_Triangle::getBrush()
 {
-        return brush;
+  return brush;
 }
 
 void Draw_Triangle::showHandles()
@@ -651,11 +651,11 @@ void Draw_Triangle::showHandles()
 void Draw_Triangle::hideHandles()
 {
   /*if(Strt_Rect->isVisible())
-         Strt_Rect->hide();
+   Strt_Rect->hide();
     if(End_Rect->isVisible())
-        End_Rect->hide();
+  End_Rect->hide();
     if(Height_Rect->isVisible())
-         Height_Rect->hide();*/
+   Height_Rect->hide();*/
   for(int i=0;i<handles.size();i++)
   {
     if(handles[i]->isVisible())
@@ -672,12 +672,12 @@ bool Draw_Triangle::isClickedOnHandleOrShape(QPointF point)
     if(getMode())
     {
     qDebug()<<"entered the condition \n";
-        if(isMouseClickedOnHandle(point))
-            return true;
-        else if(isMouseClickedOnShape(point))
-            return true;
-        else if(isMouseClickedOnRotateHandle(point))
-            return true;
+  if(isMouseClickedOnHandle(point))
+      return true;
+  else if(isMouseClickedOnShape(point))
+      return true;
+  else if(isMouseClickedOnRotateHandle(point))
+      return true;
     }
     
   return false;

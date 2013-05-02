@@ -109,33 +109,33 @@ namespace IAEX
       int startPos = html.indexOf( "<a href=\"", pos, Qt::CaseInsensitive );
       if( 0 <= startPos )
       {
-        // add lengt of '<a href="' to startpos
-        startPos += 9;
+  // add lengt of '<a href="' to startpos
+  startPos += 9;
 
-        int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
-        if( 0 <= endPos )
-        {
-          //a link is found, replace it with new link
-          QString oldLink = html.mid( startPos, endPos - startPos );
-          QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
-          html.replace( startPos, endPos - startPos, newLink );
+  int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
+  if( 0 <= endPos )
+  {
+    //a link is found, replace it with new link
+    QString oldLink = html.mid( startPos, endPos - startPos );
+    QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
+    html.replace( startPos, endPos - startPos, newLink );
 
-          //cout << "OLD LINK: " << oldLink.toStdString() << endl;
-          //cout << "NEW LINK: " << newLink.toStdString() << endl;
+    //cout << "OLD LINK: " << oldLink.toStdString() << endl;
+    //cout << "NEW LINK: " << newLink.toStdString() << endl;
 
-          // set pos to the end of the link
-          pos = startPos + newLink.length();
-        }
-        else
-        {
-          // this should never happen!
-          string msg = "Error, found no end of linkpath";
-                    throw runtime_error( msg.c_str() );
-          break;
-        }
+    // set pos to the end of the link
+    pos = startPos + newLink.length();
+  }
+  else
+  {
+    // this should never happen!
+    string msg = "Error, found no end of linkpath";
+              throw runtime_error( msg.c_str() );
+    break;
+  }
       }
       else
-        break;
+  break;
     }
 
     // set the new html code to the textcell

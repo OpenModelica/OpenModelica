@@ -98,44 +98,44 @@ namespace IAEX
 
       try
       {
-        Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-        CellStyle cstyle = sheet->getStyle( "Input" );
+  Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+  CellStyle cstyle = sheet->getStyle( "Input" );
 
-        if( cstyle.name() != "null" )
-          text->setStyle( cstyle );
-        else
-          throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+  if( cstyle.name() != "null" )
+    text->setStyle( cstyle );
+  else
+    throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
       }
       catch( exception e )
       {
-        QMessageBox::warning( 0, "Warning", e.what(), "OK" );
+  QMessageBox::warning( 0, "Warning", e.what(), "OK" );
       }
 
       try
       {
-        text->setDelegate(OmcInteractiveEnvironment::getInstance());
+  text->setDelegate(OmcInteractiveEnvironment::getInstance());
       }
       catch( exception e )
       {}
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
+  doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
       QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
+  doc_, SLOT(mouseClickedOnCell(Cell*)));
       QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
-        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+  doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
 
       // 2005-11-29 AF
       QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+  doc_, SLOT( updateScrollArea() ));
 
       // 2006-01-17 AF
       QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+  doc_, SLOT( setChanged(bool) ));
 
       // 2006-04-27 AF
       QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+  doc_, SIGNAL( forwardAction(int) ));
 
       //      CellDocument* d = dynamic_cast<CellDocument*>(doc_);
       //      DocumentView* d2 = d->observers_[0];
@@ -166,13 +166,13 @@ namespace IAEX
       Cell *text = new CellGroup(parent);
 
       QObject::connect(text, SIGNAL(cellOpened(Cell *, const bool)),
-        doc_, SLOT(cursorMoveAfter(Cell*, const bool)));
+  doc_, SLOT(cursorMoveAfter(Cell*, const bool)));
       QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
+  doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
       QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
+  doc_, SLOT(mouseClickedOnCell(Cell*)));
       QObject::connect(text, SIGNAL(openLink(const QUrl*)),
-        doc_, SLOT(linkClicked(const QUrl*)));
+  doc_, SLOT(linkClicked(const QUrl*)));
 
       return text;
     }
@@ -181,46 +181,46 @@ namespace IAEX
       GraphCell *text = new GraphCell(doc_, parent);
       try
       {
-        Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-        CellStyle cstyle = sheet->getStyle( "Input" );
+  Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+  CellStyle cstyle = sheet->getStyle( "Input" );
 
-        if( cstyle.name() != "null" )
-          text->setStyle( cstyle );
-        else
-          throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+  if( cstyle.name() != "null" )
+    text->setStyle( cstyle );
+  else
+    throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
       }
       catch( exception e )
       {
-        QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+  QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
       }
 
       try
       {
-        text->setDelegate(OmcInteractiveEnvironment::getInstance());
+  text->setDelegate(OmcInteractiveEnvironment::getInstance());
       }
       catch( exception e )
       {
-        e.what();
+  e.what();
       }
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
+  doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
       QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
+  doc_, SLOT(mouseClickedOnCell(Cell*)));
       QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
-        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+  doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
 
       // 2005-11-29 AF
       QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+  doc_, SLOT( updateScrollArea() ));
 
       // 2006-01-17 AF
       QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+  doc_, SLOT( setChanged(bool) ));
 
       // 2006-04-27 AF
       QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+  doc_, SIGNAL( forwardAction(int) ));
 
 
       QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
@@ -265,34 +265,34 @@ namespace IAEX
       // set correct cell style
       QString style_ = style;
       if(style_ == QString::null)
-        style_ = QString("Text");
+  style_ = QString("Text");
 
       text->setStyle( style_ );
 
 
 
       QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
-        doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
+  doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
       QObject::connect(text, SIGNAL(clicked(Cell *)),
-        doc_, SLOT(mouseClickedOnCell(Cell*)));
+  doc_, SLOT(mouseClickedOnCell(Cell*)));
       QObject::connect(text, SIGNAL(openLink(const QUrl*)),
-        doc_, SLOT(linkClicked(const QUrl*)));
+  doc_, SLOT(linkClicked(const QUrl*)));
 
       // 2005-11-29 AF
       QObject::connect( text, SIGNAL( heightChanged() ),
-        doc_, SLOT( updateScrollArea() ));
+  doc_, SLOT( updateScrollArea() ));
 
       // 2006-01-17 AF
       QObject::connect( text, SIGNAL( textChanged(bool) ),
-        doc_, SLOT( setChanged(bool) ));
+  doc_, SLOT( setChanged(bool) ));
 
       // 2006-02-10 AF
       QObject::connect( text, SIGNAL( hoverOverUrl(const QUrl &) ),
-        doc_, SLOT( hoverOverUrl(const QUrl &) ));
+  doc_, SLOT( hoverOverUrl(const QUrl &) ));
 
       // 2006-04-27 AF
       QObject::connect( text, SIGNAL( forwardAction(int) ),
-        doc_, SIGNAL( forwardAction(int) ));
+  doc_, SIGNAL( forwardAction(int) ));
 
       QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
       QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));

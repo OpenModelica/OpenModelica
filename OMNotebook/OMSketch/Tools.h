@@ -18,8 +18,8 @@ class Tools:public QMainWindow
     public:
       struct image_info
       {
-             QString imageName;//image file name
-             QImage* image;//image 
+       QString imageName;//image file name
+       QImage* image;//image 
        QString text;//text written into the image
        QString cellId;//cellId
        QString cell_text;//text of the cell
@@ -34,7 +34,7 @@ class Tools:public QMainWindow
       };
 
 
-          Tools(Document *,DocumentView *);
+    Tools(Document *,DocumentView *);
       void open(const QString filename);
       void open();
       void getCells(const QVector<Cell*> cells);
@@ -66,40 +66,40 @@ class Tools:public QMainWindow
 
       void updateImages();
 
-        QVector<QString> filenames;
+  QVector<QString> filenames;
       
-        private slots:
-           //methods initializes the respective shapes to draw
-           void draw_arc();
-           void draw_arrow();
-           void draw_rect();
-           void draw_round_rect();
-           void draw_line();
-           void draw_linearrow();
-           void draw_ellipse();
-           void draw_polygon();
-           void draw_triangle();
-           void draw_text();
+  private slots:
+     //methods initializes the respective shapes to draw
+     void draw_arc();
+     void draw_arrow();
+     void draw_rect();
+     void draw_round_rect();
+     void draw_line();
+     void draw_linearrow();
+     void draw_ellipse();
+     void draw_polygon();
+     void draw_triangle();
+     void draw_text();
 
-           void draw_new();
-           void draw_save();
-           void draw_open();
-           void draw_shapes();
-           void msg_save_file();
-           void msg_dnt_save_file();
+     void draw_new();
+     void draw_save();
+     void draw_open();
+     void draw_shapes();
+     void msg_save_file();
+     void msg_dnt_save_file();
 
-           //write the shapes to the images and exports to OMNotebook
-           void draw_image_save();
+     //write the shapes to the images and exports to OMNotebook
+     void draw_image_save();
        void draw_xml_save(){}
 
-           void draw_copy();
-           void draw_cut();
-           void draw_paste();
+     void draw_copy();
+     void draw_cut();
+     void draw_paste();
 
        void setColors();
-           void setPenStyles(int indx);
-           void setPenWidths(int width);
-           void setBrushStyles(int indx);
+     void setPenStyles(int indx);
+     void setPenWidths(int width);
+     void setBrushStyles(int indx);
        void pen_lineSolidStyle();
        void pen_lineDashStyle();
        void pen_lineDotStyle();
@@ -115,28 +115,28 @@ class Tools:public QMainWindow
 
     protected:
        //void mouseMoveEvent(QMouseEvent *);
-           void mousePressEvent(QMouseEvent *);
+     void mousePressEvent(QMouseEvent *);
        void mouseReleaseEvent(QMouseEvent *);
        void closeEvent(QCloseEvent* event);//function to close the window
        
-           
+     
 
-           void keyPressEvent(QKeyEvent *);
-           void keyReleaseEvent(QKeyEvent *);
-          
-        private:
-           void button_action();
-           void action();
-           void menu();
+     void keyPressEvent(QKeyEvent *);
+     void keyReleaseEvent(QKeyEvent *);
+    
+  private:
+     void button_action();
+     void action();
+     void menu();
 
-           void openFile();
+     void openFile();
 
        //funcrtion to write the image of the paticular document
        void writeImage(document_info &docs);
        void add_components();
-           void file_components();
-           void edit_components();
-           void color_pen_components();
+     void file_components();
+     void edit_components();
+     void color_pen_components();
        void item_selected(Graph_Scene* scene_item);
 
        void reloadShapesProerties();

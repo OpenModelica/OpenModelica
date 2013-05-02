@@ -126,13 +126,13 @@ QString NotebookWindow::linkDir_ = QString::null;
   * Also made som other updates /AF
   */
 NotebookWindow::NotebookWindow(Document *subject,
-                               const QString filename, QWidget *parent)
+                         const QString filename, QWidget *parent)
   : DocumentView(parent),
     subject_(subject),
     filename_(filename),
     closing_(false),
     app_( subject->application() ), //AF
-    findForm_( 0 )          //AF
+    findForm_( 0 )    //AF
 {
   if( filename_ != QString::null )
     qDebug( filename_.toStdString().c_str() );
@@ -173,14 +173,14 @@ NotebookWindow::NotebookWindow(Document *subject,
   resize(800, 600);
 
   connect( subject_->getCursor(), SIGNAL( changedPosition() ),
-           this, SLOT( updateMenus() ));
+     this, SLOT( updateMenus() ));
   connect( subject_, SIGNAL( contentChanged() ),
-           this, SLOT( updateWindowTitle() ));
+     this, SLOT( updateWindowTitle() ));
   connect( subject_, SIGNAL( hoverOverFile(QString) ),
-           this, SLOT( setStatusMessage(QString) ));
+     this, SLOT( setStatusMessage(QString) ));
   // 2006-04-27 AF
   connect( subject_, SIGNAL( forwardAction(int) ),
-           this, SLOT( forwardedAction(int) ));
+     this, SLOT( forwardedAction(int) ));
 
   connect( subject_, SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
 
@@ -215,60 +215,60 @@ NotebookWindow::NotebookWindow(Document *subject,
     {
       if(current->hasChilds())
       {
-        current1=current->child();
-        while(current1!=NULL)
+  current1=current->child();
+  while(current1!=NULL)
+  {
+    if(!current1->hasChilds())
+    {
+      cells.push_back(current1);
+    }
+
+    if(current1->hasChilds())
+    {
+      current2=current1->child();
+      while(current2!=NULL)
+      {
+        if(!current2->hasChilds())
         {
-          if(!current1->hasChilds())
+          cells.push_back(current2);
+        }
+        if(current2->hasChilds())
+        {
+          current3=current2->child();
+          while(current3!=NULL)
           {
-            cells.push_back(current1);
-          }
-
-          if(current1->hasChilds())
-          {
-            current2=current1->child();
-            while(current2!=NULL)
+            if(!current3->hasChilds())
             {
-              if(!current2->hasChilds())
+              cells.push_back(current3);
+            }
+            if(current3->hasChilds())
+            {
+              current4=current3->child();
+              while(current4!=NULL)
               {
-                cells.push_back(current2);
-              }
-              if(current2->hasChilds())
-              {
-                current3=current2->child();
-                while(current3!=NULL)
-                {
-                  if(!current3->hasChilds())
-                  {
-                    cells.push_back(current3);
-                  }
-                  if(current3->hasChilds())
-                  {
-                    current4=current3->child();
-                    while(current4!=NULL)
-                    {
-                      cells.push_back(current4);
-                      current4=current4->next();
-
-                    }
-                  }
-
-                  current3=current3->next();
-
-                }
+                cells.push_back(current4);
+                current4=current4->next();
 
               }
-
-              current2=current2->next();
-
             }
 
-            current2=current1->next();
+            current3=current3->next();
 
           }
-          //QMessageBox::about(this,"text ",current1->text());
-          current1=current1->next();
 
         }
+
+        current2=current2->next();
+
+      }
+
+      current2=current1->next();
+
+    }
+    //QMessageBox::about(this,"text ",current1->text());
+    current1=current1->next();
+
+  }
       }
       cells.push_back(current);
       current = current->next();
@@ -621,7 +621,7 @@ void NotebookWindow::createFileMenu()
   importOldFile = new QAction( tr("&Old OMNotebook file"), this );
   importOldFile->setStatusTip( tr("Import an old OMNotebook file") );
   connect( importOldFile, SIGNAL( triggered() ),
-           this, SLOT( openOldFile() ));
+     this, SLOT( openOldFile() ));
 
   importMenu->addAction( importOldFile );
 
@@ -631,7 +631,7 @@ void NotebookWindow::createFileMenu()
   exportPureText = new QAction( tr("&Pure text"), this );
   exportPureText->setStatusTip( tr("Export the document content to pure text") );
   connect( exportPureText, SIGNAL( triggered() ),
-           this, SLOT( pureText() ));
+     this, SLOT( pureText() ));
 
   exportMenu->addAction( exportPureText );
 }
@@ -654,7 +654,7 @@ void NotebookWindow::createEditMenu()
   undoAction->setShortcut( tr("Ctrl+Z") );
   undoAction->setStatusTip( tr("Undo last action") );
   connect( undoAction, SIGNAL( triggered() ),
-           this, SLOT( undoEdit() ));
+     this, SLOT( undoEdit() ));
 
   undoAction->setEnabled(false);
   undoAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
@@ -667,7 +667,7 @@ void NotebookWindow::createEditMenu()
   redoAction->setShortcut( tr("Ctrl+Y") );
   redoAction->setStatusTip( tr("Redo last action") );
   connect( redoAction, SIGNAL( triggered() ),
-           this, SLOT( redoEdit() ));
+     this, SLOT( redoEdit() ));
 
   redoAction->setEnabled(false);
   redoAction->setIcon(QIcon(":/Resources/toolbarIcons/redo.png"));
@@ -680,7 +680,7 @@ void NotebookWindow::createEditMenu()
   cutAction->setShortcut( tr("Ctrl+X") );
   cutAction->setStatusTip( tr("Cut selected text") );
   connect( cutAction, SIGNAL( triggered() ),
-           this, SLOT( cutEdit() ));
+     this, SLOT( cutEdit() ));
 
   cutAction->setEnabled(false);
   cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
@@ -691,7 +691,7 @@ void NotebookWindow::createEditMenu()
   copyAction->setShortcut( tr("Ctrl+C") );
   copyAction->setStatusTip( tr("Copy selected text") );
   connect( copyAction, SIGNAL( triggered() ),
-           this, SLOT( copyEdit() ));
+     this, SLOT( copyEdit() ));
 
   copyAction->setEnabled(false);
   copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
@@ -703,7 +703,7 @@ void NotebookWindow::createEditMenu()
   pasteAction->setShortcut( tr("Ctrl+V") );
   pasteAction->setStatusTip( tr("Paste text from clipboard") );
   connect( pasteAction, SIGNAL( triggered() ),
-           this, SLOT( pasteEdit() ));
+     this, SLOT( pasteEdit() ));
 
 
   pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
@@ -717,7 +717,7 @@ void NotebookWindow::createEditMenu()
   findAction->setShortcut( tr("Ctrl+F") );
   findAction->setStatusTip( tr("Search through the document") );
   connect( findAction, SIGNAL( triggered() ),
-           this, SLOT( findEdit() ));
+     this, SLOT( findEdit() ));
 
   findAction->setIcon(QIcon(":/Resources/toolbarIcons/find.png"));
   toolBar->addAction(findAction);
@@ -728,7 +728,7 @@ void NotebookWindow::createEditMenu()
   replaceAction->setShortcut( tr("Ctrl+H") );
   replaceAction->setStatusTip( tr("Search through the document and replace") );
   connect( replaceAction, SIGNAL( triggered() ),
-           this, SLOT( replaceEdit() ));
+     this, SLOT( replaceEdit() ));
 
 
   // 2005-10-07 AF, Porting, replaced this
@@ -747,7 +747,7 @@ void NotebookWindow::createEditMenu()
   editSketchImage->setShortcut( tr("Ctrl+E") );
   editSketchImage->setStatusTip( tr("Sketch Image Edit") );
   connect( editSketchImage, SIGNAL( triggered() ),
-           this, SLOT( sketchImageEdit() ));
+     this, SLOT( sketchImageEdit() ));
   editSketchImage->setIcon(QIcon(":/Resources/toolbarIcons/editimage.png"));
   toolBar->addAction(editSketchImage);
 
@@ -786,7 +786,7 @@ void NotebookWindow::createEditMenu()
 
 
   //    QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
-  //      this, SLOT(updateEditMenu()));               // -''-
+  //      this, SLOT(updateEditMenu()));         // -''-
 }
 
 /*!
@@ -848,21 +848,21 @@ void NotebookWindow::createCellMenu()
   groupAction->setShortcut( tr("Ctrl+Shift+G") );
   groupAction->setStatusTip( tr("Groupcell") );
   connect( groupAction, SIGNAL( triggered() ),
-           this, SLOT( groupCellsAction() ));
+     this, SLOT( groupCellsAction() ));
 
   // 2006-04-26 AF, UNGROUP
   ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
   ungroupCellAction->setShortcut( tr("Ctrl+Shift+U") );
   ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
   connect( ungroupCellAction, SIGNAL( triggered() ),
-           this, SLOT( ungroupCell() ));
+     this, SLOT( ungroupCell() ));
 
   // 2006-04-26 AF, SPLIT CELL
   splitCellAction = new QAction( tr("&Split cell"), this);
   splitCellAction->setShortcut( tr("Ctrl+Shift+P") );
   splitCellAction->setStatusTip( tr("Split selected cell") );
   connect( splitCellAction, SIGNAL( triggered() ),
-           this, SLOT( splitCell() ));
+     this, SLOT( splitCell() ));
 
   // 2005-10-07 AF, Porting, replaced this
   //QAction *deleteCellAction = new QAction("Delete cell", "&Delete Cell", CTRL+SHIFT+Key_D, this, "deletecell");
@@ -907,7 +907,7 @@ void NotebookWindow::createCellMenu()
   cellMenu->addAction( previousCellAction );
 
   QObject::connect(cellMenu, SIGNAL(aboutToShow()),
-                   this, SLOT(updateCellMenu()));
+             this, SLOT(updateCellMenu()));
 
 
   /* Old menu code //AF
@@ -1004,9 +1004,9 @@ void NotebookWindow::createFormatMenu()
   }
 
   connect( fontMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFont(QAction*) ));
+     this, SLOT( changeFont(QAction*) ));
   connect( fontMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontMenu() ));
+     this, SLOT( updateFontMenu() ));
 
   // -----------------------------------------------------
   // END: FONT
@@ -1038,9 +1038,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( faceMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontFaceMenu() ));
+     this, SLOT( updateFontFaceMenu() ));
   connect( faceMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontFace(QAction*) ));
+     this, SLOT( changeFontFace(QAction*) ));
 
   faceMenu->addAction( facePlain );
   faceMenu->addAction( faceBold );
@@ -1130,9 +1130,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( sizeMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontSizeMenu() ));
+     this, SLOT( updateFontSizeMenu() ));
   connect( sizeMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontSize(QAction*) ));
+     this, SLOT( changeFontSize(QAction*) ));
 
 
   sizeMenu->addAction( sizeSmaller );
@@ -1219,9 +1219,9 @@ void NotebookWindow::createFormatMenu()
   stretchsgroup->addAction( stretchUltraExpanded );
 
   connect( stretchMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontStretchMenu() ));
+     this, SLOT( updateFontStretchMenu() ));
   connect( stretchMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontStretch(QAction*) ));
+     this, SLOT( changeFontStretch(QAction*) ));
 
 
   stretchMenu->addAction( stretchUltraCondensed );
@@ -1331,9 +1331,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( colorMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateFontColorMenu() ));
+     this, SLOT( updateFontColorMenu() ));
   connect( colorMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeFontColor(QAction*) ));
+     this, SLOT( changeFontColor(QAction*) ));
 
 
   colorMenu->addAction( colorBlack );
@@ -1418,13 +1418,13 @@ void NotebookWindow::createFormatMenu()
   verticalAlignmentsgroup->addAction( verticalSuper );
 
   connect( alignmentMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateTextAlignmentMenu() ));
+     this, SLOT( updateTextAlignmentMenu() ));
   connect( alignmentMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeTextAlignment(QAction*) ));
+     this, SLOT( changeTextAlignment(QAction*) ));
   connect( verticalAlignmentMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateVerticalAlignmentMenu() ));
+     this, SLOT( updateVerticalAlignmentMenu() ));
   connect( verticalAlignmentMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeVerticalAlignment(QAction*) ));
+     this, SLOT( changeVerticalAlignment(QAction*) ));
 
 
   alignmentMenu->addAction( alignmentLeft );
@@ -1460,9 +1460,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( borderMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateBorderMenu() ));
+     this, SLOT( updateBorderMenu() ));
   connect( borderMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeBorder(QAction*) ));
+     this, SLOT( changeBorder(QAction*) ));
 
 
   borderMenu->addSeparator();
@@ -1494,9 +1494,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( marginMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMarginMenu() ));
+     this, SLOT( updateMarginMenu() ));
   connect( marginMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changeMargin(QAction*) ));
+     this, SLOT( changeMargin(QAction*) ));
 
 
   marginMenu->addSeparator();
@@ -1528,9 +1528,9 @@ void NotebookWindow::createFormatMenu()
 
 
   connect( paddingMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updatePaddingMenu() ));
+     this, SLOT( updatePaddingMenu() ));
   connect( paddingMenu, SIGNAL( triggered(QAction*) ),
-           this, SLOT( changePadding(QAction*) ));
+     this, SLOT( changePadding(QAction*) ));
 
 
   paddingMenu->addSeparator();
@@ -1551,9 +1551,9 @@ void NotebookWindow::createFormatMenu()
   */
 
   connect(formatMenu, SIGNAL(aboutToShow()),
-          this, SLOT(updateStyleMenu()));
+    this, SLOT(updateStyleMenu()));
   connect( formatMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMenus() ));
+     this, SLOT( updateMenus() ));
 
   formatMenu->addSeparator();
   formatMenu->addAction(toolBar->toggleViewAction());
@@ -1578,7 +1578,7 @@ void NotebookWindow::createInsertMenu()
   insertImageAction->setShortcut( tr("Ctrl+Shift+M") );
   insertImageAction->setStatusTip( tr("Insert a image into the cell") );
   connect( insertImageAction, SIGNAL( triggered() ),
-           this, SLOT( insertImage() ));
+     this, SLOT( insertImage() ));
   insertImageAction->setIcon(QIcon(":/Resources/toolbarIcons/image.png"));
   toolBar->addAction(insertImageAction);
 
@@ -1587,7 +1587,7 @@ void NotebookWindow::createInsertMenu()
   insertLinkAction->setShortcut( tr("Ctrl+Shift+L") );
   insertLinkAction->setStatusTip( tr("Insert a link to the selected text") );
   connect( insertLinkAction, SIGNAL( triggered() ),
-           this, SLOT( insertLink() ));
+     this, SLOT( insertLink() ));
   insertLinkAction->setIcon(QIcon(":/Resources/toolbarIcons/text_under.png"));
   toolBar->addAction(insertLinkAction);
 
@@ -1597,7 +1597,7 @@ void NotebookWindow::createInsertMenu()
   insertSketch = new QAction( tr("&Sketch"), this );
   insertSketch->setStatusTip( tr("Sketch App") );
   connect( insertSketch, SIGNAL( triggered() ),
-           this, SLOT( Sketch() ));
+     this, SLOT( Sketch() ));
   insertSketch->setIcon(QIcon(":/Resources/toolbarIcons/sketch.png"));
   toolBar->addAction(insertSketch);
 
@@ -1648,7 +1648,7 @@ void NotebookWindow::createInsertMenu()
   insertMenu->addAction( insertLinkAction );
 
   connect( insertMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateMenus() ));
+     this, SLOT( updateMenus() ));
 }
 
 /*!
@@ -1662,9 +1662,9 @@ void NotebookWindow::createWindowMenu()
   windowMenu = menuBar()->addMenu( tr("&Window") );
 
   connect( windowMenu, SIGNAL( triggered(QAction *) ),
-           this, SLOT( changeWindow(QAction *) ));
+     this, SLOT( changeWindow(QAction *) ));
   connect( windowMenu, SIGNAL( aboutToShow() ),
-           this, SLOT( updateWindowMenu() ));
+     this, SLOT( updateWindowMenu() ));
 }
 
 /*!
@@ -1690,13 +1690,13 @@ void NotebookWindow::createAboutMenu()
   helpAction->setShortcut( tr("F1") );
   helpAction->setStatusTip( tr("Open help document") );
   connect( helpAction, SIGNAL( triggered() ),
-           this, SLOT( helpText() ));
+     this, SLOT( helpText() ));
 
   // 2006-02-21 AF, Added a about qt action
   aboutQtAction = new QAction( tr("About &Qt"), this );
   aboutQtAction->setStatusTip( tr("Display information about Qt") );
   connect( aboutQtAction, SIGNAL( triggered() ),
-           this, SLOT( aboutQT() ));
+     this, SLOT( aboutQT() ));
 
 
   // 2005-10-07 AF, Porting, new code for creating menu
@@ -1733,7 +1733,7 @@ bool NotebookWindow::cellEditable()
 void NotebookWindow::evalCells()
 {
   application()->commandCenter()->executeCommand(
-        new EvalSelectedCells( subject_ ));
+  new EvalSelectedCells( subject_ ));
 }
 
 /*!
@@ -1859,50 +1859,50 @@ void NotebookWindow::updateEditMenu()
 
       if( typeid(InputCell) == typeid(*cell) )
       {
-        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-        if( inputcell->textEditOutput()->hasFocus() &&
-            inputcell->isEvaluated() )
-        {
+  InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+  if( inputcell->textEditOutput()->hasFocus() &&
+      inputcell->isEvaluated() )
+  {
 
-          in_cursor = inputcell->textEditOutput()->textCursor();
-        }
-        else
-        {
-          in_cursor = inputcell->textEdit()->textCursor();
-        }
+    in_cursor = inputcell->textEditOutput()->textCursor();
+  }
+  else
+  {
+    in_cursor = inputcell->textEdit()->textCursor();
+  }
       }
       else if( typeid(GraphCell) == typeid(*cell) ) //fjass
       {
-        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-        if( graphcell->textEditOutput()->hasFocus() &&
-            graphcell->isEvaluated() )
-        {
+  GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+  if( graphcell->textEditOutput()->hasFocus() &&
+      graphcell->isEvaluated() )
+  {
 
-          in_cursor = graphcell->textEditOutput()->textCursor();
-        }
-        else
-        {
-          in_cursor = graphcell->textEdit()->textCursor();
+    in_cursor = graphcell->textEditOutput()->textCursor();
+  }
+  else
+  {
+    in_cursor = graphcell->textEdit()->textCursor();
 
 
-        }
+  }
       }
 
       else
       {
-        in_cursor = editor->textCursor();
+  in_cursor = editor->textCursor();
       }
 
       if( in_cursor.hasSelection() ||
-          subject_->getSelection().size() > 0 )
+    subject_->getSelection().size() > 0 )
       {
-        cutAction->setEnabled( true );
-        copyAction->setEnabled( true );
+  cutAction->setEnabled( true );
+  copyAction->setEnabled( true );
       }
       else
       {
-        cutAction->setEnabled( false );
-        copyAction->setEnabled( false );
+  cutAction->setEnabled( false );
+  copyAction->setEnabled( false );
       }
     }
     else
@@ -1913,7 +1913,7 @@ void NotebookWindow::updateEditMenu()
 
     // paste
     if( !qApp->clipboard()->text().isEmpty() ||
-        application()->pasteboard().size() > 0 )
+  application()->pasteboard().size() > 0 )
       pasteAction->setEnabled( true );
     else
       pasteAction->setEnabled( false );
@@ -1973,7 +1973,7 @@ void NotebookWindow::updateCellMenu()
   if( cell )
   {
     if( typeid( *cell ) == typeid( TextCell ) ||
-        typeid( *cell ) == typeid( InputCell ) )
+  typeid( *cell ) == typeid( InputCell ) )
     {
       splitCellAction->setEnabled( true );
     }
@@ -2006,8 +2006,8 @@ void NotebookWindow::updateFontMenu()
       QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
       while( f_iter != fonts_.end() )
       {
-        f_iter.value()->setChecked( false );
-        ++f_iter;
+  f_iter.value()->setChecked( false );
+  ++f_iter;
       }
     }
   }
@@ -2060,20 +2060,20 @@ void NotebookWindow::updateFontSizeMenu()
 
       if( sizes_.contains( txt ))
       {
-        sizes_[txt]->setChecked( true );
-        sizeOther->setChecked( false );
+  sizes_[txt]->setChecked( true );
+  sizeOther->setChecked( false );
       }
       else
       {
-        cout << "No size found" << endl;
-        sizeOther->setChecked( true );
+  cout << "No size found" << endl;
+  sizeOther->setChecked( true );
 
-        QHash<QString, QAction*>::iterator s_iter = sizes_.begin();
-        while( s_iter != sizes_.end() )
-        {
-          s_iter.value()->setChecked( false );
-          ++s_iter;
-        }
+  QHash<QString, QAction*>::iterator s_iter = sizes_.begin();
+  while( s_iter != sizes_.end() )
+  {
+    s_iter.value()->setChecked( false );
+    ++s_iter;
+  }
       }
     }
   }
@@ -2099,8 +2099,8 @@ void NotebookWindow::updateFontStretchMenu()
       QHash<int, QAction*>::iterator s_iter = stretchs_.begin();
       while( s_iter != stretchs_.end() )
       {
-        s_iter.value()->setChecked( false );
-        ++s_iter;
+  s_iter.value()->setChecked( false );
+  ++s_iter;
       }
     }
   }
@@ -2124,12 +2124,12 @@ void NotebookWindow::updateFontColorMenu()
     {
       if( (*c_iter.value()) == color )
       {
-        c_iter.key()->setChecked( true );
-        colorOther->setChecked( false );
-        break;
+  c_iter.key()->setChecked( true );
+  colorOther->setChecked( false );
+  break;
       }
       else
-        c_iter.key()->setChecked( false );
+  c_iter.key()->setChecked( false );
 
       ++c_iter;
     }
@@ -2161,8 +2161,8 @@ void NotebookWindow::updateTextAlignmentMenu()
       QHash<int, QAction*>::iterator a_iter = alignments_.begin();
       while( a_iter != alignments_.end() )
       {
-        a_iter.value()->setChecked( false );
-        ++a_iter;
+  a_iter.value()->setChecked( false );
+  ++a_iter;
       }
     }
   }
@@ -2188,8 +2188,8 @@ void NotebookWindow::updateVerticalAlignmentMenu()
       QHash<int, QAction*>::iterator v_iter = verticals_.begin();
       while( v_iter != verticals_.end() )
       {
-        v_iter.value()->setChecked( false );
-        ++v_iter;
+  v_iter.value()->setChecked( false );
+  ++v_iter;
       }
     }
   }
@@ -2221,8 +2221,8 @@ void NotebookWindow::updateBorderMenu()
       QHash<int, QAction*>::iterator b_iter = borders_.begin();
       while( b_iter != borders_.end() )
       {
-        b_iter.value()->setChecked( false );
-        ++b_iter;
+  b_iter.value()->setChecked( false );
+  ++b_iter;
       }
     }
   }
@@ -2254,8 +2254,8 @@ void NotebookWindow::updateMarginMenu()
       QHash<int, QAction*>::iterator m_iter = margins_.begin();
       while( m_iter != margins_.end() )
       {
-        m_iter.value()->setChecked( false );
-        ++m_iter;
+  m_iter.value()->setChecked( false );
+  ++m_iter;
       }
     }
   }
@@ -2287,8 +2287,8 @@ void NotebookWindow::updatePaddingMenu()
       QHash<int, QAction*>::iterator p_iter = paddings_.begin();
       while( p_iter != paddings_.end() )
       {
-        p_iter.value()->setChecked( false );
-        ++p_iter;
+  p_iter.value()->setChecked( false );
+  ++p_iter;
       }
     }
   }
@@ -2355,7 +2355,7 @@ void NotebookWindow::updateWindowTitle()
 void NotebookWindow::updateChapterCounters()
 {
   application()->commandCenter()->executeCommand(
-        new UpdateChapterCounters( subject_ ));
+  new UpdateChapterCounters( subject_ ));
 }
 
 /*!
@@ -2434,7 +2434,7 @@ void NotebookWindow::keyPressEvent(QKeyEvent *event)
   if( event->modifiers() == Qt::AltModifier )
   {
     if( event->key() == Qt::Key_Enter ||
-        event->key() == Qt::Key_Return )
+  event->key() == Qt::Key_Return )
     {
       createNewCell();
     }
@@ -2443,7 +2443,7 @@ void NotebookWindow::keyPressEvent(QKeyEvent *event)
   }
   // 2006-02-14 AF, check id 'Shift+Enter'
   else if( event->modifiers() == Qt::ShiftModifier &&
-           ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
+     ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
   {
     evalCells();
   }
@@ -2485,13 +2485,13 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
       vector<Cell *> cells = subject_->getSelection();
       if( !cells.empty() )
       {
-        subject_->cursorDeleteCell();
-        event->setAccepted( true );
+  subject_->cursorDeleteCell();
+  event->setAccepted( true );
 
-        updateChapterCounters();
+  updateChapterCounters();
       }
       else
-        QMainWindow::keyReleaseEvent(event);
+  QMainWindow::keyReleaseEvent(event);
     }
     else
       QMainWindow::keyReleaseEvent(event);
@@ -2537,12 +2537,12 @@ void NotebookWindow::newFile()
       if(res == QMessageBox::Yes)
       {
 
-        save();
-        if(subject_->getFilename().isNull())
-          return;
+  save();
+  if(subject_->getFilename().isNull())
+    return;
       }
       else if(res == QMessageBox::Cancel)
-        return;
+  return;
     }
 
     subject_ = new CellDocument(app_, QString::null);
@@ -2592,10 +2592,10 @@ void NotebookWindow::openFile(const QString filename)
     {
       //Show a dialog for choosing a file.
       filename_ = QFileDialog::getOpenFileName(
-            this,
-            "OMNotebook -- File Open",
-            openDir_,
-            "Notebooks (*.onb *.onbz *.nb)" );
+      this,
+      "OMNotebook -- File Open",
+      openDir_,
+      "Notebooks (*.onb *.onbz *.nb)" );
     }
     else
     {
@@ -2612,13 +2612,13 @@ void NotebookWindow::openFile(const QString filename)
 
 
       if(subject_->isOpen())
-        application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+  application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
       else
       {
-        subject_ = new CellDocument(app_, QString::null);
+  subject_ = new CellDocument(app_, QString::null);
 
-        subject_->executeCommand(new OpenFileCommand(filename_));
-        subject_->attach(this);
+  subject_->executeCommand(new OpenFileCommand(filename_));
+  subject_->attach(this);
 
       }
     }
@@ -2689,7 +2689,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   while( subject_->hasChanged() )
   {
     int res = QMessageBox::question(this, "Document is unsaved", QString("The document \"") + filename + QString("\" is unsaved, do you want to save the document?"),
-                                    QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+                              QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
 
     /*
    int res = QMessageBox::question( this, "Document is unsaved",
@@ -2719,19 +2719,19 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
       OmcInteractiveEnvironment *omc = OmcInteractiveEnvironment::getInstance();
 
       int result = QMessageBox::question( 0, tr("Close OMC"),
-                                          "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
-                                          QMessageBox::Yes | QMessageBox::Default,
-                                          QMessageBox::No, QMessageBox::Cancel );
+                                    "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
+                                    QMessageBox::Yes | QMessageBox::Default,
+                                    QMessageBox::No, QMessageBox::Cancel );
 
       if( result == QMessageBox::Yes )
       {
-        QString quit = "quit()";
-        omc->evalExpression( quit );
+  QString quit = "quit()";
+  omc->evalExpression( quit );
       }
       else if(result == QMessageBox::Cancel)
       {
-        event->ignore();
-        return;
+  event->ignore();
+  return;
       }
     }
     catch( exception &e )
@@ -2796,7 +2796,7 @@ void NotebookWindow::helpText()
     if( dir.exists( helpFile ) )
     {
       application()->commandCenter()->executeCommand(
-            new OpenFileCommand( help + helpFile ));
+      new OpenFileCommand( help + helpFile ));
     }
     else
     {
@@ -2843,10 +2843,10 @@ void NotebookWindow::saveas()
   {*/
   // open save as dialog
   filename = QFileDialog::getSaveFileName(
-        this,
-        "Choose a filename to save under",
-        saveDir_,
-        "OpenModelica Notebooks (*.onb);;Compressed OM Notebooks (*.onbz)");
+  this,
+  "Choose a filename to save under",
+  saveDir_,
+  "OpenModelica Notebooks (*.onb);;Compressed OM Notebooks (*.onbz)");
   //}
 
   if(!filename.isEmpty())
@@ -2948,7 +2948,7 @@ void NotebookWindow::print()
     updateChapterCounters();
 
     application()->commandCenter()->executeCommand(
-          new PrintDocumentCommand(subject_, &printer));
+    new PrintDocumentCommand(subject_, &printer));
 
     //currentEditor->document()->print(&printer);
 
@@ -2959,8 +2959,8 @@ void NotebookWindow::print()
       title = "(untitled)";
 
     QString msg = QString( "The document " ) + title +
-        QString( " have been printed on " ) +
-        printer.printerName() + QString( "." );
+  QString( " have been printed on " ) +
+  printer.printerName() + QString( "." );
     QMessageBox::information( 0, "Document printed", msg, "OK" );
   }
 
@@ -3043,7 +3043,7 @@ void NotebookWindow::changeStyle()
       // look up style /AF
       CellStyle style = sheet->getStyle( (*cs).first );
       if( style.name() != "null" )
-        subject_->cursorChangeStyle( style );
+  subject_->cursorChangeStyle( style );
 
     }
   }
@@ -3104,7 +3104,7 @@ void NotebookWindow::changeFontSize( QAction *action )
     {
       int size = cursor.charFormat().font().pointSize();
       if( size < 2 )
-        size = 2;
+  size = 2;
 
       subject_->textcursorChangeFontSize( size - 1 );
     }
@@ -3126,12 +3126,12 @@ void NotebookWindow::changeFontSize( QAction *action )
     {
       int size = other.value();
       if( size > 0 )
-        subject_->textcursorChangeFontSize( size );
+  subject_->textcursorChangeFontSize( size );
       else
       {
-        // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 6 and 200";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+  // 2006-01-30 AF, add message box
+  QString msg = "Not a value between 6 and 200";
+  QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
   }
@@ -3292,12 +3292,12 @@ void NotebookWindow::changeBorder( QAction *action )
     {
       int border = other.value();
       if( border > 0 )
-        subject_->textcursorChangeBorder( border );
+  subject_->textcursorChangeBorder( border );
       else
       {
-        // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 30";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+  // 2006-01-30 AF, add message box
+  QString msg = "Not a value between 0 and 30";
+  QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
   }
@@ -3335,12 +3335,12 @@ void NotebookWindow::changeMargin( QAction *action )
     {
       int margin = other.value();
       if( margin > 0 )
-        subject_->textcursorChangeMargin( margin );
+  subject_->textcursorChangeMargin( margin );
       else
       {
-        // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 80.";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+  // 2006-01-30 AF, add message box
+  QString msg = "Not a value between 0 and 80.";
+  QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
   }
@@ -3378,12 +3378,12 @@ void NotebookWindow::changePadding( QAction *action )
     {
       int padding = other.value();
       if( padding > 0 )
-        subject_->textcursorChangePadding( padding );
+  subject_->textcursorChangePadding( padding );
       else
       {
-        // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 60.";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+  // 2006-01-30 AF, add message box
+  QString msg = "Not a value between 0 and 60.";
+  QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
   }
@@ -3573,8 +3573,8 @@ void NotebookWindow::insertImage()
   imageformat += ")";
 
   QString filepath = QFileDialog::getOpenFileName(
-        this, "Insert Image - Select Image", imageDir_,
-        imageformat );
+  this, "Insert Image - Select Image", imageDir_,
+  imageformat );
 
   if( !filepath.isNull() )
   {
@@ -3584,11 +3584,11 @@ void NotebookWindow::insertImage()
       ImageSizeDlg imageSize( this, &image );
       if( QDialog::Accepted == imageSize.exec() )
       {
-        QSize size = imageSize.value();
-        if( size.isValid() )
-          subject_->textcursorInsertImage( filepath, size );
-        else
-          cout << "Not a valid image size" << endl;
+  QSize size = imageSize.value();
+  if( size.isValid() )
+    subject_->textcursorInsertImage( filepath, size );
+  else
+    cout << "Not a valid image size" << endl;
       }
     }
 
@@ -3615,22 +3615,22 @@ void NotebookWindow::insertLink()
     if( cursor.hasSelection() )
     {
       QString filepath = QFileDialog::getOpenFileName(
-            this, "Insert Link - Select Document", linkDir_,
-            "Notebooks (*.onb *.nb)" );
+      this, "Insert Link - Select Document", linkDir_,
+      "Notebooks (*.onb *.nb)" );
 
       if( !filepath.isNull() )
       {
-        // 2006-03-01 AF, Update linkDir_
-        linkDir_ = QFileInfo( filepath ).absolutePath();
+  // 2006-03-01 AF, Update linkDir_
+  linkDir_ = QFileInfo( filepath ).absolutePath();
 
-        subject_->textcursorInsertLink( filepath, cursor );
+  subject_->textcursorInsertLink( filepath, cursor );
       }
     }
     else
     {
       QMessageBox::warning( this, "- No text is selected -",
-                            "A text that should make up the link, must be selected",
-                            "OK" );
+                      "A text that should make up the link, must be selected",
+                      "OK" );
     }
   }
 }
@@ -3727,7 +3727,7 @@ void NotebookWindow::viewSketchImageAttributes()
     {
       for(int i=0;i<subTexts.size();i++)
       {
-        text+=subTexts[i];
+  text+=subTexts[i];
       }
     }
   }
@@ -3750,10 +3750,10 @@ void NotebookWindow::openOldFile()
   try
   {
     QString filename = QFileDialog::getOpenFileName(
-          this,
-          "OMNotebook -- Open old OMNotebook file",
-          openDir_,
-          "Old OMNotebook (*.xml)" );
+    this,
+    "OMNotebook -- Open old OMNotebook file",
+    openDir_,
+    "Old OMNotebook (*.xml)" );
 
     if( !filename.isEmpty() )
     {
@@ -3761,7 +3761,7 @@ void NotebookWindow::openOldFile()
       openDir_ = QFileInfo( filename ).absolutePath();
 
       application()->commandCenter()->executeCommand(
-            new OpenOldFileCommand( filename, READMODE_OLD ));
+      new OpenOldFileCommand( filename, READMODE_OLD ));
     }
   }
   catch( exception &e )
@@ -3786,10 +3786,10 @@ void NotebookWindow::openOldFile()
 void NotebookWindow::pureText()
 {
   QString filename = QFileDialog::getSaveFileName(
-        this,
-        "Choose a filename to export text to",
-        saveDir_,
-        "Textfile (*.txt)");
+  this,
+  "Choose a filename to export text to",
+  saveDir_,
+  "Textfile (*.txt)");
 
   if( !filename.isEmpty() )
   {
@@ -3806,7 +3806,7 @@ void NotebookWindow::pureText()
     updateChapterCounters();
 
     application()->commandCenter()->executeCommand(
-          new ExportToPureText(subject_, filename) );
+    new ExportToPureText(subject_, filename) );
 
     // 2006-03-24 AF, added message box - so user know when
     // export is done
@@ -3816,8 +3816,8 @@ void NotebookWindow::pureText()
       title = "(untitled)";
 
     QString msg = QString( "The document " ) + title +
-        QString( " have been exported as pure text to " ) +
-        filename + QString( "." );
+  QString( " have been exported as pure text to " ) +
+  filename + QString( "." );
     QMessageBox::information( 0, "Document exported", msg, "OK" );
   }
 }
@@ -3924,7 +3924,7 @@ void NotebookWindow::groupCellsAction()
     if( cell->treeView()->isHidden() )
     {
       QMessageBox::information( 0, "Can make groupcell",
-                                "A textcell or inputcell must first be added, before a groupcell can be done" );
+                          "A textcell or inputcell must first be added, before a groupcell can be done" );
     }
     else
     {

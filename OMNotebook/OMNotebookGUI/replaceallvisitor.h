@@ -75,28 +75,28 @@ namespace IAEX
     {
       if( node->textEdit() )
       {
-        int options( 0 );
+  int options( 0 );
 
-        // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+  // move cursor to start of text
+  QTextCursor cursor = node->textEdit()->textCursor();
+  cursor.movePosition( QTextCursor::Start );
+  node->textEdit()->setTextCursor( cursor );
 
-        // match case & match word
-        if( matchCase_ && matchWord_ )
-          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-        else if( matchCase_ )
-          options = QTextDocument::FindCaseSensitively;
-        else if( matchWord_ )
-          options = QTextDocument::FindWholeWords;
+  // match case & match word
+  if( matchCase_ && matchWord_ )
+    options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+  else if( matchCase_ )
+    options = QTextDocument::FindCaseSensitively;
+  else if( matchWord_ )
+    options = QTextDocument::FindWholeWords;
 
-        // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
-          if( count_ )
-            (*count_)++;
-        }
+  // replace all
+  while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+  {
+    node->textEdit()->textCursor().insertText( replaceText_ );
+    if( count_ )
+      (*count_)++;
+  }
       }
     }
     void visitTextCellNodeAfter( TextCell *node ){}
@@ -106,28 +106,28 @@ namespace IAEX
     {
       if( node->textEdit() )
       {
-        int options( 0 );
+  int options( 0 );
 
-        // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+  // move cursor to start of text
+  QTextCursor cursor = node->textEdit()->textCursor();
+  cursor.movePosition( QTextCursor::Start );
+  node->textEdit()->setTextCursor( cursor );
 
-        // match case & match word
-        if( matchCase_ && matchWord_ )
-          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-        else if( matchCase_ )
-          options = QTextDocument::FindCaseSensitively;
-        else if( matchWord_ )
-          options = QTextDocument::FindWholeWords;
+  // match case & match word
+  if( matchCase_ && matchWord_ )
+    options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+  else if( matchCase_ )
+    options = QTextDocument::FindCaseSensitively;
+  else if( matchWord_ )
+    options = QTextDocument::FindWholeWords;
 
-        // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
-          if( count_ )
-            (*count_)++;
-        }
+  // replace all
+  while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+  {
+    node->textEdit()->textCursor().insertText( replaceText_ );
+    if( count_ )
+      (*count_)++;
+  }
       }
     }
     void visitInputCellNodeAfter( InputCell *node ){}
@@ -138,28 +138,28 @@ namespace IAEX
     {
       if( node->textEdit() )
       {
-        int options( 0 );
+  int options( 0 );
 
-        // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+  // move cursor to start of text
+  QTextCursor cursor = node->textEdit()->textCursor();
+  cursor.movePosition( QTextCursor::Start );
+  node->textEdit()->setTextCursor( cursor );
 
-        // match case & match word
-        if( matchCase_ && matchWord_ )
-          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-        else if( matchCase_ )
-          options = QTextDocument::FindCaseSensitively;
-        else if( matchWord_ )
-          options = QTextDocument::FindWholeWords;
+  // match case & match word
+  if( matchCase_ && matchWord_ )
+    options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+  else if( matchCase_ )
+    options = QTextDocument::FindCaseSensitively;
+  else if( matchWord_ )
+    options = QTextDocument::FindWholeWords;
 
-        // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
-          if( count_ )
-            (*count_)++;
-        }
+  // replace all
+  while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+  {
+    node->textEdit()->textCursor().insertText( replaceText_ );
+    if( count_ )
+      (*count_)++;
+  }
       }
     }
     void visitGraphCellNodeAfter( GraphCell *node ){}

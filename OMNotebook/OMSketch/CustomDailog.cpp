@@ -69,7 +69,7 @@ void CustomDialog::add(int indx)
 
        for(int i=0;i<groups[indx].radioButtons.size();i++)
        {
-           groups[indx].grp_vlayout->addWidget(groups[indx].radioButtons[i]);
+     groups[indx].grp_vlayout->addWidget(groups[indx].radioButtons[i]);
        }
 
        groups[indx].group_widget->setLayout(groups[indx].grp_vlayout);
@@ -87,10 +87,10 @@ void CustomDialog::open()
     //groups[0].group_widget->show();
 
     for(int i=0;i<groups.size();i++)
-        groups[i].group_widget->hide();
+  groups[i].group_widget->hide();
     int i=0;
     for(i;i<groups.size();i++)
-        layout->addWidget(groups[i].group_widget,i+2,0,i+3,groups[i].radioButtons.size());
+  layout->addWidget(groups[i].group_widget,i+2,0,i+3,groups[i].radioButtons.size());
     setLayout(layout);
 
     layout->addWidget(button_box1,i+3,1);
@@ -106,14 +106,14 @@ void CustomDialog::getValue(QString grpName,int &property)
    {
        if(grpName==groups[i].CheckBox->text())
        {
-          for(int j=0;j<groups[i].radioButtons.size();j++)
-          {
-              if(groups[0].radioButtons[j]->isChecked())
-              {
-                 QMessageBox::about(this,"hi",groups[0].radioButtons[j]->text());
-                 property=j;
-              }
-          }
+    for(int j=0;j<groups[i].radioButtons.size();j++)
+    {
+        if(groups[0].radioButtons[j]->isChecked())
+        {
+           QMessageBox::about(this,"hi",groups[0].radioButtons[j]->text());
+           property=j;
+        }
+    }
        }
    }
 }
@@ -125,10 +125,10 @@ void CustomDialog::getValue(QString grpName,int &property)
    {
        for(int j=0;j<groups[i].radioButtons.size();j++)
        {
-           if(groups[0].radioButtons[j]->isChecked())
-           {
-              values.push_back(j);
-           }
+     if(groups[0].radioButtons[j]->isChecked())
+     {
+        values.push_back(j);
+     }
        }
    }
    QDialog::close();
@@ -144,7 +144,7 @@ void CustomDialog::reject()
 void CustomDialog::changeEvent(QEvent *event)
 {
     if(event->type()==QEvent::OkRequest)
-        QMessageBox::about(this,"hi","event accepted");
+  QMessageBox::about(this,"hi","event accepted");
 
 }
 

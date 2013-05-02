@@ -17,7 +17,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
     color_dialog = new QColorDialog(this);
 
-        files = new Sketch_Files();
+  files = new Sketch_Files();
 
     //message Box
     msg = new QMessageBox(this);
@@ -25,47 +25,47 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     msg_dnt_save = new QPushButton;
     msg_cancle = new QPushButton;
 
-        edit=false;
-        isSaved=false;
+  edit=false;
+  isSaved=false;
   
-        tabWidget = new QTabWidget();
+  tabWidget = new QTabWidget();
     add_components();
 
-        statusBar = new QStatusBar();
+  statusBar = new QStatusBar();
 
-        statusBar->showMessage("OMSketch");
+  statusBar->showMessage("OMSketch");
 
 
-        setStatusBar(statusBar);
+  setStatusBar(statusBar);
 
     hlayout->addWidget(tabWidget);
 
     //if(application =="Sketch")
     {
-        scene = new Graph_Scene;
-        view = new QGraphicsView(scene);
-        scene->setSceneRect(0,0,1200,800);
-                hlayout->addWidget(view);
-        main_widget->setLayout(hlayout);
-        setCentralWidget(main_widget);
-        if(file_name!=NULL)
-        {
-           scene->open_Scene(file_name);
-        }
+  scene = new Graph_Scene;
+  view = new QGraphicsView(scene);
+  scene->setSceneRect(0,0,1200,800);
+          hlayout->addWidget(view);
+  main_widget->setLayout(hlayout);
+  setCentralWidget(main_widget);
+  if(file_name!=NULL)
+  {
+     scene->open_Scene(file_name);
+  }
     }
 
-        scene->isObjectEdited=false;
+  scene->isObjectEdited=false;
   
     /*if(application =="Text")
     {
-        textEdit = new QTextEdit;
-        openFile();
-        setCentralWidget(textEdit);
+  textEdit = new QTextEdit;
+  openFile();
+  setCentralWidget(textEdit);
     }*/
   
     button_action();
     menu();
-        draw_shapes();
+  draw_shapes();
 
     msg->setText("Do you want to save file.");
     msg_save=msg->addButton("Save",QMessageBox::AcceptRole);
@@ -74,21 +74,21 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
   
   
     filenames.clear();
-        onbfilenames.clear();
-        imagefilenames.clear();
-        positions.clear();
-        texts.clear();
-        cellIds.clear();
-        this->cells.clear();
+  onbfilenames.clear();
+  imagefilenames.clear();
+  positions.clear();
+  texts.clear();
+  cellIds.clear();
+  this->cells.clear();
 
-        scene->new_Scene();
+  scene->new_Scene();
 
-        drawn_images.clear();
+  drawn_images.clear();
 
-        images_info.clear();
-        documents_info.clear();
-        edit_imgs_info.clear();
-        file_read=false;
+  images_info.clear();
+  documents_info.clear();
+  edit_imgs_info.clear();
+  file_read=false;
 
     itemSelected=false;
 
@@ -168,11 +168,11 @@ void Tools::draw_arc()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
 
   //select_pen->clear();
@@ -194,11 +194,11 @@ void Tools::draw_arrow()
   //in process 
   /*isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
 
@@ -216,11 +216,11 @@ void Tools::draw_rect()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
 
@@ -238,11 +238,11 @@ void Tools::draw_round_rect()
 {
     isSaved=false;
   if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
   enableProperties();
@@ -260,11 +260,11 @@ void Tools::draw_line()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
 
@@ -282,11 +282,11 @@ void Tools::draw_linearrow()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
 
@@ -304,11 +304,11 @@ void Tools::draw_ellipse()
 {
     isSaved=false;
   if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
   scene->hide_object_edges();
@@ -325,11 +325,11 @@ void Tools::draw_polygon()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
 
   itemSelected=true;
   scene->hide_object_edges();
@@ -348,11 +348,11 @@ void Tools::draw_triangle()
 {
   isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
   itemSelected=true;
   scene->hide_object_edges();
 
@@ -368,11 +368,11 @@ void Tools::draw_text()
 {
     isSaved=false;
   if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+  paste_shape->setDisabled(false);
   itemSelected=true;
   reloadShapesProerties();
 
@@ -389,8 +389,8 @@ void Tools::draw_new()
 
      if(msg->clickedButton()==msg_save)
        {
-          QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
-          //file_dialog->deleteLater();
+    QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
+    //file_dialog->deleteLater();
       if(file_name.contains(".png"))
       writeImage(file_name);
       scene->new_Scene();
@@ -399,7 +399,7 @@ void Tools::draw_new()
 
        if(msg->clickedButton()==msg_dnt_save)
        {
-           scene->new_Scene();
+     scene->new_Scene();
        isSaved=false;
        }
   }
@@ -415,17 +415,17 @@ void Tools::draw_save()
     {
        while(!isSaved)
      {
-        int opt=QMessageBox::question(this,"Save file","Save File",QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+  int opt=QMessageBox::question(this,"Save file","Save File",QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
       if(opt==QMessageBox::No)
-        break;
+  break;
       else if(opt==QMessageBox::Yes)
       {
-                          QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
-         
-        QMessageBox::about(this,"file name ",file_name);  
-        writeImage(file_name);
-          
-        isSaved=true;
+                    QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
+   
+  QMessageBox::about(this,"file name ",file_name);  
+  writeImage(file_name);
+    
+  isSaved=true;
       } 
       else if(opt == QMessageBox::Cancel)
       {
@@ -436,98 +436,98 @@ void Tools::draw_save()
 
     /*if(application=="Text")
     {
-        QFile fd(this->file_name);
-        QTextStream out(&fd);
-        fd.open(QFile::WriteOnly);
-        file_dialog->deleteLater();
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        out<<textEdit->toPlainText();
-        QApplication::restoreOverrideCursor();
-        fd.close();
+  QFile fd(this->file_name);
+  QTextStream out(&fd);
+  fd.open(QFile::WriteOnly);
+  file_dialog->deleteLater();
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  out<<textEdit->toPlainText();
+  QApplication::restoreOverrideCursor();
+  fd.close();
 
-        QPointF minPos,maxPos;
+  QPointF minPos,maxPos;
 
-        Graph_Scene *scene = new Graph_Scene;
-        scene->open_Scene(file_name);
+  Graph_Scene *scene = new Graph_Scene;
+  scene->open_Scene(file_name);
 
-        QVector<QPointF> objectsPos;
-        objectsPos.clear();
-        scene->getObjectsPos(objectsPos);
-        scene->getDim();
-        scene->getMinPosition(minPos);
-        scene->getMaxPosition(maxPos);
-        qDebug()<<"objectsPos size"<<objectsPos.size();
+  QVector<QPointF> objectsPos;
+  objectsPos.clear();
+  scene->getObjectsPos(objectsPos);
+  scene->getDim();
+  scene->getMinPosition(minPos);
+  scene->getMaxPosition(maxPos);
+  qDebug()<<"objectsPos size"<<objectsPos.size();
 
-        qDebug()<<"min pos "<<minPos<<"\n";
+  qDebug()<<"min pos "<<minPos<<"\n";
 
-        QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-        QImage *image = new QImage(scene->getDim().x()+3, scene->getDim().y()+3, QImage::Format_ARGB32_Premultiplied);
-        image->fill(qRgb(255,255,255));
+  QImage *image = new QImage(scene->getDim().x()+3, scene->getDim().y()+3, QImage::Format_ARGB32_Premultiplied);
+  image->fill(qRgb(255,255,255));
 
-        QPainter *p = new QPainter(image);
+  QPainter *p = new QPainter(image);
 
-        for(int i=0;i<scene->getObjects().size();i++)
-        {
-           if(scene->getObjects().at(i)->ObjectId==1)
-           {
+  for(int i=0;i<scene->getObjects().size();i++)
+  {
+     if(scene->getObjects().at(i)->ObjectId==1)
+     {
 
-               pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
-               pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
+         pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
+         pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
 
-               pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
-               pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
+         pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
+         pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
 
-               p->drawLine(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
+         p->drawLine(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
 
-           }
+     }
 
-           if(scene->getObjects().at(i)->ObjectId==2)
-           {
+     if(scene->getObjects().at(i)->ObjectId==2)
+     {
 
-              pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
-              pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
+        pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
+        pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
 
-              pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
-              pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
-
-
-              p->drawRect(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
-
-           }
-
-           if(scene->getObjects().at(i)->ObjectId==3)
-           {
-
-               pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
-               pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
-
-               pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
-               pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
+        pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
+        pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
 
 
-               p->drawEllipse(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
+        p->drawRect(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
 
-           }
+     }
 
-           if(scene->getObjects().at(i)->ObjectId==5)
-           {
+     if(scene->getObjects().at(i)->ObjectId==3)
+     {
 
-               pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
-               pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
+         pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
+         pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
 
-               pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
-               pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
+         pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
+         pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
 
-               p->drawRoundedRect(pnt.x(),pnt.y(),pnt1.x(),pnt1.y(),15,15,Qt::AbsoluteSize);
 
-           }
+         p->drawEllipse(pnt.x(),pnt.y(),pnt1.x(),pnt1.y());
 
-        }
+     }
 
-        p->end();
-        // Save it..
-        image->save("C:/Users/rjhansir/Desktop/png.png","PNG");
+     if(scene->getObjects().at(i)->ObjectId==5)
+     {
+
+         pnt.setX(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x());
+         pnt.setY(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y());
+
+         pnt1.setX((scene->getObjects().at(i)->ObjectEndPnt.x()-minPos.x())-(scene->getObjects().at(i)->ObjectStrtPnt.x()-minPos.x()));
+         pnt1.setY((scene->getObjects().at(i)->ObjectEndPnt.y()-minPos.y())-(scene->getObjects().at(i)->ObjectStrtPnt.y()-minPos.y()));
+
+         p->drawRoundedRect(pnt.x(),pnt.y(),pnt1.x(),pnt1.y(),15,15,Qt::AbsoluteSize);
+
+     }
+
+  }
+
+  p->end();
+  // Save it..
+  image->save("C:/Users/rjhansir/Desktop/png.png","PNG");
     }*/
 
 }
@@ -551,12 +551,12 @@ void Tools::draw_image_save()//exporting of image
   //qDebug()<<"scene object size "<<scene->getObjects().size()<<"\n";
 
       QDir dir;
-        QVector<QPointF> objectsPos;
-        QPointF minPos,maxPos;
-        objectsPos.clear();
+  QVector<QPointF> objectsPos;
+  QPointF minPos,maxPos;
+  objectsPos.clear();
       QString text = QString();
      
-        scene->getObjectsPos(objectsPos);
+  scene->getObjectsPos(objectsPos);
     
 
      for(int i=0;i<scene->getObjects().size();i++)
@@ -589,67 +589,67 @@ void Tools::draw_image_save()//exporting of image
      isSaved=false;
      if(edit==false)
      {
-        QString num;
-              
-        QSize size;
-        QString num1;
+  QString num;
+        
+  QSize size;
+  QString num1;
 
    
-        //copies the image and coordinates into image_info struct
-        images.image = new QImage(); 
-        images.image=image;
+  //copies the image and coordinates into image_info struct
+  images.image = new QImage(); 
+  images.image=image;
      
     
-        size.setWidth(images.image->width());
-        size.setHeight(images.image->height());
+  size.setWidth(images.image->width());
+  size.setHeight(images.image->height());
        
       //QMessageBox::about(this,"image text first export ",text);
        
-        if(!cursor.isNull())
-        {
-        dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-        QString imagename="temp";
-        //QString imagename="sketch_";
-        imagename="OMSketchImage"+num.setNum(filenames.size()+1,10)+".png";
-        images.imageName=dir.absolutePath() + "/" +imagename;
-        imagename=images.imageName;
-            filenames.push_back(imagename);
-        imagename = QString("file:///") + imagename;
-        //image->setText("Shapes",text);
-        images.text=text;
-          writeImage(images);
-        //QMessageBox::about(this,"image name",images.imageName);
-        imagefilenames.push_back(imagename);
-          editor = document->getCursor()->currentCell()->textEdit();
+  if(!cursor.isNull())
+  {
+  dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+  QString imagename="temp";
+  //QString imagename="sketch_";
+  imagename="OMSketchImage"+num.setNum(filenames.size()+1,10)+".png";
+  images.imageName=dir.absolutePath() + "/" +imagename;
+  imagename=images.imageName;
+      filenames.push_back(imagename);
+  imagename = QString("file:///") + imagename;
+  //image->setText("Shapes",text);
+  images.text=text;
+    writeImage(images);
+  //QMessageBox::about(this,"image name",images.imageName);
+  imagefilenames.push_back(imagename);
+    editor = document->getCursor()->currentCell()->textEdit();
       
-          if( editor )
-          {
-          // save text settings and set them after image have been inserted
-            QTextCharFormat format = cursor.charFormat();
-            if( editor->toPlainText().isEmpty() )
-            format = *document->getCursor()->currentCell()->style()->textCharFormat();
-              format2 = *document->getCursor()->currentCell()->style()->textCharFormat();
+    if( editor )
+    {
+    // save text settings and set them after image have been inserted
+      QTextCharFormat format = cursor.charFormat();
+      if( editor->toPlainText().isEmpty() )
+      format = *document->getCursor()->currentCell()->style()->textCharFormat();
+        format2 = *document->getCursor()->currentCell()->style()->textCharFormat();
 
-            //qDebug()<<"images width and height "<<images.image->width()<<" "<<images.image->height()<<"\n";
-            //qDebug()<<"image width and height "<<image->width()<<"  "<<image->height()<<"\n";
-                              
-            imageformat.merge( format );
-            imageformat.setHeight( images.image->height());
-            imageformat.setWidth( images.image->width());
-            imageformat.setName( imagename );
-          
-            cursor.insertImage( imageformat );
-            statusBar->showMessage("Image Exported ",10000);
-            }
+      //qDebug()<<"images width and height "<<images.image->width()<<" "<<images.image->height()<<"\n";
+      //qDebug()<<"image width and height "<<image->width()<<"  "<<image->height()<<"\n";
+                        
+      imageformat.merge( format );
+      imageformat.setHeight( images.image->height());
+      imageformat.setWidth( images.image->width());
+      imageformat.setName( imagename );
+    
+      cursor.insertImage( imageformat );
+      statusBar->showMessage("Image Exported ",10000);
+      }
       
-         }
+   }
 
      
    } 
 
    if(edit==true)
    {
-        QSize size;
+  QSize size;
       QString num1;
 
     if(!edit_imgs_info.isEmpty())
@@ -657,7 +657,7 @@ void Tools::draw_image_save()//exporting of image
       edit_img_info=edit_imgs_info[edit_imgs_info.size()-1];
     }
 
-        
+  
     if(edit_img_info.image)
     {
       //QMessageBox::about(this,"edit image info name ",edit_img_info.imageName);
@@ -691,103 +691,103 @@ void Tools::draw_image_save()//exporting of image
       if(imagename.contains("OMSketchImage"))  
       {
 
-              QMessageBox::about(this,"image",imagename);  
-        int strt_indx = imagename.lastIndexOf("e",-1);
-        int end_indx = imagename.lastIndexOf(".",-1);
+        QMessageBox::about(this,"image",imagename);  
+  int strt_indx = imagename.lastIndexOf("e",-1);
+  int end_indx = imagename.lastIndexOf(".",-1);
 
-        QString sub = imagename.mid(strt_indx+1,(end_indx-strt_indx)-1);
-        QMessageBox::about(this,"image name sub ",sub);
-        bool ok;
-         int pos = sub.toInt(&ok,10);
-        pos+=1;
+  QString sub = imagename.mid(strt_indx+1,(end_indx-strt_indx)-1);
+  QMessageBox::about(this,"image name sub ",sub);
+  bool ok;
+   int pos = sub.toInt(&ok,10);
+  pos+=1;
 
-        imagename.remove(sub+".png");
-        dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-        imagename="OMSketchImage";
-        imagename+=num.number(pos);
-        imagename=dir.absolutePath() + "/" +imagename; 
-        imagename+=".png";
+  imagename.remove(sub+".png");
+  dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+  imagename="OMSketchImage";
+  imagename+=num.number(pos);
+  imagename=dir.absolutePath() + "/" +imagename; 
+  imagename+=".png";
 
-        //dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-        //QString imagename="temp";
-        //QString imagename="sketch_";
-        //imagename="OMSketchImage"+num.setNum(filenames.size(),10)+".png";
-        //imagename=dir.absolutePath() + "/" +imagename;
+  //dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+  //QString imagename="temp";
+  //QString imagename="sketch_";
+  //imagename="OMSketchImage"+num.setNum(filenames.size(),10)+".png";
+  //imagename=dir.absolutePath() + "/" +imagename;
 
-        edit_img_info.imageName=imagename;
+  edit_img_info.imageName=imagename;
       }
       
       else if(imagename.contains("png"))  
       {
-        int strt_indx = imagename.lastIndexOf("/",-1);
-        int end_indx = imagename.lastIndexOf(".",-1);
+  int strt_indx = imagename.lastIndexOf("/",-1);
+  int end_indx = imagename.lastIndexOf(".",-1);
 
-        //QString sub=imagename.right(2);
+  //QString sub=imagename.right(2);
 
-        QString sub = imagename.mid(strt_indx+1,(end_indx-strt_indx)-1);
-        QMessageBox::about(this,"image",sub);
-        bool ok;
-         int pos = sub.toInt(&ok,10);
-        pos+=1;
+  QString sub = imagename.mid(strt_indx+1,(end_indx-strt_indx)-1);
+  QMessageBox::about(this,"image",sub);
+  bool ok;
+   int pos = sub.toInt(&ok,10);
+  pos+=1;
 
-        imagename.remove(sub+".png");
+  imagename.remove(sub+".png");
 
-        dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-        imagename+="OMSketchImage";
+  dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+  imagename+="OMSketchImage";
 
-        imagename+=num.number(pos);
+  imagename+=num.number(pos);
       
-        imagename+=".png";
+  imagename+=".png";
 
-        edit_img_info.imageName=imagename;
+  edit_img_info.imageName=imagename;
       }
 
       else
       {
-        imagename.remove(".png");
-          QString sub = imagename;
-          //QMessageBox::about(this,"image",sub);
-          bool ok;
-           int pos = sub.toInt(&ok,10);
-          //pos+=1;
-        dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-          imagename="OMSketchImage";
-            imagename=num.number(pos);
+  imagename.remove(".png");
+    QString sub = imagename;
+    //QMessageBox::about(this,"image",sub);
+    bool ok;
+     int pos = sub.toInt(&ok,10);
+    //pos+=1;
+  dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+    imagename="OMSketchImage";
+      imagename=num.number(pos);
       
-          imagename+=".png";
+    imagename+=".png";
 
-        dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
-          QString imagename="temp";
-          //QString imagename="sketch_";
-          imagename="OMSketchImage"+num.setNum(filenames.size()+1,10)+".png";
-          imagename=dir.absolutePath() + "/" +imagename;
+  dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
+    QString imagename="temp";
+    //QString imagename="sketch_";
+    imagename="OMSketchImage"+num.setNum(filenames.size()+1,10)+".png";
+    imagename=dir.absolutePath() + "/" +imagename;
 
-          edit_img_info.imageName=imagename;
+    edit_img_info.imageName=imagename;
       }
 
       //QMessageBox::about(this,"image name after editing",edit_img_info.imageName);
 
       writeImage(edit_img_info);
       editor = document->getCursor()->currentCell()->textEdit();
-        
-        if( editor )
-        {
-          // save text settings and set them after image have been inserted
-        QMessageBox::about(this,"message ","Entered inserting image");
-        qDebug()<<"image width and height "<<image->width()<<"  "<<image->height()<<"\n";
-        qDebug()<<"imgae info image width and height "<<edit_img_info.image->width()<<"  "<<edit_img_info.image->height()<<"\n";
-          QTextCharFormat format1 = cursor.charFormat();
-          if( editor->toPlainText().isEmpty() )
-             format1 = *document->getCursor()->currentCell()->style()->textCharFormat();
+  
+  if( editor )
+  {
+    // save text settings and set them after image have been inserted
+  QMessageBox::about(this,"message ","Entered inserting image");
+  qDebug()<<"image width and height "<<image->width()<<"  "<<image->height()<<"\n";
+  qDebug()<<"imgae info image width and height "<<edit_img_info.image->width()<<"  "<<edit_img_info.image->height()<<"\n";
+    QTextCharFormat format1 = cursor.charFormat();
+    if( editor->toPlainText().isEmpty() )
+       format1 = *document->getCursor()->currentCell()->style()->textCharFormat();
 
-          imageformat1.merge( format1 );
-          imageformat1.setHeight( image->height());
-          imageformat1.setWidth(  image->width());
-          imageformat1.setName( edit_img_info.imageName );
-                    
-          cursor.insertImage( imageformat1 );
-          document->getCursor()->currentCell()->update();
-          statusBar->showMessage("Image Exported ",10000);
+    imageformat1.merge( format1 );
+    imageformat1.setHeight( image->height());
+    imageformat1.setWidth(  image->width());
+    imageformat1.setName( edit_img_info.imageName );
+              
+    cursor.insertImage( imageformat1 );
+    document->getCursor()->currentCell()->update();
+    statusBar->showMessage("Image Exported ",10000);
       }
     
        }
@@ -804,7 +804,7 @@ void Tools::SaveSketchImage(QString filename)
 {
    if(!filenames.isEmpty()||!edit_imgs_info.isEmpty())
    {
-        if(!edit_imgs_info.isEmpty())
+  if(!edit_imgs_info.isEmpty())
       edit_imgs_info.clear();
     QFileInfo file_info(filename);
 
@@ -821,11 +821,11 @@ void Tools::SaveSketchImage(QString filename)
     {
       for(int j=0;j<documents_info[i].images_info.size();j++)
       {
-        xw1.writeTextElement("FileName",documents_info[i].images_info[j].imageName);
-        xw1.writeTextElement("OnbFileName",documents_info[i].onbFileName);
-        xw1.writeTextElement("Position",documents_info[i].images_info[j].cursor_position);
-        xw1.writeTextElement("Text",documents_info[i].images_info[j].cell_text);
-        xw1.writeTextElement("CellId",documents_info[i].images_info[j].cellId);
+  xw1.writeTextElement("FileName",documents_info[i].images_info[j].imageName);
+  xw1.writeTextElement("OnbFileName",documents_info[i].onbFileName);
+  xw1.writeTextElement("Position",documents_info[i].images_info[j].cursor_position);
+  xw1.writeTextElement("Text",documents_info[i].images_info[j].cell_text);
+  xw1.writeTextElement("CellId",documents_info[i].images_info[j].cellId);
       }
     }
      
@@ -866,42 +866,42 @@ void Tools::readXml(QString file_name)
      
      while(!xr.atEnd())
      {
-          //QMessageBox::about(this,"entered","Entered reading file contents");
-        if(xr.name()=="FileName")
-        {
+    //QMessageBox::about(this,"entered","Entered reading file contents");
+  if(xr.name()=="FileName")
+  {
       
-         num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
-         filenames1.push_back(num1);
+   num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
+   filenames1.push_back(num1);
   
-        }
+  }
 
-        if(xr.name()=="OnbFileName")
-        {
+  if(xr.name()=="OnbFileName")
+  {
       
-         num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
-         onbfilenames1.push_back(num1);
-        }
+   num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
+   onbfilenames1.push_back(num1);
+  }
 
-        
-        if(xr.name()=="Position")
-        {  
-         num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
-         positions1.push_back(num1);
-        }
+  
+  if(xr.name()=="Position")
+  {  
+   num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
+   positions1.push_back(num1);
+  }
 
-        if(xr.name()=="Text")
-        {
-         num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
-         texts1.push_back(num1);
-        }
+  if(xr.name()=="Text")
+  {
+   num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
+   texts1.push_back(num1);
+  }
 
-        if(xr.name()=="CellId")
-        {
-         num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
-         cellIds1.push_back(num1);
-        }
+  if(xr.name()=="CellId")
+  {
+   num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
+   cellIds1.push_back(num1);
+  }
 
-        xr.readNext();
+  xr.readNext();
      }
   }
 
@@ -922,11 +922,11 @@ void Tools::readXml(QString file_name)
     {
       for(int j=0;j<documents_info.size();j++)
       {
-        if(onbfilenames1[i]!=documents_info[j].onbFileName)
-        {
-          doc.onbFileName=onbfilenames1[i];
-          documents_info.push_back(doc);
-        }
+  if(onbfilenames1[i]!=documents_info[j].onbFileName)
+  {
+    doc.onbFileName=onbfilenames1[i];
+    documents_info.push_back(doc);
+  }
       }
     }
     file_read=true;
@@ -939,7 +939,7 @@ void Tools::readXml(QString file_name)
        documents_info[i].images_info.clear();
      for(int j=0;j<filenames1.size();j++)
      {
-          str=QFileInfo(documents_info[i].onbFileName).absoluteFilePath();
+    str=QFileInfo(documents_info[i].onbFileName).absoluteFilePath();
       QString str2=str;
       //QMessageBox::about(this,"files",filenames1[j]);
       //QMessageBox::about(this,"onbfiles",str);
@@ -961,9 +961,9 @@ void Tools::readXml(QString file_name)
 
       if(str==str1)
       {
-             //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
+       //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
        
-             img.imageName=filenames1[j];
+       img.imageName=filenames1[j];
        img.cursor_position=positions1[j];
        img.cell_text=texts1[j];
        img.cellId=cellIds1[j];
@@ -1003,16 +1003,16 @@ void Tools::draw_copy()
 void Tools::draw_cut()
 {
     if(copy_shape->isEnabled())
-        copy_shape->setDisabled(true);
+  copy_shape->setDisabled(true);
     scene->cut_object();
 }
 
 void Tools::draw_paste()
 {
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+  copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+  cut_shape->setDisabled(false);
     scene->paste_object();
 }
 
@@ -1143,8 +1143,8 @@ void Tools::open()//edit
     //editing  an image from saved file, that is when an open file option is used choosed in OMnotebook
     if(imagename.contains("file:///"))
     {
-          QImage *image=document->getImage(imagename);  
-          imagename.remove( "file:///" );
+    QImage *image=document->getImage(imagename);  
+    imagename.remove( "file:///" );
       file_name=imagename;
       onb_file_name=document->getFilename();
       filenames.push_back(file_name);
@@ -1157,12 +1157,12 @@ void Tools::open()//edit
     } 
     else //editing an image from an unsaved file
     {
-          file_name=imagename;
+    file_name=imagename;
       onb_file_name=document->getFilename();
       img.imageName=imagename;
       img.image=new QImage(imagename);
       edit_imgs_info.push_back(img);
-          //QMessageBox::about(this,"filename",file_name);
+    //QMessageBox::about(this,"filename",file_name);
        imageinfo(imagename);
       edit=true;
     }
@@ -1232,29 +1232,29 @@ void Tools::getCells(const QVector<Cell*> cells)
       int start = cells[i]->textHtml().indexOf( "<img src=", pos, Qt::CaseInsensitive );
       if( 0 <= start )
       {
-        // found an image
-        start += 10; // pos of first letter in imagename
-        int end = cells[i]->textHtml().indexOf( "\"", start );
+  // found an image
+  start += 10; // pos of first letter in imagename
+  int end = cells[i]->textHtml().indexOf( "\"", start );
 
-        // get the image name
-        QString imagename = cells[i]->textHtml().mid( start, end - start );
-        
-        QImage *image=document->getImage(imagename);
+  // get the image name
+  QString imagename = cells[i]->textHtml().mid( start, end - start );
+  
+  QImage *image=document->getImage(imagename);
 
-        //QMessageBox::about(this,"images in cells ",image->text("Shapes"));
-        imagename.remove( "file:///" );
-        image_info img;
+  //QMessageBox::about(this,"images in cells ",image->text("Shapes"));
+  imagename.remove( "file:///" );
+  image_info img;
 
-        //img.image = new QImage();
-        img.image = image;
-        img.imageName=imagename;
-        img.cellId =num.number(i); 
-        doc_images.push_back(img);
-                
-        pos = end + 1;
+  //img.image = new QImage();
+  img.image = image;
+  img.imageName=imagename;
+  img.cellId =num.number(i); 
+  doc_images.push_back(img);
+          
+  pos = end + 1;
       }
       else
-        break;
+  break;
     }
   }
   
@@ -1271,7 +1271,7 @@ void Tools::getCells(const QVector<Cell*> cells)
       files->parseText(text,values);
       doc_images[i].cursor_position=num.number(values[5]);
       values.clear();
-        }
+  }
   }
 
   /*for(int i=0;i<doc_images.size();i++)
@@ -1291,35 +1291,35 @@ void Tools::getCells(const QVector<Cell*> cells)
    }
    else
    {
-        for(int i=0;i<documents_info.size();i++)
+  for(int i=0;i<documents_info.size();i++)
       {
        if(documents_info[i].onbFileName==document->getFilename())
        {
-         found=true;
+   found=true;
        }      
       }
     if(found)
       {
-         for(int i=0;i<documents_info.size();i++)
+   for(int i=0;i<documents_info.size();i++)
       {
-          if(documents_info[i].onbFileName==document->getFilename())
-          {
-           for(int j=0;j<images_info.size();j++)
-           {
-                     documents_info[i].images_info.push_back(doc_images[j]);
-           //QMessageBox::about(this,"entered","new image is added");
-          
-           }   
-         break;
-          }
+    if(documents_info[i].onbFileName==document->getFilename())
+    {
+     for(int j=0;j<images_info.size();j++)
+     {
+               documents_info[i].images_info.push_back(doc_images[j]);
+     //QMessageBox::about(this,"entered","new image is added");
+    
+     }   
+   break;
+    }
        }  
        }
        else
        {
-          document_info doc;
-          doc.onbFileName=document->getFilename();
-          doc.images_info=images_info;
-          documents_info.push_back(doc);
+    document_info doc;
+    doc.onbFileName=document->getFilename();
+    doc.images_info=images_info;
+    documents_info.push_back(doc);
        }
      }
 
@@ -1372,15 +1372,15 @@ void Tools::closeEvent(QCloseEvent* event)
       edit=false;
       scene->new_Scene();
       
-        //break;
+  //break;
     }
     else if(opt==QMessageBox::Yes)
     {
-           if(!isSaved)
+     if(!isSaved)
        {
-                      QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
-          if(file_name.contains(".png"))
-           writeImage(file_name);
+                QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
+    if(file_name.contains(".png"))
+     writeImage(file_name);
        }
        isSaved=true;
        edit=false;
@@ -1436,22 +1436,22 @@ void Tools::setPenStyles(int indx)
   switch(indx)
     {
       case 0:
-          pen_lineSolidStyle();
-         break;
+    pen_lineSolidStyle();
+   break;
       case 1:
-          pen_lineDashStyle();
-          break;
+    pen_lineDashStyle();
+    break;
       case 2:
-          pen_lineDotStyle();
-          break;
+    pen_lineDotStyle();
+    break;
       case 3:
-          pen_lineDashDotStyle();
-          break;
+    pen_lineDashDotStyle();
+    break;
       case 4:
-          pen_lineDashDotDotStyle();
-          break;
+    pen_lineDashDotDotStyle();
+    break;
       default:
-          break;
+    break;
     }
   isSaved=false;
 }
@@ -1463,22 +1463,22 @@ void Tools::setPenWidths(int width)
     switch(width)
     {
       case 0:
-         pen.setWidth(1);
-         break;
+   pen.setWidth(1);
+   break;
       case 1:
-         pen.setWidth(2);
-         break;
+   pen.setWidth(2);
+   break;
       case 2:
-         pen.setWidth(3);
-         break;
+   pen.setWidth(3);
+   break;
       case 3:
-         pen.setWidth(4);
-         break;
+   pen.setWidth(4);
+   break;
       case 4:
-         pen.setWidth(5);
-         break;
+   pen.setWidth(5);
+   break;
       default:
-         break;
+   break;
     }
   isSaved=false;
 }
@@ -1489,52 +1489,52 @@ void Tools::setBrushStyles(int indx)
      switch(indx)
      {
        case 0:
-          brush.setStyle(Qt::NoBrush);
-          break;
+    brush.setStyle(Qt::NoBrush);
+    break;
        case 1:
-          brush.setStyle(Qt::SolidPattern);
-          break;
+    brush.setStyle(Qt::SolidPattern);
+    break;
        case 2:
-          brush.setStyle(Qt::Dense1Pattern);
-          break;
+    brush.setStyle(Qt::Dense1Pattern);
+    break;
        case 3:
-          brush.setStyle(Qt::Dense2Pattern);
-          break;
+    brush.setStyle(Qt::Dense2Pattern);
+    break;
        case 4:
-          brush.setStyle(Qt::Dense3Pattern);
-          break;
+    brush.setStyle(Qt::Dense3Pattern);
+    break;
        case 5:
-          brush.setStyle(Qt::Dense4Pattern);
-          break;
+    brush.setStyle(Qt::Dense4Pattern);
+    break;
        case 6:
-          brush.setStyle(Qt::Dense5Pattern);
-          break;
+    brush.setStyle(Qt::Dense5Pattern);
+    break;
        case 7:
-          brush.setStyle(Qt::Dense6Pattern);
-          break;
+    brush.setStyle(Qt::Dense6Pattern);
+    break;
        case 8:
-          brush.setStyle(Qt::Dense7Pattern);
-          break;
+    brush.setStyle(Qt::Dense7Pattern);
+    break;
        case 9:
-          brush.setStyle(Qt::HorPattern);
-          break;
+    brush.setStyle(Qt::HorPattern);
+    break;
        case 10:
-          brush.setStyle(Qt::VerPattern);
-          break;
+    brush.setStyle(Qt::VerPattern);
+    break;
        case 11:
-          brush.setStyle(Qt::CrossPattern);
-          break;
+    brush.setStyle(Qt::CrossPattern);
+    break;
        case 12:
-          brush.setStyle(Qt::BDiagPattern);
-          break;
+    brush.setStyle(Qt::BDiagPattern);
+    break;
        case 13:
-          brush.setStyle(Qt::FDiagPattern);
-          break;
+    brush.setStyle(Qt::FDiagPattern);
+    break;
        case 14:
-          brush.setStyle(Qt::DiagCrossPattern);
-          break;
+    brush.setStyle(Qt::DiagCrossPattern);
+    break;
        default:
-          break;
+    break;
       }
     isSaved=false;
 }
@@ -1617,21 +1617,21 @@ void Tools::readFileAttributes(QVector<QString> &subStrings)
     {
       if(documents_info[i].onbFileName==document->getFilename())
       {
-        for(int j=0;j<documents_info[i].images_info.size();j++)
-        {
-          int pos=document->getCursor()->currentCell()->textCursor().position();
-          if((documents_info[i].images_info[j].cellId==str.number(id))&&(documents_info[i].images_info[j].cursor_position.toInt(&ok,10)==pos))
-          {
-               file_name=documents_info[i].images_info[j].imageName;
-               onb_file_name=documents_info[i].onbFileName;
-           edit_imgs_info.push_back(documents_info[i].images_info[j]);
-               //QMessageBox::about(this,"filename",file_name);
-           edit=true;
-           break;
-          }
-          else
-            file_name=" ";
-        }
+  for(int j=0;j<documents_info[i].images_info.size();j++)
+  {
+    int pos=document->getCursor()->currentCell()->textCursor().position();
+    if((documents_info[i].images_info[j].cellId==str.number(id))&&(documents_info[i].images_info[j].cursor_position.toInt(&ok,10)==pos))
+    {
+         file_name=documents_info[i].images_info[j].imageName;
+         onb_file_name=documents_info[i].onbFileName;
+     edit_imgs_info.push_back(documents_info[i].images_info[j]);
+         //QMessageBox::about(this,"filename",file_name);
+     edit=true;
+     break;
+    }
+    else
+      file_name=" ";
+  }
       }
     }
   }
@@ -1652,7 +1652,7 @@ void Tools::readFileAttributes(QVector<QString> &subStrings)
 
 void Tools::insertImage(QString imageName)
 {
-        
+  
    /*QString img_name=imageName;
 
    QString num;
@@ -1676,32 +1676,32 @@ void Tools::insertImage(QString imageName)
       int start = cells[i]->textHtml().indexOf( "<img src=", pos, Qt::CaseInsensitive );
       if( 0 <= start )
       {
-        // found an image
-        start += 10; // pos of first letter in imagename
-        int end = cells[i]->textHtml().indexOf( "\"", start );
+  // found an image
+  start += 10; // pos of first letter in imagename
+  int end = cells[i]->textHtml().indexOf( "\"", start );
 
-        // get the image name
-        QString imagename = cells[i]->textHtml().mid( start, end - start );
+  // get the image name
+  QString imagename = cells[i]->textHtml().mid( start, end - start );
 
-        QMessageBox::about(this,"image name  ",imagename);
+  QMessageBox::about(this,"image name  ",imagename);
 
-        
-        QImage *image = new QImage(imagename);
+  
+  QImage *image = new QImage(imagename);
 
-        QMessageBox::about(this,"images in cells ",image->text("Shapes"));
+  QMessageBox::about(this,"images in cells ",image->text("Shapes"));
 
-        image_info img;
+  image_info img;
 
-        //img.image = new QImage();
-        img.image = image;
-        img.text = image->text("Shapes");
-        img.cellId =num.number(i); 
-        imgs.push_back(img);
-                
-        pos = end + 1;
+  //img.image = new QImage();
+  img.image = image;
+  img.text = image->text("Shapes");
+  img.cellId =num.number(i); 
+  imgs.push_back(img);
+          
+  pos = end + 1;
       }
       else
-        break;
+  break;
     }
   }
   
@@ -1718,7 +1718,7 @@ void Tools::insertImage(QString imageName)
       files->parseText(text,values);
       imgs[i].cursor_position=num.number(values[5]);
       values.clear();
-        }
+  }
   }
 
   for(int i=0;i<imgs.size();i++)
@@ -1737,37 +1737,37 @@ void Tools::insertImage(QString imageName)
    }
    else
    {
-        for(int i=0;i<documents_info.size();i++)
+  for(int i=0;i<documents_info.size();i++)
       {
        if(documents_info[i].onbFileName==img_name)
        {
-         found=true;
+   found=true;
        }      
       }
     if(found)
       {
-           
-         for(int i=0;i<documents_info.size();i++)
+     
+   for(int i=0;i<documents_info.size();i++)
       {
-          if(documents_info[i].onbFileName==img_name)
-          {
-                 for(int j=0;j<images_info.size();j++)
-           {
-           documents_info[i].images_info.push_back(images_info[j]);
-           
-           //QMessageBox::about(this,"entered","new image is added");
-          
-           }   
-         break;
-          }
+    if(documents_info[i].onbFileName==img_name)
+    {
+           for(int j=0;j<images_info.size();j++)
+     {
+     documents_info[i].images_info.push_back(images_info[j]);
+     
+     //QMessageBox::about(this,"entered","new image is added");
+    
+     }   
+   break;
+    }
        }  
        }
        else
        {
-          document_info doc;
-          doc.onbFileName=img_name;
-          doc.images_info=images_info;
-          documents_info.push_back(doc);
+    document_info doc;
+    doc.onbFileName=img_name;
+    doc.images_info=images_info;
+    documents_info.push_back(doc);
        }
      }
 
@@ -1825,45 +1825,45 @@ void Tools::writeImage(document_info &docs)
     
       //if(!QFile(docs.images_info[i].imageName).exists())
       {
-           str=QFileInfo(docs.onbFileName).completeBaseName();
+     str=QFileInfo(docs.onbFileName).completeBaseName();
        //QMessageBox::about(this,"base name ",str);
        //the extension of the file is removed and this file name is added to image name
-         //str.remove(str.length()-4,4);
-           //str=str+"_"+num.setNum(i+1,10)+".png";
-           //docs.images_info[i].imageName=str;
+   //str.remove(str.length()-4,4);
+     //str=str+"_"+num.setNum(i+1,10)+".png";
+     //docs.images_info[i].imageName=str;
        str=docs.images_info[i].imageName;
        //if(QFile(docs.images_info[i].imageName).exists())
-         //QFile(docs.images_info[i].imageName).remove();
+   //QFile(docs.images_info[i].imageName).remove();
        //QMessageBox::about(this,"text in images", docs.images_info[i].text);
        //QMessageBox::about(this,"filename", str);
-         QString cell_indx=docs.images_info[i].cellId;
-         Cell* cell = cells[cell_indx.toInt(&ok,10)];
-         cursor = cell->textCursor();
-         /*cell->textCursor().setPosition(docs.images_info[i].cursor_position.toInt(&ok,10));
-         cell->textCursor().deletePreviousChar();
-         cell->textCursor().setPosition(cursor.position()-1);
-           if(!cursor.isNull())
-         {
-          //QString imagename = document->addImage(image);
-          writeImage(docs.images_info[i]);
-          //QString imagename = img_file_name;
-          /*editor = cell->textEdit();
+   QString cell_indx=docs.images_info[i].cellId;
+   Cell* cell = cells[cell_indx.toInt(&ok,10)];
+   cursor = cell->textCursor();
+   /*cell->textCursor().setPosition(docs.images_info[i].cursor_position.toInt(&ok,10));
+   cell->textCursor().deletePreviousChar();
+   cell->textCursor().setPosition(cursor.position()-1);
+     if(!cursor.isNull())
+   {
+    //QString imagename = document->addImage(image);
+    writeImage(docs.images_info[i]);
+    //QString imagename = img_file_name;
+    /*editor = cell->textEdit();
     
-          if( editor )
-          {
-           // save text settings and set them after image have been inserted
-           QTextCharFormat format = cursor.charFormat();
-           if( editor->toPlainText().isEmpty() )
-             format = *cell->style()->textCharFormat();
+    if( editor )
+    {
+     // save text settings and set them after image have been inserted
+     QTextCharFormat format = cursor.charFormat();
+     if( editor->toPlainText().isEmpty() )
+       format = *cell->style()->textCharFormat();
 
-           imageformat.merge( format );
-           imageformat.setHeight( docs.images_info[i].image->height());
-           imageformat.setWidth( docs.images_info[i].image->width());
-           imageformat.setName(str);
-                    
-            cursor.insertImage( imageformat );
-          }//end of if
-          }//end of if
+     imageformat.merge( format );
+     imageformat.setHeight( docs.images_info[i].image->height());
+     imageformat.setWidth( docs.images_info[i].image->width());
+     imageformat.setName(str);
+              
+      cursor.insertImage( imageformat );
+    }//end of if
+    }//end of if
       }//end of if
      }//end of for   
    }//end of if
@@ -1872,51 +1872,51 @@ void Tools::writeImage(document_info &docs)
    {
      for(int i=0;i<documents_info.size();i++)
      {
-          if(documents_info[i].onbFileName==document->getFilename())
+    if(documents_info[i].onbFileName==document->getFilename())
       {
       for(int j=0;j<documents_info[i].images_info.size();j++)
       {
-               for(int k=0;k<edit_imgs_info.size();k++)
-         {
-            if(documents_info[i].images_info[j].imageName==edit_imgs_info[k].imageName)
-            {
-                     QString str = QFileInfo(documents_info[i].onbFileName).completeBaseName();
-           str=str+"_"+num.setNum(j+1,10)+".png";
-                     edit_imgs_info[k].imageName=str;
-           //QMessageBox::about(this,"base name edit",str);
-                     QString cell_indx=edit_imgs_info[k].cellId;
-                   Cell* cell = cells[cell_indx.toInt(&ok,10)];
-           //QMessageBox::about(this,"cellIndex",cell_indx);
+         for(int k=0;k<edit_imgs_info.size();k++)
+   {
+      if(documents_info[i].images_info[j].imageName==edit_imgs_info[k].imageName)
+      {
+               QString str = QFileInfo(documents_info[i].onbFileName).completeBaseName();
+     str=str+"_"+num.setNum(j+1,10)+".png";
+               edit_imgs_info[k].imageName=str;
+     //QMessageBox::about(this,"base name edit",str);
+               QString cell_indx=edit_imgs_info[k].cellId;
+             Cell* cell = cells[cell_indx.toInt(&ok,10)];
+     //QMessageBox::about(this,"cellIndex",cell_indx);
 
-           //QMessageBox::about(this,"curpos",edit_imgs_info[k].cursor_position);
+     //QMessageBox::about(this,"curpos",edit_imgs_info[k].cursor_position);
 
-                   cursor = cell->textCursor();
-           cursor.setPosition(edit_imgs_info[k].cursor_position.toInt(&ok,10));
-                   cursor.deletePreviousChar();
-                   cursor.setPosition(edit_imgs_info[k].cursor_position.toInt(&ok,10)-1);
-                     if(!cursor.isNull())
-                   {
-                    writeImage(edit_imgs_info[k]);
-                    editor = cell->textEdit();
+             cursor = cell->textCursor();
+     cursor.setPosition(edit_imgs_info[k].cursor_position.toInt(&ok,10));
+             cursor.deletePreviousChar();
+             cursor.setPosition(edit_imgs_info[k].cursor_position.toInt(&ok,10)-1);
+               if(!cursor.isNull())
+             {
+              writeImage(edit_imgs_info[k]);
+              editor = cell->textEdit();
     
-                    if( editor )
-                    {
-                     // save text settings and set them after image have been inserted
-                     QTextCharFormat format = cursor.charFormat();
-                     if( editor->toPlainText().isEmpty() )
-                       format = *cell->style()->textCharFormat();
+              if( editor )
+              {
+               // save text settings and set them after image have been inserted
+               QTextCharFormat format = cursor.charFormat();
+               if( editor->toPlainText().isEmpty() )
+                 format = *cell->style()->textCharFormat();
 
-                     imageformat.merge( format );
-                     imageformat.setHeight( edit_imgs_info[k].image->height());
-                     imageformat.setWidth( edit_imgs_info[k].image->width());
-                     imageformat.setName(edit_imgs_info[k].imageName);
-                    
-                      cursor.insertImage( imageformat );
-                    }//end of if
-                   }//end of if
-                   
-            }
-         }
+               imageformat.merge( format );
+               imageformat.setHeight( edit_imgs_info[k].image->height());
+               imageformat.setWidth( edit_imgs_info[k].image->width());
+               imageformat.setName(edit_imgs_info[k].imageName);
+              
+                cursor.insertImage( imageformat );
+              }//end of if
+             }//end of if
+             
+      }
+   }
       }
       }
      }
@@ -1931,7 +1931,7 @@ void Tools::writeImage(document_info &docs)
      {
        if(QFile(filenames[i]).exists())
        {
-         QFile(filenames[i]).remove();
+   QFile(filenames[i]).remove();
        }
      }
    }*/
@@ -1989,29 +1989,29 @@ void Tools::writeImage(QString filename)
 
     if(filename.contains(".png"))
     {
-        QImageWriter writer_img(filename,"png");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+  QImageWriter writer_img(filename,"png");
+    writer_img.setDescription( "Temporary OMNotebook image" );
+  writer_img.setQuality( 100 );
       writer_img.setText("Shapes",text);
-        writer_img.write( *image );
+  writer_img.write( *image );
     }
 
     if(filename.contains(".jpg"))
     {
       QImageWriter writer_img(filename,"jpg");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+    writer_img.setDescription( "Temporary OMNotebook image" );
+  writer_img.setQuality( 100 );
       //writer_img.setText("Shapes",text);
-        qDebug()<<"image written "<<writer_img.write( *image )<<"\n";
+  qDebug()<<"image written "<<writer_img.write( *image )<<"\n";
     }
 
     if(filename.contains(".bmp"))
     {
-        QImageWriter writer_img(filename,"bmp");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+  QImageWriter writer_img(filename,"bmp");
+    writer_img.setDescription( "Temporary OMNotebook image" );
+  writer_img.setQuality( 100 );
       writer_img.setText("Shapes",text);
-        writer_img.write( *image );
+  writer_img.write( *image );
     }
   
     
@@ -2282,7 +2282,7 @@ void Tools::item_selected(Graph_Scene* scene_item)
     {
        for(int i=0;i<scene_item->getObjects().size();i++)
        {
-           qDebug()<<"enntered \n";
+     qDebug()<<"enntered \n";
        }
     }
 }
@@ -2293,9 +2293,9 @@ void Tools::mouseReleaseEvent(QMouseEvent *event)
     {
     if(scene->isMultipleSelected==true)
     {
-            setCursor(Qt::ArrowCursor);
-            pen.setStyle(Qt::SolidLine);
-            brush.setStyle(Qt::NoBrush);  
+      setCursor(Qt::ArrowCursor);
+      pen.setStyle(Qt::SolidLine);
+      brush.setStyle(Qt::NoBrush);  
     }
 
      

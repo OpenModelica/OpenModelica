@@ -186,12 +186,12 @@ namespace IAEX
       event->accept();
       if( inCommand )
       {
-        emit nextCommand();
+  emit nextCommand();
       }
       else
       {
-        inCommand = true;
-        emit command();
+  inCommand = true;
+  emit command();
       }
     }
     // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
@@ -275,7 +275,7 @@ namespace IAEX
       inCommand = false;
       stopHighlighter = false;
 
-            textCursor().insertText( "  " );
+      textCursor().insertText( "  " );
     }
     else
     {
@@ -379,15 +379,15 @@ namespace IAEX
     {
       if( firstTime )
       {
-        thread->removeEditor( input_ );
-        firstTime = false;
+  thread->removeEditor( input_ );
+  firstTime = false;
       }
 
       SleeperThread::msleep( 60 );
       sleepTime++;
 
       if( sleepTime > 100 )
-        break;
+  break;
     }
 
 
@@ -689,17 +689,17 @@ namespace IAEX
       int startpos = tmp.indexOf( "<span", pos, Qt::CaseInsensitive );
       if( startpos >= 0 )
       {
-        int endpos = tmp.indexOf( "\">", startpos );
-        if( endpos >= 0 )
-        {
-          endpos += 2;
-          tmp.remove( startpos, endpos - startpos );
-        }
-        else
-          break;
+  int endpos = tmp.indexOf( "\">", startpos );
+  if( endpos >= 0 )
+  {
+    endpos += 2;
+    tmp.remove( startpos, endpos - startpos );
+  }
+  else
+    break;
       }
       else
-        break;
+  break;
 
       pos = startpos;
 
@@ -964,7 +964,7 @@ namespace IAEX
     else
     {
       if( evaluated_ )
-        output_->show();
+  output_->show();
     }
 
     closed_ = closed;
@@ -1031,7 +1031,7 @@ namespace IAEX
       int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
 
       if( outHeight < 0 )
-        outHeight = 30;
+  outHeight = 30;
 
       output_->setMinimumHeight( outHeight );
       height += outHeight;
@@ -1126,12 +1126,12 @@ namespace IAEX
 
       QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
       if( openmodelica.isEmpty() )
-        QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+  QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-        openmodelica += "tmp/";
+  openmodelica += "tmp/";
       else
-        openmodelica += "/tmp/";
+  openmodelica += "/tmp/";
 
       QString imagename = "omc_tmp_plot.png";
 
@@ -1162,23 +1162,23 @@ namespace IAEX
       // 2006-02-02 AF, Added try-catch
       try
       {
-        delegate()->evalExpression( expr );
+  delegate()->evalExpression( expr );
       }
       catch( exception &e )
       {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
+  exceptionInEval(e);
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+  return;
       }
 
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
       {
-        qApp->closeAllWindows();
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
+  qApp->closeAllWindows();
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+  return;
       }
 
       // get the result
@@ -1188,35 +1188,35 @@ namespace IAEX
       // 2006-02-02 AF, Added try-catch
       try
       {
-        error = delegate()->getError();
+  error = delegate()->getError();
       }
       catch( exception &e )
       {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
+  exceptionInEval(e);
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+  return;
       }
 
       {
-        // check if resualt is empty
-        if( res.isEmpty() && error.isEmpty() )
-          res = "[done]";
+  // check if resualt is empty
+  if( res.isEmpty() && error.isEmpty() )
+    res = "[done]";
 
-        if( !error.isEmpty() )
-          res += QString("\n") + error;
+  if( !error.isEmpty() )
+    res += QString("\n") + error;
 
-        output_->selectAll();
-        output_->textCursor().insertText( res );
-        //output_->setPlainText( res );
+  output_->selectAll();
+  output_->textCursor().insertText( res );
+  //output_->setPlainText( res );
       }
 
       ++numEvals_;
       /* remove the image */
       if( dir1.exists( imagename ))
-        dir1.remove( imagename );
+  dir1.remove( imagename );
       if( dir2.exists( imagename ))
-        dir2.remove( imagename );
+  dir2.remove( imagename );
 
       contentChanged();
 
@@ -1251,31 +1251,31 @@ namespace IAEX
       // unable to reconnect, ask if user want to restart omc.
       QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
       int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-        msg,
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No );
+  msg,
+  QMessageBox::Yes | QMessageBox::Default,
+  QMessageBox::No );
 
       if( result == QMessageBox::Yes )
       {
-        delegate_->closeConnection();
-        if( delegate_->startDelegate() )
-        {
-          // 2006-03-14 AF, wait before trying to reconnect,
-          // give OMC time to start up
-          SleeperThread::msleep( 1000 );
+  delegate_->closeConnection();
+  if( delegate_->startDelegate() )
+  {
+    // 2006-03-14 AF, wait before trying to reconnect,
+    // give OMC time to start up
+    SleeperThread::msleep( 1000 );
 
-          //delegate_->closeConnection();
-          try
-          {
-            delegate_->reconnect();
-            eval();
-          }
-          catch( exception &e )
-          {
-            QMessageBox::critical( 0, tr("Communication Error"),
-              tr("<B>Unable to communication correctlly with OMC.</B>") );
-          }
-        }
+    //delegate_->closeConnection();
+    try
+    {
+      delegate_->reconnect();
+      eval();
+    }
+    catch( exception &e )
+    {
+      QMessageBox::critical( 0, tr("Communication Error"),
+        tr("<B>Unable to communication correctlly with OMC.</B>") );
+    }
+  }
       }
     }
   }

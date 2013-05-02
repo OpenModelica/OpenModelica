@@ -119,9 +119,9 @@ void Indent::ISM::newToken(QString s, QString s2)
     if(s2 == "if" || s == "if" )
     {
       if(s == "=")
-        equation = true;
+  equation = true;
       else
-        equation = false;
+  equation = false;
 
       state = 1;
       //      lMod = true;
@@ -146,9 +146,9 @@ void Indent::ISM::newToken(QString s, QString s2)
     {
 //      ++level;
       if(equation || equationSection)
-        state = 2;
+  state = 2;
       else
-        state = 3;
+  state = 3;
 //      lMod = true;
       nextMod = +1;
     }
@@ -160,7 +160,7 @@ void Indent::ISM::newToken(QString s, QString s2)
     {
 //      lMod = true;;
       --level;
-//            nextMod = -1;
+//      nextMod = -1;
       state = 1;
       break;
     }
@@ -397,9 +397,9 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
       ts >> tmp2;
       while(tmp2 != "<newLine>")
       {
-        //        QMessageBox::information(0, "uu2", tmp2);
-        comment += " " + tmp2;
-        ts >> tmp2;
+  //        QMessageBox::information(0, "uu2", tmp2);
+  comment += " " + tmp2;
+  ts >> tmp2;
 
 
       }
@@ -433,7 +433,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
     {
       current = "\n";
 //      if(ism.state == 5)
-//        ism.state = ism.oldState;
+//  ism.state = ism.oldState;
     }
 
     if(newline)
@@ -441,15 +441,15 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
       N += newline;
       //      qDebug() << ism.level << endl;
       //      if(ism.lMod)
-      //        --ism.level;
+      //  --ism.level;
       //      ism.level = max(ism.level, 0);
       //      QMessageBox::information(0, "uu", "." + comment + ".");
       if(comment.size())
       {
-        res = res + "\n"  + QString(2*ism.level -2*ism.lMod, ' ')   +tmp   + current.trimmed()  +" " + comment.trimmed(); //QString(tmp.size()?1:0, ' ') + current.trimmed();
+  res = res + "\n"  + QString(2*ism.level -2*ism.lMod, ' ')   +tmp   + current.trimmed()  +" " + comment.trimmed(); //QString(tmp.size()?1:0, ' ') + current.trimmed();
       }
       else
-        res = res + "\n"  + QString(2*ism.level -2*ism.lMod, ' ')   +tmp   + current.trimmed()  +  QString(newline-1, '\n'); //QString(tmp.size()?1:0, ' ') + current.trimmed();
+  res = res + "\n"  + QString(2*ism.level -2*ism.lMod, ' ')   +tmp   + current.trimmed()  +  QString(newline-1, '\n'); //QString(tmp.size()?1:0, ' ') + current.trimmed();
       //      res = res + "\n"  + QString(2*ism.level -2*ism.lMod, ' ')   +tmp   + current.trimmed()  + QString(comment.size()?1:0,'\n') + QString(newline-1, '\n'); //QString(tmp.size()?1:0, ' ') + current.trimmed();
 
 
@@ -464,10 +464,10 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
 //      qDebug() << "nu" << endl;
       if(states && !(N % 10))
       {
-        if(states->find(N) != states->end())
-          states->remove(N);
-          //          delete states->find(N);
-        (*states)[N] = new IndentationState(ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock);
+  if(states->find(N) != states->end())
+    states->remove(N);
+    //          delete states->find(N);
+  (*states)[N] = new IndentationState(ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock);
       }
     }
     else

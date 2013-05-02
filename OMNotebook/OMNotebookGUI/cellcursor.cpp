@@ -272,9 +272,9 @@ namespace IAEX
       removeFromCurrentPosition();
 
       if(current->hasPrevious())
-        current->previous()->setNext(this);
+  current->previous()->setNext(this);
       else
-        parentCell()->setChild(this);
+  parentCell()->setChild(this);
 
       setPrevious(current->previous());
 
@@ -345,7 +345,7 @@ namespace IAEX
   bool CellCursor::moveUp()
   {
     // 2006-08-24 AF,
-        bool moved( false );
+  bool moved( false );
 
     // 2006-04-27 AF,
     cursorIsMoved();
@@ -354,8 +354,8 @@ namespace IAEX
     {
       if( parentCell()->hasParentCell() )
       {
-        moveBefore( parentCell() );
-        moved = true;
+  moveBefore( parentCell() );
+  moved = true;
       }
     }
     else
@@ -363,21 +363,21 @@ namespace IAEX
       //previous() exists.
       if(previous()->hasChilds())
       {
-        if(!previous()->isClosed())
-        {
-          moveToLastChild(previous());
-          moved = true;
-        }
-        else
-        {
-          moveBefore(previous());
-          moved = true;
-        }
+  if(!previous()->isClosed())
+  {
+    moveToLastChild(previous());
+    moved = true;
+  }
+  else
+  {
+    moveBefore(previous());
+    moved = true;
+  }
       }
       else
       {
-        moveBefore(previous());
-        moved = true;
+  moveBefore(previous());
+  moved = true;
       }
     }
     emit positionChanged(x(), y(), 5,5);
@@ -399,7 +399,7 @@ namespace IAEX
   bool CellCursor::moveDown()
   {
     // 2006-08-24 AF,
-        bool moved( false );
+  bool moved( false );
 
     // 2006-04-27 AF,
     cursorIsMoved();
@@ -408,29 +408,29 @@ namespace IAEX
     {
       if( parentCell()->hasParentCell() )
       {
-        moveAfter( parentCell() );
-        moved = true;
+  moveAfter( parentCell() );
+  moved = true;
       }
     }
     else //Has next.
     {
       if(next()->hasChilds())
       {
-        if(!next()->isClosed())
-        {
-          moveToFirstChild(next());
-          moved = true;
-        }
-        else
-        {
-          moveAfter(next());
-          moved = true;
-        }
+  if(!next()->isClosed())
+  {
+    moveToFirstChild(next());
+    moved = true;
+  }
+  else
+  {
+    moveAfter(next());
+    moved = true;
+  }
       }
       else
       {
-        moveAfter(next());
-        moved = true;
+  moveAfter(next());
+  moved = true;
       }
     }
     // TMP EMIT
@@ -509,10 +509,10 @@ namespace IAEX
 
       if(current->hasNext() == 0)
       {
-        current->parentCell()->setLast(this);
+  current->parentCell()->setLast(this);
       }
       else
-        current->next()->setPrevious(this);
+  current->next()->setPrevious(this);
 
       setParentCell(current->parentCell());
       setNext(current->next());
@@ -554,9 +554,9 @@ namespace IAEX
     {
       setParentCell(current->parentCell());
       if(!current->hasPrevious())
-        current->parentCell()->setChild(this);
+  current->parentCell()->setChild(this);
       else
-        current->previous()->setNext(this);
+  current->previous()->setNext(this);
 
     }
     else

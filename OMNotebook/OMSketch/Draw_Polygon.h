@@ -75,12 +75,12 @@ class Draw_Polygon:QGraphicsPathItem
 
    void setPolygonDrawn(bool draw_state)
    {
-        polygon_draw_state=draw_state;
+  polygon_draw_state=draw_state;
    }
 
    bool getPolygonDrawn()
    {
-        return polygon_draw_state;
+  return polygon_draw_state;
    }
 
    void setPen(const QColor color);

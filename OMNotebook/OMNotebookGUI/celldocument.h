@@ -90,8 +90,8 @@ namespace IAEX
     virtual void cursorStepUp();
     virtual void cursorStepDown();
     virtual void cursorAddCell();
-    virtual void cursorUngroupCell();          // Added 2006-04-26 AF
-    virtual void cursorSplitCell();            // Added 2006-04-26 AF
+    virtual void cursorUngroupCell();    // Added 2006-04-26 AF
+    virtual void cursorSplitCell();      // Added 2006-04-26 AF
     virtual void cursorDeleteCell();
     virtual void cursorCutCell();
     virtual void cursorCopyCell();
@@ -131,7 +131,7 @@ namespace IAEX
     //Cursor operations
     CellCursor *getCursor();
     Factory *cellFactory();
-    Cell* getMainCell();        // Added 2006-08-24 AF
+    Cell* getMainCell();  // Added 2006-08-24 AF
     vector<Cell*> getSelection();
 
     //Command
@@ -149,7 +149,7 @@ namespace IAEX
     void toggleMainTreeView();
     void setEditable(bool editable);
     void cursorChangedPosition();
-    void updateScrollArea();        // Added 2005-11-29 AF
+    void updateScrollArea();  // Added 2005-11-29 AF
     void setChanged( bool changed );    // Added 2006-01-17 AF
     void hoverOverUrl( const QUrl &link );  // Added 2006-02-10 AF
     void selectedACell(Cell *selected, Qt::KeyboardModifiers);
@@ -174,7 +174,7 @@ namespace IAEX
     void widthChanged(const int);
     void cursorChanged();
     void viewExpression(const bool);
-    void contentChanged();        // Added 2005-11-29 AF
+    void contentChanged();  // Added 2005-11-29 AF
     void hoverOverFile( QString );    // Added 2006-02-10 AF
     void forwardAction( int );      // Added 2006-04-27 AF
 
@@ -189,14 +189,14 @@ namespace IAEX
 
 
   private:
-    bool changed_;          // Added 2006-01-17 AF
+    bool changed_;    // Added 2006-01-17 AF
     bool open_;
     bool saved_;
 
     CellApplication *app_;
     QString filename_;
 
-    Cell *workspace_;        //This should alwas be a cellgroup.
+    Cell *workspace_;  //This should alwas be a cellgroup.
     Cell *lastClickedCell_;      // Added 2006-04-25 AF
     QFrame *mainFrame_;
 
@@ -214,7 +214,7 @@ namespace IAEX
     bool autoIndent;
   private:
     QHash<QString, QImage*> images_;    // Added 2005-11-19 AF
-    int currentImageNo_;          // Added 2005-11-19 AF
+    int currentImageNo_;    // Added 2005-11-19 AF
   };
 
 }

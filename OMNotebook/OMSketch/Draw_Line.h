@@ -75,12 +75,12 @@ class Draw_Line:QGraphicsPathItem
 
    void setPolyLineDrawn(bool draw_state)
    {
-        line_draw_state=draw_state;
+  line_draw_state=draw_state;
    }
 
    bool getPolyLineDrawn()
    {
-        return line_draw_state;
+  return line_draw_state;
    }
 
    void setPen(const QColor color);

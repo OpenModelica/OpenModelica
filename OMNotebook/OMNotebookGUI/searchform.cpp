@@ -179,256 +179,256 @@ namespace IAEX
       QTextEdit* editor;
       if( currentCell )
       {
-        editor = currentCell->textEdit();
+  editor = currentCell->textEdit();
+  if( editor )
+  {
+    // FIND FUNCTION
+    if( searchDown )
+    {
+      if( editor->find( searchText_, (QTextDocument::FindFlag)options ))
+      {
+        // TODO: Activate Main Window, don't know if it is necessary
+        //parentWidget()->activateWindow();
+        break;
+      }
+    }
+    else
+    {
+      if( editor->find( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
+      {
+        // TODO: Activate Main Window, don't know if it is necessary
+        //parentWidget()->activateWindow();
+        break;
+      }
+    }
+  }
+
+  // search inside inputcells
+  if( typeid( (*currentCell) ) == typeid( InputCell ) )
+  {
+    InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
+    if( inputcell )
+    {
+      // only look inside open inputcells
+      if( !inputcell->isClosed() )
+      {
+        editor = inputcell->textEditOutput();
         if( editor )
         {
           // FIND FUNCTION
           if( searchDown )
           {
             if( editor->find( searchText_, (QTextDocument::FindFlag)options ))
-            {
-              // TODO: Activate Main Window, don't know if it is necessary
-              //parentWidget()->activateWindow();
               break;
-            }
           }
           else
           {
             if( editor->find( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
-            {
-              // TODO: Activate Main Window, don't know if it is necessary
-              //parentWidget()->activateWindow();
               break;
-            }
           }
         }
-
-        // search inside inputcells
-        if( typeid( (*currentCell) ) == typeid( InputCell ) )
-        {
-          InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-          if( inputcell )
-          {
-            // only look inside open inputcells
-            if( !inputcell->isClosed() )
-            {
-              editor = inputcell->textEditOutput();
-              if( editor )
-              {
-                // FIND FUNCTION
-                if( searchDown )
-                {
-                  if( editor->find( searchText_, (QTextDocument::FindFlag)options ))
-                    break;
-                }
-                else
-                {
-                  if( editor->find( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
-                    break;
-                }
-              }
-            }
-          }
-        }
+      }
+    }
+  }
       }
 
       // no hit in cell, move to next cell
       if( searchDown )
       {
-        // DOWN
-        // check if the cell after the current cell is a closed cell, if so open it.
-        if( insideClosedCell )
-        {
-          if( currentCell )
-          {
-            Cell* nextCell = currentCell->next(); // this cell should be the cellcursor
-            if( nextCell )
-            {
-              if( typeid( (*nextCell) ) == typeid( CellCursor ) )
-              {
-                Cell* nextCellAgain = nextCell->next();
-                if( nextCellAgain )
-                {
-                  if( typeid( (*nextCellAgain) ) == typeid( CellGroup ) )
-                  {
-                    CellGroup* groupcell = dynamic_cast<CellGroup*>( nextCellAgain );
-                    if( groupcell )
-                    {
-                      if( groupcell->isClosed() )
-                      {
-                        groupcell->setClosed( false, false );
-                        groupcell->closeChildCells();
-                        openedCells_.push_back( groupcell );
-                      }
-                    }
-                  }
-                  else if( typeid( (*nextCellAgain) ) == typeid( InputCell ) )
-                  {
-                    InputCell* inputcell = dynamic_cast<InputCell*>( nextCellAgain );
-                    if( inputcell )
-                    {
-                      if( inputcell->isClosed() )
-                      {
-                        inputcell->setClosed( false, false );
-                        openedCells_.push_back( inputcell );
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // before moving, clear last cursor selection
-        if( currentCell->textEdit() )
-        {
-          QTextCursor cursor = currentCell->textEdit()->textCursor();
-          cursor.clearSelection();
-          currentCell->textEdit()->setTextCursor( cursor );
-
-          // if inputcell, clear output also
-          if( typeid( (*currentCell) ) == typeid( InputCell ) )
-          {
-            InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-            if( inputcell )
-            {
-              QTextCursor cursor = inputcell->textEditOutput()->textCursor();
-              cursor.clearSelection();
-              inputcell->textEditOutput()->setTextCursor( cursor );
-            }
-          }
-        }
-
-        if( document_->getCursor()->moveDown() )
-        {
-          // after move, update scrollarea
-          document_->updateScrollArea();
-
-          // moved down one cell, get new currentcell
-          currentCell = document_->getCursor()->currentCell();
-
-          // if the new currentCell have a text editor, move the text cursor to pos 'start'
-          if( currentCell )
-          {
-            editor = currentCell->textEdit();
-            if( editor )
-            {
-              QTextCursor cursor = editor->textCursor();
-              cursor.movePosition( QTextCursor::Start );
-              editor->setTextCursor( cursor );
-            }
-
-            // if inputcell, also move the cursor of the output
-            if( typeid( (*currentCell) ) == typeid( InputCell ) )
-            {
-              InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-              if( inputcell )
-              {
-                editor = inputcell->textEditOutput();
-                if( editor )
-                {
-                  QTextCursor cursor = editor->textCursor();
-                  cursor.movePosition( QTextCursor::Start );
-                  editor->setTextCursor( cursor );
-                }
-              }
-            }
-          }
-        }
-        else
-        {
-          // unable to move down, assume that the cursor have reached end of document
-          QString msg = QString( "Reached end of document. No more instances of '" ) +
-            searchText_ + QString( "' found." );
-          QMessageBox::information( this, "Information", msg );
-          return;
-        }
-      }
-      else
+  // DOWN
+  // check if the cell after the current cell is a closed cell, if so open it.
+  if( insideClosedCell )
+  {
+    if( currentCell )
+    {
+      Cell* nextCell = currentCell->next(); // this cell should be the cellcursor
+      if( nextCell )
       {
-        // UP
-        // before moving, clear last cursor selection
-        if( currentCell->textEdit() )
+        if( typeid( (*nextCell) ) == typeid( CellCursor ) )
         {
-          QTextCursor cursor = currentCell->textEdit()->textCursor();
-          cursor.clearSelection();
-          currentCell->textEdit()->setTextCursor( cursor );
-
-          // if inputcell, clear output also
-          if( typeid( (*currentCell) ) == typeid( InputCell ) )
+          Cell* nextCellAgain = nextCell->next();
+          if( nextCellAgain )
           {
-            InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-            if( inputcell )
+            if( typeid( (*nextCellAgain) ) == typeid( CellGroup ) )
             {
-              QTextCursor cursor = inputcell->textEditOutput()->textCursor();
-              cursor.clearSelection();
-              inputcell->textEditOutput()->setTextCursor( cursor );
-            }
-          }
-        }
-
-        // move
-        if( document_->getCursor()->moveUp() )
-        {
-          // after move, update scrollarea
-          document_->updateScrollArea();
-
-          // moved up one cell
-          currentCell = document_->getCursor()->currentCell();
-          if( currentCell )
-          {
-            // if the new currentCell have a text editor,
-            // move the text cursor to pos 'end'
-            editor = currentCell->textEdit();
-            if( editor )
-            {
-              QTextCursor cursor = editor->textCursor();
-              cursor.movePosition( QTextCursor::End );
-              editor->setTextCursor( cursor );
-            }
-
-            // if inputcell, also move the cursor of the output
-            if( typeid( (*currentCell) ) == typeid( InputCell ) )
-            {
-              InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-              if( inputcell )
+              CellGroup* groupcell = dynamic_cast<CellGroup*>( nextCellAgain );
+              if( groupcell )
               {
-                editor = inputcell->textEditOutput();
-                if( editor )
-                {
-                  QTextCursor cursor = editor->textCursor();
-                  cursor.movePosition( QTextCursor::End );
-                  editor->setTextCursor( cursor );
-                }
-              }
-            }
-
-            // if the new currentCell is closed and the option inside cells is set,
-            // open the new cell
-            if( insideClosedCell && currentCell->isClosed() )
-            {
-              if( typeid( (*currentCell) ) == typeid( CellGroup ) )
-              {
-                CellGroup* groupcell = dynamic_cast<CellGroup*>( currentCell );
-                if( groupcell )
+                if( groupcell->isClosed() )
                 {
                   groupcell->setClosed( false, false );
                   groupcell->closeChildCells();
-                  openedCells_.push_back( currentCell );
+                  openedCells_.push_back( groupcell );
+                }
+              }
+            }
+            else if( typeid( (*nextCellAgain) ) == typeid( InputCell ) )
+            {
+              InputCell* inputcell = dynamic_cast<InputCell*>( nextCellAgain );
+              if( inputcell )
+              {
+                if( inputcell->isClosed() )
+                {
+                  inputcell->setClosed( false, false );
+                  openedCells_.push_back( inputcell );
                 }
               }
             }
           }
         }
-        else
+      }
+    }
+  }
+
+  // before moving, clear last cursor selection
+  if( currentCell->textEdit() )
+  {
+    QTextCursor cursor = currentCell->textEdit()->textCursor();
+    cursor.clearSelection();
+    currentCell->textEdit()->setTextCursor( cursor );
+
+    // if inputcell, clear output also
+    if( typeid( (*currentCell) ) == typeid( InputCell ) )
+    {
+      InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
+      if( inputcell )
+      {
+        QTextCursor cursor = inputcell->textEditOutput()->textCursor();
+        cursor.clearSelection();
+        inputcell->textEditOutput()->setTextCursor( cursor );
+      }
+    }
+  }
+
+  if( document_->getCursor()->moveDown() )
+  {
+    // after move, update scrollarea
+    document_->updateScrollArea();
+
+    // moved down one cell, get new currentcell
+    currentCell = document_->getCursor()->currentCell();
+
+    // if the new currentCell have a text editor, move the text cursor to pos 'start'
+    if( currentCell )
+    {
+      editor = currentCell->textEdit();
+      if( editor )
+      {
+        QTextCursor cursor = editor->textCursor();
+        cursor.movePosition( QTextCursor::Start );
+        editor->setTextCursor( cursor );
+      }
+
+      // if inputcell, also move the cursor of the output
+      if( typeid( (*currentCell) ) == typeid( InputCell ) )
+      {
+        InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
+        if( inputcell )
         {
-          // unable to move up, assume that the cursor have reached start of document
-          QString msg = QString( "Reached start of document. No more instances of '" ) +
-            searchText_ + QString( "' found." );
-          QMessageBox::information( this, "Information", msg );
-          return;
+          editor = inputcell->textEditOutput();
+          if( editor )
+          {
+            QTextCursor cursor = editor->textCursor();
+            cursor.movePosition( QTextCursor::Start );
+            editor->setTextCursor( cursor );
+          }
         }
+      }
+    }
+  }
+  else
+  {
+    // unable to move down, assume that the cursor have reached end of document
+    QString msg = QString( "Reached end of document. No more instances of '" ) +
+      searchText_ + QString( "' found." );
+    QMessageBox::information( this, "Information", msg );
+    return;
+  }
+      }
+      else
+      {
+  // UP
+  // before moving, clear last cursor selection
+  if( currentCell->textEdit() )
+  {
+    QTextCursor cursor = currentCell->textEdit()->textCursor();
+    cursor.clearSelection();
+    currentCell->textEdit()->setTextCursor( cursor );
+
+    // if inputcell, clear output also
+    if( typeid( (*currentCell) ) == typeid( InputCell ) )
+    {
+      InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
+      if( inputcell )
+      {
+        QTextCursor cursor = inputcell->textEditOutput()->textCursor();
+        cursor.clearSelection();
+        inputcell->textEditOutput()->setTextCursor( cursor );
+      }
+    }
+  }
+
+  // move
+  if( document_->getCursor()->moveUp() )
+  {
+    // after move, update scrollarea
+    document_->updateScrollArea();
+
+    // moved up one cell
+    currentCell = document_->getCursor()->currentCell();
+    if( currentCell )
+    {
+      // if the new currentCell have a text editor,
+      // move the text cursor to pos 'end'
+      editor = currentCell->textEdit();
+      if( editor )
+      {
+        QTextCursor cursor = editor->textCursor();
+        cursor.movePosition( QTextCursor::End );
+        editor->setTextCursor( cursor );
+      }
+
+      // if inputcell, also move the cursor of the output
+      if( typeid( (*currentCell) ) == typeid( InputCell ) )
+      {
+        InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
+        if( inputcell )
+        {
+          editor = inputcell->textEditOutput();
+          if( editor )
+          {
+            QTextCursor cursor = editor->textCursor();
+            cursor.movePosition( QTextCursor::End );
+            editor->setTextCursor( cursor );
+          }
+        }
+      }
+
+      // if the new currentCell is closed and the option inside cells is set,
+      // open the new cell
+      if( insideClosedCell && currentCell->isClosed() )
+      {
+        if( typeid( (*currentCell) ) == typeid( CellGroup ) )
+        {
+          CellGroup* groupcell = dynamic_cast<CellGroup*>( currentCell );
+          if( groupcell )
+          {
+            groupcell->setClosed( false, false );
+            groupcell->closeChildCells();
+            openedCells_.push_back( currentCell );
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    // unable to move up, assume that the cursor have reached start of document
+    QString msg = QString( "Reached start of document. No more instances of '" ) +
+      searchText_ + QString( "' found." );
+    QMessageBox::information( this, "Information", msg );
+    return;
+  }
       }
     }
   }
@@ -454,25 +454,25 @@ namespace IAEX
       QTextEdit* editor = currentCell->textEdit();
       if( editor )
       {
-        QTextCursor cursor = editor->textCursor();
-        if( cursor.hasSelection() )
-        {
-          // check if correct text is selected
-          int cs( 0 );
-          QString text = cursor.selectedText();
-          if( matchCase_ )
-            cs = Qt::CaseSensitive;
-          else
-            cs = Qt::CaseInsensitive;
+  QTextCursor cursor = editor->textCursor();
+  if( cursor.hasSelection() )
+  {
+    // check if correct text is selected
+    int cs( 0 );
+    QString text = cursor.selectedText();
+    if( matchCase_ )
+      cs = Qt::CaseSensitive;
+    else
+      cs = Qt::CaseInsensitive;
 
-          if( text.startsWith( searchText_, ( Qt::CaseSensitivity)cs ) &&
-            text.endsWith( searchText_, ( Qt::CaseSensitivity)cs ))
-          {
-            // REPLACE
-            correct = true;
-            cursor.insertText( ui.replaceText_->text() );
-          }
-        }
+    if( text.startsWith( searchText_, ( Qt::CaseSensitivity)cs ) &&
+      text.endsWith( searchText_, ( Qt::CaseSensitivity)cs ))
+    {
+      // REPLACE
+      correct = true;
+      cursor.insertText( ui.replaceText_->text() );
+    }
+  }
       }
     }
 
@@ -500,8 +500,8 @@ namespace IAEX
     {
       if( document_->isEmpty() )
       {
-        QMessageBox::information( this, "Information", "This document is empty." );
-        return;
+  QMessageBox::information( this, "Information", "This document is empty." );
+  return;
       }
     }
     else
@@ -567,9 +567,9 @@ namespace IAEX
       (*iter)->setClosed( true, false );
       if( typeid( (*(*iter)) ) == typeid( CellGroup ) )
       {
-        CellGroup* groupcell = dynamic_cast<CellGroup*>( (*iter) );
-        if( groupcell )
-          groupcell->closeChildCells();
+  CellGroup* groupcell = dynamic_cast<CellGroup*>( (*iter) );
+  if( groupcell )
+    groupcell->closeChildCells();
       }
 
       ++iter;

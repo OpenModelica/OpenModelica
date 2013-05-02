@@ -77,24 +77,24 @@ namespace IAEX
       CellStyle style;
 
       if(cursor->currentCell()->hasChilds())
-        style = *cursor->currentCell()->child()->style();
+  style = *cursor->currentCell()->child()->style();
       else
-        style = *cursor->currentCell()->style();
+  style = *cursor->currentCell()->style();
 
 
       //This does not work.
       if(cursor->currentCell()->isClosed())
       {
-        if(cursor->currentCell()->hasChilds())
-        {
-          cursor->currentCell()->child()->setReadOnly(true);
-          cursor->currentCell()->child()->setFocus(false);
-        }
+  if(cursor->currentCell()->hasChilds())
+  {
+    cursor->currentCell()->child()->setReadOnly(true);
+    cursor->currentCell()->child()->setFocus(false);
+  }
       }
       else
       {
-        cursor->currentCell()->setReadOnly(true);
-        cursor->currentCell()->setFocus(false);
+  cursor->currentCell()->setReadOnly(true);
+  cursor->currentCell()->setFocus(false);
       }
 
       // 2005-11-21 AF, Added check if the current cell is a
@@ -102,23 +102,23 @@ namespace IAEX
       // 2006-02-03 AF, added check if the current cell is a
       // groupcell
       if( style.name() == "input" || style.name() == "Input" || style.name() == "ModelicaInput" ||
-        style.name() == "cellgroup" )
-        cursor->addBefore(fac->createCell( "Text" ));
+  style.name() == "cellgroup" )
+  cursor->addBefore(fac->createCell( "Text" ));
       else
-        cursor->addBefore(fac->createCell(style.name()));
+  cursor->addBefore(fac->createCell(style.name()));
 
       if(cursor->currentCell()->isClosed())
       {
-        if(cursor->currentCell()->hasChilds())
-        {
-          cursor->currentCell()->child()->setReadOnly(false);
-          cursor->currentCell()->child()->setFocus(true);
-        }
+  if(cursor->currentCell()->hasChilds())
+  {
+    cursor->currentCell()->child()->setReadOnly(false);
+    cursor->currentCell()->child()->setFocus(true);
+  }
       }
       else
       {
-        cursor->currentCell()->setReadOnly(false);
-        cursor->currentCell()->setFocus(true);
+  cursor->currentCell()->setReadOnly(false);
+  cursor->currentCell()->setFocus(true);
       }
 
       //2006-01-18 AF, set docuement changed
@@ -151,8 +151,8 @@ namespace IAEX
    {
       if(cursor->currentCell()->hasChilds())
       {
-         cursor->currentCell()->child()->setReadOnly(true);
-         cursor->currentCell()->child()->setFocus(false);
+   cursor->currentCell()->child()->setReadOnly(true);
+   cursor->currentCell()->child()->setFocus(false);
       }
    }
    else
@@ -167,8 +167,8 @@ namespace IAEX
    {
       if(cursor->currentCell()->hasChilds())
       {
-         cursor->currentCell()->child()->setReadOnly(false);
-         cursor->currentCell()->child()->setFocus(true);
+   cursor->currentCell()->child()->setReadOnly(false);
+   cursor->currentCell()->child()->setFocus(true);
       }
    }
    else
@@ -255,13 +255,13 @@ namespace IAEX
       vector<Cell *>::iterator i = cells.begin();
       for(;i != cells.end();++i)
       {
-         c->moveAfter((*i));
+   c->moveAfter((*i));
 
-         //1. Copy cell to pasteboard.
-         application()->addToPasteboard(c->currentCell());
+   //1. Copy cell to pasteboard.
+   application()->addToPasteboard(c->currentCell());
 
-         //2. Delete Cell.
-         c->removeCurrentCell();
+   //2. Delete Cell.
+   c->removeCurrentCell();
       }
    }
 
@@ -293,22 +293,22 @@ namespace IAEX
       // Insert new cells before this position.
       if(!cells.empty())
       {
-        //Reverse iterator!!!!!
-        //vector<Cell *>::reverse_iterator i = cells.rbegin();
-        //for(;i != cells.rend();++i)
-        // AF, Not reverse
-        vector<Cell *>::iterator i = cells.begin();
-        for(;i != cells.end();++i)
-        {
-          try
-          {
-            pasteCell( (*i) );
-          }
-          catch(exception &e)
-          {
-            throw e;
-          }
-        }
+  //Reverse iterator!!!!!
+  //vector<Cell *>::reverse_iterator i = cells.rbegin();
+  //for(;i != cells.rend();++i)
+  // AF, Not reverse
+  vector<Cell *>::iterator i = cells.begin();
+  for(;i != cells.end();++i)
+  {
+    try
+    {
+      pasteCell( (*i) );
+    }
+    catch(exception &e)
+    {
+      throw e;
+    }
+  }
       }
 
       //2006-01-18 AF, set docuement changed
@@ -337,8 +337,8 @@ namespace IAEX
     {
       if(cursor->currentCell()->hasChilds())
       {
-        cursor->currentCell()->child()->setReadOnly(true);
-        cursor->currentCell()->child()->setFocus(false);
+  cursor->currentCell()->child()->setReadOnly(true);
+  cursor->currentCell()->child()->setFocus(false);
       }
     }
     else
@@ -380,12 +380,12 @@ namespace IAEX
 
       if( cell->hasChilds() )
       {
-        Cell* child = cell->child();
-        while( child )
-        {
-          pasteCell( child, newCellGroup );
-          child = child->next();
-        }
+  Cell* child = cell->child();
+  while( child )
+  {
+    pasteCell( child, newCellGroup );
+    child = child->next();
+  }
       }
     }
     else if( typeid(InputCell) == typeid( *newCell ))
@@ -398,11 +398,11 @@ namespace IAEX
 
       if( oldInputCell->isEvaluated() )
       {
-        newInputCell->setEvaluated( true );
-        newInputCell->setTextOutput( oldInputCell->textOutput() );
+  newInputCell->setEvaluated( true );
+  newInputCell->setTextOutput( oldInputCell->textOutput() );
       }
       else
-        newInputCell->setEvaluated( false );
+  newInputCell->setEvaluated( false );
 
       newInputCell->setClosed( oldInputCell->isClosed() );
     }
@@ -416,11 +416,11 @@ namespace IAEX
 
       if( oldGraphCell->isEvaluated() )
       {
-        newGraphCell->setEvaluated( true );
-        newGraphCell->setTextOutput( oldGraphCell->textOutput() );
+  newGraphCell->setEvaluated( true );
+  newGraphCell->setTextOutput( oldGraphCell->textOutput() );
       }
       else
-        newGraphCell->setEvaluated( false );
+  newGraphCell->setEvaluated( false );
 
       newGraphCell->setClosed( oldGraphCell->isClosed() );
     }
@@ -448,8 +448,8 @@ namespace IAEX
     {
       if(cursor->currentCell()->hasChilds())
       {
-        cursor->currentCell()->child()->setReadOnly(false);
-        cursor->currentCell()->child()->setFocus(true);
+  cursor->currentCell()->child()->setReadOnly(false);
+  cursor->currentCell()->child()->setFocus(true);
       }
     }
     else
@@ -491,8 +491,8 @@ namespace IAEX
       vector<Cell *>::iterator i = cells.begin();
       for(;i != cells.end();++i)
       {
-         (document()->getCursor())->moveAfter((*i));
-         (document()->getCursor())->deleteCurrentCell();
+   (document()->getCursor())->moveAfter((*i));
+   (document()->getCursor())->deleteCurrentCell();
       }
    }
 
@@ -532,17 +532,17 @@ namespace IAEX
 
       if(cells.empty())
       {
-        document()->getCursor()->currentCell()->setStyle(style_);
+  document()->getCursor()->currentCell()->setStyle(style_);
       }
       else
       {;
-        vector<Cell *>::iterator i = cells.begin();
+  vector<Cell *>::iterator i = cells.begin();
 
-        for(;i != cells.end() ;++i)
-        {
-          //This makes an segfault. Do not now why?
-          (*i)->setStyle(style_);
-        }
+  for(;i != cells.end() ;++i)
+  {
+    //This makes an segfault. Do not now why?
+    (*i)->setStyle(style_);
+  }
 
       }
 
@@ -619,75 +619,75 @@ namespace IAEX
 
       if( !cells.empty() )
       {
-        // clear selection before changing cell strucure
-        document()->clearSelection();
+  // clear selection before changing cell strucure
+  document()->clearSelection();
 
-        vector<Cell *>::iterator c_iter = cells.begin();
-        for(; c_iter != cells.end() ; ++c_iter )
+  vector<Cell *>::iterator c_iter = cells.begin();
+  for(; c_iter != cells.end() ; ++c_iter )
+  {
+    //check if groupcell
+    if( typeid( *(*c_iter) ) == typeid( CellGroup ))
+    {
+      if( !(*c_iter)->hasChilds() )
+        throw runtime_error( "No children" );
+
+      // get child
+      Cell* child = (*c_iter)->child();
+      Cell* deletedCellsParent = (*c_iter)->parentCell();
+      Cell* deletedCellsPrevious = (*c_iter)->previous();
+      Cell* deletedCellsNext = (*c_iter)->next();
+
+      // if previous is 0 = first in cell
+      child->setPrevious( deletedCellsPrevious );
+      if( !child->hasPrevious() )
+        deletedCellsParent->setChild( child );
+      else
+        deletedCellsPrevious->setNext( child );
+
+      // add all children
+      while( child != 0 )
+      {
+        //child->setParent( (*c_iter)->parent() );
+        child->setParentCell( deletedCellsParent );
+
+        if( child->hasNext() )
+                          child = child->next();
+        else
         {
-          //check if groupcell
-          if( typeid( *(*c_iter) ) == typeid( CellGroup ))
+          child->setNext( deletedCellsNext );
+          if( !child->hasNext() )
           {
-            if( !(*c_iter)->hasChilds() )
-              throw runtime_error( "No children" );
-
-            // get child
-            Cell* child = (*c_iter)->child();
-            Cell* deletedCellsParent = (*c_iter)->parentCell();
-            Cell* deletedCellsPrevious = (*c_iter)->previous();
-            Cell* deletedCellsNext = (*c_iter)->next();
-
-            // if previous is 0 = first in cell
-            child->setPrevious( deletedCellsPrevious );
-            if( !child->hasPrevious() )
-              deletedCellsParent->setChild( child );
-            else
-              deletedCellsPrevious->setNext( child );
-
-            // add all children
-            while( child != 0 )
+            // update last value on all cells
+            Cell* current = child;
+            while( current != 0 )
             {
-              //child->setParent( (*c_iter)->parent() );
-              child->setParentCell( deletedCellsParent );
-
-              if( child->hasNext() )
-                                child = child->next();
-              else
-              {
-                child->setNext( deletedCellsNext );
-                if( !child->hasNext() )
-                {
-                  // update last value on all cells
-                  Cell* current = child;
-                  while( current != 0 )
-                  {
-                    current->setLast( child );
-                    current = current->previous();
-                  }
-                }
-                else
-                  deletedCellsNext->setPrevious( child );
-
-                break;
-              }
+              current->setLast( child );
+              current = current->previous();
             }
-
-            (*c_iter)->setChild( 0 );
-            (*c_iter)->hide();
-
-            // must update groupcells parents layout
-            deletedCellsParent->removeCellWidgets();
-            deletedCellsParent->addCellWidgets();
-
-            // delete groupcell
-            //(document()->getCursor())->moveAfter( (*c_iter) );
-            //(document()->getCursor())->deleteCurrentCell();
-            delete (*c_iter);
-
-            // update document
-            document()->setChanged( true );
           }
+          else
+            deletedCellsNext->setPrevious( child );
+
+          break;
         }
+      }
+
+      (*c_iter)->setChild( 0 );
+      (*c_iter)->hide();
+
+      // must update groupcells parents layout
+      deletedCellsParent->removeCellWidgets();
+      deletedCellsParent->addCellWidgets();
+
+      // delete groupcell
+      //(document()->getCursor())->moveAfter( (*c_iter) );
+      //(document()->getCursor())->deleteCurrentCell();
+      delete (*c_iter);
+
+      // update document
+      document()->setChanged( true );
+    }
+  }
       }
     }
     catch( exception &e )
@@ -710,46 +710,46 @@ namespace IAEX
     {
       if( document()->getCursor()->currentCell() )
       {
-        if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) ||
-          typeid( *document()->getCursor()->currentCell() ) == typeid( InputCell ) )
-        {
-          // extraxt text
-          QTextEdit* editor = document()->getCursor()->currentCell()->textEdit();
-          if( editor )
-          {
-            QTextCursor cursor = editor->textCursor();
-            cursor.movePosition( QTextCursor::End, QTextCursor::KeepAnchor );
-            QTextDocumentFragment text = cursor.selection();
-            cursor.removeSelectedText();
+  if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) ||
+    typeid( *document()->getCursor()->currentCell() ) == typeid( InputCell ) )
+  {
+    // extraxt text
+    QTextEdit* editor = document()->getCursor()->currentCell()->textEdit();
+    if( editor )
+    {
+      QTextCursor cursor = editor->textCursor();
+      cursor.movePosition( QTextCursor::End, QTextCursor::KeepAnchor );
+      QTextDocumentFragment text = cursor.selection();
+      cursor.removeSelectedText();
 
-            // add new cell
-            if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) )
-            {
-              AddCellCommand addcellCommand;
-              addcellCommand.setApplication( application() );
-              addcellCommand.setDocument( document() );
-              addcellCommand.execute();
-            }
-            else
-            {
-              // inputcell
-              CreateNewCellCommand newcellCommand( "Input" );
-              newcellCommand.setApplication( application() );
-              newcellCommand.setDocument( document() );
-              newcellCommand.execute();
-            }
+      // add new cell
+      if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) )
+      {
+        AddCellCommand addcellCommand;
+        addcellCommand.setApplication( application() );
+        addcellCommand.setDocument( document() );
+        addcellCommand.execute();
+      }
+      else
+      {
+        // inputcell
+        CreateNewCellCommand newcellCommand( "Input" );
+        newcellCommand.setApplication( application() );
+        newcellCommand.setDocument( document() );
+        newcellCommand.execute();
+      }
 
-            // add text to new cell
-            QTextEdit* newEditor = document()->getCursor()->currentCell()->textEdit();
-            QTextCursor newCursor = newEditor->textCursor();
-            newCursor.insertFragment( text );
-            newCursor.movePosition( QTextCursor::Start );
-            newEditor->setTextCursor( newCursor );
+      // add text to new cell
+      QTextEdit* newEditor = document()->getCursor()->currentCell()->textEdit();
+      QTextCursor newCursor = newEditor->textCursor();
+      newCursor.insertFragment( text );
+      newCursor.movePosition( QTextCursor::Start );
+      newEditor->setTextCursor( newCursor );
 
-            // update document
-            document()->setChanged( true );
-          }
-        }
+      // update document
+      document()->setChanged( true );
+    }
+  }
       }
     }
     catch( exception &e )

@@ -276,27 +276,27 @@ namespace IAEX
     {
       if( r->attribute() == "FontSlant" )
       {
-        QRegExp fontslant( "Italic" );
-        if( 0 > r->value().indexOf( fontslant ))
-          cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
+  QRegExp fontslant( "Italic" );
+  if( 0 > r->value().indexOf( fontslant ))
+    cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "TextAlignment" )
       {
-        QRegExp textalignment( "Right|Left|Center" );
-        if( 0 > r->value().indexOf( textalignment ))
-          cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
+  QRegExp textalignment( "Right|Left|Center" );
+  if( 0 > r->value().indexOf( textalignment ))
+    cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "TextJustification" )
       {
-        QRegExp textjustification( "1|0" );
-        if( 0 > r->value().indexOf( textjustification ))
-          cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
+  QRegExp textjustification( "1|0" );
+  if( 0 > r->value().indexOf( textjustification ))
+    cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
       }
       else if( r->attribute() == "FontWeight" )
       {
-        QRegExp fontweight( "Bold|Plain" );
-        if( 0 > r->value().indexOf( fontweight ))
-          cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
+  QRegExp fontweight( "Bold|Plain" );
+  if( 0 > r->value().indexOf( fontweight ))
+    cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
       }
     }
 
@@ -318,17 +318,17 @@ namespace IAEX
       rules_t::iterator iter = rules_.begin();
       while( iter != rules_.end() )
       {
-        if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
-        {
-          found = true;
-          (*iter)->setValue( r->value() );
-          break;
-        }
-        ++iter;
+  if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
+  {
+    found = true;
+    (*iter)->setValue( r->value() );
+    break;
+  }
+  ++iter;
       }
 
       if( !found )
-        rules_.push_back(r);
+  rules_.push_back(r);
     }
   }
 
@@ -348,85 +348,85 @@ namespace IAEX
     {
       if( (*current)->attribute() == "FontSlant" )
       {
-        if( (*current)->value() == "Italic" )
-          style_.textCharFormat()->setFontItalic( true );
+  if( (*current)->value() == "Italic" )
+    style_.textCharFormat()->setFontItalic( true );
       }
       else if( (*current)->attribute() == "TextAlignment" )
       {
-        if( (*current)->value() == "Left" )
-          style_.setAlignment( Qt::AlignLeft );
-        else if( (*current)->value() == "Right" )
-          style_.setAlignment( Qt::AlignRight );
-        else if( (*current)->value() == "Center" )
-          style_.setAlignment( Qt::AlignHCenter );
-        else if( (*current)->value() == "Justify" )
-          style_.setAlignment( Qt::AlignJustify );
+  if( (*current)->value() == "Left" )
+    style_.setAlignment( Qt::AlignLeft );
+  else if( (*current)->value() == "Right" )
+    style_.setAlignment( Qt::AlignRight );
+  else if( (*current)->value() == "Center" )
+    style_.setAlignment( Qt::AlignHCenter );
+  else if( (*current)->value() == "Justify" )
+    style_.setAlignment( Qt::AlignJustify );
       }
       else if( (*current)->attribute() == "TextJustification" )
       {
-        //values: 1,0
+  //values: 1,0
       }
       else if( (*current)->attribute() == "FontSize" )
       {
-        bool ok;
-        int size = (*current)->value().toInt(&ok);
+  bool ok;
+  int size = (*current)->value().toInt(&ok);
 
-        if(ok)
-        {
-          if( size > 0 )
-            style_.textCharFormat()->setFontPointSize( size );
-        }
+  if(ok)
+  {
+    if( size > 0 )
+      style_.textCharFormat()->setFontPointSize( size );
+  }
       }
       else if( (*current)->attribute() == "FontWeight" )
       {
 
-        if( (*current)->value() == "Bold" )
-          style_.textCharFormat()->setFontWeight( QFont::Bold );
-        if( (*current)->value() == "Plain" )
-          style_.textCharFormat()->setFontWeight( QFont::Normal );
+  if( (*current)->value() == "Bold" )
+    style_.textCharFormat()->setFontWeight( QFont::Bold );
+  if( (*current)->value() == "Plain" )
+    style_.textCharFormat()->setFontWeight( QFont::Normal );
       }
       else if( (*current)->attribute() == "FontFamily" )
       {
-        style_.textCharFormat()->setFontFamily( (*current)->value() );
+  style_.textCharFormat()->setFontFamily( (*current)->value() );
       }
       else if( (*current)->attribute() == "InitializationCell" )
       {}
       else if( (*current)->attribute() == "CellTags" )
       {
-        celltag_ = (*current)->value();
+  celltag_ = (*current)->value();
       }
       else if( (*current)->attribute() == "OMNotebook_Margin" )
       {
-        bool ok;
-        int value = (*current)->value().toInt(&ok);
+  bool ok;
+  int value = (*current)->value().toInt(&ok);
 
-        if(ok)
-        {
-          if( value > 0 )
-            style_.textFrameFormat()->setMargin( value );
-        }
+  if(ok)
+  {
+    if( value > 0 )
+      style_.textFrameFormat()->setMargin( value );
+  }
       }
       else if( (*current)->attribute() == "OMNotebook_Padding" )
       {
-        bool ok;
-        int value = (*current)->value().toInt(&ok);
+  bool ok;
+  int value = (*current)->value().toInt(&ok);
 
-        if(ok)
-        {
-          if( value > 0 )
-            style_.textFrameFormat()->setPadding( value );
-        }
+  if(ok)
+  {
+    if( value > 0 )
+      style_.textFrameFormat()->setPadding( value );
+  }
       }
       else if( (*current)->attribute() == "OMNotebook_Border" )
       {
-        bool ok;
-        int value = (*current)->value().toInt(&ok);
+  bool ok;
+  int value = (*current)->value().toInt(&ok);
 
-        if(ok)
-        {
-          if( value > 0 )
-            style_.textFrameFormat()->setBorder( value );
-        }
+  if(ok)
+  {
+    if( value > 0 )
+      style_.textFrameFormat()->setBorder( value );
+  }
       }
 
       ++current;
@@ -620,14 +620,14 @@ namespace IAEX
       throw logic_error("SetHeight(const int height): TreeView is not set.");
 
 #ifdef __APPLE_CC__
-        setMinimumHeight(h);
+  setMinimumHeight(h);
 #else
-        setFixedHeight(h);
+  setFixedHeight(h);
 #endif
 
-        treeView_->setFixedHeight(h);
+  treeView_->setFixedHeight(h);
 
-        emit heightChanged();
+  emit heightChanged();
      }
 
 
@@ -673,28 +673,28 @@ namespace IAEX
     {
       if(event->pos().y() < 0)
       {
-        //if(hasPrevious())
-        //      doc()->executeCommand(new CursorMoveAfterCommand(previous()))
-        //      doc()->executeCommand(new CursorMoveAfterCommand(this));
-        // else
-        //       {
-        //          if(parentCell()->hasParentCell()) //Check for errors
-        //       doc()->executeCommand(new CursorMoveAfterCommand(parentCell()->previous()));
-        //          else
-        //          {
-        //       //Do nothing!
-        //          }
-        //       }
+  //if(hasPrevious())
+  //      doc()->executeCommand(new CursorMoveAfterCommand(previous()))
+  //      doc()->executeCommand(new CursorMoveAfterCommand(this));
+  // else
+  //       {
+  //          if(parentCell()->hasParentCell()) //Check for errors
+  //       doc()->executeCommand(new CursorMoveAfterCommand(parentCell()->previous()));
+  //          else
+  //          {
+  //       //Do nothing!
+  //          }
+  //       }
       }
 
       //     else // if(event->pos().y() < height())
       //     {
-      //        doc()->executeCommand(new CursorMoveAfterCommand(this));
+      //  doc()->executeCommand(new CursorMoveAfterCommand(this));
       //     }
 
       //    if((doc()->getCursor())->currentCell() != this)
       //     {
-      //        doc()->executeCommand(new CursorMoveAfterCommand(this));
+      //  doc()->executeCommand(new CursorMoveAfterCommand(this));
       //     }
     }
   }

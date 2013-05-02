@@ -156,7 +156,7 @@ namespace IAEX
     try
     {
       if(filename_ != QString::null)
-        open( filename_, readmode );
+  open( filename_, readmode );
     }
     catch( exception &e )
     {
@@ -654,7 +654,7 @@ namespace IAEX
       name.setNum( currentImageNo_ );
       name += ".png";
       if( !dir.exists( name ))
-        break;
+  break;
     }
 
     name = dir.absolutePath() + "/" + name;
@@ -753,18 +753,18 @@ namespace IAEX
     {
       if( workspace_->hasChilds() )
       {
-        Cell* cell = workspace_->child();
-        if( cell )
-        {
-          if( !cell->hasNext() )
-            if( typeid( (*cell) ) == typeid( CellCursor ))
-              empty = true;
-        }
-        else
-          empty = true;
+  Cell* cell = workspace_->child();
+  if( cell )
+  {
+    if( !cell->hasNext() )
+      if( typeid( (*cell) ) == typeid( CellCursor ))
+        empty = true;
+  }
+  else
+    empty = true;
       }
       else
-        empty = true;
+  empty = true;
     }
     else
       empty = true;
@@ -793,100 +793,100 @@ namespace IAEX
       CellCursor *cursor = getCursor();
       if( cursor )
       {
-        // ignore, if selected cell is a groupcell
-        if( typeid( *cursor->currentCell() ) != typeid( CellGroup ) )
-        {
-          // calculate the position of the cursor, by adding the height
-          // of all the cells before the cellcursor, using a visitor
-          CursorPosVisitor visitor;
-          runVisitor( visitor );
-          int pos = visitor.position();
+  // ignore, if selected cell is a groupcell
+  if( typeid( *cursor->currentCell() ) != typeid( CellGroup ) )
+  {
+    // calculate the position of the cursor, by adding the height
+    // of all the cells before the cellcursor, using a visitor
+    CursorPosVisitor visitor;
+    runVisitor( visitor );
+    int pos = visitor.position();
 
-          // size of scrollarea
-          int scrollTop = scroll_->widget()->visibleRegion().boundingRect().top();
-          int scrollBottom = scroll_->widget()->visibleRegion().boundingRect().bottom();
+    // size of scrollarea
+    int scrollTop = scroll_->widget()->visibleRegion().boundingRect().top();
+    int scrollBottom = scroll_->widget()->visibleRegion().boundingRect().bottom();
 
-          // cell height
-          int height = cursor->currentCell()->height();
+    // cell height
+    int height = cursor->currentCell()->height();
 
 #ifndef QT_NO_DEBUG_OUTPUT
 
-          cout << "*********************************************" << endl;
-          cout << "SCROLL TOP: " << scrollTop << endl;
-          cout << "SCROLL BOTTOM: " << scrollBottom << endl;
-          cout << "CELL CURSOR: " << pos << endl;
-          cout << "CELL HEIGHT: " << height << endl;
+    cout << "*********************************************" << endl;
+    cout << "SCROLL TOP: " << scrollTop << endl;
+    cout << "SCROLL BOTTOM: " << scrollBottom << endl;
+    cout << "CELL CURSOR: " << pos << endl;
+    cout << "CELL HEIGHT: " << height << endl;
 #endif
 
 
 
-          // TO BIG
-          if( height > (scrollBottom-scrollTop) )
-          {
-            qDebug( "TO BIG" );
-            // cell so big that it span over entire viewarea
-            return;
-          }
-          // END OF DOCUMENT
-          else if( pos > (scroll_->widget()->height() - 2 ) &&
-            scrollBottom > (scroll_->widget()->height() - 2 ) )
-          {
+    // TO BIG
+    if( height > (scrollBottom-scrollTop) )
+    {
+      qDebug( "TO BIG" );
+      // cell so big that it span over entire viewarea
+      return;
+    }
+    // END OF DOCUMENT
+    else if( pos > (scroll_->widget()->height() - 2 ) &&
+      scrollBottom > (scroll_->widget()->height() - 2 ) )
+    {
 #ifndef QT_NO_DEBUG_OUTPUT
-            cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+      cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
 #endif
-            // 2006-03-03 AF, ignore if cursor at end of document
-            return;
-          }
-          // UP
-          else if( (pos - height) < scrollTop )
-          {
-            // cursor have moved above the viewarea of the
-            // scrollbar, move up the scrollbar
+      // 2006-03-03 AF, ignore if cursor at end of document
+      return;
+    }
+    // UP
+    else if( (pos - height) < scrollTop )
+    {
+      // cursor have moved above the viewarea of the
+      // scrollbar, move up the scrollbar
 
-            // remove cell height + a little extra
-            pos -= (height + 10);
-            if( pos < 0 )
-              pos = 0;
+      // remove cell height + a little extra
+      pos -= (height + 10);
+      if( pos < 0 )
+        pos = 0;
 
-            // set new scrollvalue
-            cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
-            scroll_->verticalScrollBar()->setValue( pos );
-          }
-          // DOWN
-          else if( pos > (scrollBottom - 10) )
-          {
-            // cursor have moved below the viewarea of the
-            // scrollbar, move down the scrollbar
+      // set new scrollvalue
+      cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+      scroll_->verticalScrollBar()->setValue( pos );
+    }
+    // DOWN
+    else if( pos > (scrollBottom - 10) )
+    {
+      // cursor have moved below the viewarea of the
+      // scrollbar, move down the scrollbar
 
-            // add cell height + a little extra to scrollbar
-            //pos = height + 20 + scroll_->verticalScrollBar()->value();
+      // add cell height + a little extra to scrollbar
+      //pos = height + 20 + scroll_->verticalScrollBar()->value();
 
-            // add differens between cell cursor position och scroll bottom
-            // to the scroll value
-            pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
+      // add differens between cell cursor position och scroll bottom
+      // to the scroll value
+      pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
 
-            if( pos >= scroll_->verticalScrollBar()->maximum() )
-            {
+      if( pos >= scroll_->verticalScrollBar()->maximum() )
+      {
 #ifndef QT_NO_DEBUG_OUTPUT
-              cout << "more then max!" << endl;
+        cout << "more then max!" << endl;
 #endif
-              scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
-              //pos = scroll_->verticalScrollBar()->maximum();
+        scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
+        //pos = scroll_->verticalScrollBar()->maximum();
 
-              // a little extra to the max value of the scrollbar
-              //scroll_->verticalScrollBar()->setMaximum( 5 +
-              //  scroll_->verticalScrollBar()->maximum() );
-            }
-            else
-            {
-              // set new scrollvalue
+        // a little extra to the max value of the scrollbar
+        //scroll_->verticalScrollBar()->setMaximum( 5 +
+        //  scroll_->verticalScrollBar()->maximum() );
+      }
+      else
+      {
+        // set new scrollvalue
 #ifndef QT_NO_DEBUG_OUTPUT
-              cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+        cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
 #endif
-              scroll_->verticalScrollBar()->setValue( pos );
-            }
-          }
-        }
+        scroll_->verticalScrollBar()->setValue( pos );
+      }
+    }
+  }
       }
     }
   }
@@ -918,21 +918,21 @@ namespace IAEX
     {
       if( filename_.isEmpty() || filename_.isEmpty() )
       {
-        // replace '\' with '/' in the link path
-        filelink.replace( "\\", "/" );
+  // replace '\' with '/' in the link path
+  filelink.replace( "\\", "/" );
 
-        QDir dir;
-        filelink = dir.absolutePath() + "/" + filelink;
+  QDir dir;
+  filelink = dir.absolutePath() + "/" + filelink;
       }
       else
       {
-        // replace '\' with '/' in the link path
-        filelink.replace( "\\", "/" );
-        filelink = QFileInfo(filename_).absolutePath() + "/" + filelink;
+  // replace '\' with '/' in the link path
+  filelink.replace( "\\", "/" );
+  filelink = QFileInfo(filename_).absolutePath() + "/" + filelink;
       }
     }
 
-        emit hoverOverFile( filelink );
+  emit hoverOverFile( filelink );
   }
 
   /*!
@@ -1050,20 +1050,20 @@ namespace IAEX
       // 2005-12-05 AF, check if filename exists, otherwise use work dir
       if( filename_.isEmpty() )
       {
-        // replace '\' with '/' in the link path
-        QString linkpath = link->path();
-        linkpath.replace( "\\", "/" );
+  // replace '\' with '/' in the link path
+  QString linkpath = link->path();
+  linkpath.replace( "\\", "/" );
 
-        QDir dir;
-        executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
+  QDir dir;
+  executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
       }
       else
       {
-        // replace '\' with '/' in the link path
-        QString linkpath = link->path();
-        linkpath.replace( "\\", "/" );
+  // replace '\' with '/' in the link path
+  QString linkpath = link->path();
+  linkpath.replace( "\\", "/" );
 
-        executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
+  executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
       }
     }
 
@@ -1097,7 +1097,7 @@ namespace IAEX
     {
       if(e->type() == QEvent::MouseButtonPress)
       {
-        qDebug("Clicked");
+  qDebug("Clicked");
       }
     }
 
@@ -1244,12 +1244,12 @@ namespace IAEX
     if( cell )
     {
       vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
-        selectedCells_.end(), cell );
+  selectedCells_.end(), cell );
 
       if( found != selectedCells_.end() )
       {
-        (*found)->setSelected( false );
-        selectedCells_.erase( found );
+  (*found)->setSelected( false );
+  selectedCells_.erase( found );
       }
     }
   }
@@ -1273,98 +1273,98 @@ namespace IAEX
     {
       // if SHIFT is pressed, select all cells from last cell
       if( state == Qt::ShiftModifier &&
-        selected->isSelected() &&
-        selectedCells_.size() > 0 )
+  selected->isSelected() &&
+  selectedCells_.size() > 0 )
       {
-        // if last selected cell and this selected cell aren't
-        // int the same groupcell this funciton can't be used.
-        Cell *lastCell = selectedCells_[ selectedCells_.size() - 1 ];
-        if( selected->parentCell() == lastCell->parentCell() )
-        {
-          // check which cell is first in list
-          int count(0);
-          int cellCount(0);
-          int lastCellCound(0);
+  // if last selected cell and this selected cell aren't
+  // int the same groupcell this funciton can't be used.
+  Cell *lastCell = selectedCells_[ selectedCells_.size() - 1 ];
+  if( selected->parentCell() == lastCell->parentCell() )
+  {
+    // check which cell is first in list
+    int count(0);
+    int cellCount(0);
+    int lastCellCound(0);
 
-          Cell *current = selected->next();
-          while( current )
-          {
-            // don't count cursor
-            if( typeid(CellCursor) != typeid(*current) )
-              ++cellCount;
+    Cell *current = selected->next();
+    while( current )
+    {
+      // don't count cursor
+      if( typeid(CellCursor) != typeid(*current) )
+        ++cellCount;
 
-            current = current->next();
-          }
+      current = current->next();
+    }
 
-          current = lastCell->next();
-          while( current )
-          {
-            // don't count cursor
-            if( typeid(CellCursor) != typeid(*current) )
-              ++lastCellCound;
+    current = lastCell->next();
+    while( current )
+    {
+      // don't count cursor
+      if( typeid(CellCursor) != typeid(*current) )
+        ++lastCellCound;
 
-            current = current->next();
-          }
+      current = current->next();
+    }
 
-          // LASTCELL, last in list
-          if( cellCount > lastCellCound )
-          {
-            count = ( cellCount - lastCellCound ) + 1; // also add last cell
-            removeSelectedCell( lastCell );
+    // LASTCELL, last in list
+    if( cellCount > lastCellCound )
+    {
+      count = ( cellCount - lastCellCound ) + 1; // also add last cell
+      removeSelectedCell( lastCell );
 
-            current = selected;
-            for( int i = 0; i < count; ++i )
-            {
-              // don't add cursor
-              if( typeid(CellCursor) != typeid(*current) )
-                addSelectedCell( current );
-              else
-                ++count;
-
-              current = current->next();
-            }
-          }
-          // LASTCELL, first in list
-          else
-          {
-            count = ( lastCellCound - cellCount );
-
-            current = lastCell->next();
-            for( int i = 0; i < count; ++i )
-            {
-              // don't add cursor
-              if( typeid(CellCursor) != typeid(*current) )
-                addSelectedCell( current );
-              else
-                ++count;
-
-              current = current->next();
-            }
-          }
-        }
+      current = selected;
+      for( int i = 0; i < count; ++i )
+      {
+        // don't add cursor
+        if( typeid(CellCursor) != typeid(*current) )
+          addSelectedCell( current );
         else
-        {
-          selected->setSelected( false );
-          return;
-        }
+          ++count;
+
+        current = current->next();
+      }
+    }
+    // LASTCELL, first in list
+    else
+    {
+      count = ( lastCellCound - cellCount );
+
+      current = lastCell->next();
+      for( int i = 0; i < count; ++i )
+      {
+        // don't add cursor
+        if( typeid(CellCursor) != typeid(*current) )
+          addSelectedCell( current );
+        else
+          ++count;
+
+        current = current->next();
+      }
+    }
+  }
+  else
+  {
+    selected->setSelected( false );
+    return;
+  }
       }
       // if CTRL is pressed, keep existing selections
       else if( state == Qt::ControlModifier )
       {
-        if( selected->isSelected() )
-          addSelectedCell( selected );
-        else
-          removeSelectedCell( selected );
+  if( selected->isSelected() )
+    addSelectedCell( selected );
+  else
+    removeSelectedCell( selected );
       }
       else
       {
-        bool flag = ( selectedCells_.size() > 1 );
-        clearSelection();
+  bool flag = ( selectedCells_.size() > 1 );
+  clearSelection();
 
-        if( flag || selected->isSelected() )
-          addSelectedCell( selected );
-        else
-          removeSelectedCell( selected );
+  if( flag || selected->isSelected() )
+    addSelectedCell( selected );
+  else
+    removeSelectedCell( selected );
       }
 
       // move cell cursor to cell

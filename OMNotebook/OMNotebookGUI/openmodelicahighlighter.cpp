@@ -162,169 +162,169 @@ namespace IAEX
       if( insideString_ )
       {
 
-        int end = text.indexOf( stringEnd_, startPos );
+  int end = text.indexOf( stringEnd_, startPos );
 
-        if( end >= 0 )
-        { // found end in this block
+  if( end >= 0 )
+  { // found end in this block
 
-          startPos = end + stringEnd_.matchedLength();
-          insideString_ = false;
+    startPos = end + stringEnd_.matchedLength();
+    insideString_ = false;
 
-          QTextLayout::FormatRange range;
-          range.start = 0;
-          range.length = startPos;
-          range.format = stringFormat_;
-          overrides << range;
-        }
-        else
-        { // found no end, syntax highlight whole block
-          wholeBlock = true;
+    QTextLayout::FormatRange range;
+    range.start = 0;
+    range.length = startPos;
+    range.format = stringFormat_;
+    overrides << range;
+  }
+  else
+  { // found no end, syntax highlight whole block
+    wholeBlock = true;
 
 
-          QTextLayout::FormatRange range;
-          range.start = 0;
-          range.length = block.length();
-          range.format = stringFormat_;
-          overrides << range;
-        }
+    QTextLayout::FormatRange range;
+    range.start = 0;
+    range.length = block.length();
+    range.format = stringFormat_;
+    overrides << range;
+  }
       }
       else if( insideComment_ )
       {
 
 
-        int end = text.indexOf( commentEnd_, startPos );
+  int end = text.indexOf( commentEnd_, startPos );
 
-        if( end >= 0 )
-        { // found end in this block
-
-
-          startPos = end + commentEnd_.matchedLength();
-          insideComment_ = false;
-
-          QTextLayout::FormatRange range;
-          range.start = 0;
-          range.length = startPos;
-          range.format = commentFormat_;
-          overrides << range;
-        }
-        else
-        { // found no end, syntax highlight whole block
-          wholeBlock = true;
+  if( end >= 0 )
+  { // found end in this block
 
 
-          QTextLayout::FormatRange range;
-          range.start = 0;
-          range.length = block.length();
-          range.format = commentFormat_;
-          overrides << range;
-        }
+    startPos = end + commentEnd_.matchedLength();
+    insideComment_ = false;
+
+    QTextLayout::FormatRange range;
+    range.start = 0;
+    range.length = startPos;
+    range.format = commentFormat_;
+    overrides << range;
+  }
+  else
+  { // found no end, syntax highlight whole block
+    wholeBlock = true;
+
+
+    QTextLayout::FormatRange range;
+    range.start = 0;
+    range.length = block.length();
+    range.format = commentFormat_;
+    overrides << range;
+  }
       }
 
 
       if( !wholeBlock )
       {
 
-        foreach( QString pattern, mappings_.keys() )
-        {
-          QRegExp expression( pattern );
-          int i = text.indexOf( expression, startPos );
+  foreach( QString pattern, mappings_.keys() )
+  {
+    QRegExp expression( pattern );
+    int i = text.indexOf( expression, startPos );
 
-          while( i >= 0 )
-          {
-            QTextLayout::FormatRange range;
-            range.start = i;
-            range.length = expression.matchedLength();
-            range.format = mappings_[pattern];
-            overrides << range;
+    while( i >= 0 )
+    {
+      QTextLayout::FormatRange range;
+      range.start = i;
+      range.length = expression.matchedLength();
+      range.format = mappings_[pattern];
+      overrides << range;
 
-            i = text.indexOf(expression, i + expression.matchedLength());
-          }
-        }
-
-
-        while( true )
-        {
-          int firstString = -1;
-          int firstComment = -1;
-          int firstCommentLine = -1;
+      i = text.indexOf(expression, i + expression.matchedLength());
+    }
+  }
 
 
-          if( !stringStart_.isEmpty() )
-            firstString = text.indexOf( stringStart_, startPos );
-          if( !commentStart_.isEmpty() )
-            firstComment = text.indexOf( commentStart_, startPos );
-          if( !commentLine_.isEmpty() )
-            firstCommentLine = text.indexOf( commentLine_, startPos );
+  while( true )
+  {
+    int firstString = -1;
+    int firstComment = -1;
+    int firstCommentLine = -1;
 
 
-          if( firstString >= 0 &&
-            ( (firstString < firstComment) || (firstComment < 0) ) &&
-            ( (firstString < firstCommentLine) || (firstCommentLine < 0) ))
-          {
-            int end = text.indexOf( stringEnd_,
-              firstString + stringStart_.matchedLength() );
-            if( end >= 0 )
-            {
-              startPos = end + stringEnd_.matchedLength();
+    if( !stringStart_.isEmpty() )
+      firstString = text.indexOf( stringStart_, startPos );
+    if( !commentStart_.isEmpty() )
+      firstComment = text.indexOf( commentStart_, startPos );
+    if( !commentLine_.isEmpty() )
+      firstCommentLine = text.indexOf( commentLine_, startPos );
 
-              QTextLayout::FormatRange range;
-              range.start = firstString;
-              range.length = startPos - firstString;
-              range.format = stringFormat_;
-              overrides << range;
-            }
-            else
-            { // found no end, syntax highlight to the end of the block
-              QTextLayout::FormatRange range;
-              range.start = firstString;
-              range.length = block.length() - firstString;
-              range.format = stringFormat_;
-              overrides << range;
-              insideString_ = true;
-              break;
-            }
-          }
-          else if( firstComment >= 0 &&
-            ( (firstComment < firstString) || (firstString < 0) ) &&
-            ( (firstComment < firstCommentLine) || (firstCommentLine < 0) ))
-          {
-            int end = text.indexOf( commentEnd_,
-              firstComment + commentStart_.matchedLength() );
-            if( end >= 0 )
-            {
-              startPos = end + commentEnd_.matchedLength();
 
-              QTextLayout::FormatRange range;
-              range.start = firstComment;
-              range.length = startPos - firstComment;
-              range.format = commentFormat_;
-              overrides << range;
-            }
-            else
-            { // found no end, syntax highlight to the end of the block
-              QTextLayout::FormatRange range;
-              range.start = firstComment;
-              range.length = block.length() - firstComment;
-              range.format = commentFormat_;
-              overrides << range;
-              insideComment_ = true;
-              break;
-            }
-          }
-          else if( firstCommentLine >= 0 &&
-            ( (firstCommentLine < firstString) || (firstString < 0) ) &&
-            ( (firstCommentLine < firstComment) || (firstComment < 0) ))
-          {
-            QTextLayout::FormatRange range;
-            range.start = firstCommentLine;
-            range.length = (block.length() - firstCommentLine);
-            range.format = commentFormat_;
-            overrides << range;
-            break;
-          }
-          else
-            break;
-        }
+    if( firstString >= 0 &&
+      ( (firstString < firstComment) || (firstComment < 0) ) &&
+      ( (firstString < firstCommentLine) || (firstCommentLine < 0) ))
+    {
+      int end = text.indexOf( stringEnd_,
+        firstString + stringStart_.matchedLength() );
+      if( end >= 0 )
+      {
+        startPos = end + stringEnd_.matchedLength();
+
+        QTextLayout::FormatRange range;
+        range.start = firstString;
+        range.length = startPos - firstString;
+        range.format = stringFormat_;
+        overrides << range;
+      }
+      else
+      { // found no end, syntax highlight to the end of the block
+        QTextLayout::FormatRange range;
+        range.start = firstString;
+        range.length = block.length() - firstString;
+        range.format = stringFormat_;
+        overrides << range;
+        insideString_ = true;
+        break;
+      }
+    }
+    else if( firstComment >= 0 &&
+      ( (firstComment < firstString) || (firstString < 0) ) &&
+      ( (firstComment < firstCommentLine) || (firstCommentLine < 0) ))
+    {
+      int end = text.indexOf( commentEnd_,
+        firstComment + commentStart_.matchedLength() );
+      if( end >= 0 )
+      {
+        startPos = end + commentEnd_.matchedLength();
+
+        QTextLayout::FormatRange range;
+        range.start = firstComment;
+        range.length = startPos - firstComment;
+        range.format = commentFormat_;
+        overrides << range;
+      }
+      else
+      { // found no end, syntax highlight to the end of the block
+        QTextLayout::FormatRange range;
+        range.start = firstComment;
+        range.length = block.length() - firstComment;
+        range.format = commentFormat_;
+        overrides << range;
+        insideComment_ = true;
+        break;
+      }
+    }
+    else if( firstCommentLine >= 0 &&
+      ( (firstCommentLine < firstString) || (firstString < 0) ) &&
+      ( (firstCommentLine < firstComment) || (firstComment < 0) ))
+    {
+      QTextLayout::FormatRange range;
+      range.start = firstCommentLine;
+      range.length = (block.length() - firstCommentLine);
+      range.format = commentFormat_;
+      overrides << range;
+      break;
+    }
+    else
+      break;
+  }
       }
 
       layout->setAdditionalFormats( overrides );
@@ -388,29 +388,29 @@ namespace IAEX
       QDomElement element = node.toElement();
       if( !element.isNull() )
       {
-        if( element.tagName() == "type" )
-          parseSettings( element, &typeFormat_ );
-        else if( element.tagName() == "keyword" )
-          parseSettings( element, &keywordFormat_ );
-        else if( element.tagName() == "functionName" )
-          parseSettings( element, &functionNameFormat_ );
-        else if( element.tagName() == "constant" )
-          parseSettings( element, &constantFormat_ );
-        else if( element.tagName() == "warning" )
-          parseSettings( element, &warningFormat_ );
-        else if( element.tagName() == "builtIn" )
-          parseSettings( element, &builtInFormat_ );
-        else if( element.tagName() == "variableName" )
-          parseSettings( element, &variableNameFormat_ );
-        else if( element.tagName() == "string" )
-          parseSettings( element, &stringFormat_ );
-        else if( element.tagName() == "comment" )
-          parseSettings( element, &commentFormat_ );
-        else
-        {
-          cout << "settings tag not specified: " <<
-            element.tagName().toStdString();
-        }
+  if( element.tagName() == "type" )
+    parseSettings( element, &typeFormat_ );
+  else if( element.tagName() == "keyword" )
+    parseSettings( element, &keywordFormat_ );
+  else if( element.tagName() == "functionName" )
+    parseSettings( element, &functionNameFormat_ );
+  else if( element.tagName() == "constant" )
+    parseSettings( element, &constantFormat_ );
+  else if( element.tagName() == "warning" )
+    parseSettings( element, &warningFormat_ );
+  else if( element.tagName() == "builtIn" )
+    parseSettings( element, &builtInFormat_ );
+  else if( element.tagName() == "variableName" )
+    parseSettings( element, &variableNameFormat_ );
+  else if( element.tagName() == "string" )
+    parseSettings( element, &stringFormat_ );
+  else if( element.tagName() == "comment" )
+    parseSettings( element, &commentFormat_ );
+  else
+  {
+    cout << "settings tag not specified: " <<
+      element.tagName().toStdString();
+  }
       }
 
       node = node.nextSibling();
@@ -450,7 +450,7 @@ namespace IAEX
     mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|r)") +
       "|i(v|agonal))|edge|f(ill|loor)|i(dentity|n(itial|teger))|linspace|ma(trix|x)|min|mod|n(dims" +
       "|oEvent)|o(nes|uterProduct)|pr(e|o(duct|mote))|re(init|m)|s(amle|calar|i(n|ze)|kew" +
-            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)\\b",
+      "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)\\b",
       functionNameFormat_ );
       */
 
@@ -497,57 +497,57 @@ namespace IAEX
       QDomElement element = node.toElement();
       if( !element.isNull() )
       {
-        // FOREGROUND
-        if( element.tagName() == "foreground" )
-        {
-          bool okRed;
-          bool okGreen;
-          bool okBlue;
+  // FOREGROUND
+  if( element.tagName() == "foreground" )
+  {
+    bool okRed;
+    bool okGreen;
+    bool okBlue;
 
-          int red = element.attribute( "red", "0" ).toInt(&okRed);
-          int green = element.attribute( "green", "0" ).toInt(&okGreen);
-          int blue = element.attribute( "blue", "0" ).toInt(&okBlue);
+    int red = element.attribute( "red", "0" ).toInt(&okRed);
+    int green = element.attribute( "green", "0" ).toInt(&okGreen);
+    int blue = element.attribute( "blue", "0" ).toInt(&okBlue);
 
-          if( okRed && okGreen && okBlue )
-            format->setForeground( QBrush( QColor(red, green, blue) ));
-          else
-            format->setForeground( QBrush( QColor(0, 0, 0) ));
-        }
-        // BACKGROUND
-        else if( element.tagName() == "background" )
-        {
-          bool okRed;
-          bool okGreen;
-          bool okBlue;
+    if( okRed && okGreen && okBlue )
+      format->setForeground( QBrush( QColor(red, green, blue) ));
+    else
+      format->setForeground( QBrush( QColor(0, 0, 0) ));
+  }
+  // BACKGROUND
+  else if( element.tagName() == "background" )
+  {
+    bool okRed;
+    bool okGreen;
+    bool okBlue;
 
-          int red = element.attribute( "red", "200" ).toInt(&okRed);
-          int green = element.attribute( "green", "200" ).toInt(&okGreen);
-          int blue = element.attribute( "blue", "255" ).toInt(&okBlue);
+    int red = element.attribute( "red", "200" ).toInt(&okRed);
+    int green = element.attribute( "green", "200" ).toInt(&okGreen);
+    int blue = element.attribute( "blue", "255" ).toInt(&okBlue);
 
-          if( okRed && okGreen && okBlue )
-            format->setBackground( QBrush( QColor(red, green, blue) ));
-          else
-            format->setBackground( QBrush( QColor(200, 200, 255) ));
-        }
-        // BOLD
-        else if( element.tagName() == "bold" )
-        {
-          //This only occur when bold tag is present.
-          //delete bold tag to disable.
-          format->setFontWeight( QFont::Bold );
-        }
-        // ITALIC
-        else if( element.tagName() == "italic" )
-        {
-          //This only occur when italic tag is present.
-          //delete italic tag to disable.
-          format->setFontItalic( true );
-        }
-        else
-        {
-          cout << "type settings tag not specified: " <<
-            element.tagName().toStdString();
-        }
+    if( okRed && okGreen && okBlue )
+      format->setBackground( QBrush( QColor(red, green, blue) ));
+    else
+      format->setBackground( QBrush( QColor(200, 200, 255) ));
+  }
+  // BOLD
+  else if( element.tagName() == "bold" )
+  {
+    //This only occur when bold tag is present.
+    //delete bold tag to disable.
+    format->setFontWeight( QFont::Bold );
+  }
+  // ITALIC
+  else if( element.tagName() == "italic" )
+  {
+    //This only occur when italic tag is present.
+    //delete italic tag to disable.
+    format->setFontItalic( true );
+  }
+  else
+  {
+    cout << "type settings tag not specified: " <<
+      element.tagName().toStdString();
+  }
       }
 
       node = node.nextSibling();

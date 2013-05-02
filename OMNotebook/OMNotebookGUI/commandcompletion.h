@@ -81,7 +81,7 @@ namespace IAEX
 
     QStringList *currentList_;
     QStringList commandList_;
-        QHash<QString,CommandUnit*> commands_;
+  QHash<QString,CommandUnit*> commands_;
   };
 }
 #endif

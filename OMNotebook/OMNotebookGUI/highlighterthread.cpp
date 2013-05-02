@@ -109,9 +109,9 @@ namespace IAEX
     if( !instance_ )
     {
       if( highlighter )
-        instance_ = new HighlighterThread( highlighter, parent );
+  instance_ = new HighlighterThread( highlighter, parent );
       else
-        instance_ = new HighlighterThread( new NullHighlighter(), parent );
+  instance_ = new HighlighterThread( new NullHighlighter(), parent );
     }
 
     return instance_;
@@ -139,34 +139,34 @@ namespace IAEX
 
       if( !stack_.isEmpty() )
       {
-        QTextEdit *editor = stack_.pop();
+  QTextEdit *editor = stack_.pop();
 
-        //if( editor->isVisible() )
-        //{
-          highlighter_->highlight( editor->document() );
+  //if( editor->isVisible() )
+  //{
+    highlighter_->highlight( editor->document() );
 
 
-          // force text to be updated
-//          editor->update();
-//          QCoreApplication::processEvents();
-//          QTextCursor cursor = editor->textCursor();
-//          editor->setTextCursor( cursor );
-        //}
-        //else
-        //{
-          // add last
-          //stack_.push_back( editor );
-        //}
+    // force text to be updated
+//    editor->update();
+//    QCoreApplication::processEvents();
+//    QTextCursor cursor = editor->textCursor();
+//    editor->setTextCursor( cursor );
+  //}
+  //else
+  //{
+    // add last
+    //stack_.push_back( editor );
+  //}
       }
 
       // 2006-01-05 AF, check if any editor should be removed
       while( !removeQueue_.isEmpty() )
       {
-        //cout << "Highlight - Remove size: " << removeQueue_.size() << endl;
-        QTextEdit *editor = removeQueue_.dequeue();
-        int index = stack_.indexOf( editor );
-        if( index >= 0 )
-          stack_.remove( index );
+  //cout << "Highlight - Remove size: " << removeQueue_.size() << endl;
+  QTextEdit *editor = removeQueue_.dequeue();
+  int index = stack_.indexOf( editor );
+  if( index >= 0 )
+    stack_.remove( index );
       }
 
       //cout << "Highlight - Stack size: " << stack_.size() << endl;
@@ -174,9 +174,9 @@ namespace IAEX
       // 2006-01-13 AF, stop thread when nothing to do
       if( stack_.isEmpty() )
       {
-        //cout << "Highlight: Exit thread" << endl;
-        //this->exit();
-        break;
+  //cout << "Highlight: Exit thread" << endl;
+  //this->exit();
+  break;
       }
 
     }
@@ -200,15 +200,15 @@ namespace IAEX
       int index = stack_.indexOf( editor );
       if( index >= 0 )
       {
-        stack_.remove( index );
-        stack_.push( editor );
+  stack_.remove( index );
+  stack_.push( editor );
       }
       else
-        stack_.push( editor );
+  stack_.push( editor );
 
       // 2006-01-13 AF, restart the thread
       if(  !isRunning() && !stopHighlighting_ )
-        start( QThread::LowPriority );
+  start( QThread::LowPriority );
     }
   }
 
@@ -229,7 +229,7 @@ namespace IAEX
 
       // 2006-01-13 AF, restart the thread
       if(  !isRunning() && !stopHighlighting_ )
-        start( QThread::LowPriority );
+  start( QThread::LowPriority );
     }
   }
 
@@ -244,9 +244,9 @@ namespace IAEX
     if( editor )
     {
       if( stack_.indexOf( editor ) >= 0 )
-        return true;
+  return true;
       else
-        return false;
+  return false;
     }
 
     return false;

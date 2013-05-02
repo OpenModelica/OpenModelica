@@ -68,9 +68,9 @@ namespace IAEX
     virtual ~TextCell();
 
     QString text();
-    QString textHtml();          // Added 2005-10-28 AF
+    QString textHtml();    // Added 2005-10-28 AF
     QTextCursor textCursor();      // Added 2005-10-28 AF
-    QTextEdit* textEdit();        // Added 2005-10-28 AF
+    QTextEdit* textEdit();  // Added 2005-10-28 AF
 
     void clear();
     virtual void accept(Visitor &v);
@@ -82,18 +82,18 @@ namespace IAEX
     void textChanged();
     void textChanged( bool );
     void hoverOverUrl( const QUrl &link );    // Added 2006-02-10 AF
-    void forwardAction( int );          // Added 2006-04-27 AF
+    void forwardAction( int );    // Added 2006-04-27 AF
 
   public slots:
     void clickEvent();
     void setText(QString text);
     void setText(QString text, QTextCharFormat format);    // Added 2005-10-28 AF
-    void setTextHtml(QString html);              // Added 2005-10-28 AF
-    void setStyle(const QString &stylename);        // Changed 2005-10-28 AF
-    void setStyle(CellStyle style);              // Changed 2005-10-28 AF
-    void setChapterCounter(QString number);          // Added 2006-03-02 AF
-    QString ChapterCounter();                // Added 2006-03-02 AF
-    QString ChapterCounterHtml();              // Added 2006-03-03 AF
+    void setTextHtml(QString html);        // Added 2005-10-28 AF
+    void setStyle(const QString &stylename);  // Changed 2005-10-28 AF
+    void setStyle(CellStyle style);        // Changed 2005-10-28 AF
+    void setChapterCounter(QString number);    // Added 2006-03-02 AF
+    QString ChapterCounter();          // Added 2006-03-02 AF
+    QString ChapterCounterHtml();        // Added 2006-03-03 AF
     void setReadOnly(const bool readonly);
     virtual void setFocus(const bool focus);
 
@@ -101,7 +101,7 @@ namespace IAEX
 
   protected slots:
     void contentChanged();
-    void hoverOverLink(const QUrl &link);        // Added 2006-02-10 AF
+    void hoverOverLink(const QUrl &link);  // Added 2006-02-10 AF
     void openLinkInternal(const QUrl *url);
     void openLinkInternal(const QUrl &url);
     void textChangedInternal();
@@ -117,11 +117,11 @@ namespace IAEX
   public:
     QTextBrowser *text_;
   private:
-    QTextBrowser *chaptercounter_;            // Added 2006-03-02 AF
+    QTextBrowser *chaptercounter_;      // Added 2006-03-02 AF
 
-    QString oldHoverLink_;                // Added 2006-02-10 AF
+    QString oldHoverLink_;          // Added 2006-02-10 AF
 
-    int oldHeight_;                    // Added 2006-04-10 AF
+    int oldHeight_;              // Added 2006-04-10 AF
   };
 
   //***************************************************
@@ -133,22 +133,22 @@ namespace IAEX
     MyTextBrowser(QWidget *parent=0);
     virtual ~MyTextBrowser();
 
-    void setActive( bool active );        // Added 2006-04-25 AF
+    void setActive( bool active );  // Added 2006-04-25 AF
 
   signals:
-    void openLink(const QUrl *);        // Changed 2005-11-03 AF
-    void clickOnCell();              // Added 2005-11-01 AF
-    void wheelMove( QWheelEvent* );        // Added 2005-11-28 AF
-    void forwardAction( int );          // Added 2006-04-27 AF
+    void openLink(const QUrl *);  // Changed 2005-11-03 AF
+    void clickOnCell();        // Added 2005-11-01 AF
+    void wheelMove( QWheelEvent* );  // Added 2005-11-28 AF
+    void forwardAction( int );    // Added 2006-04-27 AF
 
   public slots:
     void setSource(const QUrl &name);      // Changed 2005-11-03 AF
 
   protected:
     void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent * event);        // Added 2005-11-28 AF
+    void wheelEvent(QWheelEvent * event);  // Added 2005-11-28 AF
     void insertFromMimeData(const QMimeData *source);  // Added 2006-01-23 AF
-    void keyPressEvent(QKeyEvent *event );        // Added 2006-01-30 AF
+    void keyPressEvent(QKeyEvent *event );  // Added 2006-01-30 AF
 
   };
 

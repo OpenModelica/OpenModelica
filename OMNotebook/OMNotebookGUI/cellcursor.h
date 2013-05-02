@@ -66,8 +66,8 @@ namespace IAEX
     Cell *currentCell();
 
     //Movment
-    bool moveUp();                  // Changed 2006-08-24 AF
-    bool moveDown();                // Changed 2006-08-24 AF
+    bool moveUp();            // Changed 2006-08-24 AF
+    bool moveDown();          // Changed 2006-08-24 AF
 
     void moveToFirstChild(Cell *parent);
     void moveToLastChild(Cell *parent);
@@ -78,8 +78,8 @@ namespace IAEX
     virtual QString text(){return QString::null;}
 
     //Flag
-    bool isEditable();                // Added 2005-10-28 AF
-    bool isClickedOn();                // Added 2006-04-27 AF
+    bool isEditable();          // Added 2005-10-28 AF
+    bool isClickedOn();          // Added 2006-04-27 AF
 
   public slots:
     virtual void setFocus(const bool){}
@@ -92,7 +92,7 @@ namespace IAEX
     void mousePressEvent(QMouseEvent *event);    // Added 2006-04-27 AF
 
   private:
-    void cursorIsMoved();              // Added 2006-04-27 AF
+    void cursorIsMoved();        // Added 2006-04-27 AF
     void removeFromCurrentPosition();
 
   private:
