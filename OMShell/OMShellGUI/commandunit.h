@@ -67,8 +67,8 @@ namespace IAEX
       QHash<QString,QString>::iterator d_iter = datafields_.begin();
       while( d_iter != datafields_.end() )
       {
-  tmp.replace( d_iter.key(), d_iter.value() );
-  ++d_iter;
+        tmp.replace( d_iter.key(), d_iter.value() );
+        ++d_iter;
       }
 
       return tmp;
@@ -79,9 +79,9 @@ namespace IAEX
     QString datafield( QString fieldID )
     {
       if( datafields_.contains( fieldID ))
-  return datafields_[fieldID];
+        return datafields_[fieldID];
       else
-  return QString::null;
+        return QString::null;
     }
     void addDataField( QString fieldID, QString data )
     {

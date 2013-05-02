@@ -48,10 +48,10 @@ namespace IAEX
 
     virtual QString getResult();
     virtual void evalExpression(QString expr);
-    virtual void closeConnection();  // Added 2006-02-02 AF
-    virtual void reconnect();    // Added 2006-02-09 AF
-    virtual bool startDelegate();  // Added 2006-02-09 AF
-    static bool startOMC();      // Added 2006-02-09 AF
+    virtual void closeConnection();        // Added 2006-02-02 AF
+    virtual void reconnect();          // Added 2006-02-09 AF
+    virtual bool startDelegate();        // Added 2006-02-09 AF
+    static bool startOMC();            // Added 2006-02-09 AF
 
   private:
     OmcCommunicator &comm_;

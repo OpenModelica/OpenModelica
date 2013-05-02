@@ -68,8 +68,8 @@ void open_socket(char* hostname, int port);
 char * check_omhome(void);
 
 void init_sockaddr (struct sockaddr_in *name,
-                       const char *hostname,
-                       int port);
+                             const char *hostname,
+                             int port);
 
 void doCorbaCommunication(int argc, char **argv,const string *);
 void doSocketCommunication(const string*);
@@ -116,9 +116,9 @@ int main(int argc, char* argv[])
   }
   if(!scriptname) {
     cout << "OMShell "
-   << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << endl
-   << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
-   << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
+         << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << endl
+         << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
+         << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
   }
   const char* errorfile = "/tmp/omshell.log";
   if (corba_comm) {
@@ -126,16 +126,16 @@ int main(int argc, char* argv[])
       // Starting background server using corba
       char systemstr[1024];
       if (omhome)
-  sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
+        sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
       else
-  sprintf(systemstr, "omc +d=interactiveCorba > %s 2>&1 &", errorfile);
+        sprintf(systemstr, "omc +d=interactiveCorba > %s 2>&1 &", errorfile);
       int res = system(systemstr);
       if (res) {
-  if (omhome)
-    cerr << "Failed to start server using " << systemstr << endl;
-  else
-    cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
-  return EXIT_FAILURE;
+        if (omhome)
+          cerr << "Failed to start server using " << systemstr << endl;
+        else
+          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
+        return EXIT_FAILURE;
       }
       if (!scriptname) cout << "Started server using:"<< systemstr << "\n" << endl;
     }
@@ -146,16 +146,16 @@ int main(int argc, char* argv[])
      // Starting background server using corba
       char systemstr[1024];
       if (omhome)
-  sprintf(systemstr, "%s/bin/omc +d=interactive > %s 2>&1 &", omhome, errorfile);
+        sprintf(systemstr, "%s/bin/omc +d=interactive > %s 2>&1 &", omhome, errorfile);
       else
-  sprintf(systemstr, "omc +d=interactive > %s 2>&1 &", errorfile);
+        sprintf(systemstr, "omc +d=interactive > %s 2>&1 &", errorfile);
       int res = system(systemstr);
       if (res) {
-  if (omhome)
-    cerr << "Failed to start server using " << systemstr << endl;
-  else
-    cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
-  return EXIT_FAILURE;
+        if (omhome)
+          cerr << "Failed to start server using " << systemstr << endl;
+        else
+          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
+        return EXIT_FAILURE;
       }
       if (!scriptname) cout << "Started server using:"<< systemstr << endl;
     }
@@ -217,7 +217,7 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
       if (!done) add_history(line);
       char *res =client->sendExpression(line);
       if (done) {
-  sleep(1);
+        sleep(1);
       }
       cout << res;
       CORBA::string_free(res);
@@ -314,15 +314,15 @@ void doSocketCommunication(const string * scriptname)
       if (!done) add_history(line);
       int nbytes = write(sock,line,strlen(line)+1);
       if (nbytes == 0) {
-  cout << "Error writing to server" << endl;
-  done = true;
-  break;
+        cout << "Error writing to server" << endl;
+        done = true;
+        break;
       }
       int recvbytes = read(sock,buf,40000);
       if (recvbytes == 0) {
-  cout << "Received 0 bytes, exiting" << endl;
-  done = true;
-  break;
+        cout << "Received 0 bytes, exiting" << endl;
+        done = true;
+        break;
       }
       cout << buf;
     }
@@ -350,8 +350,8 @@ char* check_omhome(void)
 
 void
 init_sockaddr (struct sockaddr_in *name,
-         const char *hostname,
-         int port)
+               const char *hostname,
+               int port)
 {
   struct hostent *hostinfo;
 

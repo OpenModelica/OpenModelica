@@ -113,15 +113,15 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Backspace:
     case Qt::Key_Left:
       if( !startOfCommandSign() )
-  QPlainTextEdit::keyPressEvent( event );
+        QPlainTextEdit::keyPressEvent( event );
       sameTab_ = false;
       break;
     case Qt::Key_Enter:
     case Qt::Key_Return:
       if( event->modifiers() == Qt::ShiftModifier )
-  emit insertNewline();
+        emit insertNewline();
       else
-  emit returnPressed();
+        emit returnPressed();
       sameTab_ = false;
       break;
     case Qt::Key_Up:
@@ -134,23 +134,23 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
       break;
     case Qt::Key_Home:
       if( event->modifiers() == Qt::ShiftModifier )
-  emit goHome(true);
+        emit goHome(true);
       else
-  emit goHome(false);
+        emit goHome(false);
       sameTab_ = false;
       break;
     case Qt::Key_Tab:
       {
-  if( event->modifiers() == Qt::ControlModifier )
-  {
-    emit codeNextField();
-    sameTab_ = false;
-  }
-  else
-  {
-    emit codeCompletion( sameTab_ );
-    sameTab_ = true;
-  }
+        if( event->modifiers() == Qt::ControlModifier )
+        {
+          emit codeNextField();
+          sameTab_ = false;
+        }
+        else
+        {
+          emit codeCompletion( sameTab_ );
+          sameTab_ = true;
+        }
       }
       break;
     default:
@@ -173,7 +173,7 @@ bool MyTextEdit::insideCommandSign()
     {
       cerr << "Inside Command Sign" << endl;
       cerr << "BlockStart: " << blockStartPos <<
-  ", Cursor: " << cursorPos << endl << endl;
+        ", Cursor: " << cursorPos << endl << endl;
 
       return true;
     }
@@ -486,12 +486,12 @@ void OMS::returnPressed()
 
       if( block.text().indexOf( ">> ", 0, Qt::CaseInsensitive ) == 0 )
       { // last command sign found, send command to OMC
-  break;
+        break;
       }
       else
       { // no command sign, look in previous text block
-  block = block.previous();
-  commandText = "\n" + commandText;
+        block = block.previous();
+        commandText = "\n" + commandText;
       }
     }
     else
@@ -596,22 +596,22 @@ void OMS::exceptionInEval(exception &e)
       delegate_->closeConnection();
       if( delegate_->startDelegate() )
       {
-  // 2006-03-14 AF, wait before trying to reconnect,
-  // give OMC time to start up
-  SleeperThread::msleep( 1000 );
+        // 2006-03-14 AF, wait before trying to reconnect,
+        // give OMC time to start up
+        SleeperThread::msleep( 1000 );
 
-  //delegate_->closeConnection();
-  try
-  {
-    delegate_->reconnect();
-    returnPressed();
-  }
-  catch( exception &e )
-  {
-    QMessageBox::critical( 0, tr("Communication Error"),
-      tr("<B>Unable to communication correctlly with OMC. OMShell will therefore close.</B>") );
-    close();
-  }
+        //delegate_->closeConnection();
+        try
+        {
+          delegate_->reconnect();
+          returnPressed();
+        }
+        catch( exception &e )
+        {
+          QMessageBox::critical( 0, tr("Communication Error"),
+            tr("<B>Unable to communication correctlly with OMC. OMShell will therefore close.</B>") );
+          close();
+        }
       }
     }
   }
@@ -634,9 +634,9 @@ void OMS::prevCommand()
     else
     {
       if( currentCommand_ >= 1 )
-  currentCommand_--;
+        currentCommand_--;
       else
-  currentCommand_ = 0;
+        currentCommand_ = 0;
     }
 
     // select all text in the last commandline
@@ -750,12 +750,12 @@ void OMS::selectCommandLine()
     {
       if( block.text().indexOf( ">> ", 0, Qt::CaseInsensitive ) == 0 )
       { // last command sign found, move cursor there
-  cursor_.setPosition( block.position()+3, QTextCursor::KeepAnchor );
-  break;
+        cursor_.setPosition( block.position()+3, QTextCursor::KeepAnchor );
+        break;
       }
       else
       { // no command sign, look in previous text block
-  block = block.previous();
+        block = block.previous();
       }
     }
     else
@@ -823,16 +823,16 @@ bool OMS::exit()
 
       if( result == QMessageBox::Yes )
       {
-  stopServer();
-  return true;
+        stopServer();
+        return true;
       }
       else if (result == QMessageBox::No)
       {
-    return true;
+          return true;
       }
       else if (result == QMessageBox::Cancel)
       {
-    return false;
+          return false;
       }
     }
   }
@@ -907,39 +907,39 @@ bool OMS::startServer()
     {
       if( !IAEX::OmcInteractiveEnvironment::startOMC() )
       {
-  QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will not work correctly." );
+        QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will not work correctly." );
       }
       else
       {
-  // 2006-03-14 AF, wait before trying to reconnect,
-  // give OMC time to start up
-  SleeperThread::msleep( 3000 );
+        // 2006-03-14 AF, wait before trying to reconnect,
+        // give OMC time to start up
+        SleeperThread::msleep( 3000 );
 
-  delegate_ = new IAEX::OmcInteractiveEnvironment();
-  omcNowStarted = true;
+        delegate_ = new IAEX::OmcInteractiveEnvironment();
+        omcNowStarted = true;
 
-  // get version no
-  QString getTempStr = "getTempDirectoryPath()";
-  delegate_->evalExpression( getTempStr );
-  QString tmpDir = delegate_->getResult()+"/OpenModelica/";
-  tmpDir.remove("\"");
-  if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
-  tmpDir = "cd(\"" + tmpDir + "\")";
-  cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
-  delegate_->evalExpression(tmpDir);
-  cout << "cdToTempDir: " << delegate_->getResult().toStdString() << std::endl;
+        // get version no
+        QString getTempStr = "getTempDirectoryPath()";
+        delegate_->evalExpression( getTempStr );
+        QString tmpDir = delegate_->getResult()+"/OpenModelica/";
+        tmpDir.remove("\"");
+        if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
+        tmpDir = "cd(\"" + tmpDir + "\")";
+        cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
+        delegate_->evalExpression(tmpDir);
+        cout << "cdToTempDir: " << delegate_->getResult().toStdString() << std::endl;
 
-  QString getVersionStr = "getVersion()";
-  delegate_->evalExpression( getVersionStr );
-  omc_version_ = delegate_->getResult();
-  omc_version_.remove( "\"" );
-  cout << "OMC version " << omc_version_.toStdString() << std::endl;
+        QString getVersionStr = "getVersion()";
+        delegate_->evalExpression( getVersionStr );
+        omc_version_ = delegate_->getResult();
+        omc_version_.remove( "\"" );
+        cout << "OMC version " << omc_version_.toStdString() << std::endl;
 
-  // get omhome
-  delegate_->evalExpression( getOMHomeStr );
-  omhome = delegate_->getResult();
-  omhome.remove( "\"" );
-  cout << "OPENMODELICAHOME: " << omhome.toStdString() << std::endl;
+        // get omhome
+        delegate_->evalExpression( getOMHomeStr );
+        omhome = delegate_->getResult();
+        omhome.remove( "\"" );
+        cout << "OPENMODELICAHOME: " << omhome.toStdString() << std::endl;
       }
     }
   }

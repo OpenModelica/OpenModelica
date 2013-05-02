@@ -191,10 +191,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
     {
       if( fnCall != "quit()" && fnCall != "quit();" )
       {
-  throw runtime_error("NOT RESPONDING");
+        throw runtime_error("NOT RESPONDING");
       }
       else
-  break;
+        break;
     }
   }
 
