@@ -690,7 +690,7 @@ algorithm
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.RANGE(ty = DAE.T_INTEGER(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg,_)
+    case (cache, env, DAE.RANGE(ty = DAE.T_BOOL(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg,_)
       equation
         (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt,msg,numIter+1);
         (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt,msg,numIter+1);
