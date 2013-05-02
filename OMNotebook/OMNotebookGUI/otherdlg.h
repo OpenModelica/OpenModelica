@@ -67,7 +67,7 @@ namespace IAEX
       maxW.setNum( max_ );
 
       QString text = QString("Enter value (") + minW +
-  QString("-") + maxW + QString(")");
+        QString("-") + maxW + QString(")");
 
       ui.label->setText( text );
 
@@ -84,8 +84,8 @@ namespace IAEX
       int value = ui.lineEdit->text().toInt(&ok);
 
       if(ok)
-  if( min_ <= value && value <= max_ )
-    return value;
+        if( min_ <= value && value <= max_ )
+          return value;
 
       return -1;
     }

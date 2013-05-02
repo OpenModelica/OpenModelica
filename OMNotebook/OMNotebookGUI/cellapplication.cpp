@@ -111,8 +111,8 @@ namespace IAEX
       e.what();
       if( !OmcInteractiveEnvironment::startOMC() )
       {
-  QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, OMNotebook will therefore be unable to evaluate Modelica expressions." );
-  exit( -1 );
+        QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, OMNotebook will therefore be unable to evaluate Modelica expressions." );
+        exit( -1 );
       }
     }
 
@@ -164,9 +164,9 @@ namespace IAEX
     {
       QString stylesheetfile;
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-  stylesheetfile = openmodelica + "share/omnotebook/stylesheet.xml";
+        stylesheetfile = openmodelica + "share/omnotebook/stylesheet.xml";
       else
-  stylesheetfile = openmodelica + "/share/omnotebook/stylesheet.xml";
+        stylesheetfile = openmodelica + "/share/omnotebook/stylesheet.xml";
 
       sheet = Stylesheet::instance( stylesheetfile );
     }
@@ -182,9 +182,9 @@ namespace IAEX
     {
       QString commandfile;
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-  commandfile = openmodelica + "share/omnotebook/commands.xml";
+        commandfile = openmodelica + "share/omnotebook/commands.xml";
       else
-  commandfile = openmodelica + "/share/omnotebook/commands.xml";
+        commandfile = openmodelica + "/share/omnotebook/commands.xml";
 
       CommandCompletion::instance( commandfile );
     }
@@ -211,72 +211,72 @@ namespace IAEX
       // 2006-04-10 AF, use environment variable to find modelicacolors.xml
       try
       {
-  Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-  CellStyle style = sheet->getStyle( "Input" );
-  style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
+        Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+        CellStyle style = sheet->getStyle( "Input" );
+        style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
 
-  QString modelicacolorsfile;
-  if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-    modelicacolorsfile = openmodelica + "share/omnotebook/modelicacolors.xml";
-  else
-    modelicacolorsfile = openmodelica + "/share/omnotebook/modelicacolors.xml";
+        QString modelicacolorsfile;
+        if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+          modelicacolorsfile = openmodelica + "share/omnotebook/modelicacolors.xml";
+        else
+          modelicacolorsfile = openmodelica + "/share/omnotebook/modelicacolors.xml";
 
-  OpenModelicaHighlighter *highlighter = new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
-  HighlighterThread *thread = HighlighterThread::instance( highlighter );
-  //thread->start( QThread::LowPriority );
+        OpenModelicaHighlighter *highlighter = new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
+        HighlighterThread *thread = HighlighterThread::instance( highlighter );
+        //thread->start( QThread::LowPriority );
       }
       catch( exception &e )
       {
-  QString msg = e.what();
-  msg += "\nCould not create highlighter thread, exiting OMNotebook";
-  QMessageBox::warning( 0, "Error", msg, "OK" );
-  std::exit(-1);
+        QString msg = e.what();
+        msg += "\nCould not create highlighter thread, exiting OMNotebook";
+        QMessageBox::warning( 0, "Error", msg, "OK" );
+        std::exit(-1);
       }
 
 
       // second arg is a file that should be opened.
       if( argc > 1 )
       {
-  QString fileToOpen( argv[1] );
-  if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) ||  fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
-  {
-    open( fileToOpen );
-  }
-  else
-  {
-    cout << "File not found: " << fileToOpen.toStdString() << endl;
-    open(QString::null);
-  }
+        QString fileToOpen( argv[1] );
+        if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) ||  fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
+        {
+          open( fileToOpen );
+        }
+        else
+        {
+          cout << "File not found: " << fileToOpen.toStdString() << endl;
+          open(QString::null);
+        }
       }
       else
       {
-  // 2006-02-27 AF, use environment variable to find DrModelica
-  // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-  QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+        // 2006-02-27 AF, use environment variable to find DrModelica
+        // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
+        QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
 
-  if( dir.exists( drmodelica ))
-    open(drmodelica);
-  else if( dir.exists( "DrModelica/DrModelica.onb" ))
-    open( "DrModelica/DrModelica.onb" );
-  else
-  {
-    cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-    cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+        if( dir.exists( drmodelica ))
+          open(drmodelica);
+        else if( dir.exists( "DrModelica/DrModelica.onb" ))
+          open( "DrModelica/DrModelica.onb" );
+        else
+        {
+          cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
+          cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
 
-    // NB
-    drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+          // NB
+          drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
 
-    if( dir.exists( drmodelica ))
-      open(drmodelica);
-    else if( dir.exists( "DrModelica/DrModelica.nb" ))
-      open( "DrModelica/DrModelica.nb" );
-    else
-    {
-      cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
-      cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
-      open(QString::null);
-    }
-  }
+          if( dir.exists( drmodelica ))
+            open(drmodelica);
+          else if( dir.exists( "DrModelica/DrModelica.nb" ))
+            open( "DrModelica/DrModelica.nb" );
+          else
+          {
+            cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
+            cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
+            open(QString::null);
+          }
+        }
       }
     }
   }
@@ -311,8 +311,8 @@ namespace IAEX
     {
       if( !dir.remove( removeList_.at(i) ))
       {
-  QString msg = "Could not remove temporary image " + removeList_.at(i) + " from harddrive.";
-  QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QString msg = "Could not remove temporary image " + removeList_.at(i) + " from harddrive.";
+        QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
   }
@@ -500,11 +500,11 @@ namespace IAEX
     {
       if( (*d_iter) == view->document() )
       {
-  documents_.erase( d_iter );
-  break;
+        documents_.erase( d_iter );
+        break;
       }
       else
-  ++d_iter;
+        ++d_iter;
     }
 
     vector<DocumentView *>::iterator dv_iter = views_.begin();
@@ -512,11 +512,11 @@ namespace IAEX
     {
       if( (*dv_iter) == view )
       {
-  views_.erase( dv_iter );
-  break;
+        views_.erase( dv_iter );
+        break;
       }
       else
-  ++dv_iter;
+        ++dv_iter;
     }
   }
 
@@ -553,40 +553,40 @@ namespace IAEX
 
       for( int i = 0; i < dirList.size(); ++i )
       {
-  // get file names
-  QDir fileDir( dir.absolutePath() + "/" + dirList.at(i) );
-  fileDir.setSorting( QDir::Name );
-  fileDir.setFilter( QDir::Files );
-  //fileDir.setNameFilters( QStringList(".nb") );
-  QStringList fileList = fileDir.entryList();
+        // get file names
+        QDir fileDir( dir.absolutePath() + "/" + dirList.at(i) );
+        fileDir.setSorting( QDir::Name );
+        fileDir.setFilter( QDir::Files );
+        //fileDir.setNameFilters( QStringList(".nb") );
+        QStringList fileList = fileDir.entryList();
 
-  // loop through all files
-  for( int j = 0; j < fileList.size(); ++j )
-  {
-    cout << "Loading: " << fileDir.absolutePath().toStdString() +
-      string( "/" ) + fileList.at(j).toStdString() << endl;
+        // loop through all files
+        for( int j = 0; j < fileList.size(); ++j )
+        {
+          cout << "Loading: " << fileDir.absolutePath().toStdString() +
+            string( "/" ) + fileList.at(j).toStdString() << endl;
 
-    Document *d = new CellDocument( this, fileDir.absolutePath() +
-      QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
+          Document *d = new CellDocument( this, fileDir.absolutePath() +
+            QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
 
-    // save file
-    QString filename = fileList.at(j);
-    filename.replace( ".nb", ".onb" );
+          // save file
+          QString filename = fileList.at(j);
+          filename.replace( ".nb", ".onb" );
 
-    cout << "Saving: " << dir.absolutePath().toStdString() +
-      string( "/" ) + dirList.at(i).toStdString() + string( "/" ) +
-      filename.toStdString() << endl;
+          cout << "Saving: " << dir.absolutePath().toStdString() +
+            string( "/" ) + dirList.at(i).toStdString() + string( "/" ) +
+            filename.toStdString() << endl;
 
-    SaveDocumentCommand command( d, dir.absolutePath() +
-      QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
-    this->commandCenter()->executeCommand( &command );
+          SaveDocumentCommand command( d, dir.absolutePath() +
+            QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
+          this->commandCenter()->executeCommand( &command );
 
-    cout << "DONE!" << endl << endl;
+          cout << "DONE!" << endl << endl;
 
-    // delete file
-    delete d;
-    fileDir.remove( fileList.at(j) );
-  }
+          // delete file
+          delete d;
+          fileDir.remove( fileList.at(j) );
+        }
       }
      }
 

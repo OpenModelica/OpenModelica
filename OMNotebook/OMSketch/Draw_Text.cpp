@@ -63,18 +63,18 @@ bool Draw_Text::getStrtEdge(QPointF pnt)
 
     if(Strt_Rect->isUnderMouse())
     {
-  draw_state=1;
-  Strt_Rect->setCursor(Qt::CrossCursor);
-  return true;
+        draw_state=1;
+        Strt_Rect->setCursor(Qt::CrossCursor);
+        return true;
     }
     else
-  return false;
+        return false;
 
     /*if(Strt_Rect->contains(pnt))
     {
-  draw_state=1;
-  Strt_Rect->setCursor(Qt::CrossCursor);
-  return true;
+        draw_state=1;
+        Strt_Rect->setCursor(Qt::CrossCursor);
+        return true;
     }
     */
 
@@ -85,18 +85,18 @@ bool Draw_Text::getEndEdge(QPointF pnt)
 
     if(End_Rect->isUnderMouse())
     {
-  draw_state=2;
-  End_Rect->setCursor(Qt::CrossCursor);
-  return true;
+        draw_state=2;
+        End_Rect->setCursor(Qt::CrossCursor);
+        return true;
     }
     else
-  return false;
+        return false;
 
     /*if(this->End_Rect->contains(pnt))
     {
-  draw_state=2;
-  End_Rect->setCursor(Qt::CrossCursor);
-  return true;
+        draw_state=2;
+        End_Rect->setCursor(Qt::CrossCursor);
+        return true;
     }
     */
 
@@ -107,33 +107,33 @@ bool Draw_Text::getRotEdge(const QPointF pnt)
 
     if(Rot_Rect->isUnderMouse())
     {
-  draw_state=4;
-  QPointF pnt1;
-  pnt1.setX((Rot_Rect->boundingRect().topLeft().x()+Rot_Rect->boundingRect().bottomRight().x())/2);
-  pnt1.setY((Rot_Rect->boundingRect().topLeft().y()+Rot_Rect->boundingRect().bottomRight().y())/2);
-  item->setTransformOriginPoint(pnt1);
-  Strt_Rect->setTransformOriginPoint(pnt1);
-  End_Rect->setTransformOriginPoint(pnt1);
-  Rot_Rect->setTransformOriginPoint(pnt1);
-  return true;
+        draw_state=4;
+        QPointF pnt1;
+        pnt1.setX((Rot_Rect->boundingRect().topLeft().x()+Rot_Rect->boundingRect().bottomRight().x())/2);
+        pnt1.setY((Rot_Rect->boundingRect().topLeft().y()+Rot_Rect->boundingRect().bottomRight().y())/2);
+        item->setTransformOriginPoint(pnt1);
+        Strt_Rect->setTransformOriginPoint(pnt1);
+        End_Rect->setTransformOriginPoint(pnt1);
+        Rot_Rect->setTransformOriginPoint(pnt1);
+        return true;
     }
     else
-  return false;
+        return false;
 
     /*if(this->Rot_Rect->contains(pnt))
     {
-  draw_state=4;
-  //QPointF pnt1;
-  pnt1.setX((Rot_Rect->boundingRect().topLeft().x()+Rot_Rect->boundingRect().bottomRight().x())/2);
-  pnt1.setY((Rot_Rect->boundingRect().topLeft().y()+Rot_Rect->boundingRect().bottomRight().y())/2);
-  setTransformOriginPoint(pnt1);
-  Strt_Rect->setTransformOriginPoint(pnt1);
-  End_Rect->setTransformOriginPoint(pnt1);
-  Rot_Rect->setTransformOriginPoint(pnt1);
-  return true;
+        draw_state=4;
+        //QPointF pnt1;
+        pnt1.setX((Rot_Rect->boundingRect().topLeft().x()+Rot_Rect->boundingRect().bottomRight().x())/2);
+        pnt1.setY((Rot_Rect->boundingRect().topLeft().y()+Rot_Rect->boundingRect().bottomRight().y())/2);
+        setTransformOriginPoint(pnt1);
+        Strt_Rect->setTransformOriginPoint(pnt1);
+        End_Rect->setTransformOriginPoint(pnt1);
+        Rot_Rect->setTransformOriginPoint(pnt1);
+        return true;
     }
     else
-  return false;*/
+        return false;*/
 
 }
 
@@ -141,21 +141,21 @@ bool Draw_Text::getItemSelected(const QPointF pnt)
 {
     if(item->isUnderMouse())
     {
-  draw_state=3;
-  setCursor(Qt::SizeAllCursor);
-  return true;
+        draw_state=3;
+        setCursor(Qt::SizeAllCursor);
+        return true;
     }
     else
-  return false;
+        return false;
 
     /*if(contains(pnt))
     {
-  draw_state=3;
-  setCursor(Qt::SizeAllCursor);
-  return true;
+        draw_state=3;
+        setCursor(Qt::SizeAllCursor);
+        return true;
     }
     else
-  return false;*/
+        return false;*/
 }
 
 

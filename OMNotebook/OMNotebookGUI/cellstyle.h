@@ -91,7 +91,7 @@ namespace IAEX
     QTextCharFormat* textCharFormat(){ return &textFormat_; }
     QTextFrameFormat* textFrameFormat(){ return &frameFormat_; }
     int alignment(){ return alignment_; }
-    bool visible(){ return visible_; }    // Added 2006-03-02 AF
+    bool visible(){ return visible_; }          // Added 2006-03-02 AF
     int chapterLevel(){ return chapterLevel_; }      // Added 2006-03-02 AF
 
     void setName( QString name ){ name_ = name; }
@@ -104,11 +104,11 @@ namespace IAEX
   private:
     QString name_;
     QTextCharFormat textFormat_;
-  QTextFrameFormat frameFormat_;
+        QTextFrameFormat frameFormat_;
     int alignment_;
 
-    bool visible_;      // Added 2006-03-02 AF
-    int chapterLevel_;    // Added 2006-03-02 AF
+    bool visible_;            // Added 2006-03-02 AF
+    int chapterLevel_;          // Added 2006-03-02 AF
   };
 }
 

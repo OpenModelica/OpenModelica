@@ -98,8 +98,8 @@ namespace IAEX
 
       // 2005-10-26 AF, thorw exception insted of exit
       string tmp = "Could not read content from file: " +
-  filename.toStdString() +
-  " Probably some syntax error in the xml file";
+        filename.toStdString() +
+        " Probably some syntax error in the xml file";
       throw runtime_error( tmp.c_str() );
     }
     file.close();
@@ -229,26 +229,26 @@ namespace IAEX
       QDomElement e = n.toElement();
       if( !e.isNull() )
       {
-  if( e.tagName() == "style" )
-  {
-    CellStyle style;
-    style.setName( e.attribute( "name" ));
+        if( e.tagName() == "style" )
+        {
+          CellStyle style;
+          style.setName( e.attribute( "name" ));
 
-    // get visibility
-    if( e.attribute( "visible", "true" ).indexOf( "false", 0, Qt::CaseInsensitive ) < 0 )
-                  style.setVisible( true );
-    else
-      style.setVisible( false );
+          // get visibility
+          if( e.attribute( "visible", "true" ).indexOf( "false", 0, Qt::CaseInsensitive ) < 0 )
+                        style.setVisible( true );
+          else
+            style.setVisible( false );
 
-    QDomNode node = e.firstChild();
-    traverseStyleSettings(node, &style);
+          QDomNode node = e.firstChild();
+          traverseStyleSettings(node, &style);
 
-    styles_.insert( style.name(), style );
+          styles_.insert( style.name(), style );
 
-    // 2006-03-02 AF, only add styles that are visible
-    if( style.visible() )
-      styleNames_.push_back( style.name() );
-  }
+          // 2006-03-02 AF, only add styles that are visible
+          if( style.visible() )
+            styleNames_.push_back( style.name() );
+        }
       }
       n = n.nextSibling();
     }
@@ -270,15 +270,15 @@ namespace IAEX
       QDomElement element = node.toElement();
 
       if( element.tagName() == "border" )
-  parseBorderTag( element, item );
+        parseBorderTag( element, item );
       else if( element.tagName() == "alignment" )
-  parseAlignmentTag( element, item );
+        parseAlignmentTag( element, item );
       else if( element.tagName() == "font" )
-  parseFontTag( element, item );
+        parseFontTag( element, item );
       else if( element.tagName() == "chapterlevel" )
-  parseChapterLevelTag( element, item );
+        parseChapterLevelTag( element, item );
       else
-  cout << "Tag not known" << element.tagName().toStdString();
+        cout << "Tag not known" << element.tagName().toStdString();
 
       node = node.nextSibling();
     }
@@ -361,126 +361,126 @@ namespace IAEX
       QDomElement fontElement = fontNode.toElement();
       if( !fontElement.isNull() )
       {
-  // FAMILY
-  if( fontElement.tagName() == "family" )
-  {
-    item->textCharFormat()->setFontFamily( fontElement.text() );
-  }
-  // SIZE
-  else if( fontElement.tagName() == "size" )
-  {
-    bool ok;
-    int size = fontElement.text().toInt(&ok);
+        // FAMILY
+        if( fontElement.tagName() == "family" )
+        {
+          item->textCharFormat()->setFontFamily( fontElement.text() );
+        }
+        // SIZE
+        else if( fontElement.tagName() == "size" )
+        {
+          bool ok;
+          int size = fontElement.text().toInt(&ok);
 
-    if(ok)
-      item->textCharFormat()->setFontPointSize( size );
-    else
-      item->textCharFormat()->setFontPointSize( 12 );
-  }
-  // WEIGHT
-  else if( fontElement.tagName() == "weight" )
-  {
-    QString weight = fontElement.text();
+          if(ok)
+            item->textCharFormat()->setFontPointSize( size );
+          else
+            item->textCharFormat()->setFontPointSize( 12 );
+        }
+        // WEIGHT
+        else if( fontElement.tagName() == "weight" )
+        {
+          QString weight = fontElement.text();
 
-    if( weight == "light" )
-      item->textCharFormat()->setFontWeight( QFont::Light );
-    else if( weight == "normal" )
-      item->textCharFormat()->setFontWeight( QFont::Normal );
-    else if( weight == "demibold" )
-      item->textCharFormat()->setFontWeight( QFont::DemiBold );
-    else if( weight == "bold" )
-      item->textCharFormat()->setFontWeight( QFont::Bold );
-    else if( weight == "black" )
-      item->textCharFormat()->setFontWeight( QFont::Black );
-    else
-    {
-      bool ok;
-      int size = weight.toInt(&ok);
+          if( weight == "light" )
+            item->textCharFormat()->setFontWeight( QFont::Light );
+          else if( weight == "normal" )
+            item->textCharFormat()->setFontWeight( QFont::Normal );
+          else if( weight == "demibold" )
+            item->textCharFormat()->setFontWeight( QFont::DemiBold );
+          else if( weight == "bold" )
+            item->textCharFormat()->setFontWeight( QFont::Bold );
+          else if( weight == "black" )
+            item->textCharFormat()->setFontWeight( QFont::Black );
+          else
+          {
+            bool ok;
+            int size = weight.toInt(&ok);
 
-      if(ok)
-        item->textCharFormat()->setFontWeight( size );
-      else
-        item->textCharFormat()->setFontWeight( QFont::Normal );
-    }
-  }
-  // STRETCH
-  else if( fontElement.tagName() == "stretch" )
-  {
-    QString stretch = fontElement.text();
+            if(ok)
+              item->textCharFormat()->setFontWeight( size );
+            else
+              item->textCharFormat()->setFontWeight( QFont::Normal );
+          }
+        }
+        // STRETCH
+        else if( fontElement.tagName() == "stretch" )
+        {
+          QString stretch = fontElement.text();
 
-    if( stretch == "ultracondensed" )
-      item->textCharFormat()->font().setStretch( QFont::UltraCondensed );
-    else if( stretch == "extracondensed" )
-      item->textCharFormat()->font().setStretch( QFont::ExtraCondensed );
-    else if( stretch == "condensed" )
-      item->textCharFormat()->font().setStretch( QFont::Condensed );
-    else if( stretch == "semicondensed" )
-      item->textCharFormat()->font().setStretch( QFont::SemiCondensed );
-    else if( stretch == "unstretched" )
-      item->textCharFormat()->font().setStretch( QFont::Unstretched );
-    else if( stretch == "semiexpanded" )
-      item->textCharFormat()->font().setStretch( QFont::SemiExpanded );
-    else if( stretch == "expanded" )
-      item->textCharFormat()->font().setStretch( QFont::Expanded );
-    else if( stretch == "extraexpanded" )
-      item->textCharFormat()->font().setStretch( QFont::ExtraExpanded );
-    else if( stretch == "ultraexpanded" )
-      item->textCharFormat()->font().setStretch( QFont::UltraExpanded );
-    else
-    {
-      cout << "Stretch value not correct: " << stretch.toStdString();
-      item->textCharFormat()->font().setStretch( QFont::Unstretched );
-    }
-  }
-  // ITALIC
-  else if( fontElement.tagName() == "italic" )
-  {
-    //This only occur when italic tag is present.
-    //delete italic tag to disable.
-    item->textCharFormat()->setFontItalic( true );
-  }
-  // STRIKEOUT
-  else if( fontElement.tagName() == "strikeout" )
-  {
-    //This only occur when strikeout tag is present.
-    //delete strikeout tag to disable.
-    item->textCharFormat()->setFontStrikeOut( true );
-  }
-  // UNDERLINE
-  else if( fontElement.tagName() == "underline" )
-  {
-    //This only occur when underline tag is present.
-    //delete underline tag to disable.
-    item->textCharFormat()->setFontUnderline( true );
-  }
-  // OVERLINE
-  else if( fontElement.tagName() == "overline" )
-  {
-    //This only occur when overline tag is present.
-    //delete overline tag to disable.
-    item->textCharFormat()->setFontOverline( true );
-  }
-  // COLOR
-  else if( fontElement.tagName() == "color" )
-  {
-    bool okRed;
-    bool okGreen;
-    bool okBlue;
+          if( stretch == "ultracondensed" )
+            item->textCharFormat()->font().setStretch( QFont::UltraCondensed );
+          else if( stretch == "extracondensed" )
+            item->textCharFormat()->font().setStretch( QFont::ExtraCondensed );
+          else if( stretch == "condensed" )
+            item->textCharFormat()->font().setStretch( QFont::Condensed );
+          else if( stretch == "semicondensed" )
+            item->textCharFormat()->font().setStretch( QFont::SemiCondensed );
+          else if( stretch == "unstretched" )
+            item->textCharFormat()->font().setStretch( QFont::Unstretched );
+          else if( stretch == "semiexpanded" )
+            item->textCharFormat()->font().setStretch( QFont::SemiExpanded );
+          else if( stretch == "expanded" )
+            item->textCharFormat()->font().setStretch( QFont::Expanded );
+          else if( stretch == "extraexpanded" )
+            item->textCharFormat()->font().setStretch( QFont::ExtraExpanded );
+          else if( stretch == "ultraexpanded" )
+            item->textCharFormat()->font().setStretch( QFont::UltraExpanded );
+          else
+          {
+            cout << "Stretch value not correct: " << stretch.toStdString();
+            item->textCharFormat()->font().setStretch( QFont::Unstretched );
+          }
+        }
+        // ITALIC
+        else if( fontElement.tagName() == "italic" )
+        {
+          //This only occur when italic tag is present.
+          //delete italic tag to disable.
+          item->textCharFormat()->setFontItalic( true );
+        }
+        // STRIKEOUT
+        else if( fontElement.tagName() == "strikeout" )
+        {
+          //This only occur when strikeout tag is present.
+          //delete strikeout tag to disable.
+          item->textCharFormat()->setFontStrikeOut( true );
+        }
+        // UNDERLINE
+        else if( fontElement.tagName() == "underline" )
+        {
+          //This only occur when underline tag is present.
+          //delete underline tag to disable.
+          item->textCharFormat()->setFontUnderline( true );
+        }
+        // OVERLINE
+        else if( fontElement.tagName() == "overline" )
+        {
+          //This only occur when overline tag is present.
+          //delete overline tag to disable.
+          item->textCharFormat()->setFontOverline( true );
+        }
+        // COLOR
+        else if( fontElement.tagName() == "color" )
+        {
+          bool okRed;
+          bool okGreen;
+          bool okBlue;
 
-    int red = fontElement.attribute( "red", "0" ).toInt(&okRed);
-    int green = fontElement.attribute( "green", "0" ).toInt(&okGreen);
-    int blue = fontElement.attribute( "blue", "0" ).toInt(&okBlue);
+          int red = fontElement.attribute( "red", "0" ).toInt(&okRed);
+          int green = fontElement.attribute( "green", "0" ).toInt(&okGreen);
+          int blue = fontElement.attribute( "blue", "0" ).toInt(&okBlue);
 
-    if( okRed && okGreen && okBlue )
-      item->textCharFormat()->setForeground( QBrush( QColor(red, green, blue) ));
-    else
-      item->textCharFormat()->setForeground( QBrush( QColor(0, 0, 0) ));
-  }
-  else
-  {
-    cout << "font tag not specified: " <<
-      fontElement.tagName().toStdString();
-  }
+          if( okRed && okGreen && okBlue )
+            item->textCharFormat()->setForeground( QBrush( QColor(red, green, blue) ));
+          else
+            item->textCharFormat()->setForeground( QBrush( QColor(0, 0, 0) ));
+        }
+        else
+        {
+          cout << "font tag not specified: " <<
+            fontElement.tagName().toStdString();
+        }
       }
 
       fontNode = fontNode.nextSibling();

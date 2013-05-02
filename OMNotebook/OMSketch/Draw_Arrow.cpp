@@ -72,9 +72,9 @@ void Draw_Arrow::setEdgeRects()
     
   QPointF pnt,pnt1;
 
-  //arrow pnts      
+  //arrow pnts            
   //pnt1-------pnt2---------pnt3
-  //pnt8              pnt4
+  //pnt8                    pnt4
   //pnt7------pnt6----------pnt5
 
   pnt=item->boundingRect().topLeft();
@@ -244,14 +244,14 @@ bool Draw_Arrow::isMouseClickedOnHandle(QPointF pnt)
   for(int i=0;i<handles.size();i++)
   {
       if(handles[i]->isUnderMouse())
-  {
-      draw_state=1;
+        {
+            draw_state=1;
       handle_index=i;
       qDebug()<<"handle index "<<handle_index<<"\n";
       handles[i]->setCursor(Qt::CrossCursor);
       found=true;
       break;
-      
+            
     }
     else
       found=false;
@@ -268,11 +268,11 @@ bool Draw_Arrow::isMouseClickedOnEndHandle(QPointF pnt)
 
     if(this->End_Rect->isUnderMouse())
     {
-  draw_state=2;
-  return true;
+        draw_state=2;
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -283,31 +283,31 @@ bool Draw_Arrow::isMouseClickedOnRotateHandle(const QPointF pnt)
 
     if(Rot_Rect->isUnderMouse())
     {
-  draw_state=4;
-  QPointF pnt1;
-  pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
-  pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
-  item->setTransformOriginPoint(pnt1);
-  Strt_Rect->setTransformOriginPoint(pnt1);
-  End_Rect->setTransformOriginPoint(pnt1);
-  Rot_Rect->setTransformOriginPoint(pnt1);
-  Bounding_Rect->setTransformOriginPoint(pnt1);
-  return true;
+        draw_state=4;
+        QPointF pnt1;
+        pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
+        pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
+        item->setTransformOriginPoint(pnt1);
+        Strt_Rect->setTransformOriginPoint(pnt1);
+        End_Rect->setTransformOriginPoint(pnt1);
+        Rot_Rect->setTransformOriginPoint(pnt1);
+        Bounding_Rect->setTransformOriginPoint(pnt1);
+        return true;
     }
     else
-  return false;
+        return false;
 }
 
 bool Draw_Arrow::isMouseClickedOnShape(const QPointF pnt)
 {
     if(item->isUnderMouse())
     {
-  draw_state=3;
-  item->setCursor(Qt::SizeAllCursor);
-  return true;
+        draw_state=3;
+        item->setCursor(Qt::SizeAllCursor);
+        return true;
     }
     else
-  return false;
+        return false;
 }
 
 void Draw_Arrow::BoundingBox()
@@ -341,14 +341,14 @@ void Draw_Arrow::setTranslate(QPointF pnt,QPointF pnt1)
      }
        if(handle_index==7)
        {
-    arrow_pnts[0]=QPointF(pnt1.x(),arrow_pnts[0].y());
+          arrow_pnts[0]=QPointF(pnt1.x(),arrow_pnts[0].y());
       arrow_pnts[6]=QPointF(pnt1.x(),arrow_pnts[6].y());
       arrow_pnts[7]=QPointF(pnt1.x(),arrow_pnts[7].y());
        }
 
      if(handle_index==3)
        {
-    arrow_pnts[1]=QPointF(pnt1.x()-25,arrow_pnts[1].y());
+          arrow_pnts[1]=QPointF(pnt1.x()-25,arrow_pnts[1].y());
       arrow_pnts[2]=QPointF(pnt1.x()-25,arrow_pnts[2].y());
       arrow_pnts[3]=QPointF(pnt1.x(),arrow_pnts[3].y());
       arrow_pnts[4]=QPointF(pnt1.x()-25,arrow_pnts[4].y());
@@ -481,7 +481,7 @@ QPainterPath Draw_Arrow::getArrow()
 
     if(draw_mode)
     {
-  arrow.addPolygon(QPolygonF(arrow_pnts));
+        arrow.addPolygon(QPolygonF(arrow_pnts));
     return arrow;
     }
 
@@ -619,33 +619,33 @@ void Draw_Arrow::drawImage(QPainter *painter,QString &text,QPointF point)
     pnts[i]+=point;
   }
 
-  painter->setPen(this->pen);
-  painter->setBrush(this->brush);
-  arrow.addPolygon(QPolygonF(pnts));
-  painter->drawPath(arrow);
-  text+="Arrow\n";
-  text+="Coords";
+        painter->setPen(this->pen);
+        painter->setBrush(this->brush);
+        arrow.addPolygon(QPolygonF(pnts));
+        painter->drawPath(arrow);
+        text+="Arrow\n";
+        text+="Coords";
 
-  text+=" "+str_x.setNum(arrow_pnts.size()*2);
+        text+=" "+str_x.setNum(arrow_pnts.size()*2);
 
     qDebug()<<"number of points "<<arrow_pnts.size()*2<<"\n";
 
-  for(int j=0;j<this->arrow_pnts.size();j++)
-  {
-     text+=" "+str_x.setNum((arrow_pnts[j].x()))+" "+str_y.setNum((arrow_pnts[j].y()))+" ";
-  }
+        for(int j=0;j<this->arrow_pnts.size();j++)
+        {
+           text+=" "+str_x.setNum((arrow_pnts[j].x()))+" "+str_y.setNum((arrow_pnts[j].y()))+" ";
+        }
 
 
-  text+="PenColor";
-  text+=" "+color_r.setNum(this->pen.color().red())+" "+color_g.setNum(this->pen.color().green())+" "+color_b.setNum(this->pen.color().blue())+"\n";
-  text+="PenStyle";
-  text+=" "+color_r.setNum(this->pen.style())+"\n";
-  text+="PenWidth";
-  text+=" "+color_r.setNum(this->pen.width())+"\n";
-  text+="BrushColor";
-  text+=" "+color_r.setNum(this->brush.color().red())+" "+color_g.setNum(this->brush.color().green())+" "+color_b.setNum(this->brush.color().blue())+"\n";
-  text+="BrushStyle";
-  text+=" "+color_r.setNum(this->brush.style())+"\n";
+        text+="PenColor";
+        text+=" "+color_r.setNum(this->pen.color().red())+" "+color_g.setNum(this->pen.color().green())+" "+color_b.setNum(this->pen.color().blue())+"\n";
+        text+="PenStyle";
+        text+=" "+color_r.setNum(this->pen.style())+"\n";
+        text+="PenWidth";
+        text+=" "+color_r.setNum(this->pen.width())+"\n";
+        text+="BrushColor";
+        text+=" "+color_r.setNum(this->brush.color().red())+" "+color_g.setNum(this->brush.color().green())+" "+color_b.setNum(this->brush.color().blue())+"\n";
+        text+="BrushStyle";
+        text+=" "+color_r.setNum(this->brush.style())+"\n";
 
     text+="Rotation";
       text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
@@ -669,27 +669,27 @@ void Draw_Arrow::setPenStyle(const int style)
     switch(style)
     {
       case 1:
-    this->pen.setStyle(Qt::SolidLine);
-    item->setPen(pen);
-   break;
+          this->pen.setStyle(Qt::SolidLine);
+          item->setPen(pen);
+         break;
       case 2:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 3:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 4:
-    this->pen.setStyle(Qt::DashDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotLine);
+          item->setPen(pen);
+          break;
       case 5:
-    this->pen.setStyle(Qt::DashDotDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotDotLine);
+          item->setPen(pen);
+          break;
     default:
-    break;
+          break;
     }
 
 }
@@ -722,93 +722,93 @@ void Draw_Arrow::setBrushStyle(const int style)
     switch(style)
     {
       case 0:
-   this->brush=item->brush();
-   this->brush.setStyle(Qt::NoBrush);
-   item->setBrush(brush);
-   break;
+         this->brush=item->brush();
+         this->brush.setStyle(Qt::NoBrush);
+         item->setBrush(brush);
+         break;
       case 1:
-   brush.setStyle(Qt::SolidPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::SolidPattern);
+         item->setBrush(brush);
+         break;
       case 2:
-   brush.setStyle(Qt::Dense1Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense1Pattern);
+         item->setBrush(brush);
+         break;
       case 3:
-   brush.setStyle(Qt::Dense2Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense2Pattern);
+         item->setBrush(brush);
+         break;
       case 4:
-   brush.setStyle(Qt::Dense3Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense3Pattern);
+         item->setBrush(brush);
+         break;
       case 5:
-   brush.setStyle(Qt::Dense4Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense4Pattern);
+         item->setBrush(brush);
+         break;
       case 6:
-   brush.setStyle(Qt::Dense5Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense5Pattern);
+         item->setBrush(brush);
+         break;
       case 7:
-   brush.setStyle(Qt::Dense6Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense6Pattern);
+         item->setBrush(brush);
+         break;
       case 8:
-   brush.setStyle(Qt::Dense7Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense7Pattern);
+         item->setBrush(brush);
+         break;
       case 9:
-   brush.setStyle(Qt::HorPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::HorPattern);
+         item->setBrush(brush);
+         break;
       case 10:
-   brush.setStyle(Qt::VerPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::VerPattern);
+         item->setBrush(brush);
+         break;
       case 11:
-   brush.setStyle(Qt::CrossPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::CrossPattern);
+         item->setBrush(brush);
+         break;
       case 12:
-   brush.setStyle(Qt::BDiagPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::BDiagPattern);
+         item->setBrush(brush);
+         break;
       case 13:
-   brush.setStyle(Qt::FDiagPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::FDiagPattern);
+         item->setBrush(brush);
+         break;
       case 14:
-   brush.setStyle(Qt::DiagCrossPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::DiagCrossPattern);
+         item->setBrush(brush);
+         break;
       /*case 15:
-   lgradient.setColorAt(0, QColor::fromRgbF(item->brush().color().redF(),item->brush().color().greenF(),item->brush().color().blueF(),1.0));
-   lgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-   this->brush=QBrush(lgradient);
-   item->setBrush(brush);
-   break;
+         lgradient.setColorAt(0, QColor::fromRgbF(item->brush().color().redF(),item->brush().color().greenF(),item->brush().color().blueF(),1.0));
+         lgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+         this->brush=QBrush(lgradient);
+         item->setBrush(brush);
+         break;
       case 16:
-   rgradient.setColorAt(0, item->brush().color());
-   rgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-   this->brush=QBrush(rgradient);
-   item->setBrush(brush);
-   break;
+         rgradient.setColorAt(0, item->brush().color());
+         rgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+         this->brush=QBrush(rgradient);
+         item->setBrush(brush);
+         break;
       case 17:
-   cgradient.setColorAt(0, item->brush().color());
-   cgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-   this->brush=QBrush(cgradient);
-   item->setBrush(brush);
-   break;*/
+         cgradient.setColorAt(0, item->brush().color());
+         cgradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+         this->brush=QBrush(cgradient);
+         item->setBrush(brush);
+         break;*/
       default:
-   break;
+         break;
     }
 
 }
 
 QBrush Draw_Arrow::getBrush()
 {
-  return brush;
+        return brush;
 }
 
 
@@ -833,7 +833,7 @@ void Draw_Arrow::hideHandles()
       handles[i]->hide();
   }
     if(Rot_Rect->isVisible())
-  Rot_Rect->hide();
+        Rot_Rect->hide();
 }
 
 
@@ -841,12 +841,12 @@ bool Draw_Arrow::isClickedOnHandleOrShape(QPointF point)
 {
   if(getMode())
     {
-  if(isMouseClickedOnHandle(point))
-      return true;
-  else if(isMouseClickedOnShape(point))
-      return true;
-  else if(isMouseClickedOnRotateHandle(point))
-      return true;
+        if(isMouseClickedOnHandle(point))
+            return true;
+        else if(isMouseClickedOnShape(point))
+            return true;
+        else if(isMouseClickedOnRotateHandle(point))
+            return true;
     }
     
     return false;

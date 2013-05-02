@@ -116,104 +116,104 @@ namespace IAEX
     {
       try
       {
-  // 2005-11-30 AF, Changed DomDocument name from
-  // 'qtNotebook' to 'OMNotebook'.
-  QDomDocument doc( "OMNotebook" );
+        // 2005-11-30 AF, Changed DomDocument name from
+        // 'qtNotebook' to 'OMNotebook'.
+        QDomDocument doc( "OMNotebook" );
 
-  QFileInfo fileInfo( filename_ );
-  
-  QFile file ( filename_.trimmed() );
+        QFileInfo fileInfo( filename_ );
+        
+        QFile file ( filename_.trimmed() );
 
-  QString oldFilepath;
-  QString newFilepath;
+        QString oldFilepath;
+        QString newFilepath;
 
-  // 2005-12-05 AF, update links
-  try
-  {
-    oldFilepath = doc_->getFilename();
-    newFilepath = QFileInfo( filename_ ).absolutePath();
+        // 2005-12-05 AF, update links
+        try
+        {
+          oldFilepath = doc_->getFilename();
+          newFilepath = QFileInfo( filename_ ).absolutePath();
 
-    // if no oldFilepath, use current work dir
-    if( oldFilepath.isNull() || oldFilepath.isEmpty() )
-    {
-      QDir dir;
-      oldFilepath  = dir.absolutePath();
-    }
-    else
-      oldFilepath = QFileInfo(oldFilepath).absolutePath();
+          // if no oldFilepath, use current work dir
+          if( oldFilepath.isNull() || oldFilepath.isEmpty() )
+          {
+            QDir dir;
+            oldFilepath  = dir.absolutePath();
+          }
+          else
+            oldFilepath = QFileInfo(oldFilepath).absolutePath();
 
-    // use visitor if the new path is different from the old
-    if( oldFilepath != newFilepath )
-    {
-      UpdateLinkVisitor visitor( oldFilepath, newFilepath );
-      doc_->runVisitor( visitor );
-    }
-  }
-  catch( exception &e )
-  {
-    throw e;
-  }
+          // use visitor if the new path is different from the old
+          if( oldFilepath != newFilepath )
+          {
+            UpdateLinkVisitor visitor( oldFilepath, newFilepath );
+            doc_->runVisitor( visitor );
+          }
+        }
+        catch( exception &e )
+        {
+          throw e;
+        }
 
-  // save the document
-  SerializingVisitor visitor(doc, doc_);
-  doc_->runVisitor( visitor );
+        // save the document
+        SerializingVisitor visitor(doc, doc_);
+        doc_->runVisitor( visitor );
 
-  // 2005-09-28 AF, Hade to change from 'doc.toString()'
-  // to 'doc.toCString()', so the xml file was saved in
-  // UTF-8, otherwise swedish letters didn't work.
-  // 2005-10-07 AF, Porting, changed from 'toCString()'
-  // to 'toByteArray()'
-  //            QTextStream filestream(&file);
-  //            QDataStream filestream(&file);
+        // 2005-09-28 AF, Hade to change from 'doc.toString()'
+        // to 'doc.toCString()', so the xml file was saved in
+        // UTF-8, otherwise swedish letters didn't work.
+        // 2005-10-07 AF, Porting, changed from 'toCString()'
+        // to 'toByteArray()'
+        //            QTextStream filestream(&file);
+        //            QDataStream filestream(&file);
 
-  if (file.isOpen())
-    file.close();
+        if (file.isOpen())
+          file.close();
 
-  // QTextStream ts(file);
-  // doc.save(ts, 2); // write the xml file.
+        // QTextStream ts(file);
+        // doc.save(ts, 2); // write the xml file.
 
-  QByteArray ba = doc.toByteArray(2);
-  if (!ba.size())
-  {
-    string msg = "Document is empty and will not be saved to file: " + 
-      file.fileName().toStdString();
-    throw runtime_error( msg.c_str() );
-  }
+        QByteArray ba = doc.toByteArray(2);
+        if (!ba.size())
+        {
+          string msg = "Document is empty and will not be saved to file: " + 
+            file.fileName().toStdString();
+          throw runtime_error( msg.c_str() );
+        }
 
-  if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
-  {
-    string msg = "The file for saving the document is not writable: " + 
-      file.fileName().toStdString() + "\nPlease use Save As.";
-    throw runtime_error( msg.c_str() );
-  }
-  
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate) == true)
-  {
-    if(filename_.endsWith("onbz", Qt::CaseInsensitive))
-      file.write(qCompress(ba, 9));
-    else
-      file.write(ba);
+        if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
+        {
+          string msg = "The file for saving the document is not writable: " + 
+            file.fileName().toStdString() + "\nPlease use Save As.";
+          throw runtime_error( msg.c_str() );
+        }
+        
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate) == true)
+        {
+          if(filename_.endsWith("onbz", Qt::CaseInsensitive))
+            file.write(qCompress(ba, 9));
+          else
+            file.write(ba);
 
-    file.close();
+          file.close();
 
-    // AF, Added this
-    doc_->setFilename( filename_ );
-    doc_->setSaved( true );
-    doc_->setChanged( false );
-  }
-  else
-  {
-    string msg = "Could not write document to file:\n" + 
-      file.fileName().toStdString() + " because:\n" + 
-      file.errorString().toStdString() + " error code: ";
-    throw runtime_error( msg.c_str() );
-  }
+          // AF, Added this
+          doc_->setFilename( filename_ );
+          doc_->setSaved( true );
+          doc_->setChanged( false );
+        }
+        else
+        {
+          string msg = "Could not write document to file:\n" + 
+            file.fileName().toStdString() + " because:\n" + 
+            file.errorString().toStdString() + " error code: ";
+          throw runtime_error( msg.c_str() );
+        }
       }
       catch(exception &e)
       {
-  // 2006-01-30 AF, add exception
-  string str = string("SaveDocumentCommand(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        // 2006-01-30 AF, add exception
+        string str = string("SaveDocumentCommand(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
   private:
@@ -237,12 +237,12 @@ namespace IAEX
     {
       try
       {
-  application()->open( filename_, READMODE_NORMAL );
+        application()->open( filename_, READMODE_NORMAL );
       }
       catch(exception &e)
       {
-  string msg = string("OpenFileCommand(), Exception:\r\n") + e.what();
-  throw runtime_error( msg.c_str() );
+        string msg = string("OpenFileCommand(), Exception:\r\n") + e.what();
+        throw runtime_error( msg.c_str() );
       }
     }
   private:
@@ -270,12 +270,12 @@ namespace IAEX
     {
       try
       {
-  application()->open( filename_, readmode_ );
+        application()->open( filename_, readmode_ );
       }
       catch(exception &e)
       {
-  string msg = string("OpenOldFileCommand(), Exception:\r\n") + e.what();
-  throw runtime_error( msg.c_str() );
+        string msg = string("OpenOldFileCommand(), Exception:\r\n") + e.what();
+        throw runtime_error( msg.c_str() );
       }
     }
   private:
@@ -304,26 +304,26 @@ namespace IAEX
     {
       try
       {
-  QTextDocument* printDocument = new QTextDocument();
-  QTextOption opt;
-  opt.setAlignment(Qt::AlignLeft);
-  opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-  printDocument->setDefaultTextOption(opt);
-  printDocument->setTextWidth(700);
+        QTextDocument* printDocument = new QTextDocument();
+        QTextOption opt;
+        opt.setAlignment(Qt::AlignLeft);
+        opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        printDocument->setDefaultTextOption(opt);
+        printDocument->setTextWidth(700);
 
-  PrinterVisitor visitor( printDocument, printer_ );
-  doc_->runVisitor( visitor );
-  printDocument->setTextWidth(700);
+        PrinterVisitor visitor( printDocument, printer_ );
+        doc_->runVisitor( visitor );
+        printDocument->setTextWidth(700);
 
-  printDocument->print( printer_ );
+        printDocument->print( printer_ );
 
-  // 2006-03-16 AF
-  delete printDocument;
+        // 2006-03-16 AF
+        delete printDocument;
       }
       catch(exception &e)
       {
-  string msg = string("PrintDocumentCommand(), Exception:\r\n") + e.what();
-  throw runtime_error( msg.c_str() );
+        string msg = string("PrintDocumentCommand(), Exception:\r\n") + e.what();
+        throw runtime_error( msg.c_str() );
       }
     }
   private:
@@ -348,13 +348,13 @@ namespace IAEX
       try
       {
 
-  document()->close();
+        document()->close();
       }
       catch(exception &e)
       {
-  // 2006-01-30 AF, add exception
-  string str = string("CloseFileCommand(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        // 2006-01-30 AF, add exception
+        string str = string("CloseFileCommand(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
   };
@@ -375,16 +375,16 @@ namespace IAEX
     {
       try
       {
-  /*
-  Document *doc = document();
-  doc = new CellDocument( application(), QString::null );
-  */
+        /*
+        Document *doc = document();
+        doc = new CellDocument( application(), QString::null );
+        */
       }
       catch(exception &e)
       {
-  // 2006-01-30 AF, add exception
-  string str = string("NewFileCommand(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        // 2006-01-30 AF, add exception
+        string str = string("NewFileCommand(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
   };
@@ -407,25 +407,25 @@ namespace IAEX
     {
       try
       {
-  QFile file( filename_ );
-  if( file.open( QIODevice::WriteOnly ))
-  {
-    PureTextVisitor visitor( &file );
-    doc_->runVisitor( visitor );
-  }
-  else
-  {
-    string msg = "Could not export text to file: " + filename_.toStdString();
-    throw runtime_error( msg.c_str() );
-  }
+        QFile file( filename_ );
+        if( file.open( QIODevice::WriteOnly ))
+        {
+          PureTextVisitor visitor( &file );
+          doc_->runVisitor( visitor );
+        }
+        else
+        {
+          string msg = "Could not export text to file: " + filename_.toStdString();
+          throw runtime_error( msg.c_str() );
+        }
 
-  file.close();
+        file.close();
       }
       catch(exception &e)
       {
-  // 2006-01-30 AF, add exception
-  string str = string("ExportToPureText(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        // 2006-01-30 AF, add exception
+        string str = string("ExportToPureText(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
 
@@ -452,21 +452,21 @@ namespace IAEX
     {
       try
       {
-  vector<Cell *> cells = doc_->getSelection();
+        vector<Cell *> cells = doc_->getSelection();
 
-  vector<Cell *>::iterator c_iter = cells.begin();
-  while( c_iter != cells.end() )
-  {
-    evalCell( (*c_iter) );
-    ++c_iter;
-  }
+        vector<Cell *>::iterator c_iter = cells.begin();
+        while( c_iter != cells.end() )
+        {
+          evalCell( (*c_iter) );
+          ++c_iter;
+        }
 
-  doc_->setChanged( true );
+        doc_->setChanged( true );
       }
       catch(exception &e)
       {
-  string str = string("EvalSelectedCells(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        string str = string("EvalSelectedCells(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
 
@@ -475,25 +475,25 @@ namespace IAEX
     {
       if( typeid( InputCell ) == typeid( *cell ) )
       {
-  InputCell *inputcell = dynamic_cast<InputCell *>(cell);
-  inputcell->eval();
+        InputCell *inputcell = dynamic_cast<InputCell *>(cell);
+        inputcell->eval();
       }
       if( typeid( GraphCell ) == typeid( *cell ) )
       {
-  GraphCell *graphcell = dynamic_cast<GraphCell *>(cell);
-  graphcell->eval();
+        GraphCell *graphcell = dynamic_cast<GraphCell *>(cell);
+        graphcell->eval();
       }
       else if( typeid( CellGroup ) == typeid( *cell ) )
       {
-  if( cell->hasChilds() )
-  {
-    Cell *child = cell->child();
-    while( child != 0 )
-    {
-      evalCell( child );
-      child = child->next();
-    }
-  }
+        if( cell->hasChilds() )
+        {
+          Cell *child = cell->child();
+          while( child != 0 )
+          {
+            evalCell( child );
+            child = child->next();
+          }
+        }
       }
     }
 
@@ -517,13 +517,13 @@ namespace IAEX
     {
       try
       {
-  ChapterCounterVisitor visitor;
-  doc_->runVisitor( visitor );
+        ChapterCounterVisitor visitor;
+        doc_->runVisitor( visitor );
       }
       catch(exception &e)
       {
-  string str = string("UpdateChapterCounters(), Exception: ") + e.what();
-  throw runtime_error( str.c_str() );
+        string str = string("UpdateChapterCounters(), Exception: ") + e.what();
+        throw runtime_error( str.c_str() );
       }
     }
 

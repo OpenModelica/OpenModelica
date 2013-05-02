@@ -89,13 +89,13 @@ namespace IAEX
       QSize size;
       if( heightOK && widthOK )
       {
-  size.setHeight( height );
-  size.setWidth( width );
+        size.setHeight( height );
+        size.setWidth( width );
       }
       else
       {
-  size.setHeight( -1 );
-  size.setWidth( -1 );
+        size.setHeight( -1 );
+        size.setWidth( -1 );
       }
 
       return size;

@@ -67,22 +67,22 @@ namespace IAEX
     virtual void visitCellGroupNodeBefore(CellGroup *node)
     {
       if( count_ )
-  if( node->isClosed() )
-  {
-    closed_ = true;
-    closedCell_ = node;
-  }
+        if( node->isClosed() )
+        {
+          closed_ = true;
+          closedCell_ = node;
+        }
     }
     virtual void visitCellGroupNodeAfter(CellGroup *node)
     {
       if( count_ )
       {
-  if( closed_ && closedCell_ == node )
-  {
-    position_ += node->height();
-    closed_ = false;
-    closedCell_ = 0;
-  }
+        if( closed_ && closedCell_ == node )
+        {
+          position_ += node->height();
+          closed_ = false;
+          closedCell_ = 0;
+        }
       }
     }
 
@@ -90,28 +90,28 @@ namespace IAEX
     virtual void visitTextCellNodeAfter(TextCell *node)
     {
       if( count_ && !closed_ )
-  position_ += node->height();
+        position_ += node->height();
     }
 
     virtual void visitGraphCellNodeBefore(GraphCell *node) {}
     virtual void visitGraphCellNodeAfter(GraphCell *node)
     {
       if( count_ && !closed_ )
-  position_ += node->height();
+        position_ += node->height();
     }
 
     virtual void visitInputCellNodeBefore(InputCell *node){}
     virtual void visitInputCellNodeAfter(InputCell *node)
     {
       if( count_ && !closed_ )
-  position_ += node->height();
+        position_ += node->height();
     }
 
     virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
     virtual void visitCellCursorNodeAfter(CellCursor *cursor)
     {
       if( count_ && !closed_ )
-  position_ += cursor->height();
+        position_ += cursor->height();
 
       count_ = false;
     }

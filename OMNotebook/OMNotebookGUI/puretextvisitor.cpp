@@ -108,17 +108,17 @@ namespace IAEX
       int start = html.indexOf( "<img src=", pos, Qt::CaseInsensitive );
       if( 0 <= start )
       {
-  int end = html.indexOf( "/>", start, Qt::CaseInsensitive );
-  if( 0 <= end )
-  {
-    html.remove( start, (end - start) + 2 );
-    pos = start;
-  }
-  else
-    break;
+        int end = html.indexOf( "/>", start, Qt::CaseInsensitive );
+        if( 0 <= end )
+        {
+          html.remove( start, (end - start) + 2 );
+          pos = start;
+        }
+        else
+          break;
       }
       else
-  break;
+        break;
     }
     QTextEdit tmp;
     tmp.setHtml( html );

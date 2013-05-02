@@ -211,12 +211,12 @@ namespace IAEX {
       event->accept();
       if( inCommand )
       {
-  emit nextCommand();
+        emit nextCommand();
       }
       else
       {
-  inCommand = true;
-  emit command();
+        inCommand = true;
+        emit command();
       }
     }
     // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
@@ -318,9 +318,9 @@ namespace IAEX {
       int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
 
       if(i -tc.position() > 0)
-  tc.setPosition(i, QTextCursor::KeepAnchor);
+        tc.setPosition(i, QTextCursor::KeepAnchor);
       else
-  tc.setPosition(i +1, QTextCursor::KeepAnchor);
+        tc.setPosition(i +1, QTextCursor::KeepAnchor);
 
       tc.insertText("");
       QTextBrowser::keyPressEvent( event );
@@ -336,52 +336,52 @@ namespace IAEX {
     {
       if(autoIndent)
       {
-  QTextCursor t(textCursor());
-  QString tmp, tmp2;
-  int k2 = t.blockNumber();
-  QTextBlock b = t.block();
-  int k = b.userState();
-  int prevLevel = b.text().indexOf(QRegExp("\\S"));
+        QTextCursor t(textCursor());
+        QString tmp, tmp2;
+        int k2 = t.blockNumber();
+        QTextBlock b = t.block();
+        int k = b.userState();
+        int prevLevel = b.text().indexOf(QRegExp("\\S"));
 
-  while(k2 >= 0 && !indentationStates.contains(k))
-  {
-    tmp = b.text() + "\n" + tmp;
-    b = b.previous();
-    --k2;
-    k = b.userState();
-  }
-  Indent i(tmp);
-  if(indentationStates.contains(k))
-  {
-    IndentationState* s = indentationStates[k];
-    i.ism.level = s->level;
-    i.ism.equation = s->equation;
-    i.ism.equationSection = s->equationSection;
-    i.ism.lMod = s->lMod;
-    i.ism.loopBlock = s->loopBlock;
-    i.ism.nextMod = s->nextMod;
-    i.ism.skipNext = s->skipNext;
-    i.ism.state = s->state;
-    i.current = s->current;
-    i.next = s->next;
-  }
+        while(k2 >= 0 && !indentationStates.contains(k))
+        {
+          tmp = b.text() + "\n" + tmp;
+          b = b.previous();
+          --k2;
+          k = b.userState();
+        }
+        Indent i(tmp);
+        if(indentationStates.contains(k))
+        {
+          IndentationState* s = indentationStates[k];
+          i.ism.level = s->level;
+          i.ism.equation = s->equation;
+          i.ism.equationSection = s->equationSection;
+          i.ism.lMod = s->lMod;
+          i.ism.loopBlock = s->loopBlock;
+          i.ism.nextMod = s->nextMod;
+          i.ism.skipNext = s->skipNext;
+          i.ism.state = s->state;
+          i.current = s->current;
+          i.next = s->next;
+        }
 
-  i.indentedText();
+        i.indentedText();
 
-  if(prevLevel > 2*i.level())
-  {
-    t.setPosition(t.block().position());
-    t.setPosition(t.block().position() + prevLevel-2*(i.level()),QTextCursor::KeepAnchor);
-    if(!t.selection().toPlainText().trimmed().size())
-      t.insertText("");
-    t.setPosition(t.block().position() + t.block().length() -1);
-  }
+        if(prevLevel > 2*i.level())
+        {
+          t.setPosition(t.block().position());
+          t.setPosition(t.block().position() + prevLevel-2*(i.level()),QTextCursor::KeepAnchor);
+          if(!t.selection().toPlainText().trimmed().size())
+            t.insertText("");
+          t.setPosition(t.block().position() + t.block().length() -1);
+        }
 
-  QTextBrowser::keyPressEvent(event);
-  t.insertText(QString(2*i.level(), ' '));
+        QTextBrowser::keyPressEvent(event);
+        t.insertText(QString(2*i.level(), ' '));
       }
       else
-  QTextBrowser::keyPressEvent(event);
+        QTextBrowser::keyPressEvent(event);
     }
     else
     {
@@ -457,7 +457,7 @@ namespace IAEX {
     if(r2 > 0)
     {
       for(int i = 1; i < r2; ++i)
-  p2 = toPlainText().indexOf("\n", p2)+1;
+        p2 = toPlainText().indexOf("\n", p2)+1;
       p2 += (c2-1);
       tc.setPosition(p2, QTextCursor::KeepAnchor);
     }
@@ -548,15 +548,15 @@ namespace IAEX {
     {
       if( firstTime )
       {
-  thread->removeEditor( input_ );
-  firstTime = false;
+        thread->removeEditor( input_ );
+        firstTime = false;
       }
 
       SleeperThread::msleep( 60 );
       sleepTime++;
 
       if( sleepTime > 100 )
-  break;
+        break;
     }
 
     delete mpPlotWindow;
@@ -907,17 +907,17 @@ namespace IAEX {
       int startpos = tmp.indexOf( "<span", pos, Qt::CaseInsensitive );
       if( startpos >= 0 )
       {
-  int endpos = tmp.indexOf( "\">", startpos );
-  if( endpos >= 0 )
-  {
-    endpos += 2;
-    tmp.remove( startpos, endpos - startpos );
-  }
-  else
-    break;
+        int endpos = tmp.indexOf( "\">", startpos );
+        if( endpos >= 0 )
+        {
+          endpos += 2;
+          tmp.remove( startpos, endpos - startpos );
+        }
+        else
+          break;
       }
       else
-  break;
+        break;
 
       pos = startpos;
     }
@@ -1043,8 +1043,8 @@ namespace IAEX {
 
       QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
       format.setMargin( style_.textFrameFormat()->margin() +
-  style_.textFrameFormat()->border() +
-  style_.textFrameFormat()->padding()  );
+        style_.textFrameFormat()->border() +
+        style_.textFrameFormat()->padding()  );
       chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
       chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
@@ -1124,18 +1124,18 @@ namespace IAEX {
     {
       if( readonly )
       {
-  QTextCursor cursor = input_->textCursor();
-  cursor.clearSelection();
-  input_->setTextCursor( cursor );
+        QTextCursor cursor = input_->textCursor();
+        cursor.clearSelection();
+        input_->setTextCursor( cursor );
 
-  cursor = output_->textCursor();
-  cursor.clearSelection();
-  output_->setTextCursor( cursor );
+        cursor = output_->textCursor();
+        cursor.clearSelection();
+        output_->setTextCursor( cursor );
 
-  // 2006-03-02 AF, clear selection in chapter counter
-  cursor = chaptercounter_->textCursor();
-  cursor.clearSelection();
-  chaptercounter_->setTextCursor( cursor );
+        // 2006-03-02 AF, clear selection in chapter counter
+        cursor = chaptercounter_->textCursor();
+        cursor.clearSelection();
+        chaptercounter_->setTextCursor( cursor );
       }
 
       input_->setReadOnly(readonly);
@@ -1180,7 +1180,7 @@ namespace IAEX {
     {
       if( evaluated_ )
       {
-  output_->show();
+        output_->show();
       }
     }
 
@@ -1322,12 +1322,12 @@ namespace IAEX {
       // clear any curves if we have.
       foreach (PlotCurve *pPlotCurve, mpPlotWindow->getPlot()->getPlotCurvesList())
       {
-  mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
-  pPlotCurve->detach();
+        mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
+        pPlotCurve->detach();
       }
       mpPlotWindow->initializePlot(lst);
       /*! @note Calling the fitInView function removes the xRange/yRange set on the plotter by user.
-    Fix for bug #2047.
+          Fix for bug #2047.
       */
 //      mpPlotWindow->fitInView();
       mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
@@ -1377,14 +1377,14 @@ namespace IAEX {
 
       QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
       if( openmodelica.isEmpty() )
-  QMessageBox::critical( 0, 
-     "OpenModelica Error", 
-     "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+        QMessageBox::critical( 0, 
+           "OpenModelica Error", 
+           "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-  openmodelica += "tmp/";
+        openmodelica += "tmp/";
       else
-  openmodelica += "/tmp/";
+        openmodelica += "/tmp/";
 
       QString imagename = "omc_tmp_plot.png";
 
@@ -1413,32 +1413,32 @@ namespace IAEX {
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
       {
-  qApp->closeAllWindows();
-  input_->blockSignals(false);
-  output_->blockSignals(false);
-  return;
+        qApp->closeAllWindows();
+        input_->blockSignals(false);
+        output_->blockSignals(false);
+        return;
       }
 
       {    
-  guard->lock();
-  try
-  {          
-    // adrpo:FIXME! WRONG! TODO! this is wrong!
-    //       the commands should be sent to OMC in the same sequence
-    //       they appear in the notebook, otherwise a simulate command
-    //       might finish later than a plot!
-    EvalThread* et = new EvalThread(getDelegate(), expr);
-    connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
-    et->start();
-  }
-  catch( exception &e )
-  {
-    guard->unlock();
-    exceptionInEval(e);
-    input_->blockSignals(false);
-    output_->blockSignals(false);
-    return;
-  }
+        guard->lock();
+        try
+        {          
+          // adrpo:FIXME! WRONG! TODO! this is wrong!
+          //       the commands should be sent to OMC in the same sequence
+          //       they appear in the notebook, otherwise a simulate command
+          //       might finish later than a plot!
+          EvalThread* et = new EvalThread(getDelegate(), expr);
+          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+          et->start();
+        }
+        catch( exception &e )
+        {
+          guard->unlock();
+          exceptionInEval(e);
+          input_->blockSignals(false);
+          output_->blockSignals(false);
+          return;
+        }
       }
 
       input_->blockSignals(false);
@@ -1460,8 +1460,8 @@ namespace IAEX {
     {
       if (resLst.at(0).compare("_omc_PlotResult") == 0)
       {
-  plotVariables(resLst);
-  res = tr("");
+        plotVariables(resLst);
+        res = tr("");
       }
       else { mpPlotWindow->hide(); }
     }
@@ -1474,11 +1474,11 @@ namespace IAEX {
       QStringList resLst = StringHandler::unparseStrings(plotResult);
       if (resLst.size() > 0)
       {
-  if (resLst.at(0).compare("_omc_PlotResult") == 0)
-  {
-    plotVariables(resLst);
-  }
-  else { mpPlotWindow->hide(); }
+        if (resLst.at(0).compare("_omc_PlotResult") == 0)
+        {
+          plotVariables(resLst);
+        }
+        else { mpPlotWindow->hide(); }
       }
     }
     else { mpPlotWindow->hide(); }
@@ -1513,39 +1513,39 @@ namespace IAEX {
 
       if(e.cap(1).size() > e.cap(2).size())
       {
-  f.setAnchorHref(e.cap(1));
-  QTextCursor c(output_->textCursor());
-  c.setPosition(p);
-  c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
+        f.setAnchorHref(e.cap(1));
+        QTextCursor c(output_->textCursor());
+        c.setPosition(p);
+        c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
 
-  f.setAnchor(true);
-  f.setFontUnderline(true);
-  c.mergeCharFormat(f);
-  c.setPosition(output_->toPlainText().size());
-  output_->setTextCursor(c);
+        f.setAnchor(true);
+        f.setFontUnderline(true);
+        c.mergeCharFormat(f);
+        c.setPosition(output_->toPlainText().size());
+        output_->setTextCursor(c);
 
-  MyAction* a = new MyAction(e.cap(1), 0);
-  connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-  connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-  actions.push_back(a);
+        MyAction* a = new MyAction(e.cap(1), 0);
+        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+        actions.push_back(a);
       }
       else
       {
-  f.setAnchorHref(e.cap(2));
-  QTextCursor c(output_->textCursor());
-  c.setPosition(p);
-  c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
+        f.setAnchorHref(e.cap(2));
+        QTextCursor c(output_->textCursor());
+        c.setPosition(p);
+        c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
 
-  f.setAnchor(true);
-  f.setFontUnderline(true);
-  c.mergeCharFormat(f);
-  c.setPosition(output_->toPlainText().size());
-  output_->setTextCursor(c);
+        f.setAnchor(true);
+        f.setFontUnderline(true);
+        c.mergeCharFormat(f);
+        c.setPosition(output_->toPlainText().size());
+        output_->setTextCursor(c);
 
-  MyAction* a = new MyAction(e.cap(2), 0);
-  connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-  connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-  actions.push_back(a);
+        MyAction* a = new MyAction(e.cap(2), 0);
+        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+        actions.push_back(a);
       }
     }
     emit setStatusMenu(actions);
@@ -1598,31 +1598,31 @@ namespace IAEX {
       // unable to reconnect, ask if user want to restart omc.
       QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
       int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-  msg,
-  QMessageBox::Yes | QMessageBox::Default,
-  QMessageBox::No );
+        msg,
+        QMessageBox::Yes | QMessageBox::Default,
+        QMessageBox::No );
 
       if( result == QMessageBox::Yes )
       {
-  delegate_->closeConnection();
-  if( delegate_->startDelegate() )
-  {
-    // 2006-03-14 AF, wait before trying to reconnect,
-    // give OMC time to start up
-    SleeperThread::msleep( 1000 );
+        delegate_->closeConnection();
+        if( delegate_->startDelegate() )
+        {
+          // 2006-03-14 AF, wait before trying to reconnect,
+          // give OMC time to start up
+          SleeperThread::msleep( 1000 );
 
-    //delegate_->closeConnection();
-    try
-    {
-      delegate_->reconnect();
-      eval();
-    }
-    catch( exception &e )
-    {
-      e.what();
-      QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctly with OMC.</B>") );
-    }
-  }
+          //delegate_->closeConnection();
+          try
+          {
+            delegate_->reconnect();
+            eval();
+          }
+          catch( exception &e )
+          {
+            e.what();
+            QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctly with OMC.</B>") );
+          }
+        }
       }
     }
   }

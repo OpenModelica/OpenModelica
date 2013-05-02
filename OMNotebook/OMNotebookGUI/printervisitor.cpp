@@ -95,9 +95,9 @@ namespace IAEX
     tableFormat.setCellPadding( 5 );
 
     QVector<QTextLength> constraints;
-  constraints << QTextLength(QTextLength::FixedLength, 50)
-              << QTextLength(QTextLength::VariableLength, 620);
-  tableFormat.setColumnWidthConstraints(constraints);
+        constraints << QTextLength(QTextLength::FixedLength, 50)
+                    << QTextLength(QTextLength::VariableLength, 620);
+        tableFormat.setColumnWidthConstraints(constraints);
 
     // insert the table
     QTextCursor cursor = printEditor_->textCursor();
@@ -155,56 +155,56 @@ namespace IAEX
       QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
       if( tableCell.isValid() )
       {
-  if( !node->ChapterCounterHtml().isNull() )
-  {
-    QTextCursor cursor( tableCell.firstCursorPosition() );
-    cursor.insertFragment( QTextDocumentFragment::fromHtml(
-      node->ChapterCounterHtml() ));
+        if( !node->ChapterCounterHtml().isNull() )
+        {
+          QTextCursor cursor( tableCell.firstCursorPosition() );
+          cursor.insertFragment( QTextDocumentFragment::fromHtml(
+            node->ChapterCounterHtml() ));
 
-  }
+        }
       }
 
       // second column
       tableCell = table_->cellAt( currentTableRow_, 1 );
       if( tableCell.isValid() )
       {
-  QTextCursor cursor( tableCell.firstCursorPosition() );
+        QTextCursor cursor( tableCell.firstCursorPosition() );
 
-  if( node->isViewExpression() )
-  {
-    //view expression table
-    QTextTableFormat tableFormatExpression;
-    tableFormatExpression.setBorder( 0 );
-    tableFormatExpression.setColumns( 1 );
-    tableFormatExpression.setCellPadding( 5 );
-//    tableFormatExpression.setBackground( QColor(235, 235, 220) ); // 180, 180, 180
-    tableFormatExpression.setBackground( QColor(235, 0, 0) ); // 180, 180, 180
+        if( node->isViewExpression() )
+        {
+          //view expression table
+          QTextTableFormat tableFormatExpression;
+          tableFormatExpression.setBorder( 0 );
+          tableFormatExpression.setColumns( 1 );
+          tableFormatExpression.setCellPadding( 5 );
+//          tableFormatExpression.setBackground( QColor(235, 235, 220) ); // 180, 180, 180
+          tableFormatExpression.setBackground( QColor(235, 0, 0) ); // 180, 180, 180
 
-    QVector<QTextLength> constraints;
-    constraints << QTextLength(QTextLength::PercentageLength, 100);
-    tableFormatExpression.setColumnWidthConstraints(constraints);
+          QVector<QTextLength> constraints;
+          constraints << QTextLength(QTextLength::PercentageLength, 100);
+          tableFormatExpression.setColumnWidthConstraints(constraints);
 
-    cursor.insertTable( 1, 1, tableFormatExpression );
-    // QMessageBox::information(0,"uu2", node->text());
+          cursor.insertTable( 1, 1, tableFormatExpression );
+          // QMessageBox::information(0,"uu2", node->text());
 
-    QString html = node->textHtml();
-    html += "<br><br>";
-    cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
-  }
-  else
-  {
-    QString html = node->textHtml();
-    html += "<br><br>";
-    html.remove( "file:///" );
-    QTextDocumentFragment frgmnt;
-    printEditor_->document()->setTextWidth(700);
-    cursor.insertFragment(QTextDocumentFragment::fromHtml( html ));
-    // QMessageBox::information(0, "uu3", node->text());
-  }
+          QString html = node->textHtml();
+          html += "<br><br>";
+          cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+        }
+        else
+        {
+          QString html = node->textHtml();
+          html += "<br><br>";
+          html.remove( "file:///" );
+          QTextDocumentFragment frgmnt;
+          printEditor_->document()->setTextWidth(700);
+          cursor.insertFragment(QTextDocumentFragment::fromHtml( html ));
+          // QMessageBox::information(0, "uu3", node->text());
+        }
       }
 
       if( firstChild_ )
-  firstChild_ = false;
+        firstChild_ = false;
     }
   }
 
@@ -223,62 +223,62 @@ namespace IAEX
       QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
       if( tableCell.isValid() )
       {
-  if( !node->ChapterCounterHtml().isNull() )
-  {
-    QTextCursor cursor( tableCell.firstCursorPosition() );
-    cursor.insertFragment( QTextDocumentFragment::fromHtml(
-      node->ChapterCounterHtml() ));
-  }
+        if( !node->ChapterCounterHtml().isNull() )
+        {
+          QTextCursor cursor( tableCell.firstCursorPosition() );
+          cursor.insertFragment( QTextDocumentFragment::fromHtml(
+            node->ChapterCounterHtml() ));
+        }
       }
 
       // second column
       tableCell = table_->cellAt( currentTableRow_, 1 );
       if( tableCell.isValid() )
       {
-  QTextCursor cursor( tableCell.firstCursorPosition() );
+        QTextCursor cursor( tableCell.firstCursorPosition() );
 
-  // input table
-  QTextTableFormat tableFormatInput;
-  tableFormatInput.setBorder( 0 );
-  tableFormatInput.setMargin( 6 );
-  tableFormatInput.setColumns( 1 );
-  tableFormatInput.setCellPadding( 8 );
-  tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
+        // input table
+        QTextTableFormat tableFormatInput;
+        tableFormatInput.setBorder( 0 );
+        tableFormatInput.setMargin( 6 );
+        tableFormatInput.setColumns( 1 );
+        tableFormatInput.setCellPadding( 8 );
+        tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
 
-  QVector<QTextLength> constraints;
-  constraints << QTextLength(QTextLength::PercentageLength, 100);
-          tableFormatInput.setColumnWidthConstraints(constraints);
-  cursor.insertTable( 1, 1, tableFormatInput );
+        QVector<QTextLength> constraints;
+        constraints << QTextLength(QTextLength::PercentageLength, 100);
+                tableFormatInput.setColumnWidthConstraints(constraints);
+        cursor.insertTable( 1, 1, tableFormatInput );
 
-  QString html = node->textHtml();
-  // QMessageBox::information(0, "uu1", node->text());
-  html += "<br>";
-  if( !node->isEvaluated() || node->isClosed() )
-    html += "<br>";
-  cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+        QString html = node->textHtml();
+        // QMessageBox::information(0, "uu1", node->text());
+        html += "<br>";
+        if( !node->isEvaluated() || node->isClosed() )
+          html += "<br>";
+        cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
 
-  // output table
-  if( node->isEvaluated() && !node->isClosed() )
-  {
-    QTextTableFormat tableFormatOutput;
-    tableFormatOutput.setBorder( 0 );
-    tableFormatOutput.setMargin( 6 );
-    tableFormatOutput.setColumns( 1 );
-    tableFormatOutput.setCellPadding( 8 );
-    QVector<QTextLength> constraints;
-    constraints << QTextLength(QTextLength::PercentageLength, 100);
-    tableFormatOutput.setColumnWidthConstraints(constraints);
+        // output table
+        if( node->isEvaluated() && !node->isClosed() )
+        {
+          QTextTableFormat tableFormatOutput;
+          tableFormatOutput.setBorder( 0 );
+          tableFormatOutput.setMargin( 6 );
+          tableFormatOutput.setColumns( 1 );
+          tableFormatOutput.setCellPadding( 8 );
+          QVector<QTextLength> constraints;
+          constraints << QTextLength(QTextLength::PercentageLength, 100);
+          tableFormatOutput.setColumnWidthConstraints(constraints);
 
-    cursor = tableCell.lastCursorPosition();
-    cursor.insertTable( 1, 1, tableFormatOutput );
+          cursor = tableCell.lastCursorPosition();
+          cursor.insertTable( 1, 1, tableFormatOutput );
 
-    QString outputHtml( node->textOutputHtml() );
-    outputHtml += "<br><br>";
+          QString outputHtml( node->textOutputHtml() );
+          outputHtml += "<br><br>";
 
 
-    outputHtml.remove( "file:///" );
-              cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
-  }
+          outputHtml.remove( "file:///" );
+                    cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
+        }
       }
 
 #if 0
@@ -289,7 +289,7 @@ namespace IAEX
 #endif
 
       if( firstChild_ )
-  firstChild_ = false;
+        firstChild_ = false;
     }
   }
 
@@ -311,64 +311,64 @@ namespace IAEX
       QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
       if( tableCell.isValid() )
       {
-  if( !node->ChapterCounterHtml().isNull() )
-  {
-    QTextCursor cursor( tableCell.firstCursorPosition() );
-    cursor.insertFragment( QTextDocumentFragment::fromHtml(
-      node->ChapterCounterHtml() ));
-  }
+        if( !node->ChapterCounterHtml().isNull() )
+        {
+          QTextCursor cursor( tableCell.firstCursorPosition() );
+          cursor.insertFragment( QTextDocumentFragment::fromHtml(
+            node->ChapterCounterHtml() ));
+        }
       }
 
       // second column
       tableCell = table_->cellAt( currentTableRow_, 1 );
       if( tableCell.isValid() )
       {
-  QTextCursor cursor( tableCell.firstCursorPosition() );
+        QTextCursor cursor( tableCell.firstCursorPosition() );
 
-  // input table
-  QTextTableFormat tableFormatInput;
-  tableFormatInput.setBorder( 0 );
-  tableFormatInput.setMargin( 6 );
-  tableFormatInput.setColumns( 1 );
-  tableFormatInput.setCellPadding( 8 );
-  tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
-  QVector<QTextLength> constraints;
-  constraints << QTextLength(QTextLength::PercentageLength, 100);
-          tableFormatInput.setColumnWidthConstraints(constraints);
-  cursor.insertTable( 1, 1, tableFormatInput );
+        // input table
+        QTextTableFormat tableFormatInput;
+        tableFormatInput.setBorder( 0 );
+        tableFormatInput.setMargin( 6 );
+        tableFormatInput.setColumns( 1 );
+        tableFormatInput.setCellPadding( 8 );
+        tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
+        QVector<QTextLength> constraints;
+        constraints << QTextLength(QTextLength::PercentageLength, 100);
+                tableFormatInput.setColumnWidthConstraints(constraints);
+        cursor.insertTable( 1, 1, tableFormatInput );
 
-  QString html = node->textHtml();
-  html += "<br>";
-  if( !node->isEvaluated() || node->isClosed() )
-    html += "<br>";
-  cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+        QString html = node->textHtml();
+        html += "<br>";
+        if( !node->isEvaluated() || node->isClosed() )
+          html += "<br>";
+        cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
 
-  if( node->isEvaluated() && !node->isClosed() )
-  {
-    QTextTableFormat tableFormatOutput;
-    tableFormatOutput.setBorder( 0 );
-    tableFormatOutput.setMargin( 6 );
-    tableFormatOutput.setColumns( 1 );
-    tableFormatOutput.setCellPadding( 8 );
-    QVector<QTextLength> constraints;
-    constraints << QTextLength(QTextLength::PercentageLength, 100);
-    tableFormatOutput.setColumnWidthConstraints(constraints);
+        if( node->isEvaluated() && !node->isClosed() )
+        {
+          QTextTableFormat tableFormatOutput;
+          tableFormatOutput.setBorder( 0 );
+          tableFormatOutput.setMargin( 6 );
+          tableFormatOutput.setColumns( 1 );
+          tableFormatOutput.setCellPadding( 8 );
+          QVector<QTextLength> constraints;
+          constraints << QTextLength(QTextLength::PercentageLength, 100);
+          tableFormatOutput.setColumnWidthConstraints(constraints);
 
-    cursor = tableCell.lastCursorPosition();
-    cursor.insertTable( 1, 1, tableFormatOutput );
+          cursor = tableCell.lastCursorPosition();
+          cursor.insertTable( 1, 1, tableFormatOutput );
 
-    QString outputHtml( node->textOutputHtml() );
-    outputHtml += "<br><br>";
+          QString outputHtml( node->textOutputHtml() );
+          outputHtml += "<br><br>";
 
 
-    outputHtml.remove( "file:///" );
-    cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
-  }
+          outputHtml.remove( "file:///" );
+          cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
+        }
 
       }
 
       if( firstChild_ )
-  firstChild_ = false;
+        firstChild_ = false;
     }
   }
 

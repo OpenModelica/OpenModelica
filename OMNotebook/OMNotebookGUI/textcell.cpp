@@ -841,25 +841,25 @@ namespace IAEX
 
       if( expr )
       {
-  viewexpression_ = true;
-  text_->setCurrentCharFormat( *style_.textCharFormat() );
-  text_->setPlainText( text_->toHtml() );
+        viewexpression_ = true;
+        text_->setCurrentCharFormat( *style_.textCharFormat() );
+        text_->setPlainText( text_->toHtml() );
 
-  QPalette palette;
-  palette.setColor( text_->backgroundRole(),
-    QColor( 180, 180, 180 ) );
-  text_->setPalette(palette);
+        QPalette palette;
+        palette.setColor( text_->backgroundRole(),
+          QColor( 180, 180, 180 ) );
+        text_->setPalette(palette);
       }
       else
       {
-  viewexpression_ = false;
-  text_->setHtml( text_->toPlainText() );
-  text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+        viewexpression_ = false;
+        text_->setHtml( text_->toPlainText() );
+        text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  QPalette palette;
-  palette.setColor( text_->backgroundRole(),
-    backgroundColor() );
-  text_->setPalette(palette);
+        QPalette palette;
+        palette.setColor( text_->backgroundRole(),
+          backgroundColor() );
+        text_->setPalette(palette);
       }
 
       text_->blockSignals( false );

@@ -159,12 +159,12 @@ namespace IAEX{
       Cell *current = child();
       if( current != 0 )
       {
-  current = current->next();
-  while(current != 0)
-  {
-    current->hide();
-    current = current->next();
-  }
+        current = current->next();
+        while(current != 0)
+        {
+          current->hide();
+          current = current->next();
+        }
       }
     }
     else
@@ -172,12 +172,12 @@ namespace IAEX{
       Cell *current = child();
       if( current != 0 )
       {
-  current = current->next();
-  while(current != 0)
-  {
-    current->show();
-    current = current->next();
-  }
+        current = current->next();
+        while(current != 0)
+        {
+          current->show();
+          current = current->next();
+        }
       }
     }
   }
@@ -291,8 +291,8 @@ namespace IAEX{
       int h = 0;
       while(current != 0)
       {
-  h += current->height();
-  current = current->next();
+        h += current->height();
+        current = current->next();
       }
 
       height = h;
@@ -423,13 +423,13 @@ namespace IAEX{
     if(next)
     {
       if(prev)
-  next->setPrevious(prev);
+        next->setPrevious(prev);
     }
 
     if(prev)
     {
       if(next)
-  prev->setNext(next);
+        prev->setNext(next);
     }
     //Insert all widgets again.
     par->addCellWidgets();
@@ -472,13 +472,13 @@ namespace IAEX{
     {
       if(current->parentWidget() != mainWidget())
       {
-  // PORT >> current->reparent(mainWidget(), QPoint(0,0), true);
-  current->setParent( mainWidget() );
-  current->move( QPoint(0,0) );
-  current->show();
+        // PORT >> current->reparent(mainWidget(), QPoint(0,0), true);
+        current->setParent( mainWidget() );
+        current->move( QPoint(0,0) );
+        current->show();
 
-  connect(current, SIGNAL(heightChanged()),
-    this, SLOT(adjustHeight()));
+        connect(current, SIGNAL(heightChanged()),
+          this, SLOT(adjustHeight()));
       }
 
       layout_->addWidget(current,i,0);

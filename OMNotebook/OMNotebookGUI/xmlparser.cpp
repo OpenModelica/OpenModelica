@@ -81,7 +81,7 @@ namespace IAEX
   * two different read modes:
   * READMODE_NORMAL  : Read the xml file normaly
   * READMODE_OLD    : Read the xml file accordantly to the old xml
-  *      format used by OMNotebook.
+  *            format used by OMNotebook.
   */
 
 
@@ -136,9 +136,9 @@ namespace IAEX
     {
       if(!(ba = qUncompress(ba)).size())
       {
-  file.close();
-  string msg = "The file " + filename_.toStdString() + " is not a valid onbz file.";
-  throw runtime_error(msg.c_str());
+        file.close();
+        string msg = "The file " + filename_.toStdString() + " is not a valid onbz file.";
+        throw runtime_error(msg.c_str());
       }
     }
     
@@ -151,26 +151,26 @@ namespace IAEX
       int i;
       if(!alwaysConvert)
       {
-  m.setWindowTitle("OMNotebook");
-  m.setText("Do you want to convert this file to the current document version?");
-  m.setIcon(QMessageBox::Question);
-  m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-  QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
+        m.setWindowTitle("OMNotebook");
+        m.setText("Do you want to convert this file to the current document version?");
+        m.setIcon(QMessageBox::Question);
+        m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
 
-  i = m.exec();
+        i = m.exec();
 
-  if(m.clickedButton() == always)
-  {
-    s.setValue("AlwaysConvert", true);
-    alwaysConvert = true;
-  }
+        if(m.clickedButton() == always)
+        {
+          s.setValue("AlwaysConvert", true);
+          alwaysConvert = true;
+        }
       }
 
       if(alwaysConvert || i == QMessageBox::Yes)
       */
       ba = ba.replace("<InputCell", "<GraphCell").
-  replace("/InputCell>", "/GraphCell>").
-  replace("style=\"Input\"", "style=\"Graph\"");
+        replace("/InputCell>", "/GraphCell>").
+        replace("style=\"Input\"", "style=\"Graph\"");
 
     }
 
@@ -189,10 +189,10 @@ namespace IAEX
       switch( readmode_ )
       {
       case READMODE_OLD:
-  return parseOld( domdoc );
+        return parseOld( domdoc );
       case READMODE_NORMAL:
       default:
-  return parseNormal( domdoc );
+        return parseNormal( domdoc );
       }
     }
     catch( exception &e )
@@ -218,7 +218,7 @@ namespace IAEX
     if( root.toElement().tagName() != XML_NOTEBOOK )
     {
       string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
-  ") in file " + filename_.toStdString();
+        ") in file " + filename_.toStdString();
       throw runtime_error( msg.c_str() );
     }
 
@@ -228,8 +228,8 @@ namespace IAEX
     {
       QDomElement element = node.toElement();
       if( !element.isNull() )
-  if( element.tagName() == XML_GROUPCELL )
-    node = element.firstChild();
+        if( element.tagName() == XML_GROUPCELL )
+          node = element.firstChild();
     }
 
     // Create the grouppcell that will be the root parent.
@@ -238,7 +238,7 @@ namespace IAEX
     try
     {
       if( !node.isNull() )
-  traverseCells( rootcell, node );
+        traverseCells( rootcell, node );
     }
     catch( exception &e )
     {
@@ -272,7 +272,7 @@ namespace IAEX
     if( root.toElement().tagName() != "Notebook" )
     {
       string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
-  ") in file " + filename_.toStdString() + " (Old File)";
+        ") in file " + filename_.toStdString() + " (Old File)";
       throw runtime_error( msg.c_str() );
     }
 
@@ -282,8 +282,8 @@ namespace IAEX
     {
       QDomElement element = node.toElement();
       if( !element.isNull() )
-  if( element.tagName() == "CellGroupData" )
-    node = element.firstChild();
+        if( element.tagName() == "CellGroupData" )
+          node = element.firstChild();
     }
 
     // Create the grouppcell that will be the root parent.
@@ -316,25 +316,25 @@ namespace IAEX
     {
       while( !node.isNull() )
       {
-  QDomElement element = node.toElement();
-  if( !element.isNull() )
-  {
-    if( element.tagName() == XML_GROUPCELL )
-      traverseGroupCell( parent, element );
-    else if( element.tagName() == XML_TEXTCELL )
-      traverseTextCell( parent, element );
-    else if( element.tagName() == XML_INPUTCELL )
-      traverseInputCell( parent, element );
-    else if( element.tagName() == XML_GRAPHCELL )
-      traverseGraphCell( parent, element );
-    else
-    {
-      string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
-      throw runtime_error( msg.c_str() );
-    }
-  }
+        QDomElement element = node.toElement();
+        if( !element.isNull() )
+        {
+          if( element.tagName() == XML_GROUPCELL )
+            traverseGroupCell( parent, element );
+          else if( element.tagName() == XML_TEXTCELL )
+            traverseTextCell( parent, element );
+          else if( element.tagName() == XML_INPUTCELL )
+            traverseInputCell( parent, element );
+          else if( element.tagName() == XML_GRAPHCELL )
+            traverseGraphCell( parent, element );
+          else
+          {
+            string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
+            throw runtime_error( msg.c_str() );
+          }
+        }
 
-  node = node.nextSibling();
+        node = node.nextSibling();
       }
     }
     catch( exception &e )
@@ -406,53 +406,53 @@ namespace IAEX
       QDomElement e = node.toElement();
       if( !e.isNull() )
       {
-  if( e.tagName() == XML_TEXT )
-  {
-    
-    // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
-    QString text = e.text();
-    // replace all href="...\..." with href=".../..."
-    QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
-    QRegExp rx(pattern);
-    rx.setCaseSensitivity(Qt::CaseInsensitive);
-    rx.setMinimal(true);
-    rx.setPatternSyntax(QRegExp::RegExp);
-    if (!rx.isValid())
-    {
-      fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
-    }
-    int done = rx.indexIn(text);
-    if (done > -1)
-    {
-      while (done > -1)
-      {
-        // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2); 
-        // cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
-        text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
-        done = rx.indexIn(text);
-      }
-      textcell->setTextHtml( text );
-      // fprintf(stderr, "str->%s %d\n", text.toStdString().c_str());
-    }
-    else // we haven't found any "\"
-    {
-      textcell->setTextHtml( text );
-    }
-  }
-  else if( e.tagName() == XML_RULE )
-  {
-    textcell->addRule(
-      new Rule( e.attribute( XML_NAME, "" ), e.text() ));
-  }
-  else if( e.tagName() == XML_IMAGE )
-  {
-    addImage( textcell, e );
-  }
-  else
-  {
-    string msg = "Unknown tagname " + e.tagName().toStdString() + ", in text cell";
-    throw runtime_error( msg.c_str() );
-  }
+        if( e.tagName() == XML_TEXT )
+        {
+          
+          // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
+          QString text = e.text();
+          // replace all href="...\..." with href=".../..."
+          QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+          QRegExp rx(pattern);
+          rx.setCaseSensitivity(Qt::CaseInsensitive);
+          rx.setMinimal(true);
+          rx.setPatternSyntax(QRegExp::RegExp);
+          if (!rx.isValid())
+          {
+            fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
+          }
+          int done = rx.indexIn(text);
+          if (done > -1)
+          {
+            while (done > -1)
+            {
+              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2); 
+              // cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
+              text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
+              done = rx.indexIn(text);
+            }
+            textcell->setTextHtml( text );
+            // fprintf(stderr, "str->%s %d\n", text.toStdString().c_str());
+          }
+          else // we haven't found any "\"
+          {
+            textcell->setTextHtml( text );
+          }
+        }
+        else if( e.tagName() == XML_RULE )
+        {
+          textcell->addRule(
+            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+        }
+        else if( e.tagName() == XML_IMAGE )
+        {
+          addImage( textcell, e );
+        }
+        else
+        {
+          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in text cell";
+          throw runtime_error( msg.c_str() );
+        }
       }
 
       node = node.nextSibling();
@@ -495,30 +495,30 @@ namespace IAEX
       QDomElement e = node.toElement();
       if( !e.isNull() )
       {
-  if( e.tagName() == XML_INPUTPART )
-  {
-    text = e.text();
-    inputcell->setText( text );
-  }
-  else if( e.tagName() == XML_OUTPUTPART )
-  {
-    InputCell *iCell = dynamic_cast<InputCell*>(inputcell);
-    iCell->setTextOutput( e.text() );
-  }
-  else if( e.tagName() == XML_RULE )
-  {
-    inputcell->addRule(
-      new Rule( e.attribute( XML_NAME, "" ), e.text() ));
-  }
-  else if( e.tagName() == XML_IMAGE )
-  {
-    addImage( inputcell, e );
-  }
-  else
-  {
-    string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
-    throw runtime_error( msg.c_str() );
-  }
+        if( e.tagName() == XML_INPUTPART )
+        {
+          text = e.text();
+          inputcell->setText( text );
+        }
+        else if( e.tagName() == XML_OUTPUTPART )
+        {
+          InputCell *iCell = dynamic_cast<InputCell*>(inputcell);
+          iCell->setTextOutput( e.text() );
+        }
+        else if( e.tagName() == XML_RULE )
+        {
+          inputcell->addRule(
+            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+        }
+        else if( e.tagName() == XML_IMAGE )
+        {
+          addImage( inputcell, e );
+        }
+        else
+        {
+          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
+          throw runtime_error( msg.c_str() );
+        }
       }
 
       node = node.nextSibling();
@@ -563,104 +563,104 @@ namespace IAEX
       QDomElement e = node.toElement();
       if( !e.isNull() )
       {
-  if( e.tagName() == XML_INPUTPART )
-  {
-    text = e.text();
-    GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-    gCell->setText(text);
-  }
-  else if( e.tagName() == XML_OUTPUTPART )
-  {
-    GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
-    iCell->setTextOutput( e.text() );
-  }
-  else if( e.tagName() == XML_IMAGE )
-  {
-    addImage( graphcell, e );
-  }
-  else if( e.tagName() == XML_RULE )
-  {
-    graphcell->addRule(
-      new Rule( e.attribute( XML_NAME, "" ), e.text() ));
-  }
-  else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
-  else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
-  else if( e.tagName() == XML_GRAPHCELL_SHAPE ) {}
-  else if( e.tagName() == XML_GRAPHCELL_OMCPLOT )
-  {
-    GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-    // read attributes and set the plotwindow values
-    gCell->mpPlotWindow->setTitle(e.attribute(XML_GRAPHCELL_TITLE));
-    gCell->mpPlotWindow->setGrid((e.attribute(XML_GRAPHCELL_GRID) == XML_TRUE) ? true : false);
-    gCell->mpPlotWindow->setLegend((e.attribute(XML_GRAPHCELL_LEGEND) == XML_TRUE) ? true : false);
-    int type = e.attribute(XML_GRAPHCELL_PLOTTYPE).toInt();
-    if (type == 1)
-      gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTALL);
-    else if (type == 2)
-      gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
-    else
-      gCell->mpPlotWindow->setPlotType(PlotWindow::PLOT);
-    gCell->mpPlotWindow->setLogX((e.attribute(XML_GRAPHCELL_LOGX) == XML_TRUE) ? true : false);
-    gCell->mpPlotWindow->setLogY((e.attribute(XML_GRAPHCELL_LOGY) == XML_TRUE) ? true : false);
-    gCell->mpPlotWindow->setXRange(e.attribute(XML_GRAPHCELL_XRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_XRANGE_MAX).toDouble());
-    gCell->mpPlotWindow->setYRange(e.attribute(XML_GRAPHCELL_YRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_YRANGE_MAX).toDouble());
-    gCell->mpPlotWindow->setXLabel(e.attribute(XML_GRAPHCELL_XLABEL));
-    gCell->mpPlotWindow->setYLabel(e.attribute(XML_GRAPHCELL_YLABEL));
-    // read curves
-    for (QDomNode n = e.firstChild(); !n.isNull(); n = n.nextSibling())
-    {
-      QDomElement curveElement = n.toElement();
-      if (curveElement.tagName() == XML_GRAPHCELL_CURVE)
-      {
-        PlotCurve *pPlotCurve = new PlotCurve(gCell->mpPlotWindow->getPlot());
-        // read the curve data
-        if (curveElement.hasAttribute(XML_GRAPHCELL_XDATA) && curveElement.hasAttribute(XML_GRAPHCELL_YDATA))
+        if( e.tagName() == XML_INPUTPART )
         {
-          QByteArray xByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_XDATA).toStdString().c_str());
-          QDataStream xInStream(xByteArray);
-          while (!xInStream.atEnd())
-          {
-            double d;
-            xInStream >> d;
-            pPlotCurve->addXAxisValue(d);
-          }
-          QByteArray yByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_YDATA).toStdString().c_str());
-          QDataStream yInStream(yByteArray);
-          while (!yInStream.atEnd())
-          {
-            double d;
-            yInStream >> d;
-            pPlotCurve->addYAxisValue(d);
-          }
-          // set the curve data
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+          text = e.text();
+          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
+          gCell->setText(text);
         }
-        gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
-        pPlotCurve->attach(gCell->mpPlotWindow->getPlot());
-        // read the curve attributes
-        pPlotCurve->setTitle(curveElement.attribute(XML_GRAPHCELL_TITLE));
-        pPlotCurve->setCustomColor(true);
-        pPlotCurve->setPen(QPen(curveElement.attribute(XML_GRAPHCELL_COLOR).toUInt()));
-        gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(true);
-        gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->setChecked(false);
-        gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(false);
-        if (curveElement.attribute(XML_GRAPHCELL_VISIBLE) == XML_FALSE)
+        else if( e.tagName() == XML_OUTPUTPART )
         {
-          gCell->mpPlotWindow->getPlot()->getLegend()->setLegendItemStr(pPlotCurve->title().text());
-          gCell->mpPlotWindow->getPlot()->getLegend()->getHideAction()->setChecked(true);
-          gCell->mpPlotWindow->getPlot()->getLegend()->toggleHide(true);
+          GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
+          iCell->setTextOutput( e.text() );
         }
-      }
-    }
-    gCell->mpPlotWindow->show();
-    gCell->mpPlotWindow->fitInView();
-    gCell->mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-  }
-  else
-  {
-    string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
-    throw runtime_error( msg.c_str() );
-  }
+        else if( e.tagName() == XML_IMAGE )
+        {
+          addImage( graphcell, e );
+        }
+        else if( e.tagName() == XML_RULE )
+        {
+          graphcell->addRule(
+            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+        }
+        else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
+        else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
+        else if( e.tagName() == XML_GRAPHCELL_SHAPE ) {}
+        else if( e.tagName() == XML_GRAPHCELL_OMCPLOT )
+        {
+          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
+          // read attributes and set the plotwindow values
+          gCell->mpPlotWindow->setTitle(e.attribute(XML_GRAPHCELL_TITLE));
+          gCell->mpPlotWindow->setGrid((e.attribute(XML_GRAPHCELL_GRID) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setLegend((e.attribute(XML_GRAPHCELL_LEGEND) == XML_TRUE) ? true : false);
+          int type = e.attribute(XML_GRAPHCELL_PLOTTYPE).toInt();
+          if (type == 1)
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTALL);
+          else if (type == 2)
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
+          else
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOT);
+          gCell->mpPlotWindow->setLogX((e.attribute(XML_GRAPHCELL_LOGX) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setLogY((e.attribute(XML_GRAPHCELL_LOGY) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setXRange(e.attribute(XML_GRAPHCELL_XRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_XRANGE_MAX).toDouble());
+          gCell->mpPlotWindow->setYRange(e.attribute(XML_GRAPHCELL_YRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_YRANGE_MAX).toDouble());
+          gCell->mpPlotWindow->setXLabel(e.attribute(XML_GRAPHCELL_XLABEL));
+          gCell->mpPlotWindow->setYLabel(e.attribute(XML_GRAPHCELL_YLABEL));
+          // read curves
+          for (QDomNode n = e.firstChild(); !n.isNull(); n = n.nextSibling())
+          {
+            QDomElement curveElement = n.toElement();
+            if (curveElement.tagName() == XML_GRAPHCELL_CURVE)
+            {
+              PlotCurve *pPlotCurve = new PlotCurve(gCell->mpPlotWindow->getPlot());
+              // read the curve data
+              if (curveElement.hasAttribute(XML_GRAPHCELL_XDATA) && curveElement.hasAttribute(XML_GRAPHCELL_YDATA))
+              {
+                QByteArray xByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_XDATA).toStdString().c_str());
+                QDataStream xInStream(xByteArray);
+                while (!xInStream.atEnd())
+                {
+                  double d;
+                  xInStream >> d;
+                  pPlotCurve->addXAxisValue(d);
+                }
+                QByteArray yByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_YDATA).toStdString().c_str());
+                QDataStream yInStream(yByteArray);
+                while (!yInStream.atEnd())
+                {
+                  double d;
+                  yInStream >> d;
+                  pPlotCurve->addYAxisValue(d);
+                }
+                // set the curve data
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              }
+              gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
+              pPlotCurve->attach(gCell->mpPlotWindow->getPlot());
+              // read the curve attributes
+              pPlotCurve->setTitle(curveElement.attribute(XML_GRAPHCELL_TITLE));
+              pPlotCurve->setCustomColor(true);
+              pPlotCurve->setPen(QPen(curveElement.attribute(XML_GRAPHCELL_COLOR).toUInt()));
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(true);
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->setChecked(false);
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(false);
+              if (curveElement.attribute(XML_GRAPHCELL_VISIBLE) == XML_FALSE)
+              {
+                gCell->mpPlotWindow->getPlot()->getLegend()->setLegendItemStr(pPlotCurve->title().text());
+                gCell->mpPlotWindow->getPlot()->getLegend()->getHideAction()->setChecked(true);
+                gCell->mpPlotWindow->getPlot()->getLegend()->toggleHide(true);
+              }
+            }
+          }
+          gCell->mpPlotWindow->show();
+          gCell->mpPlotWindow->fitInView();
+          gCell->mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+        }
+        else
+        {
+          string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
+          throw runtime_error( msg.c_str() );
+        }
       }
 
       node = node.nextSibling();
@@ -735,32 +735,32 @@ namespace IAEX
       // replace old imagename with the new name
       if( typeid(TextCell) == typeid(*parent) )
       {
-  QString html = parent->textHtml();
-  html.replace( imagename, newname );
-  parent->setTextHtml( html );
+        QString html = parent->textHtml();
+        html.replace( imagename, newname );
+        parent->setTextHtml( html );
       }
       else if( typeid(InputCell) == typeid(*parent) )
       {
-  InputCell *inputcell = dynamic_cast<InputCell*>(parent);
+        InputCell *inputcell = dynamic_cast<InputCell*>(parent);
 
-  QString html = inputcell->textOutputHtml();
+        QString html = inputcell->textOutputHtml();
 
-  html.replace( imagename, newname );
-  inputcell->setTextOutputHtml( html );
+        html.replace( imagename, newname );
+        inputcell->setTextOutputHtml( html );
       }
       else if( typeid(GraphCell) == typeid(*parent) )
       {
-  GraphCell *graphcell = dynamic_cast<GraphCell*>(parent);
+        GraphCell *graphcell = dynamic_cast<GraphCell*>(parent);
 
-  QString html = graphcell->textOutputHtml();
-  html.replace( imagename, newname );
+        QString html = graphcell->textOutputHtml();
+        html.replace( imagename, newname );
 
-  graphcell->setTextOutputHtml( html );
+        graphcell->setTextOutputHtml( html );
       }
       else
       {
-  string msg = "Unknown typeid of parent cell";
-  throw runtime_error( msg.c_str() );
+        string msg = "Unknown typeid of parent cell";
+        throw runtime_error( msg.c_str() );
       }
     }
     else
@@ -790,38 +790,38 @@ namespace IAEX
       QDomElement e = node.toElement();
       if(!e.isNull())
       {
-  if(e.tagName() == "CellGroupData")
-  {
-    Cell *aGroup = factory_->createCell("cellgroup", parent);
+        if(e.tagName() == "CellGroupData")
+        {
+          Cell *aGroup = factory_->createCell("cellgroup", parent);
 
-    QDomNode p = e.firstChild();
-    xmltraverse( aGroup, p );
+          QDomNode p = e.firstChild();
+          xmltraverse( aGroup, p );
 
-    QString qbool = e.attribute("closed");
-    if( qbool.toLower() == "0" )
-      aGroup->setClosed( false );
-    else
-      aGroup->setClosed( true );
+          QString qbool = e.attribute("closed");
+          if( qbool.toLower() == "0" )
+            aGroup->setClosed( false );
+          else
+            aGroup->setClosed( true );
 
-    parent->addChild(aGroup);
-  }
-  else if(e.tagName() == "Cell")
-  {
-    // ignore imagecells
-    if( e.attribute("style") != "Image" )
-    {
-      Cell *aCell = factory_->createCell(e.attribute("style"), parent);
-      aCell->setText(e.text());
-      aCell->setStyle( e.attribute("style") );
+          parent->addChild(aGroup);
+        }
+        else if(e.tagName() == "Cell")
+        {
+          // ignore imagecells
+          if( e.attribute("style") != "Image" )
+          {
+            Cell *aCell = factory_->createCell(e.attribute("style"), parent);
+            aCell->setText(e.text());
+            aCell->setStyle( e.attribute("style") );
 
-      parent->addChild( aCell );
-    }
-  }
-  else
-  {
-    string msg = "Unknown tag: <"+ e.tagName().toStdString() +">";
-    throw runtime_error( msg.c_str() );
-  }
+            parent->addChild( aCell );
+          }
+        }
+        else
+        {
+          string msg = "Unknown tag: <"+ e.tagName().toStdString() +">";
+          throw runtime_error( msg.c_str() );
+        }
       }
       node = node.nextSibling();
     }

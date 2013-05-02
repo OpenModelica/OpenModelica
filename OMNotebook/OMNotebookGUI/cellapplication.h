@@ -72,7 +72,7 @@ namespace IAEX
     QWidget* getMainWindow() { return mainWindow; }
 
   private:
-    void convertDrModelica();      // Added 2006-03-21 AF
+    void convertDrModelica();            // Added 2006-03-21 AF
 
   private:
     QApplication *app_;

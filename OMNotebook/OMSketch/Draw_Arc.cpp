@@ -162,11 +162,11 @@ bool Draw_Arc::isMouseClickedOnStartHandle(QPointF pnt)
 
     if(Strt_Rect->isUnderMouse())
     {
-  draw_state=1;
-  return true;
+        draw_state=1;
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -175,11 +175,11 @@ bool Draw_Arc::isMouseClickedOnEndHandle(QPointF pnt)
 
     if(this->End_Rect->isUnderMouse())
     {
-  draw_state=2;
-  return true;
+        draw_state=2;
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -189,11 +189,11 @@ bool Draw_Arc::isMouseClickedOnCurveHandle(QPointF pnt)
 
     if(this->Curve_Rect->isUnderMouse())
     {
-  draw_state=3;
-  return true;
+        draw_state=3;
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -203,20 +203,20 @@ bool Draw_Arc::isMouseClickedOnRotateHandle(const QPointF pnt)
 
     if(Rot_Rect->isUnderMouse())
     {
-  draw_state=5;
-  QPointF pnt1;
-  pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
-  pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
-  item->setTransformOriginPoint(pnt1);
-  Strt_Rect->setTransformOriginPoint(pnt1);
-  End_Rect->setTransformOriginPoint(pnt1);
-  Curve_Rect->setTransformOriginPoint(pnt1);
-  Rot_Rect->setTransformOriginPoint(pnt1);
-  Bounding_Rect->setTransformOriginPoint(pnt1);
-  return true;
+        draw_state=5;
+        QPointF pnt1;
+        pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
+        pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
+        item->setTransformOriginPoint(pnt1);
+        Strt_Rect->setTransformOriginPoint(pnt1);
+        End_Rect->setTransformOriginPoint(pnt1);
+        Curve_Rect->setTransformOriginPoint(pnt1);
+        Rot_Rect->setTransformOriginPoint(pnt1);
+        Bounding_Rect->setTransformOriginPoint(pnt1);
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -224,12 +224,12 @@ bool Draw_Arc::isMouseClickedOnShape(const QPointF pnt)
 {
     if(item->isUnderMouse())
     {
-  draw_state=4;
-  item->setCursor(Qt::SizeAllCursor);
-  return true;
+        draw_state=4;
+        item->setCursor(Qt::SizeAllCursor);
+        return true;
     }
     else
-  return false;
+        return false;
 }
 
 void Draw_Arc::BoundingBox()
@@ -378,7 +378,7 @@ void Draw_Arc::drawImage(QPainter *painter, QString &text,QPointF point)
 
     for(int j=0;j<pnts.size();j++)
     {
-   text+=" "+str_x.setNum((pnts[j].x()))+" "+str_y.setNum((pnts[j].y()))+" ";
+         text+=" "+str_x.setNum((pnts[j].x()))+" "+str_y.setNum((pnts[j].y()))+" ";
     }
 
 
@@ -409,27 +409,27 @@ void Draw_Arc::setPenStyle(const int style)
     switch(style)
     {
       case 1:
-    this->pen.setStyle(Qt::SolidLine);
-    item->setPen(pen);
-   break;
+          this->pen.setStyle(Qt::SolidLine);
+          item->setPen(pen);
+         break;
       case 2:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 3:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 4:
-    this->pen.setStyle(Qt::DashDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotLine);
+          item->setPen(pen);
+          break;
       case 5:
-    this->pen.setStyle(Qt::DashDotDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotDotLine);
+          item->setPen(pen);
+          break;
     default:
-    break;
+          break;
     }
 
 }
@@ -449,11 +449,11 @@ QPen Draw_Arc::getPen()
 void Draw_Arc::showHandles()
 {
    if(!Strt_Rect->isVisible())
-   Strt_Rect->show();
+         Strt_Rect->show();
      if(!End_Rect->isVisible())
-   End_Rect->show();
+         End_Rect->show();
      if(!Curve_Rect->isVisible())
-   Curve_Rect->show();
+         Curve_Rect->show();
    if(!Rot_Rect->isVisible())
      Rot_Rect->show();
 }
@@ -461,11 +461,11 @@ void Draw_Arc::showHandles()
 void Draw_Arc::hideHandles()
 {
    if(Strt_Rect->isVisible())
-   Strt_Rect->hide();
+         Strt_Rect->hide();
      if(End_Rect->isVisible())
-   End_Rect->hide();
+         End_Rect->hide();
      if(Curve_Rect->isVisible())
-   Curve_Rect->hide();
+         Curve_Rect->hide();
      if(Rot_Rect->isVisible())
      Rot_Rect->hide();
 }
@@ -474,16 +474,16 @@ bool Draw_Arc::isClickedOnHandleOrShape(QPointF point)
 {
   if(getMode())
     {
-  if(isMouseClickedOnStartHandle(point))
-      return true;
-  else if(isMouseClickedOnEndHandle(point))
-      return true;
-  else if(isMouseClickedOnCurveHandle(point))
-      return true;
-  else if(isMouseClickedOnShape(point))
-      return true;
-  else if(isMouseClickedOnRotateHandle(point))
-      return true;
+        if(isMouseClickedOnStartHandle(point))
+            return true;
+        else if(isMouseClickedOnEndHandle(point))
+            return true;
+        else if(isMouseClickedOnCurveHandle(point))
+            return true;
+        else if(isMouseClickedOnShape(point))
+            return true;
+        else if(isMouseClickedOnRotateHandle(point))
+            return true;
     }
     
     return false;

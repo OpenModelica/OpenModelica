@@ -88,8 +88,8 @@ namespace IAEX
     //State
     virtual bool hasChanged() const = 0;
     virtual bool isOpen() const = 0;
-    virtual bool isSaved() const = 0;    // AF
-    virtual bool isEmpty() const = 0;    // Added 2006-08-24 AF
+    virtual bool isSaved() const = 0;          // AF
+    virtual bool isEmpty() const = 0;          // Added 2006-08-24 AF
 
     //File operations
     virtual void open( const QString filename, int readmode ) = 0;
@@ -105,8 +105,8 @@ namespace IAEX
     virtual void cursorStepUp() = 0;
     virtual void cursorStepDown() = 0;
     virtual void cursorMoveAfter(Cell *aCell, const bool open) = 0;
-    virtual void cursorUngroupCell() = 0;    // Added 2006-04-26 AF
-    virtual void cursorSplitCell() = 0;      // Added 2006-04-26 AF
+    virtual void cursorUngroupCell() = 0;          // Added 2006-04-26 AF
+    virtual void cursorSplitCell() = 0;            // Added 2006-04-26 AF
     virtual void cursorAddCell() = 0;
     virtual void cursorDeleteCell() = 0;
     virtual void cursorCutCell() = 0;
@@ -140,7 +140,7 @@ namespace IAEX
 
     //Utility operations
     virtual Factory *cellFactory() = 0;
-    virtual Cell* getMainCell() = 0;  // Added 2006-08-24 AF
+    virtual Cell* getMainCell() = 0;        // Added 2006-08-24 AF
     virtual vector<Cell *> getSelection() = 0;
     virtual void clearSelection() = 0;
 

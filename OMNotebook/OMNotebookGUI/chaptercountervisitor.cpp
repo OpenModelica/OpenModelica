@@ -102,17 +102,17 @@ namespace IAEX
       QString number;
       for( int i = 0; i < level; ++i )
       {
-  number.setNum( counters_[i] );
+        number.setNum( counters_[i] );
 
-  if( !counter.isEmpty() )
-    counter += ".";
+        if( !counter.isEmpty() )
+          counter += ".";
 
-  counter += number;
+        counter += number;
       }
 
       // reset all counters avter counter[level]
       for( int i = level; i < COUNTERS; ++i )
-  counters_[i] = 0;
+        counters_[i] = 0;
 
       node->setChapterCounter( counter );
     }
@@ -139,17 +139,17 @@ namespace IAEX
       QString number;
       for( int i = 0; i < level; ++i )
       {
-  number.setNum( counters_[i] );
+        number.setNum( counters_[i] );
 
-  if( !counter.isEmpty() )
-    counter += ".";
+        if( !counter.isEmpty() )
+          counter += ".";
 
-  counter += number;
+        counter += number;
       }
 
       // reset all counters avter counter[level]
       for( int i = level; i < COUNTERS; ++i )
-  counters_[i] = 0;
+        counters_[i] = 0;
 
       node->setChapterCounter( counter );
     }
@@ -178,17 +178,17 @@ namespace IAEX
       QString number;
       for( int i = 0; i < level; ++i )
       {
-  number.setNum( counters_[i] );
+        number.setNum( counters_[i] );
 
-  if( !counter.isEmpty() )
-    counter += ".";
+        if( !counter.isEmpty() )
+          counter += ".";
 
-  counter += number;
+        counter += number;
       }
 
       // reset all counters avter counter[level]
       for( int i = level; i < COUNTERS; ++i )
-  counters_[i] = 0;
+        counters_[i] = 0;
 
       node->setChapterCounter( counter );
     }

@@ -81,16 +81,16 @@ namespace IAEX{
     virtual void removeCellWidgets();
 
     int height();
-    CellStyle *style();          // Changed 2005-10-28
+    CellStyle *style();                // Changed 2005-10-28
     virtual QString text(){return QString::null;}
 
-    void closeChildCells();        // Added 2005-11-30 AF
+    void closeChildCells();              // Added 2005-11-30 AF
 
     //Flag
     bool isClosed() const;
-    bool isEditable();          // Added 2005-10-28 AF
+    bool isEditable();                // Added 2005-10-28 AF
 
-    QTextEdit* textEdit();        // Added 2006-08-24 AF
+    QTextEdit* textEdit();              // Added 2006-08-24 AF
 
 
   public slots:

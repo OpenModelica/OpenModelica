@@ -81,7 +81,7 @@ namespace IAEX
     {
       if(!comm_.establishConnection())
       {
-  throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+        throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
       }
     }
   }
@@ -130,14 +130,14 @@ namespace IAEX
       // see if there are any errors if the expr is not "quit()"
       if( !expr.endsWith("quit()", Qt::CaseSensitive ) )
       {
-  error_ = comm_.callOmc( "getErrorString()" );
-  // cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl;
-  if( error_.size() > 2 )
-  {
-    error_ = QString( "OMC-ERROR: \n" ) + error_;
-  }
-  else // no errors, clear the error.
-    error_.clear();
+        error_ = comm_.callOmc( "getErrorString()" );
+        // cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl;
+        if( error_.size() > 2 )
+        {
+          error_ = QString( "OMC-ERROR: \n" ) + error_;
+        }
+        else // no errors, clear the error.
+          error_.clear();
       }
     }
     catch( exception &e )
@@ -172,7 +172,7 @@ namespace IAEX
     {
       if(!comm_.establishConnection())
       {
-  throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+        throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
       }
     }
   }
@@ -233,9 +233,9 @@ namespace IAEX
 
       // give time to start up..
       if( omcProcess->waitForStarted(7000) )
-  flag = true;
+        flag = true;
       else
-  flag = false;
+        flag = false;
 //#ifdef _MSC_VER
 //      _sleep(1);
 //#else

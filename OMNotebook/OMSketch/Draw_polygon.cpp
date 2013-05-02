@@ -29,13 +29,13 @@ void Draw_Polygon::setStartPoint(QPointF pnt)
      if(lines.isEmpty())
      {
      qDebug()<<"entered the new line mode \n";
-    line->setLine(QLineF(pnt,pnt));
+          line->setLine(QLineF(pnt,pnt));
       
      }
      else
      {
-    line = new QGraphicsLineItem();
-    line->setLine(QLineF(pnt,pnt));
+          line = new QGraphicsLineItem();
+          line->setLine(QLineF(pnt,pnt));
       
      }
 }
@@ -96,22 +96,22 @@ int Draw_Polygon::getState()
 
 bool Draw_Polygon::isMouseClickedOnHandle(const QPointF pnt)
 {
-  bool found;
+        bool found;
 
-  for(int i=0;i<edge_items.size();i++)
-  {
-      if(edge_items[i]->isUnderMouse())
-      {
-           draw_state=1;
-           found=true;
-           handle_index=i;
-           edge_items[i]->setCursor(Qt::CrossCursor);
-           break;
-      }
-      else
-          found=false;
-  }
-  return found;
+        for(int i=0;i<edge_items.size();i++)
+        {
+            if(edge_items[i]->isUnderMouse())
+            {
+                 draw_state=1;
+                 found=true;
+                 handle_index=i;
+                 edge_items[i]->setCursor(Qt::CrossCursor);
+                 break;
+            }
+            else
+                found=false;
+        }
+        return found;
 }
 
 
@@ -120,19 +120,19 @@ bool Draw_Polygon::isMouseClickedOnRotateHandle(const QPointF pnt)
 {
     if(Rot_Rect->isUnderMouse())
     {
-  draw_state=3;
+        draw_state=3;
 
     QPointF pnt1;
-  pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
-  pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
-  for(int i=0;i<edge_items.size();i++)
-      edge_items[i]->setTransformOriginPoint(pnt1);
-  item->setTransformOriginPoint(pnt1);
-  Rot_Rect->setTransformOriginPoint(pnt1);
-  return true;
+        pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
+        pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
+        for(int i=0;i<edge_items.size();i++)
+            edge_items[i]->setTransformOriginPoint(pnt1);
+        item->setTransformOriginPoint(pnt1);
+        Rot_Rect->setTransformOriginPoint(pnt1);
+        return true;
     }
     else
-  return false;
+        return false;
 
 }
 
@@ -140,9 +140,9 @@ bool Draw_Polygon::isMouseClickedOnShape(const QPointF pnt)
 {
      if(item->isUnderMouse())
      {
-   draw_state=2;
-   item->setCursor(Qt::SizeAllCursor);
-   return true;
+         draw_state=2;
+         item->setCursor(Qt::SizeAllCursor);
+         return true;
      }
      else
        return false;
@@ -153,19 +153,19 @@ void Draw_Polygon::setTranslate(QPointF pnt,QPointF pnt1)
 
   if(item->rotation()==0)
   {     
-  for(int i=0;i<poly_pnts.size();i++)
-      poly_pnts[i]-=(pnt-pnt1);
+        for(int i=0;i<poly_pnts.size();i++)
+            poly_pnts[i]-=(pnt-pnt1);
 
        for(int i=0;i<poly_pnts.size()-1;i++)
-   edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
+         edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
 
   
        QPainterPath polygon;
 
        if(!poly_pnts.isEmpty())
        {
-    QPolygonF polygon_pnts(poly_pnts);
-    polygon.addPolygon(polygon_pnts);
+          QPolygonF polygon_pnts(poly_pnts);
+          polygon.addPolygon(polygon_pnts);
      }
 
      item->setPath(polygon);
@@ -207,8 +207,8 @@ void Draw_Polygon::setRotate(const QPointF &pnt,const QPointF &pnt1)
      Rot_Rect->setRotation(angle);
        for(int i=0;i<edge_items.size();i++)
        {
-     edge_items[i]->setRotation(angle);
-     edge_items[i]->update();
+           edge_items[i]->setRotation(angle);
+           edge_items[i]->update();
        }
     }
 
@@ -219,8 +219,8 @@ void Draw_Polygon::setRotate(const QPointF &pnt,const QPointF &pnt1)
      Rot_Rect->setRotation(angle);
        for(int i=0;i<edge_items.size();i++)
        {
-     edge_items[i]->setRotation(angle);
-     edge_items[i]->update();
+           edge_items[i]->setRotation(angle);
+           edge_items[i]->update();
        }
     }
 
@@ -237,10 +237,10 @@ void Draw_Polygon::setRotate(const QPointF &pnt,const QPointF &pnt1)
 
 void Draw_Polygon::setScale(float x,float y)
 {
-  /*for(int i=0;i<lines.size();i++)
-  {
-      lines[i]->setScale(x,y);
-  }*/
+        /*for(int i=0;i<lines.size();i++)
+        {
+            lines[i]->setScale(x,y);
+        }*/
 }
 
 QGraphicsLineItem* Draw_Polygon::getLine()
@@ -253,7 +253,7 @@ QGraphicsLineItem* Draw_Polygon::getLine(int indx)
 {
     if(!lines.isEmpty())
     {
-  return lines[indx];
+        return lines[indx];
     }
   return NULL;
 }
@@ -261,7 +261,7 @@ QGraphicsLineItem* Draw_Polygon::getLine(int indx)
 void Draw_Polygon::clear_lines()
 {
      if(!lines.isEmpty())
-   lines.clear();
+         lines.clear();
 }
 
 void Draw_Polygon::setLines(QVector<QGraphicsLineItem*> plines)
@@ -292,26 +292,26 @@ QPainterPath Draw_Polygon::getPolygon()
   QPainterPath polygon;
     if(!poly_pnts.isEmpty())
     {
-  
-  polygon.addPolygon(QPolygonF(poly_pnts));
-  drawEdges();
+        
+        polygon.addPolygon(QPolygonF(poly_pnts));
+        drawEdges();
 
-  QBrush rectbrush;
-  rectbrush.setColor(QColor(0,175,225));
-  rectbrush.setStyle(Qt::SolidPattern);
+        QBrush rectbrush;
+        rectbrush.setColor(QColor(0,175,225));
+        rectbrush.setStyle(Qt::SolidPattern);
 
-  QPointF pnt1,pnt2;
+        QPointF pnt1,pnt2;
 
-  pnt1.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)-5);
-  pnt1.setY(polygon.boundingRect().topLeft().y()-20);
+        pnt1.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)-5);
+        pnt1.setY(polygon.boundingRect().topLeft().y()-20);
 
-  pnt2.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)+5);
-  pnt2.setY(polygon.boundingRect().topLeft().y()-10);
+        pnt2.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)+5);
+        pnt2.setY(polygon.boundingRect().topLeft().y()-10);
 
-  Rot_Rect = new QGraphicsEllipseItem(QRectF(pnt1,pnt2));
-  Rot_Rect->setBrush(rectbrush);
+        Rot_Rect = new QGraphicsEllipseItem(QRectF(pnt1,pnt2));
+        Rot_Rect->setBrush(rectbrush);
 
-  return polygon;
+        return polygon;
     }
 
   return polygon;
@@ -333,33 +333,33 @@ void Draw_Polygon::drawImage(QPainter *painter, QString &text,QPointF point)
 
     if(!poly_pnts.isEmpty())
     {
-  QPainterPath polygon;
-  polygon.addPolygon(QPolygonF(pnts));
-  painter->setPen(this->pen);
-  painter->setBrush(this->brush);
-  painter->drawPath(polygon);
+        QPainterPath polygon;
+        polygon.addPolygon(QPolygonF(pnts));
+        painter->setPen(this->pen);
+        painter->setBrush(this->brush);
+        painter->drawPath(polygon);
 
-  text+="Polygon\n";
-  text+="Coords";
+        text+="Polygon\n";
+        text+="Coords";
 
-  text+=" "+str_x.setNum(this->poly_pnts.size()*2);
+        text+=" "+str_x.setNum(this->poly_pnts.size()*2);
 
-  for(int j=0;j<this->poly_pnts.size();j++)
-  {
-     text+=" "+str_x.setNum((this->poly_pnts[j].x()))+" "+str_y.setNum((this->poly_pnts[j].y()))+" ";
-  }
+        for(int j=0;j<this->poly_pnts.size();j++)
+        {
+           text+=" "+str_x.setNum((this->poly_pnts[j].x()))+" "+str_y.setNum((this->poly_pnts[j].y()))+" ";
+        }
 
 
-  text+="PenColor";
-  text+=" "+color_r.setNum(this->pen.color().red())+" "+color_g.setNum(this->pen.color().green())+" "+color_b.setNum(this->pen.color().blue())+"\n";
-  text+="PenStyle";
-  text+=" "+color_r.setNum(this->pen.style())+"\n";
-  text+="PenWidth";
-  text+=" "+color_r.setNum(this->pen.width())+"\n";
-  text+="BrushColor";
-  text+=" "+color_r.setNum(this->brush.color().red())+" "+color_g.setNum(this->brush.color().green())+" "+color_b.setNum(this->brush.color().blue())+"\n";
-  text+="BrushStyle";
-  text+=" "+color_r.setNum(this->brush.style())+"\n";
+        text+="PenColor";
+        text+=" "+color_r.setNum(this->pen.color().red())+" "+color_g.setNum(this->pen.color().green())+" "+color_b.setNum(this->pen.color().blue())+"\n";
+        text+="PenStyle";
+        text+=" "+color_r.setNum(this->pen.style())+"\n";
+        text+="PenWidth";
+        text+=" "+color_r.setNum(this->pen.width())+"\n";
+        text+="BrushColor";
+        text+=" "+color_r.setNum(this->brush.color().red())+" "+color_g.setNum(this->brush.color().green())+" "+color_b.setNum(this->brush.color().blue())+"\n";
+        text+="BrushStyle";
+        text+=" "+color_r.setNum(this->brush.style())+"\n";
 
     text+="Rotation";
       text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
@@ -383,8 +383,8 @@ QPainterPath Draw_Polygon::getPolygon(int indx,QPointF pnt1,QPointF pnt2)
 
     if(!poly_pnts.isEmpty())
     {
-  QPolygonF polygon_pnts(poly_pnts);
-  polygon.addPolygon(polygon_pnts);
+        QPolygonF polygon_pnts(poly_pnts);
+        polygon.addPolygon(polygon_pnts);
     }
 
 
@@ -436,27 +436,27 @@ void Draw_Polygon::setPenStyle(const int style)
     switch(style)
     {
       case 1:
-    this->pen.setStyle(Qt::SolidLine);
-    item->setPen(pen);
-   break;
+          this->pen.setStyle(Qt::SolidLine);
+          item->setPen(pen);
+         break;
       case 2:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 3:
-    this->pen.setStyle(Qt::DashLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashLine);
+          item->setPen(pen);
+          break;
       case 4:
-    this->pen.setStyle(Qt::DashDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotLine);
+          item->setPen(pen);
+          break;
       case 5:
-    this->pen.setStyle(Qt::DashDotDotLine);
-    item->setPen(pen);
-    break;
+          this->pen.setStyle(Qt::DashDotDotLine);
+          item->setPen(pen);
+          break;
     default:
-    break;
+          break;
     }
 
 }
@@ -486,68 +486,68 @@ void Draw_Polygon::setBrushStyle(const int style)
     switch(style)
     {
       case 0:
-   this->brush=item->brush();
-   this->brush.setStyle(Qt::NoBrush);
-   item->setBrush(brush);
-   break;
+         this->brush=item->brush();
+         this->brush.setStyle(Qt::NoBrush);
+         item->setBrush(brush);
+         break;
       case 1:
-   brush.setStyle(Qt::SolidPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::SolidPattern);
+         item->setBrush(brush);
+         break;
       case 2:
-   brush.setStyle(Qt::Dense1Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense1Pattern);
+         item->setBrush(brush);
+         break;
       case 3:
-   brush.setStyle(Qt::Dense2Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense2Pattern);
+         item->setBrush(brush);
+         break;
       case 4:
-   brush.setStyle(Qt::Dense3Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense3Pattern);
+         item->setBrush(brush);
+         break;
       case 5:
-   brush.setStyle(Qt::Dense4Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense4Pattern);
+         item->setBrush(brush);
+         break;
       case 6:
-   brush.setStyle(Qt::Dense5Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense5Pattern);
+         item->setBrush(brush);
+         break;
       case 7:
-   brush.setStyle(Qt::Dense6Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense6Pattern);
+         item->setBrush(brush);
+         break;
       case 8:
-   brush.setStyle(Qt::Dense7Pattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::Dense7Pattern);
+         item->setBrush(brush);
+         break;
       case 9:
-   brush.setStyle(Qt::HorPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::HorPattern);
+         item->setBrush(brush);
+         break;
       case 10:
-   brush.setStyle(Qt::VerPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::VerPattern);
+         item->setBrush(brush);
+         break;
       case 11:
-   brush.setStyle(Qt::CrossPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::CrossPattern);
+         item->setBrush(brush);
+         break;
       case 12:
-   brush.setStyle(Qt::BDiagPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::BDiagPattern);
+         item->setBrush(brush);
+         break;
       case 13:
-   brush.setStyle(Qt::FDiagPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::FDiagPattern);
+         item->setBrush(brush);
+         break;
       case 14:
-   brush.setStyle(Qt::DiagCrossPattern);
-   item->setBrush(brush);
-   break;
+         brush.setStyle(Qt::DiagCrossPattern);
+         item->setBrush(brush);
+         break;
       default:
-   break;
+         break;
     }
 
 }
@@ -561,10 +561,10 @@ void Draw_Polygon::showHandles()
 {
    for(int i=0;i<edge_items.size();i++)
      {
-    if(!edge_items[i]->isVisible())
-    {
-          edge_items[i]->show();
-    }
+          if(!edge_items[i]->isVisible())
+          {
+                edge_items[i]->show();
+          }
    }
 
    if(!Rot_Rect->isVisible())
@@ -575,10 +575,10 @@ void Draw_Polygon::hideHandles()
 {
    for(int i=0;i<edge_items.size();i++)
      {
-    if(edge_items[i]->isVisible())
-    {
-          edge_items[i]->hide();
-    }
+          if(edge_items[i]->isVisible())
+          {
+                edge_items[i]->hide();
+          }
    }
 
    if(Rot_Rect->isVisible())
@@ -590,12 +590,12 @@ bool Draw_Polygon::isClickedOnHandleOrShape(QPointF point)
 {
   if(getPolygonDrawn())
     {
-  if(isMouseClickedOnHandle(point))
-     return true;
-  else if(isMouseClickedOnShape(point))
-      return true;
-  else if(isMouseClickedOnRotateHandle(point))
-      return true;
+        if(isMouseClickedOnHandle(point))
+           return true;
+        else if(isMouseClickedOnShape(point))
+            return true;
+        else if(isMouseClickedOnRotateHandle(point))
+            return true;
     }
     
   return false;
@@ -613,8 +613,8 @@ void Draw_Polygon::rotateShape(float angle)
    Rot_Rect->setRotation(angle);
      for(int i=0;i<edge_items.size();i++)
      {
-    edge_items[i]->setRotation(angle);
-    edge_items[i]->update();
+          edge_items[i]->setRotation(angle);
+          edge_items[i]->update();
      }
 
    item->update();
@@ -624,7 +624,7 @@ void Draw_Polygon::rotateShape(float angle)
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     for(int i=0;i<edge_items.size();i++)
-   edge_items[i]->setTransformOriginPoint(pnt1);
+         edge_items[i]->setTransformOriginPoint(pnt1);
     item->setTransformOriginPoint(pnt1);
     Rot_Rect->setTransformOriginPoint(pnt1);
 }
