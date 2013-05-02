@@ -698,10 +698,9 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = _), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        // adrpo: the iterator is not in the environment, this would fail!
-        // (cache,DAE.ATTR(false,false,/*SCode.RW()*/_,_,_,_),DAE.T_INTEGER(varLst = _),DAE.UNBOUND(),_,_,_)
-        //  = Lookup.lookupVar(cache,env, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{})) "for loops with non-constant iteration bounds" ;
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Non-constant iteration bounds", "No suggestion"}, info);
+
+        s = ExpressionDump.printExpStr(e_1);
+        Error.addSourceMessage(Error.NON_PARAMETER_ITERATOR_RANGE, {s}, info);
       then
         fail();
 

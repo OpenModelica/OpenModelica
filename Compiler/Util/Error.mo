@@ -327,6 +327,8 @@ public constant Message ASSERT_FAILED = MESSAGE(106, TRANSLATION(), ERROR(),
   Util.gettext("Assertion failed in function, message: %s "));
 public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for component %s declared as '%s'.\n  The existing 'inner' components are:\n    %s\n  Check if you have not misspelled the 'outer' component name.\n  Please declare an 'inner' component with the same name in the top scope.\n  Continuing flattening by only considering the 'outer' component declaration."));
+public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(), ERROR(),
+  Util.gettext("The iteration range %s is not a constant or parameter expression."));
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identificator %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
