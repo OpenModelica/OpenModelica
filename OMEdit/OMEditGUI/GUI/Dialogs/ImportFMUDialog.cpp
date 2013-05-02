@@ -125,7 +125,7 @@ ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
 void ImportFMUDialog::setSelectedFile()
 {
   mpFmuFileTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                           NULL, Helper::fmuFileTypes, NULL));
+                                                     NULL, Helper::fmuFileTypes, NULL));
 }
 
 /*!
@@ -146,14 +146,14 @@ void ImportFMUDialog::importFMU()
   if (mpFmuFileTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), Helper::ok);
+                    GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), Helper::ok);
     return;
   }
   QString fmuFileName = mpMainWindow->getOMCProxy()->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text(),
-                                                               mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt(),
-                                                               mpDebugLoggingCheckBox->isChecked(),
-                                                               mpGenerateIntputConnectors->isChecked(),
-                                                               mpGenerateOutputConnectors->isChecked());
+                                                         mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt(),
+                                                         mpDebugLoggingCheckBox->isChecked(),
+                                                         mpGenerateIntputConnectors->isChecked(),
+                                                         mpGenerateOutputConnectors->isChecked());
   if (!fmuFileName.isEmpty())
     mpMainWindow->getLibraryTreeWidget()->openFile(fmuFileName);
   accept();

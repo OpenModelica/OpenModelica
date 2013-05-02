@@ -638,47 +638,47 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
     {
       if (mask)
       {
-        mask = false;
+  mask = false;
       }
       else
       {
-        if (value.at(i) == '\\')
-        {
-          mask = true;
-        }
-        else if (value.at(i) == StringEnd)
-        {
-          inString = false;
-        }
+  if (value.at(i) == '\\')
+  {
+    mask = true;
+  }
+  else if (value.at(i) == StringEnd)
+  {
+    inString = false;
+  }
       }
     }
     else
     {
       if (value.at(i) == '"')
       {
-          StringEnd = '"';
-          inString = true;
+    StringEnd = '"';
+    inString = true;
       }
       else if (value.at(i) == '\'')
       {
-          StringEnd = '\'';
-          inString = true;
+    StringEnd = '\'';
+    inString = true;
       }
       else if (value.at(i) == ',')
       {
-        if (ele == 0)
-        {
-          list.append(value.mid(begin,i-begin).trimmed());
-          begin = i+1;
-        }
+  if (ele == 0)
+  {
+    list.append(value.mid(begin,i-begin).trimmed());
+    begin = i+1;
+  }
       }
       else if (value.at(i) == start)
       {
-        ele++;
+  ele++;
       }
       else if (value.at(i) == end)
       {
-        ele--;
+  ele--;
       }
     }
   }
@@ -804,21 +804,21 @@ QList<QString> StringHandler::getSimulationResultVars(QString value)
     {
       if (startReading)
       {
-        if (value.at(i+1) == ',')
-        {
-          startReading = false;
-          list.append(str.remove((str.length() - 1), 1));
-          str.clear();
-        }
-        else if (value.at(i+1) == '}')
-        {
-          startReading = false;
-          list.append(str.remove((str.length() - 1), 1));
-          str.clear();
-        }
+  if (value.at(i+1) == ',')
+  {
+    startReading = false;
+    list.append(str.remove((str.length() - 1), 1));
+    str.clear();
+  }
+  else if (value.at(i+1) == '}')
+  {
+    startReading = false;
+    list.append(str.remove((str.length() - 1), 1));
+    str.clear();
+  }
       }
       else
-        startReading = true;
+  startReading = true;
     }
   }
   return list;
@@ -836,7 +836,7 @@ QString StringHandler::getModifierValue(QString value)
     else if (value.at(i) == '=')
     {
       if (element == 0)
-        return value.mid(i + 1);
+  return value.mid(i + 1);
     }
   }
   return "";
@@ -915,10 +915,10 @@ QStringList StringHandler::unparseStrings(QString value)
       /* if we have unexpected double quotes then, however omc should return \" */
       /* remove this block once fixed in omc */
       if (value[i] == '"' && value[i+1] != ',') {
-        if (value[i+1] != '}') {
-          CONSUME_CHAR(value,res,i);
-          i++;
-        }
+  if (value[i+1] != '}') {
+    CONSUME_CHAR(value,res,i);
+    i++;
+  }
       }
       /* remove this block once fixed in omc */
     }
@@ -932,7 +932,7 @@ QStringList StringHandler::unparseStrings(QString value)
       i++;
       res = "";
       while (value[i] == ' ')     // if we have space before next value e.g {"x", "y", "z"}
-        i++;
+  i++;
       continue;
     }
     while (value[i] != '"' && value[i] != '\0') {
@@ -983,10 +983,10 @@ QStringList StringHandler::unparseArrays(QString value)
       i++;
       while (value.at(i) != '"')
       {
-        i++;
-        if (value.at(i) == '"' && value.at(i+1) != ',')
-          if (value.at(i+1) != '}')
-            i++;
+  i++;
+  if (value.at(i) == '"' && value.at(i+1) != ',')
+    if (value.at(i+1) != '}')
+      i++;
       }
     }
   }
@@ -1000,7 +1000,7 @@ bool StringHandler::unparseBool(QString value)
 }
 
 QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter,
-                                       const QString &defaultSuffix, const QString *purposedName)
+                                 const QString &defaultSuffix, const QString *purposedName)
 {
   QString dir_str;
   QString fileName;
@@ -1120,8 +1120,8 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
   else
   {
     QString tooltip = QString(Helper::type).append(": ").append(info[0]).append("\n")
-        .append(Helper::name).append(" ").append(name).append("\n")
-        .append(tr("Description")).append(": ").append(info[1]).append("\n");
+  .append(Helper::name).append(" ").append(name).append("\n")
+  .append(tr("Description")).append(": ").append(info[1]).append("\n");
     if (QString(info[2]).compare("<interactive>") == 0)
       tooltip.append(Helper::errorLocation).append(": ").append("\n");
     else

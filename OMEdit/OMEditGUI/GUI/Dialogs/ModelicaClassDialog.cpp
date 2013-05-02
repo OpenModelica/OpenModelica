@@ -139,7 +139,7 @@ void ModelicaClassDialog::createModelicaClass()
   if (mpNameTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::ENTER_NAME).arg(mpRestrictionComboBox->currentText()), Helper::ok);
+                      GUIMessages::ENTER_NAME).arg(mpRestrictionComboBox->currentText()), Helper::ok);
     return;
   }
 
@@ -148,7 +148,7 @@ void ModelicaClassDialog::createModelicaClass()
     if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            tr("Insert in class <b>%1</b> does not exist.").arg(mpParentClassComboBox->currentText()), Helper::ok);
+                      tr("Insert in class <b>%1</b> does not exist.").arg(mpParentClassComboBox->currentText()), Helper::ok);
       return;
     }
   }
@@ -168,8 +168,8 @@ void ModelicaClassDialog::createModelicaClass()
   if (mpMainWindow->getOMCProxy()->existClass(model))
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::MODEL_ALREADY_EXISTS).arg(mpRestrictionComboBox->currentText()).arg(model)
-                          .arg(parentPackage), Helper::ok);
+                      GUIMessages::MODEL_ALREADY_EXISTS).arg(mpRestrictionComboBox->currentText()).arg(model)
+                    .arg(parentPackage), Helper::ok);
     return;
   }
   // create the model.
@@ -181,8 +181,8 @@ void ModelicaClassDialog::createModelicaClass()
     if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
-                            append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+                        GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
+                      append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
   }
@@ -191,8 +191,8 @@ void ModelicaClassDialog::createModelicaClass()
     if(!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text(), mpParentClassComboBox->currentText()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
-                            append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+                        GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
+                      append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
   }
@@ -200,8 +200,8 @@ void ModelicaClassDialog::createModelicaClass()
   LibraryTreeWidget *pLibraryTree = mpMainWindow->getLibraryTreeWidget();
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = pLibraryTree->addLibraryTreeNode(mpNameTextBox->text(),
-                                                      StringHandler::getModelicaClassType(mpRestrictionComboBox->currentText()),
-                                                      mpParentClassComboBox->currentText(), false);
+                                                StringHandler::getModelicaClassType(mpRestrictionComboBox->currentText()),
+                                                mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTree->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   pLibraryTree->showModelWidget(pLibraryTreeNode, true);
@@ -216,16 +216,16 @@ void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
     if (pComboBox == mpRestrictionComboBox)
     {
       if ((text.toLower().compare("package") == 0) && mpParentClassComboBox->currentText().isEmpty())
-        mpSaveContentsInOneFileCheckBox->setVisible(true);
+  mpSaveContentsInOneFileCheckBox->setVisible(true);
       else
-        mpSaveContentsInOneFileCheckBox->setVisible(false);
+  mpSaveContentsInOneFileCheckBox->setVisible(false);
     }
     else if (pComboBox == mpParentClassComboBox)
     {
       if (text.isEmpty() && (mpRestrictionComboBox->currentText().toLower().compare("package") == 0))
-        mpSaveContentsInOneFileCheckBox->setVisible(true);
+  mpSaveContentsInOneFileCheckBox->setVisible(true);
       else
-        mpSaveContentsInOneFileCheckBox->setVisible(false);
+  mpSaveContentsInOneFileCheckBox->setVisible(false);
     }
   }
 }
@@ -288,7 +288,7 @@ void OpenModelicaFile::browseForFile()
   QStringList fileNames;
   mFileNames.clear();
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                              NULL, Helper::omFileTypes, NULL);
+                                        NULL, Helper::omFileTypes, NULL);
   foreach (QString fileName, fileNames)
   {
     mFileNames.append(fileName.replace("\\", "/"));
@@ -324,9 +324,9 @@ void OpenModelicaFile::openModelicaFile()
     {
       QString encoding;
       if (mpEncodingTextBox->text().isEmpty())
-        encoding = Helper::utf8;
+  encoding = Helper::utf8;
       else
-        encoding = mpEncodingTextBox->text();
+  encoding = mpEncodingTextBox->text();
       mpMainWindow->getLibraryTreeWidget()->openFile(file, encoding, false);
     }
   }
@@ -401,16 +401,16 @@ void RenameClassDialog::renameClass()
     else
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult())
-                            .append("\n\n").append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+                      GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult())
+                      .append("\n\n").append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
   }
   else
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).append("\n\n")
-                          .append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+                    GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).append("\n\n")
+                    .append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
     return;
   }
 }
@@ -437,7 +437,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   if (modelicaTextHighlighter)
   {
     ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                                                pMainWindow, pPlainTextEdit->document());
+                                                                          pMainWindow, pPlainTextEdit->document());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
@@ -656,9 +656,9 @@ bool SaveChangesDialog::getUnsavedClasses()
     {
       if (pLibraryTreeNode->getParentName().isEmpty())
       {
-        hasUnsavedClasses = true;
-        QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-        pListItem->setText(pLibraryTreeNode->getNameStructure());
+  hasUnsavedClasses = true;
+  QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
+  pListItem->setText(pLibraryTreeNode->getNameStructure());
       }
     }
   }

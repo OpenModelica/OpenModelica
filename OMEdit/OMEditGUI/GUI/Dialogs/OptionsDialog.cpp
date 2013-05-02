@@ -1029,10 +1029,10 @@ bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
     {
       if (pChildItem != pItem)
       {
-        if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
-        {
-          return true;
-        }
+  if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
+  {
+    return true;
+  }
       }
     }
     // add case
@@ -1040,7 +1040,7 @@ bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
     {
       if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
       {
-        return true;
+  return true;
       }
     }
     ++it;
@@ -1056,14 +1056,14 @@ void AddSystemLibraryDialog::addSystemLibrary()
   if (mpNameComboBox->currentText().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+                    GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
   if (mpValueTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+                    GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
     return;
   }
   // if user is adding a new library
@@ -1072,7 +1072,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
     if (nameExists())
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+                      GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
@@ -1086,7 +1086,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
     if (nameExists(pItem))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+                      GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     // pItem->setText(0, mpNameTextBox->text());
@@ -1139,10 +1139,10 @@ bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
     {
       if (pChildItem != pItem)
       {
-        if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
-        {
-          return true;
-        }
+  if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
+  {
+    return true;
+  }
       }
     }
     // add case
@@ -1150,7 +1150,7 @@ bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
     {
       if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
       {
-        return true;
+  return true;
       }
     }
     ++it;
@@ -1163,7 +1163,7 @@ bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
 void AddUserLibraryDialog::browseUserLibraryPath()
 {
   mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                        NULL, Helper::omFileTypes, NULL));
+                                                  NULL, Helper::omFileTypes, NULL));
 }
 
 //! Slot activated when mpOkButton clicked signal is raised.
@@ -1174,14 +1174,14 @@ void AddUserLibraryDialog::addUserLibrary()
   if (mpPathTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Please enter the file path."), Helper::ok);
+                    tr("Please enter the file path."), Helper::ok);
     return;
   }
   // if encoding text box is empty show error and return
   if (mpEncodingTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Please enter the file encoding."), Helper::ok);
+                    tr("Please enter the file encoding."), Helper::ok);
     return;
   }
   // if user is adding a new library
@@ -1190,7 +1190,7 @@ void AddUserLibraryDialog::addUserLibrary()
     if (pathExists())
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+                      GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
@@ -1204,7 +1204,7 @@ void AddUserLibraryDialog::addUserLibrary()
     if (pathExists(pItem))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+                      GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     pItem->setText(0, mpPathTextBox->text());
@@ -1222,13 +1222,13 @@ ModelicaTextSettings::ModelicaTextSettings()
   // set default values, will be handy if we are unable to create the xml file
   setFontFamily(Helper::monospacedFontInfo.family());
   setFontSize(Helper::monospacedFontInfo.pointSize());
-  setTextRuleColor(QColor(0, 0, 0));                // black
-  setKeywordRuleColor(QColor(139, 0, 0));           // dark red
-  setTypeRuleColor(QColor(255, 10, 10));            // red
-  setFunctionRuleColor(QColor(0, 0, 255));          // blue
-  setQuotesRuleColor(QColor(0, 139, 0));            // dark green
-  setCommentRuleColor(QColor(0, 150, 0));           // dark green
-  setNumberRuleColor(QColor(139, 0, 139));          // purple
+  setTextRuleColor(QColor(0, 0, 0));          // black
+  setKeywordRuleColor(QColor(139, 0, 0));     // dark red
+  setTypeRuleColor(QColor(255, 10, 10));      // red
+  setFunctionRuleColor(QColor(0, 0, 255));    // blue
+  setQuotesRuleColor(QColor(0, 139, 0));      // dark green
+  setCommentRuleColor(QColor(0, 150, 0));     // dark green
+  setNumberRuleColor(QColor(139, 0, 139));    // purple
 }
 
 //! Sets the font for the Modelica Text.
@@ -1488,14 +1488,14 @@ QString ModelicaTextEditorPage::getPreviewText()
 {
   QString previewText;
   previewText.append("class HelloWorld /* block\n"
-                     "comment */\n"
-                     "\tReal x(start = 1); // Line comment\n"
-                     "\tparameter Real a = 1.573;\n"
-                     "\tString str = \"a\\\"bc\n"
-                     "123\";\n"
-                     "equation\n"
-                     "\tder(x) = - a * x;\n"
-                     "end HelloWorld;\n");
+               "comment */\n"
+               "\tReal x(start = 1); // Line comment\n"
+               "\tparameter Real a = 1.573;\n"
+               "\tString str = \"a\\\"bc\n"
+               "123\";\n"
+               "equation\n"
+               "\tder(x) = - a * x;\n"
+               "end HelloWorld;\n");
 
   return previewText;
 }

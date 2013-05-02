@@ -169,9 +169,9 @@ QString NotificationsDialog::getNotificationLabelString()
       return tr("You must save the class before referencing a bitmap from local directory.");
     case NotificationsDialog::ReleaseInformation:
       return tr("Welcome to new enhanced OMEdit - OpenModelica Connection Editor.\n"
-                "This version includes a lot of improvements and bug fixes. Check release notes for more details.\n\n"
-                "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.\n"
-                "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
+          "This version includes a lot of improvements and bug fixes. Check release notes for more details.\n\n"
+          "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.\n"
+          "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -283,26 +283,26 @@ void NotificationsDialog::saveNotification()
     switch (mNotificationType)
     {
       case NotificationsDialog::QuitApplication:
-        saveQuitNotificationSettings();
-        break;
+  saveQuitNotificationSettings();
+  break;
       case NotificationsDialog::ItemDroppedOnItself:
-        saveItemDroppedOnItselfNotificationSettings();
-        break;
+  saveItemDroppedOnItselfNotificationSettings();
+  break;
       case NotificationsDialog::ReplaceableIfPartial:
-        saveReplaceableIfPartialNotificationSettings();
-        break;
+  saveReplaceableIfPartialNotificationSettings();
+  break;
       case NotificationsDialog::InnerModelNameChanged:
-        saveInnerModelNameChangedNotificationSettings();
-        break;
+  saveInnerModelNameChangedNotificationSettings();
+  break;
       case NotificationsDialog::SaveModelForBitmapInsertion:
-        saveModelForBitmapInsertionNotificationSettings();
-        break;
+  saveModelForBitmapInsertionNotificationSettings();
+  break;
       case NotificationsDialog::ReleaseInformation:
-        saveReleaseInformationNotificationSettings();
-        break;
+  saveReleaseInformationNotificationSettings();
+  break;
       default:
-        // should never be reached
-        break;
+  // should never be reached
+  break;
     }
   }
   else
@@ -310,11 +310,11 @@ void NotificationsDialog::saveNotification()
     switch (mNotificationType)
     {
       case NotificationsDialog::ReleaseInformation:
-        saveReleaseInformationNotificationSettings();
-        break;
+  saveReleaseInformationNotificationSettings();
+  break;
       default:
-        // should never be reached
-        break;
+  // should never be reached
+  break;
     }
   }
   accept();

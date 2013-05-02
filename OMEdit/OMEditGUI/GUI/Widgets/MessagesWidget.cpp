@@ -400,7 +400,7 @@ MessagesTreeItem::MessagesTreeItem(MessagesTreeWidget *pParent)
   \param pParent - pointer to MessagesTreeWidget.
   */
 MessagesTreeItem::MessagesTreeItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
-                         QString kind, QString level, int id, MessagesTreeWidget *pParent)
+                   QString kind, QString level, int id, MessagesTreeWidget *pParent)
   : QTreeWidgetItem(pParent)
 {
   mpMessagesTreeWidget = pParent;

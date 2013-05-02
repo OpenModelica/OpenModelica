@@ -96,7 +96,7 @@ class MessagesTreeItem : public QTreeWidgetItem
 public:
   MessagesTreeItem(MessagesTreeWidget *pParent = 0);
   MessagesTreeItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString kind,
-              QString level, int id, MessagesTreeWidget *pParent = 0);
+        QString level, int id, MessagesTreeWidget *pParent = 0);
   void initialize();
   void setFileName(QString fileName);
   QString getFileName();

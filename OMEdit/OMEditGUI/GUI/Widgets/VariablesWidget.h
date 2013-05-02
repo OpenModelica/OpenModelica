@@ -46,7 +46,7 @@ class VariableTreeItem : public QTreeWidgetItem
 {
 public:
   VariableTreeItem(QString text, QString parentName, QString nameStructure, QString fileName, QString filePath, QString tooltip,
-                   QTreeWidget *parent = 0);
+             QTreeWidget *parent = 0);
   void setName(QString name);
   QString getName();
   void setParentName(QString parentName);
@@ -87,7 +87,7 @@ public:
   void createActions();
   void addPlotVariablestoTree(QString fileName, QString filePath, QList<QString> plotVariablesList);
   void addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
-                             QString fullStructure = QString(), bool derivative = false);
+                       QString fullStructure = QString(), bool derivative = false);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void unHideChildItems(QTreeWidgetItem *pItem);
 private:

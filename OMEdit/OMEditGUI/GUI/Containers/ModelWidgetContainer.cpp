@@ -326,8 +326,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked())
     {
       NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ItemDroppedOnItself,
-                                                                          NotificationsDialog::InformationIcon,
-                                                                          mpModelWidget->getModelWidgetContainer()->getMainWindow());
+                                                                    NotificationsDialog::InformationIcon,
+                                                                    mpModelWidget->getModelWidgetContainer()->getMainWindow());
       pNotificationsDialog->exec();
     }
     return false;
@@ -339,13 +339,13 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     {
       if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked())
       {
-        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
-                                                                            NotificationsDialog::InformationIcon,
-                                                                            mpModelWidget->getModelWidgetContainer()->getMainWindow());
-        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                         .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
-        if (!pNotificationsDialog->exec())
-          return false;
+  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
+                                                                      NotificationsDialog::InformationIcon,
+                                                                      mpModelWidget->getModelWidgetContainer()->getMainWindow());
+  pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
+                                                   .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
+  if (!pNotificationsDialog->exec())
+    return false;
       }
     }
     // get the model defaultComponentPrefixes
@@ -359,24 +359,24 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     else
     {
       if (checkComponentName(defaultName))
-        name = defaultName;
+  name = defaultName;
       else
       {
-        name = getUniqueComponentName(name.toLower());
-        // show the information to the user if we have changed the name of some inner component.
-        if (defaultPrefix.contains("inner"))
-        {
-          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked())
-          {
-            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
-                                                                                NotificationsDialog::InformationIcon,
-                                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
-            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
-                                                             .arg(defaultName).arg(name));
-            if (!pNotificationsDialog->exec())
-              return false;
-          }
-        }
+  name = getUniqueComponentName(name.toLower());
+  // show the information to the user if we have changed the name of some inner component.
+  if (defaultPrefix.contains("inner"))
+  {
+    if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked())
+    {
+      NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
+                                                                          NotificationsDialog::InformationIcon,
+                                                                          mpModelWidget->getModelWidgetContainer()->getMainWindow());
+      pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                       .arg(defaultName).arg(name));
+      if (!pNotificationsDialog->exec())
+        return false;
+    }
+  }
       }
     }
     // if dropping an item on the diagram layer
@@ -384,27 +384,27 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     {
       // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
       if ((type == StringHandler::Class) or (type == StringHandler::Model) or (type == StringHandler::Block) or
-          (type == StringHandler::Connector) or (type == StringHandler::Record))
+    (type == StringHandler::Connector) or (type == StringHandler::Record))
       {
-        if (type == StringHandler::Connector)
-        {
-          addComponentToView(name, className, "", position, type, false);
-          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, type);
-          /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
-          pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
-        }
-        else
-        {
-          addComponentToView(name, className, "", position, type);
-        }
-        return true;
+  if (type == StringHandler::Connector)
+  {
+    addComponentToView(name, className, "", position, type, false);
+    mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, type);
+    /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+    pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+  }
+  else
+  {
+    addComponentToView(name, className, "", position, type);
+  }
+  return true;
       }
       else
       {
-        QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
-                                 .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
-        return false;
+  QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                           GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
+                           .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+  return false;
       }
     }
     // if dropping an item on the icon layer
@@ -413,25 +413,25 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       // if item is a connector. then we can drop it to the graphicsview
       if (type == StringHandler::Connector)
       {
-        addComponentToView(name, className, "", position, type, false);
-        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, type);
-        /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
-        pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
-        return true;
+  addComponentToView(name, className, "", position, type, false);
+  mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, type);
+  /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+  pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+  return true;
       }
       else
       {
-        QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
-                                 .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
-        return false;
+  QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                           GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
+                           .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+  return false;
       }
     }
   }
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass)
+                                StringHandler::ModelicaClasses type, bool addObject, bool openingClass)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
@@ -462,7 +462,7 @@ void GraphicsView::addComponentObject(Component *pComponent)
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   // Add the component to model in OMC Global Scope.
   pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), pComponent->getClassName(),
-                                           mpModelWidget->getLibraryTreeNode()->getNameStructure(), pComponent->getPlacementAnnotation());
+                                     mpModelWidget->getLibraryTreeNode()->getNameStructure(), pComponent->getPlacementAnnotation());
   // make the model modified
   mpModelWidget->setModelModified();
   // add the component to the local list
@@ -539,7 +539,7 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
-                                                QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
+                                          QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
   {
     // Check if both ports connected are compatible or not.
     if (pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure()))
@@ -549,9 +549,9 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
       mpConnectionLineAnnotation->setEndComponentName(endComponentName);
       Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
       if (pEndComponent->getParentComponent())
-        pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
       else
-        pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+  pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
       // update the last point to the center of component
       QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
       mpConnectionLineAnnotation->updateEndPoint(newPos);
@@ -783,7 +783,7 @@ void GraphicsView::createBitmapShape(QPointF point)
     setIsCreatingBitmapShape(false);
     ShapePropertiesDialog *pShapePropertiesDialog;
     pShapePropertiesDialog = new ShapePropertiesDialog(mpBitmapShapeAnnotation,
-                                                       mpModelWidget->getModelWidgetContainer()->getMainWindow());
+                                                 mpModelWidget->getModelWidgetContainer()->getMainWindow());
     if (!pShapePropertiesDialog->exec())
     {
       /* if user cancels the bitmap shape properties then remove the bitmap shape from the scene */
@@ -888,33 +888,33 @@ void GraphicsView::addConnection(Component *pComponent)
     {
       removeConnection();
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+                         GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
       return;
     }
     bool showConnectionArrayDialog = false;
     if (pStartComponent->getParentComponent())
       if (pStartComponent->getComponentInfo()->isArray())
-        showConnectionArrayDialog = true;
+  showConnectionArrayDialog = true;
     if (pComponent->getParentComponent())
       if (pComponent->getComponentInfo()->isArray())
-        showConnectionArrayDialog = true;
+  showConnectionArrayDialog = true;
     if (showConnectionArrayDialog)
     {
       ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
-                                                              getModelWidget()->getModelWidgetContainer()->getMainWindow());
+                                                        getModelWidget()->getModelWidgetContainer()->getMainWindow());
       pConnectionArray->show();
     }
     else
     {
       QString startComponentName, endComponentName;
       if (pStartComponent->getParentComponent())
-        startComponentName = QString(pStartComponent->getParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
+  startComponentName = QString(pStartComponent->getParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
       else
-        startComponentName = pStartComponent->getName();
+  startComponentName = pStartComponent->getName();
       if (pComponent->getParentComponent())
-        endComponentName = QString(pComponent->getParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
+  endComponentName = QString(pComponent->getParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
       else
-        endComponentName = pComponent->getName();
+  endComponentName = pComponent->getName();
       createConnection(startComponentName, endComponentName);
       mpConnectionLineAnnotation->addPoint(QPointF(0, 0));
       mpConnectionLineAnnotation->drawCornerItems();
@@ -1047,7 +1047,7 @@ void GraphicsView::addClassAnnotation()
     {
       annotationString.append(pShapeAnnotation->getShapeAnnotation());
       if (counter < mShapesList.size() - 1)
-        annotationString.append(",");
+  annotationString.append(",");
       counter++;
     }
     annotationString.append("}");
@@ -1066,9 +1066,9 @@ void GraphicsView::addClassAnnotation()
   else
   {
     pMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    "Error in class annotation " + pMainWindow->getOMCProxy()->getResult(),
-                                                                    Helper::scriptingKind, Helper::errorLevel, 0,
-                                                                    pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+                                                              "Error in class annotation " + pMainWindow->getOMCProxy()->getResult(),
+                                                              Helper::scriptingKind, Helper::errorLevel, 0,
+                                                              pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
   }
 }
 
@@ -1346,10 +1346,10 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     {
       if (pComponent->getOldPosition() != pComponent->pos())
       {
-        pComponent->updatePlacementAnnotation();
-        // if there are any connectors associated to component update their annotations as well.
-        pComponent->updateConnection();
-        hasMoved = true;
+  pComponent->updatePlacementAnnotation();
+  // if there are any connectors associated to component update their annotations as well.
+  pComponent->updateConnection();
+  hasMoved = true;
       }
     }
     if (hasMoved) mpModelWidget->setModelModified();
@@ -1359,11 +1359,11 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     {
       if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos())
       {
-        pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
-        pShapeAnnotation->setPos(0, 0);
-        pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
-        pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getOrigin());
-        hasMoved = true;
+  pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
+  pShapeAnnotation->setPos(0, 0);
+  pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
+  pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getOrigin());
+  hasMoved = true;
       }
     }
     if (hasMoved)
@@ -1423,13 +1423,13 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     if (!getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
     {
       /*
-        Double click on Component also end up here.
-        But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
-        */
+  Double click on Component also end up here.
+  But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
+  */
       if (pShapeAnnotation->getGraphicsView())
       {
-        pShapeAnnotation->showShapeProperties();
-        return;
+  pShapeAnnotation->showShapeProperties();
+  return;
       }
     }
   }
@@ -1580,7 +1580,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     mpCancelConnectionAction->setText("Cancel Connection");
     menu.addAction(mpCancelConnectionAction);
     menu.exec(event->globalPos());
-    return;         // return from it because at a time we only want one context menu.
+    return;   // return from it because at a time we only want one context menu.
   }
   // if some item is right clicked then don't show graphics view context menu
   if (!itemAt(event->pos()))
@@ -1594,7 +1594,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     menu.addSeparator();
     menu.addAction(mpPropertiesAction);
     menu.exec(event->globalPos());
-    return;         // return from it because at a time we only want one context menu.
+    return;   // return from it because at a time we only want one context menu.
   }
   QGraphicsView::contextMenuEvent(event);
 }
@@ -1793,33 +1793,33 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement)
       {
-        if (xml.name() == "item")
+  if (xml.name() == "item")
+  {
+    while (!xml.atEnd())
+    {
+      xml.readNext();
+      if (xml.tokenType() == QXmlStreamReader::StartElement)
+      {
+        if (xml.name() == "title")
+          title = xml.readElementText();
+        if (xml.name() == "link")
         {
-          while (!xml.atEnd())
-          {
-            xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement)
-            {
-              if (xml.name() == "title")
-                title = xml.readElementText();
-              if (xml.name() == "link")
-              {
-                link = xml.readElementText();
-                if (count >= (int)mpMainWindow->MaxRecentFiles)
-                  break;
-                count++;
-                QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
-                listItem->setIcon(QIcon(":/Resources/icons/next.png"));
-                listItem->setText(title);
-                listItem->setData(Qt::UserRole, link);
-                break;
-              }
-            }
-          }
+          link = xml.readElementText();
+          if (count >= (int)mpMainWindow->MaxRecentFiles)
+            break;
+          count++;
+          QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
+          listItem->setIcon(QIcon(":/Resources/icons/next.png"));
+          listItem->setText(title);
+          listItem->setData(Qt::UserRole, link);
+          break;
         }
       }
+    }
+  }
+      }
       if (count >= (int)mpMainWindow->MaxRecentFiles)
-        break;
+  break;
     }
   }
   else
@@ -1860,7 +1860,7 @@ ModelWidget::ModelWidget(bool newClass, LibraryTreeNode *pLibraryTreeNode, Model
   mpModelicaTextWidget = new ModelicaTextWidget(this);
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                          pMainWindow, mpModelicaTextWidget->getModelicaTextEdit()->document());
+                                                    pMainWindow, mpModelicaTextWidget->getModelicaTextEdit()->document());
   mpModelicaTextWidget->hide(); // set it hidden so that Find/Replace action can get correct value.
   connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
   // set Project Status Bar lables
@@ -2094,10 +2094,10 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     StringHandler::ModelicaClasses type = pMainWindow->getOMCProxy()->getClassRestriction(pComponentInfo->getClassName());
     /* Only model, class, connector, record or block is allowed on the diagram layer. */
     if (!(type == StringHandler::Model ||
-          type == StringHandler::Class ||
-          type == StringHandler::Connector ||
-          type == StringHandler::Record ||
-          type == StringHandler::Block))
+    type == StringHandler::Class ||
+    type == StringHandler::Connector ||
+    type == StringHandler::Record ||
+    type == StringHandler::Block))
     {
       i++;
       continue;
@@ -2109,12 +2109,12 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     if (!transformation.isEmpty())
     {
       mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                QPointF(0.0, 0.0), type, false, true);
+                                          QPointF(0.0, 0.0), type, false, true);
       if (type == StringHandler::Connector && !pComponentInfo->getProtected())
       {
-        // add the component to the icon view.
-        mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                               QPointF(0.0, 0.0), type, false, true);
+  // add the component to the icon view.
+  mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
+                                         QPointF(0.0, 0.0), type, false, true);
       }
     }
     i++;
@@ -2189,10 +2189,10 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       shape = StringHandler::removeFirstLastBrackets(shape);
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, pGraphicsView);
       /*
-        before drawing the corner items add one point to line since drawcorneritems
-        deletes one point. Why? because we end the line shape with double click which adds an extra
-        point to it. so we need to delete this point.
-        */
+  before drawing the corner items add one point to line since drawcorneritems
+  deletes one point. Why? because we end the line shape with double click which adds an extra
+  point to it. so we need to delete this point.
+  */
       pLineAnnotation->initializeTransformation();
       pLineAnnotation->addPoint(QPoint(0, 0));
       pLineAnnotation->drawCornerItems();
@@ -2204,10 +2204,10 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       shape = StringHandler::removeFirstLastBrackets(shape);
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, pGraphicsView);
       /*
-        before drawing the corner items add one point to polygon since drawcorneritems
-        deletes one point. Why? because we end the polygon shape with double click which adds an extra
-        point to it. so we need to delete this point.
-        */
+  before drawing the corner items add one point to polygon since drawcorneritems
+  deletes one point. Why? because we end the polygon shape with double click which adds an extra
+  point to it. so we need to delete this point.
+  */
       pPolygonAnnotation->initializeTransformation();
       pPolygonAnnotation->addPoint(QPoint(0, 0));
       pPolygonAnnotation->drawCornerItems();
@@ -2292,15 +2292,15 @@ void ModelWidget::getModelConnections(QString className)
       // check the startcomponentlist
       if (startComponentList.size() < 2 || isExpandableConnector)
       {
-        pStartConnectorComponent = pStartComponent;
+  pStartConnectorComponent = pStartComponent;
       }
       // look for port from the parent component
       else
       {
-        QString startComponentName = startComponentList.at(1);
-        if (startComponentName.contains("["))
-          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+  QString startComponentName = startComponentList.at(1);
+  if (startComponentName.contains("["))
+    startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+  pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
       }
     }
     if (pEndComponent)
@@ -2313,14 +2313,14 @@ void ModelWidget::getModelConnections(QString className)
       isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       if (endComponentList.size() < 2 || isExpandableConnector)
       {
-        pEndConnectorComponent = pEndComponent;
+  pEndConnectorComponent = pEndComponent;
       }
       else
       {
-        QString endComponentName = endComponentList.at(1);
-        if (endComponentName.contains("["))
-          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
+  QString endComponentName = endComponentList.at(1);
+  if (endComponentName.contains("["))
+    endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+  pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
       }
     }
     // get the connector annotations from OMC
@@ -2331,19 +2331,19 @@ void ModelWidget::getModelConnections(QString className)
     {
       if (shape.startsWith("Line"))
       {
-        shape = shape.mid(QString("Line").length());
-        shape = StringHandler::removeFirstLastBrackets(shape);
-        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-        if (pStartConnectorComponent)
-          pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-        if (pEndConnectorComponent)
-          pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-        pConnectionLineAnnotation->addPoint(QPointF(0, 0));
-        pConnectionLineAnnotation->drawCornerItems();
-        pConnectionLineAnnotation->setCornerItemsPassive();
-        mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+  shape = shape.mid(QString("Line").length());
+  shape = StringHandler::removeFirstLastBrackets(shape);
+  LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+  if (pStartConnectorComponent)
+    pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+  pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
+  if (pEndConnectorComponent)
+    pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+  pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
+  pConnectionLineAnnotation->addPoint(QPointF(0, 0));
+  pConnectionLineAnnotation->drawCornerItems();
+  pConnectionLineAnnotation->setCornerItemsPassive();
+  mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
       }
     }
   }
@@ -2512,7 +2512,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     {
       MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel, 0,
-                                                          pMessagesWidget->getMessagesTreeWidget()));
+                                                    pMessagesWidget->getMessagesTreeWidget()));
     }
     return false;
   }
@@ -2626,26 +2626,26 @@ void ModelWidgetContainer::printModel()
       QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
       pPrintDialog->setWindowTitle(tr("Print Document"));
       if (pModelicaTextEdit->textCursor().hasSelection())
-         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+   pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
       if (pPrintDialog->exec() == QDialog::Accepted)
-         pModelicaTextEdit->print(&printer);
+   pModelicaTextEdit->print(&printer);
       delete pPrintDialog;
     }
     else
     {
       GraphicsView *pGraphicsView;
       if (pModelWidget->getIconGraphicsView()->isVisible())
-        pGraphicsView = pModelWidget->getIconGraphicsView();
+  pGraphicsView = pModelWidget->getIconGraphicsView();
       else
-        pGraphicsView = pModelWidget->getDiagramGraphicsView();
+  pGraphicsView = pModelWidget->getDiagramGraphicsView();
 
       printer.setPageSize(QPrinter::A4);
       if (QPrintDialog(&printer).exec() == QDialog::Accepted)
       {
-        QPainter painter(&printer);
-        painter.setRenderHint(QPainter::HighQualityAntialiasing);
-        pGraphicsView->render(&painter);
-        painter.end();
+  QPainter painter(&printer);
+  painter.setRenderHint(QPainter::HighQualityAntialiasing);
+  pGraphicsView->render(&painter);
+  painter.end();
       }
     }
   }
@@ -2662,9 +2662,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
       if (pSubModelWidget == pModelWidget)
       {
-        pModelWidget->show();
-        pModelWidget->setWindowState(Qt::WindowMaximized);
-        setActiveSubWindow(subWindowsList.at(i));
+  pModelWidget->show();
+  pModelWidget->setWindowState(Qt::WindowMaximized);
+  setActiveSubWindow(subWindowsList.at(i));
       }
     }
   }
@@ -2677,7 +2677,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     {
       if (pSubWindow->systemMenu()->actions().at(5)->text().compare("Stay on &Top") == 0)
       {
-        pSubWindow->systemMenu()->removeAction(pSubWindow->systemMenu()->actions().at(5));
+  pSubWindow->systemMenu()->removeAction(pSubWindow->systemMenu()->actions().at(5));
       }
     }
     pModelWidget->show();
@@ -2688,7 +2688,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     return;
   // get the preferred view to display
   mpMainWindow->getOMCProxy()->sendCommand(QString("getNamedAnnotation(").append(pModelWidget->getLibraryTreeNode()->getNameStructure())
-                                           .append(", preferredView)"));
+                                     .append(", preferredView)"));
   QStringList preferredViewList = StringHandler::unparseStrings(mpMainWindow->getOMCProxy()->getResult());
   if (!preferredViewList.isEmpty())
   {
@@ -2762,52 +2762,52 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
 #else
       if (!(keyEvent->modifiers() & Qt::ControlModifier) && keyEvent->key() != Qt::Key_Control)
 #endif
-        return QMdiArea::eventFilter(object, event);
+  return QMdiArea::eventFilter(object, event);
       // check key press
       const bool keyPress = (event->type() == QEvent::KeyPress) ? true : false;
       switch (keyEvent->key()) {
 #ifdef Q_OS_MAC
-        case Qt::Key_Alt:
+  case Qt::Key_Alt:
 #else
-        case Qt::Key_Control:
+  case Qt::Key_Control:
 #endif
-          if (keyPress)
-          {
-            // add items to mpRecentModelsList to show in mpModelSwitcherDialog
-            mpRecentModelsList->clear();
-            QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-            for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
-            {
-              ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-              QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-              listItem->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
-              listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeNode()->getNameStructure());
-            }
-          }
-          else
-          {
-            if (!mpRecentModelsList->selectedItems().isEmpty())
-              openRecentModelWidget(mpRecentModelsList->selectedItems().at(0));
-            mpModelSwitcherDialog->hide();
-          }
-          break;
-        case Qt::Key_Tab:
-        case Qt::Key_Backtab:
-          if (keyPress)
-          {
-            if (keyEvent->key() == Qt::Key_Tab)
-              changeRecentModelsListSelection(true);
-            else
-              changeRecentModelsListSelection(false);
-          }
-          return true;
+    if (keyPress)
+    {
+      // add items to mpRecentModelsList to show in mpModelSwitcherDialog
+      mpRecentModelsList->clear();
+      QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+      for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
+      {
+        ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
+        QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
+        listItem->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
+        listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeNode()->getNameStructure());
+      }
+    }
+    else
+    {
+      if (!mpRecentModelsList->selectedItems().isEmpty())
+        openRecentModelWidget(mpRecentModelsList->selectedItems().at(0));
+      mpModelSwitcherDialog->hide();
+    }
+    break;
+  case Qt::Key_Tab:
+  case Qt::Key_Backtab:
+    if (keyPress)
+    {
+      if (keyEvent->key() == Qt::Key_Tab)
+        changeRecentModelsListSelection(true);
+      else
+        changeRecentModelsListSelection(false);
+    }
+    return true;
 #ifndef QT_NO_RUBBERBAND
-        case Qt::Key_Escape:
-          mpModelSwitcherDialog->hide();
-          break;
+  case Qt::Key_Escape:
+    mpModelSwitcherDialog->hide();
+    break;
 #endif
-        default:
-          break;
+  default:
+    break;
       }
       return QMdiArea::eventFilter(object, event);
     }
@@ -2909,7 +2909,7 @@ void ModelWidgetContainer::saveModelWidget()
   if (!pModelWidget)
   {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+                       GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;
   }
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -2933,8 +2933,8 @@ void ModelWidgetContainer::saveModelWidget(bool saveAs)
   if (!pModelWidget)
   {
     pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                   .arg(tr("saving")), Helper::scriptingKind, Helper::notificationLevel,
-                                                   0, pMessagesWidget->getMessagesTreeWidget()));
+                                             .arg(tr("saving")), Helper::scriptingKind, Helper::notificationLevel,
+                                             0, pMessagesWidget->getMessagesTreeWidget()));
     return;
   }
   LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
@@ -2943,9 +2943,9 @@ void ModelWidgetContainer::saveModelWidget(bool saveAs)
   {
     QString name = pLibraryTreeNode->getName();
     fileName = StringHandler::getSaveFileName(this, saveAs ? QString(Helper::applicationName).append(" - ").append(tr("Save File As"))
-                                                           : QString(Helper::applicationName).append(" - ").append(tr("Save File")),
-                                              NULL, Helper::omFileTypes, NULL, "mo",
-                                              &name);
+                                                     : QString(Helper::applicationName).append(" - ").append(tr("Save File")),
+                                        NULL, Helper::omFileTypes, NULL, "mo",
+                                        &name);
     if (fileName.isEmpty())   // if user press ESC
       return;
   }

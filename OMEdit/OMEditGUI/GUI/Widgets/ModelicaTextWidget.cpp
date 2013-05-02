@@ -103,9 +103,9 @@ void CommentDefinition::clearCommentStyles()
 namespace {
 
 bool isComment(const QString &text,
-               int index,
-               const CommentDefinition &definition,
-               const QString & (CommentDefinition::* comment) () const)
+         int index,
+         const CommentDefinition &definition,
+         const QString & (CommentDefinition::* comment) () const)
 {
     const QString &commentType = ((definition).*(comment))();
     const int length = commentType.length();
@@ -114,9 +114,9 @@ bool isComment(const QString &text,
 
     int i = 0;
     while (i < length) {
-        if (text.at(index + i) != commentType.at(i))
-            return false;
-        ++i;
+  if (text.at(index + i) != commentType.at(i))
+      return false;
+  ++i;
     }
     return true;
 }
@@ -197,8 +197,8 @@ QStringList ModelicaTextEdit::getClassNames(QString *errorString)
     {
       if (pOMCProxy->existClass(className))
       {
-        existingmodelsList.append(className);
-        existModel = true;
+  existingmodelsList.append(className);
+  existModel = true;
       }
     }
   }
@@ -206,7 +206,7 @@ QStringList ModelicaTextEdit::getClassNames(QString *errorString)
   if (existModel)
   {
     *errorString = QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(existingmodelsList.join(",")).append("\n")
-        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(""));
+  .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(""));
     return QStringList();
   }
   return classNames;
@@ -225,25 +225,25 @@ bool ModelicaTextEdit::validateModelicaText()
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
-                      .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
-                      .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+                .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
       pMessageBox->addButton(tr("Revert from previous"), QMessageBox::AcceptRole);
       pMessageBox->addButton(tr("Fix errors manually"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();
       switch (answer)
       {
-        case QMessageBox::AcceptRole:
-          mTextChanged = false;
-          // revert back to last valid block
-          setPlainText(mLastValidText);
-          return true;
-        case QMessageBox::RejectRole:
-          mTextChanged = true;
-          return false;
-        default:
-          // should never be reached
-          mTextChanged = true;
-          return false;
+  case QMessageBox::AcceptRole:
+    mTextChanged = false;
+    // revert back to last valid block
+    setPlainText(mLastValidText);
+    return true;
+  case QMessageBox::RejectRole:
+    mTextChanged = true;
+    return false;
+  default:
+    // should never be reached
+    mTextChanged = true;
+    return false;
       }
     }
     else
@@ -392,49 +392,49 @@ void ModelicaTextEdit::toggleCommentSelection()
     bool hasLeadingCharacters = !startText.left(startPos).trimmed().isEmpty();
 
     if (startPos >= multiLineStartLength
-        && isComment(startText,
-                     startPos - multiLineStartLength,
-                     definition,
-                     &CommentDefinition::multiLineStart)) {
+  && isComment(startText,
+               startPos - multiLineStartLength,
+               definition,
+               &CommentDefinition::multiLineStart)) {
       startPos -= multiLineStartLength;
       start -= multiLineStartLength;
     }
 
     bool hasSelStart = (startPos <= startText.length() - multiLineStartLength
-                        && isComment(startText,
-                                     startPos,
-                                     definition,
-                                     &CommentDefinition::multiLineStart));
+                  && isComment(startText,
+                               startPos,
+                               definition,
+                               &CommentDefinition::multiLineStart));
 
     QString endText = endBlock.text();
     int endPos = end - endBlock.position();
     const int multiLineEndLength = definition.multiLineEnd().length();
     bool hasTrailingCharacters =
-        !endText.left(endPos).remove(definition.singleLine()).trimmed().isEmpty()
-        && !endText.mid(endPos).trimmed().isEmpty();
+  !endText.left(endPos).remove(definition.singleLine()).trimmed().isEmpty()
+  && !endText.mid(endPos).trimmed().isEmpty();
 
     if (endPos <= endText.length() - multiLineEndLength
-        && isComment(endText, endPos, definition, &CommentDefinition::multiLineEnd)) {
+  && isComment(endText, endPos, definition, &CommentDefinition::multiLineEnd)) {
       endPos += multiLineEndLength;
       end += multiLineEndLength;
     }
 
     bool hasSelEnd = (endPos >= multiLineEndLength
-                      && isComment(endText,
-                                   endPos - multiLineEndLength,
-                                   definition,
-                                   &CommentDefinition::multiLineEnd));
+                && isComment(endText,
+                             endPos - multiLineEndLength,
+                             definition,
+                             &CommentDefinition::multiLineEnd));
 
     doMultiLineStyleUncomment = hasSelStart && hasSelEnd;
     doMultiLineStyleComment = !doMultiLineStyleUncomment
-        && (hasLeadingCharacters
-            || hasTrailingCharacters
-            || !definition.hasSingleLineStyle());
+  && (hasLeadingCharacters
+      || hasTrailingCharacters
+      || !definition.hasSingleLineStyle());
   } else if (!hasSelection && !definition.hasSingleLineStyle()) {
 
     QString text = startBlock.text().trimmed();
     doMultiLineStyleUncomment = text.startsWith(definition.multiLineStart())
-        && text.endsWith(definition.multiLineEnd());
+  && text.endsWith(definition.multiLineEnd());
     doMultiLineStyleComment = !doMultiLineStyleUncomment && !text.isEmpty();
 
     start = startBlock.position();
@@ -445,7 +445,7 @@ void ModelicaTextEdit::toggleCommentSelection()
       text = startBlock.text();
       const int length = text.length();
       while (offset < length && text.at(offset).isSpace())
-        ++offset;
+  ++offset;
       start += offset;
     }
   }
@@ -453,13 +453,13 @@ void ModelicaTextEdit::toggleCommentSelection()
   if (doMultiLineStyleUncomment) {
     cursor.setPosition(end);
     cursor.movePosition(QTextCursor::PreviousCharacter,
-                        QTextCursor::KeepAnchor,
-                        definition.multiLineEnd().length());
+                  QTextCursor::KeepAnchor,
+                  definition.multiLineEnd().length());
     cursor.removeSelectedText();
     cursor.setPosition(start);
     cursor.movePosition(QTextCursor::NextCharacter,
-                        QTextCursor::KeepAnchor,
-                        definition.multiLineStart().length());
+                  QTextCursor::KeepAnchor,
+                  definition.multiLineStart().length());
     cursor.removeSelectedText();
   } else if (doMultiLineStyleComment) {
     cursor.setPosition(end);
@@ -472,41 +472,41 @@ void ModelicaTextEdit::toggleCommentSelection()
     for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
       QString text = block.text().trimmed();
       if (!text.isEmpty() && !text.startsWith(definition.singleLine())) {
-        doSingleLineStyleUncomment = false;
-        break;
+  doSingleLineStyleUncomment = false;
+  break;
       }
     }
 
     const int singleLineLength = definition.singleLine().length();
     for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
       if (doSingleLineStyleUncomment) {
-        QString text = block.text();
-        int i = 0;
-        while (i <= text.size() - singleLineLength) {
-          if (isComment(text, i, definition, &CommentDefinition::singleLine)) {
-            cursor.setPosition(block.position() + i);
-            cursor.movePosition(QTextCursor::NextCharacter,
-                                QTextCursor::KeepAnchor,
-                                singleLineLength);
-            cursor.removeSelectedText();
-            break;
-          }
-          if (!text.at(i).isSpace())
-            break;
-          ++i;
-        }
+  QString text = block.text();
+  int i = 0;
+  while (i <= text.size() - singleLineLength) {
+    if (isComment(text, i, definition, &CommentDefinition::singleLine)) {
+      cursor.setPosition(block.position() + i);
+      cursor.movePosition(QTextCursor::NextCharacter,
+                          QTextCursor::KeepAnchor,
+                          singleLineLength);
+      cursor.removeSelectedText();
+      break;
+    }
+    if (!text.at(i).isSpace())
+      break;
+    ++i;
+  }
       } else {
-        QString text = block.text();
-        foreach(QChar c, text) {
-          if (!c.isSpace()) {
-            if (definition.isAfterWhiteSpaces())
-              cursor.setPosition(block.position() + text.indexOf(c));
-            else
-              cursor.setPosition(block.position());
-            cursor.insertText(definition.singleLine());
-            break;
-          }
-        }
+  QString text = block.text();
+  foreach(QChar c, text) {
+    if (!c.isSpace()) {
+      if (definition.isAfterWhiteSpaces())
+        cursor.setPosition(block.position() + text.indexOf(c));
+      else
+        cursor.setPosition(block.position());
+      cursor.insertText(definition.singleLine());
+      break;
+    }
+  }
       }
     }
   }
@@ -547,9 +547,9 @@ void ModelicaTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       QString number = QString::number(blockNumber + 1);
       // make the current highlighted line number darker
       if (blockNumber == textCursor().blockNumber())
-        painter.setPen(QColor(64, 64, 64));
+  painter.setPen(QColor(64, 64, 64));
       else
-        painter.setPen(Qt::gray);
+  painter.setPen(Qt::gray);
       painter.setFont(document()->defaultFont());
       QFontMetrics fontMetrics (document()->defaultFont());
       painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
@@ -650,65 +650,65 @@ void ModelicaTextHighlighter::initializeSettings()
   // keywords
   QStringList keywordPatterns;
   keywordPatterns << "\\balgorithm\\b"
-                  << "\\band\\b"
-                  << "\\bannotation\\b"
-                  << "\\bassert\\b"
-                  << "\\bblock\\b"
-                  << "\\bbreak\\b"
-                  << "\\bBoolean\\b"
-                  << "\\bclass\\b"
-                  << "\\bconnect\\b"
-                  << "\\bconnector\\b"
-                  << "\\bconstant\\b"
-                  << "\\bconstrainedby\\b"
-                  << "\\bder\\b"
-                  << "\\bdiscrete\\b"
-                  << "\\beach\\b"
-                  << "\\belse\\b"
-                  << "\\belseif\\b"
-                  << "\\belsewhen\\b"
-                  << "\\bencapsulated\\b"
-                  << "\\bend\\b"
-                  << "\\benumeration\\b"
-                  << "\\bequation\\b"
-                  << "\\bexpandable\\b"
-                  << "\\bextends\\b"
-                  << "\\bexternal\\b"
-                  << "\\bfalse\\b"
-                  << "\\bfinal\\b"
-                  << "\\bflow\\b"
-                  << "\\bfor\\b"
-                  << "\\bfunction\\b"
-                  << "\\bif\\b"
-                  << "\\bimport\\b"
-                  << "\\bin\\b"
-                  << "\\binitial\\b"
-                  << "\\binner\\b"
-                  << "\\binput\\b"
-                  << "\\bloop\\b"
-                  << "\\bmodel\\b"
-                  << "\\bnot\\b"
-                  << "\\boperator\\b"
-                  << "\\bor\\b"
-                  << "\\bouter\\b"
-                  << "\\boutput\\b"
-                  << "\\boptimization\\b"
-                  << "\\bpackage\\b"
-                  << "\\bparameter\\b"
-                  << "\\bpartial\\b"
-                  << "\\bprotected\\b"
-                  << "\\bpublic\\b"
-                  << "\\brecord\\b"
-                  << "\\bredeclare\\b"
-                  << "\\breplaceable\\b"
-                  << "\\breturn\\b"
-                  << "\\bstream\\b"
-                  << "\\bthen\\b"
-                  << "\\btrue\\b"
-                  << "\\btype\\b"
-                  << "\\bwhen\\b"
-                  << "\\bwhile\\b"
-                  << "\\bwithin\\b";
+            << "\\band\\b"
+            << "\\bannotation\\b"
+            << "\\bassert\\b"
+            << "\\bblock\\b"
+            << "\\bbreak\\b"
+            << "\\bBoolean\\b"
+            << "\\bclass\\b"
+            << "\\bconnect\\b"
+            << "\\bconnector\\b"
+            << "\\bconstant\\b"
+            << "\\bconstrainedby\\b"
+            << "\\bder\\b"
+            << "\\bdiscrete\\b"
+            << "\\beach\\b"
+            << "\\belse\\b"
+            << "\\belseif\\b"
+            << "\\belsewhen\\b"
+            << "\\bencapsulated\\b"
+            << "\\bend\\b"
+            << "\\benumeration\\b"
+            << "\\bequation\\b"
+            << "\\bexpandable\\b"
+            << "\\bextends\\b"
+            << "\\bexternal\\b"
+            << "\\bfalse\\b"
+            << "\\bfinal\\b"
+            << "\\bflow\\b"
+            << "\\bfor\\b"
+            << "\\bfunction\\b"
+            << "\\bif\\b"
+            << "\\bimport\\b"
+            << "\\bin\\b"
+            << "\\binitial\\b"
+            << "\\binner\\b"
+            << "\\binput\\b"
+            << "\\bloop\\b"
+            << "\\bmodel\\b"
+            << "\\bnot\\b"
+            << "\\boperator\\b"
+            << "\\bor\\b"
+            << "\\bouter\\b"
+            << "\\boutput\\b"
+            << "\\boptimization\\b"
+            << "\\bpackage\\b"
+            << "\\bparameter\\b"
+            << "\\bpartial\\b"
+            << "\\bprotected\\b"
+            << "\\bpublic\\b"
+            << "\\brecord\\b"
+            << "\\bredeclare\\b"
+            << "\\breplaceable\\b"
+            << "\\breturn\\b"
+            << "\\bstream\\b"
+            << "\\bthen\\b"
+            << "\\btrue\\b"
+            << "\\btype\\b"
+            << "\\bwhen\\b"
+            << "\\bwhile\\b"
+            << "\\bwithin\\b";
   foreach (const QString &pattern, keywordPatterns)
   {
     rule.mPattern = QRegExp(pattern);
@@ -718,9 +718,9 @@ void ModelicaTextHighlighter::initializeSettings()
   // Modelica types
   QStringList typePatterns;
   typePatterns << "\\bString\\b"
-               << "\\bInteger\\b"
-               << "\\bBoolean\\b"
-               << "\\bReal\\b";
+         << "\\bInteger\\b"
+         << "\\bBoolean\\b"
+         << "\\bReal\\b";
   foreach (const QString &pattern, typePatterns)
   {
     rule.mPattern = QRegExp(pattern);
@@ -753,28 +753,28 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
   {
     switch (blockState) {
       case 1:
-        if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
-          index++;
-          setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
-          blockState = 0;
-        }
-        break;
+  if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
+    index++;
+    setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
+    blockState = 0;
+  }
+  break;
       case 2:
-        if (text[index] == '\\') {
-          index++;
-        } else if (text[index] == '"') {
-          setFormat(startIndex, index-startIndex+1, mQuotationFormat);
-          blockState = 0;
-        }
-        break;
+  if (text[index] == '\\') {
+    index++;
+  } else if (text[index] == '"') {
+    setFormat(startIndex, index-startIndex+1, mQuotationFormat);
+    blockState = 0;
+  }
+  break;
       default:
-        if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
-          startIndex = index++;
-          blockState = 1;
-        } else if (text[index] == '"') {
-          startIndex = index;
-          blockState = 2;
-        }
+  if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
+    startIndex = index++;
+    blockState = 1;
+  } else if (text[index] == '"') {
+    startIndex = index;
+    blockState = 2;
+  }
     }
     index++;
   }

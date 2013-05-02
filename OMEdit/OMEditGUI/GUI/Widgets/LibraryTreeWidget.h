@@ -97,7 +97,7 @@ public:
     SaveUnspecified
   };
   LibraryTreeNode(QString text, QString parentName, QString nameStructure, QString tooltip, StringHandler::ModelicaClasses type,
-                  QString fileName, bool readOnly, bool isSaved, bool isProtected, LibraryTreeWidget *pParent);
+            QString fileName, bool readOnly, bool isSaved, bool isProtected, LibraryTreeWidget *pParent);
   static QIcon getModelicaNodeIcon(int type);
   void setType(StringHandler::ModelicaClasses type);
   StringHandler::ModelicaClasses getType();
@@ -155,7 +155,7 @@ public:
   bool isLibraryTreeNodeExpanded(QTreeWidgetItem *item);
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
   LibraryTreeNode* addLibraryTreeNode(QString name, StringHandler::ModelicaClasses type, QString parentName=QString(),
-                                      bool isSaved = true, int insertIndex = 0);
+                                bool isSaved = true, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();
   QStringList getNonSystemLibraryTreeNodeList();
