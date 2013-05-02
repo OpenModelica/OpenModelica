@@ -123,7 +123,7 @@ static void setTermMsg(const char *msg, va_list ap)
   size_t i;
   static size_t termMsgSize = 0;
   if (TermMsg==NULL) {
-    termMsgSize = max(strlen(msg)*2+1,2048);
+    termMsgSize = max(strlen(msg)*2+1,(size_t)2048);
     TermMsg = (char*) malloc(termMsgSize);
   }
   i = vsnprintf(TermMsg,termMsgSize,msg,ap);
