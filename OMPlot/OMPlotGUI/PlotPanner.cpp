@@ -67,13 +67,13 @@ void PlotPanner::updateView(int dx, int dy)
 void PlotPanner::widgetMousePressEvent(QMouseEvent *event)
 {
     if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
-        mpParentPlot->canvas()->setCursor(Qt::ClosedHandCursor);
+  mpParentPlot->canvas()->setCursor(Qt::ClosedHandCursor);
     QwtPlotPanner::widgetMousePressEvent(event);
 }
 
 void PlotPanner::widgetMouseReleaseEvent(QMouseEvent *event)
 {
     if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
-        mpParentPlot->canvas()->setCursor(Qt::OpenHandCursor);
+  mpParentPlot->canvas()->setCursor(Qt::OpenHandCursor);
     QwtPlotPanner::widgetMouseReleaseEvent(event);
 }

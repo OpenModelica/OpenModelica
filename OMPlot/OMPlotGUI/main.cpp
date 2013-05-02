@@ -47,19 +47,19 @@ void printUsage()
 {
     printf("Usage: OMPlot [OPTIONS] [--filename=NAME] [variable names]\n");
     printf("OPTIONS\n");
-    printf("    --title=TITLE              Sets the TITLE of the plot window\n");
-    printf("    --filename=NAME            Sets the NAME of the file to plot\n");
+    printf("    --title=TITLE        Sets the TITLE of the plot window\n");
+    printf("    --filename=NAME      Sets the NAME of the file to plot\n");
     printf("    --legend=[true|false]      Display a variable legend in the window\n");
-    printf("    --grid=[true|false]        Enable a grid in the window\n");
-    printf("    --logx=[true|false]        Use log scale for the x-axis\n");
-    printf("    --logy=[true|false]        Use log scale for the y-axis\n");
-    printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
-    printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
-    printf("    --plot                     Create a normal plot\n");
-    printf("    --plotAll                  Create a normal plot containing every variable in the result-file\n");
-    printf("    --plotParametric           Create a parametric plot (plot variables as functions of each other)\n");
-    printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
-    printf("    --yrange=LEFT:RIGHT        Sets the initial range of the y-axis to LEFT:RIGHT\n");
+    printf("    --grid=[true|false]  Enable a grid in the window\n");
+    printf("    --logx=[true|false]  Use log scale for the x-axis\n");
+    printf("    --logy=[true|false]  Use log scale for the y-axis\n");
+    printf("    --xlabel=LABEL       Use LABEL as the label of the x-axis\n");
+    printf("    --ylabel=LABEL       Use LABEL as the label of the y-axis\n");
+    printf("    --plot               Create a normal plot\n");
+    printf("    --plotAll            Create a normal plot containing every variable in the result-file\n");
+    printf("    --plotParametric     Create a parametric plot (plot variables as functions of each other)\n");
+    printf("    --xrange=LEFT:RIGHT  Sets the initial range of the x-axis to LEFT:RIGHT\n");
+    printf("    --yrange=LEFT:RIGHT  Sets the initial range of the y-axis to LEFT:RIGHT\n");
     printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
 }
 
@@ -84,49 +84,49 @@ int main(int argc, char *argv[])
     QString filename;
     for(int i = 1; i < argc; i++)
     {
-        if (strncmp(argv[i], "--filename=", 11) == 0) {
-          filename = argv[i]+11;
-        } else if (strcmp(argv[i], "--help") == 0) {
-          printUsage();
-          return 1;
-        } else if (strncmp(argv[i], "--title=", 7) == 0) {
-          title = argv[i]+8;
-        } else if (strncmp(argv[i], "--legend=",9) == 0) {
-          CONSUME_BOOL_ARG(i,9,legend);
-        } else if (strncmp(argv[i], "--grid=",7) == 0) {
-          CONSUME_BOOL_ARG(i,7,grid);
-        } else if (strncmp(argv[i], "--logx=",7) == 0) {
-          CONSUME_BOOL_ARG(i,7,logx);
-        } else if (strncmp(argv[i], "--logy=",7) == 0) {
-          CONSUME_BOOL_ARG(i,7,logy);
-        } else if (strcmp(argv[i], "--plot") == 0) {
-          plottype = "plot";
-        } else if (strcmp(argv[i], "--plotAll") == 0) {
-          plottype = "plotAll";
-        } else if (strcmp(argv[i], "--plotParametric") == 0) {
-          plottype = "plotParametric";
-        } else if (strncmp(argv[i], "--xlabel=",9) == 0) {
-          xlabel = argv[i]+9;
-        } else if (strncmp(argv[i], "--ylabel=",9) == 0) {
-          ylabel = argv[i]+9;
-        } else if (strncmp(argv[i], "--xrange=",9) == 0) {
-          if (2 != sscanf(argv[i]+9, "%lf:%lf", &xrange1, &xrange2)) {
-            fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
-            return 1;
-          }
-        } else if (strncmp(argv[i], "--yrange=",9) == 0) {
-          if (2 != sscanf(argv[i]+9, "%lf:%lf", &yrange1, &yrange2)) {
-            fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
-            return 1;
-          }
-        } else if (strncmp(argv[i], "--new-window=",13) == 0) {
-          CONSUME_BOOL_ARG(i,13,newApplication);
-        } else if (strncmp(argv[i], "--", 2) == 0) {
-          fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
-          return 1;
-        } else {
-          vars.append(argv[i]);
-        }
+  if (strncmp(argv[i], "--filename=", 11) == 0) {
+    filename = argv[i]+11;
+  } else if (strcmp(argv[i], "--help") == 0) {
+    printUsage();
+    return 1;
+  } else if (strncmp(argv[i], "--title=", 7) == 0) {
+    title = argv[i]+8;
+  } else if (strncmp(argv[i], "--legend=",9) == 0) {
+    CONSUME_BOOL_ARG(i,9,legend);
+  } else if (strncmp(argv[i], "--grid=",7) == 0) {
+    CONSUME_BOOL_ARG(i,7,grid);
+  } else if (strncmp(argv[i], "--logx=",7) == 0) {
+    CONSUME_BOOL_ARG(i,7,logx);
+  } else if (strncmp(argv[i], "--logy=",7) == 0) {
+    CONSUME_BOOL_ARG(i,7,logy);
+  } else if (strcmp(argv[i], "--plot") == 0) {
+    plottype = "plot";
+  } else if (strcmp(argv[i], "--plotAll") == 0) {
+    plottype = "plotAll";
+  } else if (strcmp(argv[i], "--plotParametric") == 0) {
+    plottype = "plotParametric";
+  } else if (strncmp(argv[i], "--xlabel=",9) == 0) {
+    xlabel = argv[i]+9;
+  } else if (strncmp(argv[i], "--ylabel=",9) == 0) {
+    ylabel = argv[i]+9;
+  } else if (strncmp(argv[i], "--xrange=",9) == 0) {
+    if (2 != sscanf(argv[i]+9, "%lf:%lf", &xrange1, &xrange2)) {
+      fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
+      return 1;
+    }
+  } else if (strncmp(argv[i], "--yrange=",9) == 0) {
+    if (2 != sscanf(argv[i]+9, "%lf:%lf", &yrange1, &yrange2)) {
+      fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
+      return 1;
+    }
+  } else if (strncmp(argv[i], "--new-window=",13) == 0) {
+    CONSUME_BOOL_ARG(i,13,newApplication);
+  } else if (strncmp(argv[i], "--", 2) == 0) {
+    fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
+    return 1;
+  } else {
+    vars.append(argv[i]);
+  }
     }
     if (filename.length() == 0) {
       fprintf(stderr, "Error: No filename given\n");
@@ -154,32 +154,32 @@ int main(int argc, char *argv[])
     // create the plot main window
     PlotMainWindow w;
     QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
-                     w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
+               w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
     QObject::connect(&app, SIGNAL(newApplicationLaunched(QStringList)),
-                     w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
+               w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
     try {
-        if (!app.isRunning())
-            w.addPlotWindow(arguments);
-        // if there is no exception with plot window then continue
-        if (app.isRunning())
-        {
-            if (newApplication)
-                app.launchNewApplication(arguments);
-            else
-                app.sendMessage(arguments);
-            return 0;
-        }
-        w.show();
-        return app.exec();
+  if (!app.isRunning())
+      w.addPlotWindow(arguments);
+  // if there is no exception with plot window then continue
+  if (app.isRunning())
+  {
+      if (newApplication)
+          app.launchNewApplication(arguments);
+      else
+          app.sendMessage(arguments);
+      return 0;
+  }
+  w.show();
+  return app.exec();
     } catch (PlotException &e)
     {
-        QMessageBox *msgBox = new QMessageBox();
-        msgBox->setWindowTitle(QString("OMPlot - Error"));
-        msgBox->setIcon(QMessageBox::Warning);
-        msgBox->setText(QString(e.what()));
-        msgBox->setStandardButtons(QMessageBox::Ok);
-        msgBox->setDefaultButton(QMessageBox::Ok);
-        msgBox->exec();
-        return 1;
+  QMessageBox *msgBox = new QMessageBox();
+  msgBox->setWindowTitle(QString("OMPlot - Error"));
+  msgBox->setIcon(QMessageBox::Warning);
+  msgBox->setText(QString(e.what()));
+  msgBox->setStandardButtons(QMessageBox::Ok);
+  msgBox->setDefaultButton(QMessageBox::Ok);
+  msgBox->exec();
+  return 1;
     }
 }

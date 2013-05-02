@@ -107,11 +107,11 @@ void PlotMainWindow::switchWindowsView(bool mode)
 {
     if (mode)
     {
-        getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+  getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
     }
     else
     {
-        getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
-        getPlotWindowContainer()->getCurrentWindow()->show();
+  getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+  getPlotWindowContainer()->getCurrentWindow()->show();
     }
 }

@@ -134,9 +134,9 @@ void Plot::removeCurve(PlotCurve *pCurve)
 QColor Plot::getUniqueColor(int index, int total)
 {
     if (mColorsList.size() < total)
-        return QColor::fromHsvF(index/(total + 1.0), 1, 1);
+  return QColor::fromHsvF(index/(total + 1.0), 1, 1);
     else
-        return mColorsList.at(index);
+  return mColorsList.at(index);
 }
 
 // just overloaded this function to get colors for curves.
@@ -144,9 +144,9 @@ void Plot::replot()
 {
     for (int i = 0 ; i < mPlotCurvesList.length() ; i++)
     {
-        // if user has set the custom color for the curve then dont get automatic color for it
-        if (!mPlotCurvesList[i]->hasCustomColor())
-            mPlotCurvesList[i]->setPen(getUniqueColor(i, mPlotCurvesList.length()));
+  // if user has set the custom color for the curve then dont get automatic color for it
+  if (!mPlotCurvesList[i]->hasCustomColor())
+      mPlotCurvesList[i]->setPen(getUniqueColor(i, mPlotCurvesList.length()));
     }
 
     QwtPlot::replot();
